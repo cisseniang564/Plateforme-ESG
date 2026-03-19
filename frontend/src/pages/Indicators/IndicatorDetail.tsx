@@ -20,6 +20,9 @@ import {
   Scale,
   Plus,
   X,
+  Send,
+  Clock,
+  XCircle,
 } from 'lucide-react';
 import {
   LineChart,
@@ -68,6 +71,7 @@ interface IndicatorDataPoint {
   source: string;
   is_verified: boolean;
   is_estimated: boolean;
+  validation_status: string;
 }
 
 interface Stats {
@@ -154,6 +158,16 @@ export default function IndicatorDetail() {
       toast.error(err.response?.data?.detail || 'Erreur lors de l\'ajout');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSubmitForReview = async (entryId: string) => {
+    try {
+      await api.post('/validation/submit-for-review', { entry_ids: [entryId] });
+      toast.success('Entrée soumise pour validation');
+      await loadData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Erreur lors de la soumission');
     }
   };
 
@@ -551,6 +565,7 @@ export default function IndicatorDetail() {
                   <th className="text-left py-4 px-6 font-semibold text-gray-700">Source</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700">Notes</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700">Statut</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -578,21 +593,38 @@ export default function IndicatorDetail() {
                       {point.notes || '—'}
                     </td>
                     <td className="py-4 px-6">
-                      {point.is_verified ? (
+                      {point.validation_status === 'approved' ? (
                         <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
                           <CheckCircle className="h-4 w-4" />
-                          Vérifié
+                          Approuvé
                         </span>
-                      ) : point.is_estimated ? (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
-                          <AlertCircle className="h-4 w-4" />
-                          Estimé
+                      ) : point.validation_status === 'pending_review' ? (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                          <Send className="h-4 w-4" />
+                          En révision
+                        </span>
+                      ) : point.validation_status === 'rejected' ? (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">
+                          <XCircle className="h-4 w-4" />
+                          Rejeté
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-medium">
-                          <Activity className="h-4 w-4" />
-                          En attente
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">
+                          <Clock className="h-4 w-4" />
+                          Brouillon
                         </span>
+                      )}
+                    </td>
+                    <td className="py-4 px-6">
+                      {point.validation_status === 'draft' && (
+                        <button
+                          onClick={() => handleSubmitForReview(point.id)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
+                          title="Soumettre pour validation"
+                        >
+                          <Send className="h-3.5 w-3.5" />
+                          Soumettre
+                        </button>
                       )}
                     </td>
                   </tr>
