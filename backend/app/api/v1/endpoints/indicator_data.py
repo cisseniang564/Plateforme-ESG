@@ -175,6 +175,8 @@ async def get_indicator_data(
             "notes": d.notes,
             "source": d.source,
             "is_verified": d.is_verified,
+            "is_estimated": d.is_estimated,
+            "validation_status": d.validation_status,
             "organization_id": str(d.organization_id) if d.organization_id else None,
         } for d in data]
     }

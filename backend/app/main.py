@@ -120,7 +120,6 @@ async def root():
 
 # ROUTERS
 app.include_router(auth.router, prefix="/api/v1")
-app.include_router(user_management.router, prefix="/api/v1")
 app.include_router(tenants.router, prefix="/api/v1")
 app.include_router(organizations.router, prefix="/api/v1")
 app.include_router(tasks.router, prefix="/api/v1")
