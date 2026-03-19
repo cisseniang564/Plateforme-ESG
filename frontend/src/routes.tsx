@@ -64,6 +64,9 @@ import CalculatedMetrics from '@/pages/DataEntry/CalculatedMetrics';
 import IntelligenceDashboard from '@/pages/Analytics/IntelligenceDashboard';
 import DataQualityDashboard from '@/pages/DataQuality/DataQualityDashboard';
 
+// Carbon
+import BilanCarbone from '@/pages/Carbon/BilanCarbone';
+
 // New features
 import TaxonomyAlignment from '@/pages/Compliance/TaxonomyAlignment';
 import ValidationWorkflow from '@/pages/Validation/ValidationWorkflow';
@@ -177,6 +180,9 @@ export default function AppRoutes() {
         {/* Analytics & Intelligence */}
         <Route path="intelligence" element={<IntelligenceDashboard />} />
         <Route path="data-quality" element={<DataQualityDashboard />} />
+
+        {/* Carbon */}
+        <Route path="carbon" element={<BilanCarbone />} />
 
         {/* New features */}
         <Route path="taxonomy" element={<TaxonomyAlignment />} />

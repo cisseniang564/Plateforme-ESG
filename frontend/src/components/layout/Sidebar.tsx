@@ -19,6 +19,7 @@ import {
   CheckSquare,
   Target,
   Code2,
+  Flame,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import api from '@/services/api';
@@ -111,6 +112,7 @@ export default function Sidebar() {
     {
       title: 'Conformité',
       items: [
+        { name: 'Bilan Carbone Scope 3', description: '15 catégories GHG Protocol · ADEME', href: '/app/carbon', icon: Flame },
         { name: 'Taxonomie UE', description: 'Alignement EU Taxonomy 2020/852', href: '/app/taxonomy', icon: Leaf },
         { name: 'Rapports CSRD', description: 'Générer des rapports', href: '/app/reports', icon: FileText, tourId: 'sidebar-reports' },
       ],
