@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(python3:*)",
+      "Bash(BASE=/Users/cisseniang/Downloads/esgplatform)",
+      "Bash(cd /Users/cisseniang/Downloads/esgplatform/frontend && npm run build 2>&1 | tail -60)",
+      "Bash(npm run build 2>&1 | tail -20)",
+      "Bash(timeout 10 npm run dev 2>&1; echo \"EXIT:$?\")",
+      "Bash(find /Users/cisseniang/Downloads/esgplatform/frontend/src/pages -name \"*.tsx\" 2>/dev/null | sort)",
+      "Bash(cat > /Users/cisseniang/Downloads/esgplatform/frontend/Dockerfile << 'EOF'\n# Stage 1: Build React app\nFROM node:20-alpine AS builder\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci --silent\nCOPY . .\nRUN npm run build\n\n# Stage 2: Serve with nginx\nFROM nginx:1.25-alpine\nCOPY --from=builder /app/dist /usr/share/nginx/html\nCOPY nginx.conf /etc/nginx/conf.d/default.conf\nEXPOSE 80\nCMD [\"nginx\", \"-g\", \"daemon off;\"]\nEOF)",
+      "Bash(cat > /Users/cisseniang/Downloads/esgplatform/frontend/src/tests/unit/components/Button.test.tsx << 'EOF'\nimport { render, screen, fireEvent } from '@testing-library/react';\nimport { describe, it, expect, vi } from 'vitest';\nimport Button from '@/components/common/Button';\n\ndescribe\\('Button', \\(\\) => {\n  it\\('renders with text', \\(\\) => {\n    render\\(<Button>Click me</Button>\\);\n    expect\\(screen.getByRole\\('button', { name: 'Click me' }\\)\\).toBeInTheDocument\\(\\);\n  }\\);\n\n  it\\('calls onClick when clicked', \\(\\) => {\n    const onClick = vi.fn\\(\\);\n    render\\(<Button onClick={onClick}>Click me</Button>\\);\n    fireEvent.click\\(screen.getByRole\\('button'\\)\\);\n    expect\\(onClick\\).toHaveBeenCalledTimes\\(1\\);\n  }\\);\n\n  it\\('is disabled when disabled prop is true', \\(\\) => {\n    render\\(<Button disabled>Click me</Button>\\);\n    expect\\(screen.getByRole\\('button'\\)\\).toBeDisabled\\(\\);\n  }\\);\n\n  it\\('does not call onClick when disabled', \\(\\) => {\n    const onClick = vi.fn\\(\\);\n    render\\(<Button onClick={onClick} disabled>Click me</Button>\\);\n    fireEvent.click\\(screen.getByRole\\('button'\\)\\);\n    expect\\(onClick\\).not.toHaveBeenCalled\\(\\);\n  }\\);\n}\\);\nEOF\necho \"Button.test.tsx created\")",
+      "Bash(cat > /Users/cisseniang/Downloads/esgplatform/scripts/backup-db.sh << 'EOF'\n#!/usr/bin/env bash\n# ESGFlow Database Backup Script\n# Usage: ./scripts/backup-db.sh [--upload]\n# Schedule: add to crontab → 0 2 * * * /path/to/scripts/backup-db.sh\n\nset -euo pipefail\n\nSCRIPT_DIR=\"$\\(cd \"$\\(dirname \"${BASH_SOURCE[0]}\"\\)\" && pwd\\)\"\nPROJECT_DIR=\"$\\(dirname \"$SCRIPT_DIR\"\\)\"\nBACKUP_DIR=\"${PROJECT_DIR}/backups\"\nRETENTION_DAYS=30\n\n# Load env\nif [[ -f \"${PROJECT_DIR}/.env.prod\" ]]; then\n  source \"${PROJECT_DIR}/.env.prod\"\nfi\n\nDB_NAME=\"${DATABASE_NAME:-esgflow}\"\nDB_USER=\"${DATABASE_USER:-esgflow}\"\nDB_HOST=\"${DATABASE_HOST:-localhost}\"\nDB_PORT=\"${DATABASE_PORT:-5432}\"\n\nTIMESTAMP=$\\(date +\"%Y%m%d_%H%M%S\"\\)\nBACKUP_FILE=\"${BACKUP_DIR}/esgflow_${TIMESTAMP}.sql.gz\"\n\nmkdir -p \"$BACKUP_DIR\"\n\necho \"[$\\(date\\)] Starting backup of database '${DB_NAME}'...\"\n\nPGPASSWORD=\"${DATABASE_PASSWORD}\" pg_dump \\\\\n  -h \"$DB_HOST\" \\\\\n  -p \"$DB_PORT\" \\\\\n  -U \"$DB_USER\" \\\\\n  -d \"$DB_NAME\" \\\\\n  --no-owner \\\\\n  --no-acl \\\\\n  | gzip > \"$BACKUP_FILE\"\n\necho \"[$\\(date\\)] Backup saved: ${BACKUP_FILE} \\($\\(du -sh \"$BACKUP_FILE\" | cut -f1\\)\\)\"\n\n# Optional: upload to MinIO/S3\nif [[ \"${1:-}\" == \"--upload\" ]] && command -v mc &>/dev/null; then\n  mc cp \"$BACKUP_FILE\" \"minio/esgflow-backups/$\\(basename \"$BACKUP_FILE\"\\)\"\n  echo \"[$\\(date\\)] Uploaded to MinIO.\"\nfi\n\n# Retention: delete old backups\nfind \"$BACKUP_DIR\" -name \"esgflow_*.sql.gz\" -mtime \"+${RETENTION_DAYS}\" -delete\necho \"[$\\(date\\)] Cleaned up backups older than ${RETENTION_DAYS} days.\"\necho \"[$\\(date\\)] Backup complete.\"\nEOF\n\nchmod +x /Users/cisseniang/Downloads/esgplatform/scripts/backup-db.sh)",
+      "Bash(chmod +x /Users/cisseniang/Downloads/esgplatform/setup_esgflow_v2.sh)",
+      "Bash(PSQL_URL=postgresql://esgflow_user:esgflow_password@localhost:5432/esgflow_dev)",
+      "Bash(psql $PSQL_URL -c '\\\\d indicator_data')",
+      "Bash(psql \"$PSQL_URL\":*)",
+      "Bash(docker exec:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker start:*)",
+      "Bash(curl:*)",
+      "Bash(docker info:*)",
+      "Bash(open -a Docker)",
+      "Bash(docker cp:*)",
+      "Bash(npm install:*)",
+      "Bash(find /Users/cisseniang/Downloads/esgplatform/frontend/src -name routes*)",
+      "Bash(ls:*)",
+      "Bash(python -c \"from app.api.v1.endpoints.register import router; print\\(''register.py OK''\\)\")",
+      "Bash(grep -E \"\\\\.py$\")",
+      "Bash(grep \"\\\\.py$\")",
+      "Bash(grep -r prefix.*= /Users/cisseniang/Downloads/esgplatform/backend/app/api/v1/endpoints/*.py)",
+      "Bash(npx vite:*)",
+      "Bash(grep -n \"indicators\\\\|table\\\\|__tablename__\" /Users/cisseniang/Downloads/esgplatform/backend/app/models/*.py)",
+      "Bash(docker restart:*)",
+      "Bash(docker port:*)"
+    ]
+  }
+}

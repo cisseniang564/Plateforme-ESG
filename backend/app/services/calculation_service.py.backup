@@ -1,0 +1,286 @@
+"""
+Calculation Service - Automatic ESG calculations and formulas
+"""
+from typing import List, Dict, Any, Optional
+from uuid import UUID
+from datetime import datetime, date
+from sqlalchemy import select, and_, extract, func
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.data_entry import DataEntry
+
+
+class CalculationService:
+    """Service for automatic ESG calculations"""
+    
+    # Règles de calcul par indicateur
+    FORMULAS = {
+        # SCOPE 3 = SCOPE 1 + SCOPE 2
+        'scope_3_total': {
+            'inputs': ['scope_1', 'scope_2'],
+            'formula': lambda s1, s2: s1 + s2,
+            'unit': 'tCO2e',
+            'category': 'emissions',
+            'pillar': 'environmental',
+        },
+        
+        # Intensité carbone = Émissions totales / CA
+        'carbon_intensity': {
+            'inputs': ['total_emissions', 'revenue'],
+            'formula': lambda emissions, revenue: (emissions / revenue * 1000) if revenue > 0 else 0,
+            'unit': 'tCO2e/M€',
+            'category': 'emissions',
+            'pillar': 'environmental',
+        },
+        
+        # Part énergies renouvelables = Renouvelable / Total énergie
+        'renewable_percentage': {
+            'inputs': ['renewable_energy', 'total_energy'],
+            'formula': lambda renewable, total: (renewable / total * 100) if total > 0 else 0,
+            'unit': '%',
+            'category': 'energy',
+            'pillar': 'environmental',
+        },
+        
+        # Turnover = (Départs / Effectif moyen) * 100
+        'turnover_rate': {
+            'inputs': ['departures', 'average_headcount'],
+            'formula': lambda departures, headcount: (departures / headcount * 100) if headcount > 0 else 0,
+            'unit': '%',
+            'category': 'workforce',
+            'pillar': 'social',
+        },
+        
+        # Taux de formation = Heures formation / Effectif
+        'training_rate': {
+            'inputs': ['training_hours', 'headcount'],
+            'formula': lambda hours, headcount: (hours / headcount) if headcount > 0 else 0,
+            'unit': 'heures/personne',
+            'category': 'training',
+            'pillar': 'social',
+        },
+        
+        # Part de femmes = Femmes / Total * 100
+        'women_percentage': {
+            'inputs': ['women_count', 'total_headcount'],
+            'formula': lambda women, total: (women / total * 100) if total > 0 else 0,
+            'unit': '%',
+            'category': 'diversity',
+            'pillar': 'social',
+        },
+    }
+    
+    def __init__(self, db: AsyncSession):
+        self.db = db
+    
+    async def calculate_metrics(
+        self,
+        tenant_id: UUID,
+        organization_id: Optional[UUID] = None,
+        year: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Calculate all automatic metrics"""
+        
+        # Récupérer toutes les données pour le calcul
+        data = await self._get_data_for_calculation(tenant_id, organization_id, year)
+        
+        results = {}
+        
+        # Calculer chaque formule
+        for metric_name, formula_def in self.FORMULAS.items():
+            try:
+                # Récupérer les inputs nécessaires
+                input_values = []
+                for input_name in formula_def['inputs']:
+                    value = data.get(input_name)
+                    if value is None:
+                        # Input manquant, on skip ce calcul
+                        break
+                    input_values.append(value)
+                
+                if len(input_values) == len(formula_def['inputs']):
+                    # Calculer
+                    calculated_value = formula_def['formula'](*input_values)
+                    
+                    results[metric_name] = {
+                        'value': round(calculated_value, 2),
+                        'unit': formula_def['unit'],
+                        'category': formula_def['category'],
+                        'pillar': formula_def['pillar'],
+                        'inputs_used': dict(zip(formula_def['inputs'], input_values)),
+                    }
+            except Exception as e:
+                # Erreur de calcul, on skip
+                continue
+        
+        return results
+    
+    async def calculate_evolution(
+        self,
+        tenant_id: UUID,
+        metric_name: str,
+        current_year: int,
+        previous_year: int,
+        organization_id: Optional[UUID] = None,
+    ) -> Dict[str, Any]:
+        """Calculate year-over-year evolution for a metric"""
+        
+        # Valeur année courante
+        current_value = await self._get_metric_value(
+            tenant_id, metric_name, current_year, organization_id
+        )
+        
+        # Valeur année précédente
+        previous_value = await self._get_metric_value(
+            tenant_id, metric_name, previous_year, organization_id
+        )
+        
+        if current_value is None or previous_value is None:
+            return {
+                'current_year': current_year,
+                'current_value': current_value,
+                'previous_year': previous_year,
+                'previous_value': previous_value,
+                'evolution': None,
+                'evolution_percentage': None,
+            }
+        
+        # Calculer l'évolution
+        evolution = current_value - previous_value
+        evolution_percentage = (evolution / previous_value * 100) if previous_value != 0 else 0
+        
+        return {
+            'current_year': current_year,
+            'current_value': round(current_value, 2),
+            'previous_year': previous_year,
+            'previous_value': round(previous_value, 2),
+            'evolution': round(evolution, 2),
+            'evolution_percentage': round(evolution_percentage, 2),
+            'trend': 'up' if evolution > 0 else 'down' if evolution < 0 else 'stable',
+        }
+    
+    async def calculate_aggregation(
+        self,
+        tenant_id: UUID,
+        metric_name: str,
+        year: int,
+        organization_ids: List[UUID],
+    ) -> Dict[str, Any]:
+        """Aggregate metric across multiple organizations (for groups)"""
+        
+        total = 0
+        count = 0
+        by_org = {}
+        
+        for org_id in organization_ids:
+            value = await self._get_metric_value(tenant_id, metric_name, year, org_id)
+            if value is not None:
+                total += value
+                count += 1
+                by_org[str(org_id)] = round(value, 2)
+        
+        return {
+            'total': round(total, 2),
+            'average': round(total / count, 2) if count > 0 else 0,
+            'count': count,
+            'by_organization': by_org,
+        }
+    
+    async def _get_data_for_calculation(
+        self,
+        tenant_id: UUID,
+        organization_id: Optional[UUID],
+        year: Optional[int],
+    ) -> Dict[str, float]:
+        """Get all data needed for calculations"""
+        
+        query = select(DataEntry).where(DataEntry.tenant_id == tenant_id)
+        
+        if organization_id:
+            query = query.where(DataEntry.organization_id == organization_id)
+        
+        if year:
+            query = query.where(extract('year', DataEntry.period_start) == year)
+        
+        result = await self.db.execute(query)
+        entries = result.scalars().all()
+        
+        # Mapper par nom de métrique (normalisé)
+        data = {}
+        for entry in entries:
+            if entry.value_numeric is not None:
+                # Normaliser le nom (minuscules, underscores)
+                key = entry.metric_name.lower().replace(' ', '_').replace('é', 'e').replace('è', 'e')
+                data[key] = entry.value_numeric
+        
+        return data
+    
+    async def _get_metric_value(
+        self,
+        tenant_id: UUID,
+        metric_name: str,
+        year: int,
+        organization_id: Optional[UUID] = None,
+    ) -> Optional[float]:
+        """Get a single metric value"""
+        
+        query = select(DataEntry).where(
+            and_(
+                DataEntry.tenant_id == tenant_id,
+                DataEntry.metric_name.ilike(f"%{metric_name}%"),
+                extract('year', DataEntry.period_start) == year,
+            )
+        )
+        
+        if organization_id:
+            query = query.where(DataEntry.organization_id == organization_id)
+        
+        result = await self.db.execute(query)
+        entry = result.scalar_one_or_none()
+        
+        return entry.value_numeric if entry else None
+    
+    async def get_kpis_summary(
+        self,
+        tenant_id: UUID,
+        year: int,
+        organization_id: Optional[UUID] = None,
+    ) -> Dict[str, Any]:
+        """Get summary of key KPIs with calculations"""
+        
+        # Calculs automatiques
+        calculated = await self.calculate_metrics(tenant_id, organization_id, year)
+        
+        # KPIs clés
+        kpis = {
+            'environmental': [],
+            'social': [],
+            'governance': [],
+        }
+        
+        # Organiser par pilier
+        for metric_name, data in calculated.items():
+            pillar = data['pillar']
+            kpis[pillar].append({
+                'name': metric_name.replace('_', ' ').title(),
+                'value': data['value'],
+                'unit': data['unit'],
+            })
+        
+        # Ajouter évolutions pour les métriques clés
+        evolution_metrics = ['emissions_co2', 'turnover', 'training_hours']
+        evolutions = {}
+        
+        for metric in evolution_metrics:
+            evolution = await self.calculate_evolution(
+                tenant_id, metric, year, year - 1, organization_id
+            )
+            if evolution['evolution_percentage'] is not None:
+                evolutions[metric] = evolution
+        
+        return {
+            'year': year,
+            'calculated_kpis': kpis,
+            'evolutions': evolutions,
+            'total_calculated': len(calculated),
+        }

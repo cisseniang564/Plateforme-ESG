@@ -1,0 +1,358 @@
+# ============================================================================
+# Fichier: docker-compose.yml
+# Description: Docker Compose pour l'environnement de développement complet
+# Version corrigée avec toutes les variables PostgreSQL
+# ============================================================================
+
+services:
+  # ==========================================================================
+  # PostgreSQL Database
+  # ==========================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: esgflow-postgres
+    environment:
+      POSTGRES_DB: esgflow_dev
+      POSTGRES_USER: esgflow_user
+      POSTGRES_PASSWORD: esgflow_password_dev
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "55432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - esgflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U esgflow_user -d esgflow_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================================================
+  # Redis Cache
+  # ==========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: esgflow-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - esgflow-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================================================
+  # MinIO (S3-compatible storage)
+  # ==========================================================================
+  minio:
+    image: minio/minio:latest
+    container_name: esgflow-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console
+    volumes:
+      - minio_data:/data
+    networks:
+      - esgflow-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # ==========================================================================
+  # Kafka (Event Streaming)
+  # ==========================================================================
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: esgflow-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_logs:/var/lib/zookeeper/log
+    networks:
+      - esgflow-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: esgflow-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - esgflow-network
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ==========================================================================
+  # PgAdmin (Database Management UI)
+  # ==========================================================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: esgflow-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@esgflow.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - esgflow-network
+    depends_on:
+      - postgres
+
+  # ==========================================================================
+  # Backend API (FastAPI) - CORRIGÉ AVEC TOUTES LES VARIABLES POSTGRES
+  # ==========================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/Dockerfile.backend
+    container_name: esgflow-backend
+    working_dir: /app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      # Application
+      APP_ENV: development
+      APP_DEBUG: "true"
+      PYTHONPATH: /app
+      
+      # 🔧 POSTGRESQL - TOUTES LES VARIABLES NÉCESSAIRES
+      DATABASE_URL: postgresql+asyncpg://esgflow_user:esgflow_password_dev@postgres:5432/esgflow_dev
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: esgflow_user
+      DATABASE_PASSWORD: esgflow_password_dev
+      DATABASE_NAME: esgflow_dev
+      POSTGRES_SERVER: postgres
+      POSTGRES_USER: esgflow_user
+      POSTGRES_PASSWORD: esgflow_password_dev
+      POSTGRES_DB: esgflow_dev
+      
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      
+      # Kafka
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9093
+      
+      # S3/MinIO
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_ACCESS_KEY_ID: minioadmin
+      S3_SECRET_ACCESS_KEY: minioadmin
+      
+      # Security
+      SECRET_KEY: dev-secret-key-change-this-in-production-min-32-chars-long
+      JWT_SECRET_KEY: dev-jwt-secret-key-change-this-in-production-also-32-chars
+      ENCRYPTION_KEY: dev-encryption-key-base64-encoded-fernet-key-here
+      
+      # SMTP (required by Pydantic)
+      SMTP_USER: noreply@esgflow.local
+      SMTP_PASSWORD: dev-password
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
+      SMTP_FROM_EMAIL: noreply@esgflow.local
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./workers:/app/workers
+      - backend_logs:/var/log/esgflow
+    networks:
+      - esgflow-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ==========================================================================
+  # Celery Worker - CORRIGÉ AVEC TOUTES LES VARIABLES POSTGRES
+  # ==========================================================================
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: ../docker/Dockerfile.backend
+    container_name: esgflow-celery-worker
+    working_dir: /app
+    command: celery -A workers.celery_app worker --loglevel=info
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A workers.celery_app inspect ping -d celery@$$HOSTNAME --timeout 5 || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+    environment:
+      PYTHONPATH: /app
+      APP_ENV: development
+      APP_DEBUG: "true"
+      
+      # 🔧 POSTGRESQL - POUR CELERY
+      DATABASE_URL: postgresql://esgflow_user:esgflow_password_dev@postgres:5432/esgflow_dev
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: esgflow_user
+      DATABASE_PASSWORD: esgflow_password_dev
+      DATABASE_NAME: esgflow_dev
+      POSTGRES_SERVER: postgres
+      POSTGRES_USER: esgflow_user
+      POSTGRES_PASSWORD: esgflow_password_dev
+      POSTGRES_DB: esgflow_dev
+      
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      
+      # Kafka
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9093
+      
+      # S3/MinIO
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_ACCESS_KEY_ID: minioadmin
+      S3_SECRET_ACCESS_KEY: minioadmin
+      
+      # Security
+      SECRET_KEY: dev-secret-key-change-this-in-production-min-32-chars-long
+      JWT_SECRET_KEY: dev-jwt-secret-key-change-this-in-production-also-32-chars
+      ENCRYPTION_KEY: dev-encryption-key-base64-encoded-fernet-key-here
+      
+      # SMTP
+      SMTP_USER: noreply@esgflow.local
+      SMTP_PASSWORD: dev-password
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
+      SMTP_FROM_EMAIL: noreply@esgflow.local
+    volumes:
+      - ./backend:/app
+      - ./workers:/app/workers
+    networks:
+      - esgflow-network
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+    restart: unless-stopped
+
+  # ==========================================================================
+  # Flower (Celery Monitoring)
+  # ==========================================================================
+  flower:
+    build:
+      context: ./backend
+      dockerfile: ../docker/Dockerfile.backend
+    container_name: esgflow-flower
+    working_dir: /app
+    command: celery -A workers.celery_app flower --port=5555
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5555/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    environment:
+      PYTHONPATH: /app
+      APP_ENV: development
+      
+      # 🔧 POSTGRESQL - POUR FLOWER
+      DATABASE_URL: postgresql://esgflow_user:esgflow_password_dev@postgres:5432/esgflow_dev
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: esgflow_user
+      DATABASE_PASSWORD: esgflow_password_dev
+      DATABASE_NAME: esgflow_dev
+      
+      # Redis
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      
+      # S3/MinIO
+      S3_ACCESS_KEY_ID: minioadmin
+      S3_SECRET_ACCESS_KEY: minioadmin
+      
+      # Security
+      SECRET_KEY: dev-secret-key-change-this-in-production-min-32-chars-long
+      JWT_SECRET_KEY: dev-jwt-secret-key-change-this-in-production-also-32-chars
+      ENCRYPTION_KEY: dev-encryption-key-base64-encoded-fernet-key-here
+      
+      # SMTP
+      SMTP_USER: noreply@esgflow.local
+      SMTP_PASSWORD: dev-password
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
+      SMTP_FROM_EMAIL: noreply@esgflow.local
+    ports:
+      - "5555:5555"
+    volumes:
+      - ./backend:/app
+      - ./workers:/app/workers
+    networks:
+      - esgflow-network
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+# ==========================================================================
+# Volumes
+# ==========================================================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  minio_data:
+    driver: local
+  zookeeper_data:
+    driver: local
+  zookeeper_logs:
+    driver: local
+  kafka_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  backend_logs:
+    driver: local
+
+# ==========================================================================
+# Networks
+# ==========================================================================
+networks:
+  esgflow-network:
+    driver: bridge

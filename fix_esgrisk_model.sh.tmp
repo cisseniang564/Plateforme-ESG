@@ -1,0 +1,93 @@
+#!/bin/bash
+
+echo "🔧 CORRECTION MODÈLE ESGRisk"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Trouver le fichier contenant ESGRisk
+RISK_FILE=$(find backend/app/models -name "*.py" -exec grep -l "class ESGRisk" {} \;)
+
+if [ -z "$RISK_FILE" ]; then
+  echo "❌ Fichier ESGRisk non trouvé!"
+  echo "Recherche manuelle..."
+  find backend/app/models -name "*.py" -ls
+  exit 1
+fi
+
+echo "📁 Fichier trouvé: $RISK_FILE"
+echo ""
+
+# Backup
+cp "$RISK_FILE" "${RISK_FILE}.backup.$(date +%s)"
+
+# Corriger materiality_issue_id: VARCHAR → UUID
+python3 << 'PYTHON'
+import re
+
+risk_file = """RISK_FILE_PLACEHOLDER"""
+
+with open(risk_file, 'r') as f:
+    content = f.read()
+
+# Remplacer VARCHAR par UUID pour materiality_issue_id
+# Pattern 1: Column(String) ou Column(VARCHAR)
+content = re.sub(
+    r'materiality_issue_id\s*=\s*Column\(String[^)]*\)',
+    'materiality_issue_id = Column(UUID(as_uuid=True), ForeignKey("materiality_issues.id"))',
+    content
+)
+
+# Pattern 2: mapped_column(String)
+content = re.sub(
+    r'materiality_issue_id[^:]*:\s*Mapped\[Optional\[str\]\]',
+    'materiality_issue_id: Mapped[Optional[UUID]]',
+    content
+)
+
+# Vérifier les imports UUID
+if 'from uuid import UUID' not in content and 'UUID' in content:
+    # Ajouter import UUID
+    if 'from sqlalchemy import' in content:
+        content = re.sub(
+            r'(from sqlalchemy import[^)]+)',
+            r'\1',
+            content
+        )
+        # Ajouter après les imports sqlalchemy
+        content = re.sub(
+            r'(from sqlalchemy[^\n]+\n)',
+            r'\1from uuid import UUID\n',
+            content,
+            count=1
+        )
+
+with open(risk_file, 'w') as f:
+    f.write(content)
+
+print(f"✅ Fichier {risk_file} corrigé!")
+PYTHON
+
+# Remplacer le placeholder
+sed -i.tmp "s|RISK_FILE_PLACEHOLDER|$RISK_FILE|g" "${BASH_SOURCE[0]}"
+
+echo ""
+echo "📄 Vérification du changement:"
+grep -A 2 "materiality_issue_id" "$RISK_FILE"
+
+echo ""
+echo "🔄 Redémarrage des conteneurs..."
+docker-compose down
+docker-compose up -d
+
+echo ""
+echo "⏳ Attente 30s..."
+sleep 30
+
+echo ""
+echo "📋 Logs backend:"
+docker-compose logs backend --tail=40
+
+echo ""
+echo "🧪 Test API:"
+sleep 5
+curl -s http://localhost:8000/docs > /dev/null && echo "✅ Backend OK!" || echo "❌ Backend KO"
+

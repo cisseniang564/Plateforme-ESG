@@ -1,0 +1,101 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: esgflow-postgres
+    environment:
+      POSTGRES_USER: esgflow_user
+      POSTGRES_PASSWORD: esgflow_password
+      POSTGRES_DB: esgflow_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - esgflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U esgflow_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: esgflow-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - esgflow-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: esgflow-backend
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://esgflow_user:esgflow_password@postgres:5432/esgflow_dev
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=your-secret-key-change-in-production
+      - ENVIRONMENT=development
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - esgflow-network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: esgflow-celery-worker
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://esgflow_user:esgflow_password@postgres:5432/esgflow_dev
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=your-secret-key-change-in-production
+      - ENVIRONMENT=development
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - esgflow-network
+    command: celery -A app.core.celery_app worker --loglevel=info
+
+  flower:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: esgflow-flower
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - celery_worker
+    networks:
+      - esgflow-network
+    command: celery -A app.core.celery_app flower --port=5555
+
+networks:
+  esgflow-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

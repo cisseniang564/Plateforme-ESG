@@ -1,0 +1,6 @@
+metric_name,value_numeric,unit,period_start,period_end,pillar,category,data_source,verification_status,notes
+Émissions GES Scope 1,,tCO2e,2026-01-01,2026-12-31,environmental,climate,,pending,
+Émissions GES Scope 2,,tCO2e,2026-01-01,2026-12-31,environmental,climate,,pending,
+Consommation énergie,,MWh,2026-01-01,2026-12-31,environmental,energy,,pending,
+Effectif total,,personnes,2026-01-01,2026-12-31,social,workforce,,pending,
+Heures formation,,heures,2026-01-01,2026-12-31,social,training,,pending,

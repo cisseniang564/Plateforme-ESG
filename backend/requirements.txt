@@ -1,0 +1,52 @@
+# Core
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Database
+sqlalchemy==2.0.23
+asyncpg==0.29.0
+alembic==1.12.1
+psycopg2-binary==2.9.9
+
+# Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.1.1
+
+
+tenacity>=8.2.0
+flower>=2.0.0
+# Redis & Celery
+redis==5.0.1
+celery==5.3.4
+
+# Utils
+python-dateutil==2.8.2
+pytz==2023.3
+email-validator==2.1.0
+
+# Reports
+reportlab==4.0.7
+
+# Excel
+openpyxl==3.1.2
+pandas==2.1.3
+
+# HTTP
+httpx==0.25.2
+requests==2.31.0
+
+
+google-auth>=2.0.0
+
+google-api-python-client>=2.0.0
+
+tenacity==8.2.3
+
+google-auth-httplib2==0.1.1
+google-auth-oauthlib==1.1.0
+httpx==0.25.2
+python-dateutil==2.8.2

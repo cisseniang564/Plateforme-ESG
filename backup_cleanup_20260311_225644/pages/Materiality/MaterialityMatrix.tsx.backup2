@@ -1,0 +1,539 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Grid,
+  Plus,
+  Download,
+  RefreshCw,
+  TrendingUp,
+  AlertCircle,
+  CheckCircle,
+  Edit,
+  Trash2,
+  X,
+} from 'lucide-react';
+import Card from '@/components/common/Card';
+import Button from '@/components/common/Button';
+import Spinner from '@/components/common/Spinner';
+import api from '@/services/api';
+import toast from 'react-hot-toast';
+
+interface MaterialityIssue {
+  id: string;
+  name: string;
+  description?: string;
+  category: string;
+  financial_impact: number;
+  esg_impact: number;
+  is_material: boolean;
+  priority: string;
+  stakeholders?: string;
+}
+
+export default function MaterialityMatrix() {
+  const navigate = useNavigate();
+  const [issues, setIssues] = useState<MaterialityIssue[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedIssue, setSelectedIssue] = useState<MaterialityIssue | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    category: 'environmental',
+    financial_impact: 50,
+    esg_impact: 50,
+    stakeholders: ''
+  });
+
+  useEffect(() => {
+    loadIssues();
+  }, []);
+
+  const loadIssues = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/materiality/issues');
+      setIssues(res.data || []);
+    } catch (error: any) {
+      console.error('Error loading issues:', error);
+      toast.error(error.response?.data?.detail || 'Erreur lors du chargement');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    
+    try {
+      if (selectedIssue) {
+        await api.put(`/materiality/issues/${selectedIssue.id}`, formData);
+        toast.success('✅ Enjeu mis à jour avec succès');
+      } else {
+        await api.post('/materiality/issues', formData);
+        toast.success('✅ Enjeu créé avec succès');
+      }
+      
+      setShowModal(false);
+      setSelectedIssue(null);
+      resetForm();
+      await loadIssues();
+    } catch (error: any) {
+      console.error('Error saving issue:', error);
+      toast.error(error.response?.data?.detail || 'Erreur lors de la sauvegarde');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEdit = (issue: MaterialityIssue) => {
+    setSelectedIssue(issue);
+    setFormData({
+      name: issue.name,
+      description: issue.description || '',
+      category: issue.category,
+      financial_impact: issue.financial_impact,
+      esg_impact: issue.esg_impact,
+      stakeholders: issue.stakeholders || ''
+    });
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Supprimer l'enjeu "${name}" ?`)) return;
+    
+    try {
+      await api.delete(`/materiality/issues/${id}`);
+      toast.success('🗑️ Enjeu supprimé');
+      await loadIssues();
+    } catch (error: any) {
+      console.error('Error deleting issue:', error);
+      toast.error(error.response?.data?.detail || 'Erreur lors de la suppression');
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      category: 'environmental',
+      financial_impact: 50,
+      esg_impact: 50,
+      stakeholders: ''
+    });
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedIssue(null);
+    resetForm();
+  };
+
+  const getCategoryColor = (category: string) => {
+    const colors = {
+      environmental: 'bg-green-500',
+      social: 'bg-blue-500',
+      governance: 'bg-purple-500'
+    };
+    return colors[category as keyof typeof colors] || 'bg-gray-500';
+  };
+
+  const getQuadrantInfo = (x: number, y: number) => {
+    if (x > 60 && y > 60) return { label: 'Matériel', color: 'bg-red-100 border-red-500 text-red-900' };
+    if (x > 60) return { label: 'Impact Financier', color: 'bg-orange-100 border-orange-500 text-orange-900' };
+    if (y > 60) return { label: 'Impact ESG', color: 'bg-blue-100 border-blue-500 text-blue-900' };
+    return { label: 'Non Matériel', color: 'bg-gray-100 border-gray-500 text-gray-900' };
+  };
+
+  const stats = {
+    total: issues.length,
+    material: issues.filter(i => i.is_material).length,
+    high_priority: issues.filter(i => i.priority === 'high').length,
+    by_category: {
+      environmental: issues.filter(i => i.category === 'environmental').length,
+      social: issues.filter(i => i.category === 'social').length,
+      governance: issues.filter(i => i.category === 'governance').length
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-8 text-white shadow-xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
+              <Grid className="h-10 w-10" />
+              Matrice de Matérialité
+            </h1>
+            <p className="text-indigo-100 text-lg">
+              Analyse de Double Matérialité conforme CSRD
+            </p>
+          </div>
+
+          <div className="flex gap-3">
+            <Button variant="secondary" onClick={loadIssues} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Actualiser
+            </Button>
+            <Button variant="secondary" onClick={() => setShowModal(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Ajouter un enjeu
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="border-l-4 border-indigo-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Total Enjeux</p>
+              <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
+            </div>
+            <div className="p-3 bg-indigo-50 rounded-xl">
+              <Grid className="h-6 w-6 text-indigo-600" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="border-l-4 border-red-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Enjeux Matériels</p>
+              <p className="text-3xl font-bold text-red-600">{stats.material}</p>
+            </div>
+            <div className="p-3 bg-red-50 rounded-xl">
+              <AlertCircle className="h-6 w-6 text-red-600" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="border-l-4 border-orange-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Haute Priorité</p>
+              <p className="text-3xl font-bold text-orange-600">{stats.high_priority}</p>
+            </div>
+            <div className="p-3 bg-orange-50 rounded-xl">
+              <TrendingUp className="h-6 w-6 text-orange-600" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="border-l-4 border-green-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Environnemental</p>
+              <p className="text-3xl font-bold text-green-600">{stats.by_category.environmental}</p>
+            </div>
+            <div className="p-3 bg-green-50 rounded-xl">
+              <CheckCircle className="h-6 w-6 text-green-600" />
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Matrice */}
+      <Card>
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-2">
+            Matrice de Double Matérialité
+          </h2>
+          <p className="text-gray-600 text-sm">
+            Positionnez vos enjeux selon leur impact financier (axe horizontal) et leur impact ESG (axe vertical)
+          </p>
+        </div>
+
+        {/* Matrix Container */}
+        <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-8 border-2 border-gray-200">
+          {/* Grid Background */}
+          <div className="absolute inset-8 grid grid-cols-10 grid-rows-10 gap-0">
+            {[...Array(100)].map((_, i) => (
+              <div key={i} className="border border-gray-200/50" />
+            ))}
+          </div>
+
+          {/* Quadrant Labels */}
+          <div className="absolute top-4 left-4 px-3 py-1 bg-gray-100/90 backdrop-blur-sm rounded-lg text-xs font-medium text-gray-600">
+            Impact ESG Faible
+          </div>
+          <div className="absolute top-4 right-4 px-3 py-1 bg-blue-100/90 backdrop-blur-sm rounded-lg text-xs font-bold text-blue-700">
+            Impact ESG Élevé
+          </div>
+          <div className="absolute bottom-4 left-4 px-3 py-1 bg-gray-100/90 backdrop-blur-sm rounded-lg text-xs font-medium text-gray-600">
+            Impact Financier Faible
+          </div>
+          <div className="absolute bottom-4 right-4 px-3 py-1 bg-red-100/90 backdrop-blur-sm rounded-lg text-xs font-bold text-red-700">
+            MATÉRIEL (Double Impact)
+          </div>
+
+          {/* Threshold Lines */}
+          <div className="absolute inset-8">
+            <div className="absolute left-[60%] top-0 bottom-0 w-0.5 bg-orange-400 opacity-50" />
+            <div className="absolute top-[40%] left-0 right-0 h-0.5 bg-blue-400 opacity-50" />
+          </div>
+
+          {/* Issues Bubbles */}
+          <div className="relative h-[600px]">
+            {issues.map((issue) => {
+              const quadrant = getQuadrantInfo(issue.financial_impact, issue.esg_impact);
+              
+              return (
+                <div
+                  key={issue.id}
+                  className="absolute group cursor-pointer transform -translate-x-1/2 -translate-y-1/2 transition-all duration-200 hover:z-50"
+                  style={{
+                    left: `${issue.financial_impact}%`,
+                    bottom: `${issue.esg_impact}%`,
+                    zIndex: issue.is_material ? 20 : 10
+                  }}
+                >
+                  {/* Bubble */}
+                  <div className={`
+                    w-20 h-20 rounded-full shadow-lg
+                    flex items-center justify-center
+                    border-4 ${issue.is_material ? 'border-red-500' : 'border-white'}
+                    ${getCategoryColor(issue.category)}
+                    transition-all duration-200
+                    group-hover:scale-125 group-hover:shadow-2xl
+                  `}>
+                    <span className="text-white font-bold text-xs text-center px-2 leading-tight">
+                      {issue.name.substring(0, 20)}
+                    </span>
+                  </div>
+
+                  {/* Tooltip on Hover */}
+                  <div className="
+                    absolute left-1/2 -translate-x-1/2 top-full mt-2
+                    w-64 p-4 bg-white rounded-lg shadow-xl border-2 border-gray-200
+                    opacity-0 group-hover:opacity-100
+                    pointer-events-none group-hover:pointer-events-auto
+                    transition-opacity duration-200
+                    z-50
+                  ">
+                    <p className="font-bold text-gray-900 mb-2">{issue.name}</p>
+                    <div className="space-y-1 text-xs text-gray-600">
+                      <p><span className="font-medium">Impact Financier:</span> {issue.financial_impact}/100</p>
+                      <p><span className="font-medium">Impact ESG:</span> {issue.esg_impact}/100</p>
+                      <p><span className="font-medium">Catégorie:</span> {issue.category}</p>
+                    </div>
+                    <div className={`mt-2 px-2 py-1 rounded text-xs font-bold border ${quadrant.color}`}>
+                      {quadrant.label}
+                    </div>
+                    <div className="mt-2 flex gap-2">
+                      <button 
+                        className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs flex items-center gap-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(issue);
+                        }}
+                      >
+                        <Edit className="h-3 w-3" />
+                        Modifier
+                      </button>
+                      <button 
+                        className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs flex items-center gap-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(issue.id, issue.name);
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        Supprimer
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Axis Labels */}
+          <div className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 -rotate-90">
+            <p className="text-sm font-bold text-gray-700 whitespace-nowrap">
+              Impact sur l'Environnement et la Société →
+            </p>
+          </div>
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full pt-4">
+            <p className="text-sm font-bold text-gray-700">
+              Impact sur la Performance Financière →
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Legend */}
+      <Card>
+        <h3 className="font-semibold text-gray-900 mb-4">Légende</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-green-500" />
+            <span className="text-sm text-gray-700">Environnemental</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-500" />
+            <span className="text-sm text-gray-700">Social</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-purple-500" />
+            <span className="text-sm text-gray-700">Gouvernance</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-gray-400 border-4 border-red-500" />
+            <span className="text-sm text-gray-700">Enjeu Matériel</span>
+          </div>
+        </div>
+      </Card>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {selectedIssue ? 'Modifier l\'enjeu' : 'Nouvel enjeu de matérialité'}
+              </h2>
+              <button
+                onClick={handleCloseModal}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nom de l'enjeu *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="Ex: Émissions de CO2"
+                  disabled={submitting}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="Décrivez l'enjeu..."
+                  disabled={submitting}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Catégorie *
+                </label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({...formData, category: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  disabled={submitting}
+                >
+                  <option value="environmental">🌿 Environnemental</option>
+                  <option value="social">👥 Social</option>
+                  <option value="governance">⚖️ Gouvernance</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Impact Financier: {formData.financial_impact}/100
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={formData.financial_impact}
+                  onChange={(e) => setFormData({...formData, financial_impact: Number(e.target.value)})}
+                  className="w-full"
+                  disabled={submitting}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Impact sur la performance financière de l'entreprise
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Impact ESG: {formData.esg_impact}/100
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={formData.esg_impact}
+                  onChange={(e) => setFormData({...formData, esg_impact: Number(e.target.value)})}
+                  className="w-full"
+                  disabled={submitting}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Impact sur l'environnement et la société
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Parties prenantes
+                </label>
+                <input
+                  type="text"
+                  value={formData.stakeholders}
+                  onChange={(e) => setFormData({...formData, stakeholders: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="Ex: Investisseurs, ONG, Régulateurs"
+                  disabled={submitting}
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button type="submit" className="flex-1" disabled={submitting}>
+                  {submitting ? (
+                    <>
+                      <Spinner size="sm" className="mr-2" />
+                      {selectedIssue ? 'Mise à jour...' : 'Création...'}
+                    </>
+                  ) : (
+                    selectedIssue ? 'Mettre à jour' : 'Créer l\'enjeu'
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleCloseModal}
+                  className="flex-1"
+                  disabled={submitting}
+                >
+                  Annuler
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

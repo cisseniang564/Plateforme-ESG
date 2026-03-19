@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Docker
+.docker/
+*.log
+Dockerfile.prod
+docker-compose.override.yml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Base de données
+*.db
+*.sqlite3
+
+# Environnement
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# Backups
+*.bak
+backup_*.sql
+
+# Migrations
+alembic/versions/*.pyc

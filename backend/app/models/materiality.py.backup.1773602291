@@ -1,0 +1,76 @@
+"""
+Materiality and Risk models for ESG assessment.
+"""
+from typing import TYPE_CHECKING, Optional
+from datetime import datetime
+from sqlalchemy import String, Float, Integer, Boolean, Text, ForeignKey
+from uuid import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.db.base import Base, TenantMixin, UUIDMixin, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.models.tenant import Tenant
+
+
+class MaterialityIssue(Base, UUIDMixin, TenantMixin, TimestampMixin):
+    """
+    Materiality Issue - Double Materiality Assessment (CSRD compliant).
+    """
+    __tablename__ = "materiality_issues"
+
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    category: Mapped[str] = mapped_column(String(100), nullable=False)
+    
+    # Double Materiality Scores (0-100)
+    financial_impact: Mapped[float] = mapped_column(Float, default=50.0)
+    esg_impact: Mapped[float] = mapped_column(Float, default=50.0)
+    
+    # Metadata
+    stakeholders: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    data_sources: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    is_material: Mapped[bool] = mapped_column(Boolean, default=False)
+    priority: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    
+    # Relationships
+    tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="materiality_issues")
+    risks: Mapped[list["ESGRisk"]] = relationship(
+        "ESGRisk", back_populates="materiality_issue", cascade="all, delete-orphan"
+    )
+
+
+class ESGRisk(Base, UUIDMixin, TenantMixin, TimestampMixin):
+    """
+    ESG Risk - Risk register with probability and impact assessment.
+    """
+    __tablename__ = "esg_risks"
+
+    materiality_issue_id: Mapped[Optional[str]] = mapped_column(
+        String, ForeignKey("materiality_issues.id"), nullable=True
+    )
+    
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    category: Mapped[str] = mapped_column(String(100), nullable=False)
+    
+    # Risk Assessment (1-5)
+    probability: Mapped[int] = mapped_column(Integer, default=3)
+    impact: Mapped[int] = mapped_column(Integer, default=3)
+    risk_score: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    
+    # Mitigation
+    mitigation_plan: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    mitigation_status: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    responsible_person: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    target_date: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    
+    # Status
+    status: Mapped[str] = mapped_column(String(50), default="active")
+    severity: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    
+    # Relationships
+    tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="esg_risks")
+    materiality_issue: Mapped[Optional["MaterialityIssue"]] = relationship(
+        "MaterialityIssue", back_populates="risks"
+    )

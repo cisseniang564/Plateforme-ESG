@@ -1,0 +1,12 @@
+metric_name,value_numeric,unit,period_start,period_end,pillar,category,data_source,verification_status
+Scope 1,1000,tCO2e,2026-01-01,2026-12-31,environmental,climate,Bilan Carbone,verified
+Scope 2,500,tCO2e,2026-01-01,2026-12-31,environmental,climate,Factures,verified
+Revenue,250,M€,2026-01-01,2026-12-31,environmental,climate,Comptabilité,verified
+Total energy,3000,MWh,2026-01-01,2026-12-31,environmental,energy,Factures,verified
+Renewable energy,1800,MWh,2026-01-01,2026-12-31,environmental,energy,Contrat,verified
+Departures,25,personnes,2026-01-01,2026-12-31,social,workforce,RH,verified
+Average headcount,250,personnes,2026-01-01,2026-12-31,social,workforce,RH,verified
+Training hours,5000,heures,2026-01-01,2026-12-31,social,training,Plan formation,verified
+Headcount,250,personnes,2026-01-01,2026-12-31,social,workforce,RH,verified
+Women count,120,personnes,2026-01-01,2026-12-31,social,diversity,RH,verified
+Total headcount,250,personnes,2026-01-01,2026-12-31,social,workforce,RH,verified

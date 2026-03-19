@@ -1,0 +1,72 @@
+"""
+Role model - User roles and permissions.
+"""
+from typing import TYPE_CHECKING, List, Optional
+from uuid import UUID
+from datetime import datetime
+
+from sqlalchemy import String, JSON, Boolean
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.db.base import Base, UUIDMixin, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.models.user import User
+
+
+class Role(Base, UUIDMixin, TimestampMixin):
+    """
+    User roles with permissions.
+    
+    Predefined roles: admin, manager, analyst
+    """
+    
+    __tablename__ = "roles"
+    
+    name: Mapped[str] = mapped_column(
+        String(50),
+        unique=True,
+        nullable=False,
+        comment="Role name (admin, manager, analyst)",
+    )
+    
+    display_name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        comment="Human-readable name",
+    )
+    
+    description: Mapped[Optional[str]] = mapped_column(
+        String(255),
+        nullable=True,
+        comment="Role description",
+    )
+    
+    permissions: Mapped[dict] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict,
+        comment="Permissions JSON: {resource: [actions]}",
+    )
+    
+    is_system: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        comment="System role (cannot be deleted)",
+    )
+    
+    # Relationships
+    users: Mapped[List["User"]] = relationship("User", back_populates="role")
+    
+    def __repr__(self) -> str:
+        return f"<Role(name={self.name})>"
+    
+    def has_permission(self, resource: str, action: str) -> bool:
+        """Check if role has specific permission."""
+        if not self.permissions:
+            return False
+        
+        resource_perms = self.permissions.get(resource, [])
+        return action in resource_perms or '*' in resource_perms

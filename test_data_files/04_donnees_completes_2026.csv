@@ -1,0 +1,19 @@
+organization_name,metric_name,value_numeric,unit,period_start,period_end,pillar,category,verification_status
+Acme Corp,Émissions GES Scope 1,1250,tCO2e,2026-01-01,2026-12-31,environmental,climate,verified
+Acme Corp,Émissions GES Scope 2,580,tCO2e,2026-01-01,2026-12-31,environmental,climate,verified
+Acme Corp,Chiffre d'affaires,50,M€,2026-01-01,2026-12-31,environmental,climate,verified
+Acme Corp,Consommation énergie,3500,MWh,2026-01-01,2026-12-31,environmental,energy,verified
+Acme Corp,Énergie renouvelable,2100,MWh,2026-01-01,2026-12-31,environmental,energy,verified
+Acme Corp,Consommation eau,15000,m³,2026-01-01,2026-12-31,environmental,water,verified
+Acme Corp,Déchets totaux,450,tonnes,2026-01-01,2026-12-31,environmental,waste,verified
+Acme Corp,Déchets recyclés,315,tonnes,2026-01-01,2026-12-31,environmental,waste,verified
+Acme Corp,Effectif total,450,personnes,2026-01-01,2026-12-31,social,workforce,verified
+Acme Corp,Effectif femmes,195,personnes,2026-01-01,2026-12-31,social,diversity,verified
+Acme Corp,Recrutements,65,personnes,2026-01-01,2026-12-31,social,workforce,verified
+Acme Corp,Départs,42,personnes,2026-01-01,2026-12-31,social,workforce,verified
+Acme Corp,Heures formation,9000,heures,2026-01-01,2026-12-31,social,training,verified
+Acme Corp,Accidents du travail,8,nombre,2026-01-01,2026-12-31,social,health_safety,verified
+Acme Corp,Femmes dirigeantes,35,pourcentage,2026-01-01,2026-12-31,social,diversity,verified
+Acme Corp,Administrateurs indépendants,60,pourcentage,2026-01-01,2026-12-31,governance,board,verified
+Acme Corp,Femmes au conseil,40,pourcentage,2026-01-01,2026-12-31,governance,board,verified
+Acme Corp,Incidents corruption,0,nombre,2026-01-01,2026-12-31,governance,ethics,verified

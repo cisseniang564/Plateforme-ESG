@@ -1,0 +1,13 @@
+metric_name,value_numeric,unit,period_start,period_end,pillar,category,data_source,notes
+Effectif total,450,personnes,2026-01-01,2026-12-31,social,workforce,SIRH,Moyenne annuelle ETP
+Effectif femmes,195,personnes,2026-01-01,2026-12-31,social,diversity,SIRH,43.3% de femmes
+Effectif hommes,255,personnes,2026-01-01,2026-12-31,social,diversity,SIRH,56.7% d'hommes
+Recrutements,65,personnes,2026-01-01,2026-12-31,social,workforce,Service RH,Embauches CDI+CDD
+Départs,42,personnes,2026-01-01,2026-12-31,social,workforce,Service RH,Démissions + fins de contrat
+Heures formation,9000,heures,2026-01-01,2026-12-31,social,training,Plan de formation,20h/employé en moyenne
+Budget formation,180000,euros,2026-01-01,2026-12-31,social,training,Comptabilité,400€/employé
+Accidents du travail,8,nombre,2026-01-01,2026-12-31,social,health_safety,Registre AT,Avec arrêt uniquement
+Jours arrêt maladie,1800,jours,2026-01-01,2026-12-31,social,health_safety,Service RH,4 jours/employé
+Travailleurs handicapés,18,personnes,2026-01-01,2026-12-31,social,diversity,DOETH,4% de l'effectif
+Femmes dirigeantes,35,pourcentage,2026-01-01,2026-12-31,social,diversity,Organigramme,Comex + N-1
+Écart salarial H/F,8.5,pourcentage,2026-01-01,2026-12-31,social,diversity,Index égalité pro,En amélioration

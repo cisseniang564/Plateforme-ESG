@@ -1,0 +1,138 @@
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import Layout from '@/components/layout/Layout';
+import Spinner from '@/components/common/Spinner';
+
+// Auth
+import Login from '@/pages/Auth/Login';
+import Register from '@/pages/Auth/Register';
+import ForgotPassword from '@/pages/Auth/ForgotPassword';
+
+// Dashboard
+import ExecutiveDashboard from '@/pages/Dashboard/ExecutiveDashboard';
+import PillarDashboard from '@/pages/Dashboard/PillarDashboard';
+
+// Data
+import DataManagement from '@/pages/Data/DataManagement';
+import UploadData from '@/pages/Data/UploadData';
+import DataQuality from '@/pages/Data/DataQuality';
+import Connectors from '@/pages/Data/Connectors';
+
+// Indicators
+import IndicatorsList from '@/pages/Indicators/IndicatorsList';
+import IndicatorDetail from '@/pages/Indicators/IndicatorDetail';
+import IndicatorComparison from '@/pages/Indicators/IndicatorComparison';
+
+// Scores
+import ScoreHistory from '@/pages/Scores/ScoreHistory';
+import ScoresDashboard from '@/pages/Scores/ScoresDashboard';
+import ScoreCalculation from '@/pages/Scores/ScoreCalculation';
+import ScoreBreakdown from '@/pages/Scores/ScoreBreakdown';
+
+// Reporting
+import ReportGeneration from '@/pages/Reports/ReportGeneration';
+import ReportsList from '@/pages/Reporting/ReportsList';
+import ScheduledReports from '@/pages/Reporting/ScheduledReports';
+
+// Settings
+import TenantSettings from '@/pages/Settings/TenantSettings';
+import UserManagement from '@/pages/Settings/UserManagement';
+import MethodologyConfig from '@/pages/Settings/MethodologyConfig';
+import WebhookManagement from '@/pages/Webhooks/WebhookManagement';
+import IntegrationManagement from '@/pages/Integrations/IntegrationManagement';
+import EntreprisesINSEE from '@/pages/INSEE/EntreprisesINSEE';
+import DataEnrichment from '@/pages/ESG/DataEnrichment';
+import OrganizationScoring from '@/pages/Scores/OrganizationScoring';
+import OrganizationsList from '@/pages/Organizations/OrganizationsList';
+import OrganizationDetail from '@/pages/Organizations/OrganizationDetail';
+import OrganizationComparator from '@/pages/Organizations/OrganizationComparator';
+
+
+function PrivateRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isInitializing } = useAuth();
+  if (isInitializing) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+}
+
+export default function AppRoutes() {
+  return (
+    <Routes>
+      {/* Public routes */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      
+      
+      {/* Private routes */}
+      <Route
+        path="/"
+        element={
+          <PrivateRoute>
+            <Layout />
+          </PrivateRoute>
+        }
+      >
+        <Route index element={<ExecutiveDashboard />} />
+        <Route path="dashboard/pillar/:pillar" element={<PillarDashboard />} />
+        
+        <Route path="data" element={<DataManagement />} />
+        <Route path="data/upload" element={<UploadData />} />
+        <Route path="data/quality" element={<DataQuality />} />
+        <Route path="data/connectors" element={<Connectors />} />
+        
+        <Route path="indicators" element={<IndicatorsList />} />
+        <Route path="indicators/:id" element={<IndicatorDetail />} />
+        <Route path="indicators/compare" element={<IndicatorComparison />} />
+        
+        <Route path="scores" element={<ScoresDashboard />} />
+        <Route path="scores/history" element={<ScoreHistory />} />
+        <Route path="scores/calculate" element={<ScoreCalculation />} />
+        <Route path="scores/breakdown" element={<ScoreBreakdown />} />
+        
+        <Route path="reports" element={<ReportsList />} />
+        <Route path="reports/generate" element={<ReportGeneration />} />
+        <Route path="reports/scheduled" element={<ScheduledReports />} />
+
+        {/* Materiality & Risks */}
+        <Route path="materiality" element={<MaterialityMatrix />} />
+        <Route path="risks" element={<RiskRegister />} />
+        <Route path="data-entry" element={<DataEntryForm />} />
+          <Route path="import-csv" element={<ImportCSV />} />
+          <Route path="my-data" element={<MyDataDashboard />} />
+          <Route path="data-quality" element={<DataQualityDashboard />} />
+        
+        {/* Organizations - ROUTES SPÉCIFIQUES AVANT LA GÉNÉRIQUE */}
+        <Route path="organizations/compare" element={<OrganizationComparator />} />
+        <Route path="organizations/:id" element={<OrganizationDetail />} />
+        <Route path="organizations" element={<OrganizationsList />} />
+
+        <Route path="settings" element={<TenantSettings />} />
+        <Route path="settings/users" element={<UserManagement />} />
+        <Route path="settings/methodology" element={<MethodologyConfig />} />
+        <Route path="settings/webhooks" element={<WebhookManagement />} />
+        <Route path="settings/integrations" element={<IntegrationManagement />} />
+        <Route path="settings/insee" element={<EntreprisesINSEE />} />
+        <Route path="settings/esg-enrichment" element={<DataEnrichment />} />
+        <Route path="scores/:id" element={<OrganizationScoring />} />
+      </Route>
+
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
+  );
+}
+
+// Materiality & Risks
+import MaterialityMatrix from '@/pages/Materiality/MaterialityMatrix';
+import RiskRegister from '@/pages/Risks/RiskRegister';
+import DataEntryForm from '@/pages/DataEntry/DataEntryForm';
+import ImportCSV from '@/pages/DataEntry/ImportCSV';
+import MyDataDashboard from '@/pages/DataEntry/MyDataDashboard';
+import DataQualityDashboard from '@/pages/DataQuality/DataQualityDashboard';
+
+// Data Entry

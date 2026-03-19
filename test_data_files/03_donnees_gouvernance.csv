@@ -1,0 +1,11 @@
+metric_name,value_numeric,unit,period_start,period_end,pillar,category,data_source,notes
+Administrateurs indépendants,60,pourcentage,2026-01-01,2026-12-31,governance,board,PV conseil,6 sur 10 membres
+Femmes au conseil,40,pourcentage,2026-01-01,2026-12-31,governance,board,Composition CA,4 femmes sur 10
+Réunions conseil,12,nombre,2026-01-01,2026-12-31,governance,board,Calendrier CA,1 par mois
+Taux présence conseil,95,pourcentage,2026-01-01,2026-12-31,governance,board,Feuilles présence,Très bon taux
+Formation conseil ESG,80,pourcentage,2026-01-01,2026-12-31,governance,board,Programme formation,8 membres formés
+Incidents corruption,0,nombre,2026-01-01,2026-12-31,governance,ethics,Conformité,Aucun signalement
+Signalements éthique,3,nombre,2026-01-01,2026-12-31,governance,ethics,Ligne alerte,Tous traités
+Formation anti-corruption,100,pourcentage,2026-01-01,2026-12-31,governance,ethics,LMS,Tous employés formés
+Amendes réglementaires,0,euros,2026-01-01,2026-12-31,governance,compliance,Juridique,Aucune sanction
+Audits internes,6,nombre,2026-01-01,2026-12-31,governance,compliance,Audit interne,Semestriels

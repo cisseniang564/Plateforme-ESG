@@ -1,0 +1,12 @@
+metric_name,value_numeric,unit,period_start,period_end,pillar,category,data_source,notes
+Émissions GES Scope 1,1250,tCO2e,2026-01-01,2026-12-31,environmental,climate,Bilan Carbone,Émissions directes des installations
+Émissions GES Scope 2,580,tCO2e,2026-01-01,2026-12-31,environmental,climate,Fournisseur énergie,Électricité et chaleur
+Consommation énergie,3500,MWh,2026-01-01,2026-12-31,environmental,energy,Factures énergétiques,Consommation totale site
+Énergie renouvelable,2100,MWh,2026-01-01,2026-12-31,environmental,energy,Contrat électricité verte,60% renouvelable
+Consommation eau,15000,m³,2026-01-01,2026-12-31,environmental,water,Compteurs eau,Prélèvements totaux
+Eau recyclée,3000,m³,2026-01-01,2026-12-31,environmental,water,Station traitement,20% recyclée
+Déchets totaux,450,tonnes,2026-01-01,2026-12-31,environmental,waste,Registre déchets,Production annuelle
+Déchets dangereux,25,tonnes,2026-01-01,2026-12-31,environmental,waste,BSD,Déchets industriels spéciaux
+Déchets recyclés,315,tonnes,2026-01-01,2026-12-31,environmental,waste,Prestataire recyclage,Taux 70%
+Émissions dans l'air,45,tonnes,2026-01-01,2026-12-31,environmental,pollution,Mesures continues,NOx + SOx + particules
+Surface artificialisée,2.5,hectares,2026-01-01,2026-12-31,environmental,biodiversity,Plan cadastral,Zones imperméabilisées

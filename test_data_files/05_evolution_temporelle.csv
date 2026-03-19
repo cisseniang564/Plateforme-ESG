@@ -1,0 +1,22 @@
+year,metric_name,value_numeric,unit,pillar,category
+2024,Émissions GES Scope 1,1450,tCO2e,environmental,climate
+2025,Émissions GES Scope 1,1350,tCO2e,environmental,climate
+2026,Émissions GES Scope 1,1250,tCO2e,environmental,climate
+2024,Émissions GES Scope 2,680,tCO2e,environmental,climate
+2025,Émissions GES Scope 2,630,tCO2e,environmental,climate
+2026,Émissions GES Scope 2,580,tCO2e,environmental,climate
+2024,Énergie renouvelable,1400,MWh,environmental,energy
+2025,Énergie renouvelable,1750,MWh,environmental,energy
+2026,Énergie renouvelable,2100,MWh,environmental,energy
+2024,Taux recyclage déchets,55,pourcentage,environmental,waste
+2025,Taux recyclage déchets,65,pourcentage,environmental,waste
+2026,Taux recyclage déchets,70,pourcentage,environmental,waste
+2024,Effectif total,420,personnes,social,workforce
+2025,Effectif total,435,personnes,social,workforce
+2026,Effectif total,450,personnes,social,workforce
+2024,Part de femmes,40,pourcentage,social,diversity
+2025,Part de femmes,42,pourcentage,social,diversity
+2026,Part de femmes,43.3,pourcentage,social,diversity
+2024,Heures formation,7500,heures,social,training
+2025,Heures formation,8250,heures,social,training
+2026,Heures formation,9000,heures,social,training
