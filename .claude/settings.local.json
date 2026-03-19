@@ -33,7 +33,9 @@
       "Bash(npx vite:*)",
       "Bash(grep -n \"indicators\\\\|table\\\\|__tablename__\" /Users/cisseniang/Downloads/esgplatform/backend/app/models/*.py)",
       "Bash(docker restart:*)",
-      "Bash(docker port:*)"
+      "Bash(docker port:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
