@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Leaf, Target, TrendingDown, Zap, Truck, ShoppingBag,
   Factory, Building2, Users, BarChart3, CheckCircle,
@@ -279,6 +280,7 @@ function ActionCard({ action, onTogglePlan, onStatusChange }: {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function DecarbonationPlan() {
+  const { t: tr } = useTranslation();
   const [actions, setActions] = useState<Action[]>(CATALOG);
   const [tab, setTab] = useState<TabId>('overview');
   const [catFilter, setCatFilter] = useState('Toutes');
@@ -335,10 +337,10 @@ export default function DecarbonationPlan() {
   };
 
   const tabs: { id: TabId; label: string }[] = [
-    { id: 'overview', label: 'Vue d\'ensemble' },
-    { id: 'actions', label: `Catalogue (${actions.length})` },
-    { id: 'scenarios', label: 'Scénarios What-if' },
-    { id: 'trajectory', label: 'Trajectoire' },
+    { id: 'overview', label: tr('decarbonation.tabs.overview') },
+    { id: 'actions', label: `${tr('decarbonation.tabs.catalogue')} (${actions.length})` },
+    { id: 'scenarios', label: tr('decarbonation.tabs.scenarios') },
+    { id: 'trajectory', label: tr('decarbonation.tabs.trajectory') },
   ];
 
   return (
@@ -352,8 +354,8 @@ export default function DecarbonationPlan() {
                 <FlameKindling className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Plan de Décarbonation</h1>
-                <p className="text-sm text-gray-500 mt-0.5">SBTi · Net Zero 2050 · {actions.length} actions pré-configurées · ROI estimé</p>
+                <h1 className="text-2xl font-bold text-gray-900">{tr('decarbonation.title')}</h1>
+                <p className="text-sm text-gray-500 mt-0.5">{tr('decarbonation.subtitle')}</p>
               </div>
             </div>
             <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">

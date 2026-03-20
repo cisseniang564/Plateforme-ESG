@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Shield, CheckCircle, XCircle, AlertTriangle, ChevronDown,
   ChevronRight, FileText, Download, ExternalLink, Info,
@@ -438,6 +439,7 @@ function RegulationCard({ reg }: { reg: Regulation }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function MultiRegulatoryCompliance() {
+  const { t } = useTranslation();
   const [activeCategory, setActiveCategory] = useState('Tous');
   const [search, setSearch] = useState('');
 
@@ -460,10 +462,10 @@ export default function MultiRegulatoryCompliance() {
                 <div className="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center">
                   <Shield className="h-6 w-6 text-violet-600" />
                 </div>
-                <h1 className="text-2xl font-bold text-gray-900">Conformité Multi-Réglementaire</h1>
+                <h1 className="text-2xl font-bold text-gray-900">{t('compliance.title')}</h1>
               </div>
               <p className="text-gray-500 ml-13 text-sm">
-                Suivi centralisé de vos obligations réglementaires — CSRD, Sapin II, Devoir de vigilance, SFDR, ISO, et plus
+                {t('compliance.subtitle')}
               </p>
             </div>
             <div className="flex items-center gap-3">

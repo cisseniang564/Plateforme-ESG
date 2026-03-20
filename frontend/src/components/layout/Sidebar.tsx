@@ -26,6 +26,7 @@ import {
   ClipboardList,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '@/services/api';
 
 interface ScoreTrend {
@@ -49,6 +50,7 @@ interface NavSection {
 
 export default function Sidebar() {
   const location = useLocation();
+  const { t } = useTranslation();
   const [trend, setTrend] = useState<ScoreTrend | null>(null);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     data: true,
@@ -79,54 +81,54 @@ export default function Sidebar() {
 
   const navigation: (NavItem | NavSection)[] = [
     {
-      name: 'Tableau de bord',
-      description: 'Vue d\'ensemble exécutive',
+      name: t('sidebar.nav.dashboard'),
+      description: t('sidebar.nav.dashboardDesc'),
       href: '/app',
       icon: LayoutDashboard,
       tourId: 'sidebar-dashboard',
     },
     {
-      title: 'Collecte Données',
+      title: t('sidebar.sections.collecteData'),
       items: [
-        { name: 'Saisie manuelle', description: 'Enregistrer vos indicateurs', href: '/app/data-entry', icon: Database, tourId: 'sidebar-data-entry' },
-        { name: 'Import CSV', description: 'Import en masse', href: '/app/import-csv', icon: Upload },
-        { name: 'Mes données', description: 'Toutes mes données ESG', href: '/app/my-data', icon: TrendingUp },
-        { name: 'Calculs auto', description: 'Intelligence ESG', href: '/app/calculated-metrics', icon: Activity },
+        { name: t('sidebar.nav.manualEntry'), description: t('sidebar.nav.manualEntryDesc'), href: '/app/data-entry', icon: Database, tourId: 'sidebar-data-entry' },
+        { name: t('sidebar.nav.importCsv'), description: t('sidebar.nav.importCsvDesc'), href: '/app/import-csv', icon: Upload },
+        { name: t('sidebar.nav.myData'), description: t('sidebar.nav.myDataDesc'), href: '/app/my-data', icon: TrendingUp },
+        { name: t('sidebar.nav.calcAuto'), description: t('sidebar.nav.calcAutoDesc'), href: '/app/calculated-metrics', icon: Activity },
       ],
     },
     {
-      title: 'Pilotage ESG',
+      title: t('sidebar.sections.pilotageEsg'),
       items: [
-        { name: 'Indicateurs', description: 'Indicateurs de performance', href: '/app/indicators', icon: Activity, tourId: 'sidebar-indicators' },
-        { name: 'Matérialité', description: 'Double matérialité CSRD', href: '/app/materiality', icon: Grid },
-        { name: 'Risques', description: 'Registre des risques', href: '/app/risks', icon: AlertTriangle },
-        { name: 'Supply Chain ESG', description: 'Fournisseurs · Due diligence · Vigilance', href: '/app/supply-chain', icon: PackageSearch },
-        { name: 'Qualité données', description: 'Validation et audit', href: '/app/data-quality', icon: Shield },
-        { name: 'Workflow validation', description: 'Révision & approbation', href: '/app/validation', icon: CheckSquare },
-        { name: 'Piste d\'Audit', description: 'Traçabilité · Versions · Justificatifs', href: '/app/audit-trail', icon: ClipboardList },
+        { name: t('sidebar.nav.indicators'), description: t('sidebar.nav.indicatorsDesc'), href: '/app/indicators', icon: Activity, tourId: 'sidebar-indicators' },
+        { name: t('sidebar.nav.materiality'), description: t('sidebar.nav.materialityDesc'), href: '/app/materiality', icon: Grid },
+        { name: t('sidebar.nav.risks'), description: t('sidebar.nav.risksDesc'), href: '/app/risks', icon: AlertTriangle },
+        { name: t('sidebar.nav.supplyChain'), description: t('sidebar.nav.supplyChainDesc'), href: '/app/supply-chain', icon: PackageSearch },
+        { name: t('sidebar.nav.dataQuality'), description: t('sidebar.nav.dataQualityDesc'), href: '/app/data-quality', icon: Shield },
+        { name: t('sidebar.nav.workflowValidation'), description: t('sidebar.nav.workflowValidationDesc'), href: '/app/validation', icon: CheckSquare },
+        { name: t('sidebar.nav.auditTrail'), description: t('sidebar.nav.auditTrailDesc'), href: '/app/audit-trail', icon: ClipboardList },
       ],
     },
     {
-      title: 'Scoring & Analyses',
+      title: t('sidebar.sections.scoringAnalyses'),
       items: [
-        { name: 'Scores ESG', description: 'Tableau de bord scoring', href: '/app/scores-dashboard', icon: Award, tourId: 'sidebar-scores' },
-        { name: 'Benchmarking', description: 'Position vs secteur', href: '/app/benchmarking', icon: Target },
-        { name: 'Organisations', description: 'Structure & hiérarchie', href: '/app/organizations', icon: Building2, tourId: 'sidebar-organizations' },
-        { name: 'IA Prédictive', description: 'Anomalies & prévisions', href: '/app/intelligence', icon: BarChart3 },
+        { name: t('sidebar.nav.esgScores'), description: t('sidebar.nav.esgScoresDesc'), href: '/app/scores-dashboard', icon: Award, tourId: 'sidebar-scores' },
+        { name: t('sidebar.nav.benchmarking'), description: t('sidebar.nav.benchmarkingDesc'), href: '/app/benchmarking', icon: Target },
+        { name: t('sidebar.nav.organisations'), description: t('sidebar.nav.organisationsDesc'), href: '/app/organizations', icon: Building2, tourId: 'sidebar-organizations' },
+        { name: t('sidebar.nav.iaPredictive'), description: t('sidebar.nav.iaPredictiveDesc'), href: '/app/intelligence', icon: BarChart3 },
       ],
     },
     {
-      title: 'Conformité',
+      title: t('sidebar.sections.conformite'),
       items: [
-        { name: 'Plan de Décarbonation', description: 'SBTi · Net Zero 2050 · 24 actions ROI', href: '/app/decarbonation', icon: TrendingDown },
-        { name: 'Bilan Carbone Scope 3', description: '15 catégories GHG Protocol · ADEME', href: '/app/carbon', icon: Flame },
-        { name: 'Taxonomie UE', description: 'Alignement EU Taxonomy 2020/852', href: '/app/taxonomy', icon: Leaf },
-        { name: 'Multi-Réglementaire', description: 'CSRD · Sapin II · SFDR · ISO · DPEF', href: '/app/compliance', icon: ShieldCheck },
-        { name: 'Rapports CSRD', description: 'Générer des rapports', href: '/app/reports', icon: FileText, tourId: 'sidebar-reports' },
+        { name: t('sidebar.nav.decarbonation'), description: t('sidebar.nav.decarbonationDesc'), href: '/app/decarbonation', icon: TrendingDown },
+        { name: t('sidebar.nav.bilanCarbone'), description: t('sidebar.nav.bilanCarboneDesc'), href: '/app/carbon', icon: Flame },
+        { name: t('sidebar.nav.taxonomieUE'), description: t('sidebar.nav.taxonomieUEDesc'), href: '/app/taxonomy', icon: Leaf },
+        { name: t('sidebar.nav.multiReglementaire'), description: t('sidebar.nav.multiReglementaireDesc'), href: '/app/compliance', icon: ShieldCheck },
+        { name: t('sidebar.nav.rapportsCSRD'), description: t('sidebar.nav.rapportsCSRDDesc'), href: '/app/reports', icon: FileText, tourId: 'sidebar-reports' },
       ],
     },
-    { name: 'API Publique', description: 'Documentation développeur', href: '/app/api-docs', icon: Code2 },
-    { name: 'Paramètres', description: 'Configuration', href: '/app/settings', icon: Settings },
+    { name: t('sidebar.nav.apiPublique'), description: t('sidebar.nav.apiPubliqueDesc'), href: '/app/api-docs', icon: Code2 },
+    { name: t('sidebar.nav.parametres'), description: t('sidebar.nav.parametresDesc'), href: '/app/settings', icon: Settings },
   ];
 
   const isActive = (path: string) => {
@@ -198,7 +200,7 @@ export default function Sidebar() {
           <div className="flex-1">
             <h1 className="text-lg font-bold text-gray-900 leading-tight">ESGFlow</h1>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs text-gray-500">Plateforme ESG</span>
+              <span className="text-xs text-gray-500">{t('sidebar.platform')}</span>
               <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">v2.0</span>
             </div>
           </div>
@@ -206,13 +208,13 @@ export default function Sidebar() {
 
         <div className="mt-4 flex items-center justify-between text-xs">
           <div className="flex flex-col">
-            <span className="text-gray-400">Tenant</span>
+            <span className="text-gray-400">{t('sidebar.tenant')}</span>
             <span className="font-medium text-gray-800">Demo Organization</span>
           </div>
 
           <div className="flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-md">
             <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
-            Active
+            {t('sidebar.active')}
           </div>
         </div>
       </div>
@@ -226,7 +228,7 @@ export default function Sidebar() {
       {trend !== null && (
         <div className="p-4 border-t border-gray-200">
           <div className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-xl p-4 shadow-sm">
-            <p className="text-xs font-medium text-gray-600 mb-2">Score ESG Moyen</p>
+            <p className="text-xs font-medium text-gray-600 mb-2">{t('sidebar.avgEsgScore')}</p>
             <div className="flex items-baseline gap-2">
               <p className="text-3xl font-bold text-primary-700">
                 {trend.current_score.toFixed(1)}

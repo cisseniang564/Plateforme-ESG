@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Brain, TrendingUp, TrendingDown, AlertTriangle, Lightbulb,
   RefreshCw, Sparkles, Activity, CheckCircle, ArrowRight, Zap,
@@ -157,6 +158,7 @@ const MISSING_DATA_EXAMPLES = [
 type TabId = 'predictions' | 'anomalies' | 'insights' | 'suggestions' | 'chatbot' | 'generation' | 'reduction';
 
 export default function IntelligenceDashboard() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabId>('predictions');
 
@@ -339,11 +341,10 @@ export default function IntelligenceDashboard() {
             </div>
             <h1 className="mt-4 flex items-center gap-3 text-4xl font-bold tracking-tight">
               <Zap className="h-10 w-10 text-violet-300" />
-              IA & Automatisation ESG
+              {t('ia.title')}
             </h1>
             <p className="mt-3 max-w-2xl text-sm text-white/80 md:text-base">
-              Chatbot expert, génération de rapports automatisée, OCR factures fournisseurs,
-              prédictions, anomalies et leviers de réduction carbone.
+              {t('ia.subtitle')}
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

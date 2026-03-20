@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Grid, Plus, RefreshCw, AlertCircle, CheckCircle, Edit, Trash2, X,
   List, ShieldAlert, Target, Activity, Zap, Sparkles, Users, Download,
@@ -110,6 +111,7 @@ const quadrant = (x: number, y: number) => {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function MaterialityMatrix() {
+  const { t } = useTranslation();
   const [issues, setIssues]     = useState<MaterialityIssue[]>([]);
   const [risks, setRisks]       = useState<ESGRisk[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -298,10 +300,10 @@ export default function MaterialityMatrix() {
             </div>
             <h1 className="text-4xl font-bold tracking-tight flex items-center gap-3">
               <Grid className="h-9 w-9 opacity-90" />
-              Analyse de Matérialité
+              {t('materiality.title')}
             </h1>
             <p className="mt-2 text-indigo-200 max-w-xl">
-              Questionnaire parties prenantes, matrice interactive drag &amp; drop, suggestions IA sectorielles.
+              {t('materiality.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">

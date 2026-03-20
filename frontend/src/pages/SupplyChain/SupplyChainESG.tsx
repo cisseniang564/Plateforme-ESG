@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Truck, Search, Plus, Send, CheckCircle, AlertTriangle,
   XCircle, Clock, ChevronDown, ChevronRight, Download,
@@ -334,6 +335,7 @@ function SupplierDrawer({ supplier, onClose }: { supplier: Supplier; onClose: ()
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function SupplyChainESG() {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<TabId>('dashboard');
   const [catFilter, setCatFilter] = useState('Toutes');
   const [riskFilter, setRiskFilter] = useState('Tous');
@@ -372,10 +374,10 @@ export default function SupplyChainESG() {
   };
 
   const tabs = [
-    { id: 'dashboard' as TabId, label: 'Tableau de bord' },
-    { id: 'suppliers' as TabId, label: `Fournisseurs (${SUPPLIERS.length})` },
-    { id: 'questionnaires' as TabId, label: 'Questionnaires' },
-    { id: 'diligence' as TabId, label: 'Devoir de vigilance' },
+    { id: 'dashboard' as TabId, label: t('supplychain.tabs.dashboard') },
+    { id: 'suppliers' as TabId, label: `${t('supplychain.tabs.suppliers')} (${SUPPLIERS.length})` },
+    { id: 'questionnaires' as TabId, label: t('supplychain.tabs.questionnaires') },
+    { id: 'diligence' as TabId, label: t('supplychain.tabs.vigilance') },
   ];
 
   return (
@@ -388,8 +390,8 @@ export default function SupplyChainESG() {
               <Truck className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Supply Chain ESG</h1>
-              <p className="text-sm text-gray-500 mt-0.5">Évaluation fournisseurs · Questionnaires · Due diligence · Devoir de vigilance</p>
+              <h1 className="text-2xl font-bold text-gray-900">{t('supplychain.title')}</h1>
+              <p className="text-sm text-gray-500 mt-0.5">{t('supplychain.subtitle')}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">

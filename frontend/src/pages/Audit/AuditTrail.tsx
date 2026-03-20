@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ClipboardList, Search, Download, Filter, Eye, CheckCircle,
   XCircle, AlertTriangle, Clock, ChevronDown, ChevronRight,
@@ -228,6 +229,7 @@ function EventDetail({ event, onClose }: { event: AuditEvent; onClose: () => voi
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function AuditTrail() {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<TabId>('journal');
   const [search, setSearch] = useState('');
   const [moduleFilter, setModuleFilter] = useState('Tous');
@@ -269,10 +271,10 @@ export default function AuditTrail() {
   };
 
   const tabs = [
-    { id: 'journal' as TabId, label: `Journal d'audit (${EVENTS.length})` },
-    { id: 'versions' as TabId, label: 'Historique versions' },
-    { id: 'documents' as TabId, label: `Pièces justificatives (${DOCUMENTS.length})` },
-    { id: 'export' as TabId, label: 'Export & Certification' },
+    { id: 'journal' as TabId, label: `${t('audit.tabs.journal')} (${EVENTS.length})` },
+    { id: 'versions' as TabId, label: t('audit.tabs.versions') },
+    { id: 'documents' as TabId, label: `${t('audit.tabs.documents')} (${DOCUMENTS.length})` },
+    { id: 'export' as TabId, label: t('audit.tabs.export') },
   ];
 
   return (
@@ -285,8 +287,8 @@ export default function AuditTrail() {
               <ClipboardList className="h-6 w-6 text-slate-700" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Piste d'Audit & Traçabilité</h1>
-              <p className="text-sm text-gray-500 mt-0.5">Historique complet · Versionning · Pièces justificatives · Certifiable auditeurs externes</p>
+              <h1 className="text-2xl font-bold text-gray-900">{t('audit.title')}</h1>
+              <p className="text-sm text-gray-500 mt-0.5">{t('audit.subtitle')}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
