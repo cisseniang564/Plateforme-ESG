@@ -261,10 +261,10 @@ export default function MaterialityMatrix() {
 
   // ── Export ───────────────────────────────────────────────────────────────────
   const exportCSV = () => {
-    const header = 'Enjeu,Catégorie,Impact Financier,Impact ESG,Quadrant,Matériel,Priorité,Parties prenantes\n';
+    const header = `${t('materiality.csvHeaderIssue')},${t('materiality.csvHeaderCategory')},${t('materiality.csvHeaderFinancial')},${t('materiality.csvHeaderEsg')},${t('materiality.csvHeaderQuadrant')},${t('materiality.csvHeaderMaterial')},${t('materiality.csvHeaderPriority')},${t('materiality.csvHeaderStakeholders')}\n`;
     const rows = issues.map(i => {
       const q = quadrant(i.financial_impact, i.esg_impact);
-      return `"${i.name}","${catLabel(i.category)}",${i.financial_impact},${i.esg_impact},"${t(q.labelKey)}",${i.is_material ? 'Oui' : 'Non'},"${i.priority}","${i.stakeholders || ''}"`;
+      return `"${i.name}","${catLabel(i.category)}",${i.financial_impact},${i.esg_impact},"${t(q.labelKey)}",${i.is_material ? t('materiality.csvYes') : t('materiality.csvNo')},"${i.priority}","${i.stakeholders || ''}"`;
     }).join('\n');
     const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);
@@ -296,7 +296,7 @@ export default function MaterialityMatrix() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-medium ring-1 ring-white/20 mb-4">
               <Activity className="h-3.5 w-3.5" />
-              Double Matérialité · CSRD / ESRS
+              {t('materiality.heroBadge')}
             </div>
             <h1 className="text-4xl font-bold tracking-tight flex items-center gap-3">
               <Grid className="h-9 w-9 opacity-90" />
@@ -308,7 +308,7 @@ export default function MaterialityMatrix() {
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-2 bg-white/15 hover:bg-white/25 border border-white/20 rounded-xl text-sm font-medium transition-all">
-              <Download className="h-4 w-4" /> Export CSV
+              <Download className="h-4 w-4" /> {t('materiality.exportCsvBtn')}
             </button>
             <Button variant="secondary" onClick={loadAll} disabled={loading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> {t('materiality.headerRefresh')}
@@ -496,7 +496,7 @@ export default function MaterialityMatrix() {
                           <p className="font-bold text-gray-900 text-sm mb-1">{issue.name}</p>
                           {issue.description && <p className="text-xs text-gray-500 mb-2 line-clamp-2">{issue.description}</p>}
                           <div className="grid grid-cols-2 gap-1.5 mb-2">
-                            <div className="bg-orange-50 rounded p-1.5 text-center"><p className="text-[10px] text-gray-500">Fin.</p><p className="text-sm font-bold text-orange-600">{issue.financial_impact}</p></div>
+                            <div className="bg-orange-50 rounded p-1.5 text-center"><p className="text-[10px] text-gray-500">{t('materiality.tooltipFin')}</p><p className="text-sm font-bold text-orange-600">{issue.financial_impact}</p></div>
                             <div className="bg-blue-50 rounded p-1.5 text-center"><p className="text-[10px] text-gray-500">ESG</p><p className="text-sm font-bold text-blue-600">{issue.esg_impact}</p></div>
                           </div>
                           <div className="flex items-center justify-between">
@@ -771,7 +771,7 @@ export default function MaterialityMatrix() {
                   <div className="flex items-center justify-between">
                     <div className="flex gap-2">
                       <div className="bg-orange-50 rounded-lg px-2.5 py-1.5 text-center">
-                        <p className="text-[10px] text-gray-500">Fin.</p>
+                        <p className="text-[10px] text-gray-500">{t('materiality.tooltipFin')}</p>
                         <p className="text-xs font-bold text-orange-600">{s.financial_impact}</p>
                       </div>
                       <div className="bg-blue-50 rounded-lg px-2.5 py-1.5 text-center">
@@ -779,7 +779,7 @@ export default function MaterialityMatrix() {
                         <p className="text-xs font-bold text-blue-600">{s.esg_impact}</p>
                       </div>
                       <div className={`rounded-lg px-2.5 py-1.5 text-center ${q.bg}`}>
-                        <p className="text-[10px] text-gray-500">Zone</p>
+                        <p className="text-[10px] text-gray-500">{t('materiality.suggZone')}</p>
                         <p className={`text-[10px] font-bold ${q.text}`}>{t(q.labelKey)}</p>
                       </div>
                     </div>

@@ -176,13 +176,13 @@ const STATUS_CFG: Record<EvalStatus, { color: string; bg: string; icon: any }> =
   Refus:        { color: 'text-red-700',    bg: 'bg-red-100',    icon: XCircle },
 };
 
-const SCORE_DIMS = [
-  { key: 'env',        label: 'Environnement', icon: Leaf,    color: '#16a34a' },
-  { key: 'social',     label: 'Social',        icon: Users,   color: '#2563eb' },
-  { key: 'gov',        label: 'Gouvernance',   icon: Scale,   color: '#7c3aed' },
-  { key: 'ethics',     label: 'Éthique',       icon: Shield,  color: '#0891b2' },
-  { key: 'safety',     label: 'Sécurité',      icon: Shield,  color: '#d97706' },
-  { key: 'compliance', label: 'Conformité',    icon: Check,   color: '#be185d' },
+const SCORE_DIMS_KEYS = [
+  { key: 'env',        labelKey: 'supplychain.dimEnvironment', icon: Leaf,    color: '#16a34a' },
+  { key: 'social',     labelKey: 'supplychain.dimSocial',      icon: Users,   color: '#2563eb' },
+  { key: 'gov',        labelKey: 'supplychain.dimGovernance',  icon: Scale,   color: '#7c3aed' },
+  { key: 'ethics',     labelKey: 'supplychain.dimEthics',      icon: Shield,  color: '#0891b2' },
+  { key: 'safety',     labelKey: 'supplychain.dimSafety',      icon: Shield,  color: '#d97706' },
+  { key: 'compliance', labelKey: 'supplychain.dimCompliance',  icon: Check,   color: '#be185d' },
 ] as const;
 
 const CATEGORIES = ['Toutes', 'Matières premières', 'Logistique', 'Sous-traitance', 'Emballages', 'IT & Numérique', 'Énergie', 'Services'];
@@ -255,10 +255,10 @@ function SupplierDrawer({ supplier, onClose }: { supplier: Supplier; onClose: ()
             <div className="text-5xl font-extrabold mb-1">{supplier.globalScore || '—'}</div>
             <div className="text-sm text-slate-300">{t('supplychain.drawerGlobalScore')}</div>
             <div className="mt-3 text-xs text-slate-400">{
-              supplier.globalScore === 0 ? 'Évaluation non réalisée' :
-              supplier.globalScore >= 75 ? '✓ Fournisseur validé' :
-              supplier.globalScore >= 50 ? '⚠ Amélioration requise' :
-              '✗ Fournisseur à risque — action immédiate'
+              supplier.globalScore === 0 ? t('supplychain.scoreNotEvaluated') :
+              supplier.globalScore >= 75 ? t('supplychain.scoreValidated') :
+              supplier.globalScore >= 50 ? t('supplychain.scoreImprove') :
+              t('supplychain.scoreAtRisk')
             }</div>
           </div>
 
@@ -266,12 +266,12 @@ function SupplierDrawer({ supplier, onClose }: { supplier: Supplier; onClose: ()
           {supplier.globalScore > 0 && (
             <div className="space-y-3">
               <h3 className="text-sm font-bold text-gray-900">{t('supplychain.drawerDimensions')}</h3>
-              {SCORE_DIMS.map(dim => (
+              {SCORE_DIMS_KEYS.map(dim => (
                 <div key={dim.key}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm text-gray-700 flex items-center gap-1.5">
                       <dim.icon className="h-3.5 w-3.5" style={{ color: dim.color }} />
-                      {dim.label}
+                      {t(dim.labelKey)}
                     </span>
                     <span className="text-sm font-bold" style={{ color: dim.color }}>{supplier.scores[dim.key]}</span>
                   </div>
@@ -325,7 +325,7 @@ function SupplierDrawer({ supplier, onClose }: { supplier: Supplier; onClose: ()
               </button>
             )}
             <button className="flex items-center justify-center gap-2 w-full py-3 border border-gray-200 text-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-50 transition-colors">
-              <Download className="h-4 w-4" /> Exporter la fiche
+              <Download className="h-4 w-4" /> {t('supplychain.exportSheet')}
             </button>
           </div>
         </div>
@@ -400,7 +400,7 @@ export default function SupplyChainESG() {
               <Plus className="h-4 w-4" /> {t('supplychain.addSupplier')}
             </button>
             <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-              <Download className="h-4 w-4" /> Export
+              <Download className="h-4 w-4" /> {t('common.export')}
             </button>
           </div>
         </div>
@@ -444,8 +444,8 @@ export default function SupplyChainESG() {
               <div className="flex items-start gap-3 p-4 bg-red-50 border-2 border-red-200 rounded-2xl">
                 <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <span className="font-bold text-red-800">{critical} fournisseur{critical > 1 ? 's critiques' : ' critique'} identifié{critical > 1 ? 's' : ''} — </span>
-                  <span className="text-red-700 text-sm">Ces fournisseurs présentent des risques droits humains ou environnementaux graves. Une action immédiate est requise au titre du devoir de vigilance (Loi 2017-399).</span>
+                  <span className="font-bold text-red-800">{t('supplychain.alertBannerText', { count: critical })}</span>
+                  <span className="text-red-700 text-sm"> {t('supplychain.alertBannerDesc')}</span>
                 </div>
                 <button onClick={() => setTab('diligence')} className="flex items-center gap-1 text-xs font-bold text-red-700 hover:underline whitespace-nowrap">
                   {t('supplychain.alertBannerLink')} <ArrowRight className="h-3.5 w-3.5" />
@@ -466,7 +466,7 @@ export default function SupplyChainESG() {
                       <div key={r}>
                         <div className="flex items-center justify-between mb-1.5">
                           <span className={`text-sm font-semibold ${cfg.color}`}>{r}</span>
-                          <span className="text-sm text-gray-600">{count} fournisseur{count > 1 ? 's' : ''} ({pct}%)</span>
+                          <span className="text-sm text-gray-600">{t('supplychain.supplierCount', { count, pct })}</span>
                         </div>
                         <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
                           <div className={`h-3 rounded-full ${cfg.dot}`} style={{ width: `${pct}%` }} />
@@ -532,7 +532,7 @@ export default function SupplyChainESG() {
             <div className="flex flex-wrap gap-3 items-center bg-white p-4 rounded-2xl border border-gray-200">
               <div className="relative flex-1 min-w-48">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher un fournisseur..." className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('supplychain.searchSupplier')} className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div className="flex flex-wrap gap-2">
                 {CATEGORIES.slice(0, 5).map(c => (
@@ -570,11 +570,11 @@ export default function SupplyChainESG() {
                       <tr key={s.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-5 py-4">
                           <div className="font-semibold text-gray-900 text-sm">{s.name}</div>
-                          <div className="text-xs text-gray-400">{s.country} · {s.employees.toLocaleString()} sal.</div>
+                          <div className="text-xs text-gray-400">{s.country} · {s.employees.toLocaleString()} {t('supplychain.employees')}</div>
                           {s.flags.length > 0 && (
                             <div className="flex items-center gap-1 mt-1">
                               <AlertTriangle className="h-3 w-3 text-red-400" />
-                              <span className="text-xs text-red-500">{s.flags.length} alerte{s.flags.length > 1 ? 's' : ''}</span>
+                              <span className="text-xs text-red-500">{t('supplychain.flagCount', { count: s.flags.length })}</span>
                             </div>
                           )}
                         </td>
@@ -613,7 +613,7 @@ export default function SupplyChainESG() {
                 </tbody>
               </table>
               <div className="px-5 py-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-400">
-                {filtered.length} fournisseur{filtered.length > 1 ? 's' : ''}
+                {t('supplychain.supplierCountFooter', { count: filtered.length })}
               </div>
             </div>
           </div>
@@ -743,20 +743,18 @@ export default function SupplyChainESG() {
             <div className="flex items-start gap-4 p-5 bg-blue-50 border-2 border-blue-200 rounded-2xl">
               <Scale className="h-6 w-6 text-blue-600 flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-bold text-blue-900 mb-1">Loi n°2017-399 — Devoir de Vigilance</h3>
-                <p className="text-sm text-blue-700">
-                  Les entreprises de plus de 5 000 salariés en France (ou 10 000 dans le monde) ont l'obligation légale d'établir et publier un <strong>plan de vigilance</strong> couvrant leurs activités, filiales, sous-traitants et fournisseurs. Ce plan doit identifier les risques graves en matière de droits humains, libertés fondamentales, santé, sécurité et environnement.
-                </p>
+                <h3 className="font-bold text-blue-900 mb-1">{t('supplychain.vigilanceLawTitle')}</h3>
+                <p className="text-sm text-blue-700">{t('supplychain.vigilanceLawDesc')}</p>
               </div>
             </div>
 
             {/* Plan de vigilance KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: 'Fournisseurs rang 1 couverts', val: `${SUPPLIERS.filter(s => s.status === 'Évalué').length}/${SUPPLIERS.length}`, color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
-                { label: 'Risques graves identifiés', val: critical + SUPPLIERS.filter(s => s.risk === 'Élevé').length, color: 'text-red-700', bg: 'bg-red-50 border-red-200' },
-                { label: 'Plans d\'action actifs', val: critical, color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
-                { label: 'Conformité loi vigilance', val: critical === 0 ? '✓ OK' : '⚠ Action', color: critical === 0 ? 'text-green-700' : 'text-red-700', bg: critical === 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200' },
+                { label: t('supplychain.vigilanceKpiCovered'), val: `${SUPPLIERS.filter(s => s.status === 'Évalué').length}/${SUPPLIERS.length}`, color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
+                { label: t('supplychain.vigilanceKpiRisks'), val: critical + SUPPLIERS.filter(s => s.risk === 'Élevé').length, color: 'text-red-700', bg: 'bg-red-50 border-red-200' },
+                { label: t('supplychain.vigilanceKpiActivePlans'), val: critical, color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
+                { label: t('supplychain.vigilanceKpiCompliance'), val: critical === 0 ? '✓ OK' : '⚠ Action', color: critical === 0 ? 'text-green-700' : 'text-red-700', bg: critical === 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200' },
               ].map((k, i) => (
                 <div key={i} className={`rounded-2xl border-2 ${k.bg} p-5`}>
                   <div className={`text-3xl font-extrabold ${k.color}`}>{k.val}</div>
@@ -768,8 +766,8 @@ export default function SupplyChainESG() {
             {/* Critical suppliers action plan */}
             <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h2 className="text-base font-bold text-gray-900">Plan d'action — Fournisseurs à risque grave</h2>
-                <span className="text-xs text-gray-400">Conforme Loi 2017-399 art. L.225-102-4</span>
+                <h2 className="text-base font-bold text-gray-900">{t('supplychain.actionPlanTitle')}</h2>
+                <span className="text-xs text-gray-400">{t('supplychain.actionPlanLegal')}</span>
               </div>
               <div className="divide-y divide-gray-100">
                 {SUPPLIERS.filter(s => s.risk === 'Critique' || s.risk === 'Élevé').map(s => {
@@ -800,10 +798,10 @@ export default function SupplyChainESG() {
                           <div className="space-y-2">
                             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('supplychain.vigilanceMeasures')}</p>
                             {[
-                              s.risk === 'Critique' ? 'Audit social tiers sur site dans les 60 jours' : 'Questionnaire ESG à envoyer sous 30 jours',
-                              'Intégrer les clauses contractuelles droits humains',
-                              s.risk === 'Critique' ? 'Plan d\'amélioration contraignant ou substitution fournisseur' : 'Suivi annuel des indicateurs sociaux et environnementaux',
-                              'Documenter dans le rapport plan de vigilance annuel',
+                              s.risk === 'Critique' ? t('supplychain.actionCritiqueAudit') : t('supplychain.actionHighQuestionnaire'),
+                              t('supplychain.actionContractClauses'),
+                              s.risk === 'Critique' ? t('supplychain.actionCritiqueImprovement') : t('supplychain.actionHighMonitoring'),
+                              t('supplychain.actionDocument'),
                             ].map((action, i) => (
                               <div key={i} className="flex items-start gap-2.5 p-2.5 bg-gray-50 rounded-lg">
                                 <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${s.risk === 'Critique' ? 'bg-red-100' : 'bg-amber-100'}`}>
@@ -816,10 +814,10 @@ export default function SupplyChainESG() {
                         </div>
                         <div className="flex flex-col gap-2 flex-shrink-0">
                           <button onClick={() => setSelectedSupplier(s)} className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition-colors">
-                            <Eye className="h-3.5 w-3.5" /> Fiche
+                            <Eye className="h-3.5 w-3.5" /> {t('supplychain.btnSheet')}
                           </button>
                           <button className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-xl text-xs font-semibold transition-colors">
-                            <Send className="h-3.5 w-3.5" /> Relancer
+                            <Send className="h-3.5 w-3.5" /> {t('supplychain.btnFollowUp')}
                           </button>
                         </div>
                       </div>
@@ -834,9 +832,9 @@ export default function SupplyChainESG() {
               <h2 className="text-base font-bold text-gray-900 mb-4">{t('supplychain.vigilanceCoverage')}</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
-                  { title: 'Filiales directes', pct: 95, status: 'Couvert', color: 'bg-green-500' },
-                  { title: 'Fournisseurs rang 1', pct: Math.round(SUPPLIERS.filter(s => s.status === 'Évalué').length / SUPPLIERS.length * 100), status: 'Partiel', color: 'bg-amber-400' },
-                  { title: 'Sous-traitants rang 2+', pct: 12, status: 'À développer', color: 'bg-red-400' },
+                  { title: t('supplychain.coverageDirectSubsidiaries'), pct: 95, status: t('supplychain.coverageStatusCovered'), color: 'bg-green-500' },
+                  { title: t('supplychain.coverageRank1'), pct: Math.round(SUPPLIERS.filter(s => s.status === 'Évalué').length / SUPPLIERS.length * 100), status: t('supplychain.coverageStatusPartial'), color: 'bg-amber-400' },
+                  { title: t('supplychain.coverageRank2Plus'), pct: 12, status: t('supplychain.coverageStatusToDevelop'), color: 'bg-red-400' },
                 ].map((item, i) => (
                   <div key={i} className="bg-gray-50 rounded-xl p-4">
                     <div className="flex items-center justify-between mb-2">

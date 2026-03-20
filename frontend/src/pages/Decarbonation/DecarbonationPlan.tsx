@@ -328,9 +328,9 @@ export default function DecarbonationPlan() {
 
   // Scenario quick-add
   const SCENARIOS = [
-    { id: 'quick', label: '⚡ Quick Wins uniquement', actionIds: actions.filter(a => a.tags.includes('Quick win')).map(a => a.id) },
-    { id: 'sbti42', label: '🎯 Objectif SBTi -42% 2030', actionIds: actions.filter(a => a.impact >= 100).sort((a, b) => b.impact - a.impact).slice(0, 12).map(a => a.id) },
-    { id: 'netzero', label: '🌍 Trajectoire Net Zero 2050', actionIds: actions.map(a => a.id) },
+    { id: 'quick', label: `⚡ ${tr('decarbonation.scenarioQuickWins')}`, actionIds: actions.filter(a => a.tags.includes('Quick win')).map(a => a.id) },
+    { id: 'sbti42', label: `🎯 ${tr('decarbonation.scenarioSbti42')}`, actionIds: actions.filter(a => a.impact >= 100).sort((a, b) => b.impact - a.impact).slice(0, 12).map(a => a.id) },
+    { id: 'netzero', label: `🌍 ${tr('decarbonation.scenarioNetZero')}`, actionIds: actions.map(a => a.id) },
   ];
 
   const applyScenario = (sid: string) => {
@@ -477,7 +477,7 @@ export default function DecarbonationPlan() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-semibold text-gray-900">{a.title}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">{a.impact} tCO₂e/an · {a.cost}k€ · ROI {a.roi < 12 ? `${a.roi} mois` : `${Math.round(a.roi / 12)} ans`}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">{a.impact} tCO₂e/an · {a.cost}k€ · ROI {a.roi < 12 ? `${a.roi} ${tr('decarbonation.months')}` : `${Math.round(a.roi / 12)} ${tr('decarbonation.years')}`}</div>
                       </div>
                       <button onClick={() => togglePlan(a.id)} className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs flex-shrink-0 transition-colors ${a.inPlan ? 'bg-green-500 text-white' : 'bg-white border border-amber-300 text-amber-700 hover:bg-amber-100'}`}>
                         {a.inPlan ? '✓' : '+'}
@@ -538,7 +538,7 @@ export default function DecarbonationPlan() {
               ))}
               <label className="flex items-center gap-1.5 cursor-pointer ml-auto">
                 <input type="checkbox" checked={quickWinOnly} onChange={e => setQuickWinOnly(e.target.checked)} className="rounded" />
-                <span className="text-xs font-semibold text-amber-700">Quick wins only</span>
+                <span className="text-xs font-semibold text-amber-700">{tr('decarbonation.quickWinsOnly')}</span>
               </label>
             </div>
 
@@ -671,7 +671,7 @@ export default function DecarbonationPlan() {
                     <th className="px-6 py-3 text-right">{tr('decarbonation.legendBau')}</th>
                     <th className="px-6 py-3 text-right">{tr('decarbonation.legendSbtiPath')}</th>
                     <th className="px-6 py-3 text-right">{tr('decarbonation.yourPlan')}</th>
-                    <th className="px-6 py-3 text-right">Vs SBTi</th>
+                    <th className="px-6 py-3 text-right">{tr('decarbonation.vsSbti')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">

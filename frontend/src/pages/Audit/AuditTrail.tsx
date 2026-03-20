@@ -577,11 +577,11 @@ export default function AuditTrail() {
                       </td>
                       <td className="px-5 py-3 text-center">
                         <div className="flex items-center justify-center gap-1">
-                          <button className="p-1.5 hover:bg-blue-50 rounded-lg transition-colors" title="Télécharger">
+                          <button className="p-1.5 hover:bg-blue-50 rounded-lg transition-colors" title={t('common.download')}>
                             <Download className="h-3.5 w-3.5 text-blue-600" />
                           </button>
                           {doc.status === 'En attente' && (
-                            <button className="p-1.5 hover:bg-amber-50 rounded-lg transition-colors" title="Télécharger">
+                            <button className="p-1.5 hover:bg-amber-50 rounded-lg transition-colors" title={t('common.upload')}>
                               <Upload className="h-3.5 w-3.5 text-amber-600" />
                             </button>
                           )}
@@ -606,7 +606,7 @@ export default function AuditTrail() {
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-gray-900">{t('audit.certifiableReport')}</h2>
-                  <p className="text-sm text-gray-500">Conforme aux exigences d'assurance limitée CSRD et aux normes ISAE 3000 / ISAE 3410</p>
+                  <p className="text-sm text-gray-500">{t('audit.certifiableReportDesc')}</p>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
@@ -698,7 +698,7 @@ export default function AuditTrail() {
             {/* Legal disclaimer */}
             <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700">
               <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
-              La piste d'audit ESGFlow est conforme aux exigences de traçabilité de la directive CSRD (art. 19a/29a), aux normes d'assurance ISAE 3000 et ISAE 3410, et aux bonnes pratiques ICAEW pour la vérification extra-financière. Chaque événement est horodaté, hashé (SHA-256) et non modifiable.
+              {t('audit.legalDisclaimer')}
             </div>
           </div>
         )}

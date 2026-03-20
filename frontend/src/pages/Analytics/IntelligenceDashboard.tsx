@@ -172,13 +172,7 @@ export default function IntelligenceDashboard() {
   const [totalPredictions, setTotalPredictions] = useState(0);
 
   // Chatbot state
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    {
-      role: 'assistant',
-      content: `Bonjour ! 👋 Je suis votre **assistant ESG intelligent**.\n\nJe peux vous aider sur la conformité CSRD, le bilan carbone, vos scores ESG, la génération de rapports, ou vous donner des conseils de réduction.\n\nQue puis-je faire pour vous aujourd'hui ?`,
-      timestamp: new Date(),
-    },
-  ]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -192,6 +186,9 @@ export default function IntelligenceDashboard() {
   // Reduction state
   const [selectedSector, setSelectedSector] = useState('Services');
 
+  useEffect(() => {
+    setChatMessages([{ role: 'assistant', content: t('ia.chatWelcome'), timestamp: new Date() }]);
+  }, []);
   useEffect(() => { loadAll(); }, []);
   useEffect(() => { loadPredictions(); }, [horizon]);
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatMessages]);
@@ -227,12 +224,16 @@ export default function IntelligenceDashboard() {
     } catch { setPredictions([]); }
   };
 
+  const chartKeyForecast = t('ia.chartForecast');
+  const chartKeyUpperBound = t('ia.chartUpperBound');
+  const chartKeyLowerBound = t('ia.chartLowerBound');
+
   const buildChartData = (pred: Prediction) =>
     pred.future_points.slice(0, horizon).map((p) => ({
       date: format(new Date(p.date), 'MMM yy', { locale: fr }),
-      Prévision: p.predicted_value,
-      'Borne haute': p.predicted_value * (1 + (1 - p.confidence) * 0.12),
-      'Borne basse': p.predicted_value * (1 - (1 - p.confidence) * 0.12),
+      [chartKeyForecast]: p.predicted_value,
+      [chartKeyUpperBound]: p.predicted_value * (1 + (1 - p.confidence) * 0.12),
+      [chartKeyLowerBound]: p.predicted_value * (1 - (1 - p.confidence) * 0.12),
     }));
 
   // ── Chatbot ──
@@ -250,12 +251,12 @@ export default function IntelligenceDashboard() {
   };
 
   const quickPrompts = [
-    'Qu\'est-ce que la conformité CSRD ?',
-    'Comment améliorer mon score ESG ?',
-    'Expliquez le Scope 3',
-    'Quels rapports puis-je générer ?',
-    'Qu\'est-ce que la double matérialité ?',
-    'Quels leviers de réduction carbone ?',
+    t('ia.quickPrompt1'),
+    t('ia.quickPrompt2'),
+    t('ia.quickPrompt3'),
+    t('ia.quickPrompt4'),
+    t('ia.quickPrompt5'),
+    t('ia.quickPrompt6'),
   ];
 
   // ── OCR simulation ──
@@ -337,7 +338,7 @@ export default function IntelligenceDashboard() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/90 ring-1 ring-white/15">
               <Brain className="h-3.5 w-3.5" />
-              Intelligence Artificielle — niveau Sweep & Greenly
+              {t('ia.heroBadge')}
             </div>
             <h1 className="mt-4 flex items-center gap-3 text-4xl font-bold tracking-tight">
               <Zap className="h-10 w-10 text-violet-300" />
@@ -513,9 +514,9 @@ export default function IntelligenceDashboard() {
                         <YAxis stroke="#6b7280" style={{ fontSize: '11px' }} />
                         <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '12px' }} />
                         <Legend />
-                        <Area type="monotone" dataKey="Borne haute" stroke="none" fill="#ede9fe" fillOpacity={0.4} />
-                        <Area type="monotone" dataKey="Prévision" stroke="#7c3aed" strokeWidth={2.5} strokeDasharray="6 3" fill="url(#predGrad)" dot={false} />
-                        <Area type="monotone" dataKey="Borne basse" stroke="none" fill="white" fillOpacity={1} />
+                        <Area type="monotone" dataKey={chartKeyUpperBound} stroke="none" fill="#ede9fe" fillOpacity={0.4} />
+                        <Area type="monotone" dataKey={chartKeyForecast} stroke="#7c3aed" strokeWidth={2.5} strokeDasharray="6 3" fill="url(#predGrad)" dot={false} />
+                        <Area type="monotone" dataKey={chartKeyLowerBound} stroke="none" fill="white" fillOpacity={1} />
                       </AreaChart>
                     </ResponsiveContainer>
                     <div className="mt-4 flex items-center gap-2 rounded-xl bg-violet-50 p-3 text-xs text-violet-700">
@@ -571,10 +572,10 @@ export default function IntelligenceDashboard() {
                         </div>
                       </div>
                       <div className="mt-3 flex flex-wrap gap-4 text-xs text-gray-500">
-                        <span>Valeur : <strong className="text-gray-900">{a.value}</strong></span>
-                        <span>Plage normale : <strong className="text-gray-900">{a.expected_range}</strong></span>
-                        <span>Pilier : <strong className="text-gray-900 capitalize">{a.pillar}</strong></span>
-                        {a.period && <span>Période : {new Date(a.period).toLocaleDateString('fr-FR')}</span>}
+                        <span>{t('ia.anomalyValue')} <strong className="text-gray-900">{a.value}</strong></span>
+                        <span>{t('ia.anomalyRange')} <strong className="text-gray-900">{a.expected_range}</strong></span>
+                        <span>{t('ia.anomalyPillar')} <strong className="text-gray-900 capitalize">{a.pillar}</strong></span>
+                        {a.period && <span>{t('ia.anomalyPeriod')} {new Date(a.period).toLocaleDateString('fr-FR')}</span>}
                       </div>
                     </div>
                   </div>
@@ -661,9 +662,9 @@ export default function IntelligenceDashboard() {
                     <h3 className="font-semibold text-gray-900 mb-2">{sug.title}</h3>
                     <p className="text-sm text-gray-600 mb-4">{sug.description}</p>
                     <div className="flex flex-col gap-1.5 text-xs">
-                      <div className="flex items-center gap-2"><Target className="h-3.5 w-3.5 text-gray-400" /><span className="text-gray-600">Action : <strong>{sug.action}</strong></span></div>
-                      <div className="flex items-center gap-2"><TrendingUp className="h-3.5 w-3.5 text-gray-400" /><span className="text-gray-600">Impact : <strong>{sug.impact}</strong></span></div>
-                      <div className="flex items-center gap-2"><Activity className="h-3.5 w-3.5 text-gray-400" /><span className="text-gray-600">Effort : <strong>{sug.effort}</strong></span></div>
+                      <div className="flex items-center gap-2"><Target className="h-3.5 w-3.5 text-gray-400" /><span className="text-gray-600">{t('ia.suggestionAction')} <strong>{sug.action}</strong></span></div>
+                      <div className="flex items-center gap-2"><TrendingUp className="h-3.5 w-3.5 text-gray-400" /><span className="text-gray-600">{t('ia.suggestionImpact')} <strong>{sug.impact}</strong></span></div>
+                      <div className="flex items-center gap-2"><Activity className="h-3.5 w-3.5 text-gray-400" /><span className="text-gray-600">{t('ia.suggestionEffort')} <strong>{sug.effort}</strong></span></div>
                     </div>
                   </div>
                 );
@@ -796,9 +797,9 @@ export default function IntelligenceDashboard() {
 
             <div className="space-y-3 mb-5">
               {[
-                { label: 'Standard', options: ['CSRD / ESRS 2024', 'GRI Standards', 'TCFD'] },
-                { label: 'Période', options: ['Exercice 2025', 'Exercice 2024', 'Q1 2025'] },
-                { label: 'Langue', options: ['Français', 'English', 'Deutsch'] },
+                { label: t('ia.reportFieldStandard'), options: ['CSRD / ESRS 2024', 'GRI Standards', 'TCFD'] },
+                { label: t('ia.reportFieldPeriod'), options: [t('ia.reportPeriod2025'), t('ia.reportPeriod2024'), 'Q1 2025'] },
+                { label: t('ia.reportFieldLanguage'), options: [t('ia.reportLangFr'), t('ia.reportLangEn'), t('ia.reportLangDe')] },
               ].map(field => (
                 <div key={field.label}>
                   <label className="text-xs font-semibold text-gray-600 mb-1 block">{field.label}</label>
@@ -821,13 +822,13 @@ export default function IntelligenceDashboard() {
               <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl">
                 <div className="flex items-center gap-2 mb-3">
                   <CheckCircle className="h-5 w-5 text-green-600" />
-                  <p className="font-semibold text-green-900 text-sm">Rapport CSRD généré ✓</p>
+                  <p className="font-semibold text-green-900 text-sm">{t('ia.reportGeneratedSuccess')}</p>
                 </div>
                 <div className="space-y-2 text-xs text-gray-700">
-                  <p>📄 <strong>Résumé exécutif</strong> — 2 pages · Score global : 78/100</p>
-                  <p>🌍 <strong>Environnemental</strong> — Émissions -12% vs N-1 · Énergie renouvelable 34%</p>
-                  <p>👥 <strong>Social</strong> — Formation 18h/salarié · Parité 47% postes direction</p>
-                  <p>⚖️ <strong>Gouvernance</strong> — Politique anti-corruption publiée · 3 alertes compliance</p>
+                  <p>📄 <strong>{t('ia.reportSectionExecutive')}</strong> — {t('ia.reportSectionExecutiveDesc')}</p>
+                  <p>🌍 <strong>{t('ia.reportSectionEnv')}</strong> — {t('ia.reportSectionEnvDesc')}</p>
+                  <p>👥 <strong>{t('ia.reportSectionSocial')}</strong> — {t('ia.reportSectionSocialDesc')}</p>
+                  <p>⚖️ <strong>{t('ia.reportSectionGov')}</strong> — {t('ia.reportSectionGovDesc')}</p>
                 </div>
                 <button className="mt-3 flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition">
                   <Download className="h-3.5 w-3.5" /> {t('ia.downloadPdf')}
@@ -877,7 +878,7 @@ export default function IntelligenceDashboard() {
                 <h3 className="font-bold text-gray-900">{t('ia.generationOcrTitle')}</h3>
                 <p className="text-xs text-gray-500">{t('ia.generationOcrDesc')}</p>
               </div>
-              <span className="ml-auto bg-green-100 text-green-700 text-xs px-2.5 py-1 rounded-full font-bold">Comme Greenly</span>
+              <span className="ml-auto bg-green-100 text-green-700 text-xs px-2.5 py-1 rounded-full font-bold">{t('ia.likeGreenly')}</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -889,8 +890,8 @@ export default function IntelligenceDashboard() {
                   {ocrUploading ? (
                     <div className="flex flex-col items-center gap-3">
                       <Loader2 className="h-10 w-10 text-purple-500 animate-spin" />
-                      <p className="text-sm font-medium text-purple-700">Analyse OCR en cours...</p>
-                      <p className="text-xs text-gray-500">Extraction des données · Catégorisation Scope 3</p>
+                      <p className="text-sm font-medium text-purple-700">{t('ia.ocrAnalyzing')}</p>
+                      <p className="text-xs text-gray-500">{t('ia.ocrAnalyzingDesc')}</p>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-3">
@@ -920,10 +921,10 @@ export default function IntelligenceDashboard() {
                 {ocrResult && (
                   <div className="space-y-3">
                     {[
-                      { label: 'Fournisseur', value: ocrResult.vendor, icon: Building2 },
-                      { label: 'Montant HT', value: `${ocrResult.amount.toLocaleString('fr-FR')} €`, icon: BarChart2 },
-                      { label: 'Catégorie Scope 3', value: ocrResult.category, icon: Globe },
-                      { label: 'Émissions estimées', value: `${ocrResult.co2} tCO₂e`, icon: Leaf },
+                      { label: t('ia.ocrFieldVendor'), value: ocrResult.vendor, icon: Building2 },
+                      { label: t('ia.ocrFieldAmount'), value: `${ocrResult.amount.toLocaleString('fr-FR')} €`, icon: BarChart2 },
+                      { label: t('ia.ocrFieldScope3Cat'), value: ocrResult.category, icon: Globe },
+                      { label: t('ia.ocrFieldEmissions'), value: `${ocrResult.co2} tCO₂e`, icon: Leaf },
                     ].map((item, i) => {
                       const Icon = item.icon;
                       return (
@@ -984,9 +985,9 @@ export default function IntelligenceDashboard() {
               </BarChart>
             </ResponsiveContainer>
             <div className="mt-3 flex flex-wrap gap-3 text-xs">
-              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-red-400 inline-block" />Score faible (&lt;50)</span>
-              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-amber-400 inline-block" />Moyen (50-65)</span>
-              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-green-500 inline-block" />Bon (65-80)</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-red-400 inline-block" />{t('ia.legendScoreLow')}</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-amber-400 inline-block" />{t('ia.legendScoreMedium')}</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-green-500 inline-block" />{t('ia.legendScoreGood')}</span>
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-violet-600 inline-block" />{t('ia.legendYourScore')}</span>
             </div>
           </Card>
@@ -1016,7 +1017,7 @@ export default function IntelligenceDashboard() {
                     {/* Impact bar */}
                     <div className="mb-3">
                       <div className="flex justify-between text-xs text-gray-500 mb-1">
-                        <span>{t('ia.reductionTitle')}</span>
+                        <span>{t('ia.impactLabel')}</span>
                         <span className="font-semibold text-gray-700">{lever.impact}/100</span>
                       </div>
                       <div className="h-2 bg-gray-100 rounded-full">
