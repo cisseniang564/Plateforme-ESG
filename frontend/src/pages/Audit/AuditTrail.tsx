@@ -380,7 +380,7 @@ export default function AuditTrail() {
               <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-200" />
               <div className="space-y-2">
                 {filtered.map((event) => {
-                  const cfg = ACTION_CFG[event.action];
+                  const cfg = ACTION_CFG_STATIC[event.action];
                   const ActionIcon = cfg.icon;
                   const initials = userInitials(event.user);
                   const avatarColor = USER_COLORS[event.user] || 'bg-gray-400';
@@ -450,7 +450,7 @@ export default function AuditTrail() {
 
             <div className="space-y-4">
               {EVENTS.filter(e => e.action === 'UPDATE' || e.action === 'CALCULATE').map(event => {
-                const cfg = ACTION_CFG[event.action];
+                const cfg = ACTION_CFG_STATIC[event.action];
                 const ActionIcon = cfg.icon;
                 return (
                   <div key={event.id} className="bg-white rounded-2xl border border-gray-200 p-5">
