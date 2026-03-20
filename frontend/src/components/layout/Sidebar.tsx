@@ -21,6 +21,7 @@ import {
   Target,
   Code2,
   Flame,
+  TrendingDown,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import api from '@/services/api';
@@ -113,6 +114,7 @@ export default function Sidebar() {
     {
       title: 'Conformité',
       items: [
+        { name: 'Plan de Décarbonation', description: 'SBTi · Net Zero 2050 · 24 actions ROI', href: '/app/decarbonation', icon: TrendingDown },
         { name: 'Bilan Carbone Scope 3', description: '15 catégories GHG Protocol · ADEME', href: '/app/carbon', icon: Flame },
         { name: 'Taxonomie UE', description: 'Alignement EU Taxonomy 2020/852', href: '/app/taxonomy', icon: Leaf },
         { name: 'Multi-Réglementaire', description: 'CSRD · Sapin II · SFDR · ISO · DPEF', href: '/app/compliance', icon: ShieldCheck },
