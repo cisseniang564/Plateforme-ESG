@@ -60,15 +60,15 @@ interface ChatMessage {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const PRIORITY_CONFIG = {
-  high: { color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-200', badge: 'bg-red-100 text-red-700', label: 'Haute' },
-  medium: { color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', badge: 'bg-amber-100 text-amber-700', label: 'Moyenne' },
-  low: { color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', badge: 'bg-blue-100 text-blue-700', label: 'Faible' },
+  high: { color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-200', badge: 'bg-red-100 text-red-700', labelKey: 'ia.priorityHigh' },
+  medium: { color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', badge: 'bg-amber-100 text-amber-700', labelKey: 'ia.priorityMedium' },
+  low: { color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', badge: 'bg-blue-100 text-blue-700', labelKey: 'ia.priorityLow' },
 };
 
 const TREND_CONFIG = {
-  increasing: { icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-50', label: 'Hausse' },
-  decreasing: { icon: TrendingDown, color: 'text-red-600', bg: 'bg-red-50', label: 'Baisse' },
-  stable: { icon: Minus, color: 'text-gray-600', bg: 'bg-gray-50', label: 'Stable' },
+  increasing: { icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-50', labelKey: 'ia.trendUp' },
+  decreasing: { icon: TrendingDown, color: 'text-red-600', bg: 'bg-red-50', labelKey: 'ia.trendDown' },
+  stable: { icon: Minus, color: 'text-gray-600', bg: 'bg-gray-50', labelKey: 'ia.trendStable' },
 };
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -309,13 +309,13 @@ export default function IntelligenceDashboard() {
   };
 
   const TABS: Array<{ id: TabId; label: string; icon: React.FC<{ className?: string }>; count?: number; isNew?: boolean }> = [
-    { id: 'predictions', label: 'IA Prédictive', icon: Brain, count: totalPredictions },
-    { id: 'anomalies', label: 'Anomalies', icon: AlertTriangle, count: anomalies.length },
-    { id: 'insights', label: 'Insights', icon: Lightbulb, count: insights?.recommendations?.length ?? 0 },
-    { id: 'suggestions', label: 'Suggestions', icon: Sparkles, count: suggestions.length },
-    { id: 'chatbot', label: 'Assistant IA', icon: MessageSquare, isNew: true },
-    { id: 'generation', label: 'Génération IA', icon: FileText, isNew: true },
-    { id: 'reduction', label: 'Réduction CO₂', icon: Leaf, isNew: true },
+    { id: 'predictions', label: t('ia.tabPredictive'), icon: Brain, count: totalPredictions },
+    { id: 'anomalies', label: t('ia.tabAnomalies'), icon: AlertTriangle, count: anomalies.length },
+    { id: 'insights', label: t('ia.tabInsights'), icon: Lightbulb, count: insights?.recommendations?.length ?? 0 },
+    { id: 'suggestions', label: t('ia.tabSuggestions'), icon: Sparkles, count: suggestions.length },
+    { id: 'chatbot', label: t('ia.tabAssistant'), icon: MessageSquare, isNew: true },
+    { id: 'generation', label: t('ia.tabGeneration'), icon: FileText, isNew: true },
+    { id: 'reduction', label: t('ia.tabReduction'), icon: Leaf, isNew: true },
   ];
 
   if (loading) {
@@ -323,7 +323,7 @@ export default function IntelligenceDashboard() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <Spinner size="lg" />
-          <p className="mt-4 text-gray-500">Analyse IA en cours...</p>
+          <p className="mt-4 text-gray-500">{t('ia.loading')}</p>
         </div>
       </div>
     );
@@ -349,10 +349,10 @@ export default function IntelligenceDashboard() {
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              { label: 'Prédictions', value: totalPredictions },
-              { label: 'Anomalies', value: anomalies.length },
-              { label: 'Suggestions', value: suggestions.length },
-              { label: 'Leviers CO₂', value: REDUCTION_LEVERS.length },
+              { label: t('ia.heroStatPredictions'), value: totalPredictions },
+              { label: t('ia.heroStatAnomalies'), value: anomalies.length },
+              { label: t('ia.heroStatSuggestions'), value: suggestions.length },
+              { label: t('ia.heroStatLevers'), value: REDUCTION_LEVERS.length },
             ].map((s) => (
               <div key={s.label} className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10 backdrop-blur-sm">
                 <p className="text-xs uppercase tracking-wide text-white/70">{s.label}</p>
@@ -368,7 +368,7 @@ export default function IntelligenceDashboard() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <Card className="border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-medium text-gray-600">Complétude données</p>
+              <p className="text-sm font-medium text-gray-600">{t('ia.kpiCompleteness')}</p>
               <span className="text-2xl font-bold text-teal-600">{insights.data_quality.completion_rate.toFixed(0)}%</span>
             </div>
             <div className="w-full h-2 bg-gray-100 rounded-full">
@@ -377,20 +377,20 @@ export default function IntelligenceDashboard() {
           </Card>
           <Card className="border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium text-gray-600">Indicateurs en hausse</p>
+              <p className="text-sm font-medium text-gray-600">{t('ia.kpiRising')}</p>
               <span className="text-2xl font-bold text-green-600">{insights.trends.improving_metrics}</span>
             </div>
             <div className="flex gap-2 text-xs">
-              <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full">↑ {insights.trends.improving_metrics} améliorés</span>
-              <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full">↓ {insights.trends.declining_metrics} en déclin</span>
+              <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full">↑ {insights.trends.improving_metrics} {t('ia.kpiImproved')}</span>
+              <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full">↓ {insights.trends.declining_metrics} {t('ia.kpiDeclining')}</span>
             </div>
           </Card>
           <Card className="border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Données vérifiées</p>
+              <p className="text-sm font-medium text-gray-600">{t('ia.kpiVerified')}</p>
               <span className="text-2xl font-bold text-purple-600">{insights.data_quality.verified_count}</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">sur {insights.data_quality.total_count} points</p>
+            <p className="text-xs text-gray-500 mt-1">{t('ia.kpiOnPoints', { count: insights.data_quality.total_count })}</p>
           </Card>
         </div>
       )}
@@ -430,8 +430,8 @@ export default function IntelligenceDashboard() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Prévisions IA</h2>
-              <p className="text-sm text-gray-500">Régression linéaire OLS · {totalPredictions} indicateur{totalPredictions !== 1 ? 's' : ''} analysé{totalPredictions !== 1 ? 's' : ''}</p>
+              <h2 className="text-lg font-semibold text-gray-900">{t('ia.predictionsTitle')}</h2>
+              <p className="text-sm text-gray-500">{t('ia.predictionsDesc')}</p>
             </div>
             <div className="flex items-center gap-3">
               <select
@@ -439,13 +439,13 @@ export default function IntelligenceDashboard() {
                 onChange={(e) => setHorizon(Number(e.target.value))}
                 className="rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
               >
-                <option value={3}>3 mois</option>
-                <option value={6}>6 mois</option>
-                <option value={12}>12 mois</option>
-                <option value={24}>24 mois</option>
+                <option value={3}>{t('ia.horizon3m')}</option>
+                <option value={6}>{t('ia.horizon6m')}</option>
+                <option value={12}>{t('ia.horizon12m')}</option>
+                <option value={24}>{t('ia.horizon12m')}</option>
               </select>
               <button onClick={loadPredictions} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 transition">
-                <Brain className="h-4 w-4" /> Recalculer
+                <Brain className="h-4 w-4" /> {t('ia.recalculate')}
               </button>
             </div>
           </div>
@@ -454,8 +454,7 @@ export default function IntelligenceDashboard() {
             <Card className="border border-gray-200">
               <div className="py-16 text-center">
                 <Brain className="mx-auto mb-4 h-16 w-16 text-gray-200" />
-                <p className="text-xl font-semibold text-gray-900">Aucune prédiction disponible</p>
-                <p className="mt-2 text-sm text-gray-500 max-w-md mx-auto">Saisissez des valeurs sur au moins 3 dates différentes pour activer les prédictions IA.</p>
+                <p className="text-xl font-semibold text-gray-900">{t('ia.noPredictions')}</p>
               </div>
             </Card>
           ) : (
@@ -478,7 +477,7 @@ export default function IntelligenceDashboard() {
                         <div className={`rounded-xl p-1.5 ${T.bg}`}><TIcon className={`h-4 w-4 ${T.color}`} /></div>
                       </div>
                       {pred.predicted_next_month !== null && (
-                        <p className="mt-2 text-xs text-gray-500">Dans 1 mois : <span className="font-bold text-violet-700">{pred.predicted_next_month.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} {pred.unit}</span></p>
+                        <p className="mt-2 text-xs text-gray-500">{t('ia.in1Month')} <span className="font-bold text-violet-700">{pred.predicted_next_month.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} {pred.unit}</span></p>
                       )}
                     </button>
                   );
@@ -491,11 +490,11 @@ export default function IntelligenceDashboard() {
                       <div>
                         <p className="text-xs font-mono text-gray-400">{selectedPrediction.indicator_code}</p>
                         <h3 className="text-lg font-semibold text-gray-900">{selectedPrediction.indicator_name}</h3>
-                        <p className="text-sm text-gray-500 mt-1">Tendance : <span className={`font-medium ${TREND_CONFIG[selectedPrediction.trend].color}`}>{TREND_CONFIG[selectedPrediction.trend].label}</span> · R² = {selectedPrediction.r2_score.toFixed(3)}</p>
+                        <p className="text-sm text-gray-500 mt-1">{t('ia.tabPredictive')} : <span className={`font-medium ${TREND_CONFIG[selectedPrediction.trend].color}`}>{t(TREND_CONFIG[selectedPrediction.trend].labelKey)}</span> · R² = {selectedPrediction.r2_score.toFixed(3)}</p>
                       </div>
                       {selectedPrediction.predicted_next_year !== null && (
                         <div className="rounded-2xl bg-violet-50 p-4 text-right">
-                          <p className="text-xs text-violet-600">Dans 12 mois</p>
+                          <p className="text-xs text-violet-600">{t('ia.in12Months')}</p>
                           <p className="text-2xl font-bold text-violet-700">{selectedPrediction.predicted_next_year.toLocaleString('fr-FR', { maximumFractionDigits: 1 })}</p>
                           <p className="text-xs text-violet-500">{selectedPrediction.unit}</p>
                         </div>
@@ -521,7 +520,7 @@ export default function IntelligenceDashboard() {
                     </ResponsiveContainer>
                     <div className="mt-4 flex items-center gap-2 rounded-xl bg-violet-50 p-3 text-xs text-violet-700">
                       <Brain className="h-4 w-4 flex-shrink-0" />
-                      Basé sur {selectedPrediction.historical_points} points historiques. Zone colorée = intervalle de confiance.
+                      {t('ia.confidenceInfo')}
                     </div>
                   </Card>
                 )}
@@ -536,19 +535,18 @@ export default function IntelligenceDashboard() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Anomalies détectées</h2>
-              <p className="text-sm text-gray-500">Valeurs dépassant 2σ de la moyenne historique</p>
+              <h2 className="text-lg font-semibold text-gray-900">{t('ia.anomaliesTitle')}</h2>
+              <p className="text-sm text-gray-500">{t('ia.anomaliesDesc')}</p>
             </div>
             <button onClick={loadAnomalies} className="inline-flex items-center gap-2 rounded-xl border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
-              <RefreshCw className="h-4 w-4" /> Actualiser
+              <RefreshCw className="h-4 w-4" /> {t('ia.refreshData')}
             </button>
           </div>
           {anomalies.length === 0 ? (
             <Card className="border border-gray-200">
               <div className="py-16 text-center">
                 <CheckCircle className="mx-auto mb-4 h-16 w-16 text-green-300" />
-                <p className="text-xl font-semibold text-gray-900">Aucune anomalie détectée</p>
-                <p className="mt-2 text-gray-500">Vos données sont cohérentes avec les tendances historiques.</p>
+                <p className="text-xl font-semibold text-gray-900">{t('ia.noAnomalies')}</p>
               </div>
             </Card>
           ) : (
@@ -567,7 +565,7 @@ export default function IntelligenceDashboard() {
                         </div>
                         <div className="flex gap-2 flex-shrink-0">
                           <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${a.severity === 'high' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                            {a.severity === 'high' ? 'Critique' : 'Modéré'}
+                            {a.severity === 'high' ? t('ia.severityCritical') : t('ia.severityModerate')}
                           </span>
                           <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">{a.deviation}</span>
                         </div>
@@ -590,14 +588,14 @@ export default function IntelligenceDashboard() {
       {/* ── INSIGHTS ── */}
       {activeTab === 'insights' && (
         <div className="space-y-6">
-          <h2 className="text-lg font-semibold text-gray-900">Insights {CURRENT_YEAR}</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t('ia.insightsTitle')}</h2>
           {!insights ? (
-            <Card className="border border-gray-200"><div className="py-12 text-center text-gray-500">Données insuffisantes pour générer des insights.</div></Card>
+            <Card className="border border-gray-200"><div className="py-12 text-center text-gray-500">{t('ia.noInsights')}</div></Card>
           ) : (
             <>
               {insights.recommendations.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Recommandations</h3>
+                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">{t('ia.recommendations')}</h3>
                   {insights.recommendations.map((rec, i) => {
                     const p = PRIORITY_CONFIG[rec.priority as keyof typeof PRIORITY_CONFIG] || PRIORITY_CONFIG.low;
                     return (
@@ -607,7 +605,7 @@ export default function IntelligenceDashboard() {
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <p className="font-medium text-gray-900">{rec.message}</p>
-                              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${p.badge}`}>{p.label}</span>
+                              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${p.badge}`}>{t(p.labelKey)}</span>
                             </div>
                             <p className="mt-1 text-sm text-gray-600">{rec.action}</p>
                           </div>
@@ -620,7 +618,7 @@ export default function IntelligenceDashboard() {
               )}
               {insights.achievements.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Accomplissements</h3>
+                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">{t('ia.achievements')}</h3>
                   {insights.achievements.map((a, i) => (
                     <div key={i} className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
                       <div className="flex items-center gap-3">
@@ -632,7 +630,7 @@ export default function IntelligenceDashboard() {
                 </div>
               )}
               {insights.recommendations.length === 0 && insights.achievements.length === 0 && (
-                <Card className="border border-gray-200"><div className="py-12 text-center text-gray-500">Ajoutez des données pour obtenir des insights personnalisés.</div></Card>
+                <Card className="border border-gray-200"><div className="py-12 text-center text-gray-500">{t('ia.noInsights')}</div></Card>
               )}
             </>
           )}
@@ -642,13 +640,12 @@ export default function IntelligenceDashboard() {
       {/* ── SUGGESTIONS ── */}
       {activeTab === 'suggestions' && (
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900">Suggestions d'amélioration</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t('ia.suggestionsTitle')}</h2>
           {suggestions.length === 0 ? (
             <Card className="border border-gray-200">
               <div className="py-16 text-center">
                 <Sparkles className="mx-auto mb-4 h-16 w-16 text-gray-200" />
-                <p className="text-xl font-semibold text-gray-900">Aucune suggestion pour l'instant</p>
-                <p className="mt-2 text-gray-500">Saisissez des données ESG pour obtenir des recommandations.</p>
+                <p className="text-xl font-semibold text-gray-900">{t('ia.noSuggestions')}</p>
               </div>
             </Card>
           ) : (
@@ -658,7 +655,7 @@ export default function IntelligenceDashboard() {
                 return (
                   <div key={i} className={`rounded-2xl border p-6 ${p.bg} ${p.border}`}>
                     <div className="flex items-start justify-between mb-3">
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${p.badge}`}>Priorité {p.label}</span>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${p.badge}`}>{t(p.labelKey)}</span>
                       <Sparkles className={`h-5 w-5 ${p.color}`} />
                     </div>
                     <h3 className="font-semibold text-gray-900 mb-2">{sug.title}</h3>
@@ -681,7 +678,7 @@ export default function IntelligenceDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Quick prompts */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Questions fréquentes</h3>
+            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">{t('ia.frequentQuestions')}</h3>
             {quickPrompts.map((prompt, i) => (
               <button
                 key={i}
@@ -697,9 +694,9 @@ export default function IntelligenceDashboard() {
             <div className="mt-4 p-4 bg-violet-50 border border-violet-200 rounded-xl">
               <div className="flex items-center gap-2 mb-2">
                 <Brain className="h-4 w-4 text-violet-600" />
-                <span className="text-xs font-semibold text-violet-700">IA Locale</span>
+                <span className="text-xs font-semibold text-violet-700">{t('ia.localIaBadge')}</span>
               </div>
-              <p className="text-xs text-violet-600">Base de connaissances ESG intégrée : CSRD, ESRS, GHG Protocol, GRI, TCFD.</p>
+              <p className="text-xs text-violet-600">{t('ia.knowledgeBase')} CSRD, ESRS, GHG Protocol, GRI, TCFD.</p>
             </div>
           </div>
 
@@ -711,10 +708,10 @@ export default function IntelligenceDashboard() {
                 <Brain className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="font-semibold text-gray-900 text-sm">Assistant ESG IA</p>
+                <p className="font-semibold text-gray-900 text-sm">{t('ia.chatHeaderTitle')}</p>
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                  <p className="text-xs text-gray-500">En ligne · Expert CSRD, GHG Protocol, GRI</p>
+                  <p className="text-xs text-gray-500">{t('ia.chatHeaderSubtitle')}</p>
                 </div>
               </div>
             </div>
@@ -764,7 +761,7 @@ export default function IntelligenceDashboard() {
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                  placeholder="Posez une question ESG... (ex: Qu'est-ce que le Scope 3 ?)"
+                  placeholder={t('ia.chatPlaceholder')}
                   className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                   disabled={chatLoading}
                 />
@@ -792,8 +789,8 @@ export default function IntelligenceDashboard() {
                 <FileText className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="font-bold text-gray-900">Génération rapport automatique</h3>
-                <p className="text-xs text-gray-500">Résumé exécutif généré par IA depuis vos données</p>
+                <h3 className="font-bold text-gray-900">{t('ia.generationReportTitle')}</h3>
+                <p className="text-xs text-gray-500">{t('ia.generationReportDesc')}</p>
               </div>
             </div>
 
@@ -817,7 +814,7 @@ export default function IntelligenceDashboard() {
               disabled={generatingReport}
               className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl transition text-sm"
             >
-              {generatingReport ? <><Loader2 className="h-4 w-4 animate-spin" /> Génération en cours...</> : <><Sparkles className="h-4 w-4" /> Générer le rapport IA</>}
+              {generatingReport ? <><Loader2 className="h-4 w-4 animate-spin" /> {t('ia.generating')}</> : <><Sparkles className="h-4 w-4" /> {t('ia.generateReportBtn')}</>}
             </button>
 
             {reportGenerated && (
@@ -833,7 +830,7 @@ export default function IntelligenceDashboard() {
                   <p>⚖️ <strong>Gouvernance</strong> — Politique anti-corruption publiée · 3 alertes compliance</p>
                 </div>
                 <button className="mt-3 flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition">
-                  <Download className="h-3.5 w-3.5" /> Télécharger PDF
+                  <Download className="h-3.5 w-3.5" /> {t('ia.downloadPdf')}
                 </button>
               </div>
             )}
@@ -846,8 +843,8 @@ export default function IntelligenceDashboard() {
                 <AlertTriangle className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="font-bold text-gray-900">Données manquantes ESRS</h3>
-                <p className="text-xs text-gray-500">Détection IA des indicateurs obligatoires non renseignés</p>
+                <h3 className="font-bold text-gray-900">{t('ia.missingDataTitle')}</h3>
+                <p className="text-xs text-gray-500">{t('ia.missingDataDesc')}</p>
               </div>
             </div>
 
@@ -860,13 +857,13 @@ export default function IntelligenceDashboard() {
                     <p className="text-xs text-gray-500">{item.category} · {item.esrs}</p>
                   </div>
                   <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${item.priority === 'high' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                    {item.priority === 'high' ? 'Requis' : 'Conseillé'}
+                    {item.priority === 'high' ? t('ia.priorityRequired') : t('ia.priorityAdvised')}
                   </span>
                 </div>
               ))}
             </div>
             <button className="w-full py-2.5 border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-xl transition flex items-center justify-center gap-2">
-              <ArrowRight className="h-4 w-4" /> Compléter les données manquantes
+              <ArrowRight className="h-4 w-4" /> {t('ia.completeMissingData')}
             </button>
           </Card>
 
@@ -877,8 +874,8 @@ export default function IntelligenceDashboard() {
                 <Upload className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="font-bold text-gray-900">OCR & Auto-catégorisation factures fournisseurs</h3>
-                <p className="text-xs text-gray-500">Import de factures → extraction automatique → catégorisation Scope 3</p>
+                <h3 className="font-bold text-gray-900">{t('ia.generationOcrTitle')}</h3>
+                <p className="text-xs text-gray-500">{t('ia.generationOcrDesc')}</p>
               </div>
               <span className="ml-auto bg-green-100 text-green-700 text-xs px-2.5 py-1 rounded-full font-bold">Comme Greenly</span>
             </div>
@@ -898,8 +895,8 @@ export default function IntelligenceDashboard() {
                   ) : (
                     <div className="flex flex-col items-center gap-3">
                       <Upload className="h-10 w-10 text-gray-300 group-hover:text-purple-400 transition-colors" />
-                      <p className="text-sm font-medium text-gray-700 group-hover:text-purple-700">Déposer une facture fournisseur</p>
-                      <p className="text-xs text-gray-400">PDF, PNG, JPG · Cliquez pour simuler</p>
+                      <p className="text-sm font-medium text-gray-700 group-hover:text-purple-700">{t('ia.ocrUploadTitle')}</p>
+                      <p className="text-xs text-gray-400">{t('ia.ocrUploadFormats')}</p>
                     </div>
                   )}
                 </div>
@@ -914,10 +911,10 @@ export default function IntelligenceDashboard() {
               </div>
 
               <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-3">Résultat OCR</h4>
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">{t('ia.ocrResult')}</h4>
                 {!ocrResult && !ocrUploading && (
                   <div className="h-40 flex items-center justify-center border border-gray-100 rounded-xl bg-gray-50">
-                    <p className="text-sm text-gray-400">Importez une facture pour voir le résultat</p>
+                    <p className="text-sm text-gray-400">{t('ia.ocrUploadButton')}</p>
                   </div>
                 )}
                 {ocrResult && (
@@ -940,7 +937,7 @@ export default function IntelligenceDashboard() {
                       );
                     })}
                     <button className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-xl transition">
-                      Enregistrer dans le Bilan Carbone
+                      {t('ia.saveToCarbone')}
                     </button>
                   </div>
                 )}
@@ -955,8 +952,8 @@ export default function IntelligenceDashboard() {
         <div className="space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Leviers de réduction carbone</h2>
-              <p className="text-sm text-gray-500">Classés par impact · avec benchmarks sectoriels · inspiré de Sweep & Greenly</p>
+              <h2 className="text-lg font-semibold text-gray-900">{t('ia.reductionTitle')}</h2>
+              <p className="text-sm text-gray-500">{t('ia.reductionDesc')}</p>
             </div>
             <select
               value={selectedSector}
@@ -971,7 +968,7 @@ export default function IntelligenceDashboard() {
           <Card className="border border-gray-200 shadow-sm">
             <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <BarChart2 className="h-5 w-5 text-green-600" />
-              Benchmark sectoriel — Score ESG
+              {t('ia.benchmarkTitle')}
             </h3>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={SECTOR_BENCHMARKS} layout="vertical">
@@ -990,7 +987,7 @@ export default function IntelligenceDashboard() {
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-red-400 inline-block" />Score faible (&lt;50)</span>
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-amber-400 inline-block" />Moyen (50-65)</span>
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-green-500 inline-block" />Bon (65-80)</span>
-              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-violet-600 inline-block" />Votre score</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-violet-600 inline-block" />{t('ia.legendYourScore')}</span>
             </div>
           </Card>
 
@@ -998,6 +995,7 @@ export default function IntelligenceDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {REDUCTION_LEVERS.sort((a, b) => b.impact - a.impact).map((lever, i) => {
               const Icon = lever.icon;
+              const effortLabel = lever.effort === 'Faible' ? t('ia.effortLow') : lever.effort === 'Moyen' ? t('ia.effortMedium') : t('ia.effortHigh');
               const effortColor = lever.effort === 'Faible' ? 'bg-green-100 text-green-700' : lever.effort === 'Moyen' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700';
               return (
                 <div key={i} className="flex gap-4 p-5 bg-white border border-gray-200 rounded-2xl hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group">
@@ -1018,7 +1016,7 @@ export default function IntelligenceDashboard() {
                     {/* Impact bar */}
                     <div className="mb-3">
                       <div className="flex justify-between text-xs text-gray-500 mb-1">
-                        <span>Impact potentiel</span>
+                        <span>{t('ia.reductionTitle')}</span>
                         <span className="font-semibold text-gray-700">{lever.impact}/100</span>
                       </div>
                       <div className="h-2 bg-gray-100 rounded-full">
@@ -1030,7 +1028,7 @@ export default function IntelligenceDashboard() {
                     </div>
 
                     <div className="flex flex-wrap gap-2 text-xs">
-                      <span className={`px-2 py-0.5 rounded-full font-medium ${effortColor}`}>Effort {lever.effort}</span>
+                      <span className={`px-2 py-0.5 rounded-full font-medium ${effortColor}`}>{effortLabel}</span>
                       <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">⏱ {lever.timeframe}</span>
                       <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">ROI {lever.roi}</span>
                     </div>
@@ -1043,7 +1041,7 @@ export default function IntelligenceDashboard() {
           {/* Export */}
           <div className="flex justify-end">
             <button className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition text-sm">
-              <Download className="h-4 w-4" /> Exporter le plan de réduction
+              <Download className="h-4 w-4" /> {t('decarbonation.exportPlan')}
             </button>
           </div>
         </div>

@@ -43,12 +43,19 @@ const statusConfig: Record<Status, { label: string; color: string; bg: string; i
 };
 
 function StatusBadge({ status }: { status: Status }) {
+  const { t } = useTranslation();
   const cfg = statusConfig[status];
   const Icon = cfg.icon;
+  const statusLabels: Record<Status, string> = {
+    conforme: t('compliance.statusCompliant'),
+    partiel: t('compliance.statusPartial'),
+    non_conforme: t('compliance.statusNonCompliant'),
+    na: t('compliance.statusNa'),
+  };
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.bg} ${cfg.color}`}>
       <Icon className="h-3.5 w-3.5" />
-      {cfg.label}
+      {statusLabels[status]}
     </span>
   );
 }
@@ -319,7 +326,15 @@ const regulations: Regulation[] = [
 ];
 
 // ─── Category filter ──────────────────────────────────────────────────────────
-const categories = ['Tous', 'Reporting ESG', 'Finance durable', 'Gouvernance', 'Droits humains & Environnement', 'Normes ISO'];
+// category values match regulation.category — used for filtering, not displayed directly
+const CATEGORY_KEYS: { value: string; labelKey: string }[] = [
+  { value: 'Tous', labelKey: 'compliance.catAll' },
+  { value: 'Reporting ESG', labelKey: 'compliance.catEsgReporting' },
+  { value: 'Finance durable', labelKey: 'compliance.catSustainableFinance' },
+  { value: 'Gouvernance', labelKey: 'compliance.catGovernance' },
+  { value: 'Droits humains & Environnement', labelKey: 'compliance.catHumanRights' },
+  { value: 'Normes ISO', labelKey: 'compliance.catIso' },
+];
 
 // ─── Global stats ─────────────────────────────────────────────────────────────
 function computeGlobalStats(regs: Regulation[]) {
@@ -335,9 +350,16 @@ function computeGlobalStats(regs: Regulation[]) {
 
 // ─── Regulation card ──────────────────────────────────────────────────────────
 function RegulationCard({ reg }: { reg: Regulation }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const Icon = reg.icon;
   const isNA = reg.globalStatus === 'na';
+  const statusLabels: Record<Status, string> = {
+    conforme: t('compliance.statusCompliant'),
+    partiel: t('compliance.statusPartial'),
+    non_conforme: t('compliance.statusNonCompliant'),
+    na: t('compliance.statusNa'),
+  };
 
   return (
     <div className={`bg-white rounded-2xl border-2 ${reg.globalStatus === 'conforme' ? 'border-green-200' : reg.globalStatus === 'partiel' ? 'border-amber-200' : reg.globalStatus === 'non_conforme' ? 'border-red-200' : 'border-gray-200'} shadow-sm hover:shadow-md transition-shadow overflow-hidden`}>
@@ -369,15 +391,15 @@ function RegulationCard({ reg }: { reg: Regulation }) {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 text-xs">
           <div className="flex flex-col gap-0.5">
-            <span className="text-gray-400 uppercase tracking-wider font-semibold">Périmètre</span>
+            <span className="text-gray-400 uppercase tracking-wider font-semibold">{t('compliance.metaScope')}</span>
             <span className="text-gray-700">{reg.scope}</span>
           </div>
           <div className="flex flex-col gap-0.5">
-            <span className="text-gray-400 uppercase tracking-wider font-semibold">Échéance</span>
+            <span className="text-gray-400 uppercase tracking-wider font-semibold">{t('compliance.metaDeadline')}</span>
             <span className="text-gray-700">{reg.deadline}</span>
           </div>
           <div className="flex flex-col gap-0.5">
-            <span className="text-gray-400 uppercase tracking-wider font-semibold">Autorité</span>
+            <span className="text-gray-400 uppercase tracking-wider font-semibold">{t('compliance.metaAuthority')}</span>
             <span className="text-gray-700">{reg.authority}</span>
           </div>
         </div>
@@ -388,7 +410,7 @@ function RegulationCard({ reg }: { reg: Regulation }) {
           className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors mt-2"
         >
           {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          {expanded ? 'Masquer le détail' : `Voir les ${reg.checks.length} points de conformité`}
+          {expanded ? t('compliance.hideDetail') : t('compliance.showCompliance', { count: reg.checks.length })}
         </button>
 
         {expanded && (
@@ -407,7 +429,7 @@ function RegulationCard({ reg }: { reg: Regulation }) {
                         <p className="text-xs text-gray-500 mt-0.5">{check.note}</p>
                       )}
                     </div>
-                    <span className={`text-xs font-semibold flex-shrink-0 ${cfg.color}`}>{cfg.label}</span>
+                    <span className={`text-xs font-semibold flex-shrink-0 ${cfg.color}`}>{statusLabels[check.status]}</span>
                   </div>
                 );
               })}
@@ -418,7 +440,7 @@ function RegulationCard({ reg }: { reg: Regulation }) {
               <div className="border border-amber-200 bg-amber-50 rounded-xl p-4">
                 <h4 className="text-sm font-bold text-amber-800 mb-2 flex items-center gap-1.5">
                   <AlertTriangle className="h-4 w-4" />
-                  Actions recommandées
+                  {t('compliance.recommendedActions')}
                 </h4>
                 <ul className="space-y-1.5">
                   {reg.actions.map((action, i) => (
@@ -440,13 +462,13 @@ function RegulationCard({ reg }: { reg: Regulation }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function MultiRegulatoryCompliance() {
   const { t } = useTranslation();
-  const [activeCategory, setActiveCategory] = useState('Tous');
+  const [activeCategory, setActiveCategory] = useState(CATEGORY_KEYS[0].value);
   const [search, setSearch] = useState('');
 
   const stats = computeGlobalStats(regulations);
 
   const filtered = regulations.filter(r => {
-    const matchCat = activeCategory === 'Tous' || r.category === activeCategory;
+    const matchCat = activeCategory === CATEGORY_KEYS[0].value || r.category === activeCategory;
     const matchSearch = search === '' || r.name.toLowerCase().includes(search.toLowerCase()) || r.fullName.toLowerCase().includes(search.toLowerCase());
     return matchCat && matchSearch;
   });
@@ -471,11 +493,11 @@ export default function MultiRegulatoryCompliance() {
             <div className="flex items-center gap-3">
               <button className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm">
                 <RefreshCw className="h-4 w-4" />
-                Actualiser
+                {t('compliance.refresh')}
               </button>
               <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-xl text-sm font-semibold transition-colors">
                 <Download className="h-4 w-4" />
-                Export PDF
+                {t('compliance.exportPdf')}
               </button>
             </div>
           </div>
@@ -487,11 +509,11 @@ export default function MultiRegulatoryCompliance() {
         {/* ── Global KPIs ── */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {[
-            { label: 'Score global', value: `${stats.avgScore}%`, sub: 'Conformité moyenne', color: 'text-violet-700', bg: 'bg-violet-50 border-violet-200' },
-            { label: 'Conformes', value: stats.conforme, sub: `/ ${stats.applicable} applicables`, color: 'text-green-700', bg: 'bg-green-50 border-green-200' },
-            { label: 'Partiels', value: stats.partiel, sub: 'À compléter', color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
-            { label: 'Non conformes', value: stats.nonConforme, sub: 'Actions requises', color: 'text-red-700', bg: 'bg-red-50 border-red-200' },
-            { label: 'N/A', value: regulations.length - stats.applicable, sub: 'Hors périmètre', color: 'text-gray-500', bg: 'bg-gray-50 border-gray-200' },
+            { label: t('compliance.kpiGlobalScore'), value: `${stats.avgScore}%`, sub: t('compliance.kpiGlobalScoreSub'), color: 'text-violet-700', bg: 'bg-violet-50 border-violet-200' },
+            { label: t('compliance.kpiCompliant'), value: stats.conforme, sub: t('compliance.kpiCompliantSub', { count: stats.applicable }), color: 'text-green-700', bg: 'bg-green-50 border-green-200' },
+            { label: t('compliance.kpiPartial'), value: stats.partiel, sub: t('compliance.kpiPartialSub'), color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
+            { label: t('compliance.kpiNonCompliant'), value: stats.nonConforme, sub: t('compliance.kpiNonCompliantSub'), color: 'text-red-700', bg: 'bg-red-50 border-red-200' },
+            { label: t('compliance.kpiNa'), value: regulations.length - stats.applicable, sub: t('compliance.kpiNaSub'), color: 'text-gray-500', bg: 'bg-gray-50 border-gray-200' },
           ].map((kpi, i) => (
             <div key={i} className={`rounded-2xl border-2 ${kpi.bg} p-5`}>
               <div className={`text-3xl font-extrabold ${kpi.color}`}>{kpi.value}</div>
@@ -507,9 +529,9 @@ export default function MultiRegulatoryCompliance() {
             <XCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
             <div>
               <span className="font-bold text-red-700">
-                {stats.nonConforme} référentiel{stats.nonConforme > 1 ? 's' : ''} non conforme{stats.nonConforme > 1 ? 's' : ''} —{' '}
+                {stats.nonConforme} {t('compliance.kpiNonCompliant')} —{' '}
               </span>
-              <span className="text-red-600 text-sm">des actions correctives sont requises. Consultez le détail de chaque référentiel et lancez un plan d'action.</span>
+              <span className="text-red-600 text-sm">{t('compliance.alertBanner')}</span>
             </div>
           </div>
         )}
@@ -517,19 +539,19 @@ export default function MultiRegulatoryCompliance() {
         {/* ── Filters ── */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex flex-wrap gap-2">
-            {categories.map(cat => (
+            {CATEGORY_KEYS.map(cat => (
               <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeCategory === cat ? 'bg-violet-600 text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-600 hover:border-violet-300'}`}
+                key={cat.value}
+                onClick={() => setActiveCategory(cat.value)}
+                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeCategory === cat.value ? 'bg-violet-600 text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-600 hover:border-violet-300'}`}
               >
-                {cat}
+                {t(cat.labelKey)}
               </button>
             ))}
           </div>
           <input
             type="text"
-            placeholder="Rechercher un référentiel..."
+            placeholder={t('compliance.searchPlaceholder')}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="ml-auto px-4 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 w-full sm:w-64"
@@ -546,7 +568,7 @@ export default function MultiRegulatoryCompliance() {
         {filtered.length === 0 && (
           <div className="text-center py-16 text-gray-400">
             <Shield className="h-12 w-12 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">Aucun référentiel trouvé pour cette recherche.</p>
+            <p className="font-medium">{t('compliance.noFrameworkFound')}</p>
           </div>
         )}
 
@@ -554,7 +576,7 @@ export default function MultiRegulatoryCompliance() {
         <div className="bg-white rounded-2xl border border-gray-200 p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-violet-600" />
-            Prochaines échéances réglementaires
+            {t('compliance.upcomingDeadlinesTitle')}
           </h2>
           <div className="space-y-3">
             {[
@@ -580,9 +602,7 @@ export default function MultiRegulatoryCompliance() {
         <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700">
           <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
           <p>
-            Ce tableau de bord est fourni à titre indicatif. Il ne constitue pas un avis juridique.
-            Consultez vos équipes juridiques et compliance pour valider votre conformité réglementaire.
-            Les seuils et périmètres peuvent évoluer selon les textes d'application.{' '}
+            {t('compliance.legalDisclaimer')}{' '}
             <a href="https://www.legifrance.gouv.fr" target="_blank" rel="noopener noreferrer" className="underline inline-flex items-center gap-1">
               Légifrance <ExternalLink className="h-3 w-3" />
             </a>

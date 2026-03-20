@@ -209,6 +209,7 @@ function ScoreBar({ value, color }: { value: number; color: string }) {
 
 // ─── Supplier drawer / detail panel ──────────────────────────────────────────
 function SupplierDrawer({ supplier, onClose }: { supplier: Supplier; onClose: () => void }) {
+  const { t } = useTranslation();
   const riskCfg = RISK_CFG[supplier.risk];
   const statusCfg = STATUS_CFG[supplier.status];
   const StatusIcon = statusCfg.icon;
@@ -226,10 +227,10 @@ function SupplierDrawer({ supplier, onClose }: { supplier: Supplier; onClose: ()
           {/* Header info */}
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: 'Pays', val: supplier.country },
-              { label: 'Catégorie', val: supplier.category },
-              { label: 'Dépense annuelle', val: `${supplier.spend.toLocaleString()}k€` },
-              { label: 'Effectifs', val: supplier.employees.toLocaleString() },
+              { label: t('supplychain.drawerCountry'), val: supplier.country },
+              { label: t('supplychain.drawerCategory'), val: supplier.category },
+              { label: t('supplychain.drawerSpend'), val: `${supplier.spend.toLocaleString()}k€` },
+              { label: t('supplychain.drawerHeadcount'), val: supplier.employees.toLocaleString() },
             ].map((i, idx) => (
               <div key={idx} className="bg-gray-50 rounded-xl p-3">
                 <div className="text-xs text-gray-400 mb-0.5">{i.label}</div>
@@ -244,15 +245,15 @@ function SupplierDrawer({ supplier, onClose }: { supplier: Supplier; onClose: ()
               <StatusIcon className="h-3.5 w-3.5" />{supplier.status}
             </span>
             <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${riskCfg.bg} ${riskCfg.color} border ${riskCfg.border}`}>
-              <span className={`w-2 h-2 rounded-full ${riskCfg.dot}`} />Risque {supplier.risk}
+              <span className={`w-2 h-2 rounded-full ${riskCfg.dot}`} />{t('supplychain.drawerRisk')} {supplier.risk}
             </span>
-            <span className="ml-auto text-xs text-gray-400">Dernière éval. {supplier.lastEval}</span>
+            <span className="ml-auto text-xs text-gray-400">{t('supplychain.drawerLastEval')} {supplier.lastEval}</span>
           </div>
 
           {/* Global score */}
           <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-5 text-center text-white">
             <div className="text-5xl font-extrabold mb-1">{supplier.globalScore || '—'}</div>
-            <div className="text-sm text-slate-300">Score ESG Global /100</div>
+            <div className="text-sm text-slate-300">{t('supplychain.drawerGlobalScore')}</div>
             <div className="mt-3 text-xs text-slate-400">{
               supplier.globalScore === 0 ? 'Évaluation non réalisée' :
               supplier.globalScore >= 75 ? '✓ Fournisseur validé' :
@@ -264,7 +265,7 @@ function SupplierDrawer({ supplier, onClose }: { supplier: Supplier; onClose: ()
           {/* Score breakdown */}
           {supplier.globalScore > 0 && (
             <div className="space-y-3">
-              <h3 className="text-sm font-bold text-gray-900">Détail par dimension</h3>
+              <h3 className="text-sm font-bold text-gray-900">{t('supplychain.drawerDimensions')}</h3>
               {SCORE_DIMS.map(dim => (
                 <div key={dim.key}>
                   <div className="flex items-center justify-between mb-1">
@@ -284,7 +285,7 @@ function SupplierDrawer({ supplier, onClose }: { supplier: Supplier; onClose: ()
           {supplier.flags.length > 0 && (
             <div className="space-y-2">
               <h3 className="text-sm font-bold text-red-700 flex items-center gap-1.5">
-                <AlertTriangle className="h-4 w-4" /> Alertes identifiées
+                <AlertTriangle className="h-4 w-4" /> {t('supplychain.drawerAlerts')}
               </h3>
               {supplier.flags.map((flag, i) => (
                 <div key={i} className="flex items-start gap-2 p-2.5 bg-red-50 rounded-lg border border-red-200">
@@ -297,13 +298,13 @@ function SupplierDrawer({ supplier, onClose }: { supplier: Supplier; onClose: ()
 
           {/* Questionnaire status */}
           <div className="border border-gray-200 rounded-xl p-4 space-y-2">
-            <h3 className="text-sm font-bold text-gray-900">Questionnaire ESG</h3>
+            <h3 className="text-sm font-bold text-gray-900">{t('supplychain.drawerQuestionnaire')}</h3>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Envoyé</span>
+              <span className="text-sm text-gray-600">{t('supplychain.drawerQuestionnaireLastSent')}</span>
               {supplier.questionnaireSent ? <CheckCircle className="h-4 w-4 text-green-500" /> : <X className="h-4 w-4 text-gray-300" />}
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Complété</span>
+              <span className="text-sm text-gray-600">{t('supplychain.drawerQuestionnaireCompletion')}</span>
               {supplier.questionnaireCompleted ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Clock className="h-4 w-4 text-amber-400" />}
             </div>
             <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
@@ -315,12 +316,12 @@ function SupplierDrawer({ supplier, onClose }: { supplier: Supplier; onClose: ()
           <div className="flex flex-col gap-2">
             {!supplier.questionnaireSent && (
               <button className="flex items-center justify-center gap-2 w-full py-3 bg-green-600 text-white rounded-xl font-semibold text-sm hover:bg-green-700 transition-colors">
-                <Send className="h-4 w-4" /> Envoyer le questionnaire
+                <Send className="h-4 w-4" /> {t('supplychain.drawerSendQuestionnaire')}
               </button>
             )}
             {supplier.questionnaireSent && !supplier.questionnaireCompleted && (
               <button className="flex items-center justify-center gap-2 w-full py-3 bg-amber-500 text-white rounded-xl font-semibold text-sm hover:bg-amber-600 transition-colors">
-                <RefreshCw className="h-4 w-4" /> Relancer le fournisseur
+                <RefreshCw className="h-4 w-4" /> {t('supplychain.drawerViewHistory')}
               </button>
             )}
             <button className="flex items-center justify-center gap-2 w-full py-3 border border-gray-200 text-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-50 transition-colors">
@@ -396,7 +397,7 @@ export default function SupplyChainESG() {
           </div>
           <div className="flex items-center gap-3">
             <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm">
-              <Plus className="h-4 w-4" /> Ajouter fournisseur
+              <Plus className="h-4 w-4" /> {t('supplychain.addSupplier')}
             </button>
             <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
               <Download className="h-4 w-4" /> Export
@@ -408,10 +409,10 @@ export default function SupplyChainESG() {
       {/* Tabs */}
       <div className="bg-white border-b border-gray-200 px-6">
         <div className="max-w-7xl mx-auto flex gap-0">
-          {tabs.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={`px-6 py-4 text-sm font-semibold border-b-2 transition-colors ${tab === t.id ? 'border-blue-500 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-              {t.label}
+          {tabs.map(tb => (
+            <button key={tb.id} onClick={() => setTab(tb.id)}
+              className={`px-6 py-4 text-sm font-semibold border-b-2 transition-colors ${tab === tb.id ? 'border-blue-500 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+              {tb.label}
             </button>
           ))}
         </div>
@@ -425,10 +426,10 @@ export default function SupplyChainESG() {
             {/* KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: 'Fournisseurs évalués', val: `${evaluated}/${SUPPLIERS.length}`, sub: `${Math.round(evaluated / SUPPLIERS.length * 100)}% du panel`, color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
-                { label: 'Score ESG moyen', val: avgScore, sub: 'Sur les fournisseurs évalués', color: avgScore >= 70 ? 'text-green-700' : 'text-amber-700', bg: avgScore >= 70 ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200' },
-                { label: 'Fournisseurs critiques', val: critical, sub: `${Math.round(criticalSpend / totalSpend * 100)}% des achats`, color: 'text-red-700', bg: 'bg-red-50 border-red-200' },
-                { label: 'Achats total panel', val: `${(totalSpend / 1000).toFixed(1)}M€`, sub: 'Volume annuel', color: 'text-gray-900', bg: 'bg-white border-gray-200' },
+                { label: t('supplychain.kpiEvaluated'), val: `${evaluated}/${SUPPLIERS.length}`, sub: `${Math.round(evaluated / SUPPLIERS.length * 100)}% ${t('supplychain.kpiEvaluatedSub')}`, color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
+                { label: t('supplychain.kpiAvgScore'), val: avgScore, sub: t('supplychain.kpiAvgScoreSub'), color: avgScore >= 70 ? 'text-green-700' : 'text-amber-700', bg: avgScore >= 70 ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200' },
+                { label: t('supplychain.kpiCritical'), val: critical, sub: `${Math.round(criticalSpend / totalSpend * 100)}% ${t('supplychain.kpiCriticalSub')}`, color: 'text-red-700', bg: 'bg-red-50 border-red-200' },
+                { label: t('supplychain.kpiPurchases'), val: `${(totalSpend / 1000).toFixed(1)}M€`, sub: t('supplychain.kpiPurchasesSub'), color: 'text-gray-900', bg: 'bg-white border-gray-200' },
               ].map((k, i) => (
                 <div key={i} className={`rounded-2xl border-2 ${k.bg} p-5`}>
                   <div className={`text-3xl font-extrabold ${k.color}`}>{k.val}</div>
@@ -447,7 +448,7 @@ export default function SupplyChainESG() {
                   <span className="text-red-700 text-sm">Ces fournisseurs présentent des risques droits humains ou environnementaux graves. Une action immédiate est requise au titre du devoir de vigilance (Loi 2017-399).</span>
                 </div>
                 <button onClick={() => setTab('diligence')} className="flex items-center gap-1 text-xs font-bold text-red-700 hover:underline whitespace-nowrap">
-                  Voir plan <ArrowRight className="h-3.5 w-3.5" />
+                  {t('supplychain.alertBannerLink')} <ArrowRight className="h-3.5 w-3.5" />
                 </button>
               </div>
             )}
@@ -455,7 +456,7 @@ export default function SupplyChainESG() {
             {/* Risk distribution */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                <h2 className="text-base font-bold text-gray-900 mb-5">Répartition par niveau de risque</h2>
+                <h2 className="text-base font-bold text-gray-900 mb-5">{t('supplychain.sectionRiskDistribution')}</h2>
                 <div className="space-y-3">
                   {(['Critique', 'Élevé', 'Moyen', 'Faible'] as RiskLevel[]).map(r => {
                     const count = SUPPLIERS.filter(s => s.risk === r).length;
@@ -477,7 +478,7 @@ export default function SupplyChainESG() {
               </div>
 
               <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                <h2 className="text-base font-bold text-gray-900 mb-5">Statut des évaluations</h2>
+                <h2 className="text-base font-bold text-gray-900 mb-5">{t('supplychain.sectionEvalStatus')}</h2>
                 <div className="space-y-3">
                   {(['Évalué', 'En cours', 'Non évalué', 'Refus'] as EvalStatus[]).map(s => {
                     const count = SUPPLIERS.filter(sup => sup.status === s).length;
@@ -502,7 +503,7 @@ export default function SupplyChainESG() {
 
             {/* Top risks */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h2 className="text-base font-bold text-gray-900 mb-4">Fournisseurs à traiter en priorité</h2>
+              <h2 className="text-base font-bold text-gray-900 mb-4">{t('supplychain.sectionPriority')}</h2>
               <div className="divide-y divide-gray-100">
                 {SUPPLIERS.filter(s => s.risk === 'Critique' || (s.risk === 'Élevé' && s.status === 'Non évalué')).map(s => {
                   const cfg = RISK_CFG[s.risk];
@@ -550,14 +551,14 @@ export default function SupplyChainESG() {
               <table className="w-full">
                 <thead>
                   <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider border-b border-gray-200">
-                    <th className="px-5 py-3 text-left">Fournisseur</th>
-                    <th className="px-5 py-3 text-left">Catégorie</th>
-                    <th className="px-5 py-3 text-right">Achats</th>
-                    <th className="px-5 py-3 text-center">Risque</th>
-                    <th className="px-5 py-3 text-center">Statut</th>
-                    <th className="px-5 py-3 text-center">Score ESG</th>
-                    <th className="px-5 py-3 text-center">Questionnaire</th>
-                    <th className="px-5 py-3 text-center">Actions</th>
+                    <th className="px-5 py-3 text-left">{t('supplychain.colSupplier')}</th>
+                    <th className="px-5 py-3 text-left">{t('supplychain.colCategory')}</th>
+                    <th className="px-5 py-3 text-right">{t('supplychain.colPurchases')}</th>
+                    <th className="px-5 py-3 text-center">{t('supplychain.colRisk')}</th>
+                    <th className="px-5 py-3 text-center">{t('supplychain.colStatus')}</th>
+                    <th className="px-5 py-3 text-center">{t('supplychain.colEsgScore')}</th>
+                    <th className="px-5 py-3 text-center">{t('supplychain.colQuestionnaire')}</th>
+                    <th className="px-5 py-3 text-center">{t('supplychain.colActions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -594,11 +595,11 @@ export default function SupplyChainESG() {
                         </td>
                         <td className="px-5 py-4 text-center">
                           {s.questionnaireCompleted ? (
-                            <span className="text-green-600 text-xs font-semibold flex items-center justify-center gap-1"><CheckCircle className="h-3.5 w-3.5" />Complété</span>
+                            <span className="text-green-600 text-xs font-semibold flex items-center justify-center gap-1"><CheckCircle className="h-3.5 w-3.5" />{t('supplychain.questionnaireCompleted')}</span>
                           ) : s.questionnaireSent ? (
-                            <span className="text-amber-600 text-xs font-semibold flex items-center justify-center gap-1"><Clock className="h-3.5 w-3.5" />En attente</span>
+                            <span className="text-amber-600 text-xs font-semibold flex items-center justify-center gap-1"><Clock className="h-3.5 w-3.5" />{t('supplychain.questionnairePending')}</span>
                           ) : (
-                            <span className="text-gray-400 text-xs flex items-center justify-center gap-1"><X className="h-3.5 w-3.5" />Non envoyé</span>
+                            <span className="text-gray-400 text-xs flex items-center justify-center gap-1"><X className="h-3.5 w-3.5" />{t('supplychain.questionnaireNotSent')}</span>
                           )}
                         </td>
                         <td className="px-5 py-4 text-center">
@@ -626,7 +627,7 @@ export default function SupplyChainESG() {
               <div className="lg:col-span-2 space-y-5">
                 <div className="bg-white rounded-2xl border border-gray-200 p-6">
                   <div className="flex items-center justify-between mb-5">
-                    <h2 className="text-base font-bold text-gray-900">Questionnaire ESG Fournisseurs</h2>
+                    <h2 className="text-base font-bold text-gray-900">{t('supplychain.questionnaireTabTitle')}</h2>
                     <span className="text-xs bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full font-semibold">{QUESTIONNAIRE.length} questions</span>
                   </div>
                   {/* Section tabs */}
@@ -644,11 +645,11 @@ export default function SupplyChainESG() {
                         <div className="flex items-start gap-3 mb-3">
                           <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
                           <p className="text-sm font-medium text-gray-900">{q.text}</p>
-                          <span className="text-xs text-gray-400 ml-auto flex-shrink-0">Poids : {q.weight}%</span>
+                          <span className="text-xs text-gray-400 ml-auto flex-shrink-0">{t('supplychain.questionnaireWeight')} {q.weight}%</span>
                         </div>
                         {q.type === 'yesno' && (
                           <div className="flex gap-3 ml-9">
-                            {['Oui', 'Non', 'En cours'].map(opt => (
+                            {[t('supplychain.questionnaireYes'), t('supplychain.questionnaireNo'), t('supplychain.questionnaireInProgress')].map(opt => (
                               <button key={opt} onClick={() => setQAnswers(prev => ({ ...prev, [q.id]: opt }))}
                                 className={`px-4 py-1.5 rounded-xl text-sm font-semibold transition-colors border ${qAnswers[q.id] === opt ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'}`}>
                                 {opt}
@@ -685,7 +686,7 @@ export default function SupplyChainESG() {
               {/* Send panel */}
               <div className="space-y-5">
                 <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4 sticky top-6">
-                  <h3 className="font-bold text-gray-900">Envoyer aux fournisseurs</h3>
+                  <h3 className="font-bold text-gray-900">{t('supplychain.questionnaireSendTitle')}</h3>
                   <div className="space-y-2">
                     {SUPPLIERS.filter(s => !s.questionnaireCompleted).slice(0, 5).map(s => (
                       <label key={s.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 cursor-pointer">
@@ -700,25 +701,25 @@ export default function SupplyChainESG() {
                   </div>
                   {sendSuccess ? (
                     <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700">
-                      <CheckCircle className="h-4 w-4" /> Questionnaires envoyés avec succès !
+                      <CheckCircle className="h-4 w-4" /> {t('supplychain.questionnaireSendSuccess')}
                     </div>
                   ) : (
                     <button onClick={handleSendQuestionnaire} className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors text-sm">
-                      <Send className="h-4 w-4" /> Envoyer les questionnaires
+                      <Send className="h-4 w-4" /> {t('supplychain.questionnaireSendButton')}
                     </button>
                   )}
-                  <p className="text-xs text-gray-400 text-center">Chaque fournisseur recevra un lien sécurisé par email pour remplir le questionnaire en ligne.</p>
+                  <p className="text-xs text-gray-400 text-center">{t('supplychain.questionnaireNotice')}</p>
                 </div>
 
                 {/* Progress */}
                 <div className="bg-white rounded-2xl border border-gray-200 p-5">
-                  <h3 className="font-bold text-gray-900 mb-4">Suivi des réponses</h3>
+                  <h3 className="font-bold text-gray-900 mb-4">{t('supplychain.questionnaireTrackingStatus')}</h3>
                   <div className="space-y-2.5">
                     {[
-                      { label: 'Envoyés', count: SUPPLIERS.filter(s => s.questionnaireSent).length, color: 'bg-blue-500' },
-                      { label: 'Complétés', count: SUPPLIERS.filter(s => s.questionnaireCompleted).length, color: 'bg-green-500' },
-                      { label: 'En attente', count: SUPPLIERS.filter(s => s.questionnaireSent && !s.questionnaireCompleted).length, color: 'bg-amber-400' },
-                      { label: 'Non envoyés', count: SUPPLIERS.filter(s => !s.questionnaireSent).length, color: 'bg-gray-300' },
+                      { label: t('supplychain.questionnaireTrackingLastSent'), count: SUPPLIERS.filter(s => s.questionnaireSent).length, color: 'bg-blue-500' },
+                      { label: t('supplychain.questionnaireCompleted'), count: SUPPLIERS.filter(s => s.questionnaireCompleted).length, color: 'bg-green-500' },
+                      { label: t('supplychain.questionnairePending'), count: SUPPLIERS.filter(s => s.questionnaireSent && !s.questionnaireCompleted).length, color: 'bg-amber-400' },
+                      { label: t('supplychain.questionnaireNotSent'), count: SUPPLIERS.filter(s => !s.questionnaireSent).length, color: 'bg-gray-300' },
                     ].map(item => (
                       <div key={item.label} className="flex items-center gap-3">
                         <span className="text-sm text-gray-600 w-28">{item.label}</span>
@@ -797,7 +798,7 @@ export default function SupplyChainESG() {
                           )}
                           {/* Actions requises */}
                           <div className="space-y-2">
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Mesures de vigilance requises</p>
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('supplychain.vigilanceMeasures')}</p>
                             {[
                               s.risk === 'Critique' ? 'Audit social tiers sur site dans les 60 jours' : 'Questionnaire ESG à envoyer sous 30 jours',
                               'Intégrer les clauses contractuelles droits humains',
@@ -830,7 +831,7 @@ export default function SupplyChainESG() {
 
             {/* Scope coverage */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h2 className="text-base font-bold text-gray-900 mb-4">Couverture du périmètre de vigilance</h2>
+              <h2 className="text-base font-bold text-gray-900 mb-4">{t('supplychain.vigilanceCoverage')}</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
                   { title: 'Filiales directes', pct: 95, status: 'Couvert', color: 'bg-green-500' },
@@ -854,7 +855,7 @@ export default function SupplyChainESG() {
             {/* Disclaimer */}
             <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700">
               <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
-              Ce module constitue un outil d'aide au suivi. Il ne remplace pas l'obligation légale de publication d'un plan de vigilance formalisé, ni l'accompagnement d'un conseil juridique spécialisé en droits humains et responsabilité sociétale des entreprises.
+              {t('supplychain.vigilanceDisclaimer')}
             </div>
           </div>
         )}

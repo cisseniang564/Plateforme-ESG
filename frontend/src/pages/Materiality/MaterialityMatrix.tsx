@@ -27,16 +27,16 @@ interface Rating { stakeholderId: string; issueId: string; financial: number; es
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const CAT = {
-  environmental: { label: 'Environnemental', color: 'bg-emerald-100 text-emerald-800', dot: 'bg-emerald-500' },
-  social:        { label: 'Social',          color: 'bg-blue-100 text-blue-800',       dot: 'bg-blue-500'    },
-  governance:    { label: 'Gouvernance',     color: 'bg-purple-100 text-purple-800',   dot: 'bg-purple-500'  },
+  environmental: { labelKey: 'materiality.catEnvironmental', color: 'bg-emerald-100 text-emerald-800', dot: 'bg-emerald-500' },
+  social:        { labelKey: 'materiality.catSocial',        color: 'bg-blue-100 text-blue-800',       dot: 'bg-blue-500'    },
+  governance:    { labelKey: 'materiality.catGovernance',    color: 'bg-purple-100 text-purple-800',   dot: 'bg-purple-500'  },
 } as const;
 
 const SEV = {
-  critical: { label: 'Critique', color: 'text-red-700',    bg: 'bg-red-50',    border: 'border-red-400'    },
-  high:     { label: 'Élevé',    color: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-400' },
-  medium:   { label: 'Modéré',   color: 'text-yellow-700', bg: 'bg-yellow-50', border: 'border-yellow-400' },
-  low:      { label: 'Faible',   color: 'text-green-700',  bg: 'bg-green-50',  border: 'border-green-400'  },
+  critical: { labelKey: 'materiality.sevCritical', color: 'text-red-700',    bg: 'bg-red-50',    border: 'border-red-400'    },
+  high:     { labelKey: 'materiality.sevHigh',     color: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-400' },
+  medium:   { labelKey: 'materiality.sevMedium',   color: 'text-yellow-700', bg: 'bg-yellow-50', border: 'border-yellow-400' },
+  low:      { labelKey: 'materiality.sevLow',      color: 'text-green-700',  bg: 'bg-green-50',  border: 'border-green-400'  },
 } as const;
 
 // ─── Sector suggestions ───────────────────────────────────────────────────────
@@ -101,17 +101,17 @@ const STAKEHOLDER_ROLES = ['Dirigeant / DG', 'Directeur RSE', 'Direction financi
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const catDot   = (c: string) => (CAT as any)[c]?.dot   ?? 'bg-gray-400';
 const catBadge = (c: string) => (CAT as any)[c]?.color ?? 'bg-gray-100 text-gray-600';
-const catLabel = (c: string) => (CAT as any)[c]?.label ?? c;
 const quadrant = (x: number, y: number) => {
-  if (x > 60 && y > 60) return { label: 'Double matériel',     bg: 'bg-red-50',    border: 'border-red-400',    text: 'text-red-700'    };
-  if (x > 60)           return { label: 'Impact financier',    bg: 'bg-orange-50', border: 'border-orange-400', text: 'text-orange-700' };
-  if (y > 60)           return { label: 'Impact ESG',          bg: 'bg-blue-50',   border: 'border-blue-400',   text: 'text-blue-700'   };
-  return                       { label: 'Non matériel',        bg: 'bg-gray-50',   border: 'border-gray-300',   text: 'text-gray-500'   };
+  if (x > 60 && y > 60) return { labelKey: 'materiality.quadrantDoubleMaterialLabel', bg: 'bg-red-50',    border: 'border-red-400',    text: 'text-red-700'    };
+  if (x > 60)           return { labelKey: 'materiality.quadrantFinancialImpactLabel', bg: 'bg-orange-50', border: 'border-orange-400', text: 'text-orange-700' };
+  if (y > 60)           return { labelKey: 'materiality.quadrantEsgImpactLabel',       bg: 'bg-blue-50',   border: 'border-blue-400',   text: 'text-blue-700'   };
+  return                       { labelKey: 'materiality.quadrantNotMaterialLabel',     bg: 'bg-gray-50',   border: 'border-gray-300',   text: 'text-gray-500'   };
 };
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function MaterialityMatrix() {
   const { t } = useTranslation();
+  const catLabel = (c: string) => t((CAT as any)[c]?.labelKey ?? c);
   const [issues, setIssues]     = useState<MaterialityIssue[]>([]);
   const [risks, setRisks]       = useState<ESGRisk[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -156,7 +156,7 @@ export default function MaterialityMatrix() {
       setIssues(ir.data || []);
       setRisks(rr.data || []);
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || 'Erreur lors du chargement');
+      toast.error(err.response?.data?.detail || t('materiality.toastLoadError'));
     } finally { setLoading(false); }
   };
 
@@ -164,18 +164,18 @@ export default function MaterialityMatrix() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setSubmitting(true);
     try {
-      if (selectedIssue) { await api.put(`/materiality/issues/${selectedIssue.id}`, formData); toast.success('Enjeu mis à jour'); }
-      else               { await api.post('/materiality/issues', formData);                     toast.success('Enjeu créé');       }
+      if (selectedIssue) { await api.put(`/materiality/issues/${selectedIssue.id}`, formData); toast.success(t('materiality.toastIssueUpdated')); }
+      else               { await api.post('/materiality/issues', formData);                     toast.success(t('materiality.toastIssueCreated'));  }
       closeIssueModal(); await loadAll();
-    } catch (err: any) { toast.error(err.response?.data?.detail || 'Erreur'); }
+    } catch (err: any) { toast.error(err.response?.data?.detail || t('common.error')); }
     finally { setSubmitting(false); }
   };
 
   const handleEdit   = (issue: MaterialityIssue) => { setSelectedIssue(issue); setFormData({ name: issue.name, description: issue.description || '', category: issue.category, financial_impact: issue.financial_impact, esg_impact: issue.esg_impact, stakeholders: issue.stakeholders || '' }); setShowModal(true); };
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Supprimer l'enjeu "${name}" ?`)) return;
-    try { await api.delete(`/materiality/issues/${id}`); toast.success('Enjeu supprimé'); await loadAll(); }
-    catch (err: any) { toast.error(err.response?.data?.detail || 'Erreur'); }
+    if (!confirm(t('materiality.confirmDeleteIssue', { name }))) return;
+    try { await api.delete(`/materiality/issues/${id}`); toast.success(t('materiality.toastIssueDeleted')); await loadAll(); }
+    catch (err: any) { toast.error(err.response?.data?.detail || t('common.error')); }
   };
   const closeIssueModal = () => { setShowModal(false); setSelectedIssue(null); setFormData({ name: '', description: '', category: 'environmental', financial_impact: 50, esg_impact: 50, stakeholders: '' }); };
 
@@ -183,17 +183,17 @@ export default function MaterialityMatrix() {
   const handleRiskSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setSubmitting(true);
     try {
-      if (selectedRisk) { await api.put(`/materiality/risks/${selectedRisk.id}`, riskForm); toast.success('Risque mis à jour'); }
-      else              { await api.post('/materiality/risks', riskForm);                    toast.success('Risque créé');       }
+      if (selectedRisk) { await api.put(`/materiality/risks/${selectedRisk.id}`, riskForm); toast.success(t('materiality.toastRiskUpdated')); }
+      else              { await api.post('/materiality/risks', riskForm);                    toast.success(t('materiality.toastRiskCreated'));  }
       closeRiskModal(); await loadAll();
-    } catch (err: any) { toast.error(err.response?.data?.detail || 'Erreur'); }
+    } catch (err: any) { toast.error(err.response?.data?.detail || t('common.error')); }
     finally { setSubmitting(false); }
   };
   const handleRiskEdit   = (risk: ESGRisk) => { setSelectedRisk(risk); setRiskForm({ title: risk.title, description: risk.description || '', category: risk.category, probability: risk.probability, impact: risk.impact, mitigation_plan: risk.mitigation_plan || '', responsible_person: risk.responsible_person || '' }); setShowRiskModal(true); };
   const handleRiskDelete = async (id: string, title: string) => {
-    if (!confirm(`Supprimer le risque "${title}" ?`)) return;
-    try { await api.delete(`/materiality/risks/${id}`); toast.success('Risque supprimé'); await loadAll(); }
-    catch (err: any) { toast.error(err.response?.data?.detail || 'Erreur'); }
+    if (!confirm(t('materiality.confirmDeleteRisk', { name: title }))) return;
+    try { await api.delete(`/materiality/risks/${id}`); toast.success(t('materiality.toastRiskDeleted')); await loadAll(); }
+    catch (err: any) { toast.error(err.response?.data?.detail || t('common.error')); }
   };
   const closeRiskModal = () => { setShowRiskModal(false); setSelectedRisk(null); setRiskForm({ title: '', description: '', category: 'environmental', probability: 3, impact: 3, mitigation_plan: '', responsible_person: '' }); };
 
@@ -215,8 +215,8 @@ export default function MaterialityMatrix() {
     if (!issue) return;
     try {
       await api.put(`/materiality/issues/${issue.id}`, { name: issue.name, description: issue.description || '', category: issue.category, financial_impact: issue.financial_impact, esg_impact: issue.esg_impact, stakeholders: issue.stakeholders || '' });
-      toast.success('Position sauvegardée');
-    } catch { toast.error('Erreur de sauvegarde'); await loadAll(); }
+      toast.success(t('materiality.toastPositionSaved'));
+    } catch { toast.error(t('materiality.toastSaveError')); await loadAll(); }
   };
 
   // ── Questionnaire helpers ────────────────────────────────────────────────────
@@ -244,9 +244,9 @@ export default function MaterialityMatrix() {
     }).filter(Boolean) as MaterialityIssue[];
     try {
       await Promise.all(updates.map(u => api.put(`/materiality/issues/${u.id}`, { name: u.name, description: u.description || '', category: u.category, financial_impact: u.financial_impact, esg_impact: u.esg_impact, stakeholders: u.stakeholders || '' })));
-      toast.success(`${updates.length} enjeux mis à jour depuis le questionnaire`);
+      toast.success(t('materiality.toastQuestApplied', { count: updates.length }));
       setQuestApplied(true); await loadAll();
-    } catch { toast.error('Erreur lors de l\'application des résultats'); }
+    } catch { toast.error(t('materiality.toastQuestError')); }
   };
 
   // ── Suggestions IA ───────────────────────────────────────────────────────────
@@ -254,9 +254,9 @@ export default function MaterialityMatrix() {
     try {
       await api.post('/materiality/issues', { name: s.name, description: s.description, category: s.category, financial_impact: s.financial_impact, esg_impact: s.esg_impact, stakeholders: '' });
       setAddedSuggestions(prev => new Set([...prev, s.name]));
-      toast.success(`"${s.name}" ajouté à la matrice`);
+      toast.success(t('materiality.toastAddedToMatrix', { name: s.name }));
       await loadAll();
-    } catch (err: any) { toast.error(err.response?.data?.detail || 'Erreur'); }
+    } catch (err: any) { toast.error(err.response?.data?.detail || t('common.error')); }
   };
 
   // ── Export ───────────────────────────────────────────────────────────────────
@@ -264,12 +264,12 @@ export default function MaterialityMatrix() {
     const header = 'Enjeu,Catégorie,Impact Financier,Impact ESG,Quadrant,Matériel,Priorité,Parties prenantes\n';
     const rows = issues.map(i => {
       const q = quadrant(i.financial_impact, i.esg_impact);
-      return `"${i.name}","${catLabel(i.category)}",${i.financial_impact},${i.esg_impact},"${q.label}",${i.is_material ? 'Oui' : 'Non'},"${i.priority}","${i.stakeholders || ''}"`;
+      return `"${i.name}","${catLabel(i.category)}",${i.financial_impact},${i.esg_impact},"${t(q.labelKey)}",${i.is_material ? 'Oui' : 'Non'},"${i.priority}","${i.stakeholders || ''}"`;
     }).join('\n');
     const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a'); a.href = url; a.download = 'matrice-materialite.csv'; a.click();
-    URL.revokeObjectURL(url); toast.success('Export CSV téléchargé');
+    URL.revokeObjectURL(url); toast.success(t('materiality.toastExportCsv'));
   };
 
   // ── Stats ────────────────────────────────────────────────────────────────────
@@ -311,16 +311,16 @@ export default function MaterialityMatrix() {
               <Download className="h-4 w-4" /> Export CSV
             </button>
             <Button variant="secondary" onClick={loadAll} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> Actualiser
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> {t('materiality.headerRefresh')}
             </Button>
             {activeTab === 'matrix' && (
               <Button variant="secondary" onClick={() => setShowModal(true)}>
-                <Plus className="h-4 w-4 mr-2" /> Ajouter un enjeu
+                <Plus className="h-4 w-4 mr-2" /> {t('materiality.headerAddIssue')}
               </Button>
             )}
             {activeTab === 'risks' && (
               <Button variant="secondary" onClick={() => setShowRiskModal(true)}>
-                <Plus className="h-4 w-4 mr-2" /> Ajouter un risque
+                <Plus className="h-4 w-4 mr-2" /> {t('materiality.headerAddRisk')}
               </Button>
             )}
           </div>
@@ -330,11 +330,11 @@ export default function MaterialityMatrix() {
       {/* ── KPI Cards ───────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {[
-          { label: 'Total enjeux',      value: stats.total,         icon: Grid,        color: 'text-indigo-600', bg: 'bg-indigo-50',  border: 'border-indigo-400' },
-          { label: 'Matériels',         value: stats.material,      icon: Target,      color: 'text-red-600',    bg: 'bg-red-50',     border: 'border-red-400'    },
-          { label: 'Haute priorité',    value: stats.highPriority,  icon: AlertCircle, color: 'text-orange-600', bg: 'bg-orange-50',  border: 'border-orange-400' },
-          { label: 'Environnemental',   value: stats.env,           icon: CheckCircle, color: 'text-green-600',  bg: 'bg-green-50',   border: 'border-green-400'  },
-          { label: 'Risques critiques', value: stats.criticalRisks, icon: ShieldAlert, color: 'text-purple-600', bg: 'bg-purple-50',  border: 'border-purple-400' },
+          { label: t('materiality.kpiTotal'),         value: stats.total,         icon: Grid,        color: 'text-indigo-600', bg: 'bg-indigo-50',  border: 'border-indigo-400' },
+          { label: t('materiality.kpiMaterial'),      value: stats.material,      icon: Target,      color: 'text-red-600',    bg: 'bg-red-50',     border: 'border-red-400'    },
+          { label: t('materiality.kpiHighPriority'),  value: stats.highPriority,  icon: AlertCircle, color: 'text-orange-600', bg: 'bg-orange-50',  border: 'border-orange-400' },
+          { label: t('materiality.kpiEnvironmental'), value: stats.env,           icon: CheckCircle, color: 'text-green-600',  bg: 'bg-green-50',   border: 'border-green-400'  },
+          { label: t('materiality.kpiCriticalRisks'), value: stats.criticalRisks, icon: ShieldAlert, color: 'text-purple-600', bg: 'bg-purple-50',  border: 'border-purple-400' },
         ].map(({ label, value, icon: Icon, color, bg, border }) => (
           <Card key={label} className={`border-l-4 ${border} shadow-sm`}>
             <div className="flex items-center justify-between">
@@ -348,10 +348,10 @@ export default function MaterialityMatrix() {
       {/* ── Tab bar ─────────────────────────────────────────────────────────── */}
       <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit flex-wrap">
         {([
-          { key: 'matrix',        label: 'Matrice',            icon: Grid       },
-          { key: 'questionnaire', label: 'Questionnaire',      icon: Users      },
-          { key: 'suggestions',   label: 'Suggestions IA',     icon: Sparkles   },
-          { key: 'risks',         label: 'Registre des risques', icon: ShieldAlert },
+          { key: 'matrix',        label: t('materiality.tabMatrix'),         icon: Grid       },
+          { key: 'questionnaire', label: t('materiality.tabQuestionnaire'),  icon: Users      },
+          { key: 'suggestions',   label: t('materiality.tabIaSuggestions'),  icon: Sparkles   },
+          { key: 'risks',         label: t('materiality.tabRisks'),          icon: ShieldAlert },
         ] as const).map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 ${activeTab === tab.key ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
@@ -371,10 +371,10 @@ export default function MaterialityMatrix() {
           <div className="flex justify-end">
             <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
               <button onClick={() => setViewMode('matrix')} className={`px-4 py-1.5 rounded text-sm font-medium transition-all ${viewMode === 'matrix' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}>
-                <Grid className="h-4 w-4 inline mr-1.5" />Matrice
+                <Grid className="h-4 w-4 inline mr-1.5" />{t('materiality.viewMatrix')}
               </button>
               <button onClick={() => setViewMode('list')} className={`px-4 py-1.5 rounded text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}>
-                <List className="h-4 w-4 inline mr-1.5" />Liste
+                <List className="h-4 w-4 inline mr-1.5" />{t('materiality.viewList')}
               </button>
             </div>
           </div>
@@ -383,7 +383,7 @@ export default function MaterialityMatrix() {
           {viewMode === 'list' && (
             <div className="space-y-3">
               {issues.length === 0 ? (
-                <Card className="py-16 text-center"><Grid className="mx-auto h-12 w-12 text-gray-300 mb-3" /><p className="font-semibold text-gray-700">Aucun enjeu enregistré</p></Card>
+                <Card className="py-16 text-center"><Grid className="mx-auto h-12 w-12 text-gray-300 mb-3" /><p className="font-semibold text-gray-700">{t('materiality.noIssues')}</p></Card>
               ) : issues.map(issue => {
                 const q = quadrant(issue.financial_impact, issue.esg_impact);
                 return (
@@ -393,21 +393,21 @@ export default function MaterialityMatrix() {
                         <div className="flex flex-wrap items-center gap-2 mb-2">
                           <div className={`w-2.5 h-2.5 rounded-full ${catDot(issue.category)}`} />
                           <h3 className="text-base font-semibold text-gray-900">{issue.name}</h3>
-                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${q.bg} ${q.border} ${q.text}`}>{q.label}</span>
+                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${q.bg} ${q.border} ${q.text}`}>{t(q.labelKey)}</span>
                         </div>
                         {issue.description && <p className="text-sm text-gray-500 mb-3">{issue.description}</p>}
                         <div className="flex flex-wrap gap-3">
                           <div className="flex items-center gap-2 bg-orange-50 rounded-lg px-3 py-1.5">
-                            <span className="text-xs text-gray-600">Impact financier</span>
+                            <span className="text-xs text-gray-600">{t('materiality.listFinancialImpact')}</span>
                             <span className="text-sm font-bold text-orange-600">{issue.financial_impact}/100</span>
                           </div>
                           <div className="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-1.5">
-                            <span className="text-xs text-gray-600">Impact ESG</span>
+                            <span className="text-xs text-gray-600">{t('materiality.listEsgImpact')}</span>
                             <span className="text-sm font-bold text-blue-600">{issue.esg_impact}/100</span>
                           </div>
                           <span className={`text-xs px-2.5 py-1.5 rounded-lg font-medium ${catBadge(issue.category)}`}>{catLabel(issue.category)}</span>
                         </div>
-                        {issue.stakeholders && <p className="mt-2 text-xs text-gray-400">Parties prenantes : {issue.stakeholders}</p>}
+                        {issue.stakeholders && <p className="mt-2 text-xs text-gray-400">{t('materiality.listStakeholdersFull')} {issue.stakeholders}</p>}
                       </div>
                       <div className="flex gap-1.5 flex-shrink-0">
                         <button onClick={() => handleEdit(issue)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"><Edit className="h-4 w-4" /></button>
@@ -425,14 +425,14 @@ export default function MaterialityMatrix() {
             <Card className="overflow-hidden">
               <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">Matrice de Double Matérialité</h2>
+                  <h2 className="text-lg font-bold text-gray-900">{t('materiality.matrixTitle2')}</h2>
                   <p className="text-sm text-gray-500">
-                    <span className="inline-flex items-center gap-1 text-indigo-600 font-medium">✦ Glissez-déposez</span> les points pour repositionner · Survolez pour les détails · Cliquez pour modifier
+                    <span className="inline-flex items-center gap-1 text-indigo-600 font-medium">✦ {t('materiality.dragTooltip')}</span> {t('materiality.matrixDragSubtitle')}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3 text-xs text-gray-600">
                   {Object.entries(CAT).map(([k, v]) => (
-                    <div key={k} className="flex items-center gap-1.5"><div className={`w-3 h-3 rounded-full ${v.dot}`} />{v.label}</div>
+                    <div key={k} className="flex items-center gap-1.5"><div className={`w-3 h-3 rounded-full ${v.dot}`} />{t(v.labelKey)}</div>
                   ))}
                 </div>
               </div>
@@ -453,10 +453,10 @@ export default function MaterialityMatrix() {
                 </div>
 
                 {/* Quadrant labels */}
-                <div className="absolute top-11 right-11 px-2 py-1 bg-blue-100/90 rounded text-[11px] font-bold text-blue-700 shadow-sm pointer-events-none">Impact ESG Élevé</div>
-                <div className="absolute bottom-11 right-11 px-2 py-1 bg-red-100/90 rounded text-[11px] font-bold text-red-700 shadow-sm pointer-events-none">⚠ DOUBLE MATÉRIEL</div>
-                <div className="absolute top-11 left-16 px-2 py-1 bg-white/80 rounded text-[11px] text-gray-400 shadow-sm pointer-events-none">Impact ESG ↑</div>
-                <div className="absolute bottom-11 left-16 px-2 py-1 bg-white/80 rounded text-[11px] text-gray-400 shadow-sm pointer-events-none">Impact Financier →</div>
+                <div className="absolute top-11 right-11 px-2 py-1 bg-blue-100/90 rounded text-[11px] font-bold text-blue-700 shadow-sm pointer-events-none">{t('materiality.quadrantEsgHigh')}</div>
+                <div className="absolute bottom-11 right-11 px-2 py-1 bg-red-100/90 rounded text-[11px] font-bold text-red-700 shadow-sm pointer-events-none">{t('materiality.quadrantDoubleMat')}</div>
+                <div className="absolute top-11 left-16 px-2 py-1 bg-white/80 rounded text-[11px] text-gray-400 shadow-sm pointer-events-none">{t('materiality.quadrantEsgUp')}</div>
+                <div className="absolute bottom-11 left-16 px-2 py-1 bg-white/80 rounded text-[11px] text-gray-400 shadow-sm pointer-events-none">{t('materiality.quadrantFinRight')}</div>
 
                 {/* Plot area */}
                 <div
@@ -471,8 +471,8 @@ export default function MaterialityMatrix() {
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-center">
                         <Grid className="mx-auto h-10 w-10 text-gray-300 mb-2" />
-                        <p className="text-gray-400 text-sm">Ajoutez des enjeux pour les voir apparaître</p>
-                        <p className="text-gray-300 text-xs mt-1">Utilisez "Suggestions IA" pour démarrer rapidement</p>
+                        <p className="text-gray-400 text-sm">{t('materiality.emptyMatrixLine1')}</p>
+                        <p className="text-gray-300 text-xs mt-1">{t('materiality.emptyMatrixLine2')}</p>
                       </div>
                     </div>
                   ) : issues.map((issue, idx) => (
@@ -517,14 +517,14 @@ export default function MaterialityMatrix() {
 
                 {/* Axis labels */}
                 <div className="absolute left-2 top-1/2 -translate-y-1/2 -rotate-90">
-                  <p className="text-xs font-semibold text-gray-500 whitespace-nowrap tracking-wide">Impact Environnement &amp; Société →</p>
+                  <p className="text-xs font-semibold text-gray-500 whitespace-nowrap tracking-wide">{t('materiality.matrixAxisY')}</p>
                 </div>
                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
-                  <p className="text-xs font-semibold text-gray-500 tracking-wide">Impact Performance Financière →</p>
+                  <p className="text-xs font-semibold text-gray-500 tracking-wide">{t('materiality.matrixAxisX')}</p>
                 </div>
               </div>
               <p className="mt-3 text-xs text-gray-400 text-center">
-                ✦ Glissez-déposez les points pour repositionner · Sauvegarde automatique · Les enjeux matériels sont encadrés en rouge
+                ✦ {t('materiality.matrixDragHint')}
               </p>
             </Card>
           )}
@@ -536,7 +536,7 @@ export default function MaterialityMatrix() {
         <div className="space-y-6">
           {/* Step indicator */}
           <div className="flex items-center gap-2">
-            {['Parties prenantes', 'Enjeux', 'Évaluations', 'Résultats'].map((label, i) => (
+            {[t('materiality.stepStakeholders'), t('materiality.stepIssues'), t('materiality.stepRatings'), t('materiality.stepResults')].map((label, i) => (
               <div key={i} className="flex items-center gap-2">
                 <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold transition-all ${i <= questStep ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
                   {i < questStep ? <Check className="h-4 w-4" /> : i + 1}
@@ -550,29 +550,29 @@ export default function MaterialityMatrix() {
           {/* Step 0: Add stakeholders */}
           {questStep === 0 && (
             <Card>
-              <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2"><Users className="h-5 w-5 text-indigo-500" /> Étape 1 · Définir les parties prenantes</h3>
-              <p className="text-sm text-gray-500 mb-5">Ajoutez les acteurs qui participeront à l'évaluation de la matérialité.</p>
+              <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2"><Users className="h-5 w-5 text-indigo-500" /> {t('materiality.step0HeadingFull')}</h3>
+              <p className="text-sm text-gray-500 mb-5">{t('materiality.step0DescFull')}</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                 <input value={stakeholderForm.name} onChange={e => setStakeholderForm(p => ({ ...p, name: e.target.value }))}
-                  placeholder="Nom / Entité" className="px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+                  placeholder={t('materiality.stakeholderNamePlaceholder')} className="px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
                 <select value={stakeholderForm.role} onChange={e => setStakeholderForm(p => ({ ...p, role: e.target.value }))}
                   className="px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500">
                   {STAKEHOLDER_ROLES.map(r => <option key={r}>{r}</option>)}
                 </select>
                 <select value={stakeholderForm.type} onChange={e => setStakeholderForm(p => ({ ...p, type: e.target.value as 'internal' | 'external' }))}
                   className="px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500">
-                  <option value="internal">Interne</option>
-                  <option value="external">Externe</option>
+                  <option value="internal">{t('materiality.stakeholderInternal')}</option>
+                  <option value="external">{t('materiality.stakeholderExternal')}</option>
                 </select>
               </div>
-              <Button onClick={addStakeholder} variant="secondary" className="mb-5"><Plus className="h-4 w-4 mr-1" /> Ajouter</Button>
+              <Button onClick={addStakeholder} variant="secondary" className="mb-5"><Plus className="h-4 w-4 mr-1" /> {t('materiality.addStakeholder')}</Button>
               {stakeholders.length > 0 && (
                 <div className="space-y-2 mb-5">
                   {stakeholders.map(s => (
                     <div key={s.id} className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl border border-gray-100">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${s.type === 'internal' ? 'bg-indigo-500' : 'bg-purple-500'}`}>{s.name.charAt(0).toUpperCase()}</div>
-                        <div><p className="text-sm font-semibold text-gray-900">{s.name}</p><p className="text-xs text-gray-500">{s.role} · {s.type === 'internal' ? 'Interne' : 'Externe'}</p></div>
+                        <div><p className="text-sm font-semibold text-gray-900">{s.name}</p><p className="text-xs text-gray-500">{s.role} · {s.type === 'internal' ? t('materiality.stakeholderInternal') : t('materiality.stakeholderExternal')}</p></div>
                       </div>
                       <button onClick={() => setStakeholders(p => p.filter(x => x.id !== s.id))} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><X className="h-4 w-4" /></button>
                     </div>
@@ -582,11 +582,11 @@ export default function MaterialityMatrix() {
               {stakeholders.length === 0 && (
                 <div className="py-8 text-center text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200 mb-5">
                   <Users className="mx-auto h-8 w-8 mb-2 opacity-40" />
-                  <p className="text-sm">Aucune partie prenante ajoutée</p>
+                  <p className="text-sm">{t('materiality.noStakeholdersAdded')}</p>
                 </div>
               )}
               <div className="flex justify-end">
-                <Button onClick={() => setQuestStep(1)} disabled={stakeholders.length === 0}>Étape suivante <ChevronRight className="h-4 w-4 ml-1" /></Button>
+                <Button onClick={() => setQuestStep(1)} disabled={stakeholders.length === 0}>{t('materiality.nextStep')} <ChevronRight className="h-4 w-4 ml-1" /></Button>
               </div>
             </Card>
           )}
@@ -594,11 +594,11 @@ export default function MaterialityMatrix() {
           {/* Step 1: Select issues */}
           {questStep === 1 && (
             <Card>
-              <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2"><BarChart3 className="h-5 w-5 text-indigo-500" /> Étape 2 · Sélectionner les enjeux à évaluer</h3>
-              <p className="text-sm text-gray-500 mb-5">Cochez les enjeux sur lesquels vous souhaitez recueillir l'avis des parties prenantes.</p>
+              <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2"><BarChart3 className="h-5 w-5 text-indigo-500" /> {t('materiality.step1HeadingFull')}</h3>
+              <p className="text-sm text-gray-500 mb-5">{t('materiality.step1DescFull')}</p>
               {issues.length === 0 ? (
                 <div className="py-8 text-center text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200 mb-5">
-                  <p className="text-sm">Aucun enjeu dans la matrice. Ajoutez des enjeux dans l'onglet "Matrice" ou via "Suggestions IA".</p>
+                  <p className="text-sm">{t('materiality.noIssuesInMatrix')}</p>
                 </div>
               ) : (
                 <div className="space-y-2 mb-5">
@@ -606,7 +606,7 @@ export default function MaterialityMatrix() {
                     <input type="checkbox" checked={selectedIssueIds.length === issues.length}
                       onChange={e => setSelectedIssueIds(e.target.checked ? issues.map(i => i.id) : [])}
                       className="w-4 h-4 rounded text-indigo-600" />
-                    <span className="text-sm font-semibold text-indigo-700">Sélectionner tout ({issues.length})</span>
+                    <span className="text-sm font-semibold text-indigo-700">{t('materiality.selectAllCount', { count: issues.length })}</span>
                   </label>
                   {issues.map(issue => (
                     <label key={issue.id} className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all">
@@ -621,9 +621,9 @@ export default function MaterialityMatrix() {
                 </div>
               )}
               <div className="flex justify-between">
-                <Button variant="secondary" onClick={() => setQuestStep(0)}><ChevronLeft className="h-4 w-4 mr-1" /> Retour</Button>
+                <Button variant="secondary" onClick={() => setQuestStep(0)}><ChevronLeft className="h-4 w-4 mr-1" /> {t('materiality.prevStep')}</Button>
                 <Button onClick={() => { setQuestStep(2); setRatings(stakeholders.flatMap(s => selectedIssueIds.map(iId => ({ stakeholderId: s.id, issueId: iId, financial: 5, esg: 5 })))); }} disabled={selectedIssueIds.length === 0}>
-                  Étape suivante <ChevronRight className="h-4 w-4 ml-1" />
+                  {t('materiality.nextStep')} <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               </div>
             </Card>
@@ -633,8 +633,8 @@ export default function MaterialityMatrix() {
           {questStep === 2 && (
             <div className="space-y-4">
               <Card>
-                <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2"><Target className="h-5 w-5 text-indigo-500" /> Étape 3 · Saisir les évaluations</h3>
-                <p className="text-sm text-gray-500">Pour chaque partie prenante, notez l'importance de chaque enjeu de 1 (faible) à 10 (critique).</p>
+                <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2"><Target className="h-5 w-5 text-indigo-500" /> {t('materiality.step2HeadingFull')}</h3>
+                <p className="text-sm text-gray-500">{t('materiality.step2DescFull')}</p>
               </Card>
               {stakeholders.map(s => (
                 <Card key={s.id}>
@@ -653,13 +653,13 @@ export default function MaterialityMatrix() {
                             <span className="text-sm font-medium text-gray-800">{issue.name}</span>
                           </div>
                           <div>
-                            <label className="text-xs text-gray-500 block mb-1">Impact financier: <span className="font-bold text-orange-600">{getRating(s.id, iId, 'financial')}/10</span></label>
+                            <label className="text-xs text-gray-500 block mb-1">{t('materiality.ratingFinancial')}: <span className="font-bold text-orange-600">{getRating(s.id, iId, 'financial')}/10</span></label>
                             <input type="range" min="1" max="10" value={getRating(s.id, iId, 'financial')}
                               onChange={e => setRating(s.id, iId, 'financial', Number(e.target.value))}
                               className="w-full accent-orange-500" />
                           </div>
                           <div>
-                            <label className="text-xs text-gray-500 block mb-1">Impact ESG: <span className="font-bold text-blue-600">{getRating(s.id, iId, 'esg')}/10</span></label>
+                            <label className="text-xs text-gray-500 block mb-1">{t('materiality.ratingEsg')}: <span className="font-bold text-blue-600">{getRating(s.id, iId, 'esg')}/10</span></label>
                             <input type="range" min="1" max="10" value={getRating(s.id, iId, 'esg')}
                               onChange={e => setRating(s.id, iId, 'esg', Number(e.target.value))}
                               className="w-full accent-blue-500" />
@@ -671,8 +671,8 @@ export default function MaterialityMatrix() {
                 </Card>
               ))}
               <div className="flex justify-between">
-                <Button variant="secondary" onClick={() => setQuestStep(1)}><ChevronLeft className="h-4 w-4 mr-1" /> Retour</Button>
-                <Button onClick={() => setQuestStep(3)}>Voir les résultats <ChevronRight className="h-4 w-4 ml-1" /></Button>
+                <Button variant="secondary" onClick={() => setQuestStep(1)}><ChevronLeft className="h-4 w-4 mr-1" /> {t('materiality.prevStep')}</Button>
+                <Button onClick={() => setQuestStep(3)}>{t('materiality.viewResults')} <ChevronRight className="h-4 w-4 ml-1" /></Button>
               </div>
             </div>
           )}
@@ -681,8 +681,8 @@ export default function MaterialityMatrix() {
           {questStep === 3 && (
             <div className="space-y-4">
               <Card>
-                <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2"><BarChart3 className="h-5 w-5 text-indigo-500" /> Étape 4 · Résultats & Pondération</h3>
-                <p className="text-sm text-gray-500 mb-5">Scores moyens calculés à partir des {stakeholders.length} évaluations. Cliquez sur "Appliquer" pour mettre à jour la matrice.</p>
+                <h3 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2"><BarChart3 className="h-5 w-5 text-indigo-500" /> {t('materiality.step3HeadingFull')}</h3>
+                <p className="text-sm text-gray-500 mb-5">{t('materiality.step3DescFull', { count: stakeholders.length })}</p>
                 <div className="space-y-3">
                   {selectedIssueIds.map(iId => {
                     const issue = issues.find(i => i.id === iId);
@@ -696,15 +696,15 @@ export default function MaterialityMatrix() {
                         <div className={`w-2 h-2 rounded-full flex-shrink-0 ${catDot(issue.category)}`} />
                         <div className="flex-1">
                           <p className="text-sm font-semibold text-gray-900">{issue.name}</p>
-                          <p className={`text-xs mt-0.5 font-medium ${q.text}`}>{q.label}</p>
+                          <p className={`text-xs mt-0.5 font-medium ${q.text}`}>{t(q.labelKey)}</p>
                         </div>
                         <div className="flex gap-3 text-center">
                           <div className="bg-orange-50 rounded-lg px-3 py-2">
-                            <p className="text-[10px] text-gray-500">Financier</p>
+                            <p className="text-[10px] text-gray-500">{t('materiality.resultFinancial')}</p>
                             <p className="text-sm font-bold text-orange-600">{avgFin}</p>
                           </div>
                           <div className="bg-blue-50 rounded-lg px-3 py-2">
-                            <p className="text-[10px] text-gray-500">ESG</p>
+                            <p className="text-[10px] text-gray-500">{t('materiality.resultEsg')}</p>
                             <p className="text-sm font-bold text-blue-600">{avgEsg}</p>
                           </div>
                         </div>
@@ -714,14 +714,14 @@ export default function MaterialityMatrix() {
                 </div>
               </Card>
               <div className="flex justify-between">
-                <Button variant="secondary" onClick={() => setQuestStep(2)}><ChevronLeft className="h-4 w-4 mr-1" /> Retour</Button>
+                <Button variant="secondary" onClick={() => setQuestStep(2)}><ChevronLeft className="h-4 w-4 mr-1" /> {t('materiality.prevStep')}</Button>
                 {questApplied ? (
                   <div className="flex items-center gap-2 text-green-600 font-semibold text-sm">
-                    <CheckCircle className="h-5 w-5" /> Matrice mise à jour
+                    <CheckCircle className="h-5 w-5" /> {t('materiality.matrixUpdated')}
                   </div>
                 ) : (
                   <Button onClick={applyQuestionnaire} className="bg-green-600 hover:bg-green-700">
-                    <Check className="h-4 w-4 mr-1" /> Appliquer à la matrice
+                    <Check className="h-4 w-4 mr-1" /> {t('materiality.applyToMatrix')}
                   </Button>
                 )}
               </div>
@@ -739,8 +739,8 @@ export default function MaterialityMatrix() {
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Suggestions IA · Enjeux sectoriels</h3>
-                <p className="text-sm text-gray-500">Sélectionnez votre secteur pour obtenir des enjeux ESG pré-configurés selon les standards CSRD/ESRS.</p>
+                <h3 className="text-lg font-bold text-gray-900">{t('materiality.iaTabSectorTitle')}</h3>
+                <p className="text-sm text-gray-500">{t('materiality.iaTabSectorDesc')}</p>
               </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
@@ -780,17 +780,17 @@ export default function MaterialityMatrix() {
                       </div>
                       <div className={`rounded-lg px-2.5 py-1.5 text-center ${q.bg}`}>
                         <p className="text-[10px] text-gray-500">Zone</p>
-                        <p className={`text-[10px] font-bold ${q.text}`}>{q.label}</p>
+                        <p className={`text-[10px] font-bold ${q.text}`}>{t(q.labelKey)}</p>
                       </div>
                     </div>
                     {already || justAdded ? (
                       <div className="flex items-center gap-1.5 text-green-600 text-xs font-semibold">
-                        <CheckCircle className="h-4 w-4" /> Ajouté
+                        <CheckCircle className="h-4 w-4" /> {t('materiality.iaSuggAdded')}
                       </div>
                     ) : (
                       <button onClick={() => addSuggestion(s)}
                         className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition-all shadow-sm shadow-indigo-200 hover:shadow-indigo-300">
-                        <Plus className="h-3.5 w-3.5" /> Ajouter
+                        <Plus className="h-3.5 w-3.5" /> {t('common.add')}
                       </button>
                     )}
                   </div>
@@ -803,8 +803,8 @@ export default function MaterialityMatrix() {
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-semibold text-amber-800">Note sur les scores pré-configurés</p>
-                <p className="text-xs text-amber-700 mt-1">Les impacts financiers et ESG proposés sont des benchmarks sectoriels basés sur les référentiels ESRS, GRI et SASB. Ils sont personnalisables via le questionnaire parties prenantes ou directement dans la matrice.</p>
+                <p className="text-sm font-semibold text-amber-800">{t('materiality.iaBenchmarkTitle')}</p>
+                <p className="text-xs text-amber-700 mt-1">{t('materiality.iaBenchmarkDesc')}</p>
               </div>
             </div>
           </Card>
@@ -817,18 +817,18 @@ export default function MaterialityMatrix() {
           {risks.length === 0 ? (
             <Card className="py-16 text-center">
               <ShieldAlert className="mx-auto h-12 w-12 text-gray-300 mb-3" />
-              <p className="font-semibold text-gray-700">Aucun risque enregistré</p>
-              <p className="text-sm text-gray-500 mt-1 mb-4">Identifiez et documentez vos risques ESG pour mieux les piloter.</p>
-              <Button onClick={() => setShowRiskModal(true)}><Plus className="h-4 w-4 mr-2" />Ajouter le premier risque</Button>
+              <p className="font-semibold text-gray-700">{t('materiality.riskEmptyTitle')}</p>
+              <p className="text-sm text-gray-500 mt-1 mb-4">{t('materiality.riskEmptyDescFull')}</p>
+              <Button onClick={() => setShowRiskModal(true)}><Plus className="h-4 w-4 mr-2" />{t('materiality.riskEmptyAddFirst')}</Button>
             </Card>
           ) : (
             <>
               <Card className="border border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"><Zap className="h-4 w-4 text-yellow-500" />Vue d'ensemble des risques</h3>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"><Zap className="h-4 w-4 text-yellow-500" />{t('materiality.riskOverviewTitle')}</h3>
                 <div className="grid grid-cols-4 gap-2">
                   {Object.entries(SEV).map(([key, cfg]) => (
                     <div key={key} className={`rounded-lg p-3 border ${cfg.bg} ${cfg.border}`}>
-                      <p className={`text-xs font-medium ${cfg.color}`}>{cfg.label}</p>
+                      <p className={`text-xs font-medium ${cfg.color}`}>{t(cfg.labelKey)}</p>
                       <p className={`text-2xl font-bold ${cfg.color}`}>{risks.filter(r => r.severity === key).length}</p>
                     </div>
                   ))}
@@ -841,26 +841,26 @@ export default function MaterialityMatrix() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex flex-wrap items-center gap-2 mb-2">
-                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${sev.bg} ${sev.color} border ${sev.border}`}>{sev.label}</span>
+                          <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${sev.bg} ${sev.color} border ${sev.border}`}>{t(sev.labelKey)}</span>
                           <h3 className="text-base font-semibold text-gray-900">{risk.title}</h3>
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${catBadge(risk.category)}`}>{catLabel(risk.category)}</span>
                         </div>
                         {risk.description && <p className="text-sm text-gray-500 mb-3">{risk.description}</p>}
                         <div className="flex flex-wrap gap-3 text-xs text-gray-600">
                           <div className="flex items-center gap-1.5 bg-gray-50 rounded px-2.5 py-1.5">
-                            Probabilité : <div className="flex gap-0.5 mx-1">{[1,2,3,4,5].map(i => <div key={i} className={`w-2 h-2 rounded-full ${i <= risk.probability ? 'bg-indigo-500' : 'bg-gray-200'}`} />)}</div>
+                            {t('materiality.riskProbabilityLabel')} <div className="flex gap-0.5 mx-1">{[1,2,3,4,5].map(i => <div key={i} className={`w-2 h-2 rounded-full ${i <= risk.probability ? 'bg-indigo-500' : 'bg-gray-200'}`} />)}</div>
                             <span className="font-bold text-indigo-600">{risk.probability}/5</span>
                           </div>
                           <div className="flex items-center gap-1.5 bg-gray-50 rounded px-2.5 py-1.5">
-                            Impact : <div className="flex gap-0.5 mx-1">{[1,2,3,4,5].map(i => <div key={i} className={`w-2 h-2 rounded-full ${i <= risk.impact ? 'bg-orange-500' : 'bg-gray-200'}`} />)}</div>
+                            {t('materiality.riskImpactLabel')} <div className="flex gap-0.5 mx-1">{[1,2,3,4,5].map(i => <div key={i} className={`w-2 h-2 rounded-full ${i <= risk.impact ? 'bg-orange-500' : 'bg-gray-200'}`} />)}</div>
                             <span className="font-bold text-orange-600">{risk.impact}/5</span>
                           </div>
-                          <div className="bg-gray-50 rounded px-2.5 py-1.5 font-semibold">Score : <span className={sev.color}>{risk.risk_score}/25</span></div>
-                          {risk.responsible_person && <div className="text-gray-500">Responsable : <span className="font-medium text-gray-700">{risk.responsible_person}</span></div>}
+                          <div className="bg-gray-50 rounded px-2.5 py-1.5 font-semibold">{t('materiality.riskScoreLabel')} <span className={sev.color}>{risk.risk_score}/25</span></div>
+                          {risk.responsible_person && <div className="text-gray-500">{t('materiality.riskOwnerLabel')} <span className="font-medium text-gray-700">{risk.responsible_person}</span></div>}
                         </div>
                         {risk.mitigation_plan && (
                           <div className="mt-3 p-2.5 bg-indigo-50 rounded-lg border border-indigo-100">
-                            <p className="text-xs font-semibold text-indigo-700 mb-0.5">Plan de mitigation</p>
+                            <p className="text-xs font-semibold text-indigo-700 mb-0.5">{t('materiality.riskMitigationPlan')}</p>
                             <p className="text-xs text-indigo-600">{risk.mitigation_plan}</p>
                           </div>
                         )}
@@ -883,45 +883,45 @@ export default function MaterialityMatrix() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
-              <h2 className="text-xl font-bold text-gray-900">{selectedIssue ? "Modifier l'enjeu" : 'Nouvel enjeu de matérialité'}</h2>
+              <h2 className="text-xl font-bold text-gray-900">{selectedIssue ? t('materiality.issueModalEditTitle') : t('materiality.issueModalNewTitle')}</h2>
               <button onClick={closeIssueModal} className="p-2 hover:bg-gray-100 rounded-lg transition-colors"><X className="h-5 w-5 text-gray-400" /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Nom *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('materiality.issueModalNameLabel')}</label>
                 <input type="text" required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" placeholder="Ex : Émissions de CO₂" disabled={submitting} />
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" placeholder={t('materiality.issueNamePlaceholder')} disabled={submitting} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('materiality.issueModalDescLabel')}</label>
                 <textarea rows={3} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm resize-none" disabled={submitting} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Catégorie *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('materiality.issueModalCatLabel')}</label>
                 <select value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm" disabled={submitting}>
-                  <option value="environmental">🌿 Environnemental</option>
-                  <option value="social">👥 Social</option>
-                  <option value="governance">⚖️ Gouvernance</option>
+                  <option value="environmental">🌿 {t('materiality.catEnvironmental')}</option>
+                  <option value="social">👥 {t('materiality.catSocial')}</option>
+                  <option value="governance">⚖️ {t('materiality.catGovernance')}</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Impact Financier : <span className="font-bold text-orange-600">{formData.financial_impact}/100</span></label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('materiality.issueModalFinancialLabel')} <span className="font-bold text-orange-600">{formData.financial_impact}/100</span></label>
                 <input type="range" min="0" max="100" value={formData.financial_impact} onChange={e => setFormData({ ...formData, financial_impact: Number(e.target.value) })} className="w-full accent-orange-500" disabled={submitting} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Impact ESG : <span className="font-bold text-blue-600">{formData.esg_impact}/100</span></label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('materiality.issueModalEsgLabel')} <span className="font-bold text-blue-600">{formData.esg_impact}/100</span></label>
                 <input type="range" min="0" max="100" value={formData.esg_impact} onChange={e => setFormData({ ...formData, esg_impact: Number(e.target.value) })} className="w-full accent-blue-500" disabled={submitting} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Parties prenantes</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('materiality.issueModalStakeholders')}</label>
                 <input type="text" value={formData.stakeholders} onChange={e => setFormData({ ...formData, stakeholders: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm" placeholder="Ex : Investisseurs, ONG, Régulateurs" disabled={submitting} />
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm" placeholder={t('materiality.issueStakeholdersPlaceholder')} disabled={submitting} />
               </div>
               <div className="flex gap-3 pt-2">
-                <Button type="submit" className="flex-1" disabled={submitting}>{submitting ? <Spinner size="sm" className="mr-2" /> : null}{selectedIssue ? 'Mettre à jour' : "Créer l'enjeu"}</Button>
-                <Button type="button" variant="secondary" onClick={closeIssueModal} className="flex-1" disabled={submitting}>Annuler</Button>
+                <Button type="submit" className="flex-1" disabled={submitting}>{submitting ? <Spinner size="sm" className="mr-2" /> : null}{selectedIssue ? t('materiality.issueModalUpdate') : t('materiality.issueModalCreate')}</Button>
+                <Button type="button" variant="secondary" onClick={closeIssueModal} className="flex-1" disabled={submitting}>{t('common.cancel')}</Button>
               </div>
             </form>
           </div>
@@ -933,55 +933,55 @@ export default function MaterialityMatrix() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
-              <h2 className="text-xl font-bold text-gray-900">{selectedRisk ? 'Modifier le risque' : 'Nouveau risque ESG'}</h2>
+              <h2 className="text-xl font-bold text-gray-900">{selectedRisk ? t('materiality.riskModalEditTitle') : t('materiality.riskModalNewTitle')}</h2>
               <button onClick={closeRiskModal} className="p-2 hover:bg-gray-100 rounded-lg transition-colors"><X className="h-5 w-5 text-gray-400" /></button>
             </div>
             <form onSubmit={handleRiskSubmit} className="p-6 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Titre *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('materiality.riskModalTitleLabel')}</label>
                 <input type="text" required value={riskForm.title} onChange={e => setRiskForm({ ...riskForm, title: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm" placeholder="Ex : Risque de transition climatique" disabled={submitting} />
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm" placeholder={t('materiality.riskTitlePlaceholder')} disabled={submitting} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('materiality.riskModalDescLabel')}</label>
                 <textarea rows={3} value={riskForm.description} onChange={e => setRiskForm({ ...riskForm, description: e.target.value })}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm resize-none" disabled={submitting} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Catégorie *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('materiality.riskModalCatLabel')}</label>
                 <select value={riskForm.category} onChange={e => setRiskForm({ ...riskForm, category: e.target.value })}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm" disabled={submitting}>
-                  <option value="environmental">🌿 Environnemental</option>
-                  <option value="social">👥 Social</option>
-                  <option value="governance">⚖️ Gouvernance</option>
+                  <option value="environmental">🌿 {t('materiality.catEnvironmental')}</option>
+                  <option value="social">👥 {t('materiality.catSocial')}</option>
+                  <option value="governance">⚖️ {t('materiality.catGovernance')}</option>
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Probabilité : <span className="font-bold text-indigo-600">{riskForm.probability}/5</span></label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('materiality.riskModalProbLabel')} <span className="font-bold text-indigo-600">{riskForm.probability}/5</span></label>
                   <input type="range" min="1" max="5" value={riskForm.probability} onChange={e => setRiskForm({ ...riskForm, probability: Number(e.target.value) })} className="w-full accent-indigo-500" disabled={submitting} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Impact : <span className="font-bold text-orange-600">{riskForm.impact}/5</span></label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('materiality.riskModalImpactLabel')} <span className="font-bold text-orange-600">{riskForm.impact}/5</span></label>
                   <input type="range" min="1" max="5" value={riskForm.impact} onChange={e => setRiskForm({ ...riskForm, impact: Number(e.target.value) })} className="w-full accent-orange-500" disabled={submitting} />
                 </div>
               </div>
               <div className="p-3 bg-gray-50 rounded-xl text-center text-sm">
-                Score de risque : <span className={`ml-2 text-lg font-bold ${riskForm.probability * riskForm.impact >= 20 ? 'text-red-600' : riskForm.probability * riskForm.impact >= 12 ? 'text-orange-600' : riskForm.probability * riskForm.impact >= 6 ? 'text-yellow-600' : 'text-green-600'}`}>{riskForm.probability * riskForm.impact}/25</span>
+                {t('materiality.riskModalScoreLabel')} <span className={`ml-2 text-lg font-bold ${riskForm.probability * riskForm.impact >= 20 ? 'text-red-600' : riskForm.probability * riskForm.impact >= 12 ? 'text-orange-600' : riskForm.probability * riskForm.impact >= 6 ? 'text-yellow-600' : 'text-green-600'}`}>{riskForm.probability * riskForm.impact}/25</span>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Plan de mitigation</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('materiality.riskModalMitigLabel')}</label>
                 <textarea rows={2} value={riskForm.mitigation_plan} onChange={e => setRiskForm({ ...riskForm, mitigation_plan: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm resize-none" placeholder="Actions prévues..." disabled={submitting} />
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm resize-none" placeholder={t('materiality.riskModalMitigPlaceholder')} disabled={submitting} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Responsable</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('materiality.riskModalOwnerLabel')}</label>
                 <input type="text" value={riskForm.responsible_person} onChange={e => setRiskForm({ ...riskForm, responsible_person: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm" placeholder="Nom ou fonction" disabled={submitting} />
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm" placeholder={t('materiality.riskModalOwnerPlaceholder')} disabled={submitting} />
               </div>
               <div className="flex gap-3 pt-2">
-                <Button type="submit" className="flex-1" disabled={submitting}>{submitting ? <Spinner size="sm" className="mr-2" /> : null}{selectedRisk ? 'Mettre à jour' : 'Créer le risque'}</Button>
-                <Button type="button" variant="secondary" onClick={closeRiskModal} className="flex-1" disabled={submitting}>Annuler</Button>
+                <Button type="submit" className="flex-1" disabled={submitting}>{submitting ? <Spinner size="sm" className="mr-2" /> : null}{selectedRisk ? t('materiality.riskModalUpdate') : t('materiality.riskModalCreate')}</Button>
+                <Button type="button" variant="secondary" onClick={closeRiskModal} className="flex-1" disabled={submitting}>{t('common.cancel')}</Button>
               </div>
             </form>
           </div>

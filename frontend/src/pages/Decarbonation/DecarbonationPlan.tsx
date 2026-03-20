@@ -121,6 +121,7 @@ const DIFF_CFG: Record<Difficulty, string> = {
 
 // ─── Mini SVG trajectory chart ────────────────────────────────────────────────
 function TrajectoryChart({ planReduction }: { planReduction: number }) {
+  const { t: tr } = useTranslation();
   const W = 700, H = 260, PAD = { t: 20, r: 20, b: 40, l: 60 };
   const cw = W - PAD.l - PAD.r;
   const ch = H - PAD.t - PAD.b;
@@ -177,14 +178,14 @@ function TrajectoryChart({ planReduction }: { planReduction: number }) {
 
       {/* Net Zero zone */}
       <rect x={PAD.l} y={yScale(1200)} width={cw} height={yScale(0) - yScale(1200)} fill="#16a34a" opacity={0.05} />
-      <text x={PAD.l + 6} y={yScale(900)} fontSize={9} fill="#16a34a" opacity={0.8}>Zone Net Zero</text>
+      <text x={PAD.l + 6} y={yScale(900)} fontSize={9} fill="#16a34a" opacity={0.8}>{tr('decarbonation.legendNetZeroZone')}</text>
 
       {/* Legend */}
       {[
-        { label: 'Scénario BAU', color: '#ef4444', dash: '6 4' },
-        { label: 'Trajectoire SBTi 1.5°C', color: '#16a34a', dash: '' },
-        { label: 'Rythme actuel', color: '#f59e0b', dash: '4 3' },
-        ...(planReduction > 0 ? [{ label: 'Avec votre plan', color: '#3b82f6', dash: '6 3' }] : []),
+        { label: tr('decarbonation.legendBau'), color: '#ef4444', dash: '6 4' },
+        { label: tr('decarbonation.legendSbtiPath'), color: '#16a34a', dash: '' },
+        { label: tr('decarbonation.legendCurrentPace'), color: '#f59e0b', dash: '4 3' },
+        ...(planReduction > 0 ? [{ label: tr('decarbonation.legendWithPlan'), color: '#3b82f6', dash: '6 3' }] : []),
       ].map((l, i) => (
         <g key={i} transform={`translate(${PAD.l + i * 160}, ${H - 8})`}>
           <line x1={0} y1={0} x2={24} y2={0} stroke={l.color} strokeWidth={2} strokeDasharray={l.dash} />
@@ -204,9 +205,16 @@ function ActionCard({ action, onTogglePlan, onStatusChange }: {
   onTogglePlan: (id: string) => void;
   onStatusChange: (id: string, s: ActionStatus) => void;
 }) {
+  const { t: tr } = useTranslation();
   const Icon = CATEGORY_ICONS[action.category] || Leaf;
   const sc = STATUS_CFG[action.status];
   const SIcon = sc.icon;
+
+  const statusLabels: Record<ActionStatus, string> = {
+    à_faire: tr('decarbonation.statusTodo'),
+    en_cours: tr('decarbonation.statusInProgress'),
+    terminé: tr('decarbonation.statusDone'),
+  };
 
   return (
     <div className={`bg-white rounded-2xl border-2 ${action.inPlan ? 'border-green-400 shadow-green-100 shadow-md' : 'border-gray-100 hover:border-green-200 hover:shadow-md'} p-5 transition-all`}>
@@ -231,7 +239,7 @@ function ActionCard({ action, onTogglePlan, onStatusChange }: {
         <button
           onClick={() => onTogglePlan(action.id)}
           className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all ${action.inPlan ? 'bg-green-500 text-white hover:bg-red-500' : 'bg-gray-100 text-gray-400 hover:bg-green-100 hover:text-green-600'}`}
-          title={action.inPlan ? 'Retirer du plan' : 'Ajouter au plan'}
+          title={action.inPlan ? tr('decarbonation.removeFromPlan') : tr('decarbonation.addToPlan')}
         >
           {action.inPlan ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
         </button>
@@ -243,15 +251,15 @@ function ActionCard({ action, onTogglePlan, onStatusChange }: {
       <div className="grid grid-cols-3 gap-2 mb-4">
         <div className="bg-green-50 rounded-xl p-2.5 text-center">
           <div className="text-base font-bold text-green-700">{action.impact}</div>
-          <div className="text-xs text-green-600">tCO₂e/an</div>
+          <div className="text-xs text-green-600">{tr('decarbonation.metricImpact')}</div>
         </div>
         <div className="bg-blue-50 rounded-xl p-2.5 text-center">
           <div className="text-base font-bold text-blue-700">{action.cost}k€</div>
-          <div className="text-xs text-blue-600">Investissement</div>
+          <div className="text-xs text-blue-600">{tr('decarbonation.metricInvestment')}</div>
         </div>
         <div className="bg-amber-50 rounded-xl p-2.5 text-center">
           <div className="text-base font-bold text-amber-700">{action.roi < 12 ? `${action.roi}m` : `${Math.round(action.roi / 12)}a`}</div>
-          <div className="text-xs text-amber-600">ROI</div>
+          <div className="text-xs text-amber-600">{tr('decarbonation.metricRoi')}</div>
         </div>
       </div>
 
@@ -259,7 +267,7 @@ function ActionCard({ action, onTogglePlan, onStatusChange }: {
       <div className="flex items-center justify-between">
         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${sc.bg} ${sc.color}`}>
           <SIcon className="h-3 w-3" />
-          {sc.label}
+          {statusLabels[action.status]}
         </span>
         <div className="flex gap-1">
           {(['à_faire', 'en_cours', 'terminé'] as ActionStatus[]).map(s => (
@@ -267,7 +275,7 @@ function ActionCard({ action, onTogglePlan, onStatusChange }: {
               key={s}
               onClick={() => onStatusChange(action.id, s)}
               className={`w-6 h-6 rounded-lg text-xs transition-colors ${action.status === s ? `${STATUS_CFG[s].bg} ${STATUS_CFG[s].color}` : 'bg-gray-100 text-gray-300 hover:bg-gray-200'}`}
-              title={STATUS_CFG[s].label}
+              title={statusLabels[s]}
             >
               {s === 'à_faire' ? '○' : s === 'en_cours' ? '◑' : '●'}
             </button>
@@ -360,7 +368,7 @@ export default function DecarbonationPlan() {
             </div>
             <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
               <Download className="h-4 w-4" />
-              Exporter le plan
+              {tr('decarbonation.exportPlan')}
             </button>
           </div>
         </div>
@@ -389,10 +397,10 @@ export default function DecarbonationPlan() {
             {/* KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: 'Émissions base 2024', value: `${(BASE_EMISSIONS / 1000).toFixed(1)}k`, unit: 'tCO₂e', color: 'text-gray-900', bg: 'bg-white border-gray-200' },
-                { label: 'Objectif SBTi 2030', value: `${(SBTI_TARGET_2030 / 1000).toFixed(1)}k`, unit: 'tCO₂e (-42%)', color: 'text-green-700', bg: 'bg-green-50 border-green-200' },
-                { label: 'Réduction plan actuel', value: planReduction.toLocaleString(), unit: 'tCO₂e/an', color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
-                { label: 'Investissement total plan', value: `${planCost}k`, unit: '€', color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
+                { label: tr('decarbonation.kpiBase2024'), value: `${(BASE_EMISSIONS / 1000).toFixed(1)}k`, unit: 'tCO₂e', color: 'text-gray-900', bg: 'bg-white border-gray-200' },
+                { label: tr('decarbonation.kpiSbtiTarget'), value: `${(SBTI_TARGET_2030 / 1000).toFixed(1)}k`, unit: 'tCO₂e (-42%)', color: 'text-green-700', bg: 'bg-green-50 border-green-200' },
+                { label: tr('decarbonation.kpiPlanReduction'), value: planReduction.toLocaleString(), unit: 'tCO₂e/an', color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
+                { label: tr('decarbonation.kpiTotalInvestment'), value: `${planCost}k`, unit: '€', color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
               ].map((k, i) => (
                 <div key={i} className={`rounded-2xl border-2 ${k.bg} p-5`}>
                   <div className={`text-3xl font-extrabold ${k.color}`}>{k.value}</div>
@@ -405,16 +413,16 @@ export default function DecarbonationPlan() {
             {/* Progress toward SBTi */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-900">Progression vers l'objectif SBTi 2030</h2>
+                <h2 className="text-lg font-bold text-gray-900">{tr('decarbonation.sbtiProgressTitle')}</h2>
                 <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${onTrack ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                  {onTrack ? '✓ Objectif atteint' : `Manque ${(projected2030 - SBTI_TARGET_2030).toLocaleString()} tCO₂e`}
+                  {onTrack ? `✓ ${tr('decarbonation.onTrack')}` : `${tr('decarbonation.offTrack')} ${(projected2030 - SBTI_TARGET_2030).toLocaleString()} tCO₂e`}
                 </span>
               </div>
               <div className="space-y-3">
                 {/* SBTi bar */}
                 <div>
                   <div className="flex justify-between text-xs text-gray-500 mb-1.5">
-                    <span>Réduction requise pour SBTi (-42%)</span>
+                    <span>{tr('decarbonation.sbtiRequired')}</span>
                     <span className="font-semibold">{(BASE_EMISSIONS - SBTI_TARGET_2030).toLocaleString()} tCO₂e</span>
                   </div>
                   <div className="h-4 bg-gray-100 rounded-full overflow-hidden">
@@ -424,8 +432,8 @@ export default function DecarbonationPlan() {
                     />
                   </div>
                   <div className="flex justify-between text-xs mt-1">
-                    <span className="text-green-600 font-semibold">Votre plan : {planReduction.toLocaleString()} tCO₂e ({planPct}%)</span>
-                    <span className="text-gray-400">Cible 2030</span>
+                    <span className="text-green-600 font-semibold">{tr('decarbonation.yourPlan')} {planReduction.toLocaleString()} tCO₂e ({planPct}%)</span>
+                    <span className="text-gray-400">{tr('decarbonation.target2030')}</span>
                   </div>
                 </div>
               </div>
@@ -434,22 +442,22 @@ export default function DecarbonationPlan() {
               <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-100">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-gray-900">{planActions.length}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">Actions dans votre plan</div>
+                  <div className="text-xs text-gray-500 mt-0.5">{tr('decarbonation.quickStatsActions')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600">{completedActions}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">Terminées</div>
+                  <div className="text-xs text-gray-500 mt-0.5">{tr('decarbonation.quickStatsDone')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">{inProgressActions}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">En cours</div>
+                  <div className="text-xs text-gray-500 mt-0.5">{tr('decarbonation.quickStatsInProgress')}</div>
                 </div>
               </div>
             </div>
 
             {/* Trajectory preview */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Trajectoire d'émissions</h2>
+              <h2 className="text-lg font-bold text-gray-900 mb-4">{tr('decarbonation.trajectoryTitle')}</h2>
               <TrajectoryChart planReduction={planReduction} />
             </div>
 
@@ -458,9 +466,9 @@ export default function DecarbonationPlan() {
               <div className="bg-white rounded-2xl border border-gray-200 p-6">
                 <h2 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
                   <Star className="h-5 w-5 text-amber-500" />
-                  Quick Wins — résultats immédiats, coût minimal
+                  {tr('decarbonation.quickWinsTitle')}
                 </h2>
-                <p className="text-sm text-gray-500 mb-5">Ces {quickWins.length} actions peuvent être lancées immédiatement avec un fort impact carbone.</p>
+                <p className="text-sm text-gray-500 mb-5">{tr('decarbonation.quickWinsDesc')}</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {quickWins.slice(0, 4).map(a => (
                     <div key={a.id} className="flex items-start gap-3 p-4 bg-amber-50 rounded-xl border border-amber-100">
@@ -479,7 +487,7 @@ export default function DecarbonationPlan() {
                 </div>
                 {quickWins.length > 4 && (
                   <button onClick={() => { setTab('actions'); setQuickWinOnly(true); }} className="mt-4 text-sm text-green-600 hover:underline flex items-center gap-1">
-                    Voir les {quickWins.length} quick wins <ChevronRight className="h-4 w-4" />
+                    {tr('decarbonation.viewQuickWins', { count: quickWins.length })} <ChevronRight className="h-4 w-4" />
                   </button>
                 )}
               </div>
@@ -495,11 +503,10 @@ export default function DecarbonationPlan() {
               <div className="flex items-center gap-4 p-4 bg-green-50 border-2 border-green-200 rounded-2xl flex-wrap">
                 <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
                 <span className="text-sm font-semibold text-green-800">
-                  {planActions.length} action{planActions.length > 1 ? 's' : ''} dans votre plan —{' '}
-                  {planReduction.toLocaleString()} tCO₂e/an · {planCost}k€ · Couverture SBTi : {planPct}%
+                  {tr('decarbonation.catalogSummary', { count: planActions.length, reduction: planReduction.toLocaleString(), cost: planCost })}
                 </span>
                 <button onClick={() => setTab('overview')} className="ml-auto flex items-center gap-1 text-xs text-green-700 hover:underline">
-                  Voir le plan <ArrowRight className="h-3.5 w-3.5" />
+                  {tr('decarbonation.viewPlan')} <ArrowRight className="h-3.5 w-3.5" />
                 </button>
               </div>
             )}
@@ -535,7 +542,7 @@ export default function DecarbonationPlan() {
               </label>
             </div>
 
-            <div className="text-xs text-gray-400">{sortedFiltered.length} action{sortedFiltered.length > 1 ? 's' : ''} — triées par impact décroissant</div>
+            <div className="text-xs text-gray-400">{sortedFiltered.length} {tr('decarbonation.actionsSorted')}</div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {sortedFiltered.map(a => (
@@ -549,8 +556,8 @@ export default function DecarbonationPlan() {
         {tab === 'scenarios' && (
           <div className="space-y-8">
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-2">Scénarios pré-configurés</h2>
-              <p className="text-sm text-gray-500 mb-6">Activez un ou plusieurs scénarios pour voir instantanément leur impact sur votre trajectoire.</p>
+              <h2 className="text-lg font-bold text-gray-900 mb-2">{tr('decarbonation.scenariosTitle')}</h2>
+              <p className="text-sm text-gray-500 mb-6">{tr('decarbonation.scenariosDesc')}</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {SCENARIOS.map(sc => {
                   const scActions = actions.filter(a => sc.actionIds.includes(a.id));
@@ -566,10 +573,10 @@ export default function DecarbonationPlan() {
                         </div>
                       </div>
                       <div className="space-y-1 text-sm">
-                        <div className="flex justify-between"><span className="text-gray-500">Actions</span><span className="font-semibold">{scActions.length}</span></div>
-                        <div className="flex justify-between"><span className="text-gray-500">Réduction</span><span className="font-semibold text-green-700">{scImpact.toLocaleString()} tCO₂e/an</span></div>
-                        <div className="flex justify-between"><span className="text-gray-500">Investissement</span><span className="font-semibold text-amber-700">{scCost}k€</span></div>
-                        <div className="flex justify-between"><span className="text-gray-500">Couverture SBTi</span><span className="font-semibold">{Math.min(Math.round(scImpact / (BASE_EMISSIONS - SBTI_TARGET_2030) * 100), 100)}%</span></div>
+                        <div className="flex justify-between"><span className="text-gray-500">{tr('decarbonation.scenarioActions')}</span><span className="font-semibold">{scActions.length}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-500">{tr('decarbonation.scenarioReduction')}</span><span className="font-semibold text-green-700">{scImpact.toLocaleString()} tCO₂e/an</span></div>
+                        <div className="flex justify-between"><span className="text-gray-500">{tr('decarbonation.scenarioInvestment')}</span><span className="font-semibold text-amber-700">{scCost}k€</span></div>
+                        <div className="flex justify-between"><span className="text-gray-500">{tr('decarbonation.scenarioSbtiCoverage')}</span><span className="font-semibold">{Math.min(Math.round(scImpact / (BASE_EMISSIONS - SBTI_TARGET_2030) * 100), 100)}%</span></div>
                       </div>
                     </div>
                   );
@@ -579,13 +586,13 @@ export default function DecarbonationPlan() {
 
             {/* What-if result */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Résultat What-if — Votre plan actuel</h2>
+              <h2 className="text-lg font-bold text-gray-900 mb-4">{tr('decarbonation.scenariosTitle')} — {tr('decarbonation.viewPlan')}</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 {[
-                  { label: 'Actions sélectionnées', val: planActions.length, unit: '', color: 'text-gray-900' },
-                  { label: 'Réduction totale', val: planReduction.toLocaleString(), unit: 'tCO₂e/an', color: 'text-green-700' },
-                  { label: 'Émissions projetées 2030', val: projected2030.toLocaleString(), unit: 'tCO₂e', color: onTrack ? 'text-green-700' : 'text-amber-700' },
-                  { label: 'Couverture objectif SBTi', val: `${planPct}%`, unit: '', color: planPct >= 100 ? 'text-green-700' : 'text-amber-700' },
+                  { label: tr('decarbonation.whatifSelectedActions'), val: planActions.length, unit: '', color: 'text-gray-900' },
+                  { label: tr('decarbonation.whatifTotalReduction'), val: planReduction.toLocaleString(), unit: 'tCO₂e/an', color: 'text-green-700' },
+                  { label: tr('decarbonation.whatifProjected2030'), val: projected2030.toLocaleString(), unit: 'tCO₂e', color: onTrack ? 'text-green-700' : 'text-amber-700' },
+                  { label: tr('decarbonation.whatifSbtiCoverage'), val: `${planPct}%`, unit: '', color: planPct >= 100 ? 'text-green-700' : 'text-amber-700' },
                 ].map((k, i) => (
                   <div key={i} className="bg-gray-50 rounded-xl p-4 text-center">
                     <div className={`text-2xl font-bold ${k.color}`}>{k.val}</div>
@@ -599,13 +606,13 @@ export default function DecarbonationPlan() {
 
             {/* Impact matrix */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Matrice Impact / Coût</h2>
-              <p className="text-sm text-gray-500 mb-4">Les actions en haut à gauche sont les plus efficaces (fort impact, faible coût).</p>
+              <h2 className="text-lg font-bold text-gray-900 mb-4">{tr('decarbonation.matrixTitle')}</h2>
+              <p className="text-sm text-gray-500 mb-4">{tr('decarbonation.matrixDesc')}</p>
               <div className="relative bg-gray-50 rounded-xl" style={{ height: 300 }}>
-                <div className="absolute top-2 left-1/2 text-xs text-gray-400">Impact élevé ↑</div>
-                <div className="absolute bottom-2 left-1/2 text-xs text-gray-400">Impact faible ↓</div>
-                <div className="absolute left-2 top-1/2 text-xs text-gray-400 -rotate-90">Coût faible ←</div>
-                <div className="absolute right-2 top-1/2 text-xs text-gray-400 rotate-90">Coût élevé →</div>
+                <div className="absolute top-2 left-1/2 text-xs text-gray-400">{tr('decarbonation.matrixQuadrantQ1')} ↑</div>
+                <div className="absolute bottom-2 left-1/2 text-xs text-gray-400">{tr('decarbonation.matrixQuadrantQ3')} ↓</div>
+                <div className="absolute left-2 top-1/2 text-xs text-gray-400 -rotate-90">{tr('decarbonation.matrixQuadrantQ3')} ←</div>
+                <div className="absolute right-2 top-1/2 text-xs text-gray-400 rotate-90">{tr('decarbonation.matrixQuadrantQ4')} →</div>
                 {/* Quadrant lines */}
                 <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gray-200" />
                 <div className="absolute top-1/2 left-0 right-0 h-px bg-gray-200" />
@@ -627,7 +634,7 @@ export default function DecarbonationPlan() {
                 })}
                 {planActions.length === 0 && (
                   <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-400">
-                    Ajoutez des actions à votre plan pour les voir apparaître ici
+                    {tr('decarbonation.matrixEmpty')}
                   </div>
                 )}
               </div>
@@ -641,12 +648,12 @@ export default function DecarbonationPlan() {
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">Trajectoire d'émissions 2024–2050</h2>
-                  <p className="text-sm text-gray-500 mt-0.5">Alignement SBTi 1.5°C et objectif Net Zero 2050</p>
+                  <h2 className="text-lg font-bold text-gray-900">{tr('decarbonation.trajectoryTabTitle')}</h2>
+                  <p className="text-sm text-gray-500 mt-0.5">{tr('decarbonation.trajectoryTabSubtitle')}</p>
                 </div>
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-xl">
                   <Wind className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-semibold text-green-700">Net Zero 2050 : {NET_ZERO_2050} tCO₂e</span>
+                  <span className="text-sm font-semibold text-green-700">{tr('decarbonation.netZeroBadge')} : {NET_ZERO_2050} tCO₂e</span>
                 </div>
               </div>
               <TrajectoryChart planReduction={planReduction} />
@@ -655,15 +662,15 @@ export default function DecarbonationPlan() {
             {/* Milestones table */}
             <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100">
-                <h2 className="text-lg font-bold text-gray-900">Jalons clés</h2>
+                <h2 className="text-lg font-bold text-gray-900">{tr('decarbonation.milestonesTitle')}</h2>
               </div>
               <table className="w-full">
                 <thead>
                   <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
-                    <th className="px-6 py-3 text-left">Année</th>
-                    <th className="px-6 py-3 text-right">Scénario BAU</th>
-                    <th className="px-6 py-3 text-right">Trajectoire SBTi</th>
-                    <th className="px-6 py-3 text-right">Votre plan</th>
+                    <th className="px-6 py-3 text-left">{tr('decarbonation.milestoneYear')}</th>
+                    <th className="px-6 py-3 text-right">{tr('decarbonation.legendBau')}</th>
+                    <th className="px-6 py-3 text-right">{tr('decarbonation.legendSbtiPath')}</th>
+                    <th className="px-6 py-3 text-right">{tr('decarbonation.yourPlan')}</th>
                     <th className="px-6 py-3 text-right">Vs SBTi</th>
                   </tr>
                 </thead>
@@ -675,8 +682,8 @@ export default function DecarbonationPlan() {
                       <tr key={d.year} className={`${d.year === 2030 ? 'bg-green-50' : ''}`}>
                         <td className="px-6 py-3 font-bold text-gray-900">
                           {d.year}
-                          {d.year === 2030 && <span className="ml-2 text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full">Objectif SBTi</span>}
-                          {d.year === 2050 && <span className="ml-2 text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full">Net Zero</span>}
+                          {d.year === 2030 && <span className="ml-2 text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full">{tr('decarbonation.kpiSbtiTarget')}</span>}
+                          {d.year === 2050 && <span className="ml-2 text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full">{tr('decarbonation.netZeroBadge')}</span>}
                         </td>
                         <td className="px-6 py-3 text-right text-red-600 font-medium">{d.bau.toLocaleString()}</td>
                         <td className="px-6 py-3 text-right text-green-700 font-semibold">{d.sbti.toLocaleString()}</td>
@@ -699,8 +706,7 @@ export default function DecarbonationPlan() {
             <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700">
               <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
               <div>
-                La trajectoire SBTi 1.5°C suit une réduction de <strong>-5.8% par an</strong> jusqu'en 2030 puis <strong>-8% par an</strong> jusqu'en 2050, conformément aux recommandations du Science Based Targets initiative.
-                L'objectif Net Zero implique de <strong>réduire les émissions résiduelles</strong> à moins de 1 000 tCO₂e et de compenser le solde avec des puits de carbone certifiés.
+                {tr('decarbonation.trajectoryInfoBox')}
               </div>
             </div>
           </div>

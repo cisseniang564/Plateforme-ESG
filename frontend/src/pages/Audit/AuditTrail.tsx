@@ -84,20 +84,20 @@ const DOCUMENTS: Document[] = [
 ];
 
 // ─── Action config ────────────────────────────────────────────────────────────
-const ACTION_CFG: Record<ActionType, { label: string; color: string; bg: string; border: string; icon: any }> = {
-  CREATE:    { label: 'Création',       color: 'text-emerald-700', bg: 'bg-emerald-50',  border: 'border-emerald-200', icon: Plus },
-  UPDATE:    { label: 'Modification',   color: 'text-blue-700',    bg: 'bg-blue-50',     border: 'border-blue-200',    icon: Edit3 },
-  DELETE:    { label: 'Suppression',    color: 'text-red-700',     bg: 'bg-red-50',      border: 'border-red-200',     icon: Trash2 },
-  SUBMIT:    { label: 'Soumission',     color: 'text-violet-700',  bg: 'bg-violet-50',   border: 'border-violet-200',  icon: Send },
-  APPROVE:   { label: 'Approbation',    color: 'text-green-700',   bg: 'bg-green-50',    border: 'border-green-200',   icon: CheckCircle },
-  REJECT:    { label: 'Rejet',          color: 'text-red-700',     bg: 'bg-red-50',      border: 'border-red-200',     icon: XCircle },
-  IMPORT:    { label: 'Import',         color: 'text-orange-700',  bg: 'bg-orange-50',   border: 'border-orange-200',  icon: Upload },
-  EXPORT:    { label: 'Export',         color: 'text-slate-600',   bg: 'bg-slate-50',    border: 'border-slate-200',   icon: Download },
-  LOGIN:     { label: 'Connexion',      color: 'text-gray-600',    bg: 'bg-gray-50',     border: 'border-gray-200',    icon: LogIn },
-  COMMENT:   { label: 'Commentaire',    color: 'text-teal-700',    bg: 'bg-teal-50',     border: 'border-teal-200',    icon: BookOpen },
-  ATTACH:    { label: 'Pièce jointe',   color: 'text-indigo-700',  bg: 'bg-indigo-50',   border: 'border-indigo-200',  icon: Paperclip },
-  CALCULATE: { label: 'Calcul auto',    color: 'text-cyan-700',    bg: 'bg-cyan-50',     border: 'border-cyan-200',    icon: RefreshCw },
-  PUBLISH:   { label: 'Publication',    color: 'text-pink-700',    bg: 'bg-pink-50',     border: 'border-pink-200',    icon: Star },
+const ACTION_CFG_STATIC: Record<ActionType, { color: string; bg: string; border: string; icon: any }> = {
+  CREATE:    { color: 'text-emerald-700', bg: 'bg-emerald-50',  border: 'border-emerald-200', icon: Plus },
+  UPDATE:    { color: 'text-blue-700',    bg: 'bg-blue-50',     border: 'border-blue-200',    icon: Edit3 },
+  DELETE:    { color: 'text-red-700',     bg: 'bg-red-50',      border: 'border-red-200',     icon: Trash2 },
+  SUBMIT:    { color: 'text-violet-700',  bg: 'bg-violet-50',   border: 'border-violet-200',  icon: Send },
+  APPROVE:   { color: 'text-green-700',   bg: 'bg-green-50',    border: 'border-green-200',   icon: CheckCircle },
+  REJECT:    { color: 'text-red-700',     bg: 'bg-red-50',      border: 'border-red-200',     icon: XCircle },
+  IMPORT:    { color: 'text-orange-700',  bg: 'bg-orange-50',   border: 'border-orange-200',  icon: Upload },
+  EXPORT:    { color: 'text-slate-600',   bg: 'bg-slate-50',    border: 'border-slate-200',   icon: Download },
+  LOGIN:     { color: 'text-gray-600',    bg: 'bg-gray-50',     border: 'border-gray-200',    icon: LogIn },
+  COMMENT:   { color: 'text-teal-700',    bg: 'bg-teal-50',     border: 'border-teal-200',    icon: BookOpen },
+  ATTACH:    { color: 'text-indigo-700',  bg: 'bg-indigo-50',   border: 'border-indigo-200',  icon: Paperclip },
+  CALCULATE: { color: 'text-cyan-700',    bg: 'bg-cyan-50',     border: 'border-cyan-200',    icon: RefreshCw },
+  PUBLISH:   { color: 'text-pink-700',    bg: 'bg-pink-50',     border: 'border-pink-200',    icon: Star },
 };
 
 const MODULES = ['Tous', 'Collecte Données', 'Pilotage ESG', 'Validation', 'Rapports', 'Supply Chain', 'Matérialité', 'Décarbonation', 'IA & Automatisation', 'Authentification'];
@@ -125,26 +125,27 @@ const USER_COLORS: Record<string, string> = {
 
 // ─── Event detail panel ───────────────────────────────────────────────────────
 function EventDetail({ event, onClose }: { event: AuditEvent; onClose: () => void }) {
-  const cfg = ACTION_CFG[event.action];
+  const { t } = useTranslation();
+  const cfg = ACTION_CFG_STATIC[event.action];
   const ActionIcon = cfg.icon;
   return (
     <div className="fixed inset-0 z-50 flex">
       <div className="flex-1 bg-black/40" onClick={onClose} />
       <div className="w-full max-w-lg bg-white shadow-2xl overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-base font-bold text-gray-900">Détail de l'événement</h2>
+          <h2 className="text-base font-bold text-gray-900">{t('audit.eventDetail')}</h2>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg"><X className="h-5 w-5" /></button>
         </div>
         <div className="p-6 space-y-5">
           {/* Action badge */}
           <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl font-semibold text-sm ${cfg.bg} ${cfg.color} border ${cfg.border}`}>
             <ActionIcon className="h-4 w-4" />
-            {cfg.label} — {event.module}
+            {t(`audit.eventTypes.${event.action}`)} — {event.module}
           </div>
 
           {/* Description */}
           <div>
-            <p className="text-sm font-semibold text-gray-500 mb-1">Description</p>
+            <p className="text-sm font-semibold text-gray-500 mb-1">{t('audit.description')}</p>
             <p className="text-sm text-gray-900">{event.description}</p>
           </div>
 
@@ -153,13 +154,13 @@ function EventDetail({ event, onClose }: { event: AuditEvent; onClose: () => voi
             <div className="grid grid-cols-2 gap-3">
               {event.oldValue && (
                 <div className="bg-red-50 border border-red-200 rounded-xl p-3">
-                  <p className="text-xs font-bold text-red-600 mb-1">AVANT</p>
+                  <p className="text-xs font-bold text-red-600 mb-1">{t('audit.valueBefore')}</p>
                   <p className="text-sm text-red-800 font-mono">{event.oldValue}</p>
                 </div>
               )}
               {event.newValue && (
                 <div className="bg-green-50 border border-green-200 rounded-xl p-3">
-                  <p className="text-xs font-bold text-green-600 mb-1">APRÈS</p>
+                  <p className="text-xs font-bold text-green-600 mb-1">{t('audit.valueAfter')}</p>
                   <p className="text-sm text-green-800 font-mono">{event.newValue}</p>
                 </div>
               )}
@@ -169,7 +170,7 @@ function EventDetail({ event, onClose }: { event: AuditEvent; onClose: () => voi
           {/* Comment */}
           {event.comment && (
             <div className="bg-teal-50 border border-teal-200 rounded-xl p-4">
-              <p className="text-xs font-bold text-teal-600 mb-1.5">COMMENTAIRE D'AUDIT</p>
+              <p className="text-xs font-bold text-teal-600 mb-1.5">{t('audit.auditComment')}</p>
               <p className="text-sm text-teal-900 italic">"{event.comment}"</p>
             </div>
           )}
@@ -177,17 +178,17 @@ function EventDetail({ event, onClose }: { event: AuditEvent; onClose: () => voi
           {/* Metadata grid */}
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: 'Utilisateur', val: event.user, icon: User },
-              { label: 'Rôle', val: event.userRole, icon: Shield },
-              { label: 'Horodatage', val: formatDate(event.timestamp), icon: Calendar },
-              { label: 'Entité', val: `${event.entity} #${event.entityId}`, icon: Database },
-              { label: 'Adresse IP', val: event.ipAddress, icon: Lock },
-              { label: 'Session ID', val: event.sessionId, icon: GitBranch },
+              { labelKey: 'audit.metaUser', val: event.user, icon: User },
+              { labelKey: 'audit.metaRole', val: event.userRole, icon: Shield },
+              { labelKey: 'audit.metaTimestamp', val: formatDate(event.timestamp), icon: Calendar },
+              { labelKey: 'audit.metaEntity', val: `${event.entity} #${event.entityId}`, icon: Database },
+              { labelKey: 'audit.metaIp', val: event.ipAddress, icon: Lock },
+              { labelKey: 'audit.metaSession', val: event.sessionId, icon: GitBranch },
             ].map((item, i) => (
               <div key={i} className="bg-gray-50 rounded-xl p-3">
                 <div className="flex items-center gap-1.5 mb-1">
                   <item.icon className="h-3.5 w-3.5 text-gray-400" />
-                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{item.label}</span>
+                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t(item.labelKey)}</span>
                 </div>
                 <span className="text-sm text-gray-800 font-mono break-all">{item.val}</span>
               </div>
@@ -198,8 +199,8 @@ function EventDetail({ event, onClose }: { event: AuditEvent; onClose: () => voi
           <div className="bg-slate-900 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               <Hash className="h-4 w-4 text-green-400" />
-              <span className="text-xs font-bold text-green-400 uppercase tracking-wider">Empreinte d'intégrité</span>
-              <span className="ml-auto text-xs text-green-300 flex items-center gap-1"><Check className="h-3 w-3" />Valide</span>
+              <span className="text-xs font-bold text-green-400 uppercase tracking-wider">{t('audit.integrityFootprint')}</span>
+              <span className="ml-auto text-xs text-green-300 flex items-center gap-1"><Check className="h-3 w-3" />{t('audit.valid')}</span>
             </div>
             <code className="text-xs text-slate-300 font-mono break-all">{event.hash}:{event.entityId}:{event.timestamp}</code>
           </div>
@@ -207,7 +208,7 @@ function EventDetail({ event, onClose }: { event: AuditEvent; onClose: () => voi
           {/* Attachments */}
           {event.attachments && event.attachments.length > 0 && (
             <div>
-              <p className="text-sm font-semibold text-gray-500 mb-2">Pièces justificatives</p>
+              <p className="text-sm font-semibold text-gray-500 mb-2">{t('audit.supportingDocs')}</p>
               <div className="space-y-2">
                 {event.attachments.map((att, i) => (
                   <div key={i} className="flex items-center gap-3 p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
@@ -294,10 +295,10 @@ export default function AuditTrail() {
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-xl text-xs font-semibold text-green-700">
               <Lock className="h-3.5 w-3.5" />
-              Intégrité vérifiée
+              {t('audit.integrityVerified')}
             </div>
             <button onClick={() => setTab('export')} className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm">
-              <Download className="h-4 w-4" /> Exporter pour audit
+              <Download className="h-4 w-4" /> {t('audit.exportForAudit')}
             </button>
           </div>
         </div>
@@ -306,10 +307,10 @@ export default function AuditTrail() {
       {/* Tabs */}
       <div className="bg-white border-b border-gray-200 px-6">
         <div className="max-w-7xl mx-auto flex gap-0">
-          {tabs.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={`px-5 py-4 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${tab === t.id ? 'border-slate-700 text-slate-900' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-              {t.label}
+          {tabs.map(tb => (
+            <button key={tb.id} onClick={() => setTab(tb.id)}
+              className={`px-5 py-4 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${tab === tb.id ? 'border-slate-700 text-slate-900' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+              {tb.label}
             </button>
           ))}
         </div>
@@ -323,11 +324,11 @@ export default function AuditTrail() {
             {/* KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               {[
-                { label: 'Événements total', val: totalEvents, sub: 'Depuis le démarrage', color: 'text-slate-900', bg: 'bg-white border-gray-200' },
-                { label: 'Aujourd\'hui', val: todayEvents, sub: '20 mars 2026', color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
-                { label: 'Modifications données', val: modifyEvents, sub: 'Créations / Mises à jour / Supp.', color: 'text-orange-700', bg: 'bg-orange-50 border-orange-200' },
-                { label: 'Décisions validation', val: approvalEvents, sub: 'Approbations & rejets', color: 'text-green-700', bg: 'bg-green-50 border-green-200' },
-                { label: 'Pièces justificatives', val: docCount, sub: `${pendingDocs} en attente`, color: 'text-indigo-700', bg: 'bg-indigo-50 border-indigo-200' },
+                { label: t('audit.totalEvents'), val: totalEvents, sub: t('audit.kpiSinceStart'), color: 'text-slate-900', bg: 'bg-white border-gray-200' },
+                { label: t('audit.kpiToday'), val: todayEvents, sub: '20 mars 2026', color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
+                { label: t('audit.kpiDataChanges'), val: modifyEvents, sub: t('audit.kpiDataChangesSub'), color: 'text-orange-700', bg: 'bg-orange-50 border-orange-200' },
+                { label: t('audit.kpiValidationDecisions'), val: approvalEvents, sub: t('audit.kpiValidationDecisionsSub'), color: 'text-green-700', bg: 'bg-green-50 border-green-200' },
+                { label: t('audit.kpiDocuments'), val: docCount, sub: t('audit.kpiDocumentsPending', { count: pendingDocs }), color: 'text-indigo-700', bg: 'bg-indigo-50 border-indigo-200' },
               ].map((k, i) => (
                 <div key={i} className={`rounded-2xl border-2 ${k.bg} p-4`}>
                   <div className={`text-3xl font-extrabold ${k.color}`}>{k.val}</div>
@@ -342,28 +343,28 @@ export default function AuditTrail() {
               <div className="flex items-center gap-3">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher dans le journal..." className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
+                  <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('audit.searchJournal')} className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
                 </div>
                 <button onClick={() => setShowFilters(!showFilters)} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${showFilters ? 'bg-slate-800 text-white border-slate-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-                  <Filter className="h-4 w-4" /> Filtres
+                  <Filter className="h-4 w-4" /> {t('audit.filters')}
                 </button>
               </div>
               {showFilters && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-gray-100">
                   <div>
-                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 block">Module</label>
+                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 block">{t('audit.filterModule')}</label>
                     <select value={moduleFilter} onChange={e => setModuleFilter(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400">
                       {MODULES.map(m => <option key={m}>{m}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 block">Type d'action</label>
+                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 block">{t('audit.filterActionType')}</label>
                     <select value={actionFilter} onChange={e => setActionFilter(e.target.value as any)} className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400">
                       {ACTIONS.map(a => <option key={a}>{a}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 block">Utilisateur</label>
+                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 block">{t('audit.filterUser')}</label>
                     <select value={userFilter} onChange={e => setUserFilter(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400">
                       {USERS.map(u => <option key={u}>{u}</option>)}
                     </select>
@@ -372,7 +373,7 @@ export default function AuditTrail() {
               )}
             </div>
 
-            <div className="text-xs text-gray-400">{filtered.length} événement{filtered.length > 1 ? 's' : ''} — ordre antéchronologique</div>
+            <div className="text-xs text-gray-400">{t('audit.eventCount', { count: filtered.length })}</div>
 
             {/* Timeline */}
             <div className="relative">
@@ -395,7 +396,7 @@ export default function AuditTrail() {
                         <div className="flex items-start justify-between gap-3 flex-wrap">
                           <div className="flex items-center gap-3 flex-wrap">
                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${cfg.bg} ${cfg.color} border ${cfg.border}`}>
-                              <ActionIcon className="h-3 w-3" />{cfg.label}
+                              <ActionIcon className="h-3 w-3" />{t(`audit.eventTypes.${event.action}`)}
                             </span>
                             <span className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-lg font-medium">{event.module}</span>
                             {event.attachments && event.attachments.length > 0 && (
@@ -443,8 +444,8 @@ export default function AuditTrail() {
         {tab === 'versions' && (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl border border-gray-200 p-5">
-              <h2 className="text-base font-bold text-gray-900 mb-2">Versionning des données ESG</h2>
-              <p className="text-sm text-gray-500">Chaque modification d'une valeur ESG est conservée avec sa valeur précédente. Comparez les versions et naviguez dans l'historique complet.</p>
+              <h2 className="text-base font-bold text-gray-900 mb-2">{t('audit.versioningTitle')}</h2>
+              <p className="text-sm text-gray-500">{t('audit.versioningDesc')}</p>
             </div>
 
             <div className="space-y-4">
@@ -455,7 +456,7 @@ export default function AuditTrail() {
                   <div key={event.id} className="bg-white rounded-2xl border border-gray-200 p-5">
                     <div className="flex items-center gap-3 mb-4 flex-wrap">
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold ${cfg.bg} ${cfg.color} border ${cfg.border}`}>
-                        <ActionIcon className="h-3.5 w-3.5" />{cfg.label}
+                        <ActionIcon className="h-3.5 w-3.5" />{t(`audit.eventTypes.${event.action}`)}
                       </span>
                       <span className="text-sm font-bold text-gray-900">{event.entity} — {event.entityId}</span>
                       <span className="text-xs text-gray-400 ml-auto">{formatDate(event.timestamp)}</span>
@@ -468,7 +469,7 @@ export default function AuditTrail() {
                         <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
                           <div className="flex items-center gap-2 mb-2">
                             <div className="w-2 h-2 rounded-full bg-red-400" />
-                            <span className="text-xs font-bold text-red-600 uppercase tracking-wider">Version précédente</span>
+                            <span className="text-xs font-bold text-red-600 uppercase tracking-wider">{t('audit.previousVersion')}</span>
                           </div>
                           <p className="text-sm font-mono text-red-800">{event.oldValue}</p>
                         </div>
@@ -477,7 +478,7 @@ export default function AuditTrail() {
                         <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4">
                           <div className="flex items-center gap-2 mb-2">
                             <div className="w-2 h-2 rounded-full bg-green-500" />
-                            <span className="text-xs font-bold text-green-600 uppercase tracking-wider">Version actuelle</span>
+                            <span className="text-xs font-bold text-green-600 uppercase tracking-wider">{t('audit.currentVersion')}</span>
                           </div>
                           <p className="text-sm font-mono text-green-800">{event.newValue}</p>
                         </div>
@@ -508,8 +509,8 @@ export default function AuditTrail() {
               <div className="flex items-start gap-3 p-4 bg-amber-50 border-2 border-amber-200 rounded-2xl">
                 <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-amber-800">{pendingDocs} pièce{pendingDocs > 1 ? 's' : ''} justificative{pendingDocs > 1 ? 's' : ''} en attente — </span>
-                  <span className="text-sm text-amber-700">Des indicateurs ont été rejetés par l'auditeur pour absence de justificatif. Téléchargez les documents manquants.</span>
+                  <span className="font-bold text-amber-800">{t('audit.documentsPendingAlert', { count: pendingDocs })}</span>
+                  <span className="text-sm text-amber-700">{t('audit.documentsPendingAlertDesc')}</span>
                 </div>
               </div>
             )}
@@ -517,17 +518,17 @@ export default function AuditTrail() {
             {/* Upload zone */}
             <div className="border-2 border-dashed border-gray-300 hover:border-slate-400 transition-colors rounded-2xl p-8 text-center bg-white cursor-pointer">
               <Upload className="h-8 w-8 text-gray-400 mx-auto mb-3" />
-              <p className="text-sm font-semibold text-gray-700">Déposer vos pièces justificatives ici</p>
-              <p className="text-xs text-gray-400 mt-1">PDF, Excel, CSV — Max 50 Mo par fichier</p>
+              <p className="text-sm font-semibold text-gray-700">{t('audit.dropDocuments')}</p>
+              <p className="text-xs text-gray-400 mt-1">{t('audit.dropDocumentsFormats')}</p>
               <button className="mt-3 px-4 py-2 bg-slate-800 text-white rounded-xl text-sm font-semibold hover:bg-slate-900 transition-colors">
-                Choisir des fichiers
+                {t('audit.chooseFiles')}
               </button>
             </div>
 
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input value={docSearch} onChange={e => setDocSearch(e.target.value)} placeholder="Rechercher une pièce justificative..." className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-400" />
+              <input value={docSearch} onChange={e => setDocSearch(e.target.value)} placeholder={t('audit.searchDocument')} className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-400" />
             </div>
 
             {/* Documents table */}
@@ -535,14 +536,14 @@ export default function AuditTrail() {
               <table className="w-full">
                 <thead>
                   <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider border-b border-gray-200">
-                    <th className="px-5 py-3 text-left">Document</th>
-                    <th className="px-5 py-3 text-left">Entité liée</th>
-                    <th className="px-5 py-3 text-left">Module</th>
-                    <th className="px-5 py-3 text-left">Ajouté par</th>
-                    <th className="px-5 py-3 text-center">Date</th>
-                    <th className="px-5 py-3 text-center">Statut</th>
-                    <th className="px-5 py-3 text-center">Intégrité</th>
-                    <th className="px-5 py-3 text-center">Actions</th>
+                    <th className="px-5 py-3 text-left">{t('audit.colDocument')}</th>
+                    <th className="px-5 py-3 text-left">{t('audit.colLinkedEntity')}</th>
+                    <th className="px-5 py-3 text-left">{t('audit.colModule')}</th>
+                    <th className="px-5 py-3 text-left">{t('audit.colAddedBy')}</th>
+                    <th className="px-5 py-3 text-center">{t('audit.colDate')}</th>
+                    <th className="px-5 py-3 text-center">{t('audit.colStatus')}</th>
+                    <th className="px-5 py-3 text-center">{t('audit.colIntegrity')}</th>
+                    <th className="px-5 py-3 text-center">{t('audit.colActions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -561,7 +562,7 @@ export default function AuditTrail() {
                       <td className="px-5 py-3">
                         <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg">{doc.linkedModule}</span>
                       </td>
-                      <td className="px-5 py-3 text-sm text-gray-600">{doc.uploadedBy || <span className="text-amber-500 text-xs font-semibold">Non téléchargé</span>}</td>
+                      <td className="px-5 py-3 text-sm text-gray-600">{doc.uploadedBy || <span className="text-amber-500 text-xs font-semibold">{t('audit.notUploaded')}</span>}</td>
                       <td className="px-5 py-3 text-center text-sm text-gray-500">{doc.uploadedAt}</td>
                       <td className="px-5 py-3 text-center">
                         <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${doc.status === 'Validé' ? 'bg-green-100 text-green-700' : doc.status === 'En attente' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
@@ -604,15 +605,15 @@ export default function AuditTrail() {
                   <Stamp className="h-6 w-6 text-slate-700" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-gray-900">Rapport d'audit certifiable</h2>
+                  <h2 className="text-base font-bold text-gray-900">{t('audit.certifiableReport')}</h2>
                   <p className="text-sm text-gray-500">Conforme aux exigences d'assurance limitée CSRD et aux normes ISAE 3000 / ISAE 3410</p>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 {[
-                  { label: 'Événements', val: EVENTS.length, icon: ClipboardList, color: 'text-slate-700', bg: 'bg-slate-50' },
-                  { label: 'Documents', val: DOCUMENTS.filter(d => d.status === 'Validé').length, icon: FileText, color: 'text-indigo-700', bg: 'bg-indigo-50' },
-                  { label: 'Intégrité', val: '100%', icon: Shield, color: 'text-green-700', bg: 'bg-green-50' },
+                  { label: t('audit.miniStatEvents'), val: EVENTS.length, icon: ClipboardList, color: 'text-slate-700', bg: 'bg-slate-50' },
+                  { label: t('audit.miniStatDocuments'), val: DOCUMENTS.filter(d => d.status === 'Validé').length, icon: FileText, color: 'text-indigo-700', bg: 'bg-indigo-50' },
+                  { label: t('audit.miniStatIntegrity'), val: '100%', icon: Shield, color: 'text-green-700', bg: 'bg-green-50' },
                 ].map((k, i) => (
                   <div key={i} className={`${k.bg} rounded-xl p-4 text-center`}>
                     <k.icon className={`h-5 w-5 mx-auto mb-1 ${k.color}`} />
@@ -625,10 +626,10 @@ export default function AuditTrail() {
 
             {/* Export config */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-5">
-              <h3 className="font-bold text-gray-900">Configurer l'export</h3>
+              <h3 className="font-bold text-gray-900">{t('audit.configureExport')}</h3>
 
               <div>
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Format</label>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">{t('audit.formatLabel')}</label>
                 <div className="flex gap-3">
                   {(['pdf', 'csv', 'json'] as const).map(fmt => (
                     <button key={fmt} onClick={() => setExportFormat(fmt)}
@@ -640,26 +641,26 @@ export default function AuditTrail() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Contenu à inclure</label>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">{t('audit.contentLabel')}</label>
                 <div className="space-y-2">
                   {[
-                    { label: 'Journal d\'audit complet', checked: true },
-                    { label: 'Historique des versions (avant/après)', checked: true },
-                    { label: 'Pièces justificatives indexées', checked: true },
-                    { label: 'Empreintes d\'intégrité SHA-256', checked: true },
-                    { label: 'Informations sessions et adresses IP', checked: true },
-                    { label: 'Synthèse exécutive pour auditeurs', checked: true },
+                    { labelKey: 'audit.exportContentJournal', checked: true },
+                    { labelKey: 'audit.exportContentVersions', checked: true },
+                    { labelKey: 'audit.exportContentDocs', checked: true },
+                    { labelKey: 'audit.exportContentHashes', checked: true },
+                    { labelKey: 'audit.exportContentSessions', checked: true },
+                    { labelKey: 'audit.exportContentSummary', checked: true },
                   ].map((item, i) => (
                     <label key={i} className="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" defaultChecked={item.checked} className="rounded accent-slate-700 w-4 h-4" />
-                      <span className="text-sm text-gray-700">{item.label}</span>
+                      <span className="text-sm text-gray-700">{t(item.labelKey)}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">Période</label>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">{t('audit.periodLabel')}</label>
                 <div className="grid grid-cols-2 gap-3">
                   <input type="date" defaultValue="2026-01-01" className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
                   <input type="date" defaultValue="2026-03-20" className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
@@ -668,28 +669,28 @@ export default function AuditTrail() {
 
               {exportDone ? (
                 <div className="flex items-center gap-2 p-4 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700 font-semibold">
-                  <CheckCircle className="h-5 w-5" /> Export généré — audit_trail_ESGFlow_2026Q1.{exportFormat}
+                  <CheckCircle className="h-5 w-5" /> {t('audit.exportSuccess', { format: exportFormat })}
                 </div>
               ) : (
                 <button onClick={handleExport} className="w-full flex items-center justify-center gap-2 py-4 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-2xl transition-colors text-base">
-                  <Download className="h-5 w-5" /> Générer le rapport d'audit ({exportFormat.toUpperCase()})
+                  <Download className="h-5 w-5" /> {t('audit.generateReport', { format: exportFormat.toUpperCase() })}
                 </button>
               )}
             </div>
 
             {/* Auditeur access */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-              <h3 className="font-bold text-gray-900">Accès auditeur externe</h3>
-              <p className="text-sm text-gray-500">Créez un accès temporaire en lecture seule pour votre commissaire aux comptes ou auditeur tiers.</p>
+              <h3 className="font-bold text-gray-900">{t('audit.auditorAccess')}</h3>
+              <p className="text-sm text-gray-500">{t('audit.auditorAccessDesc')}</p>
               <div className="flex gap-3">
                 <input type="email" placeholder="email@cabinet-audit.fr" className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
                 <select className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400">
-                  <option>7 jours</option>
-                  <option>14 jours</option>
-                  <option>30 jours</option>
+                  <option>{t('audit.duration7')}</option>
+                  <option>{t('audit.duration14')}</option>
+                  <option>{t('audit.duration30')}</option>
                 </select>
                 <button className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 text-white rounded-xl font-semibold text-sm hover:bg-slate-900 transition-colors">
-                  <Send className="h-4 w-4" /> Inviter
+                  <Send className="h-4 w-4" /> {t('audit.invite')}
                 </button>
               </div>
             </div>
