@@ -22,6 +22,7 @@ import {
   Code2,
   Flame,
   TrendingDown,
+  PackageSearch,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import api from '@/services/api';
@@ -98,6 +99,7 @@ export default function Sidebar() {
         { name: 'Indicateurs', description: 'Indicateurs de performance', href: '/app/indicators', icon: Activity, tourId: 'sidebar-indicators' },
         { name: 'Matérialité', description: 'Double matérialité CSRD', href: '/app/materiality', icon: Grid },
         { name: 'Risques', description: 'Registre des risques', href: '/app/risks', icon: AlertTriangle },
+        { name: 'Supply Chain ESG', description: 'Fournisseurs · Due diligence · Vigilance', href: '/app/supply-chain', icon: PackageSearch },
         { name: 'Qualité données', description: 'Validation et audit', href: '/app/data-quality', icon: Shield },
         { name: 'Workflow validation', description: 'Révision & approbation', href: '/app/validation', icon: CheckSquare },
       ],

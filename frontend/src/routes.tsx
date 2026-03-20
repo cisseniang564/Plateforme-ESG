@@ -71,6 +71,7 @@ import BilanCarbone from '@/pages/Carbon/BilanCarbone';
 import TaxonomyAlignment from '@/pages/Compliance/TaxonomyAlignment';
 import MultiRegulatoryCompliance from '@/pages/Compliance/MultiRegulatoryCompliance';
 import DecarbonationPlan from '@/pages/Decarbonation/DecarbonationPlan';
+import SupplyChainESG from '@/pages/SupplyChain/SupplyChainESG';
 import ValidationWorkflow from '@/pages/Validation/ValidationWorkflow';
 import BenchmarkingDashboard from '@/pages/Benchmarking/BenchmarkingDashboard';
 import APIDocumentation from '@/pages/Developer/APIDocumentation';
@@ -190,6 +191,7 @@ export default function AppRoutes() {
         <Route path="taxonomy" element={<TaxonomyAlignment />} />
         <Route path="compliance" element={<MultiRegulatoryCompliance />} />
         <Route path="decarbonation" element={<DecarbonationPlan />} />
+        <Route path="supply-chain" element={<SupplyChainESG />} />
         <Route path="validation" element={<ValidationWorkflow />} />
         <Route path="benchmarking" element={<BenchmarkingDashboard />} />
         <Route path="api-docs" element={<APIDocumentation />} />
