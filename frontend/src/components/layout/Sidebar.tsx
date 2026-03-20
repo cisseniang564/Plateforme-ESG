@@ -7,6 +7,7 @@ import {
   Activity,
   Grid,
   Shield,
+  ShieldCheck,
   AlertTriangle,
   BarChart3,
   Building2,
@@ -114,6 +115,7 @@ export default function Sidebar() {
       items: [
         { name: 'Bilan Carbone Scope 3', description: '15 catégories GHG Protocol · ADEME', href: '/app/carbon', icon: Flame },
         { name: 'Taxonomie UE', description: 'Alignement EU Taxonomy 2020/852', href: '/app/taxonomy', icon: Leaf },
+        { name: 'Multi-Réglementaire', description: 'CSRD · Sapin II · SFDR · ISO · DPEF', href: '/app/compliance', icon: ShieldCheck },
         { name: 'Rapports CSRD', description: 'Générer des rapports', href: '/app/reports', icon: FileText, tourId: 'sidebar-reports' },
       ],
     },

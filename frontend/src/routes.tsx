@@ -69,6 +69,7 @@ import BilanCarbone from '@/pages/Carbon/BilanCarbone';
 
 // New features
 import TaxonomyAlignment from '@/pages/Compliance/TaxonomyAlignment';
+import MultiRegulatoryCompliance from '@/pages/Compliance/MultiRegulatoryCompliance';
 import ValidationWorkflow from '@/pages/Validation/ValidationWorkflow';
 import BenchmarkingDashboard from '@/pages/Benchmarking/BenchmarkingDashboard';
 import APIDocumentation from '@/pages/Developer/APIDocumentation';
@@ -186,6 +187,7 @@ export default function AppRoutes() {
 
         {/* New features */}
         <Route path="taxonomy" element={<TaxonomyAlignment />} />
+        <Route path="compliance" element={<MultiRegulatoryCompliance />} />
         <Route path="validation" element={<ValidationWorkflow />} />
         <Route path="benchmarking" element={<BenchmarkingDashboard />} />
         <Route path="api-docs" element={<APIDocumentation />} />
