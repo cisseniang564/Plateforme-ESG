@@ -23,6 +23,7 @@ import {
   Flame,
   TrendingDown,
   PackageSearch,
+  ClipboardList,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import api from '@/services/api';
@@ -102,6 +103,7 @@ export default function Sidebar() {
         { name: 'Supply Chain ESG', description: 'Fournisseurs · Due diligence · Vigilance', href: '/app/supply-chain', icon: PackageSearch },
         { name: 'Qualité données', description: 'Validation et audit', href: '/app/data-quality', icon: Shield },
         { name: 'Workflow validation', description: 'Révision & approbation', href: '/app/validation', icon: CheckSquare },
+        { name: 'Piste d\'Audit', description: 'Traçabilité · Versions · Justificatifs', href: '/app/audit-trail', icon: ClipboardList },
       ],
     },
     {
