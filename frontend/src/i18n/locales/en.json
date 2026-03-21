@@ -3267,7 +3267,12 @@
     "regulatoryDeadlines": "Regulatory deadlines (CSRD, SFDR)",
     "platformUpdates": "Platform updates",
     "emailNotifs": "Email notifications",
-    "webhookUrl": "Webhook URL (optional)"
+    "webhookUrl": "Webhook URL (optional)",
+    "allRead": "All caught up",
+    "typeError": "Errors",
+    "typeWarning": "Warnings",
+    "typeSuccess": "Success",
+    "typeInfo": "Info"
   },
   "csrdBuilder": {
     "title": "CSRD Report Builder",

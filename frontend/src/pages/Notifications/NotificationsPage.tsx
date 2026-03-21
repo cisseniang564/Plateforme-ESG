@@ -142,40 +142,63 @@ export default function NotificationsPage() {
     { value: 'info', label: 'Infos' },
   ];
 
+  const countByType = (type: NotificationType) => notifications.filter(n => n.type === type).length;
+  const unreadByType = (type: NotificationType) => notifications.filter(n => n.type === type && !n.read).length;
+
   return (
-    <div className="p-6 space-y-6 max-w-4xl mx-auto">
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-            <Bell className="h-5 w-5 text-green-600" />
-          </div>
+    <div className="space-y-6 max-w-4xl mx-auto">
+      {/* Hero */}
+      <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-emerald-900 to-teal-700 p-8 text-white shadow-xl">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15">
+              <Bell size={13} />
               {t('notifications.center', 'Centre de notifications')}
+            </div>
+            <h1 className="mt-4 flex items-center gap-3 text-3xl font-bold tracking-tight">
+              <Bell className="h-8 w-8" />
+              {t('notifications.center', 'Notifications')}
             </h1>
-            {unreadCount > 0 && (
-              <p className="text-sm text-gray-500">
-                {unreadCount} {t('notifications.unread', 'non lue(s)')}
-              </p>
-            )}
+            <p className="mt-2 text-sm text-white/80">
+              {unreadCount > 0
+                ? `${unreadCount} ${t('notifications.unread', 'notification(s) non lue(s)')}`
+                : t('notifications.allRead', 'Tout est à jour')}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {([
+                { type: 'error' as NotificationType, label: t('notifications.typeError', 'Erreurs'), color: 'bg-red-500/20 text-red-200 ring-red-400/30' },
+                { type: 'warning' as NotificationType, label: t('notifications.typeWarning', 'Avertissements'), color: 'bg-amber-500/20 text-amber-200 ring-amber-400/30' },
+                { type: 'success' as NotificationType, label: t('notifications.typeSuccess', 'Succès'), color: 'bg-emerald-500/20 text-emerald-200 ring-emerald-400/30' },
+                { type: 'info' as NotificationType, label: t('notifications.typeInfo', 'Infos'), color: 'bg-blue-500/20 text-blue-200 ring-blue-400/30' },
+              ]).map(({ type, label, color }) => {
+                const unread = unreadByType(type);
+                return (
+                  <span key={type} className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ring-1 ${color}`}>
+                    {label} · {countByType(type)}
+                    {unread > 0 && <span className="font-bold text-white">({unread})</span>}
+                  </span>
+                );
+              })}
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          {unreadCount > 0 && (
-            <Button variant="secondary" size="sm" onClick={markAllRead}>
-              <CheckCheck className="h-4 w-4 mr-1.5 inline" />
-              {t('notifications.markAllRead', 'Tout marquer comme lu')}
-            </Button>
-          )}
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => navigate('/app/settings')}
-          >
-            <Settings className="h-4 w-4 mr-1.5 inline" />
-            {t('notifications.alertSettings', 'Param\u00e8tres alertes')}
-          </Button>
+          <div className="flex gap-3 flex-shrink-0">
+            {unreadCount > 0 && (
+              <button
+                onClick={markAllRead}
+                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-medium px-4 py-2 rounded-xl transition-all"
+              >
+                <CheckCheck size={14} />
+                {t('notifications.markAllRead', 'Tout marquer lu')}
+              </button>
+            )}
+            <button
+              onClick={() => navigate('/app/settings')}
+              className="flex items-center gap-2 bg-white text-emerald-900 hover:bg-white/90 text-sm font-semibold px-4 py-2 rounded-xl transition-all"
+            >
+              <Settings size={14} />
+              {t('notifications.alertSettings', 'Paramètres')}
+            </button>
+          </div>
         </div>
       </div>
 

@@ -3214,7 +3214,12 @@
     "regulatoryDeadlines": "Délais réglementaires (CSRD, SFDR)",
     "platformUpdates": "Mises à jour plateforme",
     "emailNotifs": "Notifications par email",
-    "webhookUrl": "URL Webhook (optionnel)"
+    "webhookUrl": "URL Webhook (optionnel)",
+    "allRead": "Tout est à jour",
+    "typeError": "Erreurs",
+    "typeWarning": "Avertissements",
+    "typeSuccess": "Succès",
+    "typeInfo": "Infos"
   },
   "csrdBuilder": {
     "title": "Constructeur de rapport CSRD",
