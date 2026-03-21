@@ -250,7 +250,7 @@ export default function Header() {
 
           <button
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            onClick={() => navigate('/app/settings/tenant')}
+            onClick={() => navigate('/app/settings')}
           >
             <Settings className="h-5 w-5 text-gray-600" />
           </button>
