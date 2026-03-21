@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Building2,
   TrendingUp,
@@ -43,17 +44,16 @@ type ViewMode = 'grid' | 'list';
 type SortBy = 'name' | 'score' | 'rating';
 
 export default function OrganizationsList() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // Filtres
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndustry, setSelectedIndustry] = useState<string>('all');
   const [selectedRating, setSelectedRating] = useState<string>('all');
   const [scoreRange, setScoreRange] = useState<[number, number]>([0, 100]);
-  
-  // UI
+
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [sortBy, setSortBy] = useState<SortBy>('score');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -66,8 +66,7 @@ export default function OrganizationsList() {
     try {
       const res = await api.get('/organizations');
       const orgs = res.data?.organizations || res.data?.items || [];
-      
-      // Enrichir avec scores COHÉRENTS basés sur l'ID
+
       const enrichedOrgs = orgs.map((org: any) => {
         const scores = generateConsistentScores(org.id);
         return {
@@ -81,7 +80,7 @@ export default function OrganizationsList() {
           data_completeness: scores.data_completeness
         };
       });
-      
+
       setOrganizations(enrichedOrgs);
     } catch (error) {
       console.error('Error loading organizations:', error);
@@ -90,7 +89,6 @@ export default function OrganizationsList() {
     }
   };
 
-  // Filtrage et tri
   const filteredAndSorted = useMemo(() => {
     let result = organizations.filter(org => {
       const matchesSearch = org.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -98,13 +96,13 @@ export default function OrganizationsList() {
       const matchesIndustry = selectedIndustry === 'all' || org.industry === selectedIndustry;
       const matchesRating = selectedRating === 'all' || org.rating === selectedRating;
       const matchesScore = (org.esg_score || 0) >= scoreRange[0] && (org.esg_score || 0) <= scoreRange[1];
-      
+
       return matchesSearch && matchesIndustry && matchesRating && matchesScore;
     });
 
     result.sort((a, b) => {
       const dir = sortDir === 'asc' ? 1 : -1;
-      
+
       if (sortBy === 'name') {
         return a.name.localeCompare(b.name) * dir;
       }
@@ -115,15 +113,14 @@ export default function OrganizationsList() {
         const ratings = ['AAA', 'AA', 'A', 'BBB', 'BB', 'B', 'CCC', 'CC', 'C'];
         return (ratings.indexOf(a.rating || 'C') - ratings.indexOf(b.rating || 'C')) * dir;
       }
-      
+
       return 0;
     });
 
     return result;
   }, [organizations, searchQuery, selectedIndustry, selectedRating, scoreRange, sortBy, sortDir]);
 
-  // Industries et ratings uniques
-  const industries = useMemo(() => 
+  const industries = useMemo(() =>
     Array.from(new Set(organizations.map(o => o.industry).filter(Boolean))) as string[],
     [organizations]
   );
@@ -133,7 +130,6 @@ export default function OrganizationsList() {
     [organizations]
   );
 
-  // Stats
   const stats = useMemo(() => ({
     total: organizations.length,
     avgScore: Math.round(organizations.reduce((sum, o) => sum + (o.esg_score || 0), 0) / organizations.length),
@@ -166,7 +162,7 @@ export default function OrganizationsList() {
     const filters = [];
     if (selectedIndustry !== 'all') filters.push({ key: 'industry', label: selectedIndustry });
     if (selectedRating !== 'all') filters.push({ key: 'rating', label: `Rating ${selectedRating}` });
-    if (scoreRange[0] !== 0 || scoreRange[1] !== 100) 
+    if (scoreRange[0] !== 0 || scoreRange[1] !== 100)
       filters.push({ key: 'score', label: `Score ${scoreRange[0]}-${scoreRange[1]}` });
     return filters;
   }, [selectedIndustry, selectedRating, scoreRange]);
@@ -192,11 +188,11 @@ export default function OrganizationsList() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
             <Building2 className="h-8 w-8 text-primary-600" />
-            Organisations CAC 40
+            {t('organizations.title')}
           </h1>
           <p className="text-gray-600 mt-1">
-            {filteredAndSorted.length} entreprise{filteredAndSorted.length > 1 ? 's' : ''} 
-            {filteredAndSorted.length !== organizations.length && ` sur ${organizations.length}`}
+            {filteredAndSorted.length} {t('organizations.company')}{filteredAndSorted.length > 1 ? 's' : ''}
+            {filteredAndSorted.length !== organizations.length && ` ${t('organizations.outOf')} ${organizations.length}`}
           </p>
         </div>
         <div className="flex gap-2">
@@ -205,11 +201,11 @@ export default function OrganizationsList() {
             onClick={() => navigate('/app/organizations/compare')}
           >
             <BarChart3 className="h-4 w-4 mr-2" />
-            Comparer
+            {t('organizations.compare')}
           </Button>
           <Button onClick={() => {}}>
             <Download className="h-4 w-4 mr-2" />
-            Exporter
+            {t('common.export')}
           </Button>
         </div>
       </div>
@@ -219,7 +215,7 @@ export default function OrganizationsList() {
         <Card className="bg-gradient-to-br from-primary-50 to-primary-100 border-primary-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-primary-700 font-medium">Total</p>
+              <p className="text-sm text-primary-700 font-medium">{t('common.total')}</p>
               <p className="text-3xl font-bold text-primary-900 mt-1">{stats.total}</p>
             </div>
             <Building2 className="h-10 w-10 text-primary-600 opacity-50" />
@@ -229,7 +225,7 @@ export default function OrganizationsList() {
         <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-green-700 font-medium">Score moyen</p>
+              <p className="text-sm text-green-700 font-medium">{t('organizations.avgScore')}</p>
               <p className="text-3xl font-bold text-green-900 mt-1">{stats.avgScore}</p>
             </div>
             <Zap className="h-10 w-10 text-green-600 opacity-50" />
@@ -239,7 +235,7 @@ export default function OrganizationsList() {
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-blue-700 font-medium">Top A+</p>
+              <p className="text-sm text-blue-700 font-medium">{t('organizations.topAPlus')}</p>
               <p className="text-3xl font-bold text-blue-900 mt-1">{stats.topPerformers}</p>
             </div>
             <Award className="h-10 w-10 text-blue-600 opacity-50" />
@@ -249,7 +245,7 @@ export default function OrganizationsList() {
         <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-purple-700 font-medium">En progression</p>
+              <p className="text-sm text-purple-700 font-medium">{t('organizations.improving')}</p>
               <p className="text-3xl font-bold text-purple-900 mt-1">{stats.improving}</p>
             </div>
             <TrendingUp className="h-10 w-10 text-purple-600 opacity-50" />
@@ -259,7 +255,7 @@ export default function OrganizationsList() {
         <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-orange-700 font-medium">Secteurs</p>
+              <p className="text-sm text-orange-700 font-medium">{t('organizations.sectors')}</p>
               <p className="text-3xl font-bold text-orange-900 mt-1">{stats.sectors}</p>
             </div>
             <Sparkles className="h-10 w-10 text-orange-600 opacity-50" />
@@ -267,23 +263,23 @@ export default function OrganizationsList() {
         </Card>
       </div>
 
-            {/* Filtres & Recherche */}
+      {/* Filters & Search */}
       <Card>
         <div className="space-y-4">
           <div className="flex flex-col md:flex-row gap-4">
-            {/* Recherche */}
+            {/* Search */}
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Rechercher par nom ou ID..."
+                placeholder={t('organizations.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
             </div>
 
-            {/* Secteur */}
+            {/* Sector */}
             <div className="flex items-center gap-2">
               <Filter className="h-5 w-5 text-gray-400" />
               <select
@@ -291,7 +287,7 @@ export default function OrganizationsList() {
                 onChange={(e) => setSelectedIndustry(e.target.value)}
                 className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 min-w-[180px]"
               >
-                <option value="all">Tous les secteurs</option>
+                <option value="all">{t('organizations.allSectors')}</option>
                 {industries.map(industry => (
                   <option key={industry} value={industry}>{industry}</option>
                 ))}
@@ -304,13 +300,13 @@ export default function OrganizationsList() {
               onChange={(e) => setSelectedRating(e.target.value)}
               className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 min-w-[150px]"
             >
-              <option value="all">Tous les ratings</option>
+              <option value="all">{t('organizations.allRatings')}</option>
               {ratings.map(rating => (
                 <option key={rating} value={rating}>Rating {rating}</option>
               ))}
             </select>
 
-            {/* Tri */}
+            {/* Sort */}
             <div className="flex items-center gap-2">
               <ArrowUpDown className="h-5 w-5 text-gray-400" />
               <select
@@ -322,16 +318,16 @@ export default function OrganizationsList() {
                 }}
                 className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
               >
-                <option value="score-desc">Score ↓</option>
-                <option value="score-asc">Score ↑</option>
-                <option value="name-asc">Nom A→Z</option>
-                <option value="name-desc">Nom Z→A</option>
-                <option value="rating-asc">Rating ↑</option>
-                <option value="rating-desc">Rating ↓</option>
+                <option value="score-desc">{t('organizations.sortScoreDesc')}</option>
+                <option value="score-asc">{t('organizations.sortScoreAsc')}</option>
+                <option value="name-asc">{t('organizations.sortNameAZ')}</option>
+                <option value="name-desc">{t('organizations.sortNameZA')}</option>
+                <option value="rating-asc">{t('organizations.sortRatingAsc')}</option>
+                <option value="rating-desc">{t('organizations.sortRatingDesc')}</option>
               </select>
             </div>
 
-            {/* Vue */}
+            {/* View mode */}
             <div className="flex border border-gray-300 rounded-lg overflow-hidden">
               <button
                 onClick={() => setViewMode('grid')}
@@ -356,10 +352,10 @@ export default function OrganizationsList() {
             </div>
           </div>
 
-          {/* Filtres actifs */}
+          {/* Active filters */}
           {activeFilters.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm text-gray-600">Filtres actifs:</span>
+              <span className="text-sm text-gray-600">{t('organizations.activeFilters')}:</span>
               {activeFilters.map(filter => (
                 <span
                   key={filter.key}
@@ -382,14 +378,14 @@ export default function OrganizationsList() {
                 onClick={clearFilters}
                 className="text-sm text-primary-600 hover:text-primary-700 font-medium"
               >
-                Tout effacer
+                {t('organizations.clearAll')}
               </button>
             </div>
           )}
         </div>
       </Card>
 
-      {/* Liste des organisations - MODE GRILLE */}
+      {/* Grid / List mode */}
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredAndSorted.map(org => (
@@ -420,10 +416,10 @@ export default function OrganizationsList() {
                 </span>
               )}
 
-              {/* Score ESG */}
+              {/* ESG Score */}
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-600 font-medium">Score ESG Global</span>
+                  <span className="text-sm text-gray-600 font-medium">{t('organizations.globalEsgScore')}</span>
                   <span className={`text-3xl font-bold ${getScoreColor(org.esg_score || 0)}`}>
                     {org.esg_score}
                   </span>
@@ -436,7 +432,7 @@ export default function OrganizationsList() {
                 </div>
               </div>
 
-              {/* Piliers E/S/G */}
+              {/* E/S/G pillars */}
               <div className="grid grid-cols-3 gap-2 mb-4">
                 <div className="text-center">
                   <p className="text-xs text-gray-500 mb-1">E</p>
@@ -452,28 +448,28 @@ export default function OrganizationsList() {
                 </div>
               </div>
 
-              {/* Tendance */}
+              {/* Trend */}
               {org.trend !== undefined && (
                 <div className="flex items-center gap-2 text-sm pb-4 border-b border-gray-200 mb-4">
                   {org.trend > 0 ? (
                     <>
                       <TrendingUp className="h-4 w-4 text-green-600" />
                       <span className="text-green-600 font-semibold">+{org.trend.toFixed(1)}%</span>
-                      <span className="text-gray-500">vs période précédente</span>
+                      <span className="text-gray-500">{t('organizations.vsPrevPeriod')}</span>
                     </>
                   ) : (
                     <>
                       <TrendingDown className="h-4 w-4 text-red-600" />
                       <span className="text-red-600 font-semibold">{org.trend.toFixed(1)}%</span>
-                      <span className="text-gray-500">vs période précédente</span>
+                      <span className="text-gray-500">{t('organizations.vsPrevPeriod')}</span>
                     </>
                   )}
                 </div>
               )}
 
-              {/* Complétude */}
+              {/* Completeness */}
               <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-                <span>Complétude des données</span>
+                <span>{t('organizations.dataCompleteness')}</span>
                 <span className="font-semibold">{org.data_completeness}%</span>
               </div>
 
@@ -488,35 +484,34 @@ export default function OrganizationsList() {
                 }}
               >
                 <Eye className="h-4 w-4 mr-2" />
-                Voir les détails
+                {t('organizations.viewDetails')}
               </Button>
             </Card>
           ))}
         </div>
       ) : (
-        // MODE LISTE
         <Card>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b-2 border-gray-200">
                 <tr>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">
-                    Organisation
+                    {t('organizations.organization')}
                   </th>
                   <th className="text-center py-4 px-6 font-semibold text-gray-700 text-sm">
                     Rating
                   </th>
                   <th className="text-center py-4 px-6 font-semibold text-gray-700 text-sm">
-                    Score Global
+                    {t('organizations.globalScore')}
                   </th>
                   <th className="text-center py-4 px-6 font-semibold text-gray-700 text-sm">
                     E / S / G
                   </th>
                   <th className="text-center py-4 px-6 font-semibold text-gray-700 text-sm">
-                    Tendance
+                    {t('organizations.trend')}
                   </th>
                   <th className="text-right py-4 px-6 font-semibold text-gray-700 text-sm">
-                    Actions
+                    {t('common.actions')}
                   </th>
                 </tr>
               </thead>
@@ -579,7 +574,7 @@ export default function OrganizationsList() {
                         }}
                       >
                         <Eye className="h-4 w-4 mr-2" />
-                        Détails
+                        {t('common.details')}
                       </Button>
                     </td>
                   </tr>
@@ -594,12 +589,12 @@ export default function OrganizationsList() {
         <Card>
           <div className="text-center py-16">
             <Activity className="h-20 w-20 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-600 text-xl font-medium mb-2">Aucune organisation trouvée</p>
+            <p className="text-gray-600 text-xl font-medium mb-2">{t('organizations.notFound')}</p>
             <p className="text-gray-500 mb-4">
-              Essayez de modifier vos filtres de recherche
+              {t('organizations.tryModifySearch')}
             </p>
             <Button variant="secondary" onClick={clearFilters}>
-              Réinitialiser les filtres
+              {t('organizations.resetFilters')}
             </Button>
           </div>
         </Card>

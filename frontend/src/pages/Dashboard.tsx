@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { SectorBenchmark } from '../components/esg/SectorBenchmark';
 import { TrendAnalysis } from '../components/esg/TrendAnalysis';
@@ -28,6 +29,7 @@ interface ScoreData {
 }
 
 export const Dashboard: React.FC = () => {
+  const { t } = useTranslation();
   const [scoreData, setScoreData] = useState<ScoreData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +47,7 @@ export const Dashboard: React.FC = () => {
       const response = await api.get(`/esg/scoring/organization/${organizationId}`);
       setScoreData(response.data);
     } catch (err) {
-      setError("Erreur lors du chargement des données");
+      setError(t('dashboard.loadError'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -81,7 +83,7 @@ export const Dashboard: React.FC = () => {
   if (!scoreData) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">Aucune donnée disponible</p>
+        <p className="text-gray-500">{t('dashboard.noData')}</p>
       </div>
     );
   }
@@ -93,7 +95,7 @@ export const Dashboard: React.FC = () => {
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-2xl font-bold">{scoreData.organization_name}</h1>
-            <p className="text-blue-100">Tableau de bord ESG</p>
+            <p className="text-blue-100">{t('dashboard.esgDashboard')}</p>
           </div>
           <div className="text-right">
             <div className="text-4xl font-bold">{scoreData.overall_score}</div>
@@ -105,7 +107,7 @@ export const Dashboard: React.FC = () => {
       {/* Scores par pilier */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
-          <h3 className="text-sm font-medium text-gray-500">Environnement</h3>
+          <h3 className="text-sm font-medium text-gray-500">{t('dashboard.environment')}</h3>
           <div className="mt-2 flex items-baseline">
             <p className="text-3xl font-semibold text-gray-900">
               {scoreData.pillar_scores.environmental}
@@ -113,7 +115,7 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
-          <h3 className="text-sm font-medium text-gray-500">Social</h3>
+          <h3 className="text-sm font-medium text-gray-500">{t('dashboard.social')}</h3>
           <div className="mt-2 flex items-baseline">
             <p className="text-3xl font-semibold text-gray-900">
               {scoreData.pillar_scores.social}
@@ -121,7 +123,7 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
         <div className="bg-white rounded-lg shadow p-6 border-l-4 border-purple-500">
-          <h3 className="text-sm font-medium text-gray-500">Gouvernance</h3>
+          <h3 className="text-sm font-medium text-gray-500">{t('dashboard.governance')}</h3>
           <div className="mt-2 flex items-baseline">
             <p className="text-3xl font-semibold text-gray-900">
               {scoreData.pillar_scores.governance}
@@ -132,37 +134,37 @@ export const Dashboard: React.FC = () => {
 
       {/* Benchmark et Tendance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SectorBenchmark 
-          organizationId={organizationId} 
+        <SectorBenchmark
+          organizationId={organizationId}
           sector={scoreData.sector}
         />
-        
+
         {scoreData.trend && (
           <TrendAnalysis trendData={scoreData.trend} />
         )}
       </div>
 
-      {/* Qualité des données */}
+      {/* Qualite des donnees */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">Qualité des données</h3>
+        <h3 className="text-lg font-semibold mb-4">{t('dashboard.dataQuality')}</h3>
         <div className="flex items-center space-x-4">
           <div className="flex-1">
             <div className="flex justify-between mb-1">
-              <span className="text-sm font-medium text-gray-700">Complétude</span>
+              <span className="text-sm font-medium text-gray-700">{t('dashboard.completeness')}</span>
               <span className="text-sm font-medium text-gray-700">
                 {scoreData.data_quality.completeness}%
               </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-blue-600 rounded-full h-2" 
+              <div
+                className="bg-blue-600 rounded-full h-2"
                 style={{ width: `${scoreData.data_quality.completeness}%` }}
               ></div>
             </div>
           </div>
           <div className="flex items-center">
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${getConfidenceColor(scoreData.data_quality.confidence_level)}`}>
-              Confiance {scoreData.data_quality.confidence_level}
+              {t('dashboard.confidence')} {scoreData.data_quality.confidence_level}
             </span>
           </div>
         </div>

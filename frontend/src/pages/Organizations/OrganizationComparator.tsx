@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Building2,
   ArrowLeft,
@@ -59,9 +60,10 @@ interface OrgWithScores extends Organization {
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export default function OrganizationComparator() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   const [allOrganizations, setAllOrganizations] = useState<Organization[]>([]);
   const [selectedOrgs, setSelectedOrgs] = useState<OrgWithScores[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,7 +74,6 @@ export default function OrganizationComparator() {
   }, []);
 
   useEffect(() => {
-    // Charger les organisations pré-sélectionnées depuis l'URL
     const ids = searchParams.get('ids')?.split(',').filter(Boolean) || [];
     if (ids.length > 0 && allOrganizations.length > 0) {
       const orgsToSelect = allOrganizations
@@ -100,14 +101,14 @@ export default function OrganizationComparator() {
 
   const toggleOrganization = (org: Organization) => {
     const isSelected = selectedOrgs.find(o => o.id === org.id);
-    
+
     if (isSelected) {
       const newSelected = selectedOrgs.filter(o => o.id !== org.id);
       setSelectedOrgs(newSelected);
       updateUrl(newSelected);
     } else {
       if (selectedOrgs.length >= 5) {
-        alert('Maximum 5 organisations pour la comparaison');
+        alert(t('comparator.maxOrgsAlert'));
         return;
       }
       const newSelected = [...selectedOrgs, { ...org, scores: generateConsistentScores(org.id) }];
@@ -130,19 +131,17 @@ export default function OrganizationComparator() {
     );
   }, [allOrganizations, searchQuery]);
 
-  // Données pour le radar chart
   const radarData = useMemo(() => {
     if (selectedOrgs.length === 0) return [];
-    
-    return [
-      { subject: 'Score Global', ...Object.fromEntries(selectedOrgs.map(org => [org.name, org.scores.overall])) },
-      { subject: 'Environnemental', ...Object.fromEntries(selectedOrgs.map(org => [org.name, org.scores.environmental])) },
-      { subject: 'Social', ...Object.fromEntries(selectedOrgs.map(org => [org.name, org.scores.social])) },
-      { subject: 'Gouvernance', ...Object.fromEntries(selectedOrgs.map(org => [org.name, org.scores.governance])) }
-    ];
-  }, [selectedOrgs]);
 
-  // Données pour le bar chart
+    return [
+      { subject: t('comparator.globalScore'), ...Object.fromEntries(selectedOrgs.map(org => [org.name, org.scores.overall])) },
+      { subject: t('comparator.environmental'), ...Object.fromEntries(selectedOrgs.map(org => [org.name, org.scores.environmental])) },
+      { subject: t('comparator.social'), ...Object.fromEntries(selectedOrgs.map(org => [org.name, org.scores.social])) },
+      { subject: t('comparator.governance'), ...Object.fromEntries(selectedOrgs.map(org => [org.name, org.scores.governance])) }
+    ];
+  }, [selectedOrgs, t]);
+
   const barData = useMemo(() => {
     return selectedOrgs.map(org => ({
       name: org.name.length > 15 ? org.name.substring(0, 15) + '...' : org.name,
@@ -152,11 +151,10 @@ export default function OrganizationComparator() {
     }));
   }, [selectedOrgs]);
 
-  // Insights
   const insights = useMemo(() => {
     if (selectedOrgs.length === 0) return null;
 
-    const bestOverall = selectedOrgs.reduce((best, org) => 
+    const bestOverall = selectedOrgs.reduce((best, org) =>
       org.scores.overall > best.scores.overall ? org : best
     );
 
@@ -188,7 +186,7 @@ export default function OrganizationComparator() {
   const exportCSV = () => {
     if (selectedOrgs.length === 0) return;
 
-    const headers = ['Organisation', 'Score Global', 'E', 'S', 'G', 'Rating', 'Tendance'];
+    const headers = [t('comparator.organization'), t('comparator.globalScore'), 'E', 'S', 'G', 'Rating', t('comparator.trend')];
     const rows = selectedOrgs.map(org => [
       org.name,
       org.scores.overall,
@@ -227,15 +225,15 @@ export default function OrganizationComparator() {
             size="sm"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Retour
+            {t('common.back')}
           </Button>
           <div>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
               <BarChart3 className="h-8 w-8 text-primary-600" />
-              Comparateur d'Organisations
+              {t('comparator.title')}
             </h1>
             <p className="text-gray-600 mt-1">
-              Comparez jusqu'à 5 organisations côte à côte
+              {t('comparator.subtitle')}
             </p>
           </div>
         </div>
@@ -243,22 +241,22 @@ export default function OrganizationComparator() {
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => navigator.clipboard.writeText(window.location.href)}>
             <Share2 className="h-4 w-4 mr-2" />
-            Partager
+            {t('comparator.share')}
           </Button>
           <Button variant="secondary" onClick={exportCSV} disabled={selectedOrgs.length === 0}>
             <Download className="h-4 w-4 mr-2" />
-            Exporter CSV
+            {t('comparator.exportCSV')}
           </Button>
         </div>
       </div>
 
-      {/* Sélection des Organisations */}
+      {/* Selection */}
       <Card>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Sélection des Organisations ({selectedOrgs.length}/5)
+          {t('comparator.selectionTitle')} ({selectedOrgs.length}/5)
         </h2>
 
-        {/* Organisations sélectionnées */}
+        {/* Selected orgs */}
         {selectedOrgs.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-4 p-4 bg-gray-50 rounded-lg">
             {selectedOrgs.map(org => (
@@ -278,19 +276,19 @@ export default function OrganizationComparator() {
           </div>
         )}
 
-        {/* Recherche */}
+        {/* Search */}
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
           <input
             type="text"
-            placeholder="Rechercher une organisation..."
+            placeholder={t('comparator.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
           />
         </div>
 
-        {/* Liste des organisations */}
+        {/* Organization list */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 max-h-64 overflow-y-auto">
           {filteredOrgs.map(org => {
             const isSelected = selectedOrgs.find(o => o.id === org.id);
@@ -325,10 +323,10 @@ export default function OrganizationComparator() {
           <div className="text-center py-16">
             <Building2 className="h-20 w-20 text-gray-300 mx-auto mb-4" />
             <p className="text-xl font-medium text-gray-900 mb-2">
-              Aucune organisation sélectionnée
+              {t('comparator.noOrgSelected')}
             </p>
             <p className="text-gray-600">
-              Sélectionnez au moins 2 organisations pour commencer la comparaison
+              {t('comparator.selectAtLeastTwo')}
             </p>
           </div>
         </Card>
@@ -340,7 +338,7 @@ export default function OrganizationComparator() {
               <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm text-green-700 font-medium">Meilleur score</p>
+                    <p className="text-sm text-green-700 font-medium">{t('comparator.bestScore')}</p>
                     <p className="text-2xl font-bold text-green-900 mt-1">{insights.bestOverall.scores.overall}</p>
                     <p className="text-xs text-green-600 mt-1">{insights.bestOverall.name}</p>
                   </div>
@@ -351,9 +349,9 @@ export default function OrganizationComparator() {
               <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm text-blue-700 font-medium">Score moyen</p>
+                    <p className="text-sm text-blue-700 font-medium">{t('comparator.avgScore')}</p>
                     <p className="text-2xl font-bold text-blue-900 mt-1">{insights.avgScore}</p>
-                    <p className="text-xs text-blue-600 mt-1">{selectedOrgs.length} organisations</p>
+                    <p className="text-xs text-blue-600 mt-1">{selectedOrgs.length} {t('comparator.organizations')}</p>
                   </div>
                   <Activity className="h-8 w-8 text-blue-600 opacity-50" />
                 </div>
@@ -362,9 +360,9 @@ export default function OrganizationComparator() {
               <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm text-orange-700 font-medium">Écart max</p>
+                    <p className="text-sm text-orange-700 font-medium">{t('comparator.maxGap')}</p>
                     <p className="text-2xl font-bold text-orange-900 mt-1">{Math.round(insights.gap)} pts</p>
-                    <p className="text-xs text-orange-600 mt-1">Entre min et max</p>
+                    <p className="text-xs text-orange-600 mt-1">{t('comparator.betweenMinMax')}</p>
                   </div>
                   <TrendingUp className="h-8 w-8 text-orange-600 opacity-50" />
                 </div>
@@ -373,7 +371,7 @@ export default function OrganizationComparator() {
               <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm text-purple-700 font-medium">Leader Environnemental</p>
+                    <p className="text-sm text-purple-700 font-medium">{t('comparator.envLeader')}</p>
                     <p className="text-2xl font-bold text-purple-900 mt-1">{insights.bestEnv.scores.environmental}</p>
                     <p className="text-xs text-purple-600 mt-1">{insights.bestEnv.name}</p>
                   </div>
@@ -383,16 +381,16 @@ export default function OrganizationComparator() {
             </div>
           )}
 
-          {/* Tableau de comparaison */}
+          {/* Comparison table */}
           <Card>
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Comparaison Détaillée
+              {t('comparator.detailedComparison')}
             </h3>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b-2 border-gray-200">
                   <tr>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Métrique</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">{t('comparator.metric')}</th>
                     {selectedOrgs.map((org, index) => (
                       <th key={org.id} className="text-center py-3 px-4 font-semibold text-gray-700">
                         <div className="flex items-center justify-center gap-2">
@@ -405,7 +403,7 @@ export default function OrganizationComparator() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   <tr className="hover:bg-gray-50">
-                    <td className="py-3 px-4 font-medium text-gray-900">Score Global</td>
+                    <td className="py-3 px-4 font-medium text-gray-900">{t('comparator.globalScore')}</td>
                     {selectedOrgs.map(org => {
                       const isMax = org.scores.overall === Math.max(...selectedOrgs.map(o => o.scores.overall));
                       return (
@@ -431,7 +429,7 @@ export default function OrganizationComparator() {
                   </tr>
 
                   <tr className="hover:bg-gray-50 bg-green-50">
-                    <td className="py-3 px-4 font-medium text-gray-900">🌿 Environnemental</td>
+                    <td className="py-3 px-4 font-medium text-gray-900">{t('comparator.environmental')}</td>
                     {selectedOrgs.map(org => {
                       const isMax = org.scores.environmental === Math.max(...selectedOrgs.map(o => o.scores.environmental));
                       return (
@@ -445,7 +443,7 @@ export default function OrganizationComparator() {
                   </tr>
 
                   <tr className="hover:bg-gray-50 bg-blue-50">
-                    <td className="py-3 px-4 font-medium text-gray-900">👥 Social</td>
+                    <td className="py-3 px-4 font-medium text-gray-900">{t('comparator.social')}</td>
                     {selectedOrgs.map(org => {
                       const isMax = org.scores.social === Math.max(...selectedOrgs.map(o => o.scores.social));
                       return (
@@ -459,7 +457,7 @@ export default function OrganizationComparator() {
                   </tr>
 
                   <tr className="hover:bg-gray-50 bg-purple-50">
-                    <td className="py-3 px-4 font-medium text-gray-900">⚖️ Gouvernance</td>
+                    <td className="py-3 px-4 font-medium text-gray-900">{t('comparator.governance')}</td>
                     {selectedOrgs.map(org => {
                       const isMax = org.scores.governance === Math.max(...selectedOrgs.map(o => o.scores.governance));
                       return (
@@ -473,7 +471,7 @@ export default function OrganizationComparator() {
                   </tr>
 
                   <tr className="hover:bg-gray-50">
-                    <td className="py-3 px-4 font-medium text-gray-900">Tendance</td>
+                    <td className="py-3 px-4 font-medium text-gray-900">{t('comparator.trend')}</td>
                     {selectedOrgs.map(org => (
                       <td key={org.id} className="py-3 px-4 text-center">
                         <div className="flex items-center justify-center gap-1">
@@ -494,10 +492,10 @@ export default function OrganizationComparator() {
                   </tr>
 
                   <tr className="hover:bg-gray-50">
-                    <td className="py-3 px-4 font-medium text-gray-900">Secteur</td>
+                    <td className="py-3 px-4 font-medium text-gray-900">{t('comparator.sector')}</td>
                     {selectedOrgs.map(org => (
                       <td key={org.id} className="py-3 px-4 text-center text-sm text-gray-600">
-                        {org.industry || '—'}
+                        {org.industry || '-'}
                       </td>
                     ))}
                   </tr>
@@ -506,12 +504,11 @@ export default function OrganizationComparator() {
             </div>
           </Card>
 
-          {/* Graphiques */}
+          {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Radar Chart */}
             <Card>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Vue d'ensemble Multi-dimensionnelle
+                {t('comparator.multidimOverview')}
               </h3>
               <ResponsiveContainer width="100%" height={400}>
                 <RadarChart data={radarData}>
@@ -535,10 +532,9 @@ export default function OrganizationComparator() {
               </ResponsiveContainer>
             </Card>
 
-            {/* Bar Chart */}
             <Card>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Comparaison par Pilier
+                {t('comparator.pillarComparison')}
               </h3>
               <ResponsiveContainer width="100%" height={400}>
                 <BarChart data={barData}>
@@ -547,9 +543,9 @@ export default function OrganizationComparator() {
                   <YAxis domain={[0, 100]} />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="Environmental" fill="#10b981" name="Environnemental" />
-                  <Bar dataKey="Social" fill="#3b82f6" name="Social" />
-                  <Bar dataKey="Governance" fill="#8b5cf6" name="Gouvernance" />
+                  <Bar dataKey="Environmental" fill="#10b981" name={t('comparator.environmental')} />
+                  <Bar dataKey="Social" fill="#3b82f6" name={t('comparator.social')} />
+                  <Bar dataKey="Governance" fill="#8b5cf6" name={t('comparator.governance')} />
                 </BarChart>
               </ResponsiveContainer>
             </Card>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Download,
   Eye,
@@ -38,25 +39,25 @@ interface Report {
 
 const TYPE_CONFIG = {
   executive: {
-    label: 'Exécutif',
+    labelKey: 'reportsList.typeExecutive',
     icon: FileBarChart,
     color: 'bg-purple-100 text-purple-700 border-purple-200',
     iconBg: 'bg-purple-100 text-purple-600'
   },
   detailed: {
-    label: 'Détaillé',
+    labelKey: 'reportsList.typeDetailed',
     icon: FileText,
     color: 'bg-blue-100 text-blue-700 border-blue-200',
     iconBg: 'bg-blue-100 text-blue-600'
   },
   regulatory: {
-    label: 'Réglementaire',
+    labelKey: 'reportsList.typeRegulatory',
     icon: FileSpreadsheet,
     color: 'bg-orange-100 text-orange-700 border-orange-200',
     iconBg: 'bg-orange-100 text-orange-600'
   },
   standard: {
-    label: 'Standard',
+    labelKey: 'reportsList.typeStandard',
     icon: FileText,
     color: 'bg-gray-100 text-gray-700 border-gray-200',
     iconBg: 'bg-gray-100 text-gray-600'
@@ -107,6 +108,7 @@ const MOCK_REPORTS: Report[] = [
 ];
 
 export default function ReportsList() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
@@ -122,11 +124,8 @@ export default function ReportsList() {
     try {
       const data = await reportsService.getReports();
       const items = Array.isArray(data) ? data : data?.items || data?.reports || [];
-      
-      // Si pas de rapports réels, utiliser les mock
       setReports(items.length > 0 ? items : MOCK_REPORTS);
     } catch (error) {
-      // Utiliser les mock en cas d'erreur
       setReports(MOCK_REPORTS);
     } finally {
       setLoading(false);
@@ -146,7 +145,7 @@ export default function ReportsList() {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Download failed:', error);
-      alert('Téléchargement non disponible en mode démo');
+      alert(t('reportsList.downloadUnavailable'));
     }
   };
 
@@ -156,7 +155,6 @@ export default function ReportsList() {
     return matchesSearch && matchesType;
   });
 
-  // Stats
   const stats = {
     total: reports.length,
     thisMonth: reports.filter(r => {
@@ -182,10 +180,10 @@ export default function ReportsList() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
             <FileText className="h-8 w-8 text-primary-600" />
-            Rapports ESG
+            {t('reportsList.title')}
           </h1>
           <p className="mt-2 text-gray-600">
-            Générez et consultez vos rapports de conformité et d'analyse
+            {t('reportsList.subtitle')}
           </p>
         </div>
         <div className="flex gap-3">
@@ -194,11 +192,11 @@ export default function ReportsList() {
             onClick={loadReports}
           >
             <RefreshCw className="h-4 w-4 mr-2" />
-            Actualiser
+            {t('common.refresh')}
           </Button>
           <Button onClick={() => navigate('/reports/generate')}>
             <Plus className="h-4 w-4 mr-2" />
-            Nouveau Rapport
+            {t('reportsList.newReport')}
           </Button>
         </div>
       </div>
@@ -208,7 +206,7 @@ export default function ReportsList() {
         <Card className="bg-gradient-to-br from-primary-50 to-primary-100 border-primary-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-primary-700 font-medium">Total Rapports</p>
+              <p className="text-sm text-primary-700 font-medium">{t('reportsList.totalReports')}</p>
               <p className="text-3xl font-bold text-primary-900 mt-1">{stats.total}</p>
             </div>
             <FileText className="h-10 w-10 text-primary-600 opacity-50" />
@@ -218,7 +216,7 @@ export default function ReportsList() {
         <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-green-700 font-medium">Ce mois-ci</p>
+              <p className="text-sm text-green-700 font-medium">{t('reportsList.thisMonth')}</p>
               <p className="text-3xl font-bold text-green-900 mt-1">{stats.thisMonth}</p>
             </div>
             <TrendingUp className="h-10 w-10 text-green-600 opacity-50" />
@@ -228,7 +226,7 @@ export default function ReportsList() {
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-blue-700 font-medium">Complétés</p>
+              <p className="text-sm text-blue-700 font-medium">{t('reportsList.completed')}</p>
               <p className="text-3xl font-bold text-blue-900 mt-1">{stats.completed}</p>
             </div>
             <CheckCircle className="h-10 w-10 text-blue-600 opacity-50" />
@@ -236,11 +234,11 @@ export default function ReportsList() {
         </Card>
       </div>
 
-      {/* Templates rapides */}
+      {/* Quick Templates */}
       <Card>
         <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-primary-600" />
-          Templates Rapides
+          {t('reportsList.quickTemplates')}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {Object.entries(TYPE_CONFIG).map(([key, config]) => {
@@ -254,30 +252,28 @@ export default function ReportsList() {
                 <div className={`w-12 h-12 rounded-lg ${config.iconBg} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
                   <Icon className="h-6 w-6" />
                 </div>
-                <p className="font-semibold text-gray-900">{config.label}</p>
-                <p className="text-sm text-gray-500 mt-1">Générer un rapport {config.label.toLowerCase()}</p>
+                <p className="font-semibold text-gray-900">{t(config.labelKey)}</p>
+                <p className="text-sm text-gray-500 mt-1">{t('reportsList.generateType', { type: t(config.labelKey).toLowerCase() })}</p>
               </button>
             );
           })}
         </div>
       </Card>
 
-      {/* Filtres et recherche */}
+      {/* Filters and search */}
       <Card>
         <div className="flex flex-col md:flex-row gap-4">
-          {/* Recherche */}
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Rechercher un rapport..."
+              placeholder={t('reportsList.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
 
-          {/* Filtre type */}
           <div className="flex items-center gap-2">
             <Filter className="h-5 w-5 text-gray-400" />
             <select
@@ -285,16 +281,16 @@ export default function ReportsList() {
               onChange={(e) => setTypeFilter(e.target.value)}
               className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 min-w-[180px]"
             >
-              <option value="all">Tous les types</option>
+              <option value="all">{t('reportsList.allTypes')}</option>
               {Object.entries(TYPE_CONFIG).map(([key, config]) => (
-                <option key={key} value={key}>{config.label}</option>
+                <option key={key} value={key}>{t(config.labelKey)}</option>
               ))}
             </select>
           </div>
         </div>
       </Card>
 
-      {/* Liste des rapports */}
+      {/* Reports list */}
       <Card>
         {filteredReports.length > 0 ? (
           <div className="space-y-3">
@@ -314,12 +310,12 @@ export default function ReportsList() {
                     <div className={`w-12 h-12 rounded-lg ${config.iconBg} flex items-center justify-center flex-shrink-0`}>
                       <Icon className="h-6 w-6" />
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-gray-900 truncate">{name}</h3>
                       <div className="flex items-center gap-3 mt-1">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color} border`}>
-                          {config.label}
+                          {t(config.labelKey)}
                         </span>
                         {date && (
                           <span className="flex items-center gap-1 text-sm text-gray-500">
@@ -340,19 +336,19 @@ export default function ReportsList() {
                         {report.status === 'completed' && (
                           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
                             <CheckCircle className="h-3 w-3" />
-                            Terminé
+                            {t('reportsList.statusCompleted')}
                           </span>
                         )}
                         {report.status === 'processing' && (
                           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200">
                             <Clock className="h-3 w-3" />
-                            En cours
+                            {t('reportsList.statusProcessing')}
                           </span>
                         )}
                         {report.status === 'failed' && (
                           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
                             <AlertCircle className="h-3 w-3" />
-                            Échec
+                            {t('reportsList.statusFailed')}
                           </span>
                         )}
                       </div>
@@ -366,7 +362,7 @@ export default function ReportsList() {
                       className="opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <Eye className="h-4 w-4 mr-2" />
-                      Voir
+                      {t('common.view')}
                     </Button>
                     <Button
                       size="sm"
@@ -374,7 +370,7 @@ export default function ReportsList() {
                       className="opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <Download className="h-4 w-4 mr-2" />
-                      Télécharger
+                      {t('common.download')}
                     </Button>
                   </div>
                 </div>
@@ -385,17 +381,17 @@ export default function ReportsList() {
           <div className="text-center py-16">
             <FileText className="h-20 w-20 mx-auto text-gray-300 mb-4" />
             <p className="text-xl text-gray-600 font-medium mb-2">
-              {searchQuery || typeFilter !== 'all' ? 'Aucun rapport trouvé' : 'Aucun rapport généré'}
+              {searchQuery || typeFilter !== 'all' ? t('reportsList.noReportsFound') : t('reportsList.noReportsGenerated')}
             </p>
             <p className="text-gray-500 mb-6">
-              {searchQuery || typeFilter !== 'all' 
-                ? 'Essayez de modifier vos filtres' 
-                : 'Générez votre premier rapport ESG pour le voir ici'
+              {searchQuery || typeFilter !== 'all'
+                ? t('reportsList.tryModifyFilters')
+                : t('reportsList.generateFirstReport')
               }
             </p>
             <Button onClick={() => navigate('/reports/generate')}>
               <Plus className="h-4 w-4 mr-2" />
-              Générer un Rapport
+              {t('reportsList.generateReport')}
             </Button>
           </div>
         )}

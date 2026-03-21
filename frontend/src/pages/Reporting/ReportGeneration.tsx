@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   FileText,
   Download,
@@ -36,13 +37,6 @@ type ReportFormat = 'pdf' | 'excel' | 'word';
 
 type ReportPeriod = 'monthly' | 'quarterly' | 'yearly' | 'custom';
 
-const REPORT_PERIOD_LABELS: Record<ReportPeriod, string> = {
-  monthly: 'Mensuel',
-  quarterly: 'Trimestriel',
-  yearly: 'Annuel',
-  custom: 'Personnalisé',
-};
-
 async function generatePdfReport(reportData: {
   organization: Organization;
   scores: any;
@@ -67,16 +61,16 @@ async function generatePdfReport(reportData: {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
   doc.text(`Organisation : ${reportData.organization.name}`, 14, 42);
-  doc.text(`Période : ${start} au ${end}`, 14, 49);
+  doc.text(`Periode : ${start} au ${end}`, 14, 49);
   doc.text(`Type : ${reportData.type}`, 14, 56);
-  doc.text(`Généré le : ${generatedDate}`, 14, 63);
+  doc.text(`Genere le : ${generatedDate}`, 14, 63);
 
   doc.setDrawColor(229, 231, 235);
   doc.line(14, 69, 196, 69);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
-  doc.text('Synthèse du score ESG', 14, 81);
+  doc.text('Synthese du score ESG', 14, 81);
 
   doc.setFontSize(26);
   doc.setTextColor(37, 99, 235);
@@ -94,7 +88,7 @@ async function generatePdfReport(reportData: {
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.text('Détail par pilier', 14, 115);
+  doc.text('Detail par pilier', 14, 115);
 
   let y = 126;
   pillarRows.forEach(([label, value], index) => {
@@ -111,12 +105,12 @@ async function generatePdfReport(reportData: {
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.text('Historique récent', 14, 170);
+  doc.text('Historique recent', 14, 170);
 
   const recentEvolution = (reportData.evolution || []).slice(-6);
   y = 181;
   recentEvolution.forEach((item, index) => {
-    const periodLabel = item?.month || item?.date || `Période ${index + 1}`;
+    const periodLabel = item?.month || item?.date || `Periode ${index + 1}`;
     const value = Number(item?.overall_score ?? item?.score ?? 0).toFixed(1);
     if (index % 2 === 0) {
       doc.setFillColor(249, 250, 251);
@@ -131,7 +125,7 @@ async function generatePdfReport(reportData: {
 
   doc.setFontSize(8);
   doc.setTextColor(107, 114, 128);
-  doc.text('ESGFlow — Document généré automatiquement', 14, 287);
+  doc.text('ESGFlow - Document genere automatiquement', 14, 287);
 
   const fileName = `ESG_Rapport_${reportData.organization.name.replace(/\s+/g, '_')}_${format(new Date(), 'yyyyMMdd_HHmm')}.pdf`;
   const pdfBlob = doc.output('blob');
@@ -146,12 +140,12 @@ async function generatePdfReport(reportData: {
 }
 
 export default function ReportGeneration() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  
-  // Formulaire
+
   const [selectedOrg, setSelectedOrg] = useState<string>('');
   const [reportType, setReportType] = useState<ReportType>('executive');
   const [reportFormat, setReportFormat] = useState<ReportFormat>('pdf');
@@ -176,7 +170,7 @@ export default function ReportGeneration() {
       }
     } catch (error) {
       console.error('Error loading organizations:', error);
-      toast.error('Erreur lors du chargement des organisations');
+      toast.error(t('reporting.loadOrgError'));
     } finally {
       setLoading(false);
     }
@@ -184,7 +178,7 @@ export default function ReportGeneration() {
 
   const generateReport = async () => {
     if (!selectedOrg) {
-      toast.error('Veuillez sélectionner une organisation');
+      toast.error(t('reporting.selectOrgError'));
       return;
     }
 
@@ -193,7 +187,7 @@ export default function ReportGeneration() {
     try {
       const org = organizations.find(o => o.id === selectedOrg);
       if (!org) {
-        toast.error('Organisation introuvable');
+        toast.error(t('reporting.orgNotFound'));
         return;
       }
 
@@ -209,16 +203,12 @@ export default function ReportGeneration() {
         generatedAt: new Date().toISOString()
       };
 
-      // Afficher un toast de progression
-      const progressToast = toast.loading('Génération du rapport en cours...');
+      const progressToast = toast.loading(t('reporting.generatingProgress'));
 
-      // Simuler un délai pour l'effet visuel
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Log report format before switch
       console.log('Generating report format:', reportFormat);
 
-      // Générer selon le format choisi
       switch (reportFormat) {
         case 'pdf':
           await generatePdfReport(reportData);
@@ -231,11 +221,11 @@ export default function ReportGeneration() {
           break;
       }
 
-      toast.success('Rapport généré avec succès !', { id: progressToast });
-      
+      toast.success(t('reporting.generateSuccess'), { id: progressToast });
+
     } catch (error: any) {
       console.error('Error generating report:', error);
-      toast.error('Erreur lors de la génération du rapport');
+      toast.error(t('reporting.generateError'));
     } finally {
       setGenerating(false);
     }
@@ -244,40 +234,47 @@ export default function ReportGeneration() {
   const reportTypes = [
     {
       id: 'executive' as ReportType,
-      name: 'Rapport Exécutif',
-      description: 'Vue d\'ensemble synthétique pour la direction',
+      name: t('reporting.typeExecutive'),
+      description: t('reporting.typeExecutiveDesc'),
       icon: Award,
       color: 'from-purple-500 to-purple-600'
     },
     {
       id: 'detailed' as ReportType,
-      name: 'Rapport Détaillé',
-      description: 'Analyse complète avec tous les indicateurs',
+      name: t('reporting.typeDetailed'),
+      description: t('reporting.typeDetailedDesc'),
       icon: BarChart3,
       color: 'from-blue-500 to-blue-600'
     },
     {
       id: 'csrd' as ReportType,
-      name: 'Rapport CSRD',
-      description: 'Conforme à la directive européenne',
+      name: t('reporting.typeCSRD'),
+      description: t('reporting.typeCSRDDesc'),
       icon: Globe,
       color: 'from-green-500 to-green-600'
     },
     {
       id: 'gri' as ReportType,
-      name: 'Rapport GRI',
-      description: 'Standards GRI 2021',
+      name: t('reporting.typeGRI'),
+      description: t('reporting.typeGRIDesc'),
       icon: CheckCircle,
       color: 'from-orange-500 to-orange-600'
     },
     {
       id: 'tcfd' as ReportType,
-      name: 'Rapport TCFD',
-      description: 'Risques et opportunités climatiques',
+      name: t('reporting.typeTCFD'),
+      description: t('reporting.typeTCFDDesc'),
       icon: TrendingUp,
       color: 'from-red-500 to-red-600'
     }
   ];
+
+  const REPORT_PERIOD_LABELS: Record<ReportPeriod, string> = {
+    monthly: t('reporting.monthly'),
+    quarterly: t('reporting.quarterly'),
+    yearly: t('reporting.yearly'),
+    custom: t('reporting.custom'),
+  };
 
   if (loading) {
     return (
@@ -295,30 +292,29 @@ export default function ReportGeneration() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/90 ring-1 ring-white/15">
               <Sparkles className="h-3.5 w-3.5" />
-              Reporting ESG intelligent
+              {t('reporting.badge')}
             </div>
             <h1 className="mt-4 flex items-center gap-3 text-3xl font-bold tracking-tight">
               <FileText className="h-8 w-8 text-white" />
-              Génération de Rapports ESG
+              {t('reporting.title')}
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-white/80">
-              Créez des rapports professionnels, lisibles et prêts à partager pour la direction,
-              les auditeurs et les parties prenantes.
+              {t('reporting.subtitle')}
             </p>
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-white/70">Formats</p>
+              <p className="text-xs uppercase tracking-wide text-white/70">{t('reporting.formats')}</p>
               <p className="mt-1 text-lg font-semibold">PDF · Excel · Word</p>
             </div>
             <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-white/70">Standards</p>
+              <p className="text-xs uppercase tracking-wide text-white/70">{t('reporting.standards')}</p>
               <p className="mt-1 text-lg font-semibold">CSRD · GRI · TCFD</p>
             </div>
             <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-white/70">Objectif</p>
-              <p className="mt-1 text-lg font-semibold">Prêt à diffuser</p>
+              <p className="text-xs uppercase tracking-wide text-white/70">{t('reporting.objective')}</p>
+              <p className="mt-1 text-lg font-semibold">{t('reporting.readyToShare')}</p>
             </div>
           </div>
         </div>
@@ -327,11 +323,11 @@ export default function ReportGeneration() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Configuration */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Type de rapport */}
+          {/* Report Type */}
           <Card>
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary-600" />
-              Type de Rapport
+              {t('reporting.reportType')}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {reportTypes.map(type => (
@@ -361,18 +357,18 @@ export default function ReportGeneration() {
             </div>
           </Card>
 
-          {/* Configuration détaillée */}
+          {/* Detailed Configuration */}
           <Card>
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Filter className="h-5 w-5 text-primary-600" />
-              Configuration
+              {t('reporting.configuration')}
             </h2>
 
             <div className="space-y-4">
-              {/* Organisation */}
+              {/* Organization */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Organisation *
+                  {t('reporting.organisation')} *
                 </label>
                 <div className="relative">
                   <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -390,10 +386,10 @@ export default function ReportGeneration() {
                 </div>
               </div>
 
-              {/* Période */}
+              {/* Period */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Période de reporting
+                  {t('reporting.reportingPeriod')}
                 </label>
                 <div className="grid grid-cols-4 gap-2 mb-3">
                   {(['monthly', 'quarterly', 'yearly', 'custom'] as ReportPeriod[]).map(period => (
@@ -406,9 +402,7 @@ export default function ReportGeneration() {
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
-                      {period === 'monthly' ? 'Mensuel' : 
-                       period === 'quarterly' ? 'Trimestriel' : 
-                       period === 'yearly' ? 'Annuel' : 'Personnalisé'}
+                      {REPORT_PERIOD_LABELS[period]}
                     </button>
                   ))}
                 </div>
@@ -416,7 +410,7 @@ export default function ReportGeneration() {
                 {reportPeriod === 'custom' && (
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs text-gray-600 mb-1">Date de début</label>
+                      <label className="block text-xs text-gray-600 mb-1">{t('reporting.startDate')}</label>
                       <input
                         type="date"
                         value={startDate}
@@ -425,7 +419,7 @@ export default function ReportGeneration() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-600 mb-1">Date de fin</label>
+                      <label className="block text-xs text-gray-600 mb-1">{t('reporting.endDate')}</label>
                       <input
                         type="date"
                         value={endDate}
@@ -440,20 +434,20 @@ export default function ReportGeneration() {
               {/* Format */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Format de sortie
+                  {t('reporting.outputFormat')}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
-                  {(['pdf', 'excel', 'word'] as ReportFormat[]).map(format => (
+                  {(['pdf', 'excel', 'word'] as ReportFormat[]).map(fmt => (
                     <button
-                      key={format}
-                      onClick={() => setReportFormat(format)}
+                      key={fmt}
+                      onClick={() => setReportFormat(fmt)}
                       className={`px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-                        reportFormat === format
+                        reportFormat === fmt
                           ? 'bg-primary-600 text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
-                      {format === 'pdf' ? '📄 PDF' : format === 'excel' ? '📊 Excel' : '📝 Word'}
+                      {fmt === 'pdf' ? 'PDF' : fmt === 'excel' ? 'Excel' : 'Word'}
                     </button>
                   ))}
                 </div>
@@ -462,7 +456,7 @@ export default function ReportGeneration() {
               {/* Options */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Options du rapport
+                  {t('reporting.reportOptions')}
                 </label>
                 <div className="space-y-2">
                   <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
@@ -473,8 +467,8 @@ export default function ReportGeneration() {
                       className="w-5 h-5 text-primary-600 rounded focus:ring-2 focus:ring-primary-500"
                     />
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900">Inclure les graphiques</p>
-                      <p className="text-sm text-gray-600">Ajouter les visualisations de données</p>
+                      <p className="font-medium text-gray-900">{t('reporting.includeCharts')}</p>
+                      <p className="text-sm text-gray-600">{t('reporting.includeChartsDesc')}</p>
                     </div>
                   </label>
 
@@ -486,8 +480,8 @@ export default function ReportGeneration() {
                       className="w-5 h-5 text-primary-600 rounded focus:ring-2 focus:ring-primary-500"
                     />
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900">Inclure les recommandations</p>
-                      <p className="text-sm text-gray-600">Ajouter des axes d'amélioration</p>
+                      <p className="font-medium text-gray-900">{t('reporting.includeRecommendations')}</p>
+                      <p className="text-sm text-gray-600">{t('reporting.includeRecommendationsDesc')}</p>
                     </div>
                   </label>
 
@@ -499,8 +493,8 @@ export default function ReportGeneration() {
                       className="w-5 h-5 text-primary-600 rounded focus:ring-2 focus:ring-primary-500"
                     />
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900">Inclure la comparaison sectorielle</p>
-                      <p className="text-sm text-gray-600">Comparer avec les pairs du secteur</p>
+                      <p className="font-medium text-gray-900">{t('reporting.includeSectorComparison')}</p>
+                      <p className="text-sm text-gray-600">{t('reporting.includeSectorComparisonDesc')}</p>
                     </div>
                   </label>
                 </div>
@@ -509,14 +503,14 @@ export default function ReportGeneration() {
           </Card>
         </div>
 
-        {/* Aperçu & Actions */}
+        {/* Preview & Actions */}
         <div className="space-y-6">
-          {/* Aperçu */}
+          {/* Preview */}
           <Card className="border-gray-200 shadow-sm">
             <div className="flex items-center justify-between gap-3 mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Aperçu du rapport</h3>
-                <p className="text-sm text-gray-500 mt-1">Résumé clair avant génération</p>
+                <h3 className="text-lg font-semibold text-gray-900">{t('reporting.reportPreview')}</h3>
+                <p className="text-sm text-gray-500 mt-1">{t('reporting.reportPreviewDesc')}</p>
               </div>
               <div className="rounded-xl bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700">
                 {reportFormat.toUpperCase()}
@@ -525,22 +519,22 @@ export default function ReportGeneration() {
 
             <div className="space-y-4">
               <div className="rounded-2xl bg-slate-900 p-4 text-white">
-                <p className="text-xs uppercase tracking-wide text-white/60">Document sélectionné</p>
+                <p className="text-xs uppercase tracking-wide text-white/60">{t('reporting.selectedDocument')}</p>
                 <p className="mt-2 text-lg font-semibold">
                   {reportTypes.find(t => t.id === reportType)?.name}
                 </p>
                 <p className="mt-1 text-sm text-white/70">
-                  {organizations.find(o => o.id === selectedOrg)?.name || 'Aucune organisation'}
+                  {organizations.find(o => o.id === selectedOrg)?.name || t('reporting.noOrganisation')}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3">
-                  <p className="text-xs uppercase tracking-wide text-gray-500">Période</p>
+                  <p className="text-xs uppercase tracking-wide text-gray-500">{t('reporting.period')}</p>
                   <p className="mt-1 font-semibold text-gray-900">{REPORT_PERIOD_LABELS[reportPeriod]}</p>
                 </div>
                 <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3">
-                  <p className="text-xs uppercase tracking-wide text-gray-500">Format</p>
+                  <p className="text-xs uppercase tracking-wide text-gray-500">{t('reporting.format')}</p>
                   <p className="mt-1 font-semibold text-gray-900">
                     {reportFormat === 'pdf' ? 'PDF' : reportFormat === 'excel' ? 'Excel' : 'Word'}
                   </p>
@@ -549,32 +543,32 @@ export default function ReportGeneration() {
 
               {reportPeriod === 'custom' && (
                 <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-                  <p className="font-medium">Période personnalisée</p>
+                  <p className="font-medium">{t('reporting.customPeriod')}</p>
                   <p className="mt-1">
-                    Du {format(new Date(startDate), 'dd/MM/yyyy')} au {format(new Date(endDate), 'dd/MM/yyyy')}
+                    {format(new Date(startDate), 'dd/MM/yyyy')} - {format(new Date(endDate), 'dd/MM/yyyy')}
                   </p>
                 </div>
               )}
 
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-3">Contenu inclus</p>
+                <p className="text-sm font-medium text-gray-700 mb-3">{t('reporting.includedContent')}</p>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-2 text-sm">
-                    <span className="text-gray-700">Graphiques</span>
+                    <span className="text-gray-700">{t('reporting.charts')}</span>
                     <span className={`font-medium ${includeCharts ? 'text-green-600' : 'text-gray-400'}`}>
-                      {includeCharts ? 'Inclus' : 'Non inclus'}
+                      {includeCharts ? t('reporting.included') : t('reporting.notIncluded')}
                     </span>
                   </div>
                   <div className="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-2 text-sm">
-                    <span className="text-gray-700">Recommandations</span>
+                    <span className="text-gray-700">{t('reporting.recommendations')}</span>
                     <span className={`font-medium ${includeRecommendations ? 'text-green-600' : 'text-gray-400'}`}>
-                      {includeRecommendations ? 'Incluses' : 'Non incluses'}
+                      {includeRecommendations ? t('reporting.included') : t('reporting.notIncluded')}
                     </span>
                   </div>
                   <div className="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-2 text-sm">
-                    <span className="text-gray-700">Comparaison sectorielle</span>
+                    <span className="text-gray-700">{t('reporting.sectorComparison')}</span>
                     <span className={`font-medium ${includeComparison ? 'text-green-600' : 'text-gray-400'}`}>
-                      {includeComparison ? 'Incluse' : 'Non incluse'}
+                      {includeComparison ? t('reporting.included') : t('reporting.notIncluded')}
                     </span>
                   </div>
                 </div>
@@ -593,12 +587,12 @@ export default function ReportGeneration() {
               {generating ? (
                 <>
                   <Loader className="h-5 w-5 mr-2 animate-spin" />
-                  Génération en cours...
+                  {t('reporting.generating')}
                 </>
               ) : (
                 <>
                   <Download className="h-5 w-5 mr-2" />
-                  Générer le {reportFormat === 'pdf' ? 'PDF' : reportFormat === 'excel' ? 'fichier Excel' : 'document Word'}
+                  {t('reporting.generateBtn')} {reportFormat === 'pdf' ? 'PDF' : reportFormat === 'excel' ? 'Excel' : 'Word'}
                 </>
               )}
             </Button>
@@ -609,7 +603,7 @@ export default function ReportGeneration() {
               onClick={() => navigate('/reports')}
             >
               <FileText className="h-5 w-5 mr-2" />
-              Voir les rapports
+              {t('reporting.viewReports')}
             </Button>
 
             <Button
@@ -618,7 +612,7 @@ export default function ReportGeneration() {
               onClick={() => navigate('/reports/scheduled')}
             >
               <Calendar className="h-5 w-5 mr-2" />
-              Rapports planifiés
+              {t('reporting.scheduledReports')}
             </Button>
           </Card>
 
@@ -627,25 +621,24 @@ export default function ReportGeneration() {
             <div className="flex gap-3">
               <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-blue-900 mb-1">Conformité garantie</p>
+                <p className="font-medium text-blue-900 mb-1">{t('reporting.complianceTitle')}</p>
                 <p className="text-sm text-blue-700">
-                  Tous nos rapports sont conformes aux standards internationaux et 
-                  aux réglementations européennes (CSRD, GRI, TCFD).
+                  {t('reporting.complianceDesc')}
                 </p>
               </div>
             </div>
           </Card>
 
-          {/* Exemples */}
+          {/* Formats */}
           <Card className="bg-green-50 border-green-200">
             <div className="flex gap-3">
               <Sparkles className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-green-900 mb-1">Formats professionnels</p>
+                <p className="font-medium text-green-900 mb-1">{t('reporting.professionalFormats')}</p>
                 <ul className="text-sm text-green-700 space-y-1">
-                  <li>• PDF : Mise en page professionnelle</li>
-                  <li>• Excel : 4 onglets avec données</li>
-                  <li>• Word : Document éditable</li>
+                  <li>PDF: {t('reporting.pdfDesc')}</li>
+                  <li>Excel: {t('reporting.excelDesc')}</li>
+                  <li>Word: {t('reporting.wordDesc')}</li>
                 </ul>
               </div>
             </div>

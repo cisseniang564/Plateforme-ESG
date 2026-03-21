@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Code,
   Key,
@@ -16,52 +17,51 @@ import {
   Zap,
 } from 'lucide-react'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// --- Types ---
 
 type SectionId = 'auth' | 'indicators' | 'data' | 'scores' | 'reports' | 'webhooks'
 
 interface NavSection {
   id: SectionId
-  label: string
+  labelKey: string
   icon: React.ReactNode
 }
 
 interface Endpoint {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
   path: string
-  description: string
+  descKey: string
 }
 
 interface DocSection {
-  title: string
-  description: string
+  titleKey: string
+  descKey: string
   endpoints: Endpoint[]
   curlExample: string
   responseExample: string
 }
 
-// ─── Navigation config ────────────────────────────────────────────────────────
+// --- Navigation config ---
 
 const NAV_SECTIONS: NavSection[] = [
-  { id: 'auth', label: 'Authentification', icon: <Shield className="h-4 w-4" /> },
-  { id: 'indicators', label: 'Indicateurs', icon: <BarChart3 className="h-4 w-4" /> },
-  { id: 'data', label: 'Données', icon: <Database className="h-4 w-4" /> },
-  { id: 'scores', label: 'Scores', icon: <Zap className="h-4 w-4" /> },
-  { id: 'reports', label: 'Rapports', icon: <FileText className="h-4 w-4" /> },
-  { id: 'webhooks', label: 'Webhooks', icon: <Webhook className="h-4 w-4" /> },
+  { id: 'auth', labelKey: 'apiDocs.navAuth', icon: <Shield className="h-4 w-4" /> },
+  { id: 'indicators', labelKey: 'apiDocs.navIndicators', icon: <BarChart3 className="h-4 w-4" /> },
+  { id: 'data', labelKey: 'apiDocs.navData', icon: <Database className="h-4 w-4" /> },
+  { id: 'scores', labelKey: 'apiDocs.navScores', icon: <Zap className="h-4 w-4" /> },
+  { id: 'reports', labelKey: 'apiDocs.navReports', icon: <FileText className="h-4 w-4" /> },
+  { id: 'webhooks', labelKey: 'apiDocs.navWebhooks', icon: <Webhook className="h-4 w-4" /> },
 ]
 
-// ─── Documentation content ────────────────────────────────────────────────────
+// --- Documentation content ---
 
 const DOC_SECTIONS: Record<SectionId, DocSection> = {
   auth: {
-    title: 'Authentification',
-    description:
-      "L'API ESGFlow utilise JWT (JSON Web Token) pour sécuriser les échanges. Obtenez un token via l'endpoint de login et transmettez-le dans l'en-tête Authorization de chaque requête.",
+    titleKey: 'apiDocs.authTitle',
+    descKey: 'apiDocs.authDesc',
     endpoints: [
-      { method: 'POST', path: '/api/v1/auth/login', description: 'Obtenir un token JWT' },
-      { method: 'POST', path: '/api/v1/auth/refresh', description: 'Rafraîchir le token' },
-      { method: 'POST', path: '/api/v1/auth/logout', description: 'Révoquer le token' },
+      { method: 'POST', path: '/api/v1/auth/login', descKey: 'apiDocs.authLogin' },
+      { method: 'POST', path: '/api/v1/auth/refresh', descKey: 'apiDocs.authRefresh' },
+      { method: 'POST', path: '/api/v1/auth/logout', descKey: 'apiDocs.authLogout' },
     ],
     curlExample: `curl -X POST https://api.esgflow.io/api/v1/auth/login \\
   -H "Content-Type: application/json" \\
@@ -73,14 +73,13 @@ const DOC_SECTIONS: Record<SectionId, DocSection> = {
 }`,
   },
   indicators: {
-    title: 'Indicateurs',
-    description:
-      "Accédez au référentiel complet des indicateurs ESG. Chaque indicateur est associé à un pilier (environmental, social, governance), une unité de mesure et un cadre de référence (CSRD, GRI, TCFD…).",
+    titleKey: 'apiDocs.indicatorsTitle',
+    descKey: 'apiDocs.indicatorsDesc',
     endpoints: [
-      { method: 'GET', path: '/api/v1/indicators', description: 'Lister tous les indicateurs' },
-      { method: 'GET', path: '/api/v1/indicators/{id}', description: "Détail d'un indicateur" },
-      { method: 'POST', path: '/api/v1/indicators', description: 'Créer un indicateur personnalisé' },
-      { method: 'PUT', path: '/api/v1/indicators/{id}', description: 'Mettre à jour un indicateur' },
+      { method: 'GET', path: '/api/v1/indicators', descKey: 'apiDocs.indicatorsList' },
+      { method: 'GET', path: '/api/v1/indicators/{id}', descKey: 'apiDocs.indicatorsDetail' },
+      { method: 'POST', path: '/api/v1/indicators', descKey: 'apiDocs.indicatorsCreate' },
+      { method: 'PUT', path: '/api/v1/indicators/{id}', descKey: 'apiDocs.indicatorsUpdate' },
     ],
     curlExample: `curl -X GET https://api.esgflow.io/api/v1/indicators \\
   -H "Authorization: Bearer {token}" \\
@@ -89,48 +88,22 @@ const DOC_SECTIONS: Record<SectionId, DocSection> = {
   {
     "id": "550e8400-e29b-41d4-a716-446655440000",
     "code": "ENV-001",
-    "name": "Émissions CO2",
+    "name": "Emissions CO2",
     "pillar": "environmental",
     "unit": "tCO2e",
     "framework": "GRI 305-1",
-    "required_csrd": true
-  },
-  {
-    "id": "550e8400-e29b-41d4-a716-446655440001",
-    "code": "SOC-001",
-    "name": "Part de femmes cadres",
-    "pillar": "social",
-    "unit": "%",
-    "framework": "GRI 405-1",
     "required_csrd": true
   }
 ]`,
   },
   data: {
-    title: 'Données',
-    description:
-      "Enregistrez et consultez les valeurs de vos indicateurs ESG. Les données sont versionnées et horodatées. Chaque saisie peut embarquer des notes et des pièces justificatives.",
+    titleKey: 'apiDocs.dataTitle',
+    descKey: 'apiDocs.dataDesc',
     endpoints: [
-      {
-        method: 'GET',
-        path: '/api/v1/indicator-data/indicators/{id}/data',
-        description: "Lister les données d'un indicateur",
-      },
-      {
-        method: 'POST',
-        path: '/api/v1/indicator-data/indicators/{id}/data',
-        description: 'Saisir une nouvelle valeur',
-      },
-      {
-        method: 'PUT',
-        path: '/api/v1/indicator-data/{data_id}',
-        description: 'Mettre à jour une saisie',
-      },
-      {
-        method: 'DELETE',
-        path: '/api/v1/indicator-data/{data_id}',
-        description: 'Supprimer une saisie',
-      },
+      { method: 'GET', path: '/api/v1/indicator-data/indicators/{id}/data', descKey: 'apiDocs.dataList' },
+      { method: 'POST', path: '/api/v1/indicator-data/indicators/{id}/data', descKey: 'apiDocs.dataCreate' },
+      { method: 'PUT', path: '/api/v1/indicator-data/{data_id}', descKey: 'apiDocs.dataUpdate' },
+      { method: 'DELETE', path: '/api/v1/indicator-data/{data_id}', descKey: 'apiDocs.dataDelete' },
     ],
     curlExample: `curl -X POST https://api.esgflow.io/api/v1/indicator-data/indicators/{id}/data \\
   -H "Authorization: Bearer {token}" \\
@@ -147,14 +120,13 @@ const DOC_SECTIONS: Record<SectionId, DocSection> = {
 }`,
   },
   scores: {
-    title: 'Scores ESG',
-    description:
-      "Calculez et consultez vos scores ESG agrégés. Le moteur de scoring utilise une méthodologie pondérée alignée sur les standards CSRD et les benchmarks sectoriels.",
+    titleKey: 'apiDocs.scoresTitle',
+    descKey: 'apiDocs.scoresDesc',
     endpoints: [
-      { method: 'GET', path: '/api/v1/esg-scoring/dashboard', description: 'Tableau de bord scores ESG' },
-      { method: 'POST', path: '/api/v1/esg-scoring/calculate', description: 'Déclencher un calcul de score' },
-      { method: 'GET', path: '/api/v1/esg-scoring/history', description: 'Historique des scores' },
-      { method: 'GET', path: '/api/v1/esg-scoring/breakdown', description: 'Décomposition par indicateur' },
+      { method: 'GET', path: '/api/v1/esg-scoring/dashboard', descKey: 'apiDocs.scoresDashboard' },
+      { method: 'POST', path: '/api/v1/esg-scoring/calculate', descKey: 'apiDocs.scoresCalculate' },
+      { method: 'GET', path: '/api/v1/esg-scoring/history', descKey: 'apiDocs.scoresHistory' },
+      { method: 'GET', path: '/api/v1/esg-scoring/breakdown', descKey: 'apiDocs.scoresBreakdown' },
     ],
     curlExample: `curl -X GET https://api.esgflow.io/api/v1/esg-scoring/dashboard \\
   -H "Authorization: Bearer {token}"`,
@@ -168,14 +140,13 @@ const DOC_SECTIONS: Record<SectionId, DocSection> = {
 }`,
   },
   reports: {
-    title: 'Rapports',
-    description:
-      "Générez des rapports ESG conformes aux exigences réglementaires (CSRD, GRI, TCFD). Les rapports sont produits en PDF ou XLSX et stockés de façon sécurisée.",
+    titleKey: 'apiDocs.reportsTitle',
+    descKey: 'apiDocs.reportsDesc',
     endpoints: [
-      { method: 'GET', path: '/api/v1/reports', description: 'Lister les rapports' },
-      { method: 'POST', path: '/api/v1/reports/generate', description: 'Générer un rapport' },
-      { method: 'GET', path: '/api/v1/reports/{id}/download', description: 'Télécharger un rapport' },
-      { method: 'DELETE', path: '/api/v1/reports/{id}', description: 'Supprimer un rapport' },
+      { method: 'GET', path: '/api/v1/reports', descKey: 'apiDocs.reportsList' },
+      { method: 'POST', path: '/api/v1/reports/generate', descKey: 'apiDocs.reportsGenerate' },
+      { method: 'GET', path: '/api/v1/reports/{id}/download', descKey: 'apiDocs.reportsDownload' },
+      { method: 'DELETE', path: '/api/v1/reports/{id}', descKey: 'apiDocs.reportsDelete' },
     ],
     curlExample: `curl -X POST https://api.esgflow.io/api/v1/reports/generate \\
   -H "Authorization: Bearer {token}" \\
@@ -190,14 +161,13 @@ const DOC_SECTIONS: Record<SectionId, DocSection> = {
 }`,
   },
   webhooks: {
-    title: 'Webhooks',
-    description:
-      "Recevez des notifications en temps réel lors d'événements clés (nouvelle saisie, score calculé, rapport prêt). Configurez vos endpoints HTTPS et gérez les tentatives de livraison.",
+    titleKey: 'apiDocs.webhooksTitle',
+    descKey: 'apiDocs.webhooksDesc',
     endpoints: [
-      { method: 'GET', path: '/api/v1/webhooks', description: 'Lister les webhooks' },
-      { method: 'POST', path: '/api/v1/webhooks', description: 'Créer un webhook' },
-      { method: 'PUT', path: '/api/v1/webhooks/{id}', description: 'Mettre à jour un webhook' },
-      { method: 'DELETE', path: '/api/v1/webhooks/{id}', description: 'Supprimer un webhook' },
+      { method: 'GET', path: '/api/v1/webhooks', descKey: 'apiDocs.webhooksList' },
+      { method: 'POST', path: '/api/v1/webhooks', descKey: 'apiDocs.webhooksCreate' },
+      { method: 'PUT', path: '/api/v1/webhooks/{id}', descKey: 'apiDocs.webhooksUpdate' },
+      { method: 'DELETE', path: '/api/v1/webhooks/{id}', descKey: 'apiDocs.webhooksDelete' },
     ],
     curlExample: `curl -X POST https://api.esgflow.io/api/v1/webhooks \\
   -H "Authorization: Bearer {token}" \\
@@ -213,7 +183,7 @@ const DOC_SECTIONS: Record<SectionId, DocSection> = {
   },
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// --- Sub-components ---
 
 function MethodBadge({ method }: { method: string }) {
   const colors: Record<string, string> = {
@@ -231,6 +201,7 @@ function MethodBadge({ method }: { method: string }) {
 }
 
 function CodeBlock({ code, lang = 'bash' }: { code: string; lang?: string }) {
+  const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
 
   const handleCopy = () => {
@@ -248,7 +219,7 @@ function CodeBlock({ code, lang = 'bash' }: { code: string; lang?: string }) {
           className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-400 transition hover:bg-gray-700 hover:text-white"
         >
           {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
-          {copied ? 'Copié !' : 'Copier'}
+          {copied ? t('apiDocs.copied') : t('apiDocs.copy')}
         </button>
       </div>
       <pre className="overflow-x-auto p-4">
@@ -265,6 +236,7 @@ function KeyModal({
   apiKey: string
   onClose: () => void
 }) {
+  const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
 
   const handleCopy = () => {
@@ -281,8 +253,8 @@ function KeyModal({
             <Key className="h-5 w-5 text-teal-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">Clé API générée</h3>
-            <p className="text-xs text-gray-500">Conservez-la en lieu sûr — elle ne sera plus affichée.</p>
+            <h3 className="font-semibold text-gray-900">{t('apiDocs.keyGenerated')}</h3>
+            <p className="text-xs text-gray-500">{t('apiDocs.keyWarning')}</p>
           </div>
         </div>
 
@@ -296,13 +268,13 @@ function KeyModal({
             className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-teal-600 py-2.5 text-sm font-semibold text-white hover:bg-teal-700"
           >
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            {copied ? 'Copié !' : 'Copier la clé'}
+            {copied ? t('apiDocs.copied') : t('apiDocs.copyKey')}
           </button>
           <button
             onClick={onClose}
             className="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
           >
-            Fermer
+            {t('common.close')}
           </button>
         </div>
       </div>
@@ -310,9 +282,10 @@ function KeyModal({
   )
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// --- Main component ---
 
 export default function APIDocumentation() {
+  const { t } = useTranslation()
   const [activeSection, setActiveSection] = useState<SectionId>('auth')
   const [showKeyModal, setShowKeyModal] = useState(false)
   const [generatedKey, setGeneratedKey] = useState('')
@@ -331,18 +304,18 @@ export default function APIDocumentation() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ── Hero ── */}
+      {/* Hero */}
       <div className="bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 px-6 py-10 md:py-14">
         <div className="mx-auto max-w-7xl">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-indigo-500/20 px-4 py-1.5 text-sm font-medium text-indigo-300 ring-1 ring-indigo-500/30">
             <Globe className="h-4 w-4" />
-            Developer Portal
+            {t('apiDocs.developerPortal')}
           </div>
           <h1 className="text-3xl font-bold text-white md:text-4xl">
-            API Publique ESGFlow
+            {t('apiDocs.heroTitle')}
           </h1>
           <p className="mt-2 max-w-2xl text-slate-300">
-            Intégrez vos données ESG dans vos outils — tableaux de bord, ERP, solutions BI et bien plus.
+            {t('apiDocs.heroSubtitle')}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <button
@@ -350,27 +323,27 @@ export default function APIDocumentation() {
               className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-indigo-700"
             >
               <Key className="h-4 w-4" />
-              Générer une clé API
+              {t('apiDocs.generateKey')}
             </button>
             <button
               onClick={() => window.open('/api/docs', '_blank')}
               className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur hover:bg-white/20"
             >
               <ExternalLink className="h-4 w-4" />
-              Ouvrir Swagger UI
+              {t('apiDocs.openSwagger')}
             </button>
           </div>
         </div>
       </div>
 
-      {/* ── Body ── */}
+      {/* Body */}
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex gap-6">
-          {/* ── Sidebar ── */}
+          {/* Sidebar */}
           <aside className="hidden w-56 shrink-0 lg:block">
             <div className="sticky top-6 rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
               <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Sections
+                {t('apiDocs.sections')}
               </p>
               <nav className="space-y-0.5">
                 {NAV_SECTIONS.map((nav) => (
@@ -386,7 +359,7 @@ export default function APIDocumentation() {
                     <span className={activeSection === nav.id ? 'text-indigo-600' : 'text-gray-400'}>
                       {nav.icon}
                     </span>
-                    {nav.label}
+                    {t(nav.labelKey)}
                     {activeSection === nav.id && (
                       <ChevronRight className="ml-auto h-3.5 w-3.5 text-indigo-400" />
                     )}
@@ -396,7 +369,7 @@ export default function APIDocumentation() {
             </div>
           </aside>
 
-          {/* ── Mobile nav ── */}
+          {/* Mobile nav */}
           <div className="mb-4 flex gap-2 overflow-x-auto lg:hidden">
             {NAV_SECTIONS.map((nav) => (
               <button
@@ -409,25 +382,25 @@ export default function APIDocumentation() {
                 }`}
               >
                 {nav.icon}
-                {nav.label}
+                {t(nav.labelKey)}
               </button>
             ))}
           </div>
 
-          {/* ── Main content ── */}
+          {/* Main content */}
           <main className="min-w-0 flex-1">
             <div className="space-y-6">
               {/* Section header */}
               <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-                <h2 className="text-xl font-bold text-gray-900">{section.title}</h2>
-                <p className="mt-1.5 text-sm leading-relaxed text-gray-500">{section.description}</p>
+                <h2 className="text-xl font-bold text-gray-900">{t(section.titleKey)}</h2>
+                <p className="mt-1.5 text-sm leading-relaxed text-gray-500">{t(section.descKey)}</p>
               </div>
 
               {/* Endpoints */}
               <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
                 <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
                   <Terminal className="h-4 w-4" />
-                  Endpoints
+                  {t('apiDocs.endpoints')}
                 </h3>
                 <div className="space-y-2">
                   {section.endpoints.map((ep) => (
@@ -437,7 +410,7 @@ export default function APIDocumentation() {
                     >
                       <MethodBadge method={ep.method} />
                       <code className="flex-1 font-mono text-sm text-gray-800">{ep.path}</code>
-                      <span className="text-xs text-gray-400">{ep.description}</span>
+                      <span className="text-xs text-gray-400">{t(ep.descKey)}</span>
                     </div>
                   ))}
                 </div>
@@ -447,7 +420,7 @@ export default function APIDocumentation() {
               <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
                 <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
                   <Code className="h-4 w-4" />
-                  Exemple de requête
+                  {t('apiDocs.requestExample')}
                 </h3>
                 <CodeBlock code={section.curlExample} lang="bash" />
               </div>
@@ -456,7 +429,7 @@ export default function APIDocumentation() {
               <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
                 <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
                   <Database className="h-4 w-4" />
-                  Exemple de réponse
+                  {t('apiDocs.responseExample')}
                 </h3>
                 <CodeBlock code={section.responseExample} lang="json" />
               </div>
@@ -465,7 +438,7 @@ export default function APIDocumentation() {
         </div>
       </div>
 
-      {/* ── Key modal ── */}
+      {/* Key modal */}
       {showKeyModal && (
         <KeyModal
           apiKey={generatedKey}

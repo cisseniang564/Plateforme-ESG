@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Calculator, TrendingUp, TrendingDown, Minus, Zap , RefreshCw } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
@@ -25,11 +26,12 @@ interface Evolution {
 }
 
 export default function CalculatedMetrics() {
+  const { t } = useTranslation();
   const [year, setYear] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<Record<string, CalculatedMetric>>({});
   const [kpisSummary, setKpisSummary] = useState<any>(null);
-  
+
 
 
   useEffect(() => {
@@ -39,17 +41,17 @@ export default function CalculatedMetrics() {
   const loadCalculations = async () => {
     setLoading(true);
     try {
-      // Charger les métriques calculées
+      // Charger les metriques calculees
       const metricsRes = await api.get(`/calculations/metrics?year=${year}`);
       setMetrics(metricsRes.data);
 
-      // Charger le résumé KPIs
+      // Charger le resume KPIs
       const kpisRes = await api.get(`/calculations/kpis-summary?year=${year}`);
       setKpisSummary(kpisRes.data);
 
     } catch (error: any) {
       console.error('Error loading calculations:', error);
-      toast.error('Erreur lors du chargement des calculs');
+      toast.error(t('calculatedMetrics.loadError'));
     } finally {
       setLoading(false);
     }
@@ -92,18 +94,18 @@ export default function CalculatedMetrics() {
           <div className="flex items-center gap-4">
             <Calculator className="h-12 w-12" />
             <div>
-              
+
           <Button
             onClick={loadCalculations}
             variant="secondary"
             className="flex items-center gap-2"
           >
             <RefreshCw className="h-4 w-4" />
-            Recalculer
+            {t('calculatedMetrics.recalculate')}
           </Button>
-        <h1 className="text-4xl font-bold mb-2">Calculs Automatiques</h1>
+        <h1 className="text-4xl font-bold mb-2">{t('calculatedMetrics.title')}</h1>
               <p className="text-indigo-100 text-lg">
-                Intelligence ESG - Métriques calculées en temps réel
+                {t('calculatedMetrics.subtitle')}
               </p>
             </div>
           </div>
@@ -122,7 +124,7 @@ export default function CalculatedMetrics() {
         </div>
       </div>
 
-      {/* Métriques calculées */}
+      {/* Metriques calculees */}
       {Object.keys(metrics).length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Object.entries(metrics).map(([name, data]) => {
@@ -151,7 +153,7 @@ export default function CalculatedMetrics() {
                 </div>
 
                 <div className="pt-3 border-t border-gray-200">
-                  <p className="text-xs text-gray-500 mb-2">Calculé à partir de:</p>
+                  <p className="text-xs text-gray-500 mb-2">{t('calculatedMetrics.calculatedFrom')}</p>
                   <div className="space-y-1">
                     {Object.entries(data.inputs_used).map(([input, value]) => (
                       <div key={input} className="flex justify-between text-xs">
@@ -170,20 +172,20 @@ export default function CalculatedMetrics() {
           <div className="text-center py-12">
             <Calculator className="h-16 w-16 mx-auto text-gray-300 mb-4" />
             <p className="text-xl text-gray-900 font-semibold mb-2">
-              Aucun calcul disponible
+              {t('calculatedMetrics.noCalculations')}
             </p>
             <p className="text-gray-600">
-              Ajoutez des données pour voir les calculs automatiques
+              {t('calculatedMetrics.addDataPrompt')}
             </p>
           </div>
         </Card>
       )}
 
-      {/* Évolutions année N vs N-1 */}
+      {/* Evolutions annee N vs N-1 */}
       {kpisSummary?.evolutions && Object.keys(kpisSummary.evolutions).length > 0 && (
         <Card>
           <h2 className="text-xl font-bold text-gray-900 mb-6">
-            Évolutions {year} vs {year - 1}
+            {t('calculatedMetrics.evolutions', { year, prevYear: year - 1 })}
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -220,12 +222,12 @@ export default function CalculatedMetrics() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {Object.entries(kpisSummary.calculated_kpis).map(([pillar, kpis]: [string, any]) => {
             if (!kpis || kpis.length === 0) return null;
-            
+
             const color = getPillarColor(pillar);
-            const pillarNames = {
-              environmental: 'Environnemental',
-              social: 'Social',
-              governance: 'Gouvernance',
+            const pillarNames: Record<string, string> = {
+              environmental: t('calculatedMetrics.environmental'),
+              social: t('calculatedMetrics.social'),
+              governance: t('calculatedMetrics.governance'),
             };
 
             return (
@@ -256,16 +258,15 @@ export default function CalculatedMetrics() {
         <div className="flex items-start gap-3">
           <Zap className="h-5 w-5 text-indigo-600 mt-0.5 flex-shrink-0" />
           <div>
-            <p className="font-semibold text-indigo-900 mb-2">Calculs automatiques activés</p>
+            <p className="font-semibold text-indigo-900 mb-2">{t('calculatedMetrics.autoCalcTitle')}</p>
             <p className="text-sm text-indigo-700 mb-3">
-              Notre plateforme calcule automatiquement vos KPIs ESG à partir de vos données brutes.
-              Gain de temps massif vs Excel !
+              {t('calculatedMetrics.autoCalcDesc')}
             </p>
             <div className="text-xs text-indigo-600 space-y-1">
-              <p>• Scope 3 = Scope 1 + Scope 2</p>
-              <p>• Intensité carbone = Émissions / CA</p>
-              <p>• Turnover = Départs / Effectif moyen</p>
-              <p>• Et bien plus...</p>
+              <p>{t('calculatedMetrics.formula1')}</p>
+              <p>{t('calculatedMetrics.formula2')}</p>
+              <p>{t('calculatedMetrics.formula3')}</p>
+              <p>{t('calculatedMetrics.formulaMore')}</p>
             </div>
           </div>
         </div>

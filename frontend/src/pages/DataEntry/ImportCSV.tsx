@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Upload,
   FileText,
@@ -39,6 +40,7 @@ interface ImportResult {
 }
 
 export default function ImportCSV() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [file, setFile] = useState<File | null>(null);
@@ -47,7 +49,7 @@ export default function ImportCSV() {
   const [dragActive, setDragActive] = useState(false);
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
-  
+
   const [mapping, setMapping] = useState({
     pillar: '',
     category: '',
@@ -82,14 +84,14 @@ export default function ImportCSV() {
   const handleFileSelect = (selectedFile: File) => {
     const allowedTypes = ['.csv', '.xlsx', '.xls'];
     const ext = selectedFile.name.substring(selectedFile.name.lastIndexOf('.')).toLowerCase();
-    
+
     if (!allowedTypes.includes(ext)) {
-      toast.error('Type de fichier invalide. CSV ou Excel uniquement.');
+      toast.error(t('importCsv.invalidFileType'));
       return;
     }
 
     if (selectedFile.size > 10 * 1024 * 1024) {
-      toast.error('Fichier trop volumineux. Maximum 10MB.');
+      toast.error(t('importCsv.fileTooLarge'));
       return;
     }
 
@@ -98,7 +100,7 @@ export default function ImportCSV() {
 
   const handleUpload = async () => {
     if (!file) return;
-    
+
     setUploading(true);
     const formData = new FormData();
     formData.append('file', file);
@@ -107,9 +109,9 @@ export default function ImportCSV() {
       const response = await api.post('/esg-import/upload-preview', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      
+
       setPreviewData(response.data);
-      
+
       setMapping({
         pillar: response.data.detected_mapping.pillar || '',
         category: response.data.detected_mapping.category || '',
@@ -121,12 +123,12 @@ export default function ImportCSV() {
         data_source: response.data.detected_mapping.data_source || '',
         notes: response.data.detected_mapping.notes || '',
       });
-      
+
       setStep(2);
-      toast.success('✅ Fichier analysé avec succès');
+      toast.success(t('importCsv.fileAnalyzed'));
     } catch (error: any) {
       console.error('Upload error:', error);
-      toast.error(error.response?.data?.detail || 'Erreur lors de l\'upload');
+      toast.error(error.response?.data?.detail || t('importCsv.uploadError'));
     } finally {
       setUploading(false);
     }
@@ -134,26 +136,26 @@ export default function ImportCSV() {
 
   const handleImport = async () => {
     if (!previewData) return;
-    
+
     if (!mapping.metric_name || !mapping.value_numeric) {
-      toast.error('Mapping minimal requis: Métrique et Valeur');
+      toast.error(t('importCsv.mappingRequired'));
       return;
     }
-    
+
     setImporting(true);
-    
+
     try {
       const response = await api.post(
         `/esg-import/uploads/${previewData.upload_id}/import`,
         mapping
       );
-      
+
       setImportResult(response.data);
       setStep(3);
-      toast.success(`✅ ${response.data.imported} données importées !`);
+      toast.success(t('importCsv.importSuccess', { count: response.data.imported }));
     } catch (error: any) {
       console.error('Import error:', error);
-      toast.error(error.response?.data?.detail || 'Erreur lors de l\'import');
+      toast.error(error.response?.data?.detail || t('importCsv.importError'));
     } finally {
       setImporting(false);
     }
@@ -179,10 +181,10 @@ export default function ImportCSV() {
 
   const downloadTemplate = () => {
     const template = `pillar,category,metric_name,value_numeric,unit,period_start,period_end,data_source,notes
-environmental,emissions,Émissions CO2 Scope 1,1234.5,tCO2e,2024-01-01,2024-12-31,Bilan Carbone 2024,Données validées
+environmental,emissions,Emissions CO2 Scope 1,1234.5,tCO2e,2024-01-01,2024-12-31,Bilan Carbone 2024,Donnees validees
 social,workforce,Effectif total,500,personnes,2024-01-01,2024-12-31,HRIS,
-environmental,energy,Consommation électricité,2500,MWh,2024-01-01,2024-12-31,Factures EDF,`;
-    
+environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Factures EDF,`;
+
     const blob = new Blob([template], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -192,16 +194,16 @@ environmental,energy,Consommation électricité,2500,MWh,2024-01-01,2024-12-31,F
     window.URL.revokeObjectURL(url);
   };
 
-  // Preview des données mappées
+  // Preview des donnees mappees
   const getMappedPreview = () => {
     if (!previewData || !previewData.preview[0]) return null;
-    
+
     const firstRow = previewData.preview[0];
     return {
-      metric_name: mapping.metric_name ? firstRow[mapping.metric_name] : '❌ Non mappé',
-      value_numeric: mapping.value_numeric ? firstRow[mapping.value_numeric] : '❌ Non mappé',
+      metric_name: mapping.metric_name ? firstRow[mapping.metric_name] : t('importCsv.notMapped'),
+      value_numeric: mapping.value_numeric ? firstRow[mapping.value_numeric] : t('importCsv.notMapped'),
       unit: mapping.unit ? firstRow[mapping.unit] : '-',
-      pillar: mapping.pillar ? firstRow[mapping.pillar] : 'environmental (défaut)',
+      pillar: mapping.pillar ? firstRow[mapping.pillar] : t('importCsv.defaultPillar'),
       category: mapping.category ? firstRow[mapping.category] : '-',
     };
   };
@@ -214,16 +216,16 @@ environmental,energy,Consommation électricité,2500,MWh,2024-01-01,2024-12-31,F
           <div>
             <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
               <Upload className="h-10 w-10" />
-              Import CSV/Excel
+              {t('importCsv.title')}
             </h1>
             <p className="text-purple-100 text-lg">
-              Importez vos données ESG en masse
+              {t('importCsv.subtitle')}
             </p>
           </div>
 
           <Button variant="secondary" onClick={downloadTemplate}>
             <Download className="h-4 w-4 mr-2" />
-            Template CSV
+            {t('importCsv.csvTemplate')}
           </Button>
         </div>
       </div>
@@ -249,7 +251,7 @@ environmental,energy,Consommation électricité,2500,MWh,2024-01-01,2024-12-31,F
       {step === 1 && (
         <Card className="animate-fade-in">
           <h2 className="text-xl font-bold text-gray-900 mb-6">
-            Étape 1: Sélectionner le fichier
+            {t('importCsv.step1Title')}
           </h2>
 
           {!file ? (
@@ -267,10 +269,10 @@ environmental,energy,Consommation électricité,2500,MWh,2024-01-01,2024-12-31,F
             >
               <Upload className="h-16 w-16 mx-auto text-gray-400 mb-4" />
               <p className="text-xl font-semibold text-gray-700 mb-2">
-                Déposez votre fichier ici, ou cliquez pour parcourir
+                {t('importCsv.dropZoneText')}
               </p>
               <p className="text-sm text-gray-500">
-                Formats acceptés: CSV, Excel (.xlsx, .xls) - Max 10MB
+                {t('importCsv.acceptedFormats')}
               </p>
               <input
                 id="file-input"
@@ -308,12 +310,12 @@ environmental,energy,Consommation électricité,2500,MWh,2024-01-01,2024-12-31,F
                 {uploading ? (
                   <>
                     <Spinner size="sm" className="mr-2" />
-                    Analyse en cours...
+                    {t('importCsv.analyzing')}
                   </>
                 ) : (
                   <>
                     <ArrowRight className="h-4 w-4 mr-2" />
-                    Analyser le fichier
+                    {t('importCsv.analyzeFile')}
                   </>
                 )}
               </Button>
@@ -327,59 +329,59 @@ environmental,energy,Consommation électricité,2500,MWh,2024-01-01,2024-12-31,F
         <div className="space-y-6 animate-fade-in">
           <Card>
             <h2 className="text-xl font-bold text-gray-900 mb-6">
-              Étape 2: Mapping des colonnes
+              {t('importCsv.step2Title')}
             </h2>
 
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Colonne Métrique * (NOM de l'indicateur)
+                  {t('importCsv.metricColumn')}
                 </label>
                 <select
                   value={mapping.metric_name}
                   onChange={(e) => setMapping({ ...mapping, metric_name: e.target.value })}
                   className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-indigo-500"
                 >
-                  <option value="">-- Sélectionner --</option>
+                  <option value="">{t('importCsv.selectColumn')}</option>
                   {previewData.columns.map((col) => (
                     <option key={col} value={col}>{col}</option>
                   ))}
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                  Ex: "Émissions CO2 Scope 1", "Effectif total"
+                  {t('importCsv.metricColumnHint')}
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Colonne Valeur * (NOMBRE)
+                  {t('importCsv.valueColumn')}
                 </label>
                 <select
                   value={mapping.value_numeric}
                   onChange={(e) => setMapping({ ...mapping, value_numeric: e.target.value })}
                   className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-indigo-500"
                 >
-                  <option value="">-- Sélectionner --</option>
+                  <option value="">{t('importCsv.selectColumn')}</option>
                   {previewData.columns.map((col) => (
                     <option key={col} value={col}>{col}</option>
                   ))}
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                  Ex: 1234.5, 500, 2500
+                  {t('importCsv.valueColumnHint')}
                 </p>
               </div>
 
               {/* Optional fields... */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Colonne Unité
+                  {t('importCsv.unitColumn')}
                 </label>
                 <select
                   value={mapping.unit}
                   onChange={(e) => setMapping({ ...mapping, unit: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 >
-                  <option value="">-- Aucune --</option>
+                  <option value="">{t('importCsv.noneOption')}</option>
                   {previewData.columns.map((col) => (
                     <option key={col} value={col}>{col}</option>
                   ))}
@@ -388,14 +390,14 @@ environmental,energy,Consommation électricité,2500,MWh,2024-01-01,2024-12-31,F
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Colonne Pilier
+                  {t('importCsv.pillarColumn')}
                 </label>
                 <select
                   value={mapping.pillar}
                   onChange={(e) => setMapping({ ...mapping, pillar: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 >
-                  <option value="">-- Auto (environmental) --</option>
+                  <option value="">{t('importCsv.autoEnvironmental')}</option>
                   {previewData.columns.map((col) => (
                     <option key={col} value={col}>{col}</option>
                   ))}
@@ -403,36 +405,36 @@ environmental,energy,Consommation électricité,2500,MWh,2024-01-01,2024-12-31,F
               </div>
             </div>
 
-            {/* NOUVEAU: Preview du mapping */}
+            {/* Preview du mapping */}
             {mapping.metric_name && mapping.value_numeric && (
               <div className="mt-6 p-4 bg-indigo-50 rounded-lg border-2 border-indigo-200">
                 <div className="flex items-start gap-3">
                   <Eye className="h-5 w-5 text-indigo-600 mt-1" />
                   <div className="flex-1">
-                    <p className="font-bold text-indigo-900 mb-3">Aperçu du mapping (1ère ligne):</p>
+                    <p className="font-bold text-indigo-900 mb-3">{t('importCsv.mappingPreviewTitle')}</p>
                     {(() => {
                       const preview = getMappedPreview();
                       return preview ? (
                         <div className="grid grid-cols-2 gap-3 text-sm">
                           <div className="p-2 bg-white rounded">
-                            <span className="text-gray-600">Métrique:</span>
+                            <span className="text-gray-600">{t('importCsv.metricLabel')}:</span>
                             <span className="ml-2 font-semibold text-gray-900">{preview.metric_name}</span>
                           </div>
                           <div className="p-2 bg-white rounded">
-                            <span className="text-gray-600">Valeur:</span>
+                            <span className="text-gray-600">{t('importCsv.valueLabel')}:</span>
                             <span className="ml-2 font-semibold text-gray-900">
                               {preview.value_numeric} {preview.unit}
                             </span>
                           </div>
                           <div className="p-2 bg-white rounded col-span-2">
-                            <span className="text-gray-600">Pilier:</span>
+                            <span className="text-gray-600">{t('importCsv.pillarLabel')}:</span>
                             <span className="ml-2 font-semibold text-gray-900">{preview.pillar}</span>
                           </div>
                         </div>
                       ) : null;
                     })()}
                     <p className="text-xs text-indigo-700 mt-3">
-                      ⚠️ Vérifiez que Métrique = texte et Valeur = nombre !
+                      {t('importCsv.mappingWarning')}
                     </p>
                   </div>
                 </div>
@@ -443,7 +445,7 @@ environmental,energy,Consommation électricité,2500,MWh,2024-01-01,2024-12-31,F
           {/* Preview table... */}
           <Card>
             <h3 className="text-lg font-bold text-gray-900 mb-4">
-              Aperçu des données (10 premières lignes)
+              {t('importCsv.dataPreviewTitle')}
             </h3>
 
             <div className="overflow-x-auto">
@@ -453,8 +455,8 @@ environmental,energy,Consommation électricité,2500,MWh,2024-01-01,2024-12-31,F
                     {previewData.columns.map((col) => (
                       <th key={col} className="px-4 py-2 text-left font-semibold text-gray-700 border-b">
                         {col}
-                        {col === mapping.metric_name && <span className="ml-2 text-xs text-indigo-600">(Métrique)</span>}
-                        {col === mapping.value_numeric && <span className="ml-2 text-xs text-green-600">(Valeur)</span>}
+                        {col === mapping.metric_name && <span className="ml-2 text-xs text-indigo-600">({t('importCsv.metricLabel')})</span>}
+                        {col === mapping.value_numeric && <span className="ml-2 text-xs text-green-600">({t('importCsv.valueLabel')})</span>}
                       </th>
                     ))}
                   </tr>
@@ -477,7 +479,7 @@ environmental,energy,Consommation électricité,2500,MWh,2024-01-01,2024-12-31,F
           {/* Actions */}
           <div className="flex gap-4">
             <Button variant="secondary" onClick={handleReset} className="flex-1">
-              Annuler
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleImport}
@@ -487,12 +489,12 @@ environmental,energy,Consommation électricité,2500,MWh,2024-01-01,2024-12-31,F
               {importing ? (
                 <>
                   <Spinner size="sm" className="mr-2" />
-                  Import en cours...
+                  {t('importCsv.importing')}
                 </>
               ) : (
                 <>
                   <Database className="h-4 w-4 mr-2" />
-                  Importer {previewData.validation.valid_rows} données
+                  {t('importCsv.importRows', { count: previewData.validation.valid_rows })}
                 </>
               )}
             </Button>
@@ -506,28 +508,28 @@ environmental,energy,Consommation électricité,2500,MWh,2024-01-01,2024-12-31,F
           <div className="text-center py-12">
             <CheckCircle className="h-20 w-20 text-green-500 mx-auto mb-6" />
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Import réussi !
+              {t('importCsv.importSuccessTitle')}
             </h2>
-            
+
             <div className="grid grid-cols-2 gap-6 max-w-md mx-auto mb-8">
               <div className="p-6 bg-green-50 rounded-xl">
                 <p className="text-4xl font-bold text-green-600">{importResult.imported}</p>
-                <p className="text-sm text-gray-600 mt-2">Données importées</p>
+                <p className="text-sm text-gray-600 mt-2">{t('importCsv.importedData')}</p>
               </div>
               <div className="p-6 bg-red-50 rounded-xl">
                 <p className="text-4xl font-bold text-red-600">{importResult.errors}</p>
-                <p className="text-sm text-gray-600 mt-2">Erreurs</p>
+                <p className="text-sm text-gray-600 mt-2">{t('importCsv.errors')}</p>
               </div>
             </div>
 
             <div className="flex gap-4 justify-center">
               <Button variant="secondary" onClick={handleReset}>
                 <RefreshCw className="h-4 w-4 mr-2" />
-                Importer un autre fichier
+                {t('importCsv.importAnother')}
               </Button>
               <Button onClick={() => navigate('/data-entry')}>
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Voir mes données
+                {t('importCsv.viewData')}
               </Button>
             </div>
           </div>

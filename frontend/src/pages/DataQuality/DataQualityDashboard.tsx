@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Shield,
   AlertTriangle,
@@ -46,6 +47,7 @@ interface QualityIssue {
 }
 
 export default function DataQualityDashboard() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<QualityStats | null>(null);
   const [issues, setIssues] = useState<QualityIssue[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,17 +60,17 @@ export default function DataQualityDashboard() {
   const loadData = async () => {
     try {
       setLoading(true);
-      
+
       const [statsRes, issuesRes] = await Promise.all([
         api.get('/data-validation/quality/stats'),
         api.get('/data-validation/quality/issues')
       ]);
-      
+
       setStats(statsRes.data);
       setIssues(issuesRes.data);
     } catch (error: any) {
       console.error('Error loading quality data:', error);
-      toast.error('Erreur lors du chargement');
+      toast.error(t('dataQuality.loadError'));
     } finally {
       setLoading(false);
     }
@@ -76,23 +78,23 @@ export default function DataQualityDashboard() {
 
   const handleValidate = async (issueId: string, action: 'verify' | 'reject' | 'flag') => {
     setValidating(issueId);
-    
+
     try {
       await api.post(`/data-validation/entries/${issueId}/validate`, {
         action,
         reason: action === 'reject' ? 'Quality check failed' : undefined
       });
-      
+
       toast.success(
-        action === 'verify' ? '✅ Donnée vérifiée' :
-        action === 'reject' ? '❌ Donnée rejetée' :
-        '🚩 Donnée marquée'
+        action === 'verify' ? t('dataQuality.verified') :
+        action === 'reject' ? t('dataQuality.rejected') :
+        t('dataQuality.flagged')
       );
-      
+
       await loadData();
     } catch (error: any) {
       console.error('Error validating:', error);
-      toast.error('Erreur lors de la validation');
+      toast.error(t('dataQuality.validationError'));
     } finally {
       setValidating(null);
     }
@@ -125,7 +127,7 @@ export default function DataQualityDashboard() {
   }
 
   if (!stats) {
-    return <div>Erreur de chargement</div>;
+    return <div>{t('dataQuality.loadError')}</div>;
   }
 
   const qualityPercentage = stats.total_entries > 0
@@ -140,17 +142,17 @@ export default function DataQualityDashboard() {
           <div>
             <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
               <Shield className="h-10 w-10" />
-              Qualité des Données
+              {t('dataQuality.title')}
             </h1>
             <p className="text-blue-100 text-lg">
-              Audit trail & validation conforme CSRD
+              {t('dataQuality.subtitle')}
             </p>
           </div>
 
           <div className="flex gap-3">
             <Button variant="secondary" onClick={loadData}>
               <RefreshCw className="h-4 w-4 mr-2" />
-              Actualiser
+              {t('dataQuality.refresh')}
             </Button>
           </div>
         </div>
@@ -161,7 +163,7 @@ export default function DataQualityDashboard() {
         <Card className="border-l-4 border-blue-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Total Données</p>
+              <p className="text-sm text-gray-600 mb-1">{t('dataQuality.totalData')}</p>
               <p className="text-3xl font-bold text-gray-900">{stats.total_entries}</p>
             </div>
             <div className="p-3 bg-blue-50 rounded-xl">
@@ -173,9 +175,9 @@ export default function DataQualityDashboard() {
         <Card className="border-l-4 border-green-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Vérifiées</p>
+              <p className="text-sm text-gray-600 mb-1">{t('dataQuality.verifiedStat')}</p>
               <p className="text-3xl font-bold text-green-600">{stats.verified}</p>
-              <p className="text-xs text-gray-500 mt-1">{qualityPercentage}% du total</p>
+              <p className="text-xs text-gray-500 mt-1">{qualityPercentage}% {t('dataQuality.ofTotal')}</p>
             </div>
             <div className="p-3 bg-green-50 rounded-xl">
               <CheckCircle className="h-6 w-6 text-green-600" />
@@ -186,7 +188,7 @@ export default function DataQualityDashboard() {
         <Card className="border-l-4 border-yellow-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">En attente</p>
+              <p className="text-sm text-gray-600 mb-1">{t('dataQuality.pending')}</p>
               <p className="text-3xl font-bold text-yellow-600">{stats.pending}</p>
             </div>
             <div className="p-3 bg-yellow-50 rounded-xl">
@@ -198,7 +200,7 @@ export default function DataQualityDashboard() {
         <Card className="border-l-4 border-red-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Rejetées</p>
+              <p className="text-sm text-gray-600 mb-1">{t('dataQuality.rejectedStat')}</p>
               <p className="text-3xl font-bold text-red-600">{stats.rejected}</p>
             </div>
             <div className="p-3 bg-red-50 rounded-xl">
@@ -210,7 +212,7 @@ export default function DataQualityDashboard() {
         <Card className="border-l-4 border-orange-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Marquées</p>
+              <p className="text-sm text-gray-600 mb-1">{t('dataQuality.flaggedStat')}</p>
               <p className="text-3xl font-bold text-orange-600">{stats.flagged}</p>
             </div>
             <div className="p-3 bg-orange-50 rounded-xl">
@@ -225,12 +227,12 @@ export default function DataQualityDashboard() {
         <Card>
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-blue-600" />
-            Score de Complétude
+            {t('dataQuality.completenessScore')}
           </h3>
           <div className="space-y-4">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">Données avec source</span>
+                <span className="text-sm text-gray-600">{t('dataQuality.dataWithSource')}</span>
                 <span className="text-sm font-bold text-gray-900">
                   {stats.completeness_score.toFixed(1)}%
                 </span>
@@ -245,11 +247,11 @@ export default function DataQualityDashboard() {
 
             <div className="pt-4 border-t space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Avec source documentée</span>
+                <span className="text-gray-600">{t('dataQuality.withDocumentedSource')}</span>
                 <span className="font-medium">{stats.entries_with_source}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Avec pièces jointes</span>
+                <span className="text-gray-600">{t('dataQuality.withAttachments')}</span>
                 <span className="font-medium">{stats.entries_with_attachments}</span>
               </div>
             </div>
@@ -259,14 +261,14 @@ export default function DataQualityDashboard() {
         <Card>
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Shield className="h-5 w-5 text-green-600" />
-            Score Qualité Moyen
+            {t('dataQuality.avgQualityScore')}
           </h3>
           <div className="flex items-center justify-center py-6">
             <div className="text-center">
               <p className="text-5xl font-bold text-green-600">
                 {stats.avg_quality_score.toFixed(0)}
               </p>
-              <p className="text-sm text-gray-600 mt-2">sur 100</p>
+              <p className="text-sm text-gray-600 mt-2">{t('dataQuality.outOf100')}</p>
             </div>
           </div>
         </Card>
@@ -274,14 +276,14 @@ export default function DataQualityDashboard() {
         <Card>
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-orange-600" />
-            Données Obsolètes
+            {t('dataQuality.staleData')}
           </h3>
           <div className="flex items-center justify-center py-6">
             <div className="text-center">
               <p className="text-5xl font-bold text-orange-600">
                 {stats.stale_entries}
               </p>
-              <p className="text-sm text-gray-600 mt-2">&gt;90 jours sans validation</p>
+              <p className="text-sm text-gray-600 mt-2">{t('dataQuality.staleDays')}</p>
             </div>
           </div>
         </Card>
@@ -292,7 +294,7 @@ export default function DataQualityDashboard() {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <AlertCircle className="h-6 w-6 text-red-600" />
-            Problèmes à Résoudre ({issues.length})
+            {t('dataQuality.issuesTitle', { count: issues.length })}
           </h2>
         </div>
 
@@ -300,17 +302,17 @@ export default function DataQualityDashboard() {
           <div className="text-center py-16">
             <CheckCircle className="h-16 w-16 mx-auto text-green-500 mb-4" />
             <p className="text-xl text-gray-900 font-semibold mb-2">
-              Aucun problème détecté
+              {t('dataQuality.noIssues')}
             </p>
             <p className="text-gray-600">
-              Toutes vos données sont de bonne qualité ! 🎉
+              {t('dataQuality.allGoodQuality')}
             </p>
           </div>
         ) : (
           <div className="space-y-3">
             {issues.map((issue) => {
               const Icon = getIssueIcon(issue.issue_type);
-              
+
               return (
                 <div
                   key={issue.id}
@@ -327,7 +329,7 @@ export default function DataQualityDashboard() {
                       </div>
                       <p className="text-sm mb-2">{issue.details}</p>
                       <p className="text-xs opacity-75">
-                        {format(new Date(issue.created_at), 'dd MMM yyyy à HH:mm', { locale: fr })}
+                        {format(new Date(issue.created_at), 'dd MMM yyyy HH:mm', { locale: fr })}
                       </p>
                     </div>
 
@@ -336,7 +338,7 @@ export default function DataQualityDashboard() {
                         onClick={() => handleValidate(issue.id, 'verify')}
                         disabled={validating === issue.id}
                         className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors disabled:opacity-50"
-                        title="Vérifier"
+                        title={t('dataQuality.verifyAction')}
                       >
                         {validating === issue.id ? (
                           <Spinner size="sm" />
@@ -348,7 +350,7 @@ export default function DataQualityDashboard() {
                         onClick={() => handleValidate(issue.id, 'reject')}
                         disabled={validating === issue.id}
                         className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50"
-                        title="Rejeter"
+                        title={t('dataQuality.rejectAction')}
                       >
                         <ThumbsDown className="h-5 w-5" />
                       </button>
@@ -356,7 +358,7 @@ export default function DataQualityDashboard() {
                         onClick={() => handleValidate(issue.id, 'flag')}
                         disabled={validating === issue.id}
                         className="p-2 text-orange-600 hover:bg-orange-100 rounded-lg transition-colors disabled:opacity-50"
-                        title="Marquer"
+                        title={t('dataQuality.flagAction')}
                       >
                         <Flag className="h-5 w-5" />
                       </button>
