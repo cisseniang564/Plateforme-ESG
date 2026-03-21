@@ -1119,7 +1119,7 @@ export default function LandingPage() {
             <div className="flex gap-6 text-sm text-slate-500">
               <Link to="/legal-notice" className="hover:text-white transition-colors">Mentions légales</Link>
               <Link to="/privacy-policy" className="hover:text-white transition-colors">Confidentialité</Link>
-              <Link to="/terms-of-service" className="hover:text-white transition-colors">CGV</Link>
+              <Link to="/terms-of-service" className="hover:text-white transition-colors">CGU</Link>
               <a href="#" className="hover:text-white transition-colors">Cookies</a>
             </div>
           </div>
