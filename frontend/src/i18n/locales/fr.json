@@ -230,7 +230,7 @@
     "uploadNewData": "Importer de nouvelles données",
     "calculateScores": "Calculer les scores",
     "generateReport": "Générer un rapport",
-    "recentActivity": "Activité récente",
+    "recentActivity": "Activité Récente",
     "trends": "Tendances",
     "addWidget": "Ajouter un widget",
     "activeFilters": "Filtres actifs",
@@ -357,7 +357,17 @@
     "esrsS2": "Travailleurs chaîne valeur",
     "esrsS3": "Communautés affectées",
     "esrsS4": "Consommateurs",
-    "esrsG1": "Conduite des affaires"
+    "esrsG1": "Conduite des affaires",
+    "upcomingDeadlines": "Échéances Réglementaires",
+    "deadlineCsrd": "Rapport CSRD",
+    "deadlineSfdr": "Divulgation SFDR",
+    "deadlineTaxonomy": "Alignement Taxonomie UE",
+    "activityCsrd": "Brouillon rapport CSRD mis à jour",
+    "activityScope1": "Données émissions Scope 1 soumises",
+    "activityAudit": "Piste d'audit vérifiée",
+    "activityTimeToday": "Aujourd'hui",
+    "activityTimeYesterday": "Hier",
+    "activityTime2days": "Il y a 2 jours"
   },
   "indicators": {
     "title": "Indicateurs ESG",

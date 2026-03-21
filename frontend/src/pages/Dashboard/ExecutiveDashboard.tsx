@@ -851,6 +851,56 @@ export default function ExecutiveDashboard() {
         </div>
       </div>
 
+      {/* Upcoming regulatory deadlines */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="border-l-4 border-amber-400">
+          <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-amber-500" />
+            {t('dashboard.upcomingDeadlines')}
+          </h3>
+          <div className="space-y-2.5">
+            {[
+              { label: t('dashboard.deadlineCsrd'), date: '30 avr. 2025', daysLeft: 40, color: 'bg-red-500', urgent: true },
+              { label: t('dashboard.deadlineSfdr'), date: '30 juin 2025', daysLeft: 101, color: 'bg-amber-500', urgent: false },
+              { label: t('dashboard.deadlineTaxonomy'), date: '31 déc. 2025', daysLeft: 285, color: 'bg-green-500', urgent: false },
+            ].map(d => (
+              <div key={d.label} className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${d.color}`} />
+                  <span className="text-sm text-gray-700 truncate">{d.label}</span>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-xs text-gray-500">{d.date}</span>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${d.urgent ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
+                    J-{d.daysLeft}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="border-l-4 border-emerald-400">
+          <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-emerald-500" />
+            {t('dashboard.recentActivity')}
+          </h3>
+          <div className="space-y-2.5">
+            {[
+              { label: t('dashboard.activityCsrd'), time: t('dashboard.activityTimeToday'), icon: '📄' },
+              { label: t('dashboard.activityScope1'), time: t('dashboard.activityTimeYesterday'), icon: '🌿' },
+              { label: t('dashboard.activityAudit'), time: t('dashboard.activityTime2days'), icon: '✅' },
+            ].map((a, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm">
+                <span className="text-base">{a.icon}</span>
+                <span className="flex-1 text-gray-700">{a.label}</span>
+                <span className="text-xs text-gray-400 flex-shrink-0">{a.time}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
       {/* ESRS Coverage tracker */}
       <Card>
         <div className="flex items-center justify-between mb-4">

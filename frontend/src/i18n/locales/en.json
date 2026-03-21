@@ -357,7 +357,17 @@
     "esrsS2": "Value chain workers",
     "esrsS3": "Affected communities",
     "esrsS4": "Consumers",
-    "esrsG1": "Business conduct"
+    "esrsG1": "Business conduct",
+    "upcomingDeadlines": "Upcoming Regulatory Deadlines",
+    "deadlineCsrd": "CSRD Reporting",
+    "deadlineSfdr": "SFDR Disclosure",
+    "deadlineTaxonomy": "EU Taxonomy Alignment",
+    "activityCsrd": "CSRD report draft updated",
+    "activityScope1": "Scope 1 emissions data submitted",
+    "activityAudit": "Audit trail reviewed",
+    "activityTimeToday": "Today",
+    "activityTimeYesterday": "Yesterday",
+    "activityTime2days": "2 days ago"
   },
   "indicators": {
     "title": "ESG Indicators",
