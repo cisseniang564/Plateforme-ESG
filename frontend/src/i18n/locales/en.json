@@ -538,7 +538,13 @@
     "uploadAnother": "Upload Another File",
     "viewIndicators": "View Indicators",
     "errors": "Errors",
-    "viewAllUploads": "View All Uploads"
+    "viewAllUploads": "View All Uploads",
+    "heroTag": "ESG Data Import",
+    "invalidFileType": "Unsupported format. Use CSV or Excel.",
+    "fileTooLarge": "File too large (max 10 MB).",
+    "maxSize": "Max 10 MB",
+    "quality": "Quality",
+    "importError": "Import failed"
   },
   "scores": {
     "title": "ESG Scores",

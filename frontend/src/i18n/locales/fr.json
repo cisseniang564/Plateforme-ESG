@@ -538,7 +538,13 @@
     "uploadAnother": "Importer un autre fichier",
     "viewIndicators": "Voir les indicateurs",
     "errors": "Erreurs",
-    "viewAllUploads": "Voir tous les imports"
+    "viewAllUploads": "Voir tous les imports",
+    "heroTag": "Import de données ESG",
+    "invalidFileType": "Format non supporté. Utilisez CSV ou Excel.",
+    "fileTooLarge": "Fichier trop volumineux (max 10 Mo).",
+    "maxSize": "Max 10 Mo",
+    "quality": "Qualité",
+    "importError": "Échec de l'import"
   },
   "scores": {
     "title": "Scores ESG",
