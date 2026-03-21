@@ -6,7 +6,7 @@ import {
   Brain, Building2, Database, Plus, Minus, Star, Check, X,
   Play, Leaf, Globe, ChevronRight, Truck, ClipboardList,
   FlameKindling, Scale, PackageSearch, ShieldCheck, TrendingDown,
-  Flame, Lock, Hash, Target, Layers,
+  Flame, Lock, Hash, Target, Layers, Plug,
 } from 'lucide-react';
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
@@ -177,6 +177,19 @@ const MODULES = [
     desc: 'Journal d\'audit complet et infalsifiable : qui / quand / quoi / où. Versionning avant/après, pièces justificatives, empreintes SHA-256 et export pour auditeurs.',
     badges: ['Journal complet', 'Versionning données', 'Intégrité SHA-256', 'Export ISAE 3000'],
     preview: 'audit',
+  },
+  {
+    id: 'connectors',
+    icon: Plug,
+    color: '#0891b2',
+    bg: 'bg-cyan-500',
+    lightBg: 'bg-cyan-50',
+    lightText: 'text-cyan-700',
+    name: 'Connecteurs Data',
+    tagline: 'SAP · Oracle · Workday · Schneider · Climatiq',
+    desc: 'Ingestion automatisee depuis vos systemes : 11 connecteurs natifs ERP, RH, Energie et Carbone. OAuth2, API keys, certificats. Fini la saisie manuelle Excel.',
+    badges: ['11 connecteurs natifs', 'OAuth2 & API keys', 'Sync temps reel', 'Monitoring flux'],
+    preview: 'connectors',
   },
 ];
 
@@ -432,6 +445,60 @@ function PreviewAudit() {
   );
 }
 
+function PreviewConnectors() {
+  const connectors = [
+    { name: 'SAP S/4HANA', cat: 'ERP', status: 'connected', color: '#1e40af', records: '1 250' },
+    { name: 'Workday', cat: 'RH', status: 'connected', color: '#0891b2', records: '890' },
+    { name: 'Schneider Electric', cat: 'Energie', status: 'connected', color: '#059669', records: '4 200' },
+    { name: 'SAP SuccessFactors', cat: 'RH', status: 'error', color: '#9333ea', records: '-' },
+    { name: 'Climatiq API', cat: 'Carbone', status: 'connected', color: '#16a34a', records: '156' },
+    { name: 'Enedis', cat: 'Energie', status: 'available', color: '#0284c7', records: '-' },
+  ];
+  return (
+    <div className="p-5 space-y-3">
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-white font-bold text-sm">Hub Connecteurs Data</div>
+        <div className="flex gap-1.5">
+          <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded-full">5 actifs</span>
+          <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs rounded-full">1 erreur</span>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {connectors.map((c) => (
+          <div key={c.name} className="bg-white/5 rounded-xl p-2.5 border border-white/10">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-1.5">
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: c.color }}>
+                  {c.name[0]}
+                </div>
+                <span className="text-white text-xs font-medium truncate max-w-[70px]">{c.name}</span>
+              </div>
+              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${c.status === 'connected' ? 'bg-green-400' : c.status === 'error' ? 'bg-red-400' : 'bg-slate-400'}`} />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-400 text-xs">{c.cat}</span>
+              {c.status === 'connected' && <span className="text-cyan-400 text-xs">{c.records} entrees</span>}
+              {c.status === 'error' && <span className="text-red-400 text-xs">Erreur auth</span>}
+              {c.status === 'available' && <span className="text-slate-400 text-xs">Disponible</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-2 bg-white/5 rounded-xl p-2.5 border border-white/10">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-slate-400">Syncs aujourd'hui</span>
+          <span className="text-cyan-400 font-bold">47 syncs · 8.4 GB</span>
+        </div>
+        <div className="mt-1.5 flex gap-1">
+          {[40, 55, 35, 60, 45, 70, 47].map((v, i) => (
+            <div key={i} className="flex-1 bg-white/10 rounded-sm" style={{ height: `${v * 0.4}px`, alignSelf: 'flex-end', backgroundColor: `rgba(6,182,212,${v/100})` }} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const PREVIEWS: Record<string, () => JSX.Element> = {
   dashboard: PreviewDashboard,
   scope3: PreviewScope3,
@@ -441,6 +508,7 @@ const PREVIEWS: Record<string, () => JSX.Element> = {
   supply: PreviewSupply,
   compliance: PreviewCompliance,
   audit: PreviewAudit,
+  connectors: PreviewConnectors,
 };
 
 // ─── Competitive comparison data ──────────────────────────────────────────────
@@ -457,6 +525,7 @@ const COMP_ROWS = [
   { label: 'OCR factures fournisseurs', values: [true, true, false, false] },
   { label: 'Hébergement France + RGPD', values: [true, true, false, false] },
   { label: 'Prix accessible PME (< 500€/mois)', values: [true, true, false, false] },
+  { label: 'Connecteurs natifs ERP/RH/Energie (11)', values: [true, false, true, false] },
 ];
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -595,7 +664,7 @@ export default function LandingPage() {
           <div className="space-y-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/15 border border-green-500/30 rounded-full text-green-300 text-sm font-medium">
               <Sparkles className="h-4 w-4" />
-              Plateforme ESG complète — 10 modules intégrés
+              Plateforme ESG complète — 9 modules intégrés
               <span className="bg-green-500/20 px-2 py-0.5 rounded-full text-xs text-green-400">2026</span>
             </div>
 
@@ -632,7 +701,7 @@ export default function LandingPage() {
 
             {/* Stats */}
             <div ref={heroRef} className="grid grid-cols-4 gap-4 pt-8 border-t border-white/10">
-              <StatCounter value={10} suffix="+" label="Modules ESG" started={heroInView} />
+              <StatCounter value={9} suffix="" label="Modules ESG" started={heroInView} />
               <StatCounter value={100} suffix="+" label="Indicateurs" started={heroInView} />
               <StatCounter value={24} suffix="" label="Actions décarb." started={heroInView} />
               <StatCounter value={10} suffix="" label="Référentiels" started={heroInView} />
@@ -720,7 +789,7 @@ export default function LandingPage() {
       <section ref={statsRef} className="py-16 bg-gradient-to-r from-green-900 to-emerald-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-6 gap-8">
-            <StatCounter value={10} suffix="" label="Modules intégrés" started={statsInView} />
+            <StatCounter value={9} suffix="" label="Modules intégrés" started={statsInView} />
             <StatCounter value={100} suffix="+" label="Indicateurs ESRS" started={statsInView} />
             <StatCounter value={15} suffix="" label="Catégories Scope 3" started={statsInView} />
             <StatCounter value={24} suffix="" label="Actions décarbonation" started={statsInView} />
@@ -735,7 +804,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
             <span className="text-sm font-semibold text-green-600 uppercase tracking-widest">Modules</span>
-            <h2 className="text-4xl font-bold text-gray-900 mt-3 mb-4">10 modules. Une seule plateforme.</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mt-3 mb-4">9 modules. Une seule plateforme.</h2>
             <p className="text-lg text-gray-500 max-w-2xl mx-auto">Chaque module est conçu pour répondre à un besoin précis — et ils fonctionnent tous ensemble.</p>
           </div>
 
@@ -982,7 +1051,7 @@ export default function LandingPage() {
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/20 rounded-full text-green-300 text-sm font-medium mb-8">
             <Sparkles className="h-4 w-4" />
-            10 modules · 14 jours d'essai · Sans carte bancaire
+            9 modules · 14 jours d'essai · Sans carte bancaire
           </div>
           <h2 className="text-4xl lg:text-5xl font-extrabold text-white mb-6 leading-tight">
             Prêt à passer à la vitesse supérieure ?
@@ -1024,7 +1093,7 @@ export default function LandingPage() {
                 <span className="text-xl font-bold">ESGFlow</span>
               </div>
               <p className="text-slate-400 text-sm leading-relaxed max-w-xs mb-6">
-                La plateforme ESG la plus complète du marché — 10 modules, 100+ indicateurs, IA intégrée, conformité CSRD garantie.
+                La plateforme ESG la plus complète du marché — 9 modules, 100+ indicateurs, IA intégrée, conformité CSRD garantie.
               </p>
               <div className="flex gap-2.5">
                 {['in', 'tw', 'yt'].map(s => (
