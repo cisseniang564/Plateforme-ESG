@@ -24,6 +24,9 @@ import {
   RefreshCw,
   Building2,
   ChevronDown,
+  CheckCircle,
+  AlertTriangle,
+  Trophy,
 } from 'lucide-react'
 
 // --- Mock / fallback data ---
@@ -332,6 +335,73 @@ export default function BenchmarkingDashboard() {
                 />
               </RadarChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Ranking banner */}
+        <div className="mb-6 rounded-2xl bg-gradient-to-r from-teal-900 via-teal-800 to-emerald-800 p-6 text-white shadow-lg">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-yellow-400/20 ring-2 ring-yellow-400/40">
+                <Trophy className="h-8 w-8 text-yellow-300" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-teal-200">{t('benchmarking.sectorRank')}</p>
+                <p className="text-3xl font-bold">3<span className="text-lg font-normal text-teal-200">e / 47 {t('benchmarking.companies')}</span></p>
+                <p className="mt-0.5 text-sm font-medium text-yellow-300">{t('benchmarking.topPercent', { pct: 10 })}</p>
+              </div>
+            </div>
+            <div className="flex-1 max-w-xs">
+              <p className="mb-2 text-xs text-teal-300">{t('benchmarking.positionInSector')}</p>
+              <div className="relative h-3 w-full overflow-hidden rounded-full bg-white/10">
+                <div className="h-full rounded-full bg-gradient-to-r from-green-400 to-emerald-400" style={{ width: '94%' }} />
+                <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-5 w-5 rounded-full bg-yellow-400 ring-2 ring-white shadow" style={{ left: '6%' }} />
+              </div>
+              <div className="mt-1 flex justify-between text-xs text-teal-300">
+                <span>{t('benchmarking.best')}</span>
+                <span>{t('benchmarking.worst')}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Strengths & improvements */}
+        <div className="mb-6 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-xl border border-green-100 bg-green-50 p-5 shadow-sm">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-green-800">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              {t('benchmarking.strengths')}
+            </h3>
+            <ul className="space-y-2">
+              {[
+                t('benchmarking.strength1'),
+                t('benchmarking.strength2'),
+                t('benchmarking.strength3'),
+              ].map((s, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-green-700">
+                  <span className="mt-0.5 flex-shrink-0 h-4 w-4 rounded-full bg-green-200 flex items-center justify-center text-xs font-bold text-green-700">{i + 1}</span>
+                  {s}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-xl border border-amber-100 bg-amber-50 p-5 shadow-sm">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-amber-800">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              {t('benchmarking.improvements')}
+            </h3>
+            <ul className="space-y-2">
+              {[
+                t('benchmarking.improvement1'),
+                t('benchmarking.improvement2'),
+                t('benchmarking.improvement3'),
+              ].map((s, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-amber-700">
+                  <span className="mt-0.5 flex-shrink-0 h-4 w-4 rounded-full bg-amber-200 flex items-center justify-center text-xs font-bold text-amber-700">{i + 1}</span>
+                  {s}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 

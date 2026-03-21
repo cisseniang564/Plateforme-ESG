@@ -894,7 +894,21 @@
     "performance": "Performance",
     "inAverage": "Average",
     "toImprove": "To Improve",
-    "environment": "Environment"
+    "environment": "Environment",
+    "sectorRank": "Sector Ranking",
+    "companies": "companies",
+    "topPercent": "You outperform {{pct}}% of your sector",
+    "positionInSector": "Your position in the sector",
+    "best": "Best",
+    "worst": "Worst",
+    "strengths": "Strengths",
+    "improvements": "Areas for Improvement",
+    "strength1": "CO2 emissions: -18% vs sector average",
+    "strength2": "Training: +27% vs sector average",
+    "strength3": "Independent directors: Top 10%",
+    "improvement1": "Recycled water: -23% vs sector average",
+    "improvement2": "Audited suppliers: -15% vs CSRD threshold",
+    "improvement3": "Biodiversity: missing data"
   },
   "organizations": {
     "title": "Organizations",

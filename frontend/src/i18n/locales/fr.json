@@ -894,7 +894,21 @@
     "performance": "Performance",
     "inAverage": "Dans la moyenne",
     "toImprove": "A ameliorer",
-    "environment": "Environnement"
+    "environment": "Environnement",
+    "sectorRank": "Classement sectoriel",
+    "companies": "entreprises",
+    "topPercent": "Vous surpassez {{pct}}% de votre secteur",
+    "positionInSector": "Votre position dans le secteur",
+    "best": "Meilleur",
+    "worst": "Dernier",
+    "strengths": "Points forts",
+    "improvements": "Axes d'amélioration",
+    "strength1": "CO2 : -18% vs moyenne secteur",
+    "strength2": "Formation : +27% vs moyenne secteur",
+    "strength3": "Administrateurs indépendants : Top 10%",
+    "improvement1": "Eau recyclée : -23% vs moyenne secteur",
+    "improvement2": "Fournisseurs audités : -15% vs seuil CSRD",
+    "improvement3": "Biodiversité : données manquantes"
   },
   "organizations": {
     "title": "Organisations",
