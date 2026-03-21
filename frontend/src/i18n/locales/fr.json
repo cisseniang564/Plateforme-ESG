@@ -3079,5 +3079,26 @@
     "priorityMedium": "Moyenne",
     "priorityLow": "Basse",
     "description": "Description"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Tout marquer comme lu",
+    "filterAll": "Toutes",
+    "filterUnread": "Non lues",
+    "filterAlerts": "Alertes",
+    "seeAll": "Voir toutes les notifications",
+    "noNotifications": "Aucune notification",
+    "unread": "non lue(s)",
+    "center": "Centre de notifications",
+    "alertSettings": "Param\u00e8tres alertes",
+    "byType": "Par type",
+    "connectorErrors": "Erreurs de connexion (connecteurs)",
+    "scoreChanges": "Variations de score ESG (> \u00b15%)",
+    "reportsGenerated": "Rapports g\u00e9n\u00e9r\u00e9s",
+    "syncUpdates": "Nouvelles synchronisations",
+    "regulatoryDeadlines": "D\u00e9lais r\u00e9glementaires (CSRD, SFDR)",
+    "platformUpdates": "Mises \u00e0 jour plateforme",
+    "emailNotifs": "Notifications par email",
+    "webhookUrl": "URL Webhook (optionnel)"
   }
 }

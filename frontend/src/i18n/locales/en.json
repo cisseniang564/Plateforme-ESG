@@ -3132,5 +3132,26 @@
     "keyGenerated": "API key generated",
     "keyWarning": "Store it safely - it will not be shown again.",
     "copyKey": "Copy key"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "filterAll": "All",
+    "filterUnread": "Unread",
+    "filterAlerts": "Alerts",
+    "seeAll": "See all notifications",
+    "noNotifications": "No notifications",
+    "unread": "unread",
+    "center": "Notification Center",
+    "alertSettings": "Alert Settings",
+    "byType": "By Type",
+    "connectorErrors": "Connection errors (connectors)",
+    "scoreChanges": "ESG score variations (> \u00b15%)",
+    "reportsGenerated": "Reports generated",
+    "syncUpdates": "New synchronizations",
+    "regulatoryDeadlines": "Regulatory deadlines (CSRD, SFDR)",
+    "platformUpdates": "Platform updates",
+    "emailNotifs": "Email notifications",
+    "webhookUrl": "Webhook URL (optional)"
   }
 }

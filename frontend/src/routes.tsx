@@ -83,6 +83,9 @@ import PrivacyPolicy from '@/pages/Legal/PrivacyPolicy';
 import LegalNotice from '@/pages/Legal/LegalNotice';
 import Support from '@/pages/Support/Support';
 
+// Notifications
+import NotificationsPage from '@/pages/Notifications/NotificationsPage';
+
 // Onboarding
 import FirstTimeSetup from '@/pages/Setup/FirstTimeSetup';
 
@@ -211,6 +214,9 @@ export default function AppRoutes() {
         <Route path="settings/integrations" element={<IntegrationManagement />} />
         <Route path="settings/insee" element={<EntreprisesINSEE />} />
         <Route path="settings/esg-enrichment" element={<DataEnrichment />} />
+
+        {/* Notifications */}
+        <Route path="notifications" element={<NotificationsPage />} />
       </Route>
 
       {/* Redirect unknown routes depending on authentication */}
