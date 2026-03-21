@@ -127,6 +127,7 @@ export default function Sidebar() {
         { name: t('sidebar.nav.taxonomieUE'), description: t('sidebar.nav.taxonomieUEDesc'), href: '/app/taxonomy', icon: Leaf },
         { name: t('sidebar.nav.multiReglementaire'), description: t('sidebar.nav.multiReglementaireDesc'), href: '/app/compliance', icon: ShieldCheck },
         { name: t('sidebar.nav.rapportsCSRD'), description: t('sidebar.nav.rapportsCSRDDesc'), href: '/app/reports', icon: FileText, tourId: 'sidebar-reports' },
+        { name: t('sidebar.nav.csrdBuilder'), description: t('sidebar.nav.csrdBuilderDesc'), href: '/app/reports/csrd-builder', icon: Shield },
       ],
     },
     { name: t('sidebar.nav.apiPublique'), description: t('sidebar.nav.apiPubliqueDesc'), href: '/app/api-docs', icon: Code2 },

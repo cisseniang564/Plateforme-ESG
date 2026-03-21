@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   FileText,
@@ -182,6 +183,7 @@ function TemplateCard({
   onSelect?: (t: Template) => void;
 }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const Icon = template.icon;
   return (
     <div
@@ -205,13 +207,22 @@ function TemplateCard({
         ))}
       </div>
       {!compact && (
-        <div className="flex gap-2 mt-2">
+        <div className="flex gap-2 mt-2 flex-wrap">
           <Button size="sm" onClick={(e: React.MouseEvent) => { e.stopPropagation(); onSelect && onSelect(template); }}>
             {t('reports.useTemplate')}
           </Button>
           <Button size="sm" variant="secondary">
             {t('reports.preview')}
           </Button>
+          {template.id === 1 && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={(e: React.MouseEvent) => { e.stopPropagation(); navigate('/app/reports/csrd-builder'); }}
+            >
+              Ouvrir le builder CSRD →
+            </Button>
+          )}
         </div>
       )}
     </div>

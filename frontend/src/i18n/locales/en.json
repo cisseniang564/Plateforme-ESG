@@ -196,7 +196,9 @@
       "parametres": "Settings",
       "parametresDesc": "Configuration",
       "connectors": "Data Connectors",
-      "connectorsDesc": "Automated ingestion"
+      "connectorsDesc": "Automated ingestion",
+      "csrdBuilder": "CSRD Builder",
+      "csrdBuilderDesc": "Interactive CSRD/ESRS 2024 report builder"
     }
   },
   "pageHeader": {
@@ -621,7 +623,7 @@
     "searchPlaceholder": "Search a report...",
     "allTypes": "All types",
     "statusDone": "Done",
-    "statusInProgress": "In progress",
+    "statusInProgress": "In Progress",
     "statusFailed": "Failed",
     "view": "View",
     "download": "Download",
@@ -677,7 +679,7 @@
     "includedFem": "Included",
     "notIncludedFem": "Not included",
     "generating": "Generating...",
-    "generateBtn": "Generate {{format}}",
+    "generateBtn": "Generate Report",
     "generatePdf": "Generate PDF",
     "generateExcel": "Generate Excel file",
     "generateWord": "Generate Word document",
@@ -722,8 +724,6 @@
     "colCreated": "Created",
     "colActions": "Actions",
     "statusGenerated": "Generated",
-    "statusInProgress": "In Progress",
-    "statusFailed": "Failed",
     "stepTemplate": "Choose Template",
     "stepConfig": "Configure",
     "stepGenerate": "Generate",
@@ -737,7 +737,6 @@
     "optSectorComparison": "Sector comparison",
     "optExecutiveSummary": "Executive summary (1 page)",
     "optAnnexes": "Technical annexes",
-    "generateBtn": "Generate Report",
     "downloadBtn": "Download Report",
     "successMsg": "Report generated successfully!",
     "scheduleFreq": "Frequency",
@@ -3146,12 +3145,61 @@
     "alertSettings": "Alert Settings",
     "byType": "By Type",
     "connectorErrors": "Connection errors (connectors)",
-    "scoreChanges": "ESG score variations (> \u00b15%)",
+    "scoreChanges": "ESG score variations (> ±5%)",
     "reportsGenerated": "Reports generated",
     "syncUpdates": "New synchronizations",
     "regulatoryDeadlines": "Regulatory deadlines (CSRD, SFDR)",
     "platformUpdates": "Platform updates",
     "emailNotifs": "Email notifications",
     "webhookUrl": "Webhook URL (optional)"
+  },
+  "csrdBuilder": {
+    "title": "CSRD Report Builder",
+    "subtitle": "Interactive CSRD/ESRS 2024 compliance report builder",
+    "tabs": {
+      "builder": "Builder",
+      "indicators": "Indicators & Data",
+      "score": "CSRD Score",
+      "generate": "Generate & Export"
+    },
+    "config": "Report Configuration",
+    "esrsSections": "ESRS Sections",
+    "advancedOptions": "Advanced Options",
+    "reportPreview": "Report Preview",
+    "generateBtn": "Generate CSRD Report",
+    "generating": "Generating...",
+    "downloadBtn": "Download",
+    "shareBtn": "Share",
+    "globalScore": "Global CSRD Score",
+    "compliantSections": "Compliant Sections",
+    "missingPoints": "Missing Data Points",
+    "completion": "Completion",
+    "status": {
+      "validated": "Validated",
+      "partial": "Partial",
+      "missing": "Missing"
+    },
+    "source": "Source",
+    "noValue": "No data",
+    "radarTitle": "CSRD Radar — ESRS Sections",
+    "pillarEnv": "Environment",
+    "pillarSoc": "Social",
+    "pillarGov": "Governance",
+    "recommendations": "Priority Recommendations",
+    "completeSection": "Complete →",
+    "configSummary": "Configuration Summary",
+    "reportContent": "Report Content",
+    "progress": {
+      "step1": "Collecting indicator data...",
+      "step2": "Computing ESRS compliance...",
+      "step3": "Generating document..."
+    },
+    "successTitle": "Report generated successfully!",
+    "incompleteSections": "incomplete sections",
+    "warningIncomplete": "The report will be marked 'in progress'",
+    "orgLabel": "Organization",
+    "periodLabel": "Period",
+    "langLabel": "Language",
+    "formatLabel": "Export Format"
   }
 }

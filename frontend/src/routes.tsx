@@ -35,6 +35,7 @@ import OrganizationScoring from '@/pages/Scores/OrganizationScoring';
 import ReportGeneration from '@/pages/Reports/ReportGeneration';
 import ReportsList from '@/pages/Reporting/ReportsList';
 import ScheduledReports from '@/pages/Reporting/ScheduledReports';
+import CSRDReportBuilder from '@/pages/Reports/CSRDReportBuilder';
 
 // Organizations
 import OrganizationsList from '@/pages/Organizations/OrganizationsList';
@@ -179,6 +180,7 @@ export default function AppRoutes() {
         <Route path="reports" element={<ReportsList />} />
         <Route path="reports/generate" element={<ReportGeneration />} />
         <Route path="reports/scheduled" element={<ScheduledReports />} />
+        <Route path="reports/csrd-builder" element={<CSRDReportBuilder />} />
 
         {/* Materiality & Risks */}
         <Route path="materiality" element={<MaterialityMatrix />} />
