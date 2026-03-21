@@ -850,6 +850,47 @@ export default function ExecutiveDashboard() {
           ))}
         </div>
       </div>
+
+      {/* ESRS Coverage tracker */}
+      <Card>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <Target className="h-5 w-5 text-violet-600" />
+            {t('dashboard.esrsCoverageTitle')}
+          </h3>
+          <button
+            onClick={() => navigate('/app/reports/csrd-builder')}
+            className="text-sm text-violet-600 hover:text-violet-700 font-medium flex items-center gap-1"
+          >
+            {t('dashboard.esrsViewBuilder')} <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          {[
+            { code: 'E1', label: t('dashboard.esrsE1'), pct: 82, color: 'bg-emerald-500', track: 'bg-emerald-100' },
+            { code: 'E2', label: t('dashboard.esrsE2'), pct: 65, color: 'bg-green-500', track: 'bg-green-100' },
+            { code: 'E3', label: t('dashboard.esrsE3'), pct: 44, color: 'bg-teal-500', track: 'bg-teal-100' },
+            { code: 'E4', label: t('dashboard.esrsE4'), pct: 28, color: 'bg-lime-500', track: 'bg-lime-100' },
+            { code: 'E5', label: t('dashboard.esrsE5'), pct: 51, color: 'bg-green-600', track: 'bg-green-100' },
+            { code: 'S1', label: t('dashboard.esrsS1'), pct: 77, color: 'bg-blue-500', track: 'bg-blue-100' },
+            { code: 'S2', label: t('dashboard.esrsS2'), pct: 55, color: 'bg-sky-500', track: 'bg-sky-100' },
+            { code: 'S3', label: t('dashboard.esrsS3'), pct: 33, color: 'bg-cyan-500', track: 'bg-cyan-100' },
+            { code: 'S4', label: t('dashboard.esrsS4'), pct: 60, color: 'bg-blue-600', track: 'bg-blue-100' },
+            { code: 'G1', label: t('dashboard.esrsG1'), pct: 88, color: 'bg-purple-500', track: 'bg-purple-100' },
+          ].map(({ code, label, pct, color, track }) => (
+            <div key={code} className={`p-3 rounded-xl ${track}`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-gray-700">{code}</span>
+                <span className={`text-xs font-bold ${pct >= 70 ? 'text-green-700' : pct >= 40 ? 'text-amber-700' : 'text-red-600'}`}>{pct}%</span>
+              </div>
+              <div className="w-full bg-white/70 rounded-full h-1.5 mb-1.5">
+                <div className={`${color} h-1.5 rounded-full transition-all`} style={{ width: `${pct}%` }} />
+              </div>
+              <p className="text-[10px] text-gray-500 leading-tight">{label}</p>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 }

@@ -345,7 +345,19 @@
     "quickAccessEntry": "Enter data",
     "quickAccessCsrd": "Generate CSRD report",
     "quickAccessConnectors": "View connectors",
-    "quickAccessAI": "AI Analysis"
+    "quickAccessAI": "AI Analysis",
+    "esrsCoverageTitle": "ESRS Coverage — CSRD 2025",
+    "esrsViewBuilder": "Open CSRD Builder",
+    "esrsE1": "Climate change",
+    "esrsE2": "Pollution",
+    "esrsE3": "Water & marine",
+    "esrsE4": "Biodiversity",
+    "esrsE5": "Resource use",
+    "esrsS1": "Own workforce",
+    "esrsS2": "Value chain workers",
+    "esrsS3": "Affected communities",
+    "esrsS4": "Consumers",
+    "esrsG1": "Business conduct"
   },
   "indicators": {
     "title": "ESG Indicators",
