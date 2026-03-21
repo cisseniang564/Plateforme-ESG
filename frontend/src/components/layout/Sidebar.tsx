@@ -95,7 +95,7 @@ export default function Sidebar() {
         { name: t('sidebar.nav.importCsv'), description: t('sidebar.nav.importCsvDesc'), href: '/app/import-csv', icon: Upload },
         { name: t('sidebar.nav.myData'), description: t('sidebar.nav.myDataDesc'), href: '/app/my-data', icon: TrendingUp },
         { name: t('sidebar.nav.calcAuto'), description: t('sidebar.nav.calcAutoDesc'), href: '/app/calculated-metrics', icon: Activity },
-        { name: t('sidebar.nav.connectors'), description: t('sidebar.nav.connectorsDesc'), href: '/app/connectors', icon: Plug },
+        { name: t('sidebar.nav.connectors'), description: t('sidebar.nav.connectorsDesc'), href: '/app/data/connectors', icon: Plug },
       ],
     },
     {
