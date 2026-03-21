@@ -43,6 +43,51 @@ interface Organization {
 type ViewMode = 'grid' | 'list';
 type SortBy = 'name' | 'score' | 'rating';
 
+// ─── SVG Score Ring ──────────────────────────────────────────────────────────
+function ScoreRing({ score, size = 80, strokeWidth = 8 }: { score: number; size?: number; strokeWidth?: number }) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const progress = Math.min(Math.max(score, 0), 100);
+  const dashOffset = circumference - (progress / 100) * circumference;
+  const color = score >= 75 ? '#16a34a' : score >= 60 ? '#2563eb' : score >= 45 ? '#ea580c' : '#dc2626';
+  const trackColor = score >= 75 ? '#dcfce7' : score >= 60 ? '#dbeafe' : score >= 45 ? '#ffedd5' : '#fee2e2';
+
+  return (
+    <svg width={size} height={size} className="transform -rotate-90">
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={trackColor} strokeWidth={strokeWidth} />
+      <circle
+        cx={size / 2} cy={size / 2} r={radius} fill="none"
+        stroke={color} strokeWidth={strokeWidth}
+        strokeDasharray={circumference} strokeDashoffset={dashOffset}
+        strokeLinecap="round"
+        className="transition-all duration-700"
+      />
+    </svg>
+  );
+}
+
+function PillarRing({ score, color, label }: { score: number; color: string; label: string }) {
+  const size = 48; const sw = 5;
+  const radius = (size - sw) / 2;
+  const circ = 2 * Math.PI * radius;
+  const offset = circ - (Math.min(score, 100) / 100) * circ;
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div className="relative">
+        <svg width={size} height={size} className="transform -rotate-90">
+          <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="#f3f4f6" strokeWidth={sw} />
+          <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke={color} strokeWidth={sw}
+            strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
+        </svg>
+        <span className="absolute inset-0 flex items-center justify-center text-xs font-bold" style={{ color }}>
+          {score}
+        </span>
+      </div>
+      <span className="text-[10px] font-semibold text-gray-500">{label}</span>
+    </div>
+  );
+}
+
 export default function OrganizationsList() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -416,35 +461,22 @@ export default function OrganizationsList() {
                 </span>
               )}
 
-              {/* ESG Score */}
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-600 font-medium">{t('organizations.globalEsgScore')}</span>
-                  <span className={`text-3xl font-bold ${getScoreColor(org.esg_score || 0)}`}>
-                    {org.esg_score}
-                  </span>
+              {/* ESG Score Ring */}
+              <div className="flex items-center gap-4 mb-4">
+                <div className="relative flex-shrink-0">
+                  <ScoreRing score={org.esg_score || 0} size={80} strokeWidth={8} />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className={`text-xl font-bold ${getScoreColor(org.esg_score || 0)}`}>
+                      {org.esg_score}
+                    </span>
+                    <span className="text-[9px] text-gray-400 font-medium uppercase tracking-wide">ESG</span>
+                  </div>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                  <div
-                    className={`h-3 rounded-full transition-all ${getScoreBgColor(org.esg_score || 0)}`}
-                    style={{ width: `${org.esg_score || 0}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* E/S/G pillars */}
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                <div className="text-center">
-                  <p className="text-xs text-gray-500 mb-1">E</p>
-                  <p className="text-lg font-bold text-green-600">{org.environmental_score}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-gray-500 mb-1">S</p>
-                  <p className="text-lg font-bold text-blue-600">{org.social_score}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-gray-500 mb-1">G</p>
-                  <p className="text-lg font-bold text-purple-600">{org.governance_score}</p>
+                {/* E/S/G pillar rings */}
+                <div className="flex gap-3 flex-1 justify-end">
+                  <PillarRing score={org.environmental_score || 0} color="#16a34a" label="E" />
+                  <PillarRing score={org.social_score || 0} color="#2563eb" label="S" />
+                  <PillarRing score={org.governance_score || 0} color="#7c3aed" label="G" />
                 </div>
               </div>
 
