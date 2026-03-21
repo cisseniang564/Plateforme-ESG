@@ -476,7 +476,18 @@
     "addError": "Erreur lors de l'ajout",
     "submitSuccess": "Entrée soumise pour validation",
     "submitError": "Erreur lors de la soumission",
-    "csvHeaders": "Code,Nom,Pilier,Valeur Actuelle,Objectif,Écart,Progression (%),Poids"
+    "csvHeaders": "Code,Nom,Pilier,Valeur Actuelle,Objectif,Écart,Progression (%),Poids",
+    "kpiTotal": "Total",
+    "kpiActive": "Actifs",
+    "kpiWithData": "Avec données",
+    "kpiNoData": "Sans données",
+    "esrsEnv": "ESRS Environnement",
+    "esrsEnvDesc": "E1→E5 : Climat, Pollution, Eau, Biodiversité, Ressources",
+    "esrsSoc": "ESRS Social",
+    "esrsSocDesc": "S1→S4 : Effectifs propres, Chaîne de valeur, Communautés, Consommateurs",
+    "esrsGov": "ESRS Gouvernance",
+    "esrsGovDesc": "G1 : Conduite des affaires, Anti-corruption, Transparence",
+    "exportCsv": "Exporter CSV"
   },
   "upload": {
     "title": "Importer des données ESG",

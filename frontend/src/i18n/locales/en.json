@@ -476,7 +476,18 @@
     "addError": "Error adding data",
     "submitSuccess": "Entry submitted for validation",
     "submitError": "Error during submission",
-    "csvHeaders": "Code,Name,Pillar,Current Value,Target,Gap,Progress (%),Weight"
+    "csvHeaders": "Code,Name,Pillar,Current Value,Target,Gap,Progress (%),Weight",
+    "kpiTotal": "Total",
+    "kpiActive": "Active",
+    "kpiWithData": "With Data",
+    "kpiNoData": "No Data",
+    "esrsEnv": "Environmental ESRS",
+    "esrsEnvDesc": "E1→E5: Climate, Pollution, Water, Biodiversity, Resources",
+    "esrsSoc": "Social ESRS",
+    "esrsSocDesc": "S1→S4: Own workforce, Value chain, Affected communities, Consumers",
+    "esrsGov": "Governance ESRS",
+    "esrsGovDesc": "G1: Business conduct, Anti-corruption, Transparency",
+    "exportCsv": "Export CSV"
   },
   "upload": {
     "title": "Upload ESG Data",
