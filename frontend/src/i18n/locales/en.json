@@ -1404,7 +1404,34 @@
     "size": "Size",
     "noUploads": "No uploads yet",
     "uploadFirst": "Upload your first ESG data file to get started",
-    "confirmDelete": "Delete this upload record?"
+    "confirmDelete": "Delete this upload record?",
+    "heroTag": "ESG Data Hub",
+    "uploadFiles": "files",
+    "connectorsTitle": "Connectors",
+    "connectorsDesc": "Connect external sources",
+    "qualityTitle": "Data Quality",
+    "qualityDesc": "Review validation metrics",
+    "myDataTitle": "My Data",
+    "myDataDesc": "View entered data",
+    "filesTotal": "files total",
+    "pendingFiles": "files pending",
+    "quality": {
+      "completenessDesc": "Valid rows / total",
+      "accuracyDesc": "Average success rate",
+      "consistencyDesc": "Files processed / total",
+      "coverageDesc": "Connected sources",
+      "invalidRowsMsg": "invalid rows detected",
+      "uploadFailed": "Upload failed",
+      "completedSub": "processed",
+      "totalRowsSub": "total",
+      "errorRate": "error rate",
+      "improveTitle": "Improve Quality",
+      "improveDesc": "Validate pending data or connect new sources",
+      "validateBtn": "Validate",
+      "connectBtn": "Connectors",
+      "pageTitle": "Data Quality Control",
+      "pageSubtitle": "Monitor and improve your ESG data quality"
+    }
   },
   "footer": {
     "allRightsReserved": "ESGFlow. All rights reserved.",
@@ -2642,7 +2669,10 @@
     "actionEnterBtn": "Enter",
     "actionValidateBtn": "Validate",
     "actionVerifyBtn": "Verify",
-    "actionConnectBtn": "Connect"
+    "actionConnectBtn": "Connect",
+    "excellent": "Excellent",
+    "acceptable": "Acceptable",
+    "toImprove": "Needs improvement"
   },
   "connectors": {
     "title": "Data Connectors Hub",

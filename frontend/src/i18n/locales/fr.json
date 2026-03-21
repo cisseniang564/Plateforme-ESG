@@ -1404,7 +1404,34 @@
     "size": "Taille",
     "noUploads": "Aucun import",
     "uploadFirst": "Importez votre premier fichier de données ESG pour commencer",
-    "confirmDelete": "Supprimer cet enregistrement d'import ?"
+    "confirmDelete": "Supprimer cet enregistrement d'import ?",
+    "heroTag": "Hub de données ESG",
+    "uploadFiles": "fichiers",
+    "connectorsTitle": "Connecteurs",
+    "connectorsDesc": "Connecter des sources externes",
+    "qualityTitle": "Qualité des données",
+    "qualityDesc": "Vérifier les métriques de validation",
+    "myDataTitle": "Mes données",
+    "myDataDesc": "Voir les données saisies",
+    "filesTotal": "fichiers au total",
+    "pendingFiles": "fichiers en attente",
+    "quality": {
+      "completenessDesc": "Lignes valides / total",
+      "accuracyDesc": "Taux moyen de succès",
+      "consistencyDesc": "Fichiers traités / total",
+      "coverageDesc": "Sources connectées",
+      "invalidRowsMsg": "lignes invalides détectées",
+      "uploadFailed": "Import échoué",
+      "completedSub": "traités",
+      "totalRowsSub": "au total",
+      "errorRate": "taux d'erreur",
+      "improveTitle": "Améliorer la qualité",
+      "improveDesc": "Validez les données en attente ou connectez de nouvelles sources",
+      "validateBtn": "Valider",
+      "connectBtn": "Connecteurs",
+      "pageTitle": "Contrôle Qualité des Données",
+      "pageSubtitle": "Surveillez et améliorez la qualité de vos données ESG"
+    }
   },
   "footer": {
     "allRightsReserved": "ESGFlow. Tous droits réservés.",
@@ -2765,7 +2792,10 @@
     "actionEnterBtn": "Saisir",
     "actionValidateBtn": "Valider",
     "actionVerifyBtn": "Verifier",
-    "actionConnectBtn": "Connecter"
+    "actionConnectBtn": "Connecter",
+    "excellent": "Excellent",
+    "acceptable": "Acceptable",
+    "toImprove": "À améliorer"
   },
   "reporting": {
     "badge": "Reporting ESG",
