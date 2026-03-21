@@ -34,6 +34,7 @@ import OrganizationScoring from '@/pages/Scores/OrganizationScoring';
 // Reports
 import ReportGeneration from '@/pages/Reports/ReportGeneration';
 import ReportsList from '@/pages/Reporting/ReportsList';
+import ReportsDashboard from '@/pages/Reports/ReportsDashboard';
 import ScheduledReports from '@/pages/Reporting/ScheduledReports';
 import CSRDReportBuilder from '@/pages/Reports/CSRDReportBuilder';
 
@@ -177,7 +178,8 @@ export default function AppRoutes() {
         <Route path="scores-dashboard" element={<ScoresDashboard />} /> 
 
         {/* Reports */}
-        <Route path="reports" element={<ReportsList />} />
+        <Route path="reports" element={<ReportsDashboard />} />
+        <Route path="reports/list" element={<ReportsList />} />
         <Route path="reports/generate" element={<ReportGeneration />} />
         <Route path="reports/scheduled" element={<ScheduledReports />} />
         <Route path="reports/csrd-builder" element={<CSRDReportBuilder />} />

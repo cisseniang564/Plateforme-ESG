@@ -276,6 +276,66 @@ export default function MyDataDashboard() {
         </div>
       )}
 
+      {/* Pillar distribution + verification summary */}
+      {stats && stats.total > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Distribution par pilier */}
+          <Card>
+            <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-cyan-600" />
+              Distribution par pilier
+            </h3>
+            <div className="space-y-3">
+              {[
+                { id: 'environmental', label: 'Environnemental', color: 'bg-emerald-500', textColor: 'text-emerald-700', count: stats.by_pillar.environmental || 0 },
+                { id: 'social', label: 'Social', color: 'bg-blue-500', textColor: 'text-blue-700', count: stats.by_pillar.social || 0 },
+                { id: 'governance', label: 'Gouvernance', color: 'bg-purple-500', textColor: 'text-purple-700', count: stats.by_pillar.governance || 0 },
+              ].map(p => {
+                const pct = stats.total > 0 ? Math.round((p.count / stats.total) * 100) : 0;
+                return (
+                  <div key={p.id}>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="font-medium text-gray-700">{p.label}</span>
+                      <span className={`font-bold ${p.textColor}`}>{p.count} <span className="text-gray-400 font-normal">({pct}%)</span></span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2">
+                      <div className={`${p.color} h-2 rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+
+          {/* Statut de vérification */}
+          <Card>
+            <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              Statut de vérification
+            </h3>
+            <div className="space-y-2">
+              {[
+                { key: 'verified', label: 'Vérifiés', color: 'text-green-600', bg: 'bg-green-100', icon: CheckCircle },
+                { key: 'pending', label: 'En attente', color: 'text-yellow-600', bg: 'bg-yellow-100', icon: Clock },
+                { key: 'rejected', label: 'Rejetés', color: 'text-red-600', bg: 'bg-red-100', icon: XCircle },
+              ].map(s => {
+                const count = stats.by_verification_status?.[s.key] || 0;
+                const Icon = s.icon;
+                return (
+                  <div key={s.key} className={`flex items-center justify-between px-3 py-2 rounded-lg ${s.bg}`}>
+                    <div className="flex items-center gap-2">
+                      <Icon className={`h-4 w-4 ${s.color}`} />
+                      <span className={`text-sm font-medium ${s.color}`}>{s.label}</span>
+                    </div>
+                    <span className={`text-lg font-bold ${s.color}`}>{count}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        </div>
+      )}
+
       {/* Filtres */}
       <Card>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
