@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  TrendingUp,
+  TrendingDown,
   Award,
   Leaf,
   Users,
@@ -20,7 +20,12 @@ import {
   RefreshCw,
   ChevronRight,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Sparkles,
+  Shield,
+  Plug,
+  Brain,
+  Database,
 } from 'lucide-react';
 import {
   LineChart,
@@ -446,6 +451,55 @@ export default function ExecutiveDashboard() {
         })}
       </div>
 
+      {/* Insights IA + Progression CSRD */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Insights IA */}
+        <div className="lg:col-span-2 rounded-2xl bg-gradient-to-r from-emerald-900 to-green-800 p-6 text-white shadow-lg">
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="h-5 w-5 text-yellow-300" />
+            <h3 className="font-bold text-base">
+              {t('dashboard.aiInsightsTitle')} — {format(new Date(), 'dd MMMM yyyy', { locale: fr })}
+            </h3>
+          </div>
+          <ul className="space-y-2 text-sm text-emerald-100 mb-4">
+            <li>{t('dashboard.aiInsight1')}</li>
+            <li>{t('dashboard.aiInsight2')}</li>
+            <li>{t('dashboard.aiInsight3')}</li>
+          </ul>
+          <button
+            onClick={() => navigate('/app/intelligence')}
+            className="text-xs font-semibold text-yellow-300 hover:text-yellow-100 transition-colors flex items-center gap-1"
+          >
+            {t('dashboard.aiInsightsCTA')}
+            <ChevronRight className="h-3 w-3" />
+          </button>
+        </div>
+
+        {/* Progression CSRD */}
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 flex flex-col justify-between">
+          <div>
+            <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">
+              {t('dashboard.csrdProgressLabel')}
+            </p>
+            <div className="flex items-end gap-2 mb-2">
+              <span className="text-3xl font-bold text-amber-800">61%</span>
+              <span className="text-sm text-amber-600 mb-1">{t('dashboard.csrdProgressSub')}</span>
+            </div>
+            <div className="w-full bg-amber-200 rounded-full h-3 mb-2">
+              <div className="bg-amber-500 h-3 rounded-full" style={{ width: '61%' }} />
+            </div>
+            <p className="text-xs text-amber-700">{t('dashboard.csrdProgressHint')}</p>
+          </div>
+          <button
+            onClick={() => navigate('/app/reports/csrd-builder')}
+            className="mt-3 text-xs font-semibold text-amber-800 hover:text-amber-600 flex items-center gap-1"
+          >
+            {t('dashboard.csrdProgressCTA')}
+            <ChevronRight className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
+
       {/* Graphiques Principaux */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Évolution (Span 2 colonnes) */}
@@ -771,6 +825,31 @@ export default function ExecutiveDashboard() {
           </div>
         </Card>
       )}
+
+      {/* Acces rapide */}
+      <div>
+        <h3 className="text-lg font-bold text-gray-900 mb-3">{t('dashboard.quickAccessTitle')}</h3>
+        <div className="grid grid-cols-2 2xl:grid-cols-4 gap-4">
+          {[
+            { label: t('dashboard.quickAccessEntry'), route: '/app/data-entry', icon: Database, iconColor: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200' },
+            { label: t('dashboard.quickAccessCsrd'), route: '/app/reports/csrd-builder', icon: Shield, iconColor: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-200' },
+            { label: t('dashboard.quickAccessConnectors'), route: '/app/data/connectors', icon: Plug, iconColor: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-200' },
+            { label: t('dashboard.quickAccessAI'), route: '/app/intelligence', icon: Brain, iconColor: 'text-pink-600', bg: 'bg-pink-50', border: 'border-pink-200' },
+          ].map(({ label, route, icon: Icon, iconColor, bg, border }) => (
+            <button
+              key={route}
+              onClick={() => navigate(route)}
+              className={`flex items-center gap-3 p-4 rounded-xl border-2 ${border} ${bg} hover:shadow-md transition-all text-left group`}
+            >
+              <div className={`p-2 rounded-lg bg-white/80`}>
+                <Icon className={`h-5 w-5 ${iconColor}`} />
+              </div>
+              <span className="font-semibold text-gray-800 text-sm flex-1">{label}</span>
+              <ArrowUpRight className={`h-4 w-4 ${iconColor} opacity-0 group-hover:opacity-100 transition-opacity`} />
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

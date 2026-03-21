@@ -15,6 +15,9 @@ import {
   AlertCircle,
   Database,
   RefreshCw,
+  CheckCheck,
+  ArrowRight,
+  Download,
 } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
@@ -23,6 +26,7 @@ import api from '@/services/api';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
 
 interface QualityStats {
   total_entries: number;
@@ -48,6 +52,8 @@ interface QualityIssue {
 
 export default function DataQualityDashboard() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [period, setPeriod] = useState<'30j' | '90j' | '12m'>('30j');
   const [stats, setStats] = useState<QualityStats | null>(null);
   const [issues, setIssues] = useState<QualityIssue[]>([]);
   const [loading, setLoading] = useState(true);
@@ -157,6 +163,69 @@ export default function DataQualityDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Action bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500 font-medium">{t('dataQuality.period')} :</span>
+          {(['30j', '90j', '12m'] as const).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${
+                period === p
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+              }`}
+            >
+              {p === '30j' ? t('dataQuality.period30j') : p === '90j' ? t('dataQuality.period90j') : t('dataQuality.period12m')}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            {t('dataQuality.exportReport')}
+          </Button>
+          <Button variant="secondary" size="sm">
+            <CheckCheck className="h-4 w-4 mr-2" />
+            {t('dataQuality.batchValidate')}
+          </Button>
+        </div>
+      </div>
+
+      {/* Quality Score Gauge */}
+      {(() => {
+        const rawScore = stats ? stats.avg_quality_score * 10 : 61;
+        const gaugeScore = Math.min(Math.round(rawScore), 100);
+        const gaugeColor = gaugeScore >= 75 ? '#16a34a' : gaugeScore >= 50 ? '#d97706' : '#dc2626';
+        const radius = 54;
+        const circumference = 2 * Math.PI * radius;
+        const dashOffset = circumference * (1 - gaugeScore / 100);
+        return (
+          <Card className="flex flex-col items-center py-6">
+            <svg width="140" height="140" viewBox="0 0 140 140">
+              <circle cx="70" cy="70" r={radius} fill="none" stroke="#e5e7eb" strokeWidth="12" />
+              <circle
+                cx="70"
+                cy="70"
+                r={radius}
+                fill="none"
+                stroke={gaugeColor}
+                strokeWidth="12"
+                strokeDasharray={circumference}
+                strokeDashoffset={dashOffset}
+                strokeLinecap="round"
+                transform="rotate(-90 70 70)"
+                style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+              />
+              <text x="70" y="65" textAnchor="middle" fontSize="26" fontWeight="bold" fill="#111827">{gaugeScore}</text>
+              <text x="70" y="84" textAnchor="middle" fontSize="12" fill="#6b7280">/100</text>
+            </svg>
+            <p className="mt-2 text-sm font-semibold text-gray-700">{t('dataQuality.globalQualityScore')}</p>
+          </Card>
+        );
+      })()}
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 animate-fade-in">
@@ -299,14 +368,18 @@ export default function DataQualityDashboard() {
         </div>
 
         {issues.length === 0 ? (
-          <div className="text-center py-16">
-            <CheckCircle className="h-16 w-16 mx-auto text-green-500 mb-4" />
-            <p className="text-xl text-gray-900 font-semibold mb-2">
-              {t('dataQuality.noIssues')}
+          <div className="text-center py-16 bg-green-50 rounded-xl border border-green-100">
+            <CheckCircle className="h-20 w-20 mx-auto text-green-500 mb-4" />
+            <p className="text-2xl text-gray-900 font-bold mb-2">
+              {t('dataQuality.noIssuesTitle')}
             </p>
-            <p className="text-gray-600">
-              {t('dataQuality.allGoodQuality')}
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+              {t('dataQuality.noIssuesCsrd')}
             </p>
+            <Button>
+              <Download className="h-4 w-4 mr-2" />
+              {t('dataQuality.generateQualityReport')}
+            </Button>
           </div>
         ) : (
           <div className="space-y-3">
@@ -369,6 +442,56 @@ export default function DataQualityDashboard() {
             })}
           </div>
         )}
+      </Card>
+
+      {/* Actions recommandees */}
+      <Card>
+        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5 text-amber-500" />
+          {t('dataQuality.recommendedActions')}
+        </h2>
+        <div className="space-y-3">
+          {[
+            {
+              color: 'bg-red-500',
+              text: t('dataQuality.actionMissingData'),
+              btnLabel: t('dataQuality.actionEnterBtn'),
+              route: '/app/data-entry',
+            },
+            {
+              color: 'bg-amber-500',
+              text: t('dataQuality.actionPendingValidation'),
+              btnLabel: t('dataQuality.actionValidateBtn'),
+              route: '/app/data/quality',
+            },
+            {
+              color: 'bg-blue-500',
+              text: t('dataQuality.actionMissingSource'),
+              btnLabel: t('dataQuality.actionVerifyBtn'),
+              route: '/app/data/quality',
+            },
+            {
+              color: 'bg-green-500',
+              text: t('dataQuality.actionConnectEnedis'),
+              btnLabel: t('dataQuality.actionConnectBtn'),
+              route: '/app/data/connectors',
+            },
+          ].map((action, idx) => (
+            <div key={idx} className="flex items-center justify-between gap-4 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+              <div className="flex items-center gap-3">
+                <span className={`w-3 h-3 rounded-full flex-shrink-0 ${action.color}`} />
+                <span className="text-sm text-gray-800">{action.text}</span>
+              </div>
+              <button
+                onClick={() => navigate(action.route)}
+                className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 whitespace-nowrap px-3 py-1.5 rounded-lg border border-blue-200 hover:border-blue-400 transition-colors"
+              >
+                {action.btnLabel}
+                <ArrowRight className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
       </Card>
     </div>
   );

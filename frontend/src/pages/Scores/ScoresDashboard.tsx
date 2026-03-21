@@ -176,16 +176,22 @@ export default function ScoresDashboard() {
           </div>
         </div>
 
-        <Card className="border border-dashed border-gray-300 bg-white">
+        <Card className="border border-dashed border-purple-200 bg-purple-50">
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <Award className="h-16 w-16 text-gray-300" />
-            <h3 className="mt-4 text-lg font-semibold text-gray-900">{t('scores.noScoresAvailable')}</h3>
+            {/* Simple onboarding illustration */}
+            <svg width="80" height="80" viewBox="0 0 80 80" className="mb-4">
+              <circle cx="40" cy="40" r="36" fill="#ede9fe" stroke="#8b5cf6" strokeWidth="2" />
+              <rect x="24" y="44" width="8" height="16" rx="2" fill="#8b5cf6" opacity="0.4" />
+              <rect x="36" y="34" width="8" height="26" rx="2" fill="#8b5cf6" opacity="0.7" />
+              <rect x="48" y="26" width="8" height="34" rx="2" fill="#8b5cf6" />
+            </svg>
+            <h3 className="mt-2 text-xl font-bold text-gray-900">{t('scores.onboardingTitle')}</h3>
             <p className="mt-2 max-w-md text-gray-600">
               {t('scores.noScoresHint')}
             </p>
             <Button onClick={handleRecalculateAll} className="mt-6" disabled={recalculating}>
-              {recalculating ? <Spinner size="sm" /> : <Award className="mr-2 h-4 w-4" />}
-              {t('scores.calculateScores')}
+              {recalculating ? <Spinner size="sm" /> : <BarChart3 className="mr-2 h-4 w-4" />}
+              {t('scores.calculateNow')}
             </Button>
           </div>
         </Card>
@@ -294,6 +300,65 @@ export default function ScoresDashboard() {
                 </Card>
               );
             })}
+          </div>
+
+          {/* Classement sectoriel + Sparkline */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Classement sectoriel */}
+            <Card className="border-l-4 border-green-500">
+              <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <Award className="h-5 w-5 text-green-600" />
+                {t('scores.sectorRankTitle')}
+              </h3>
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-3xl font-bold text-green-700">3e</span>
+                <span className="text-sm text-gray-600">{t('scores.sectorRankOf47')}</span>
+              </div>
+              <div className="relative h-3 bg-gray-200 rounded-full mb-2">
+                <div className="absolute h-3 bg-green-100 rounded-full" style={{ width: '100%' }} />
+                <div
+                  className="absolute w-4 h-4 bg-green-600 rounded-full border-2 border-white shadow"
+                  style={{ left: 'calc(6% - 8px)', top: '-2px' }}
+                />
+              </div>
+              <p className="text-xs text-green-700 font-medium">{t('scores.sectorTop10')}</p>
+            </Card>
+
+            {/* Evolution 12 mois sparkline */}
+            <Card>
+              <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-purple-600" />
+                {t('scores.evolution12mTitle')}
+              </h3>
+              {(() => {
+                const points = [58, 59, 60, 59, 61, 62, 63, 64, 64, 65, 67, 69];
+                const w = 260, h = 60, pad = 8;
+                const minV = Math.min(...points) - 2;
+                const maxV = Math.max(...points) + 2;
+                const xs = points.map((_, i) => pad + (i / (points.length - 1)) * (w - pad * 2));
+                const ys = points.map((v) => h - pad - ((v - minV) / (maxV - minV)) * (h - pad * 2));
+                const polyline = xs.map((x, i) => `${x},${ys[i]}`).join(' ');
+                const areaPath = `M${xs[0]},${h} ${xs.map((x, i) => `L${x},${ys[i]}`).join(' ')} L${xs[xs.length - 1]},${h} Z`;
+                return (
+                  <svg width="100%" viewBox={`0 0 ${w} ${h}`} className="overflow-visible">
+                    <defs>
+                      <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.25" />
+                        <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <path d={areaPath} fill="url(#sparkGrad)" />
+                    <polyline points={polyline} fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinejoin="round" />
+                    {xs.map((x, i) => (
+                      <circle key={i} cx={x} cy={ys[i]} r="3" fill="#8b5cf6" />
+                    ))}
+                    <text x={xs[0]} y={ys[0] - 6} textAnchor="middle" fontSize="10" fill="#6b7280">{points[0]}</text>
+                    <text x={xs[xs.length - 1]} y={ys[ys.length - 1] - 6} textAnchor="middle" fontSize="10" fill="#7c3aed" fontWeight="bold">{points[points.length - 1]}</text>
+                  </svg>
+                );
+              })()}
+              <p className="text-xs text-gray-500 mt-1">{t('scores.evolution12mSub')}</p>
+            </Card>
           </div>
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
