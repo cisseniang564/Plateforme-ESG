@@ -194,7 +194,9 @@
       "apiPublique": "Public API",
       "apiPubliqueDesc": "Developer documentation",
       "parametres": "Settings",
-      "parametresDesc": "Configuration"
+      "parametresDesc": "Configuration",
+      "connectors": "Data Connectors",
+      "connectorsDesc": "Automated ingestion"
     }
   },
   "pageHeader": {
@@ -2562,9 +2564,9 @@
     "apiKey": "API Key",
     "baseUrl": "Base URL",
     "orgId": "Organization ID",
-    "certFile": "Certificate File (.p12, .pfx)",
-    "uploadCert": "Click to upload certificate",
-    "certPassword": "Certificate Password",
+    "certFile": "Certificate (.pem)",
+    "uploadCert": "Upload certificate",
+    "certPassword": "Private key password",
     "testConnection": "Test Connection",
     "syncFrequency": "Sync Frequency",
     "freqRealtime": "Real-time",
@@ -2610,9 +2612,6 @@
     "deleteConnector": "Delete connector",
     "scopes": "Scopes",
     "authorizeOAuth2": "Authorize via OAuth2",
-    "certFile": "Certificate (.pem)",
-    "certPassword": "Private key password",
-    "uploadCert": "Upload certificate",
     "integrationPlan": "Integration Plan",
     "phase": "Phase",
     "effort": "Effort",
