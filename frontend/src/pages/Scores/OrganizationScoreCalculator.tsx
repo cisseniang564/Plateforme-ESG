@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Calculator, TrendingUp } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
@@ -11,11 +12,12 @@ interface Props {
   onScoreCalculated?: () => void;
 }
 
-export default function OrganizationScoreCalculator({ 
-  organizationId, 
+export default function OrganizationScoreCalculator({
+  organizationId,
   organizationName,
-  onScoreCalculated 
+  onScoreCalculated
 }: Props) {
+  const { t } = useTranslation();
   const { loading, calculateScore } = useESGScoring();
   const [result, setResult] = useState<any>(null);
 
@@ -38,7 +40,7 @@ export default function OrganizationScoreCalculator({
     <Card>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Calculer Score ESG</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{t('scores.calcScoreTitle')}</h3>
           <p className="mt-1 text-sm text-gray-600">{organizationName}</p>
         </div>
 
@@ -52,7 +54,7 @@ export default function OrganizationScoreCalculator({
           ) : (
             <>
               <Calculator className="h-4 w-4" />
-              Calculer
+              {t('scores.calculate')}
             </>
           )}
         </Button>
@@ -62,7 +64,7 @@ export default function OrganizationScoreCalculator({
         <div className="space-y-4 rounded-xl bg-gradient-to-br from-purple-50 to-indigo-50 p-6">
           {/* Score Global */}
           <div className="text-center">
-            <p className="text-sm font-medium text-gray-600">Score Global</p>
+            <p className="text-sm font-medium text-gray-600">{t('scores.globalScore')}</p>
             <p className="mt-2 text-5xl font-bold text-gray-900">
               {result.overall_score.toFixed(1)}
             </p>
@@ -74,21 +76,21 @@ export default function OrganizationScoreCalculator({
           {/* Scores Piliers */}
           <div className="grid grid-cols-3 gap-4 pt-4">
             <div className="text-center">
-              <p className="text-xs font-medium text-gray-600">Environnement</p>
+              <p className="text-xs font-medium text-gray-600">{t('scores.envLabel')}</p>
               <p className="mt-1 text-2xl font-bold text-green-700">
                 {result.environmental_score.toFixed(0)}
               </p>
             </div>
 
             <div className="text-center">
-              <p className="text-xs font-medium text-gray-600">Social</p>
+              <p className="text-xs font-medium text-gray-600">{t('scores.socialLabel')}</p>
               <p className="mt-1 text-2xl font-bold text-blue-700">
                 {result.social_score.toFixed(0)}
               </p>
             </div>
 
             <div className="text-center">
-              <p className="text-xs font-medium text-gray-600">Gouvernance</p>
+              <p className="text-xs font-medium text-gray-600">{t('scores.govLabel')}</p>
               <p className="mt-1 text-2xl font-bold text-indigo-700">
                 {result.governance_score.toFixed(0)}
               </p>
@@ -98,30 +100,30 @@ export default function OrganizationScoreCalculator({
           {/* Métriques */}
           <div className="grid grid-cols-2 gap-4 border-t border-gray-200 pt-4">
             <div>
-              <p className="text-xs text-gray-600">Complétude</p>
+              <p className="text-xs text-gray-600">{t('scores.compl')}</p>
               <p className="mt-1 font-semibold text-gray-900">
                 {result.data_completeness.toFixed(0)}%
               </p>
             </div>
 
             <div>
-              <p className="text-xs text-gray-600">Confiance</p>
+              <p className="text-xs text-gray-600">{t('scores.confidence')}</p>
               <p className="mt-1 font-semibold text-gray-900 capitalize">
                 {result.confidence_level}
               </p>
             </div>
 
             <div>
-              <p className="text-xs text-gray-600">Points de données</p>
+              <p className="text-xs text-gray-600">{t('scores.dataPointsCount')}</p>
               <p className="mt-1 font-semibold text-gray-900">
                 {result.data_points_used}
               </p>
             </div>
 
             <div>
-              <p className="text-xs text-gray-600">Période</p>
+              <p className="text-xs text-gray-600">{t('scores.period')}</p>
               <p className="mt-1 font-semibold text-gray-900">
-                12 mois
+                {t('scores.months12')}
               </p>
             </div>
           </div>

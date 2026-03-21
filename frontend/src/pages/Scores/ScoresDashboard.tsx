@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   RefreshCw,
   Award,
@@ -17,6 +18,7 @@ import { useESGScoring } from '@/hooks/useESGScoring';
 import toast from 'react-hot-toast';
 
 export default function ScoresDashboard() {
+  const { t } = useTranslation();
   const { loading, getDashboard, recalculateAll } = useESGScoring();
   const [dashboard, setDashboard] = useState<any>(null);
   const [recalculating, setRecalculating] = useState(false);
@@ -40,13 +42,13 @@ export default function ScoresDashboard() {
       }
     } catch (error) {
       console.error('Erreur chargement dashboard ESG :', error);
-      setErrorMessage('Impossible de charger le tableau de bord ESG.');
-      toast.error('Erreur lors du chargement du dashboard ESG');
+      setErrorMessage(t('scores.calcError'));
+      toast.error(t('scores.loadError'));
     }
   };
 
   const handleRecalculateAll = async () => {
-    if (!confirm('Recalculer tous les scores ESG ? Cela peut prendre quelques minutes.')) {
+    if (!confirm(t('scores.recalculateConfirm'))) {
       return;
     }
 
@@ -57,16 +59,16 @@ export default function ScoresDashboard() {
       const result = await recalculateAll(12);
 
       if (result) {
-        toast.success('Recalcul terminé avec succès');
+        toast.success(t('scores.recalcSuccess'));
         await loadDashboard();
       } else {
-        setErrorMessage('Le recalcul a échoué. Vérifiez les données importées et les endpoints backend.');
-        toast.error('Le recalcul des scores a échoué');
+        setErrorMessage(t('scores.recalcFailed'));
+        toast.error(t('scores.recalcFailed'));
       }
     } catch (error) {
       console.error('Erreur recalcul des scores :', error);
-      setErrorMessage('Le recalcul des scores a échoué.');
-      toast.error('Erreur lors du recalcul des scores');
+      setErrorMessage(t('scores.recalcFailed'));
+      toast.error(t('scores.recalcError'));
     } finally {
       setRecalculating(false);
     }
@@ -91,65 +93,71 @@ export default function ScoresDashboard() {
 
   const statCards = [
     {
-      title: 'Score moyen global',
+      title: t('scores.avgGlobalScore'),
       value: statistics?.average_score?.toFixed(1) || '0',
       suffix: '/100',
       icon: Award,
       iconWrap: 'bg-purple-100',
       iconColor: 'text-purple-600',
       border: 'border-purple-500',
-      helper: 'Moyenne consolidée des organisations',
+      helper: t('scores.avgGlobalScoreHelper'),
     },
     {
-      title: 'Environnement',
+      title: t('scores.environmentalAvg'),
       value: statistics?.average_environmental?.toFixed(1) || '0',
       suffix: '/100',
       icon: TrendingUp,
       iconWrap: 'bg-green-100',
       iconColor: 'text-green-600',
       border: 'border-green-500',
-      helper: 'Performance moyenne du pilier E',
+      helper: t('scores.environmentalAvgHelper'),
     },
     {
-      title: 'Social',
+      title: t('scores.socialAvg'),
       value: statistics?.average_social?.toFixed(1) || '0',
       suffix: '/100',
       icon: TrendingUp,
       iconWrap: 'bg-blue-100',
       iconColor: 'text-blue-600',
       border: 'border-blue-500',
-      helper: 'Performance moyenne du pilier S',
+      helper: t('scores.socialAvgHelper'),
     },
     {
-      title: 'Gouvernance',
+      title: t('scores.governanceAvg'),
       value: statistics?.average_governance?.toFixed(1) || '0',
       suffix: '/100',
       icon: ShieldCheck,
       iconWrap: 'bg-indigo-100',
       iconColor: 'text-indigo-600',
       border: 'border-indigo-500',
-      helper: 'Performance moyenne du pilier G',
+      helper: t('scores.governanceAvgHelper'),
     },
     {
-      title: 'Organisations analysées',
+      title: t('scores.analyzedOrgs'),
       value: String(totalOrganizations),
       suffix: '',
       icon: Building2,
       iconWrap: 'bg-teal-100',
       iconColor: 'text-teal-600',
       border: 'border-teal-500',
-      helper: 'Périmètre inclus dans le dashboard',
+      helper: t('scores.analyzedOrgsHelper'),
     },
     {
-      title: 'Complétude moyenne',
+      title: t('scores.avgCompleteness'),
       value: statistics?.average_completeness?.toFixed(0) || '0',
       suffix: '%',
       icon: BarChart3,
       iconWrap: 'bg-amber-100',
       iconColor: 'text-amber-600',
       border: 'border-amber-500',
-      helper: 'Taux moyen de couverture des données',
+      helper: t('scores.avgCompletenessHelper'),
     },
+  ];
+
+  const diagnosticPillars = [
+    { label: t('scores.envLabel'), value: statistics?.average_environmental || 0 },
+    { label: t('scores.socialLabel'), value: statistics?.average_social || 0 },
+    { label: t('scores.govLabel'), value: statistics?.average_governance || 0 },
   ];
 
   if (!dashboard && !loading) {
@@ -159,11 +167,11 @@ export default function ScoresDashboard() {
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15">
               <Sparkles className="h-3.5 w-3.5" />
-              Scoring ESG intelligent
+              {t('scores.smartScoring')}
             </div>
-            <h1 className="mt-4 text-4xl font-bold tracking-tight">Tableau de bord ESG</h1>
+            <h1 className="mt-4 text-4xl font-bold tracking-tight">{t('scores.dashboardTitle')}</h1>
             <p className="mt-3 text-sm text-white/80 md:text-base">
-              Aucun score n’est disponible pour le moment. Lance un recalcul global pour générer les premiers résultats.
+              {t('scores.noScoresAvailable')}
             </p>
           </div>
         </div>
@@ -171,13 +179,13 @@ export default function ScoresDashboard() {
         <Card className="border border-dashed border-gray-300 bg-white">
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <Award className="h-16 w-16 text-gray-300" />
-            <h3 className="mt-4 text-lg font-semibold text-gray-900">Aucun score disponible</h3>
+            <h3 className="mt-4 text-lg font-semibold text-gray-900">{t('scores.noScoresAvailable')}</h3>
             <p className="mt-2 max-w-md text-gray-600">
-              Vérifie que tes données sont bien importées et reliées aux indicateurs, puis lance un recalcul complet.
+              {t('scores.noScoresHint')}
             </p>
             <Button onClick={handleRecalculateAll} className="mt-6" disabled={recalculating}>
               {recalculating ? <Spinner size="sm" /> : <Award className="mr-2 h-4 w-4" />}
-              Calculer les scores
+              {t('scores.calculateScores')}
             </Button>
           </div>
         </Card>
@@ -192,27 +200,29 @@ export default function ScoresDashboard() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15">
               <Award className="h-3.5 w-3.5" />
-              Scoring ESG
+              {t('scores.smartScoring')}
             </div>
 
             <h1 className="mt-4 flex items-center gap-3 text-4xl font-bold tracking-tight">
               <BarChart3 className="h-10 w-10" />
-              Tableau de bord ESG
+              {t('scores.dashboardTitle')}
             </h1>
 
             <p className="mt-3 max-w-2xl text-sm text-white/80 md:text-base">
-              Scores ESG dynamiques calculés automatiquement à partir de vos données, avec vision consolidée et distribution des ratings.
+              {t('scores.dashboardSubtitle')}
             </p>
 
             <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-white/80">
               <span className="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/10">
-                {totalOrganizations} organisations analysées
+                {t('scores.orgsAnalyzed', { count: totalOrganizations })}
               </span>
               <span className="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/10">
-                Meilleur rating : {bestRating}
+                {t('scores.bestRating', { rating: bestRating })}
               </span>
               <span className="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/10">
-                {lastLoadedAt ? `Dernière mise à jour : ${lastLoadedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` : 'Non chargé'}
+                {lastLoadedAt
+                  ? t('scores.lastUpdate', { time: lastLoadedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) })
+                  : t('scores.notLoaded')}
               </span>
             </div>
           </div>
@@ -237,7 +247,7 @@ export default function ScoresDashboard() {
               ) : (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4" />
-                  Recalculer tout
+                  {t('scores.recalculateAll')}
                 </>
               )}
             </Button>
@@ -250,7 +260,7 @@ export default function ScoresDashboard() {
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-5 w-5 text-red-600" />
             <div>
-              <p className="font-medium text-red-900">Problème de calcul ou de chargement</p>
+              <p className="font-medium text-red-900">{t('scores.calcError')}</p>
               <p className="mt-1 text-sm text-red-700">{errorMessage}</p>
             </div>
           </div>
@@ -290,8 +300,8 @@ export default function ScoresDashboard() {
             <Card className="xl:col-span-2">
               <div className="mb-6 flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">Distribution des ratings</h2>
-                  <p className="mt-1 text-sm text-gray-500">Répartition des organisations par niveau ESG</p>
+                  <h2 className="text-xl font-semibold text-gray-900">{t('scores.ratingDistribution')}</h2>
+                  <p className="mt-1 text-sm text-gray-500">{t('scores.ratingDistributionSub')}</p>
                 </div>
               </div>
 
@@ -327,36 +337,32 @@ export default function ScoresDashboard() {
                 </div>
               ) : (
                 <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-6 py-12 text-center text-sm text-gray-500">
-                  Aucune distribution disponible pour le moment.
+                  {t('scores.noDistribution')}
                 </div>
               )}
             </Card>
 
             <Card>
-              <h2 className="text-xl font-semibold text-gray-900">Diagnostic rapide</h2>
+              <h2 className="text-xl font-semibold text-gray-900">{t('scores.quickDiagnostic')}</h2>
               <div className="mt-6 space-y-4">
                 <div className="rounded-2xl bg-purple-50 p-4">
-                  <p className="text-sm text-purple-700">Score global moyen</p>
+                  <p className="text-sm text-purple-700">{t('scores.avgGlobalScoreDiag')}</p>
                   <p className="mt-2 text-2xl font-bold text-purple-900">{statistics?.average_score?.toFixed(1) || '0'}</p>
                 </div>
 
                 <div className="rounded-2xl bg-green-50 p-4">
-                  <p className="text-sm text-green-700">Pilier le plus solide</p>
+                  <p className="text-sm text-green-700">{t('scores.strongestPillar')}</p>
                   <p className="mt-2 text-lg font-semibold text-green-900">
-                    {[
-                      { label: 'Environnement', value: statistics?.average_environmental || 0 },
-                      { label: 'Social', value: statistics?.average_social || 0 },
-                      { label: 'Gouvernance', value: statistics?.average_governance || 0 },
-                    ].sort((a, b) => b.value - a.value)[0]?.label || '—'}
+                    {diagnosticPillars.sort((a, b) => b.value - a.value)[0]?.label || '—'}
                   </p>
                 </div>
 
                 <div className="rounded-2xl bg-amber-50 p-4">
-                  <p className="text-sm text-amber-700">Point de vigilance</p>
+                  <p className="text-sm text-amber-700">{t('scores.watchPoint')}</p>
                   <p className="mt-2 text-sm font-medium text-amber-900">
                     {statistics?.average_completeness < 60
-                      ? 'La complétude des données semble insuffisante pour des calculs fiables.'
-                      : 'La qualité de couverture est correcte, mais un recalcul périodique reste recommandé.'}
+                      ? t('scores.lowCompletenessWarning')
+                      : t('scores.adequateCoverageHint')}
                   </p>
                 </div>
               </div>
@@ -366,12 +372,12 @@ export default function ScoresDashboard() {
           <Card>
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">Top 5 performances</h2>
-                <p className="mt-1 text-sm text-gray-500">Organisations les mieux notées sur la période analysée</p>
+                <h2 className="text-xl font-semibold text-gray-900">{t('scores.top5Title')}</h2>
+                <p className="mt-1 text-sm text-gray-500">{t('scores.top5Sub')}</p>
               </div>
               <Button variant="secondary" size="sm">
                 <Download className="mr-2 h-4 w-4" />
-                Exporter
+                {t('scores.export')}
               </Button>
             </div>
 
@@ -380,10 +386,10 @@ export default function ScoresDashboard() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-200 text-left text-sm font-semibold text-gray-700">
-                      <th className="pb-3">Rang</th>
-                      <th className="pb-3">Organisation</th>
-                      <th className="pb-3">Score global</th>
-                      <th className="pb-3">Rating</th>
+                      <th className="pb-3">{t('scores.colRank')}</th>
+                      <th className="pb-3">{t('scores.colOrganization')}</th>
+                      <th className="pb-3">{t('scores.colGlobalScore')}</th>
+                      <th className="pb-3">{t('scores.colRating')}</th>
                       <th className="pb-3">E</th>
                       <th className="pb-3">S</th>
                       <th className="pb-3">G</th>
@@ -430,7 +436,7 @@ export default function ScoresDashboard() {
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-6 py-12 text-center text-sm text-gray-500">
-                Aucun classement disponible pour le moment.
+                {t('scores.noPerformers')}
               </div>
             )}
           </Card>

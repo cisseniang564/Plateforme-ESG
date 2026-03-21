@@ -1,8 +1,10 @@
 import { ArrowLeft, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Button from '@/components/common/Button';
 
 export default function PrivacyPolicy() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
@@ -14,7 +16,7 @@ export default function PrivacyPolicy() {
           className="mb-8 flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          Retour
+          {t('legal.back')}
         </Button>
 
         <div className="rounded-2xl bg-white p-8 shadow-sm md:p-12">
@@ -23,9 +25,9 @@ export default function PrivacyPolicy() {
               <Shield className="h-8 w-8 text-blue-600" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Politique de Confidentialité</h1>
+              <h1 className="text-3xl font-bold text-gray-900">{t('legal.privacyTitle')}</h1>
               <p className="mt-1 text-sm text-gray-600">
-                Conforme au RGPD - Dernière mise à jour : 17 mars 2026
+                {t('legal.privacySubtitle')}
               </p>
             </div>
           </div>
@@ -33,8 +35,7 @@ export default function PrivacyPolicy() {
           <div className="prose prose-gray max-w-none">
             <div className="rounded-lg bg-blue-50 p-4 mb-6">
               <p className="text-sm text-blue-900 font-medium">
-                ℹ️ ESGFlow est conforme au Règlement Général sur la Protection des Données (RGPD UE 2016/679)
-                et s'engage à protéger vos données personnelles.
+                ℹ️ {t('legal.privacyGdprNote')}
               </p>
             </div>
 

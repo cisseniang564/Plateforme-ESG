@@ -98,33 +98,33 @@ export default function Login() {
           </Button>
         </form>
 
-        {/* Nouveau: Lien vers Register */}
+        {/* Register link */}
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600 mb-4">
-            Pas encore de compte ?{' '}
-            <Link 
-              to="/register" 
+            {t('auth.noAccount')}{' '}
+            <Link
+              to="/register"
               className="text-primary-600 hover:text-primary-700 font-semibold hover:underline"
             >
-              S'inscrire gratuitement
+              {t('auth.registerFree')}
             </Link>
           </p>
-          
-          {/* Séparateur */}
+
+          {/* Separator */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-200"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">ou</span>
+              <span className="px-2 bg-white text-gray-500">{t('auth.or')}</span>
             </div>
           </div>
 
-          {/* Bouton CTA pour inscription */}
+          {/* CTA button for registration */}
           <Link to="/register">
             <Button variant="secondary" className="w-full">
               <UserPlus className="h-5 w-5 mr-2" />
-              Créer un nouveau compte
+              {t('auth.createNewAccount')}
             </Button>
           </Link>
         </div>

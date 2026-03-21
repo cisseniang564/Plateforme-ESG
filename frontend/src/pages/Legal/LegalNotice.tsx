@@ -1,8 +1,10 @@
 import { ArrowLeft, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Button from '@/components/common/Button';
 
 export default function LegalNotice() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
@@ -14,7 +16,7 @@ export default function LegalNotice() {
           className="mb-8 flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          Retour
+          {t('legal.back')}
         </Button>
 
         <div className="rounded-2xl bg-white p-8 shadow-sm md:p-12">
@@ -23,8 +25,8 @@ export default function LegalNotice() {
               <Info className="h-8 w-8 text-gray-600" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Mentions Légales</h1>
-              <p className="mt-1 text-sm text-gray-600">Informations légales obligatoires</p>
+              <h1 className="text-3xl font-bold text-gray-900">{t('legal.legalNoticeTitle')}</h1>
+              <p className="mt-1 text-sm text-gray-600">{t('legal.legalNoticeSubtitle')}</p>
             </div>
           </div>
 
@@ -82,7 +84,7 @@ export default function LegalNotice() {
             <p>
               Pour plus d'informations, consultez notre{' '}
               <a href="/privacy-policy" className="text-primary-600 hover:underline">
-                Politique de Confidentialité
+                {t('legal.privacyLink')}
               </a>.
             </p>
 

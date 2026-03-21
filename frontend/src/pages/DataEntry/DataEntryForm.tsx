@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Database,
   Plus,
@@ -55,12 +56,13 @@ interface MetricTemplate {
 }
 
 const PILLARS = [
-  { id: 'environmental', name: 'Environnemental', icon: Leaf, color: 'green' },
-  { id: 'social', name: 'Social', icon: Users, color: 'blue' },
-  { id: 'governance', name: 'Gouvernance', icon: Scale, color: 'purple' },
+  { id: 'environmental', nameKey: 'dashboard.environmental', icon: Leaf, color: 'green' },
+  { id: 'social', nameKey: 'dashboard.social', icon: Users, color: 'blue' },
+  { id: 'governance', nameKey: 'dashboard.governance', icon: Scale, color: 'purple' },
 ];
 
 export default function DataEntryForm() {
+  const { t } = useTranslation();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [entries, setEntries] = useState<DataEntry[]>([]);
   const [templates, setTemplates] = useState<any>({});
@@ -105,7 +107,7 @@ export default function DataEntryForm() {
       await loadEntries();
     } catch (error: any) {
       console.error('Error loading data:', error);
-      toast.error('Erreur lors du chargement');
+      toast.error(t('dataEntry.loadingError'));
     } finally {
       setLoading(false);
     }
@@ -165,14 +167,14 @@ export default function DataEntryForm() {
       };
 
       await api.post('/data-entry/', payload);
-      toast.success('✅ Donnée enregistrée avec succès');
+      toast.success(t('dataEntry.savedSuccess'));
       
       setShowModal(false);
       resetForm();
       await loadEntries();
     } catch (error: any) {
       console.error('Error saving entry:', error);
-      toast.error(error.response?.data?.detail || 'Erreur lors de la sauvegarde');
+      toast.error(error.response?.data?.detail || t('dataEntry.saveError'));
     } finally {
       setSubmitting(false);
     }
@@ -183,11 +185,11 @@ export default function DataEntryForm() {
     
     try {
       await api.delete(`/data-entry/${id}`);
-      toast.success('🗑️ Entrée supprimée');
+      toast.success(t('dataEntry.entryDeleted'));
       await loadEntries();
     } catch (error: any) {
       console.error('Error deleting entry:', error);
-      toast.error('Erreur lors de la suppression');
+      toast.error(t('dataEntry.deleteError'));
     }
   };
 
@@ -246,21 +248,21 @@ export default function DataEntryForm() {
           <div>
             <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
               <Database className="h-10 w-10" />
-              Saisie de Données ESG
+              {t('dataEntry.title')}
             </h1>
             <p className="text-emerald-100 text-lg">
-              Enregistrez vos indicateurs ESG manuellement
+              {t('dataEntry.subtitle')}
             </p>
           </div>
 
           <div className="flex gap-3">
             <Button variant="secondary" onClick={loadEntries}>
               <TrendingUp className="h-4 w-4 mr-2" />
-              Actualiser
+              {t('dataEntry.refresh')}
             </Button>
             <Button variant="secondary" onClick={() => setShowModal(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Nouvelle Saisie
+              {t('dataEntry.newEntry')}
             </Button>
           </div>
         </div>
@@ -271,7 +273,7 @@ export default function DataEntryForm() {
         <Card className="border-l-4 border-emerald-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Total Entrées</p>
+              <p className="text-sm text-gray-600 mb-1">{t('dataEntry.totalEntries')}</p>
               <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
             </div>
             <div className="p-3 bg-emerald-50 rounded-xl">
@@ -283,7 +285,7 @@ export default function DataEntryForm() {
         <Card className="border-l-4 border-green-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Environnemental</p>
+              <p className="text-sm text-gray-600 mb-1">{t('dashboard.environmental')}</p>
               <p className="text-3xl font-bold text-green-600">{stats.byPillar.environmental}</p>
             </div>
             <div className="p-3 bg-green-50 rounded-xl">
@@ -295,7 +297,7 @@ export default function DataEntryForm() {
         <Card className="border-l-4 border-blue-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Social</p>
+              <p className="text-sm text-gray-600 mb-1">{t('dashboard.social')}</p>
               <p className="text-3xl font-bold text-blue-600">{stats.byPillar.social}</p>
             </div>
             <div className="p-3 bg-blue-50 rounded-xl">
@@ -307,7 +309,7 @@ export default function DataEntryForm() {
         <Card className="border-l-4 border-purple-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Gouvernance</p>
+              <p className="text-sm text-gray-600 mb-1">{t('dashboard.governance')}</p>
               <p className="text-3xl font-bold text-purple-600">{stats.byPillar.governance}</p>
             </div>
             <div className="p-3 bg-purple-50 rounded-xl">
@@ -320,11 +322,11 @@ export default function DataEntryForm() {
       {/* Entries List */}
       <Card>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Données Saisies</h2>
+          <h2 className="text-xl font-bold text-gray-900">{t('dataEntry.entriesTitle')}</h2>
           <div className="flex gap-2">
             <Button variant="secondary" size="sm">
               <Download className="h-4 w-4 mr-2" />
-              Exporter CSV
+              {t('dataEntry.exportCsv')}
             </Button>
           </div>
         </div>
@@ -333,14 +335,14 @@ export default function DataEntryForm() {
           <div className="text-center py-16">
             <Database className="h-16 w-16 mx-auto text-gray-300 mb-4" />
             <p className="text-xl text-gray-900 font-semibold mb-2">
-              Aucune donnée saisie
+              {t('dataEntry.emptyTitle')}
             </p>
             <p className="text-gray-600 mb-6">
-              Commencez par ajouter votre première entrée
+              {t('dataEntry.emptySubtitle')}
             </p>
             <Button onClick={() => setShowModal(true)}>
               <Plus className="h-5 w-5 mr-2" />
-              Nouvelle Saisie
+              {t('dataEntry.newEntry')}
             </Button>
           </div>
         ) : (
@@ -370,28 +372,28 @@ export default function DataEntryForm() {
 
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
                         <div>
-                          <p className="text-xs text-gray-600 mb-1">Valeur</p>
+                          <p className="text-xs text-gray-600 mb-1">{t('dataEntry.value')}</p>
                           <p className="font-bold text-gray-900">
                             {entry.value_numeric !== null ? `${entry.value_numeric} ${entry.unit || ''}` : entry.value_text}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-600 mb-1">Période</p>
-                          <p className="text-sm text-gray-900">{entry.period_type === 'annual' ? 'Annuel' : entry.period_type}</p>
+                          <p className="text-xs text-gray-600 mb-1">{t('dataEntry.period')}</p>
+                          <p className="text-sm text-gray-900">{entry.period_type === 'annual' ? t('dataEntry.annual') : entry.period_type}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-600 mb-1">Statut</p>
+                          <p className="text-xs text-gray-600 mb-1">{t('dataEntry.status')}</p>
                           <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            entry.verification_status === 'verified' 
+                            entry.verification_status === 'verified'
                               ? 'bg-green-100 text-green-800'
                               : 'bg-yellow-100 text-yellow-800'
                           }`}>
-                            {entry.verification_status === 'verified' ? 'Vérifié' : 'En attente'}
+                            {entry.verification_status === 'verified' ? t('dataEntry.verified') : t('dataEntry.pending')}
                           </span>
                         </div>
                         {entry.data_source && (
                           <div>
-                            <p className="text-xs text-gray-600 mb-1">Source</p>
+                            <p className="text-xs text-gray-600 mb-1">{t('dataEntry.source')}</p>
                             <p className="text-sm text-gray-900 truncate">{entry.data_source}</p>
                           </div>
                         )}
@@ -426,7 +428,7 @@ export default function DataEntryForm() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 modal-backdrop">
           <div className="bg-white rounded-2xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-scale-in">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Nouvelle Saisie de Données</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{t('dataEntry.modalTitle')}</h2>
               <button
                 onClick={() => {
                   setShowModal(false);
@@ -442,7 +444,7 @@ export default function DataEntryForm() {
               {/* Step 1: Pillar Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3">
-                  1. Sélectionnez un pilier ESG *
+                  {t('dataEntry.stepPillar')}
                 </label>
                 <div className="grid grid-cols-3 gap-4">
                   {PILLARS.map((pillar) => {
@@ -464,7 +466,7 @@ export default function DataEntryForm() {
                         <p className={`text-sm font-medium ${
                           selectedPillar === pillar.id ? `text-${pillar.color}-900` : 'text-gray-600'
                         }`}>
-                          {pillar.name}
+                          {t(pillar.nameKey)}
                         </p>
                       </button>
                     );
@@ -477,7 +479,7 @@ export default function DataEntryForm() {
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      2. Catégorie *
+                      {t('dataEntry.stepCategory')}
                     </label>
                     <select
                       value={selectedCategory}
@@ -486,7 +488,7 @@ export default function DataEntryForm() {
                       required
                       disabled={submitting}
                     >
-                      <option value="">Choisir une catégorie</option>
+                      <option value="">{t('dataEntry.chooseCategory')}</option>
                       {Object.keys(templates[selectedPillar]).map((cat) => (
                         <option key={cat} value={cat}>
                           {cat.charAt(0).toUpperCase() + cat.slice(1)}
@@ -497,7 +499,7 @@ export default function DataEntryForm() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      3. Indicateur *
+                      {t('dataEntry.stepIndicator')}
                     </label>
                     <select
                       value={selectedMetric?.name || ''}
@@ -511,7 +513,7 @@ export default function DataEntryForm() {
                       required
                       disabled={!selectedCategory || submitting}
                     >
-                      <option value="">Choisir un indicateur</option>
+                      <option value="">{t('dataEntry.chooseIndicator')}</option>
                       {selectedCategory && templates[selectedPillar][selectedCategory]?.map((metric: MetricTemplate) => (
                         <option key={metric.name} value={metric.name}>
                           {metric.name}
@@ -528,7 +530,7 @@ export default function DataEntryForm() {
                   <div className="grid grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Valeur *
+                        {t('dataEntry.valueLabel')}
                       </label>
                       <div className="flex gap-2">
                         <input
@@ -546,7 +548,7 @@ export default function DataEntryForm() {
                           value={formData.unit}
                           onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                           className="w-24 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
-                          placeholder="Unité"
+                          placeholder={t('dataEntry.unitPlaceholder')}
                           disabled={submitting}
                         />
                       </div>
@@ -554,7 +556,7 @@ export default function DataEntryForm() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Organisation
+                        {t('dataEntry.organisation')}
                       </label>
                       <select
                         value={formData.organization_id}
@@ -562,7 +564,7 @@ export default function DataEntryForm() {
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
                         disabled={submitting}
                       >
-                        <option value="">Toutes les organisations</option>
+                        <option value="">{t('dataEntry.allOrgs')}</option>
                         {organizations.map((org) => (
                           <option key={org.id} value={org.id}>
                             {org.name}
@@ -575,7 +577,7 @@ export default function DataEntryForm() {
                   <div className="grid grid-cols-3 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Début période *
+                        {t('dataEntry.periodStart')}
                       </label>
                       <input
                         type="date"
@@ -589,7 +591,7 @@ export default function DataEntryForm() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Fin période *
+                        {t('dataEntry.periodEnd')}
                       </label>
                       <input
                         type="date"
@@ -603,7 +605,7 @@ export default function DataEntryForm() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Type de période
+                        {t('dataEntry.periodType')}
                       </label>
                       <select
                         value={formData.period_type}
@@ -611,16 +613,16 @@ export default function DataEntryForm() {
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
                         disabled={submitting}
                       >
-                        <option value="annual">Annuel</option>
-                        <option value="quarterly">Trimestriel</option>
-                        <option value="monthly">Mensuel</option>
+                        <option value="annual">{t('dataEntry.annual')}</option>
+                        <option value="quarterly">{t('dataEntry.quarterly')}</option>
+                        <option value="monthly">{t('dataEntry.monthly')}</option>
                       </select>
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Source de données
+                      {t('dataEntry.dataSource')}
                     </label>
                     <input
                       type="text"
@@ -634,14 +636,14 @@ export default function DataEntryForm() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Notes (optionnel)
+                      {t('dataEntry.notes')}
                     </label>
                     <textarea
                       value={formData.notes}
                       onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                       rows={3}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
-                      placeholder="Commentaires ou précisions..."
+                      placeholder={t('dataEntry.notesPlaceholder')}
                       disabled={submitting}
                     />
                   </div>
@@ -651,12 +653,12 @@ export default function DataEntryForm() {
                       {submitting ? (
                         <>
                           <Spinner size="sm" className="mr-2" />
-                          Enregistrement...
+                          {t('dataEntry.saving')}
                         </>
                       ) : (
                         <>
                           <Save className="h-4 w-4 mr-2" />
-                          Enregistrer
+                          {t('dataEntry.save')}
                         </>
                       )}
                     </Button>
@@ -670,7 +672,7 @@ export default function DataEntryForm() {
                       className="flex-1"
                       disabled={submitting}
                     >
-                      Annuler
+                      {t('dataEntry.cancel')}
                     </Button>
                   </div>
                 </>

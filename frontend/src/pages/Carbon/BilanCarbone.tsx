@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Flame, Zap, Package, Truck, Trash2, Briefcase, Users, Home,
   ArrowDownRight, Settings, ShoppingBag, BarChart3, Leaf, Download,
@@ -179,6 +180,7 @@ function Tooltip({ text }: { text: string }) {
 
 // ─── Main page ─────────────────────────────────────────────────────────────────
 export default function BilanCarbone() {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState<Scope3Category[]>(initialCategories);
   const [scope1, setScope1] = useState<number>(SCOPE1_DEFAULT);
   const [scope2, setScope2] = useState<number>(SCOPE2_DEFAULT);
@@ -222,10 +224,13 @@ export default function BilanCarbone() {
   };
 
   const exportCSV = () => {
-    const header = ['Catégorie', 'Nom', 'Type', 'Valeur (tCO2e)', 'Statut', 'Facteur ADEME', 'Unité'];
+    const header = [
+      t('carbon.csvCategory'), t('carbon.csvName'), t('carbon.csvType'),
+      t('carbon.csvValue'), t('carbon.csvStatus'), t('carbon.csvFactor'), t('carbon.csvUnit'),
+    ];
     const rows = categories.map(c => [
-      c.num, c.name, c.upstream ? 'Amont' : 'Aval',
-      c.value ?? '', c.value !== null ? 'Complété' : 'Non renseigné',
+      c.num, c.name, c.upstream ? t('carbon.upstream') : t('carbon.downstream'),
+      c.value ?? '', c.value !== null ? t('carbon.csvCompleted') : t('carbon.notFilled'),
       c.ademe_factor, c.ademe_unit,
     ]);
     const csv = [header, ...rows].map(r => r.join(';')).join('\n');
@@ -267,9 +272,9 @@ export default function BilanCarbone() {
               <Leaf className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Bilan Carbone — Scope 3</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{t('carbon.title')}</h1>
               <p className="text-sm text-gray-500 mt-0.5">
-                15 catégories GHG Protocol · Facteurs ADEME Base Empreinte® · Exercice {year}
+                {t('carbon.subtitle15cat')} {year}
               </p>
             </div>
           </div>
@@ -280,7 +285,7 @@ export default function BilanCarbone() {
                 className="flex items-center gap-2 px-4 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 font-medium rounded-xl transition-colors text-sm"
               >
                 <Sparkles className="h-4 w-4" />
-                Compléter avec l'IA ({aiAvailable})
+                {t('carbon.completeWithAI')} ({aiAvailable})
               </button>
             )}
             <button
@@ -288,7 +293,7 @@ export default function BilanCarbone() {
               className="flex items-center gap-2 px-4 py-2 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 font-medium rounded-xl transition-colors text-sm"
             >
               <Download className="h-4 w-4" />
-              Export CSV
+              {t('carbon.exportCSV')}
             </button>
           </div>
         </div>
@@ -305,7 +310,7 @@ export default function BilanCarbone() {
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
-              {tab === 'overview' ? 'Vue d\'ensemble' : '15 Catégories Scope 3'}
+              {tab === 'overview' ? t('carbon.tabOverview') : t('carbon.tabScope3')}
             </button>
           ))}
         </div>
@@ -314,7 +319,7 @@ export default function BilanCarbone() {
       <div className="max-w-7xl mx-auto px-6 py-8">
 
         {/* ════════════════════════════════════════════════════════════════════ */}
-        {/* TAB: VUE D'ENSEMBLE                                                */}
+        {/* TAB: OVERVIEW                                                       */}
         {/* ════════════════════════════════════════════════════════════════════ */}
         {activeTab === 'overview' && (
           <div className="space-y-8">
@@ -322,10 +327,10 @@ export default function BilanCarbone() {
             {/* KPI cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {[
-                { label: 'Total Scope 1', value: scope1, unit: 'tCO2e', icon: Flame, color: 'red', sub: 'Émissions directes', pct: grandTotal > 0 ? ((scope1/grandTotal)*100).toFixed(1) : '—' },
-                { label: 'Total Scope 2', value: scope2, unit: 'tCO2e', icon: Zap, color: 'orange', sub: 'Énergie indirecte', pct: grandTotal > 0 ? ((scope2/grandTotal)*100).toFixed(1) : '—' },
-                { label: 'Total Scope 3', value: scope3Total, unit: 'tCO2e', icon: Package, color: 'green', sub: `${completedCount}/15 cat. renseignées`, pct: grandTotal > 0 ? ((scope3Total/grandTotal)*100).toFixed(1) : '—' },
-                { label: 'Total général', value: grandTotal, unit: 'tCO2e', icon: Leaf, color: 'emerald', sub: `Exercice ${year}`, pct: '100' },
+                { label: t('carbon.totalScope1'), value: scope1, unit: 'tCO2e', icon: Flame, color: 'red', sub: t('carbon.directEmissions'), pct: grandTotal > 0 ? ((scope1/grandTotal)*100).toFixed(1) : '—' },
+                { label: t('carbon.totalScope2'), value: scope2, unit: 'tCO2e', icon: Zap, color: 'orange', sub: t('carbon.indirectEnergy'), pct: grandTotal > 0 ? ((scope2/grandTotal)*100).toFixed(1) : '—' },
+                { label: t('carbon.totalScope3'), value: scope3Total, unit: 'tCO2e', icon: Package, color: 'green', sub: `${completedCount}/15 ${t('carbon.catsCompleted')}`, pct: grandTotal > 0 ? ((scope3Total/grandTotal)*100).toFixed(1) : '—' },
+                { label: t('carbon.grandTotal'), value: grandTotal, unit: 'tCO2e', icon: Leaf, color: 'emerald', sub: `${t('carbon.exercise')} ${year}`, pct: '100' },
               ].map((kpi, i) => {
                 const colors = COLOR_MAP[kpi.color] ?? COLOR_MAP.emerald;
                 const Icon = kpi.icon;
@@ -351,7 +356,7 @@ export default function BilanCarbone() {
 
               {/* Donut chart */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <h3 className="text-base font-bold text-gray-900 mb-6">Répartition des émissions totales</h3>
+                <h3 className="text-base font-bold text-gray-900 mb-6">{t('carbon.emissionsDistribution')}</h3>
                 <div className="flex items-center gap-8">
                   <div className="relative flex-shrink-0">
                     <svg width="170" height="170" viewBox="0 0 170 170">
@@ -373,7 +378,7 @@ export default function BilanCarbone() {
                         {fmt(grandTotal)}
                       </text>
                       <text x="85" y="98" textAnchor="middle" fill="#9ca3af" fontSize="11">
-                        tCO2e total
+                        {t('carbon.tCO2eTotal')}
                       </text>
                     </svg>
                   </div>
@@ -402,12 +407,12 @@ export default function BilanCarbone() {
 
               {/* Scope 1 & 2 manual inputs + benchmark */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
-                <h3 className="text-base font-bold text-gray-900">Scope 1 & 2 — Saisie directe</h3>
-                <p className="text-sm text-gray-500">Ces valeurs proviennent généralement de votre bilan énergétique ou de votre comptabilité GES.</p>
+                <h3 className="text-base font-bold text-gray-900">{t('carbon.scope12DirectEntry')}</h3>
+                <p className="text-sm text-gray-500">{t('carbon.scope12Desc')}</p>
 
                 {[
-                  { label: 'Scope 1 — Émissions directes', desc: 'Combustion stationnaire & mobile, procédés industriels, fuites frigorigènes', key: 'scope1' as const, value: scope1, setter: setScope1 },
-                  { label: 'Scope 2 — Énergie indirecte', desc: 'Électricité, chaleur et vapeur achetées (méthode location-based)', key: 'scope2' as const, value: scope2, setter: setScope2 },
+                  { label: t('carbon.scope1Label'), desc: t('carbon.scope1Desc'), key: 'scope1' as const, value: scope1, setter: setScope1 },
+                  { label: t('carbon.scope2Label'), desc: t('carbon.scope2Desc'), key: 'scope2' as const, value: scope2, setter: setScope2 },
                 ].map(field => (
                   <div key={field.key} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
                     <label className="block text-sm font-semibold text-gray-700 mb-1">{field.label}</label>
@@ -428,10 +433,10 @@ export default function BilanCarbone() {
                 <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
                   <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
                   <div className="text-sm">
-                    <p className="font-semibold text-amber-800 mb-1">Benchmark sectoriel (Services B2B)</p>
+                    <p className="font-semibold text-amber-800 mb-1">{t('carbon.benchmarkTitle')}</p>
                     <p className="text-amber-700">
-                      Le Scope 3 représente en moyenne <strong>78%</strong> des émissions totales dans votre secteur.
-                      Actuellement : <strong>{grandTotal > 0 ? ((scope3Total / grandTotal) * 100).toFixed(0) : 0}%</strong>.
+                      {t('carbon.benchmarkDesc')} <strong>78%</strong> {t('carbon.benchmarkDesc2')}{' '}
+                      <strong>{grandTotal > 0 ? ((scope3Total / grandTotal) * 100).toFixed(0) : 0}%</strong>.
                     </p>
                   </div>
                 </div>
@@ -441,7 +446,7 @@ export default function BilanCarbone() {
             {/* Scope 3 top categories bar chart */}
             {scope3Total > 0 && (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <h3 className="text-base font-bold text-gray-900 mb-6">Top catégories Scope 3</h3>
+                <h3 className="text-base font-bold text-gray-900 mb-6">{t('carbon.topScope3Categories')}</h3>
                 <div className="space-y-3">
                   {[...categories]
                     .filter(c => c.value !== null && c.value > 0)
@@ -472,7 +477,7 @@ export default function BilanCarbone() {
         )}
 
         {/* ════════════════════════════════════════════════════════════════════ */}
-        {/* TAB: 15 CATÉGORIES SCOPE 3                                         */}
+        {/* TAB: 15 SCOPE 3 CATEGORIES                                         */}
         {/* ════════════════════════════════════════════════════════════════════ */}
         {activeTab === 'scope3' && (
           <div className="space-y-6">
@@ -481,8 +486,8 @@ export default function BilanCarbone() {
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center gap-4">
               <div className="flex-1">
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="font-semibold text-gray-700">Complétude Scope 3</span>
-                  <span className="font-bold text-green-600">{completedCount} / 15 catégories</span>
+                  <span className="font-semibold text-gray-700">{t('carbon.scope3Completeness')}</span>
+                  <span className="font-bold text-green-600">{completedCount} / 15 {t('carbon.categories')}</span>
                 </div>
                 <div className="h-3 bg-gray-100 rounded-full">
                   <div
@@ -493,17 +498,20 @@ export default function BilanCarbone() {
               </div>
               <div className="flex gap-4 text-sm">
                 <div className="flex items-center gap-1.5 text-green-600 font-medium">
-                  <CheckCircle className="h-4 w-4" />{completedCount} complétées
+                  <CheckCircle className="h-4 w-4" />{completedCount} {t('carbon.completed')}
                 </div>
                 <div className="flex items-center gap-1.5 text-amber-600 font-medium">
-                  <Clock className="h-4 w-4" />{15 - completedCount} restantes
+                  <Clock className="h-4 w-4" />{15 - completedCount} {t('carbon.remaining')}
                 </div>
               </div>
             </div>
 
             {/* Upstream / Downstream toggle */}
             <div className="flex gap-2">
-              {[{ val: true, label: '⬆️ Catégories amont (1–8)' }, { val: false, label: '⬇️ Catégories aval (9–15)' }].map(opt => (
+              {[
+                { val: true, label: `⬆️ ${t('carbon.upstreamCategories')}` },
+                { val: false, label: `⬇️ ${t('carbon.downstreamCategories')}` },
+              ].map(opt => (
                 <button
                   key={String(opt.val)}
                   onClick={() => setShowUpstream(opt.val)}
@@ -557,7 +565,7 @@ export default function BilanCarbone() {
                               <div className={`h-1.5 rounded-full transition-all duration-500 ${colors.bg.replace('50', '400')}`}
                                 style={{ width: `${Math.min(pct, 100)}%` }} />
                             </div>
-                            <span className="text-xs text-gray-500">{pct.toFixed(1)}% du Scope 3</span>
+                            <span className="text-xs text-gray-500">{pct.toFixed(1)}% {t('carbon.percentOfScope3')}</span>
                           </div>
                         )}
                       </div>
@@ -569,7 +577,7 @@ export default function BilanCarbone() {
                             <span className="text-xs text-gray-400 ml-1">tCO2e</span>
                           </div>
                         ) : (
-                          <span className="text-sm text-gray-400 italic">Non renseigné</span>
+                          <span className="text-sm text-gray-400 italic">{t('carbon.notFilled')}</span>
                         )}
                       </div>
 
@@ -590,7 +598,7 @@ export default function BilanCarbone() {
                           {/* Input */}
                           <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Valeur mesurée (tCO2e) <Tooltip text={cat.tooltip} />
+                              {t('carbon.measuredValue')} <Tooltip text={cat.tooltip} />
                             </label>
                             <div className="flex gap-2">
                               <input
@@ -608,7 +616,7 @@ export default function BilanCarbone() {
                           {/* ADEME Factor */}
                           <div className={`${colors.bg} rounded-xl p-4 border ${colors.border}`}>
                             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                              Facteur d'émission ADEME
+                              {t('carbon.ademeEmissionFactor')}
                             </p>
                             <p className={`text-xl font-bold ${colors.text}`}>{cat.ademe_factor}</p>
                             <p className="text-xs text-gray-500 mt-0.5">{cat.ademe_unit}</p>
@@ -621,9 +629,9 @@ export default function BilanCarbone() {
                           <div className="flex items-center gap-4 p-4 bg-purple-50 border border-purple-200 rounded-xl">
                             <Sparkles className="h-5 w-5 text-purple-600 flex-shrink-0" />
                             <div className="flex-1">
-                              <p className="text-sm font-semibold text-purple-800">Suggestion IA</p>
+                              <p className="text-sm font-semibold text-purple-800">{t('carbon.aiSuggestion')}</p>
                               <p className="text-xs text-purple-600 mt-0.5">
-                                Estimé à <strong>{fmt(cat.aiEstimate)} tCO2e</strong> basé sur votre secteur, taille et données historiques
+                                {t('carbon.aiEstimatedAt')} <strong>{fmt(cat.aiEstimate)} tCO2e</strong> {t('carbon.aiBasedOn')}
                               </p>
                             </div>
                             <button
@@ -635,7 +643,7 @@ export default function BilanCarbone() {
                                 ? <RefreshCw className="h-4 w-4 animate-spin" />
                                 : <Sparkles className="h-4 w-4" />
                               }
-                              Appliquer
+                              {t('carbon.apply')}
                             </button>
                           </div>
                         )}
@@ -644,14 +652,14 @@ export default function BilanCarbone() {
                         {cat.aiEstimate === null && cat.value === null && (
                           <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
                             <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
-                            <span>Pas assez de données pour estimer cette catégorie. Saisissez la valeur manuellement.</span>
+                            <span>{t('carbon.noAIData')}</span>
                           </div>
                         )}
 
                         {cat.value !== null && (
                           <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700">
                             <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                            <span>Catégorie renseignée — <strong>{fmt(cat.value)} tCO2e</strong> soit <strong>{pct.toFixed(1)}%</strong> du total Scope 3</span>
+                            <span>{t('carbon.catFilledMsg')} — <strong>{fmt(cat.value)} tCO2e</strong> {t('carbon.ofScope3Total')} <strong>{pct.toFixed(1)}%</strong></span>
                           </div>
                         )}
                       </div>
@@ -665,20 +673,25 @@ export default function BilanCarbone() {
             <div className="bg-gradient-to-br from-green-900 to-emerald-800 rounded-2xl p-6 text-white">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <p className="text-green-300 text-sm font-medium mb-1">Total Scope 3 saisi</p>
+                  <p className="text-green-300 text-sm font-medium mb-1">{t('carbon.scope3TotalEntered')}</p>
                   <p className="text-4xl font-bold">{fmt(scope3Total)} <span className="text-xl text-green-300">tCO2e</span></p>
-                  <p className="text-green-400 text-sm mt-1">{completedCount} catégorie{completedCount > 1 ? 's' : ''} sur 15 renseignée{completedCount > 1 ? 's' : ''}</p>
+                  <p className="text-green-400 text-sm mt-1">
+                    {completedCount > 1
+                      ? `${completedCount} ${t('carbon.scope3TotalOf15Plural')}`
+                      : `${completedCount} ${t('carbon.scope3TotalOf15')}`
+                    }
+                  </p>
                 </div>
                 <div className="flex gap-3">
                   {aiAvailable > 0 && (
                     <button onClick={applyAllAI} className="flex items-center gap-2 px-5 py-3 bg-white/15 hover:bg-white/25 border border-white/25 rounded-xl font-semibold text-sm transition-colors">
                       <Sparkles className="h-4 w-4" />
-                      IA : compléter les {aiAvailable} restantes
+                      {t('carbon.aiCompleteRemaining')} {aiAvailable} {t('carbon.aiCompleteRemainingUnit')}
                     </button>
                   )}
                   <button onClick={exportCSV} className="flex items-center gap-2 px-5 py-3 bg-white text-green-900 rounded-xl font-bold text-sm hover:bg-green-50 transition-colors shadow-lg">
                     <Download className="h-4 w-4" />
-                    Exporter
+                    {t('carbon.export')}
                   </button>
                 </div>
               </div>

@@ -1,8 +1,10 @@
 import { ArrowLeft, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Button from '@/components/common/Button';
 
 export default function TermsOfService() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
@@ -14,7 +16,7 @@ export default function TermsOfService() {
           className="mb-8 flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          Retour
+          {t('legal.back')}
         </Button>
 
         <div className="rounded-2xl bg-white p-8 shadow-sm md:p-12">
@@ -23,8 +25,8 @@ export default function TermsOfService() {
               <FileText className="h-8 w-8 text-primary-600" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Conditions Générales d'Utilisation</h1>
-              <p className="mt-1 text-sm text-gray-600">Dernière mise à jour : 17 mars 2026</p>
+              <h1 className="text-3xl font-bold text-gray-900">{t('legal.tosTitle')}</h1>
+              <p className="mt-1 text-sm text-gray-600">{t('legal.tosSubtitle')}</p>
             </div>
           </div>
 
@@ -102,7 +104,7 @@ export default function TermsOfService() {
             <p>
               Le traitement des données personnelles est régi par notre{' '}
               <a href="/privacy-policy" className="text-primary-600 hover:underline">
-                Politique de Confidentialité
+                {t('legal.privacyLink')}
               </a>
               , conforme au Règlement Général sur la Protection des Données (RGPD).
             </p>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   ChevronRight,
@@ -84,6 +85,7 @@ interface Stats {
 }
 
 export default function IndicatorDetail() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [indicator, setIndicator] = useState<Indicator | null>(null);
@@ -150,12 +152,12 @@ export default function IndicatorDetail() {
         source: 'manual',
         is_estimated: formData.is_estimated,
       });
-      toast.success('Donnée ajoutée avec succès');
+      toast.success(t('indicators.addSuccess'));
       setShowAddModal(false);
       setFormData({ date: new Date().toISOString().split('T')[0], value: '', notes: '', is_estimated: false });
       await loadAll();
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || 'Erreur lors de l\'ajout');
+      toast.error(err.response?.data?.detail || t('indicators.addError'));
     } finally {
       setSubmitting(false);
     }
@@ -164,10 +166,10 @@ export default function IndicatorDetail() {
   const handleSubmitForReview = async (entryId: string) => {
     try {
       await api.post('/validation/submit-for-review', { entry_ids: [entryId] });
-      toast.success('Entrée soumise pour validation');
+      toast.success(t('indicators.submitSuccess'));
       await loadData();
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || 'Erreur lors de la soumission');
+      toast.error(err.response?.data?.detail || t('indicators.submitError'));
     }
   };
 
@@ -179,7 +181,7 @@ export default function IndicatorDetail() {
         bgColor: 'bg-green-50',
         borderColor: 'border-green-200',
         gradient: 'from-green-500 to-green-600',
-        name: 'Environnemental'
+        name: t('indicators.environmental')
       },
       social: {
         icon: Users,
@@ -187,7 +189,7 @@ export default function IndicatorDetail() {
         bgColor: 'bg-blue-50',
         borderColor: 'border-blue-200',
         gradient: 'from-blue-500 to-blue-600',
-        name: 'Social'
+        name: t('indicators.social')
       },
       governance: {
         icon: Scale,
@@ -195,7 +197,7 @@ export default function IndicatorDetail() {
         bgColor: 'bg-purple-50',
         borderColor: 'border-purple-200',
         gradient: 'from-purple-500 to-purple-600',
-        name: 'Gouvernance'
+        name: t('indicators.governance')
       }
     };
     return configs[pillar as keyof typeof configs] || configs.environmental;
@@ -214,8 +216,8 @@ export default function IndicatorDetail() {
   // Calculer les métriques
   const latestValue = data.length > 0 ? data[data.length - 1].value : null;
   const previousValue = data.length > 1 ? data[data.length - 2].value : null;
-  const trend = latestValue && previousValue 
-    ? ((latestValue - previousValue) / previousValue * 100) 
+  const trend = latestValue && previousValue
+    ? ((latestValue - previousValue) / previousValue * 100)
     : null;
 
   const targetProgress = indicator?.target_value && latestValue
@@ -238,9 +240,9 @@ export default function IndicatorDetail() {
       <Card>
         <div className="text-center py-16">
           <AlertCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 font-medium text-lg mb-4">Indicateur introuvable</p>
+          <p className="text-gray-500 font-medium text-lg mb-4">{t('indicators.notFound')}</p>
           <Button onClick={() => navigate('/app/indicators')}>
-            Retour aux indicateurs
+            {t('indicators.backToIndicators')}
           </Button>
         </div>
       </Card>
@@ -260,7 +262,7 @@ export default function IndicatorDetail() {
             className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-medium text-gray-600 shadow-sm ring-1 ring-gray-200 transition hover:text-gray-900 hover:shadow"
           >
             <ArrowLeft className="h-4 w-4" />
-            Retour
+            {t('common.back')}
           </button>
 
           <ChevronRight className="h-4 w-4 text-gray-300" />
@@ -269,7 +271,7 @@ export default function IndicatorDetail() {
             onClick={() => navigate('/app/indicators')}
             className="text-sm font-medium text-gray-500 transition hover:text-gray-900"
           >
-            Indicateurs
+            {t('indicators.title')}
           </button>
 
           <ChevronRight className="h-4 w-4 text-gray-300" />
@@ -291,7 +293,7 @@ export default function IndicatorDetail() {
                   <h1 className="text-3xl font-bold mt-2">{indicator.name}</h1>
                 </div>
               </div>
-              
+
               {indicator.description && (
                 <p className="text-white/90 text-lg max-w-3xl">
                   {indicator.description}
@@ -301,12 +303,12 @@ export default function IndicatorDetail() {
               <div className="flex items-center gap-6 mt-6">
                 <div className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
-                  <span className="text-white/90">Pilier: {pillarConfig.name}</span>
+                  <span className="text-white/90">{t('indicators.pillarLabel')}: {pillarConfig.name}</span>
                 </div>
                 {indicator.framework && (
                   <div className="flex items-center gap-2">
                     <Award className="h-5 w-5" />
-                    <span className="text-white/90">Référentiel: {indicator.framework}</span>
+                    <span className="text-white/90">{t('indicators.referenceLabel')}: {indicator.framework}</span>
                   </div>
                 )}
               </div>
@@ -319,7 +321,7 @@ export default function IndicatorDetail() {
                 onClick={loadAll}
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
-                Actualiser
+                {t('indicators.refresh')}
               </Button>
               <Button
                 variant="secondary"
@@ -327,7 +329,7 @@ export default function IndicatorDetail() {
                 onClick={() => setShowAddModal(true)}
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Saisir une valeur
+                {t('indicators.enterValue')}
               </Button>
             </div>
           </div>
@@ -336,10 +338,10 @@ export default function IndicatorDetail() {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Valeur Actuelle */}
+        {/* Current Value */}
         <Card className="border-l-4 border-primary-500">
           <div className="text-center">
-            <p className="text-sm text-gray-600 mb-2 font-medium">Valeur Actuelle</p>
+            <p className="text-sm text-gray-600 mb-2 font-medium">{t('indicators.currentValueKpi')}</p>
             <p className="text-4xl font-bold text-primary-600 mb-1">
               {latestValue !== null ? latestValue.toLocaleString() : '—'}
             </p>
@@ -353,30 +355,30 @@ export default function IndicatorDetail() {
                 ) : (
                   <TrendingDown className="h-4 w-4 mr-1" />
                 )}
-                {Math.abs(trend).toFixed(1)}% vs précédent
+                {Math.abs(trend).toFixed(1)}% {t('indicators.vsPrevious')}
               </div>
             )}
           </div>
         </Card>
 
-        {/* Moyenne */}
+        {/* Average */}
         <Card className="border-l-4 border-blue-500">
           <div className="text-center">
-            <p className="text-sm text-gray-600 mb-2 font-medium">Moyenne</p>
+            <p className="text-sm text-gray-600 mb-2 font-medium">{t('indicators.averageKpi')}</p>
             <p className="text-4xl font-bold text-blue-600 mb-1">
               {stats?.avg ? stats.avg.toFixed(1) : '—'}
             </p>
             <p className="text-sm text-gray-500">{indicator.unit}</p>
             <p className="text-xs text-gray-400 mt-3">
-              Sur {stats?.count || 0} points de données
+              {t('common.total')} {stats?.count || 0} {t('indicators.dataPoints')}
             </p>
           </div>
         </Card>
 
-        {/* Objectif */}
+        {/* Target */}
         <Card className="border-l-4 border-green-500">
           <div className="text-center">
-            <p className="text-sm text-gray-600 mb-2 font-medium">Objectif</p>
+            <p className="text-sm text-gray-600 mb-2 font-medium">{t('indicators.objectiveKpi')}</p>
             <p className="text-4xl font-bold text-green-600 mb-1">
               {indicator.target_value || '—'}
             </p>
@@ -392,38 +394,38 @@ export default function IndicatorDetail() {
                   />
                 </div>
                 <p className="text-xs text-gray-600 mt-1">
-                  {targetProgress.toFixed(0)}% atteint
+                  {targetProgress.toFixed(0)}% {t('indicators.achieved')}
                 </p>
               </div>
             )}
           </div>
         </Card>
 
-        {/* Vérification */}
+        {/* Verification */}
         <Card className="border-l-4 border-purple-500">
           <div className="text-center">
-            <p className="text-sm text-gray-600 mb-2 font-medium">Vérification</p>
+            <p className="text-sm text-gray-600 mb-2 font-medium">{t('indicators.verificationKpi')}</p>
             <p className="text-4xl font-bold text-purple-600 mb-1">
               {verificationRate.toFixed(0)}%
             </p>
-            <p className="text-sm text-gray-500">Données vérifiées</p>
+            <p className="text-sm text-gray-500">{t('indicators.verifiedData')}</p>
             <div className="flex items-center justify-center gap-2 mt-3 text-xs">
               <CheckCircle className="h-4 w-4 text-green-600" />
               <span className="text-gray-600">
-                {verifiedCount}/{data.length} points
+                {verifiedCount}/{data.length} {t('indicators.dataPoints')}
               </span>
             </div>
           </div>
         </Card>
       </div>
 
-      {/* Graphiques */}
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Évolution */}
+        {/* Evolution */}
         <Card>
           <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
             <LineChartIcon className="h-5 w-5 text-primary-600" />
-            Évolution Temporelle
+            {t('indicators.temporalEvolution')}
           </h3>
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={350}>
@@ -437,30 +439,30 @@ export default function IndicatorDetail() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '11px' }} />
                 <YAxis stroke="#6b7280" style={{ fontSize: '11px' }} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'white', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'white',
                     border: '1px solid #e5e7eb',
                     borderRadius: '8px'
                   }}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="#6366f1" 
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#6366f1"
                   strokeWidth={3}
-                  fillOpacity={1} 
-                  fill="url(#colorValue)" 
-                  name="Valeur"
+                  fillOpacity={1}
+                  fill="url(#colorValue)"
+                  name={t('common.value')}
                 />
                 {indicator.target_value && (
-                  <Line 
-                    type="monotone" 
-                    dataKey={() => indicator.target_value} 
-                    stroke="#10b981" 
+                  <Line
+                    type="monotone"
+                    dataKey={() => indicator.target_value}
+                    stroke="#10b981"
                     strokeWidth={2}
                     strokeDasharray="5 5"
-                    name="Objectif"
+                    name={t('indicators.objectiveKpi')}
                     dot={false}
                   />
                 )}
@@ -470,21 +472,21 @@ export default function IndicatorDetail() {
             <div className="h-[350px] flex items-center justify-center text-gray-400">
               <div className="text-center">
                 <Activity className="h-12 w-12 mx-auto mb-2" />
-                <p>Aucune donnée disponible</p>
+                <p>{t('indicators.noData')}</p>
               </div>
             </div>
           )}
         </Card>
 
-        {/* Statistiques */}
+        {/* Statistics */}
         <Card>
           <h3 className="text-lg font-semibold text-gray-900 mb-6">
-            Statistiques Détaillées
+            {t('indicators.detailedStats')}
           </h3>
           <div className="space-y-6">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">Plage de valeurs</span>
+                <span className="text-sm text-gray-600">{t('indicators.valueRange')}</span>
                 <span className="font-semibold text-gray-900">
                   {stats?.min?.toFixed(1)} - {stats?.max?.toFixed(1)} {indicator.unit}
                 </span>
@@ -503,30 +505,30 @@ export default function IndicatorDetail() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-xs text-gray-600 mb-1">Valeur Min</p>
+                <p className="text-xs text-gray-600 mb-1">{t('indicators.minValue')}</p>
                 <p className="text-2xl font-bold text-gray-900">{stats?.min?.toFixed(1)}</p>
               </div>
               <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-xs text-gray-600 mb-1">Valeur Max</p>
+                <p className="text-xs text-gray-600 mb-1">{t('indicators.maxValue')}</p>
                 <p className="text-2xl font-bold text-gray-900">{stats?.max?.toFixed(1)}</p>
               </div>
             </div>
 
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                <span className="text-sm font-medium text-blue-900">Poids dans le score</span>
+                <span className="text-sm font-medium text-blue-900">{t('indicators.scoreWeight')}</span>
                 <span className="text-lg font-bold text-blue-600">{indicator.weight}</span>
               </div>
 
               <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                <span className="text-sm font-medium text-purple-900">Catégorie</span>
+                <span className="text-sm font-medium text-purple-900">{t('indicators.category')}</span>
                 <span className="text-sm font-semibold text-purple-600 capitalize">
                   {indicator.category}
                 </span>
               </div>
 
               <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                <span className="text-sm font-medium text-green-900">Type de données</span>
+                <span className="text-sm font-medium text-green-900">{t('indicators.dataTypeLabel')}</span>
                 <span className="text-sm font-semibold text-green-600 capitalize">
                   {indicator.data_type}
                 </span>
@@ -535,7 +537,7 @@ export default function IndicatorDetail() {
 
             {indicator.calculation_method && (
               <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                <p className="text-xs text-orange-800 font-medium mb-1">Méthode de calcul</p>
+                <p className="text-xs text-orange-800 font-medium mb-1">{t('indicators.calculationMethod')}</p>
                 <p className="text-sm text-orange-900">{indicator.calculation_method}</p>
               </div>
             )}
@@ -543,16 +545,16 @@ export default function IndicatorDetail() {
         </Card>
       </div>
 
-      {/* Tableau des données */}
+      {/* Data table */}
       {data.length > 0 && (
         <Card>
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-900">
-              Points de Données ({data.length})
+              {t('indicators.dataPointsTable')} ({data.length})
             </h3>
             <Button variant="secondary" size="sm">
               <Download className="h-4 w-4 mr-2" />
-              Exporter CSV
+              {t('indicators.exportCSV')}
             </Button>
           </div>
 
@@ -560,12 +562,12 @@ export default function IndicatorDetail() {
             <table className="w-full">
               <thead className="bg-gray-50 border-b-2 border-gray-200">
                 <tr>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700">Date</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700">Valeur</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700">Source</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700">Notes</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700">Statut</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700">Actions</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700">{t('common.date')}</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700">{t('common.value')}</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700">{t('indicators.source')}</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700">{t('common.notes')}</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700">{t('indicators.statusLabel')}</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700">{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -596,22 +598,22 @@ export default function IndicatorDetail() {
                       {point.validation_status === 'approved' ? (
                         <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
                           <CheckCircle className="h-4 w-4" />
-                          Approuvé
+                          {t('indicators.approved')}
                         </span>
                       ) : point.validation_status === 'pending_review' ? (
                         <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
                           <Send className="h-4 w-4" />
-                          En révision
+                          {t('indicators.inReview')}
                         </span>
                       ) : point.validation_status === 'rejected' ? (
                         <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">
                           <XCircle className="h-4 w-4" />
-                          Rejeté
+                          {t('indicators.rejected')}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">
                           <Clock className="h-4 w-4" />
-                          Brouillon
+                          {t('indicators.draft')}
                         </span>
                       )}
                     </td>
@@ -620,10 +622,10 @@ export default function IndicatorDetail() {
                         <button
                           onClick={() => handleSubmitForReview(point.id)}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
-                          title="Soumettre pour validation"
+                          title={t('indicators.submitForValidation')}
                         >
                           <Send className="h-3.5 w-3.5" />
-                          Soumettre
+                          {t('indicators.submit')}
                         </button>
                       )}
                     </td>
@@ -641,27 +643,27 @@ export default function IndicatorDetail() {
           <div className="text-center py-16">
             <Activity className="h-16 w-16 mx-auto text-blue-300 mb-4" />
             <p className="text-gray-900 font-semibold text-lg mb-2">
-              Aucune donnée disponible
+              {t('indicators.emptyData')}
             </p>
             <p className="text-gray-600 mb-6">
-              Saisissez votre première valeur pour commencer à suivre cet indicateur
+              {t('indicators.emptyDataHint')}
             </p>
             <Button onClick={() => setShowAddModal(true)}>
               <Plus className="h-5 w-5 mr-2" />
-              Saisir une valeur
+              {t('indicators.enterValue')}
             </Button>
           </div>
         </Card>
       )}
 
-      {/* Modal saisie donnée */}
+      {/* Modal enter data */}
       {showAddModal && indicator && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
             <div className={`flex items-center justify-between rounded-t-2xl bg-gradient-to-r ${getPillarConfig(indicator.pillar).gradient} p-6 text-white`}>
               <div>
                 <p className="text-sm font-mono opacity-80">{indicator.code}</p>
-                <h3 className="text-xl font-bold">Saisir une valeur</h3>
+                <h3 className="text-xl font-bold">{t('indicators.modalTitle')}</h3>
                 <p className="text-sm opacity-80 mt-1">{indicator.name}</p>
               </div>
               <button onClick={() => setShowAddModal(false)} className="rounded-xl bg-white/20 p-2 hover:bg-white/30 transition">
@@ -671,7 +673,7 @@ export default function IndicatorDetail() {
 
             <form onSubmit={handleAddData} className="p-6 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date de mesure *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('indicators.measureDate')}</label>
                 <input
                   type="date"
                   required
@@ -683,7 +685,7 @@ export default function IndicatorDetail() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Valeur * {indicator.unit && <span className="text-gray-400">({indicator.unit})</span>}
+                  {t('indicators.valueLabel')} {indicator.unit && <span className="text-gray-400">({indicator.unit})</span>}
                 </label>
                 <input
                   type="number"
@@ -697,10 +699,10 @@ export default function IndicatorDetail() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optionnel)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('indicators.notesOptional')}</label>
                 <textarea
                   rows={3}
-                  placeholder="Commentaires, source de données..."
+                  placeholder={t('indicators.notesPlaceholder')}
                   value={formData.notes}
                   onChange={e => setFormData(f => ({ ...f, notes: e.target.value }))}
                   className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
@@ -714,7 +716,7 @@ export default function IndicatorDetail() {
                   onChange={e => setFormData(f => ({ ...f, is_estimated: e.target.checked }))}
                   className="h-4 w-4 rounded text-teal-600"
                 />
-                <span className="text-sm text-gray-700">Valeur estimée / provisoire</span>
+                <span className="text-sm text-gray-700">{t('indicators.estimatedValue')}</span>
               </label>
 
               <div className="flex gap-3 pt-2">
@@ -723,14 +725,14 @@ export default function IndicatorDetail() {
                   onClick={() => setShowAddModal(false)}
                   className="flex-1 rounded-xl border border-gray-300 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
                 >
-                  Annuler
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={submitting || !formData.value}
                   className="flex-1 rounded-xl bg-teal-600 py-2.5 text-sm font-semibold text-white hover:bg-teal-700 transition disabled:opacity-60"
                 >
-                  {submitting ? 'Enregistrement...' : 'Enregistrer'}
+                  {submitting ? t('indicators.saving') : t('indicators.save')}
                 </button>
               </div>
             </form>

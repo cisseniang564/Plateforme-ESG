@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   CheckCircle, Settings, BookOpen, BarChart3,
   Thermometer, ChevronDown, ChevronUp, ExternalLink, Save
@@ -104,6 +105,7 @@ const DEFAULT_METHODOLOGIES: Methodology[] = [
 ];
 
 export default function MethodologyConfig() {
+  const { t } = useTranslation();
   const [methodologies, setMethodologies] = useState<Methodology[]>(DEFAULT_METHODOLOGIES);
   const [expanded, setExpanded] = useState<string | null>('gri');
   const [saving, setSaving] = useState(false);
@@ -113,14 +115,14 @@ export default function MethodologyConfig() {
       prev.map(m => m.id === id ? { ...m, active: !m.active } : m)
     );
     const m = methodologies.find(m => m.id === id);
-    if (m) toast.success(`${m.name} ${m.active ? 'désactivé' : 'activé'}`);
+    if (m) toast.success(`${m.name} ${m.active ? t('methodology.deactivated') : t('methodology.activated')}`);
   };
 
   const handleSave = async () => {
     setSaving(true);
     await new Promise(r => setTimeout(r, 900));
     setSaving(false);
-    toast.success('Configuration des méthodologies enregistrée !');
+    toast.success(t('methodology.saveSuccess'));
   };
 
   const activeCount = methodologies.filter(m => m.active).length;
@@ -128,16 +130,16 @@ export default function MethodologyConfig() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Configuration des Méthodologies"
-        subtitle="Configurez les référentiels ESG utilisés pour le reporting"
+        title={t('methodology.title')}
+        subtitle={t('methodology.subtitle')}
         showBack
         backTo="/app/settings"
         actions={
           <Button onClick={handleSave} disabled={saving}>
             {saving ? (
-              <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />Enregistrement...</>
+              <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />{t('methodology.saving')}</>
             ) : (
-              <><Save className="h-4 w-4 mr-2" />Enregistrer</>
+              <><Save className="h-4 w-4 mr-2" />{t('methodology.save')}</>
             )}
           </Button>
         }
@@ -147,17 +149,17 @@ export default function MethodologyConfig() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white border-2 border-green-100 rounded-2xl p-5">
           <p className="text-3xl font-black text-gray-900">{activeCount}</p>
-          <p className="text-sm font-semibold text-gray-500 mt-1">Actives</p>
+          <p className="text-sm font-semibold text-gray-500 mt-1">{t('methodology.active')}</p>
         </div>
         <div className="bg-white border-2 border-gray-100 rounded-2xl p-5">
           <p className="text-3xl font-black text-gray-900">{methodologies.length}</p>
-          <p className="text-sm font-semibold text-gray-500 mt-1">Disponibles</p>
+          <p className="text-sm font-semibold text-gray-500 mt-1">{t('methodology.available')}</p>
         </div>
         <div className="bg-white border-2 border-blue-100 rounded-2xl p-5">
           <p className="text-3xl font-black text-gray-900">
             {methodologies.filter(m => m.active).reduce((s, m) => s + m.indicators, 0)}
           </p>
-          <p className="text-sm font-semibold text-gray-500 mt-1">Indicateurs actifs</p>
+          <p className="text-sm font-semibold text-gray-500 mt-1">{t('methodology.activeIndicators')}</p>
         </div>
         <div className="bg-white border-2 border-purple-100 rounded-2xl p-5">
           <p className="text-3xl font-black text-gray-900">
@@ -165,7 +167,7 @@ export default function MethodologyConfig() {
               ? Math.round(methodologies.filter(m => m.active).reduce((s, m) => s + m.coverage, 0) / activeCount)
               : 0}%
           </p>
-          <p className="text-sm font-semibold text-gray-500 mt-1">Couverture moy.</p>
+          <p className="text-sm font-semibold text-gray-500 mt-1">{t('methodology.avgCoverage')}</p>
         </div>
       </div>
 
@@ -193,10 +195,10 @@ export default function MethodologyConfig() {
                     <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full font-mono">{m.version}</span>
                     {m.active ? (
                       <span className="text-xs font-bold px-2.5 py-0.5 bg-green-100 text-green-700 rounded-full flex items-center gap-1">
-                        <CheckCircle className="h-3 w-3" /> Actif
+                        <CheckCircle className="h-3 w-3" /> {t('methodology.active')}
                       </span>
                     ) : (
-                      <span className="text-xs font-bold px-2.5 py-0.5 bg-gray-100 text-gray-500 rounded-full">Inactif</span>
+                      <span className="text-xs font-bold px-2.5 py-0.5 bg-gray-100 text-gray-500 rounded-full">{t('methodology.inactive')}</span>
                     )}
                   </div>
                   <p className="text-sm text-gray-500 truncate">{m.description}</p>
@@ -204,7 +206,7 @@ export default function MethodologyConfig() {
 
                 {/* Coverage */}
                 <div className="hidden md:flex flex-col items-end gap-1 flex-shrink-0 w-28">
-                  <span className="text-xs text-gray-400">Couverture</span>
+                  <span className="text-xs text-gray-400">{t('methodology.coverage')}</span>
                   <div className="flex items-center gap-2">
                     <div className="h-1.5 w-16 bg-gray-100 rounded-full overflow-hidden">
                       <div
@@ -257,7 +259,7 @@ export default function MethodologyConfig() {
                               style={{ width: `${pct}%` }}
                             />
                           </div>
-                          <p className="text-xs text-gray-400 mt-1.5">{pct}% configuré</p>
+                          <p className="text-xs text-gray-400 mt-1.5">{pct}% {t('methodology.configured')}</p>
                         </div>
                       );
                     })}
@@ -265,7 +267,7 @@ export default function MethodologyConfig() {
 
                   <div className="flex items-center justify-between">
                     <div className="text-xs text-gray-400">
-                      Mise à jour : {m.lastUpdate} · {m.indicators} indicateurs au total
+                      {t('methodology.lastUpdate')}: {m.lastUpdate} · {m.indicators} {t('methodology.totalIndicators')}
                     </div>
                     <div className="flex gap-2">
                       <a
@@ -274,10 +276,10 @@ export default function MethodologyConfig() {
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-600 hover:text-primary-700 px-3 py-1.5 border border-primary-200 rounded-lg hover:bg-primary-50 transition-colors"
                       >
-                        <ExternalLink className="h-3.5 w-3.5" /> Documentation
+                        <ExternalLink className="h-3.5 w-3.5" /> {t('methodology.documentation')}
                       </a>
                       <Button size="sm" variant="secondary">
-                        <Settings className="h-3.5 w-3.5 mr-1.5" /> Configurer
+                        <Settings className="h-3.5 w-3.5 mr-1.5" /> {t('methodology.configure')}
                       </Button>
                     </div>
                   </div>
@@ -293,10 +295,9 @@ export default function MethodologyConfig() {
         <div className="flex items-start gap-3">
           <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
           <div>
-            <p className="font-semibold text-blue-900 mb-1">Conformité réglementaire</p>
+            <p className="font-semibold text-blue-900 mb-1">{t('methodology.complianceTitle')}</p>
             <p className="text-sm text-blue-700">
-              Toutes les méthodologies activées sont prises en compte lors de la génération de vos rapports ESG.
-              Activez la CSRD/ESRS pour vous conformer à la directive européenne obligatoire dès 2025.
+              {t('methodology.complianceDesc')}
             </p>
           </div>
         </div>

@@ -1,24 +1,26 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Leaf, Building2, ChevronRight, ChevronLeft, Check, Loader2 } from 'lucide-react';
 import api from '@/services/api';
 
-const SECTORS = [
-  { id: 'technology', label: 'Technologie & Digital', icon: '💻', color: 'bg-blue-50 border-blue-200 text-blue-700' },
-  { id: 'finance', label: 'Finance & Assurance', icon: '🏦', color: 'bg-green-50 border-green-200 text-green-700' },
-  { id: 'industry', label: 'Industrie & Fabrication', icon: '🏭', color: 'bg-orange-50 border-orange-200 text-orange-700' },
-  { id: 'services', label: 'Services & Conseil', icon: '🤝', color: 'bg-purple-50 border-purple-200 text-purple-700' },
-  { id: 'retail', label: 'Commerce & Distribution', icon: '🛒', color: 'bg-pink-50 border-pink-200 text-pink-700' },
-  { id: 'general', label: 'Autre / Général', icon: '🌍', color: 'bg-gray-50 border-gray-200 text-gray-700' },
-];
-
 export default function FirstTimeSetup() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [sector, setSector] = useState('');
   const [orgName, setOrgName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const SECTORS = [
+    { id: 'technology', labelKey: 'setup.sectorTechnology', icon: '💻', color: 'bg-blue-50 border-blue-200 text-blue-700' },
+    { id: 'finance', labelKey: 'setup.sectorFinance', icon: '🏦', color: 'bg-green-50 border-green-200 text-green-700' },
+    { id: 'industry', labelKey: 'setup.sectorIndustry', icon: '🏭', color: 'bg-orange-50 border-orange-200 text-orange-700' },
+    { id: 'services', labelKey: 'setup.sectorServices', icon: '🤝', color: 'bg-purple-50 border-purple-200 text-purple-700' },
+    { id: 'retail', labelKey: 'setup.sectorRetail', icon: '🛒', color: 'bg-pink-50 border-pink-200 text-pink-700' },
+    { id: 'general', labelKey: 'setup.sectorGeneral', icon: '🌍', color: 'bg-gray-50 border-gray-200 text-gray-700' },
+  ];
 
   const handleSubmit = async () => {
     if (!orgName.trim()) return;
@@ -28,7 +30,7 @@ export default function FirstTimeSetup() {
       await api.post('/onboarding/setup', { org_name: orgName.trim(), sector });
       navigate('/app', { replace: true });
     } catch {
-      setError("Une erreur est survenue. Veuillez réessayer.");
+      setError(t('setup.errorOccurred'));
       setLoading(false);
     }
   };
@@ -42,8 +44,8 @@ export default function FirstTimeSetup() {
             <Leaf className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Bienvenue sur ESGFlow</h1>
-            <p className="text-sm text-gray-500">Configuration initiale — {step + 1}/3</p>
+            <h1 className="text-xl font-bold text-gray-900">{t('setup.welcomeTitle')}</h1>
+            <p className="text-sm text-gray-500">{t('setup.initialConfig')} — {step + 1}{t('setup.stepOf')}</p>
           </div>
         </div>
 
@@ -62,9 +64,9 @@ export default function FirstTimeSetup() {
         {/* Step 0 — Sector */}
         {step === 0 && (
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-1">Votre secteur d'activité</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">{t('setup.step0Title')}</h2>
             <p className="text-sm text-gray-500 mb-6">
-              Nous pré-configurons vos indicateurs ESG selon votre secteur.
+              {t('setup.step0Desc')}
             </p>
             <div className="grid grid-cols-2 gap-3">
               {SECTORS.map(s => (
@@ -78,7 +80,7 @@ export default function FirstTimeSetup() {
                   }`}
                 >
                   <span className="text-2xl mb-2 block">{s.icon}</span>
-                  <span className="text-sm font-medium text-gray-800">{s.label}</span>
+                  <span className="text-sm font-medium text-gray-800">{t(s.labelKey)}</span>
                 </button>
               ))}
             </div>
@@ -87,7 +89,7 @@ export default function FirstTimeSetup() {
               disabled={!sector}
               className="mt-6 w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-xl font-medium disabled:opacity-50 hover:bg-primary-700 transition-colors"
             >
-              Continuer <ChevronRight className="w-4 h-4" />
+              {t('setup.continue')} <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         )}
@@ -95,14 +97,14 @@ export default function FirstTimeSetup() {
         {/* Step 1 — Org name */}
         {step === 1 && (
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-1">Nom de votre organisation</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">{t('setup.step1Title')}</h2>
             <p className="text-sm text-gray-500 mb-6">
-              Cette organisation sera votre entité principale de suivi ESG.
+              {t('setup.step1Desc')}
             </p>
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Building2 className="inline w-4 h-4 mr-1" />
-                Nom de l'organisation
+                {t('setup.orgNameLabel')}
               </label>
               <input
                 type="text"
@@ -119,14 +121,14 @@ export default function FirstTimeSetup() {
                 onClick={() => setStep(0)}
                 className="flex items-center gap-1 px-4 py-3 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors"
               >
-                <ChevronLeft className="w-4 h-4" /> Retour
+                <ChevronLeft className="w-4 h-4" /> {t('setup.back')}
               </button>
               <button
                 onClick={() => setStep(2)}
                 disabled={!orgName.trim()}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-xl font-medium disabled:opacity-50 hover:bg-primary-700 transition-colors"
               >
-                Continuer <ChevronRight className="w-4 h-4" />
+                {t('setup.continue')} <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -135,31 +137,33 @@ export default function FirstTimeSetup() {
         {/* Step 2 — Confirmation */}
         {step === 2 && (
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-1">Confirmation</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">{t('setup.step2Title')}</h2>
             <p className="text-sm text-gray-500 mb-6">
-              Votre espace ESGFlow va être configuré avec ces paramètres.
+              {t('setup.step2Desc')}
             </p>
             <div className="space-y-3 mb-6">
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                 <span className="text-xl">{SECTORS.find(s => s.id === sector)?.icon}</span>
                 <div>
-                  <p className="text-xs text-gray-500">Secteur</p>
-                  <p className="text-sm font-medium text-gray-900">{SECTORS.find(s => s.id === sector)?.label}</p>
+                  <p className="text-xs text-gray-500">{t('setup.sectorLabel')}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {t(SECTORS.find(s => s.id === sector)?.labelKey ?? '')}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                 <Building2 className="w-5 h-5 text-gray-400" />
                 <div>
-                  <p className="text-xs text-gray-500">Organisation</p>
+                  <p className="text-xs text-gray-500">{t('setup.orgLabel')}</p>
                   <p className="text-sm font-medium text-gray-900">{orgName}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 bg-green-50 rounded-xl">
                 <Check className="w-5 h-5 text-green-500" />
                 <div>
-                  <p className="text-xs text-gray-500">Indicateurs ESG</p>
+                  <p className="text-xs text-gray-500">{t('setup.esgIndicatorsLabel')}</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {sector === 'general' ? 14 : 18} indicateurs pré-configurés (ESRS / GRI)
+                    {sector === 'general' ? 14 : 18} {t('setup.indicatorsPreConfigured')}
                   </p>
                 </div>
               </div>
@@ -173,7 +177,7 @@ export default function FirstTimeSetup() {
                 disabled={loading}
                 className="flex items-center gap-1 px-4 py-3 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors"
               >
-                <ChevronLeft className="w-4 h-4" /> Retour
+                <ChevronLeft className="w-4 h-4" /> {t('setup.back')}
               </button>
               <button
                 onClick={handleSubmit}
@@ -181,9 +185,9 @@ export default function FirstTimeSetup() {
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors disabled:opacity-50"
               >
                 {loading ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> Configuration…</>
+                  <><Loader2 className="w-4 h-4 animate-spin" /> {t('setup.configuring')}</>
                 ) : (
-                  <><Check className="w-4 h-4" /> Lancer ESGFlow</>
+                  <><Check className="w-4 h-4" /> {t('setup.launchEsgflow')}</>
                 )}
               </button>
             </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   CheckCircle, XCircle, Plug, Search, RefreshCw,
   Settings, Trash2, ArrowUpRight, AlertCircle, Zap,
@@ -130,22 +131,24 @@ const INTEGRATIONS: Integration[] = [
   },
 ];
 
-const CATEGORIES: { id: Category; label: string; icon: React.ElementType }[] = [
-  { id: 'all', label: 'Toutes', icon: Plug },
-  { id: 'bi', label: 'Business Intelligence', icon: BarChart3 },
-  { id: 'crm', label: 'CRM', icon: Building2 },
-  { id: 'erp', label: 'ERP', icon: Database },
-  { id: 'api', label: 'API & Webhooks', icon: Zap },
+const CATEGORIES_DEF: { id: Category; labelKey: string; icon: React.ElementType }[] = [
+  { id: 'all', labelKey: 'integrations.all', icon: Plug },
+  { id: 'bi', labelKey: 'integrations.bi', icon: BarChart3 },
+  { id: 'crm', labelKey: 'integrations.crm', icon: Building2 },
+  { id: 'erp', labelKey: 'integrations.erp', icon: Database },
+  { id: 'api', labelKey: 'integrations.apiWebhooks', icon: Zap },
 ];
 
-const STATUS_CONFIG = {
-  connected: { label: 'Connecté', color: 'bg-green-100 text-green-700', dot: 'bg-green-500', icon: CheckCircle },
-  disconnected: { label: 'Non connecté', color: 'bg-gray-100 text-gray-500', dot: 'bg-gray-400', icon: XCircle },
-  error: { label: 'Erreur', color: 'bg-red-100 text-red-700', dot: 'bg-red-500', icon: AlertCircle },
-  syncing: { label: 'Sync...', color: 'bg-blue-100 text-blue-700', dot: 'bg-blue-500 animate-pulse', icon: RefreshCw },
-};
-
 export default function Integrations() {
+  const { t } = useTranslation();
+
+  const STATUS_CONFIG = {
+    connected: { label: t('integrations.connected'), color: 'bg-green-100 text-green-700', dot: 'bg-green-500', icon: CheckCircle },
+    disconnected: { label: t('integrations.disconnected'), color: 'bg-gray-100 text-gray-500', dot: 'bg-gray-400', icon: XCircle },
+    error: { label: t('integrations.error'), color: 'bg-red-100 text-red-700', dot: 'bg-red-500', icon: AlertCircle },
+    syncing: { label: t('integrations.syncing'), color: 'bg-blue-100 text-blue-700', dot: 'bg-blue-500 animate-pulse', icon: RefreshCw },
+  };
+
   const [category, setCategory] = useState<Category>('all');
   const [search, setSearch] = useState('');
   const [integrations, setIntegrations] = useState<Integration[]>(INTEGRATIONS);
@@ -177,8 +180,8 @@ export default function Integrations() {
     );
     toast.success(
       integration.status === 'connected'
-        ? `${integration.name} déconnecté`
-        : `${integration.name} connecté avec succès !`
+        ? t('integrations.disconnectedMsg', { name: integration.name })
+        : t('integrations.connectedMsg', { name: integration.name })
     );
     setLoadingId(null);
   };
@@ -190,17 +193,17 @@ export default function Integrations() {
     await new Promise((r) => setTimeout(r, 2000));
     setIntegrations((prev) =>
       prev.map((i) =>
-        i.id === integration.id ? { ...i, status: 'connected', lastSync: 'À l\'instant' } : i
+        i.id === integration.id ? { ...i, status: 'connected', lastSync: t('integrations.justNow') } : i
       )
     );
-    toast.success(`${integration.name} synchronisé !`);
+    toast.success(t('integrations.syncedMsg', { name: integration.name }));
   };
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Intégrations"
-        subtitle="Connectez ESGFlow à vos outils et systèmes d'entreprise"
+        title={t('integrations.title')}
+        subtitle={t('integrations.subtitle')}
       />
 
       {/* Stats Bar */}
@@ -212,7 +215,7 @@ export default function Integrations() {
             </div>
             <span className="text-2xl font-black text-gray-900">{stats.connected}</span>
           </div>
-          <p className="text-sm font-semibold text-gray-600">Connectées</p>
+          <p className="text-sm font-semibold text-gray-600">{t('integrations.connected')}</p>
         </div>
         <div className="bg-white border-2 border-red-100 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-2">
@@ -221,7 +224,7 @@ export default function Integrations() {
             </div>
             <span className="text-2xl font-black text-gray-900">{stats.error}</span>
           </div>
-          <p className="text-sm font-semibold text-gray-600">En erreur</p>
+          <p className="text-sm font-semibold text-gray-600">{t('integrations.inError')}</p>
         </div>
         <div className="bg-white border-2 border-gray-100 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-2">
@@ -230,7 +233,7 @@ export default function Integrations() {
             </div>
             <span className="text-2xl font-black text-gray-900">{stats.total}</span>
           </div>
-          <p className="text-sm font-semibold text-gray-600">Disponibles</p>
+          <p className="text-sm font-semibold text-gray-600">{t('integrations.available')}</p>
         </div>
       </div>
 
@@ -243,7 +246,7 @@ export default function Integrations() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher une intégration..."
+            placeholder={t('integrations.searchPlaceholder')}
             className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-sm"
           />
           {search && (
@@ -255,7 +258,7 @@ export default function Integrations() {
 
         {/* Category filter */}
         <div className="flex gap-2 flex-wrap">
-          {CATEGORIES.map((cat) => {
+          {CATEGORIES_DEF.map((cat) => {
             const Icon = cat.icon;
             const isActive = category === cat.id;
             return (
@@ -270,7 +273,7 @@ export default function Integrations() {
                 }`}
               >
                 <Icon className="h-4 w-4" />
-                {cat.label}
+                {t(cat.labelKey)}
               </button>
             );
           })}
@@ -281,9 +284,9 @@ export default function Integrations() {
       {filtered.length === 0 ? (
         <Card className="border-2 text-center py-12">
           <Search className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 font-medium">Aucune intégration trouvée pour "{search}"</p>
+          <p className="text-gray-500 font-medium">{t('integrations.noResults')} "{search}"</p>
           <button type="button" onClick={() => setSearch('')} className="mt-2 text-primary-600 text-sm font-semibold hover:underline">
-            Effacer la recherche
+            {t('integrations.clearSearch')}
           </button>
         </Card>
       ) : (
@@ -361,7 +364,7 @@ export default function Integrations() {
                   {integration.lastSync && (
                     <p className="text-xs text-gray-400 mb-4 flex items-center gap-1.5">
                       <RefreshCw className="h-3 w-3" />
-                      Dernière sync : {integration.lastSync}
+                      {t('integrations.lastSync')}: {integration.lastSync}
                     </p>
                   )}
 
@@ -377,12 +380,12 @@ export default function Integrations() {
                       {isLoading ? (
                         <div className="flex items-center gap-1.5">
                           <div className="animate-spin h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full" />
-                          {integration.status === 'connected' ? 'Déconnexion...' : 'Connexion...'}
+                          {integration.status === 'connected' ? t('integrations.disconnecting') : t('integrations.connecting')}
                         </div>
                       ) : integration.status === 'connected' ? (
-                        <><XCircle className="h-3.5 w-3.5 mr-1.5" />Déconnecter</>
+                        <><XCircle className="h-3.5 w-3.5 mr-1.5" />{t('integrations.disconnect')}</>
                       ) : (
-                        <><Plug className="h-3.5 w-3.5 mr-1.5" />Connecter</>
+                        <><Plug className="h-3.5 w-3.5 mr-1.5" />{t('integrations.connect')}</>
                       )}
                     </Button>
 
@@ -436,7 +439,7 @@ export default function Integrations() {
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900">{configModal.name}</h3>
-                  <p className="text-xs text-gray-500">Configuration</p>
+                  <p className="text-xs text-gray-500">{t('integrations.configuration')}</p>
                 </div>
               </div>
               <button type="button" onClick={() => setConfigModal(null)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
@@ -445,22 +448,22 @@ export default function Integrations() {
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Fréquence de synchronisation</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">{t('integrations.syncFrequency')}</label>
                 <div className="relative">
                   <select
                     aria-label="Fréquence de synchronisation"
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 appearance-none bg-white"
                   >
-                    <option>Toutes les 15 minutes</option>
-                    <option>Toutes les heures</option>
-                    <option>Chaque jour</option>
-                    <option>Manuellement</option>
+                    <option>{t('integrations.every15min')}</option>
+                    <option>{t('integrations.everyHour')}</option>
+                    <option>{t('integrations.everyDay')}</option>
+                    <option>{t('integrations.manually')}</option>
                   </select>
                   <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Webhook de notification</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">{t('integrations.notifWebhook')}</label>
                 <input
                   type="url"
                   placeholder="https://votre-endpoint.com/hook"
@@ -468,18 +471,18 @@ export default function Integrations() {
                 />
               </div>
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                <span className="text-sm font-semibold text-gray-700">Activer les notifications d'erreur</span>
+                <span className="text-sm font-semibold text-gray-700">{t('integrations.enableErrorNotifs')}</span>
                 <div className="w-11 h-6 bg-primary-600 rounded-full relative cursor-pointer">
                   <div className="absolute top-1 right-1 w-4 h-4 bg-white rounded-full shadow-sm" />
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
                 <Button variant="secondary" className="flex-1" onClick={() => setConfigModal(null)}>
-                  Annuler
+                  {t('integrations.cancel')}
                 </Button>
-                <Button className="flex-1" onClick={() => { toast.success('Configuration sauvegardée !'); setConfigModal(null); }}>
+                <Button className="flex-1" onClick={() => { toast.success(t('integrations.configSaved')); setConfigModal(null); }}>
                   <Settings className="h-4 w-4 mr-2" />
-                  Sauvegarder
+                  {t('integrations.save')}
                 </Button>
               </div>
             </div>

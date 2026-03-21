@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Leaf,
   Thermometer,
@@ -52,80 +53,6 @@ const INITIAL_ACTIVITIES: Activity[] = [
   { id: 6, name: "Production d'acier", sector: 'Industrie', objective: 'mitigation', dnsh: false, safeguards: false, status: 'not_aligned' },
 ];
 
-const OBJECTIVES: {
-  key: ObjectiveKey;
-  label: string;
-  description: string;
-  Icon: React.ElementType;
-  color: string;
-  bgColor: string;
-  borderColor: string;
-}[] = [
-  {
-    key: 'mitigation',
-    label: 'Atténuation du changement climatique',
-    description: 'Réduction des émissions de GES et séquestration du carbone pour limiter le réchauffement planétaire.',
-    Icon: Thermometer,
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-50',
-    borderColor: 'border-orange-200',
-  },
-  {
-    key: 'adaptation',
-    label: 'Adaptation au changement climatique',
-    description: "Renforcement de la résilience face aux impacts climatiques actuels et futurs.",
-    Icon: Shield,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
-  },
-  {
-    key: 'water',
-    label: 'Eau et ressources marines',
-    description: "Protection et usage durable de l'eau douce, des eaux de transition et des ressources marines.",
-    Icon: Droplets,
-    color: 'text-cyan-600',
-    bgColor: 'bg-cyan-50',
-    borderColor: 'border-cyan-200',
-  },
-  {
-    key: 'circular',
-    label: 'Économie circulaire',
-    description: 'Transition vers des modèles de production et de consommation circulaires et sobres en ressources.',
-    Icon: Recycle,
-    color: 'text-emerald-600',
-    bgColor: 'bg-emerald-50',
-    borderColor: 'border-emerald-200',
-  },
-  {
-    key: 'pollution',
-    label: 'Prévention de la pollution',
-    description: "Prévention et réduction de la pollution de l'air, de l'eau, des sols et des organismes vivants.",
-    Icon: Wind,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50',
-    borderColor: 'border-purple-200',
-  },
-  {
-    key: 'biodiversity',
-    label: 'Biodiversité',
-    description: 'Protection et restauration de la biodiversité et des écosystèmes terrestres et aquatiques.',
-    Icon: Leaf,
-    color: 'text-green-600',
-    bgColor: 'bg-green-50',
-    borderColor: 'border-green-200',
-  },
-];
-
-const OBJECTIVE_LABELS: Record<ObjectiveKey, string> = {
-  mitigation: 'Atténuation climat',
-  adaptation: 'Adaptation climat',
-  water: 'Eau & ressources marines',
-  circular: 'Économie circulaire',
-  pollution: 'Prévention pollution',
-  biodiversity: 'Biodiversité',
-};
-
 const DEFAULT_FORM: NewActivityForm = {
   name: '',
   sector: '',
@@ -138,16 +65,17 @@ const DEFAULT_FORM: NewActivityForm = {
 // ─── Helper components ────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: AlignmentStatus }) {
-  const config: Record<AlignmentStatus, { label: string; className: string; Icon: React.ElementType }> = {
-    aligned: { label: 'Alignée', className: 'bg-emerald-100 text-emerald-800 border border-emerald-200', Icon: CheckCircle },
-    partial: { label: 'Partielle', className: 'bg-amber-100 text-amber-800 border border-amber-200', Icon: AlertCircle },
-    not_aligned: { label: 'Non alignée', className: 'bg-red-100 text-red-800 border border-red-200', Icon: XCircle },
+  const { t } = useTranslation();
+  const config: Record<AlignmentStatus, { labelKey: string; className: string; Icon: React.ElementType }> = {
+    aligned: { labelKey: 'taxonomy.statusAligned', className: 'bg-emerald-100 text-emerald-800 border border-emerald-200', Icon: CheckCircle },
+    partial: { labelKey: 'taxonomy.statusPartial', className: 'bg-amber-100 text-amber-800 border border-amber-200', Icon: AlertCircle },
+    not_aligned: { labelKey: 'taxonomy.statusNotAligned', className: 'bg-red-100 text-red-800 border border-red-200', Icon: XCircle },
   };
-  const { label, className, Icon } = config[status];
+  const { labelKey, className, Icon } = config[status];
   return (
     <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${className}`}>
       <Icon size={12} />
-      {label}
+      {t(labelKey)}
     </span>
   );
 }
@@ -163,12 +91,86 @@ function BooleanBadge({ value }: { value: boolean }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function TaxonomyAlignment() {
+  const { t } = useTranslation();
   const [activities, setActivities] = useState<Activity[]>(INITIAL_ACTIVITIES);
   const [selectedObjective, setSelectedObjective] = useState<ObjectiveKey | 'all'>('all');
   const [assessmentMode, setAssessmentMode] = useState<'view' | 'edit'>('view');
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<NewActivityForm>(DEFAULT_FORM);
   const [generating, setGenerating] = useState(false);
+
+  // ── Objectives config ────────────────────────────────────────────────────────
+  const OBJECTIVES: {
+    key: ObjectiveKey;
+    label: string;
+    labelShort: string;
+    description: string;
+    Icon: React.ElementType;
+    color: string;
+    bgColor: string;
+    borderColor: string;
+  }[] = [
+    {
+      key: 'mitigation',
+      label: t('taxonomy.objectiveMitigation'),
+      labelShort: t('taxonomy.objectiveMitigationShort'),
+      description: t('taxonomy.objectiveMitigationDesc'),
+      Icon: Thermometer,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50',
+      borderColor: 'border-orange-200',
+    },
+    {
+      key: 'adaptation',
+      label: t('taxonomy.objectiveAdaptation'),
+      labelShort: t('taxonomy.objectiveAdaptationShort'),
+      description: t('taxonomy.objectiveAdaptationDesc'),
+      Icon: Shield,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+      borderColor: 'border-blue-200',
+    },
+    {
+      key: 'water',
+      label: t('taxonomy.objectiveWater'),
+      labelShort: t('taxonomy.objectiveWaterShort'),
+      description: t('taxonomy.objectiveWaterDesc'),
+      Icon: Droplets,
+      color: 'text-cyan-600',
+      bgColor: 'bg-cyan-50',
+      borderColor: 'border-cyan-200',
+    },
+    {
+      key: 'circular',
+      label: t('taxonomy.objectiveCircular'),
+      labelShort: t('taxonomy.objectiveCircularShort'),
+      description: t('taxonomy.objectiveCircularDesc'),
+      Icon: Recycle,
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-50',
+      borderColor: 'border-emerald-200',
+    },
+    {
+      key: 'pollution',
+      label: t('taxonomy.objectivePollution'),
+      labelShort: t('taxonomy.objectivePollutionShort'),
+      description: t('taxonomy.objectivePollutionDesc'),
+      Icon: Wind,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      borderColor: 'border-purple-200',
+    },
+    {
+      key: 'biodiversity',
+      label: t('taxonomy.objectiveBiodiversity'),
+      labelShort: t('taxonomy.objectiveBiodiversityShort'),
+      description: t('taxonomy.objectiveBiodiversityDesc'),
+      Icon: Leaf,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
+      borderColor: 'border-green-200',
+    },
+  ];
 
   // ── Computed stats ──────────────────────────────────────────────────────────
   const totalActivities = activities.length;
@@ -238,12 +240,11 @@ export default function TaxonomyAlignment() {
             <div>
               <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white text-sm font-semibold px-3 py-1.5 rounded-full mb-4">
                 <Leaf size={14} />
-                Taxonomie UE 2023
+                {t('taxonomy.badge')}
               </div>
-              <h1 className="text-3xl font-bold mb-2">Alignement Taxonomie Européenne</h1>
+              <h1 className="text-3xl font-bold mb-2">{t('taxonomy.title')}</h1>
               <p className="text-teal-200 text-sm max-w-xl">
-                Évaluez l'alignement de vos activités économiques avec les six objectifs environnementaux
-                du règlement EU 2020/852 sur la finance durable.
+                {t('taxonomy.subtitle')}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -255,14 +256,14 @@ export default function TaxonomyAlignment() {
                     : 'bg-white/10 text-white border-white/30 hover:bg-white/20'
                 }`}
               >
-                {assessmentMode === 'edit' ? 'Mode édition actif' : 'Activer édition'}
+                {assessmentMode === 'edit' ? t('taxonomy.editModeActive') : t('taxonomy.activateEdit')}
               </button>
               <button
                 onClick={() => setShowModal(true)}
                 className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
               >
                 <Plus size={16} />
-                Déclarer une activité
+                {t('taxonomy.declareActivity')}
               </button>
             </div>
           </div>
@@ -273,11 +274,11 @@ export default function TaxonomyAlignment() {
         {/* ── Stats cards ──────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="card flex flex-col gap-1">
-            <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">Total activités</span>
+            <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">{t('taxonomy.totalActivities')}</span>
             <span className="text-3xl font-bold text-gray-900">{totalActivities}</span>
           </div>
           <div className="card flex flex-col gap-1">
-            <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">Alignées</span>
+            <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">{t('taxonomy.aligned')}</span>
             <span className="text-3xl font-bold text-emerald-600">{alignedCount}</span>
             <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1">
               <div
@@ -287,7 +288,7 @@ export default function TaxonomyAlignment() {
             </div>
           </div>
           <div className="card flex flex-col gap-1">
-            <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">Partiellement alignées</span>
+            <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">{t('taxonomy.partiallyAligned')}</span>
             <span className="text-3xl font-bold text-amber-500">{partialCount}</span>
             <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1">
               <div
@@ -297,7 +298,7 @@ export default function TaxonomyAlignment() {
             </div>
           </div>
           <div className="card flex flex-col gap-1">
-            <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">% CapEx éligible</span>
+            <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">{t('taxonomy.capexEligible')}</span>
             <span className="text-3xl font-bold text-teal-600">{capexEligible}%</span>
             <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1">
               <div
@@ -310,7 +311,7 @@ export default function TaxonomyAlignment() {
 
         {/* ── Objective cards ──────────────────────────────────────────────── */}
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Objectifs environnementaux</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('taxonomy.environmentalObjectives')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {OBJECTIVES.map(({ key, label, description, Icon, color, bgColor, borderColor }) => {
               const count = activities.filter((a) => a.objective === key).length;
@@ -354,10 +355,10 @@ export default function TaxonomyAlignment() {
         <Card>
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Activités économiques</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t('taxonomy.economicActivities')}</h2>
               <p className="text-sm text-gray-500 mt-0.5">
-                {filteredActivities.length} activité{filteredActivities.length !== 1 ? 's' : ''}
-                {selectedObjective !== 'all' && ` · filtrées par ${OBJECTIVE_LABELS[selectedObjective]}`}
+                {filteredActivities.length} {filteredActivities.length !== 1 ? t('taxonomy.activityPlural') : t('taxonomy.activitySingular')}
+                {selectedObjective !== 'all' && ` · ${t('taxonomy.filteredBy')} ${OBJECTIVES.find(o => o.key === selectedObjective)?.labelShort ?? ''}`}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -366,7 +367,7 @@ export default function TaxonomyAlignment() {
                   onClick={() => setSelectedObjective('all')}
                   className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
                 >
-                  <X size={12} /> Effacer filtre
+                  <X size={12} /> {t('taxonomy.clearFilter')}
                 </button>
               )}
               <button
@@ -379,7 +380,7 @@ export default function TaxonomyAlignment() {
                 ) : (
                   <FileText size={14} />
                 )}
-                Générer rapport
+                {t('taxonomy.generateReport')}
               </button>
             </div>
           </div>
@@ -388,20 +389,20 @@ export default function TaxonomyAlignment() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 text-left">
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide">Activité</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide">Secteur</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide">Objectif</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide">{t('taxonomy.activity')}</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide">{t('taxonomy.sector')}</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide">{t('taxonomy.objective')}</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide text-center">
-                    Contribution substantielle
+                    {t('taxonomy.substantialContribution')}
                   </th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide text-center">
                     DNSH
                   </th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide text-center">
-                    Garde-fous sociaux
+                    {t('taxonomy.socialSafeguards')}
                   </th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide text-center">
-                    Statut
+                    {t('taxonomy.status')}
                   </th>
                 </tr>
               </thead>
@@ -424,7 +425,7 @@ export default function TaxonomyAlignment() {
                             className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full ${obj.bgColor} ${obj.color}`}
                           >
                             <obj.Icon size={11} />
-                            {OBJECTIVE_LABELS[activity.objective]}
+                            {obj.labelShort}
                           </span>
                         )}
                       </td>
@@ -448,7 +449,7 @@ export default function TaxonomyAlignment() {
             {filteredActivities.length === 0 && (
               <div className="text-center py-12 text-gray-400">
                 <Leaf size={32} className="mx-auto mb-3 opacity-30" />
-                <p className="text-sm">Aucune activité pour cet objectif</p>
+                <p className="text-sm">{t('taxonomy.noActivityForObjective')}</p>
               </div>
             )}
           </div>
@@ -456,27 +457,27 @@ export default function TaxonomyAlignment() {
           {assessmentMode === 'edit' && (
             <p className="mt-3 text-xs text-amber-600 flex items-center gap-1">
               <AlertCircle size={12} />
-              Mode édition : cliquez sur une ligne pour faire tourner le statut d'alignement.
+              {t('taxonomy.editModeHint')}
             </p>
           )}
         </Card>
 
         {/* ── Summary progress ─────────────────────────────────────────────── */}
-        <Card title="Récapitulatif d'alignement">
+        <Card title={t('taxonomy.alignmentSummary')}>
           <div className="space-y-4">
             {[
-              { label: 'Alignées', count: alignedCount, color: 'bg-emerald-500', textColor: 'text-emerald-700' },
-              { label: 'Partiellement alignées', count: partialCount, color: 'bg-amber-400', textColor: 'text-amber-700' },
+              { labelKey: 'taxonomy.alignedLabel', count: alignedCount, color: 'bg-emerald-500', textColor: 'text-emerald-700' },
+              { labelKey: 'taxonomy.partialLabel', count: partialCount, color: 'bg-amber-400', textColor: 'text-amber-700' },
               {
-                label: 'Non alignées',
+                labelKey: 'taxonomy.notAlignedLabel',
                 count: activities.filter((a) => a.status === 'not_aligned').length,
                 color: 'bg-red-400',
                 textColor: 'text-red-700',
               },
-            ].map(({ label, count, color, textColor }) => (
-              <div key={label}>
+            ].map(({ labelKey, count, color, textColor }) => (
+              <div key={labelKey}>
                 <div className="flex justify-between text-sm mb-1.5">
-                  <span className={`font-medium ${textColor}`}>{label}</span>
+                  <span className={`font-medium ${textColor}`}>{t(labelKey)}</span>
                   <span className="text-gray-500">
                     {count} / {totalActivities} ({totalActivities ? Math.round((count / totalActivities) * 100) : 0}%)
                   </span>
@@ -501,8 +502,8 @@ export default function TaxonomyAlignment() {
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Déclarer une activité</h3>
-                <p className="text-sm text-gray-500 mt-0.5">Ajouter une nouvelle activité économique</p>
+                <h3 className="text-lg font-semibold text-gray-900">{t('taxonomy.declareModalTitle')}</h3>
+                <p className="text-sm text-gray-500 mt-0.5">{t('taxonomy.declareModalSubtitle')}</p>
               </div>
               <button
                 onClick={() => setShowModal(false)}
@@ -516,32 +517,32 @@ export default function TaxonomyAlignment() {
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Nom de l'activité <span className="text-red-500">*</span>
+                  {t('taxonomy.activityName')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  placeholder="Ex: Production d'énergie éolienne"
+                  placeholder={t('taxonomy.activityPlaceholderName')}
                   className="input"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Secteur <span className="text-red-500">*</span>
+                  {t('taxonomy.sectorRequired')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={form.sector}
                   onChange={(e) => setForm((f) => ({ ...f, sector: e.target.value }))}
-                  placeholder="Ex: Énergie renouvelable"
+                  placeholder={t('taxonomy.sectorPlaceholder')}
                   className="input"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Objectif environnemental</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('taxonomy.environmentalObjective')}</label>
                 <select
                   value={form.objective}
                   onChange={(e) => setForm((f) => ({ ...f, objective: e.target.value as ObjectiveKey }))}
@@ -556,12 +557,12 @@ export default function TaxonomyAlignment() {
               </div>
 
               <div className="space-y-3 pt-2">
-                <p className="text-sm font-medium text-gray-700">Critères d'éligibilité</p>
+                <p className="text-sm font-medium text-gray-700">{t('taxonomy.eligibilityCriteria')}</p>
                 {[
-                  { field: 'contribution' as const, label: 'Contribution substantielle', hint: "L'activité contribue substantiellement à l'objectif" },
-                  { field: 'dnsh' as const, label: 'Absence de préjudice significatif (DNSH)', hint: 'Ne nuit pas aux cinq autres objectifs' },
-                  { field: 'safeguards' as const, label: 'Garde-fous sociaux minimaux', hint: 'Respect des droits humains et normes sociales' },
-                ].map(({ field, label, hint }) => (
+                  { field: 'contribution' as const, labelKey: 'taxonomy.contributionLabel', hintKey: 'taxonomy.contributionHint' },
+                  { field: 'dnsh' as const, labelKey: 'taxonomy.dnshLabel', hintKey: 'taxonomy.dnshHint' },
+                  { field: 'safeguards' as const, labelKey: 'taxonomy.safeguardsLabel', hintKey: 'taxonomy.safeguardsHint' },
+                ].map(({ field, labelKey, hintKey }) => (
                   <label key={field} className="flex items-start gap-3 cursor-pointer group">
                     <div className="relative mt-0.5">
                       <input
@@ -581,8 +582,8 @@ export default function TaxonomyAlignment() {
                       </div>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-800">{label}</p>
-                      <p className="text-xs text-gray-500">{hint}</p>
+                      <p className="text-sm font-medium text-gray-800">{t(labelKey)}</p>
+                      <p className="text-xs text-gray-500">{t(hintKey)}</p>
                     </div>
                   </label>
                 ))}
@@ -595,7 +596,7 @@ export default function TaxonomyAlignment() {
                 onClick={() => { setShowModal(false); setForm(DEFAULT_FORM); }}
                 className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
               >
-                Annuler
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleAddActivity}
@@ -603,7 +604,7 @@ export default function TaxonomyAlignment() {
                 className="flex items-center gap-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus size={14} />
-                Ajouter l'activité
+                {t('taxonomy.addActivity')}
               </button>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Users, Webhook, Plug, FileText, Building2, Database,
   Crown, Mail, TrendingUp, Shield, Zap, CheckCircle,
@@ -15,11 +16,11 @@ import PageHeader from '@/components/PageHeader';
 
 type Tab = 'general' | 'billing' | 'integrations' | 'security';
 
-const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
-  { id: 'general', label: 'Général', icon: Building2 },
-  { id: 'billing', label: 'Facturation', icon: CreditCard },
-  { id: 'integrations', label: 'Config & Intégrations', icon: Plug },
-  { id: 'security', label: 'Sécurité', icon: Shield },
+const TABS_DEF: { id: Tab; labelKey: string; icon: React.ElementType }[] = [
+  { id: 'general', labelKey: 'settings.tabGeneral', icon: Building2 },
+  { id: 'billing', labelKey: 'settings.tabBilling', icon: CreditCard },
+  { id: 'integrations', labelKey: 'settings.tabIntegrations', icon: Plug },
+  { id: 'security', labelKey: 'settings.tabSecurity', icon: Shield },
 ];
 
 const PLANS = [
@@ -201,6 +202,7 @@ function getProgressColor(status: 'ok' | 'warning' | 'full') {
 }
 
 export default function TenantSettings() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('general');
   const [saving, setSaving] = useState(false);
@@ -218,35 +220,35 @@ export default function TenantSettings() {
     setSaving(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success('Modifications enregistrées avec succès !');
+      toast.success(t('settings.saveSuccess'));
     } catch {
-      toast.error('Erreur lors de l\'enregistrement');
+      toast.error(t('settings.saveError'));
     } finally {
       setSaving(false);
     }
   };
 
   const handleGenerateKey = () => {
-    if (!newKeyName.trim()) { toast.error('Entrez un nom pour la clé'); return; }
-    toast.success(`Clé API "${newKeyName}" créée avec succès !`);
+    if (!newKeyName.trim()) { toast.error(t('settings.keyNameRequired')); return; }
+    toast.success(t('settings.keyCreated', { name: newKeyName }));
     setShowNewKeyModal(false);
     setNewKeyName('');
   };
 
   const handleRevokeKey = (keyName: string) => {
-    toast.success(`Clé "${keyName}" révoquée`);
+    toast.success(t('settings.keyRevoked', { name: keyName }));
   };
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Paramètres"
-        subtitle="Configurez votre plateforme ESG et gérez vos intégrations"
+        title={t('settings.title')}
+        subtitle={t('settings.subtitle')}
       />
 
       {/* Tab Navigation */}
       <div className="bg-white border-2 border-gray-100 rounded-2xl p-2 flex gap-1">
-        {TABS.map((tab) => {
+        {TABS_DEF.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           return (
@@ -260,7 +262,7 @@ export default function TenantSettings() {
               }`}
             >
               <Icon className="h-4 w-4" />
-              {tab.label}
+              {t(tab.labelKey)}
             </button>
           );
         })}
@@ -272,10 +274,10 @@ export default function TenantSettings() {
           {/* Quick Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: 'Uptime ce mois', value: '99.9%', icon: Activity, color: 'text-green-600', bg: 'bg-green-50', trend: '+0.1%' },
-              { label: 'Dernier backup', value: '2h', icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50', trend: 'Automatique' },
-              { label: 'Score sécurité', value: 'A+', icon: Shield, color: 'text-purple-600', bg: 'bg-purple-50', trend: 'Excellent' },
-              { label: 'Temps de réponse', value: '< 1h', icon: Bell, color: 'text-orange-600', bg: 'bg-orange-50', trend: 'Support' },
+              { label: t('settings.uptimeMonth'), value: '99.9%', icon: Activity, color: 'text-green-600', bg: 'bg-green-50', trend: '+0.1%' },
+              { label: t('settings.lastBackup'), value: '2h', icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50', trend: t('settings.automatic') },
+              { label: t('settings.securityScore'), value: 'A+', icon: Shield, color: 'text-purple-600', bg: 'bg-purple-50', trend: t('settings.excellent') },
+              { label: t('settings.responseTime'), value: '< 1h', icon: Bell, color: 'text-orange-600', bg: 'bg-orange-50', trend: t('settings.support') },
             ].map((stat) => {
               const Icon = stat.icon;
               return (
@@ -301,14 +303,14 @@ export default function TenantSettings() {
                   <Building2 className="h-5 w-5 text-primary-600" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">Informations Générales</h2>
-                  <p className="text-xs text-gray-500">Données de votre organisation</p>
+                  <h2 className="text-lg font-bold text-gray-900">{t('settings.generalInfo')}</h2>
+                  <p className="text-xs text-gray-500">{t('settings.orgData')}</p>
                 </div>
               </div>
 
               <div className="space-y-5">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Nom de l'entreprise *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">{t('settings.companyName')}</label>
                   <input
                     type="text"
                     value={formData.companyName}
@@ -318,7 +320,7 @@ export default function TenantSettings() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Email de facturation *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">{t('settings.billingEmail')}</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
@@ -331,7 +333,7 @@ export default function TenantSettings() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Secteur d'activité</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">{t('settings.sector')}</label>
                   <select
                     value={formData.sector}
                     onChange={(e) => setFormData({ ...formData, sector: e.target.value })}
@@ -348,7 +350,7 @@ export default function TenantSettings() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Fuseau horaire</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">{t('settings.timezone')}</label>
                   <div className="relative">
                     <Globe className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <select
@@ -367,9 +369,9 @@ export default function TenantSettings() {
 
                 <Button className="w-full py-3 text-sm font-semibold" onClick={handleSave} disabled={saving}>
                   {saving ? (
-                    <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />Enregistrement...</>
+                    <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />{t('settings.saving')}</>
                   ) : (
-                    <><Save className="h-4 w-4 mr-2" />Enregistrer les modifications</>
+                    <><Save className="h-4 w-4 mr-2" />{t('settings.saveChanges')}</>
                   )}
                 </Button>
               </div>
@@ -383,7 +385,7 @@ export default function TenantSettings() {
                     <TrendingUp className="h-5 w-5 text-green-600" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-gray-900">Utilisation & Limites</h2>
+                    <h2 className="text-lg font-bold text-gray-900">{t('settings.usageLimits')}</h2>
                     <p className="text-xs text-gray-500">Plan Pro — Cycle actuel</p>
                   </div>
                 </div>
@@ -392,7 +394,7 @@ export default function TenantSettings() {
                   onClick={() => setActiveTab('billing')}
                   className="text-xs text-primary-600 hover:text-primary-700 font-semibold flex items-center gap-1 hover:gap-2 transition-all"
                 >
-                  Gérer le plan <ChevronRight className="h-3 w-3" />
+                  {t('settings.managePlan')} <ChevronRight className="h-3 w-3" />
                 </button>
               </div>
 
@@ -430,7 +432,7 @@ export default function TenantSettings() {
                         />
                       </div>
                       {item.status === 'full' && (
-                        <p className="mt-1.5 text-xs text-red-600 font-medium">Limite atteinte — passez à Enterprise</p>
+                        <p className="mt-1.5 text-xs text-red-600 font-medium">{t('settings.limitReached')}</p>
                       )}
                       {item.status === 'warning' && (
                         <p className="mt-1.5 text-xs text-yellow-600 font-medium">{100 - pct}% restant — bientôt la limite</p>
@@ -443,12 +445,12 @@ export default function TenantSettings() {
               <div className="mt-6 p-4 bg-gradient-to-br from-primary-50 to-blue-50 rounded-xl border border-primary-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-bold text-gray-900 mb-0.5">Besoin de plus ?</p>
-                    <p className="text-xs text-gray-600">Enterprise — limites illimitées</p>
+                    <p className="text-sm font-bold text-gray-900 mb-0.5">{t('settings.needMore')}</p>
+                    <p className="text-xs text-gray-600">{t('settings.enterpriseUnlimited')}</p>
                   </div>
                   <Button size="sm" onClick={() => setActiveTab('billing')}>
                     <Crown className="h-3.5 w-3.5 mr-1.5" />
-                    Voir les plans
+                    {t('settings.seePlans')}
                   </Button>
                 </div>
               </div>
@@ -495,7 +497,7 @@ export default function TenantSettings() {
 
           {/* Billing Toggle */}
           <div className="flex items-center justify-center gap-4">
-            <span className={`text-sm font-semibold ${!billingAnnual ? 'text-gray-900' : 'text-gray-400'}`}>Mensuel</span>
+            <span className={`text-sm font-semibold ${!billingAnnual ? 'text-gray-900' : 'text-gray-400'}`}>{t('settings.monthly')}</span>
             <button
               type="button"
               onClick={() => setBillingAnnual(!billingAnnual)}
@@ -504,7 +506,7 @@ export default function TenantSettings() {
               <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${billingAnnual ? 'translate-x-8' : 'translate-x-1'}`} />
             </button>
             <span className={`text-sm font-semibold ${billingAnnual ? 'text-gray-900' : 'text-gray-400'}`}>
-              Annuel
+              {t('settings.annual')}
               <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded-full">-17%</span>
             </span>
           </div>
@@ -538,7 +540,7 @@ export default function TenantSettings() {
                           <span className="text-white/70 mb-1.5 text-sm">/{billingAnnual ? 'an' : 'mois'}</span>
                         </>
                       ) : (
-                        <span className="text-3xl font-black">Sur devis</span>
+                        <span className="text-3xl font-black">{t('settings.onQuote')}</span>
                       )}
                     </div>
                     {billingAnnual && price !== null && (
@@ -571,15 +573,15 @@ export default function TenantSettings() {
 
                     {plan.current ? (
                       <div className="w-full py-2.5 bg-primary-50 border-2 border-primary-200 rounded-xl text-primary-700 text-sm font-bold text-center">
-                        Plan actuel
+                        {t('settings.currentPlan')}
                       </div>
                     ) : plan.id === 'enterprise' ? (
                       <Button variant="secondary" className="w-full">
-                        Contacter les ventes
+                        {t('settings.contactSales')}
                       </Button>
                     ) : (
                       <Button variant="secondary" className="w-full hover:bg-gray-900 hover:text-white transition-colors">
-                        {plan.id === 'starter' ? 'Rétrograder' : 'Passer à Enterprise'}
+                        {plan.id === 'starter' ? t('settings.downgrade') : t('settings.upgradeEnterprise')}
                       </Button>
                     )}
                   </div>
@@ -595,11 +597,11 @@ export default function TenantSettings() {
                 <div className="p-2.5 bg-gray-50 rounded-xl">
                   <CreditCard className="h-5 w-5 text-gray-600" />
                 </div>
-                <h2 className="text-lg font-bold text-gray-900">Historique des factures</h2>
+                <h2 className="text-lg font-bold text-gray-900">{t('settings.invoiceHistory')}</h2>
               </div>
               <Button variant="secondary" size="sm">
                 <Download className="h-3.5 w-3.5 mr-1.5" />
-                Tout télécharger
+                {t('settings.downloadAll')}
               </Button>
             </div>
 
@@ -607,10 +609,10 @@ export default function TenantSettings() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600">Date</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600">Description</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600">Montant</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600">Statut</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-600">{t('settings.date')}</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-600">{t('settings.description')}</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-600">{t('settings.amount')}</th>
+                    <th className="text-left px-4 py-3 font-semibold text-gray-600">{t('settings.status')}</th>
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
@@ -676,7 +678,7 @@ export default function TenantSettings() {
                   {/* Status dot */}
                   <div className="absolute top-4 right-4 flex items-center gap-1.5">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                    <span className="text-xs font-semibold text-green-600">Actif</span>
+                    <span className="text-xs font-semibold text-green-600">{t('settings.active')}</span>
                   </div>
 
                   {/* Icon */}
@@ -695,7 +697,7 @@ export default function TenantSettings() {
                   {section.stats && (
                     <div className="mb-4">
                       <div className="flex items-center justify-between text-xs mb-1.5">
-                        <span className="text-gray-400">Utilisation</span>
+                        <span className="text-gray-400">{t('settings.usage')}</span>
                         <span className="font-bold text-gray-800">
                           {section.stats.current.toLocaleString()}
                           {section.stats.max && ` / ${section.stats.max.toLocaleString()}`}
@@ -722,7 +724,7 @@ export default function TenantSettings() {
 
                   {/* Hover action */}
                   <div className="mt-3 flex items-center text-sm font-semibold text-primary-600 group-hover:gap-2 gap-1 transition-all">
-                    <span>{section.external ? 'Ouvrir' : 'Configurer'}</span>
+                    <span>{section.external ? t('settings.open') : t('settings.configure')}</span>
                     <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
@@ -738,8 +740,8 @@ export default function TenantSettings() {
                   <BarChart3 className="h-5 w-5 text-teal-600" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">Méthodologies ESG actives</h2>
-                  <p className="text-xs text-gray-500">Référentiels de reporting configurés</p>
+                  <h2 className="text-lg font-bold text-gray-900">{t('settings.activeMethodologies')}</h2>
+                  <p className="text-xs text-gray-500">{t('settings.reportingFrameworks')}</p>
                 </div>
               </div>
               <Button
@@ -747,7 +749,7 @@ export default function TenantSettings() {
                 size="sm"
                 onClick={() => navigate('/app/settings/methodology')}
               >
-                Configurer
+                {t('settings.configure')}
               </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -763,7 +765,7 @@ export default function TenantSettings() {
                     <p className="text-xs text-gray-500">{method.version}</p>
                   </div>
                   <span className="text-xs font-bold px-2 py-1 bg-green-100 text-green-700 rounded-full flex-shrink-0">
-                    {method.status}
+                    {t('settings.active')}
                   </span>
                 </div>
               ))}
@@ -783,8 +785,8 @@ export default function TenantSettings() {
                   <Shield className="h-8 w-8" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold mb-1">Score de sécurité</h3>
-                  <p className="text-white/80 text-sm">Basé sur vos configurations actuelles</p>
+                  <h3 className="text-xl font-bold mb-1">{t('settings.securityScore')}</h3>
+                  <p className="text-white/80 text-sm">{t('settings.basedOnConfig')}</p>
                 </div>
               </div>
               <div className="text-right">
@@ -814,10 +816,10 @@ export default function TenantSettings() {
                   <div className="p-2.5 bg-orange-50 rounded-xl">
                     <Key className="h-5 w-5 text-orange-600" />
                   </div>
-                  <h2 className="text-lg font-bold text-gray-900">Clés API</h2>
+                  <h2 className="text-lg font-bold text-gray-900">{t('settings.apiKeys')}</h2>
                 </div>
                 <Button size="sm" onClick={() => setShowNewKeyModal(true)}>
-                  + Nouvelle clé
+                  + {t('settings.newKey')}
                 </Button>
               </div>
 
@@ -842,7 +844,7 @@ export default function TenantSettings() {
                         onClick={() => handleRevokeKey(apiKey.name)}
                         className="text-xs text-red-500 hover:text-red-700 font-semibold flex-shrink-0"
                       >
-                        Révoquer
+                        {t('settings.revoke')}
                       </button>
                     </div>
                   </div>
@@ -860,8 +862,8 @@ export default function TenantSettings() {
                       <Lock className="h-5 w-5 text-green-600" />
                     </div>
                     <div>
-                      <h2 className="text-base font-bold text-gray-900">Authentification 2FA</h2>
-                      <p className="text-xs text-gray-500">Double authentification activée</p>
+                      <h2 className="text-base font-bold text-gray-900">{t('settings.twoFa')}</h2>
+                      <p className="text-xs text-gray-500">{t('settings.twoFaEnabled')}</p>
                     </div>
                   </div>
                   <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">Activé</span>
@@ -879,10 +881,10 @@ export default function TenantSettings() {
                     <div className="p-2.5 bg-blue-50 rounded-xl">
                       <Activity className="h-5 w-5 text-blue-600" />
                     </div>
-                    <h2 className="text-base font-bold text-gray-900">Sessions actives</h2>
+                    <h2 className="text-base font-bold text-gray-900">{t('settings.activeSessions')}</h2>
                   </div>
                   <button type="button" className="text-xs text-red-500 hover:text-red-700 font-semibold">
-                    Tout déconnecter
+                    {t('settings.disconnectAll')}
                   </button>
                 </div>
                 <div className="space-y-2.5">
@@ -916,11 +918,11 @@ export default function TenantSettings() {
                     <div className="p-2.5 bg-gray-50 rounded-xl">
                       <RefreshCw className="h-5 w-5 text-gray-600" />
                     </div>
-                    <h2 className="text-base font-bold text-gray-900">Audit & Logs</h2>
+                    <h2 className="text-base font-bold text-gray-900">{t('settings.auditLogs')}</h2>
                   </div>
                   <Button variant="secondary" size="sm">
                     <Download className="h-3.5 w-3.5 mr-1.5" />
-                    Exporter
+                    {t('settings.export')}
                   </Button>
                 </div>
                 <p className="text-sm text-gray-500 mb-3">
@@ -950,14 +952,14 @@ export default function TenantSettings() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-gray-900">Générer une clé API</h3>
+              <h3 className="text-lg font-bold text-gray-900">{t('settings.generateApiKey')}</h3>
               <button type="button" onClick={() => setShowNewKeyModal(false)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
                 <X className="h-5 w-5 text-gray-400" />
               </button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Nom de la clé *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">{t('settings.keyName')}</label>
                 <input
                   type="text"
                   value={newKeyName}
@@ -973,11 +975,11 @@ export default function TenantSettings() {
               </div>
               <div className="flex gap-3 pt-2">
                 <Button variant="secondary" className="flex-1" onClick={() => setShowNewKeyModal(false)}>
-                  Annuler
+                  {t('settings.cancel')}
                 </Button>
                 <Button className="flex-1" onClick={handleGenerateKey}>
                   <Key className="h-4 w-4 mr-2" />
-                  Générer
+                  {t('settings.generate')}
                 </Button>
               </div>
             </div>

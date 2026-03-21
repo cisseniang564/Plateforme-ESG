@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Award, TrendingUp, Building2, Calculator } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
@@ -15,6 +16,7 @@ interface Organization {
 }
 
 export default function ScoresList() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,27 +47,27 @@ export default function ScoresList() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Scores ESG"
-        subtitle="Évaluation ESG complète avec pondération sectorielle"
+        title={t('scores.title')}
+        subtitle={t('scores.sectoralSubtitle')}
       />
 
       {organizations.length === 0 ? (
         <Card>
           <div className="text-center py-12">
             <Building2 className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-500 font-medium mb-2">Aucune organisation</p>
+            <p className="text-gray-500 font-medium mb-2">{t('scores.noOrganizations')}</p>
             <p className="text-sm text-gray-400 mb-6">
-              Commencez par enrichir vos organisations avec des données INSEE
+              {t('scores.enrichOrgsHint')}
             </p>
             <Button onClick={() => navigate('/settings/esg-enrichment')}>
-              Enrichir des Organisations
+              {t('scores.enrichOrgs')}
             </Button>
           </div>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {organizations.map(org => (
-            <Card 
+            <Card
               key={org.id}
               className="hover:shadow-lg transition-all cursor-pointer"
               onClick={() => navigate(`/scores/calculate/${org.id}`)}
@@ -86,8 +88,8 @@ export default function ScoresList() {
                   <Award className="h-8 w-8 text-primary-600" />
                 </div>
 
-                <Button 
-                  variant="secondary" 
+                <Button
+                  variant="secondary"
                   size="sm"
                   className="w-full"
                   onClick={(e) => {
@@ -96,7 +98,7 @@ export default function ScoresList() {
                   }}
                 >
                   <Calculator className="h-4 w-4 mr-2" />
-                  Calculer Score ESG
+                  {t('scores.calculateEsgScore')}
                 </Button>
               </div>
             </Card>
@@ -108,13 +110,13 @@ export default function ScoresList() {
         <div className="flex items-start gap-4">
           <TrendingUp className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
           <div>
-            <h3 className="font-semibold text-blue-900 mb-2">Méthodologie de Scoring</h3>
+            <h3 className="font-semibold text-blue-900 mb-2">{t('scores.methodology')}</h3>
             <ul className="text-sm text-blue-800 space-y-1">
-              <li>• Collecte des données des 12 derniers mois</li>
-              <li>• Normalisation sur échelle 0-100</li>
-              <li>• Pondération sectorielle (E, S, G)</li>
-              <li>• Rating de AAA à C selon le score</li>
-              <li>• Benchmarking vs médiane sectorielle</li>
+              <li>• {t('scores.methodStep1')}</li>
+              <li>• {t('scores.methodStep2')}</li>
+              <li>• {t('scores.methodStep3')}</li>
+              <li>• {t('scores.methodStep4')}</li>
+              <li>• {t('scores.methodStep5')}</li>
             </ul>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   CheckCircle,
   XCircle,
@@ -36,47 +37,48 @@ interface PendingEntry {
 
 // ─── Workflow stepper ─────────────────────────────────────────────────────────
 
-const STEPS = [
-  {
-    key: 'draft',
-    label: 'Brouillon',
-    Icon: Clock,
-    color: 'text-gray-500',
-    bgColor: 'bg-gray-100',
-    lineColor: 'bg-gray-200',
-  },
-  {
-    key: 'review',
-    label: 'En révision',
-    Icon: Send,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-100',
-    lineColor: 'bg-blue-300',
-  },
-  {
-    key: 'approved',
-    label: 'Approuvé',
-    Icon: CheckCircle,
-    color: 'text-emerald-600',
-    bgColor: 'bg-emerald-100',
-    lineColor: 'bg-emerald-300',
-  },
-  {
-    key: 'rejected',
-    label: 'Rejeté',
-    Icon: XCircle,
-    color: 'text-red-500',
-    bgColor: 'bg-red-100',
-    lineColor: '',
-  },
-];
-
 function WorkflowStepper() {
+  const { t } = useTranslation();
+
+  const STEPS = [
+    {
+      key: 'draft',
+      label: t('validation.stepDraft'),
+      Icon: Clock,
+      color: 'text-gray-500',
+      bgColor: 'bg-gray-100',
+      lineColor: 'bg-gray-200',
+    },
+    {
+      key: 'review',
+      label: t('validation.stepReview'),
+      Icon: Send,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-100',
+      lineColor: 'bg-blue-300',
+    },
+    {
+      key: 'approved',
+      label: t('validation.stepApproved'),
+      Icon: CheckCircle,
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-100',
+      lineColor: 'bg-emerald-300',
+    },
+    {
+      key: 'rejected',
+      label: t('validation.stepRejected'),
+      Icon: XCircle,
+      color: 'text-red-500',
+      bgColor: 'bg-red-100',
+      lineColor: '',
+    },
+  ];
+
   return (
     <div className="flex items-center gap-0">
       {STEPS.map((step, idx) => {
         const isLast = idx === STEPS.length - 1;
-        const isFork = step.key === 'approved'; // approved/rejected are siblings
         return (
           <div key={step.key} className="flex items-center">
             <div className="flex flex-col items-center">
@@ -126,9 +128,38 @@ function KpiCard({ label, value, icon: Icon, iconColor, iconBg, subLabel }: KpiC
   );
 }
 
+// ─── Status chip ──────────────────────────────────────────────────────────────
+
+function StatusChip({ status }: { status: string }) {
+  const { t } = useTranslation();
+
+  const map: Record<string, { label: string; className: string; Icon: React.ElementType }> = {
+    pending_review: { label: t('validation.statusPendingReview'), className: 'bg-blue-100 text-blue-700 border-blue-200', Icon: Send },
+    approved: { label: t('validation.statusApproved'), className: 'bg-emerald-100 text-emerald-700 border-emerald-200', Icon: CheckCircle },
+    rejected: { label: t('validation.statusRejected'), className: 'bg-red-100 text-red-700 border-red-200', Icon: XCircle },
+    draft: { label: t('validation.statusDraft'), className: 'bg-gray-100 text-gray-600 border-gray-200', Icon: Clock },
+  };
+
+  const config = map[status] ?? {
+    label: status,
+    className: 'bg-gray-100 text-gray-600 border-gray-200',
+    Icon: AlertCircle,
+  };
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${config.className}`}
+    >
+      <config.Icon size={11} />
+      {config.label}
+    </span>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function ValidationWorkflow() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<ValidationStats | null>(null);
   const [pending, setPending] = useState<PendingEntry[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -149,12 +180,12 @@ export default function ValidationWorkflow() {
       setStats(statsRes.data);
       setPending(pendingRes.data);
     } catch (error: any) {
-      toast.error('Erreur lors du chargement des données de validation');
+      toast.error(t('validation.loadError'));
       console.error('Validation load error:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadData();
@@ -189,11 +220,12 @@ export default function ValidationWorkflow() {
     setActionLoading(true);
     try {
       await api.post('/validation/submit-for-review', { entry_ids: ids });
-      toast.success(`${ids.length} entrée${ids.length > 1 ? 's' : ''} soumise${ids.length > 1 ? 's' : ''} en révision`);
+      const label = ids.length > 1 ? t('validation.submitSuccessPlural') : t('validation.submitSuccess');
+      toast.success(`${ids.length} ${label}`);
       setSelected(new Set());
       await loadData();
     } catch (error: any) {
-      toast.error('Erreur lors de la soumission');
+      toast.error(t('validation.submitError'));
       console.error(error);
     } finally {
       setActionLoading(false);
@@ -204,11 +236,12 @@ export default function ValidationWorkflow() {
     setActionLoading(true);
     try {
       await api.post('/validation/approve', { entry_ids: ids });
-      toast.success(`${ids.length} entrée${ids.length > 1 ? 's' : ''} approuvée${ids.length > 1 ? 's' : ''}`);
+      const label = ids.length > 1 ? t('validation.approveSuccessPlural') : t('validation.approveSuccess');
+      toast.success(`${ids.length} ${label}`);
       setSelected(new Set());
       await loadData();
     } catch (error: any) {
-      toast.error("Erreur lors de l'approbation");
+      toast.error(t('validation.approveError'));
       console.error(error);
     } finally {
       setActionLoading(false);
@@ -229,14 +262,15 @@ export default function ValidationWorkflow() {
         entry_ids: rejectTarget,
         notes: rejectNotes.trim() || undefined,
       });
-      toast.success(`${rejectTarget.length} entrée${rejectTarget.length > 1 ? 's' : ''} rejetée${rejectTarget.length > 1 ? 's' : ''}`);
+      const label = rejectTarget.length > 1 ? t('validation.rejectSuccessPlural') : t('validation.rejectSuccess');
+      toast.success(`${rejectTarget.length} ${label}`);
       setSelected(new Set());
       setShowRejectPanel(false);
       setRejectTarget([]);
       setRejectNotes('');
       await loadData();
     } catch (error: any) {
-      toast.error('Erreur lors du rejet');
+      toast.error(t('validation.rejectError'));
       console.error(error);
     } finally {
       setActionLoading(false);
@@ -269,12 +303,11 @@ export default function ValidationWorkflow() {
             <div>
               <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white text-sm font-semibold px-3 py-1.5 rounded-full mb-4">
                 <Shield size={14} />
-                Qualité des données
+                {t('validation.dataQualityBadge')}
               </div>
-              <h1 className="text-3xl font-bold mb-2">Workflow de Validation</h1>
+              <h1 className="text-3xl font-bold mb-2">{t('validation.workflowTitle')}</h1>
               <p className="text-blue-200 text-sm max-w-xl">
-                Gérez le cycle de vie de vos saisies ESG — de la rédaction à l'approbation — afin de
-                garantir l'intégrité et la traçabilité des données publiées.
+                {t('validation.workflowSubtitle')}
               </p>
             </div>
             <button
@@ -283,13 +316,13 @@ export default function ValidationWorkflow() {
               className="self-start md:self-auto flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-medium px-4 py-2 rounded-lg transition-all disabled:opacity-50"
             >
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-              Actualiser
+              {t('validation.refresh')}
             </button>
           </div>
 
           {/* Workflow stepper */}
           <div className="mt-8 bg-white/10 backdrop-blur-sm rounded-xl px-6 py-5 inline-block">
-            <p className="text-xs text-blue-200 font-medium uppercase tracking-wide mb-4">Étapes du workflow</p>
+            <p className="text-xs text-blue-200 font-medium uppercase tracking-wide mb-4">{t('validation.workflowSteps')}</p>
             <WorkflowStepper />
           </div>
         </div>
@@ -305,33 +338,33 @@ export default function ValidationWorkflow() {
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <KpiCard
-                label="Brouillons"
+                label={t('validation.kpiDrafts')}
                 value={stats?.draft ?? 0}
                 icon={Clock}
                 iconColor="text-gray-500"
                 iconBg="bg-gray-100"
               />
               <KpiCard
-                label="En attente de validation"
+                label={t('validation.kpiPendingValidation')}
                 value={stats?.pending_review ?? 0}
                 icon={Send}
                 iconColor="text-blue-600"
                 iconBg="bg-blue-100"
               />
               <KpiCard
-                label="Approuvées"
+                label={t('validation.kpiApproved')}
                 value={stats?.approved ?? 0}
                 icon={CheckCircle}
                 iconColor="text-emerald-600"
                 iconBg="bg-emerald-100"
               />
               <KpiCard
-                label="Taux d'approbation"
+                label={t('validation.kpiApprovalRate')}
                 value={`${approvalRate}%`}
                 icon={Shield}
                 iconColor="text-indigo-600"
                 iconBg="bg-indigo-100"
-                subLabel="sur toutes les entrées"
+                subLabel={t('validation.kpiApprovalRateSub')}
               />
             </div>
 
@@ -339,14 +372,16 @@ export default function ValidationWorkflow() {
             <Card>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Données en attente de validation</h2>
-                  <p className="text-sm text-gray-500 mt-0.5">{pending.length} entrée{pending.length !== 1 ? 's' : ''} en attente</p>
+                  <h2 className="text-lg font-semibold text-gray-900">{t('validation.pendingDataTitle')}</h2>
+                  <p className="text-sm text-gray-500 mt-0.5">
+                    {pending.length} {pending.length !== 1 ? t('validation.pendingEntriesPlural') : t('validation.pendingEntries')}
+                  </p>
                 </div>
 
                 {someSelected && (
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm text-gray-600 font-medium">
-                      {selected.size} sélectionnée{selected.size > 1 ? 's' : ''}
+                      {selected.size} {selected.size > 1 ? t('validation.selectedCountPlural') : t('validation.selectedCount')}
                     </span>
                     <button
                       onClick={() => handleSubmitForReview(Array.from(selected))}
@@ -354,7 +389,7 @@ export default function ValidationWorkflow() {
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-all disabled:opacity-50"
                     >
                       <Send size={13} />
-                      Soumettre
+                      {t('validation.submitBtn')}
                     </button>
                     <button
                       onClick={() => handleApprove(Array.from(selected))}
@@ -362,7 +397,7 @@ export default function ValidationWorkflow() {
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-all disabled:opacity-50"
                     >
                       <Check size={13} />
-                      Approuver
+                      {t('validation.approveBtn')}
                     </button>
                     <button
                       onClick={() => openRejectPanel(Array.from(selected))}
@@ -370,7 +405,7 @@ export default function ValidationWorkflow() {
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-all disabled:opacity-50"
                     >
                       <X size={13} />
-                      Rejeter
+                      {t('validation.rejectBtn')}
                     </button>
                   </div>
                 )}
@@ -388,12 +423,12 @@ export default function ValidationWorkflow() {
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
                       </th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide">Indicateur</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide">Date</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide">Valeur</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide">Soumis le</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide">Statut</th>
-                      <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">Actions</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide">{t('validation.colIndicator')}</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide">{t('validation.colDate')}</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide">{t('validation.colValue')}</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide">{t('validation.colSubmittedAt')}</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide">{t('validation.colStatus')}</th>
+                      <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">{t('validation.colActions')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -428,7 +463,7 @@ export default function ValidationWorkflow() {
                             <button
                               onClick={() => handleApprove([entry.id])}
                               disabled={actionLoading}
-                              title="Approuver"
+                              title={t('validation.approveTitle')}
                               className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-600 transition-colors disabled:opacity-50"
                             >
                               <Check size={14} />
@@ -436,7 +471,7 @@ export default function ValidationWorkflow() {
                             <button
                               onClick={() => openRejectPanel([entry.id])}
                               disabled={actionLoading}
-                              title="Rejeter"
+                              title={t('validation.rejectTitle')}
                               className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 transition-colors disabled:opacity-50"
                             >
                               <X size={14} />
@@ -451,8 +486,8 @@ export default function ValidationWorkflow() {
                 {pending.length === 0 && !loading && (
                   <div className="text-center py-16 text-gray-400">
                     <CheckCircle size={40} className="mx-auto mb-3 opacity-25" />
-                    <p className="text-sm font-medium">Aucune entrée en attente de validation</p>
-                    <p className="text-xs mt-1">Toutes les données ont été traitées.</p>
+                    <p className="text-sm font-medium">{t('validation.noEntriesPending')}</p>
+                    <p className="text-xs mt-1">{t('validation.allDataProcessed')}</p>
                   </div>
                 )}
               </div>
@@ -465,17 +500,17 @@ export default function ValidationWorkflow() {
                   <AlertCircle size={22} className="text-amber-500" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900 mb-1">Brouillons</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-1">{t('validation.draftsTitle')}</h2>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    Les brouillons sont des saisies ESG non encore soumises au processus de validation.
-                    Pour soumettre un brouillon en révision, rendez-vous sur la page de détail d'un
-                    indicateur, saisissez ou modifiez une valeur, puis cliquez sur{' '}
-                    <strong className="text-gray-800">Soumettre pour validation</strong>.
+                    {t('validation.draftsDesc')}{' '}
+                    <strong className="text-gray-800">{t('validation.submitForValidationBtn')}</strong>.
                   </p>
                   <p className="text-sm text-gray-500 mt-2">
-                    Vous avez actuellement{' '}
-                    <span className="font-semibold text-amber-600">{stats?.draft ?? 0} brouillon{(stats?.draft ?? 0) !== 1 ? 's' : ''}</span>{' '}
-                    en attente de soumission.
+                    {t('validation.currentlyDrafts')}{' '}
+                    <span className="font-semibold text-amber-600">
+                      {stats?.draft ?? 0} {(stats?.draft ?? 0) !== 1 ? t('validation.draftCountPlural') : t('validation.draftCount')}
+                    </span>{' '}
+                    {t('validation.pendingSubmission')}
                   </p>
                 </div>
               </div>
@@ -494,9 +529,9 @@ export default function ValidationWorkflow() {
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Rejeter les entrées</h3>
+                <h3 className="text-lg font-semibold text-gray-900">{t('validation.rejectModalTitle')}</h3>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  {rejectTarget.length} entrée{rejectTarget.length > 1 ? 's' : ''} sélectionnée{rejectTarget.length > 1 ? 's' : ''}
+                  {rejectTarget.length} {rejectTarget.length > 1 ? t('validation.rejectModalSubtitlePlural') : t('validation.rejectModalSubtitle')}
                 </p>
               </div>
               <button
@@ -509,20 +544,20 @@ export default function ValidationWorkflow() {
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Motif de rejet{' '}
-                  <span className="text-gray-400 font-normal">(optionnel)</span>
+                  {t('validation.rejectReason')}{' '}
+                  <span className="text-gray-400 font-normal">{t('validation.rejectReasonOptional')}</span>
                 </label>
                 <textarea
                   rows={4}
                   value={rejectNotes}
                   onChange={(e) => setRejectNotes(e.target.value)}
-                  placeholder="Expliquez pourquoi ces entrées sont rejetées..."
+                  placeholder={t('validation.rejectPlaceholder')}
                   className="input resize-none"
                 />
               </div>
               <div className="flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
                 <AlertCircle size={13} />
-                Cette action notifiera le soumetteur et enregistrera le rejet dans l'audit.
+                {t('validation.rejectWarning')}
               </div>
             </div>
             <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
@@ -530,7 +565,7 @@ export default function ValidationWorkflow() {
                 onClick={() => setShowRejectPanel(false)}
                 className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
               >
-                Annuler
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleReject}
@@ -542,38 +577,12 @@ export default function ValidationWorkflow() {
                 ) : (
                   <XCircle size={14} />
                 )}
-                Confirmer le rejet
+                {t('validation.confirmReject')}
               </button>
             </div>
           </div>
         </div>
       )}
     </div>
-  );
-}
-
-// ─── Status chip ──────────────────────────────────────────────────────────────
-
-function StatusChip({ status }: { status: string }) {
-  const map: Record<string, { label: string; className: string; Icon: React.ElementType }> = {
-    pending_review: { label: 'En révision', className: 'bg-blue-100 text-blue-700 border-blue-200', Icon: Send },
-    approved: { label: 'Approuvée', className: 'bg-emerald-100 text-emerald-700 border-emerald-200', Icon: CheckCircle },
-    rejected: { label: 'Rejetée', className: 'bg-red-100 text-red-700 border-red-200', Icon: XCircle },
-    draft: { label: 'Brouillon', className: 'bg-gray-100 text-gray-600 border-gray-200', Icon: Clock },
-  };
-
-  const config = map[status] ?? {
-    label: status,
-    className: 'bg-gray-100 text-gray-600 border-gray-200',
-    Icon: AlertCircle,
-  };
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${config.className}`}
-    >
-      <config.Icon size={11} />
-      {config.label}
-    </span>
   );
 }

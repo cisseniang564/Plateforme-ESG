@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
   Plus,
@@ -45,6 +46,7 @@ interface ESGRisk {
 }
 
 export default function RiskRegister() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [risks, setRisks] = useState<ESGRisk[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,7 +77,7 @@ export default function RiskRegister() {
       setRisks(res.data || []);
     } catch (error: any) {
       console.error('Error loading risks:', error);
-      toast.error(error.response?.data?.detail || 'Erreur lors du chargement');
+      toast.error(error.response?.data?.detail || t('risks.loadError'));
     } finally {
       setLoading(false);
     }
@@ -84,23 +86,23 @@ export default function RiskRegister() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    
+
     try {
       if (selectedRisk) {
         await api.put(`/materiality/risks/${selectedRisk.id}`, formData);
-        toast.success('✅ Risque mis à jour avec succès');
+        toast.success(t('risks.updateSuccess'));
       } else {
         await api.post('/materiality/risks', formData);
-        toast.success('✅ Risque créé avec succès');
+        toast.success(t('risks.createSuccess'));
       }
-      
+
       setShowModal(false);
       setSelectedRisk(null);
       resetForm();
       await loadRisks();
     } catch (error: any) {
       console.error('Error saving risk:', error);
-      toast.error(error.response?.data?.detail || 'Erreur lors de la sauvegarde');
+      toast.error(error.response?.data?.detail || t('risks.saveError'));
     } finally {
       setSubmitting(false);
     }
@@ -122,15 +124,15 @@ export default function RiskRegister() {
   };
 
   const handleDelete = async (id: string, title: string) => {
-    if (!confirm(`Supprimer le risque "${title}" ?`)) return;
-    
+    if (!confirm(t('risks.deleteConfirm', { title }))) return;
+
     try {
       await api.delete(`/materiality/risks/${id}`);
-      toast.success('🗑️ Risque supprimé');
+      toast.success(t('risks.deleteSuccess'));
       await loadRisks();
     } catch (error: any) {
       console.error('Error deleting risk:', error);
-      toast.error(error.response?.data?.detail || 'Erreur lors de la suppression');
+      toast.error(error.response?.data?.detail || t('risks.deleteError'));
     }
   };
 
@@ -192,13 +194,13 @@ export default function RiskRegister() {
     critical: risks.filter(r => r.severity === 'critical').length,
     active: risks.filter(r => r.status === 'active').length,
     mitigated: risks.filter(r => r.status === 'mitigated' || r.status === 'closed').length,
-    avg_score: risks.length > 0 
+    avg_score: risks.length > 0
       ? Math.round(risks.reduce((sum, r) => sum + r.risk_score, 0) / risks.length)
       : 0
   };
 
   // Heatmap data (5x5 matrix)
-  const heatmapData = Array.from({ length: 5 }, (_, i) => 
+  const heatmapData = Array.from({ length: 5 }, (_, i) =>
     Array.from({ length: 5 }, (_, j) => {
       const prob = i + 1;
       const imp = j + 1;
@@ -231,21 +233,21 @@ export default function RiskRegister() {
           <div>
             <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
               <Shield className="h-10 w-10" />
-              Registre des Risques ESG
+              {t('risks.title')}
             </h1>
             <p className="text-red-100 text-lg">
-              Identification, évaluation et mitigation des risques ESG
+              {t('risks.subtitle')}
             </p>
           </div>
 
           <div className="flex gap-3">
             <Button variant="secondary" onClick={loadRisks} disabled={loading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Actualiser
+              {t('risks.refresh')}
             </Button>
             <Button variant="secondary" onClick={() => setShowModal(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Nouveau risque
+              {t('risks.newRisk')}
             </Button>
           </div>
         </div>
@@ -256,7 +258,7 @@ export default function RiskRegister() {
         <Card className="border-l-4 border-red-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Total Risques</p>
+              <p className="text-sm text-gray-600 mb-1">{t('risks.totalRisks')}</p>
               <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
             </div>
             <div className="p-3 bg-red-50 rounded-xl">
@@ -268,7 +270,7 @@ export default function RiskRegister() {
         <Card className="border-l-4 border-red-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Critiques</p>
+              <p className="text-sm text-gray-600 mb-1">{t('risks.critical')}</p>
               <p className="text-3xl font-bold text-red-700">{stats.critical}</p>
             </div>
             <div className="p-3 bg-red-100 rounded-xl">
@@ -280,7 +282,7 @@ export default function RiskRegister() {
         <Card className="border-l-4 border-orange-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Actifs</p>
+              <p className="text-sm text-gray-600 mb-1">{t('risks.active')}</p>
               <p className="text-3xl font-bold text-orange-600">{stats.active}</p>
             </div>
             <div className="p-3 bg-orange-50 rounded-xl">
@@ -292,7 +294,7 @@ export default function RiskRegister() {
         <Card className="border-l-4 border-green-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Mitigés</p>
+              <p className="text-sm text-gray-600 mb-1">{t('risks.mitigated')}</p>
               <p className="text-3xl font-bold text-green-600">{stats.mitigated}</p>
             </div>
             <div className="p-3 bg-green-50 rounded-xl">
@@ -304,7 +306,7 @@ export default function RiskRegister() {
         <Card className="border-l-4 border-purple-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Score Moyen</p>
+              <p className="text-sm text-gray-600 mb-1">{t('risks.avgScore')}</p>
               <p className="text-3xl font-bold text-purple-600">{stats.avg_score}</p>
             </div>
             <div className="p-3 bg-purple-50 rounded-xl">
@@ -317,7 +319,7 @@ export default function RiskRegister() {
       {/* Heatmap */}
       <Card>
         <h2 className="text-xl font-bold text-gray-900 mb-6">
-          Matrice de Chaleur des Risques (Probabilité × Impact)
+          {t('risks.heatmap')}
         </h2>
 
         <div className="overflow-x-auto">
@@ -326,7 +328,7 @@ export default function RiskRegister() {
               {/* Y-axis label */}
               <div className="flex flex-col justify-center items-end pr-4">
                 <div className="transform -rotate-90 whitespace-nowrap">
-                  <p className="text-sm font-bold text-gray-700">Probabilité →</p>
+                  <p className="text-sm font-bold text-gray-700">{t('risks.probabilityAxis')}</p>
                 </div>
               </div>
 
@@ -374,7 +376,7 @@ export default function RiskRegister() {
 
             {/* X-axis label */}
             <div className="text-center mt-4">
-              <p className="text-sm font-bold text-gray-700">Impact →</p>
+              <p className="text-sm font-bold text-gray-700">{t('risks.impactAxis')}</p>
             </div>
           </div>
         </div>
@@ -383,19 +385,19 @@ export default function RiskRegister() {
         <div className="mt-6 flex items-center gap-6 justify-center">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 bg-green-400 rounded" />
-            <span className="text-xs text-gray-600">Faible (1-5)</span>
+            <span className="text-xs text-gray-600">{t('risks.legendLow')}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 bg-yellow-400 rounded" />
-            <span className="text-xs text-gray-600">Moyen (6-11)</span>
+            <span className="text-xs text-gray-600">{t('risks.legendMedium')}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 bg-orange-500 rounded" />
-            <span className="text-xs text-gray-600">Élevé (12-19)</span>
+            <span className="text-xs text-gray-600">{t('risks.legendHigh')}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 bg-red-600 rounded" />
-            <span className="text-xs text-gray-600">Critique (20-25)</span>
+            <span className="text-xs text-gray-600">{t('risks.legendCritical')}</span>
           </div>
         </div>
       </Card>
@@ -404,38 +406,38 @@ export default function RiskRegister() {
       <Card>
         <div className="flex gap-4 items-center flex-wrap">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Catégorie</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t('risks.categoryLabel')}</label>
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
             >
-              <option value="all">Toutes</option>
-              <option value="environmental">🌿 Environnemental</option>
-              <option value="social">👥 Social</option>
-              <option value="governance">⚖️ Gouvernance</option>
+              <option value="all">{t('risks.allCategories')}</option>
+              <option value="environmental">{t('risks.categoryEnv')}</option>
+              <option value="social">{t('risks.categorySocial')}</option>
+              <option value="governance">{t('risks.categoryGov')}</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Sévérité</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t('risks.severityLabel')}</label>
             <select
               value={filterSeverity}
               onChange={(e) => setFilterSeverity(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
             >
-              <option value="all">Toutes</option>
-              <option value="critical">Critique</option>
-              <option value="high">Élevée</option>
-              <option value="medium">Moyenne</option>
-              <option value="low">Faible</option>
+              <option value="all">{t('risks.allSeverities')}</option>
+              <option value="critical">{t('risks.severityCritical')}</option>
+              <option value="high">{t('risks.severityHigh')}</option>
+              <option value="medium">{t('risks.severityMedium')}</option>
+              <option value="low">{t('risks.severityLow')}</option>
             </select>
           </div>
 
           <div className="ml-auto">
             <p className="text-sm text-gray-600 mb-2">&nbsp;</p>
             <p className="text-lg font-bold text-gray-900">
-              {filteredRisks.length} risque{filteredRisks.length > 1 ? 's' : ''} affiché{filteredRisks.length > 1 ? 's' : ''}
+              {t('risks.risksCount', { count: filteredRisks.length })}
             </p>
           </div>
         </div>
@@ -454,7 +456,7 @@ export default function RiskRegister() {
                     {risk.severity.toUpperCase()}
                   </span>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(risk.status)}`}>
-                    {risk.status === 'active' ? 'Actif' : risk.status === 'mitigated' ? 'Mitigé' : 'Fermé'}
+                    {risk.status === 'active' ? t('risks.statusActive') : risk.status === 'mitigated' ? t('risks.statusMitigated') : t('risks.statusClosed')}
                   </span>
                 </div>
 
@@ -464,19 +466,19 @@ export default function RiskRegister() {
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                   <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-600 mb-1">Probabilité</p>
+                    <p className="text-xs text-gray-600 mb-1">{t('risks.probability')}</p>
                     <p className="text-xl font-bold text-gray-900">{risk.probability}/5</p>
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-600 mb-1">Impact</p>
+                    <p className="text-xs text-gray-600 mb-1">{t('risks.impact')}</p>
                     <p className="text-xl font-bold text-gray-900">{risk.impact}/5</p>
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-600 mb-1">Score de Risque</p>
+                    <p className="text-xs text-gray-600 mb-1">{t('risks.riskScore')}</p>
                     <p className="text-xl font-bold text-red-600">{risk.risk_score}</p>
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-gray-600 mb-1">Catégorie</p>
+                    <p className="text-xs text-gray-600 mb-1">{t('risks.categoryField')}</p>
                     <p className="text-sm font-medium text-gray-900 capitalize">{risk.category}</p>
                   </div>
                 </div>
@@ -485,7 +487,7 @@ export default function RiskRegister() {
                   <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-4">
                     <p className="text-xs font-medium text-blue-900 mb-1 flex items-center gap-2">
                       <Target className="h-4 w-4" />
-                      Plan de Mitigation
+                      {t('risks.mitigationPlan')}
                     </p>
                     <p className="text-sm text-blue-800">{risk.mitigation_plan}</p>
                   </div>
@@ -501,12 +503,12 @@ export default function RiskRegister() {
                   {risk.target_date && (
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
-                      <span>Échéance: {format(new Date(risk.target_date), 'dd MMM yyyy', { locale: fr })}</span>
+                      <span>{t('risks.deadline')} {format(new Date(risk.target_date), 'dd MMM yyyy', { locale: fr })}</span>
                     </div>
                   )}
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4" />
-                    <span>Mis à jour {format(new Date(risk.updated_at), 'dd MMM yyyy', { locale: fr })}</span>
+                    <span>{t('risks.updatedAt')} {format(new Date(risk.updated_at), 'dd MMM yyyy', { locale: fr })}</span>
                   </div>
                 </div>
               </div>
@@ -515,14 +517,12 @@ export default function RiskRegister() {
                 <button
                   onClick={() => handleEdit(risk)}
                   className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                  title="Modifier"
                 >
                   <Edit className="h-5 w-5" />
                 </button>
                 <button
                   onClick={() => handleDelete(risk.id, risk.title)}
                   className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  title="Supprimer"
                 >
                   <Trash2 className="h-5 w-5" />
                 </button>
@@ -537,17 +537,17 @@ export default function RiskRegister() {
           <div className="text-center py-16">
             <Shield className="h-16 w-16 mx-auto text-gray-300 mb-4" />
             <p className="text-xl text-gray-900 font-semibold mb-2">
-              Aucun risque trouvé
+              {t('risks.noRisksFound')}
             </p>
             <p className="text-gray-600 mb-6">
-              {filterCategory !== 'all' || filterSeverity !== 'all' 
-                ? 'Essayez de modifier les filtres'
-                : 'Créez votre premier risque ESG'}
+              {filterCategory !== 'all' || filterSeverity !== 'all'
+                ? t('risks.tryChangeFilters')
+                : t('risks.createFirst')}
             </p>
             {filterCategory === 'all' && filterSeverity === 'all' && (
               <Button onClick={() => setShowModal(true)}>
                 <Plus className="h-5 w-5 mr-2" />
-                Nouveau risque
+                {t('risks.newRisk')}
               </Button>
             )}
           </div>
@@ -560,7 +560,7 @@ export default function RiskRegister() {
           <div className="bg-white rounded-2xl p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">
-                {selectedRisk ? 'Modifier le risque' : 'Nouveau risque ESG'}
+                {selectedRisk ? t('risks.editTitle') : t('risks.newTitle')}
               </h2>
               <button
                 onClick={handleCloseModal}
@@ -573,7 +573,7 @@ export default function RiskRegister() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Titre du risque *
+                  {t('risks.riskTitleField')}
                 </label>
                 <input
                   type="text"
@@ -581,28 +581,28 @@ export default function RiskRegister() {
                   value={formData.title}
                   onChange={(e) => setFormData({...formData, title: e.target.value})}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  placeholder="Ex: Risque de pénurie d'eau"
+                  placeholder={t('risks.riskTitlePlaceholder')}
                   disabled={submitting}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
+                  {t('risks.descriptionField')}
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
                   rows={3}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  placeholder="Décrivez le risque en détail..."
+                  placeholder={t('risks.descriptionPlaceholder')}
                   disabled={submitting}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Catégorie *
+                  {t('risks.categoryRequired')}
                 </label>
                 <select
                   value={formData.category}
@@ -610,16 +610,16 @@ export default function RiskRegister() {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   disabled={submitting}
                 >
-                  <option value="environmental">🌿 Environnemental</option>
-                  <option value="social">👥 Social</option>
-                  <option value="governance">⚖️ Gouvernance</option>
+                  <option value="environmental">{t('risks.categoryEnv')}</option>
+                  <option value="social">{t('risks.categorySocial')}</option>
+                  <option value="governance">{t('risks.categoryGov')}</option>
                 </select>
               </div>
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Probabilité: {formData.probability}/5
+                    {t('risks.probabilitySlider', { value: formData.probability })}
                   </label>
                   <input
                     type="range"
@@ -631,14 +631,14 @@ export default function RiskRegister() {
                     disabled={submitting}
                   />
                   <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>Très faible</span>
-                    <span>Très élevée</span>
+                    <span>{t('risks.veryLow')}</span>
+                    <span>{t('risks.veryHigh')}</span>
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Impact: {formData.impact}/5
+                    {t('risks.impactSlider', { value: formData.impact })}
                   </label>
                   <input
                     type="range"
@@ -650,28 +650,28 @@ export default function RiskRegister() {
                     disabled={submitting}
                   />
                   <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>Très faible</span>
-                    <span>Très élevé</span>
+                    <span>{t('risks.veryLow')}</span>
+                    <span>{t('risks.veryHighImpact')}</span>
                   </div>
                 </div>
               </div>
 
               <div className="p-4 bg-gray-100 rounded-lg">
                 <p className="text-sm font-medium text-gray-700">
-                  Score de Risque: <span className="text-xl font-bold text-red-600">{formData.probability * formData.impact}</span>
+                  {t('risks.riskScoreDisplay')} <span className="text-xl font-bold text-red-600">{formData.probability * formData.impact}</span>
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Plan de Mitigation
+                  {t('risks.mitigationField')}
                 </label>
                 <textarea
                   value={formData.mitigation_plan}
                   onChange={(e) => setFormData({...formData, mitigation_plan: e.target.value})}
                   rows={3}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  placeholder="Actions pour réduire ou éliminer le risque..."
+                  placeholder={t('risks.mitigationPlaceholder')}
                   disabled={submitting}
                 />
               </div>
@@ -679,21 +679,21 @@ export default function RiskRegister() {
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Responsable
+                    {t('risks.responsibleField')}
                   </label>
                   <input
                     type="text"
                     value={formData.responsible_person}
                     onChange={(e) => setFormData({...formData, responsible_person: e.target.value})}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                    placeholder="Nom du responsable"
+                    placeholder={t('risks.responsiblePlaceholder')}
                     disabled={submitting}
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Date Cible
+                    {t('risks.targetDate')}
                   </label>
                   <input
                     type="date"
@@ -710,10 +710,10 @@ export default function RiskRegister() {
                   {submitting ? (
                     <>
                       <Spinner size="sm" className="mr-2" />
-                      {selectedRisk ? 'Mise à jour...' : 'Création...'}
+                      {selectedRisk ? t('risks.updating') : t('risks.creating')}
                     </>
                   ) : (
-                    selectedRisk ? 'Mettre à jour' : 'Créer le risque'
+                    selectedRisk ? t('risks.update') : t('risks.create')
                   )}
                 </Button>
                 <Button
@@ -723,7 +723,7 @@ export default function RiskRegister() {
                   className="flex-1"
                   disabled={submitting}
                 >
-                  Annuler
+                  {t('common.cancel')}
                 </Button>
               </div>
             </form>

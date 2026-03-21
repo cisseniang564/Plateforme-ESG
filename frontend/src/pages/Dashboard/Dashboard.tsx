@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   TrendingUp, 
   TrendingDown,
@@ -66,6 +67,7 @@ interface Organization {
 }
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -87,10 +89,10 @@ export default function Dashboard() {
       });
 
       setOrganizations(enrichedOrgs);
-      toast.success('Dashboard actualisé');
+      toast.success(t('dashboard.refreshed'));
     } catch (error) {
       console.error('Dashboard error:', error);
-      toast.error('Erreur de chargement');
+      toast.error(t('dashboard.loadingError'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -107,7 +109,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <Spinner size="lg" />
-          <p className="text-gray-600 mt-4">Chargement du dashboard...</p>
+          <p className="text-gray-600 mt-4">{t('dashboard.loading')}</p>
         </div>
       </div>
     );
@@ -135,9 +137,9 @@ export default function Dashboard() {
   ].filter(r => r.value > 0);
 
   const pillarData = [
-    { subject: 'Environnemental', A: avgEnv, fullMark: 100, color: '#10b981' },
-    { subject: 'Social', A: avgSoc, fullMark: 100, color: '#3b82f6' },
-    { subject: 'Gouvernance', A: avgGov, fullMark: 100, color: '#8b5cf6' }
+    { subject: t('dashboard.environmental'), A: avgEnv, fullMark: 100, color: '#10b981' },
+    { subject: t('dashboard.social'), A: avgSoc, fullMark: 100, color: '#3b82f6' },
+    { subject: t('dashboard.governance'), A: avgGov, fullMark: 100, color: '#8b5cf6' }
   ];
 
   const scoreGauge = [
@@ -146,7 +148,7 @@ export default function Dashboard() {
 
   const kpis = [
     {
-      label: 'Score ESG Moyen',
+      label: t('dashboard.avgEsgScore'),
       value: Math.round(avgScore),
       change: '+2.3%',
       trend: 'up',
@@ -154,10 +156,10 @@ export default function Dashboard() {
       color: 'from-green-500 to-emerald-600',
       textColor: 'text-green-600',
       bgColor: 'bg-green-50',
-      detail: 'Sur 100 points'
+      detail: t('dashboard.outOf100')
     },
     {
-      label: 'Organisations',
+      label: t('dashboard.organizations'),
       value: totalOrgs,
       change: '+4',
       trend: 'up',
@@ -165,10 +167,10 @@ export default function Dashboard() {
       color: 'from-blue-500 to-indigo-600',
       textColor: 'text-blue-600',
       bgColor: 'bg-blue-50',
-      detail: 'Portfolio actif'
+      detail: t('dashboard.activePortfolio')
     },
     {
-      label: 'Leaders ESG',
+      label: t('dashboard.esgLeaders'),
       value: topPerformers,
       change: '+3',
       trend: 'up',
@@ -176,10 +178,10 @@ export default function Dashboard() {
       color: 'from-purple-500 to-pink-600',
       textColor: 'text-purple-600',
       bgColor: 'bg-purple-50',
-      detail: 'Score ≥ 75/100'
+      detail: t('dashboard.scoreGe75')
     },
     {
-      label: 'En progression',
+      label: t('dashboard.improving'),
       value: Math.floor(totalOrgs * 0.68),
       change: '+12%',
       trend: 'up',
@@ -187,7 +189,7 @@ export default function Dashboard() {
       color: 'from-orange-500 to-red-600',
       textColor: 'text-orange-600',
       bgColor: 'bg-orange-50',
-      detail: 'Tendance positive'
+      detail: t('dashboard.positiveTrend')
     }
   ];
 
@@ -222,7 +224,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h1 className="text-4xl font-bold text-white mb-1">
-                    Dashboard Exécutif ESG
+                    {t('dashboard.executiveDashboard')}
                   </h1>
                   <p className="text-white/80 text-lg flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
@@ -239,14 +241,14 @@ export default function Dashboard() {
                 className="bg-white/20 backdrop-blur-lg border border-white/30 text-white hover:bg-white/30"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                Actualiser
+                {t('dashboard.refresh')}
               </Button>
               <Button
                 onClick={() => navigate('/reports/generate')}
                 className="bg-white text-indigo-600 hover:bg-white/90"
               >
                 <Download className="h-4 w-4 mr-2" />
-                Exporter
+                {t('dashboard.export')}
               </Button>
             </div>
           </div>
@@ -271,7 +273,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-white">+2.3%</p>
-                <p className="text-sm text-white/70">vs période précédente</p>
+                <p className="text-sm text-white/70">{t('dashboard.vsPreviousPeriod')}</p>
               </div>
             </div>
 
@@ -350,8 +352,8 @@ export default function Dashboard() {
                 <BarChart3 className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-gray-900">Évolution des Scores</h3>
-                <p className="text-sm text-gray-600">Performance sur 12 mois</p>
+                <h3 className="text-xl font-bold text-gray-900">{t('dashboard.scoreEvolutionTitle')}</h3>
+                <p className="text-sm text-gray-600">{t('dashboard.performanceOver12Months')}</p>
               </div>
             </div>
           </div>
@@ -397,7 +399,7 @@ export default function Dashboard() {
         <div className="lg:col-span-2 space-y-6">
           {/* Jauge Score */}
           <Card className="shadow-xl border-0">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Score Global</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">{t('dashboard.globalScore')}</h3>
             <ResponsiveContainer width="100%" height={180}>
               <RadialBarChart 
                 cx="50%" 
@@ -427,7 +429,7 @@ export default function Dashboard() {
 
           {/* Ratings Distribution */}
           <Card className="shadow-xl border-0">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Ratings</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">{t('dashboard.ratings')}</h3>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
@@ -468,19 +470,19 @@ export default function Dashboard() {
               <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
                 <Award className="h-5 w-5 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900">Top 5 Performances</h3>
+              <h3 className="text-xl font-bold text-gray-900">{t('dashboard.top5Performances')}</h3>
             </div>
             <Button size="sm" variant="secondary" onClick={() => navigate('/organizations')}>
-              Voir tout <ChevronRight className="h-4 w-4 ml-1" />
+              {t('dashboard.seeAll')} <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
 
           <div className="space-y-3">
             {topOrgs.map((org, idx) => (
-              <div 
+              <div
                 key={org.id}
                 className="group flex items-center gap-4 p-4 bg-gradient-to-r from-gray-50 to-white rounded-2xl hover:from-green-50 hover:to-emerald-50 transition-all cursor-pointer border border-gray-100 hover:border-green-200"
-                onClick={() => toast.info("Détails disponibles prochainement")}
+                onClick={() => toast.info(t('dashboard.detailsSoon'))}
               >
                 <div className={`flex items-center justify-center w-10 h-10 rounded-xl font-bold text-sm shadow-lg ${
                   idx === 0 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white' :
@@ -514,19 +516,19 @@ export default function Dashboard() {
               <div className="p-2 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl">
                 <AlertCircle className="h-5 w-5 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900">Priorités Amélioration</h3>
+              <h3 className="text-xl font-bold text-gray-900">{t('dashboard.improvementPriorities')}</h3>
             </div>
             <Button size="sm" variant="secondary" onClick={() => navigate('/organizations')}>
-              Voir tout <ChevronRight className="h-4 w-4 ml-1" />
+              {t('dashboard.seeAll')} <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
 
           <div className="space-y-3">
             {needsImprovement.map((org, idx) => (
-              <div 
+              <div
                 key={org.id}
                 className="group flex items-center gap-4 p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-2xl hover:from-orange-100 hover:to-red-100 transition-all cursor-pointer border border-orange-200"
-                onClick={() => toast.info("Détails disponibles prochainement")}
+                onClick={() => toast.info(t('dashboard.detailsSoon'))}
               >
                 <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-red-500 text-white font-bold text-sm shadow-lg">
                   {idx + 1}
@@ -554,8 +556,8 @@ export default function Dashboard() {
           onClick={() => navigate('/calculated-metrics')}
         >
           <Zap className="h-8 w-8 text-white mb-3" />
-          <h4 className="text-white font-bold text-lg mb-1">Calculs Automatiques</h4>
-          <p className="text-blue-100 text-sm">KPIs calculés en temps réel</p>
+          <h4 className="text-white font-bold text-lg mb-1">{t('dashboard.autoCalcs')}</h4>
+          <p className="text-blue-100 text-sm">{t('dashboard.kpisRealTime')}</p>
           <ChevronRight className="h-5 w-5 text-white mt-3 group-hover:translate-x-1 transition-transform" />
         </div>
 
@@ -564,8 +566,8 @@ export default function Dashboard() {
           onClick={() => navigate('/reports/generate')}
         >
           <Download className="h-8 w-8 text-white mb-3" />
-          <h4 className="text-white font-bold text-lg mb-1">Rapports PDF</h4>
-          <p className="text-green-100 text-sm">Exports CSRD & GRI conformes</p>
+          <h4 className="text-white font-bold text-lg mb-1">{t('dashboard.pdfReports')}</h4>
+          <p className="text-green-100 text-sm">{t('dashboard.csrdGriExports')}</p>
           <ChevronRight className="h-5 w-5 text-white mt-3 group-hover:translate-x-1 transition-transform" />
         </div>
 
@@ -574,8 +576,8 @@ export default function Dashboard() {
           onClick={() => navigate('/my-data')}
         >
           <Eye className="h-8 w-8 text-white mb-3" />
-          <h4 className="text-white font-bold text-lg mb-1">Mes Données</h4>
-          <p className="text-purple-100 text-sm">Toutes les données ESG</p>
+          <h4 className="text-white font-bold text-lg mb-1">{t('dashboard.myData')}</h4>
+          <p className="text-purple-100 text-sm">{t('dashboard.allEsgData')}</p>
           <ChevronRight className="h-5 w-5 text-white mt-3 group-hover:translate-x-1 transition-transform" />
         </div>
       </div>

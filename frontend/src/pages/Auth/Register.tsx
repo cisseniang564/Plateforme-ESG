@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { 
-  Mail, 
-  Lock, 
-  User, 
-  Building2, 
-  Eye, 
+import { useTranslation } from 'react-i18next';
+import {
+  Mail,
+  Lock,
+  User,
+  Building2,
+  Eye,
   EyeOff,
   CheckCircle,
   AlertCircle,
@@ -17,11 +18,12 @@ import Button from '@/components/common/Button';
 import api from '@/services/api';
 
 export default function Register() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -37,25 +39,25 @@ export default function Register() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.firstName.trim()) newErrors.firstName = 'Prénom requis';
-    if (!formData.lastName.trim()) newErrors.lastName = 'Nom requis';
+    if (!formData.firstName.trim()) newErrors.firstName = t('auth.firstNameRequired');
+    if (!formData.lastName.trim()) newErrors.lastName = t('auth.lastNameRequired');
     if (!formData.email.trim()) {
-      newErrors.email = 'Email requis';
+      newErrors.email = t('auth.emailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Email invalide';
+      newErrors.email = t('auth.emailInvalid');
     }
     if (!formData.password) {
-      newErrors.password = 'Mot de passe requis';
+      newErrors.password = t('auth.passwordRequired');
     } else if (formData.password.length < 8) {
-      newErrors.password = 'Minimum 8 caractères';
+      newErrors.password = t('auth.passwordMinLength');
     } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = 'Doit contenir majuscule, minuscule et chiffre';
+      newErrors.password = t('auth.passwordComplexity');
     }
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Les mots de passe ne correspondent pas';
+      newErrors.confirmPassword = t('auth.passwordMismatch');
     }
-    if (!formData.companyName.trim()) newErrors.companyName = 'Nom d\'entreprise requis';
-    if (!formData.acceptTerms) newErrors.acceptTerms = 'Vous devez accepter les conditions';
+    if (!formData.companyName.trim()) newErrors.companyName = t('auth.companyRequired');
+    if (!formData.acceptTerms) newErrors.acceptTerms = t('auth.termsRequired');
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -63,22 +65,22 @@ export default function Register() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
-      toast.error('Veuillez corriger les erreurs');
+      toast.error(t('auth.fixErrors'));
       return;
     }
 
     setLoading(true);
     try {
-      // Générer un slug URL-safe depuis le nom de l'entreprise
+      // Generate a URL-safe slug from the company name
       const tenantSlug = formData.companyName
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '')
         .slice(0, 100) || 'company';
 
-      // Appel API d'onboarding (crée tenant + admin user)
+      // Onboarding API call (creates tenant + admin user)
       await api.post('/auth/onboard', {
         tenant_name: formData.companyName,
         tenant_slug: tenantSlug,
@@ -87,17 +89,16 @@ export default function Register() {
         admin_password: formData.password,
         admin_first_name: formData.firstName,
         admin_last_name: formData.lastName,
-        // Créer une organisation par défaut avec le nom de l'entreprise
         org_name: formData.companyName,
       });
 
-      toast.success('Compte créé avec succès ! Connectez-vous maintenant.');
+      toast.success(t('auth.registrationSuccess'));
       navigate('/login');
     } catch (error: any) {
       const detail = error.response?.data?.detail;
       const message = Array.isArray(detail)
-        ? detail[0]?.msg || 'Erreur lors de l\'inscription'
-        : detail || 'Erreur lors de l\'inscription';
+        ? detail[0]?.msg || t('auth.registrationError')
+        : detail || t('auth.registrationError');
       toast.error(message);
     } finally {
       setLoading(false);
@@ -107,7 +108,7 @@ export default function Register() {
   const passwordStrength = () => {
     const password = formData.password;
     if (!password) return { strength: 0, label: '', color: '' };
-    
+
     let strength = 0;
     if (password.length >= 8) strength++;
     if (password.length >= 12) strength++;
@@ -116,11 +117,11 @@ export default function Register() {
     if (/[^A-Za-z0-9]/.test(password)) strength++;
 
     const levels = [
-      { label: 'Très faible', color: 'bg-red-500' },
-      { label: 'Faible', color: 'bg-orange-500' },
-      { label: 'Moyen', color: 'bg-yellow-500' },
-      { label: 'Bon', color: 'bg-green-500' },
-      { label: 'Excellent', color: 'bg-green-600' }
+      { label: t('auth.passwordStrengthVeryWeak'), color: 'bg-red-500' },
+      { label: t('auth.passwordStrengthWeak'), color: 'bg-orange-500' },
+      { label: t('auth.passwordStrengthMedium'), color: 'bg-yellow-500' },
+      { label: t('auth.passwordStrengthGood'), color: 'bg-green-500' },
+      { label: t('auth.passwordStrengthExcellent'), color: 'bg-green-600' }
     ];
 
     return { strength, ...levels[Math.min(strength, 4)] };
@@ -129,24 +130,24 @@ export default function Register() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
+
         {/* Left Side - Branding */}
         <div className="hidden lg:flex flex-col justify-center p-12 bg-gradient-to-br from-primary-600 to-primary-800 rounded-2xl text-white">
           <div className="mb-8">
             <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-sm">
               <Sparkles className="h-8 w-8" />
             </div>
-            <h1 className="text-4xl font-bold mb-4">Rejoignez ESGFlow</h1>
+            <h1 className="text-4xl font-bold mb-4">{t('auth.joinEsgflow')}</h1>
             <p className="text-xl text-white/90 mb-8">
-              La plateforme de référence pour la gestion ESG
+              {t('auth.platformTagline')}
             </p>
           </div>
 
           <div className="space-y-6">
             {[
-              { icon: Shield, title: 'Sécurité maximale', desc: 'Vos données protégées par cryptage de bout en bout' },
-              { icon: Sparkles, title: 'IA intégrée', desc: 'Génération automatique de rapports ESG' },
-              { icon: CheckCircle, title: 'Conformité garantie', desc: 'Respect des normes CSRD, GRI, SASB' }
+              { icon: Shield, titleKey: 'auth.featureMaxSecurity', descKey: 'auth.featureMaxSecurityDesc' },
+              { icon: Sparkles, titleKey: 'auth.featureAI', descKey: 'auth.featureAIDesc' },
+              { icon: CheckCircle, titleKey: 'auth.featureCompliance', descKey: 'auth.featureComplianceDesc' }
             ].map((feature, idx) => {
               const Icon = feature.icon;
               return (
@@ -155,8 +156,8 @@ export default function Register() {
                     <Icon className="h-6 w-6" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">{feature.title}</h3>
-                    <p className="text-sm text-white/80">{feature.desc}</p>
+                    <h3 className="font-semibold mb-1">{t(feature.titleKey)}</h3>
+                    <p className="text-sm text-white/80">{t(feature.descKey)}</p>
                   </div>
                 </div>
               );
@@ -174,21 +175,21 @@ export default function Register() {
         {/* Right Side - Form */}
         <div className="bg-white rounded-2xl shadow-2xl p-8 lg:p-12">
           <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Créer un compte</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">{t('auth.createAccount')}</h2>
             <p className="text-gray-600">
-              Déjà inscrit ?{' '}
+              {t('auth.alreadyRegistered')}{' '}
               <Link to="/login" className="text-primary-600 hover:text-primary-700 font-semibold">
-                Se connecter
+                {t('auth.signIn')}
               </Link>
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Nom & Prénom */}
+            {/* First name & Last name */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Prénom *
+                  {t('auth.firstName')} *
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -212,7 +213,7 @@ export default function Register() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Nom *
+                  {t('auth.lastName')} *
                 </label>
                 <input
                   type="text"
@@ -235,7 +236,7 @@ export default function Register() {
             {/* Email */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Email professionnel *
+                {t('auth.professionalEmail')} *
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -257,10 +258,10 @@ export default function Register() {
               )}
             </div>
 
-            {/* Entreprise */}
+            {/* Company */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Nom de l'entreprise *
+                {t('auth.companyName')} *
               </label>
               <div className="relative">
                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -282,10 +283,10 @@ export default function Register() {
               )}
             </div>
 
-            {/* Mot de passe */}
+            {/* Password */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Mot de passe *
+                {t('auth.password')} *
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -306,7 +307,7 @@ export default function Register() {
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
-              
+
               {/* Password Strength */}
               {formData.password && (
                 <div className="mt-2">
@@ -323,7 +324,7 @@ export default function Register() {
                   </div>
                 </div>
               )}
-              
+
               {errors.password && (
                 <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
@@ -332,10 +333,10 @@ export default function Register() {
               )}
             </div>
 
-            {/* Confirmer mot de passe */}
+            {/* Confirm password */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Confirmer le mot de passe *
+                {t('auth.confirmPassword')} *
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -374,13 +375,13 @@ export default function Register() {
                 className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
               />
               <label htmlFor="terms" className="text-sm text-gray-600">
-                J'accepte les{' '}
+                {t('auth.acceptTerms')}{' '}
                 <Link to="/terms-of-service" className="text-primary-600 hover:underline font-medium">
-                  conditions d'utilisation
+                  {t('auth.termsOfUse')}
                 </Link>
-                {' '}et la{' '}
+                {' '}{t('auth.and')}{' '}
                 <Link to="/privacy-policy" className="text-primary-600 hover:underline font-medium">
-                  politique de confidentialité
+                  {t('auth.privacyPolicy')}
                 </Link>
               </label>
             </div>
@@ -400,19 +401,19 @@ export default function Register() {
               {loading ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2" />
-                  Création en cours...
+                  {t('auth.creatingAccount')}
                 </>
               ) : (
                 <>
                   <Sparkles className="h-5 w-5 mr-2" />
-                  Créer mon compte
+                  {t('auth.createMyAccount')}
                 </>
               )}
             </Button>
           </form>
 
           <p className="text-xs text-center text-gray-500 mt-6">
-            En créant un compte, vous bénéficiez d'un essai gratuit de 14 jours. Aucune carte bancaire requise.
+            {t('auth.trialInfo')}
           </p>
         </div>
       </div>

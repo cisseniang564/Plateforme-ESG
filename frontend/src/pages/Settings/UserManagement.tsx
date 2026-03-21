@@ -373,14 +373,14 @@ export default function UserManagement() {
         ...(resolvedRoleId ? { role_id: resolvedRoleId } : {}),
       });
 
-      toast.success(`Utilisateur ${form.first_name} ${form.last_name} créé !`);
+      toast.success(t('users.userCreated', { name: `${form.first_name} ${form.last_name}` }));
       setCreateOpen(false);
       await loadData();
     } catch (err: any) {
       const raw = err.response?.data?.detail || err.response?.data?.message;
       let msg: string;
       if (!raw) {
-        msg = err.message || 'Erreur lors de la création';
+        msg = err.message || t('users.createError');
       } else if (typeof raw === 'string') {
         msg = raw;
       } else if (Array.isArray(raw)) {
@@ -417,14 +417,14 @@ export default function UserManagement() {
         ...(resolvedRoleId ? { role_id: resolvedRoleId } : {}),
       });
 
-      toast.success('Utilisateur mis à jour');
+      toast.success(t('users.userUpdated'));
       setEditOpen(false);
       setEditingUser(null);
       await loadData();
     } catch (err: any) {
       const raw = err.response?.data?.detail || err.response?.data?.message;
       let msg: string;
-      if (!raw) msg = err.message || 'Erreur lors de la mise à jour';
+      if (!raw) msg = err.message || t('users.updateError');
       else if (typeof raw === 'string') msg = raw;
       else if (Array.isArray(raw)) msg = raw.map((e: any) => e.msg).join('\n');
       else msg = JSON.stringify(raw);
@@ -438,7 +438,7 @@ export default function UserManagement() {
     try {
       await api.patch(`/users/${user.id}`, { is_active: !user.is_active });
       setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_active: !u.is_active } : u));
-      toast.success(user.is_active ? 'Utilisateur désactivé' : 'Utilisateur réactivé');
+      toast.success(user.is_active ? t('users.userDeactivated') : t('users.userReactivated'));
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Erreur');
     }
@@ -449,12 +449,12 @@ export default function UserManagement() {
     setSaving(true);
     try {
       await api.delete(`/users/${deletingUser.id}`);
-      toast.success('Utilisateur supprimé');
+      toast.success(t('users.userDeleted'));
       setDeleteModal(false);
       setDeletingUser(null);
       await loadData();
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || 'Erreur lors de la suppression');
+      toast.error(err.response?.data?.detail || t('users.deleteError'));
     } finally {
       setSaving(false);
     }
@@ -462,11 +462,11 @@ export default function UserManagement() {
 
   const exportCSV = () => {
     const rows = [
-      ['Prénom', 'Nom', 'Email', 'Rôle', 'Statut', 'Créé le'],
+      [t('users.firstName'), t('users.lastName'), t('users.email'), t('users.role'), t('users.status'), t('users.createdAt')],
       ...users.map(u => [
         u.first_name, u.last_name, u.email,
         u.role?.display_name || '',
-        u.is_active ? 'Actif' : 'Inactif',
+        u.is_active ? t('users.active') : t('users.inactive'),
         new Date(u.created_at).toLocaleDateString('fr-FR'),
       ]),
     ];
@@ -494,7 +494,7 @@ export default function UserManagement() {
         {(['first_name', 'last_name'] as const).map((field, i) => (
           <div key={field}>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              {i === 0 ? 'Prénom' : 'Nom'} *
+              {i === 0 ? t('users.firstName') : t('users.lastName')} *
             </label>
             <input
               type="text"
@@ -512,7 +512,7 @@ export default function UserManagement() {
 
       {/* Email */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email *</label>
+        <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('users.email')} *</label>
         <div className="relative">
           <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
@@ -532,8 +532,8 @@ export default function UserManagement() {
       {/* Rôle — Combobox */}
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-          Rôle *
-          <span className="ml-2 text-xs font-normal text-gray-400">Sélectionner ou saisir</span>
+          {t('users.role')} *
+          <span className="ml-2 text-xs font-normal text-gray-400">{t('users.selectOrType')}</span>
         </label>
         <RoleCombobox
           roles={roles}
@@ -560,7 +560,7 @@ export default function UserManagement() {
         <>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Mot de passe *
+              {t('users.password')} *
             </label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -568,7 +568,7 @@ export default function UserManagement() {
                 type={showPwd ? 'text' : 'password'}
                 value={form.password}
                 onChange={(e) => setForm(f => ({ ...f, password: e.target.value }))}
-                placeholder="Minimum 8 caractères"
+                placeholder={t('users.min8Chars')}
                 className={`w-full pl-10 pr-11 py-3 border-2 rounded-xl outline-none transition-all focus:ring-2 focus:ring-primary-100 ${
                   formErrors.password ? 'border-red-300' : 'border-gray-200 focus:border-primary-400'
                 }`}
@@ -584,14 +584,14 @@ export default function UserManagement() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Confirmer le mot de passe *</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('users.confirmPassword')} *</label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type={showPwd ? 'text' : 'password'}
                 value={form.confirm_password}
                 onChange={(e) => setForm(f => ({ ...f, confirm_password: e.target.value }))}
-                placeholder="Répéter le mot de passe"
+                placeholder={t('users.repeatPassword')}
                 className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl outline-none transition-all focus:ring-2 focus:ring-primary-100 ${
                   formErrors.confirm_password ? 'border-red-300' : 'border-gray-200 focus:border-primary-400'
                 }`}
@@ -612,20 +612,20 @@ export default function UserManagement() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Gestion des Utilisateurs"
-        subtitle="Gérez les membres, rôles et permissions de votre organisation"
+        title={t('users.title')}
+        subtitle={t('users.subtitle')}
         showBack
         backTo="/app/settings"
         actions={
           <div className="flex gap-2">
             <Button variant="secondary" onClick={exportCSV}>
-              <Download className="h-4 w-4 mr-2" />Export CSV
+              <Download className="h-4 w-4 mr-2" />{t('users.exportCsv')}
             </Button>
             <Button variant="secondary" onClick={loadData}>
-              <RefreshCw className="h-4 w-4 mr-2" />Actualiser
+              <RefreshCw className="h-4 w-4 mr-2" />{t('users.refresh')}
             </Button>
             <Button onClick={openCreate}>
-              <Plus className="h-4 w-4 mr-2" />Nouvel utilisateur
+              <Plus className="h-4 w-4 mr-2" />{t('users.newUser')}
             </Button>
           </div>
         }
@@ -634,10 +634,10 @@ export default function UserManagement() {
       {/* ── Stats ──────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Utilisateurs', value: stats.total,    icon: UsersIcon,  bg: 'bg-primary-50',  text: 'text-primary-600',  border: 'border-primary-100' },
-          { label: 'Actifs',       value: stats.active,   icon: UserCheck,  bg: 'bg-green-50',    text: 'text-green-600',    border: 'border-green-100' },
-          { label: 'Inactifs',     value: stats.inactive, icon: UserX,      bg: 'bg-gray-50',     text: 'text-gray-500',     border: 'border-gray-200' },
-          { label: 'Rôles',        value: roles.length,   icon: Shield,     bg: 'bg-purple-50',   text: 'text-purple-600',   border: 'border-purple-100' },
+          { label: t('users.users'),    value: stats.total,    icon: UsersIcon,  bg: 'bg-primary-50',  text: 'text-primary-600',  border: 'border-primary-100' },
+          { label: t('users.active'),   value: stats.active,   icon: UserCheck,  bg: 'bg-green-50',    text: 'text-green-600',    border: 'border-green-100' },
+          { label: t('users.inactive'), value: stats.inactive, icon: UserX,      bg: 'bg-gray-50',     text: 'text-gray-500',     border: 'border-gray-200' },
+          { label: t('users.roles'),    value: roles.length,   icon: Shield,     bg: 'bg-purple-50',   text: 'text-purple-600',   border: 'border-purple-100' },
         ].map(({ label, value, icon: Icon, bg, text, border }) => (
           <div key={label} className={`bg-white border-2 ${border} rounded-2xl p-5`}>
             <div className="flex items-center justify-between mb-3">
@@ -654,7 +654,7 @@ export default function UserManagement() {
       {/* ── Rôles breakdown ────────────────────────────────────────────────── */}
       {stats.byRole.filter(r => r.count > 0).length > 0 && (
         <div className="bg-white border-2 border-gray-100 rounded-2xl p-5">
-          <p className="text-sm font-bold text-gray-700 mb-4">Répartition par rôle</p>
+          <p className="text-sm font-bold text-gray-700 mb-4">{t('users.roleBreakdown')}</p>
           <div className="flex flex-wrap gap-3">
             {stats.byRole.map(role => {
               const style = ROLE_STYLE[role.name] || ROLE_STYLE.viewer;
@@ -683,7 +683,7 @@ export default function UserManagement() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher par nom ou email..."
+              placeholder={t('users.searchPlaceholder')}
               className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none text-sm transition-all"
             />
             {search && (
@@ -700,7 +700,7 @@ export default function UserManagement() {
             aria-label="Filtrer par rôle"
             className="px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:border-primary-400 outline-none text-sm bg-white"
           >
-            <option value="">Tous les rôles</option>
+            <option value="">{t('users.allRoles')}</option>
             {roles.map(r => {
               const val = isValidUUID(r.id) ? r.id : r.name;
               return <option key={val} value={val}>{r.display_name}</option>;
@@ -718,7 +718,7 @@ export default function UserManagement() {
                   filterStatus === s ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                {s === 'all' ? 'Tous' : s === 'active' ? 'Actifs' : 'Inactifs'}
+                {s === 'all' ? t('users.all') : s === 'active' ? t('users.activeFilter') : t('users.inactiveFilter')}
               </button>
             ))}
           </div>
@@ -730,15 +730,15 @@ export default function UserManagement() {
         {displayed.length === 0 ? (
           <div className="text-center py-16">
             <UsersIcon className="h-12 w-12 mx-auto text-gray-200 mb-4" />
-            <p className="text-gray-500 font-semibold mb-1">Aucun utilisateur trouvé</p>
+            <p className="text-gray-500 font-semibold mb-1">{t('users.noUsersFound')}</p>
             <p className="text-sm text-gray-400 mb-5">
               {search || filterRole || filterStatus !== 'all'
-                ? 'Modifiez vos filtres pour voir plus de résultats'
-                : 'Commencez par créer votre premier utilisateur'}
+                ? t('users.adjustFilters')
+                : t('users.createFirst')}
             </p>
             {!search && !filterRole && filterStatus === 'all' && (
               <Button onClick={openCreate}>
-                <Plus className="h-4 w-4 mr-2" />Créer un utilisateur
+                <Plus className="h-4 w-4 mr-2" />{t('users.createUser')}
               </Button>
             )}
           </div>
@@ -746,11 +746,11 @@ export default function UserManagement() {
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Utilisateur</th>
-                <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Rôle</th>
-                <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Statut</th>
-                <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Membre depuis</th>
-                <th className="text-right px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">{t('users.userCol')}</th>
+                <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">{t('users.roleCol')}</th>
+                <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">{t('users.statusCol')}</th>
+                <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">{t('users.memberSince')}</th>
+                <th className="text-right px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">{t('users.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -784,7 +784,7 @@ export default function UserManagement() {
                           {user.role.display_name}
                         </span>
                       ) : (
-                        <span className="text-xs text-gray-400 italic">Sans rôle</span>
+                        <span className="text-xs text-gray-400 italic">{t('users.noRole')}</span>
                       )}
                     </td>
 
@@ -798,12 +798,12 @@ export default function UserManagement() {
                         {user.is_active ? (
                           <>
                             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                            <span className="text-xs font-semibold text-green-700">Actif</span>
+                            <span className="text-xs font-semibold text-green-700">{t('users.active')}</span>
                           </>
                         ) : (
                           <>
                             <div className="w-2 h-2 bg-gray-400 rounded-full" />
-                            <span className="text-xs font-semibold text-gray-500">Inactif</span>
+                            <span className="text-xs font-semibold text-gray-500">{t('users.inactive')}</span>
                           </>
                         )}
                       </button>
@@ -869,17 +869,17 @@ export default function UserManagement() {
       <SideModal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        title="Nouvel utilisateur"
-        subtitle="Invitez un membre dans votre organisation"
+        title={t('users.newUser')}
+        subtitle={t('users.inviteMember')}
         footer={
           <>
             <Button variant="secondary" className="flex-1" onClick={() => setCreateOpen(false)} disabled={saving}>
-              Annuler
+              {t('users.cancel')}
             </Button>
             <Button className="flex-1" onClick={handleCreate} disabled={saving}>
               {saving
-                ? <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />Création...</>
-                : <><Plus className="h-4 w-4 mr-2" />Créer l'utilisateur</>
+                ? <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />{t('users.creating')}</>
+                : <><Plus className="h-4 w-4 mr-2" />{t('users.createUser')}</>
               }
             </Button>
           </>
@@ -892,17 +892,17 @@ export default function UserManagement() {
       <SideModal
         open={editOpen}
         onClose={() => { setEditOpen(false); setEditingUser(null); }}
-        title={editingUser ? `Modifier — ${editingUser.first_name} ${editingUser.last_name}` : 'Modifier'}
-        subtitle="Mettez à jour les informations du membre"
+        title={editingUser ? `${t('users.edit')} — ${editingUser.first_name} ${editingUser.last_name}` : t('users.edit')}
+        subtitle={t('users.updateMember')}
         footer={
           <>
             <Button variant="secondary" className="flex-1" onClick={() => { setEditOpen(false); setEditingUser(null); }} disabled={saving}>
-              Annuler
+              {t('users.cancel')}
             </Button>
             <Button className="flex-1" onClick={handleEdit} disabled={saving}>
               {saving
-                ? <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />Enregistrement...</>
-                : <><CheckCircle className="h-4 w-4 mr-2" />Enregistrer</>
+                ? <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />{t('users.saving')}</>
+                : <><CheckCircle className="h-4 w-4 mr-2" />{t('users.save')}</>
               }
             </Button>
           </>
@@ -921,19 +921,19 @@ export default function UserManagement() {
                 <Trash2 className="h-6 w-6 text-red-600" />
               </div>
               <div>
-                <h3 className="font-bold text-gray-900 text-lg">Supprimer cet utilisateur ?</h3>
+                <h3 className="font-bold text-gray-900 text-lg">{t('users.deleteConfirmTitle')}</h3>
                 <p className="text-sm text-gray-500 mt-1">
                   <span className="font-semibold">{deletingUser.first_name} {deletingUser.last_name}</span>
-                  {' '}({deletingUser.email}) sera définitivement supprimé.
+                  {' '}({deletingUser.email}) {t('users.deleteConfirmDesc')}
                 </p>
               </div>
             </div>
             <div className="p-3 bg-red-50 border border-red-100 rounded-xl mb-5 text-xs text-red-700 font-medium">
-              ⚠ Cette action est irréversible. Envisagez de désactiver le compte si vous souhaitez conserver les données.
+              ⚠ {t('users.deleteWarning')}
             </div>
             <div className="flex gap-3">
               <Button variant="secondary" className="flex-1" onClick={() => setDeleteModal(false)} disabled={saving}>
-                Annuler
+                {t('users.cancel')}
               </Button>
               <button
                 type="button"
@@ -942,8 +942,8 @@ export default function UserManagement() {
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold text-sm transition-colors disabled:opacity-60"
               >
                 {saving
-                  ? <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />Suppression...</>
-                  : <><Trash2 className="h-4 w-4" />Supprimer définitivement</>
+                  ? <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />{t('users.deleting')}</>
+                  : <><Trash2 className="h-4 w-4" />{t('users.deletePermanently')}</>
                 }
               </button>
             </div>

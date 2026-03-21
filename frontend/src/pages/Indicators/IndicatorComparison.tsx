@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Activity, 
+import { useTranslation } from 'react-i18next';
+import {
+  Activity,
   ArrowLeft,
   TrendingUp,
   TrendingDown,
@@ -72,6 +73,7 @@ interface ComparisonRow {
 }
 
 export default function IndicatorComparison() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [comparisonData, setComparisonData] = useState<ComparisonRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,9 +95,8 @@ export default function IndicatorComparison() {
         return;
       }
 
-      // Limiter à 20 indicateurs pour ne pas surcharger
       const limited = indicators.slice(0, 20);
-      
+
       const statsResults = await Promise.allSettled(
         limited.map(ind =>
           api.get(`/indicator-data/indicators/${ind.id}/stats`).catch(() => null)
@@ -106,7 +107,7 @@ export default function IndicatorComparison() {
         .map((ind, idx) => {
           const statsResult = statsResults[idx];
           let currentAvg = 0;
-          
+
           if (statsResult.status === 'fulfilled' && statsResult.value) {
             const stats: IndicatorStats = statsResult.value.data;
             currentAvg = stats.avg ?? 0;
@@ -132,10 +133,10 @@ export default function IndicatorComparison() {
         .filter(r => r.current > 0 || r.target > 0);
 
       setComparisonData(rows);
-      toast.success('Données de comparaison chargées');
+      toast.success(t('indicators.comparisonLoaded'));
     } catch (error) {
       console.error('Error loading comparison data:', error);
-      toast.error('Erreur lors du chargement');
+      toast.error(t('indicators.comparisonLoadError'));
     } finally {
       setLoading(false);
     }
@@ -144,7 +145,7 @@ export default function IndicatorComparison() {
   const pillars = [
     {
       id: 'environmental',
-      name: 'Environnemental',
+      name: t('indicators.environmental'),
       icon: Leaf,
       color: '#10b981',
       bgColor: 'bg-green-50',
@@ -152,7 +153,7 @@ export default function IndicatorComparison() {
     },
     {
       id: 'social',
-      name: 'Social',
+      name: t('indicators.social'),
       icon: Users,
       color: '#3b82f6',
       bgColor: 'bg-blue-50',
@@ -160,7 +161,7 @@ export default function IndicatorComparison() {
     },
     {
       id: 'governance',
-      name: 'Gouvernance',
+      name: t('indicators.governance'),
       icon: Scale,
       color: '#8b5cf6',
       bgColor: 'bg-purple-50',
@@ -178,7 +179,6 @@ export default function IndicatorComparison() {
     return b.weight - a.weight;
   });
 
-  // Stats globales
   const stats = {
     total: filtered.length,
     onTrack: filtered.filter(r => r.current >= r.target).length,
@@ -188,7 +188,6 @@ export default function IndicatorComparison() {
       : 0
   };
 
-  // Données pour radar chart (top 6)
   const radarData = sorted.slice(0, 6).map(r => ({
     indicator: r.code,
     current: r.current,
@@ -196,7 +195,6 @@ export default function IndicatorComparison() {
     fullMark: Math.max(r.current, r.target) * 1.2
   }));
 
-  // Données pour bar chart
   const barData = sorted.slice(0, 10);
 
   const getPillarColor = (pillar: string) => {
@@ -205,7 +203,7 @@ export default function IndicatorComparison() {
   };
 
   const exportToCSV = () => {
-    const headers = ['Code', 'Nom', 'Pilier', 'Valeur Actuelle', 'Objectif', 'Écart', 'Progression (%)', 'Poids'];
+    const headers = t('indicators.csvHeaders').split(',');
     const rows = sorted.map(r => [
       r.code,
       r.name,
@@ -216,7 +214,7 @@ export default function IndicatorComparison() {
       r.percentage,
       r.weight
     ]);
-    
+
     const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -225,7 +223,6 @@ export default function IndicatorComparison() {
     a.download = 'comparaison-indicateurs.csv';
     a.click();
     window.URL.revokeObjectURL(url);
-    toast.success('Fichier CSV téléchargé');
   };
 
   if (loading) {
@@ -245,23 +242,23 @@ export default function IndicatorComparison() {
           className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4 transition-colors"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Retour aux indicateurs
+          {t('indicators.backToIndicators')}
         </button>
-        
+
         <div className="bg-gradient-to-br from-primary-600 to-primary-700 rounded-2xl p-8 text-white shadow-xl">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
                 <BarChart3 className="h-10 w-10" />
-                Comparaison des Indicateurs
+                {t('indicators.comparisonTitle')}
               </h1>
               <p className="text-primary-100 text-lg">
-                Analysez la performance de vos indicateurs par rapport aux objectifs définis
+                {t('indicators.comparisonSubtitle')}
               </p>
             </div>
             <Button variant="secondary" onClick={exportToCSV}>
               <Download className="h-4 w-4 mr-2" />
-              Exporter CSV
+              {t('indicators.exportCSV')}
             </Button>
           </div>
         </div>
@@ -272,7 +269,7 @@ export default function IndicatorComparison() {
         <Card className="border-l-4 border-primary-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Total Indicateurs</p>
+              <p className="text-sm text-gray-600 mb-1">{t('indicators.totalIndicatorsLabel')}</p>
               <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
             </div>
             <div className="p-3 bg-primary-50 rounded-xl">
@@ -284,7 +281,7 @@ export default function IndicatorComparison() {
         <Card className="border-l-4 border-green-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Objectifs Atteints</p>
+              <p className="text-sm text-gray-600 mb-1">{t('indicators.targetsReached')}</p>
               <p className="text-3xl font-bold text-green-600">{stats.onTrack}</p>
             </div>
             <div className="p-3 bg-green-50 rounded-xl">
@@ -296,7 +293,7 @@ export default function IndicatorComparison() {
         <Card className="border-l-4 border-orange-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">En-dessous Cible</p>
+              <p className="text-sm text-gray-600 mb-1">{t('indicators.belowTarget')}</p>
               <p className="text-3xl font-bold text-orange-600">{stats.belowTarget}</p>
             </div>
             <div className="p-3 bg-orange-50 rounded-xl">
@@ -308,7 +305,7 @@ export default function IndicatorComparison() {
         <Card className="border-l-4 border-blue-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Complétion Moyenne</p>
+              <p className="text-sm text-gray-600 mb-1">{t('indicators.avgCompletion')}</p>
               <p className="text-3xl font-bold text-blue-600">{stats.avgCompletion.toFixed(0)}%</p>
             </div>
             <div className="p-3 bg-blue-50 rounded-xl">
@@ -330,7 +327,7 @@ export default function IndicatorComparison() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Tous ({comparisonData.length})
+              {t('indicators.all')} ({comparisonData.length})
             </button>
             {pillars.map(pillar => {
               const Icon = pillar.icon;
@@ -359,9 +356,9 @@ export default function IndicatorComparison() {
               onChange={(e) => setSortBy(e.target.value as any)}
               className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
             >
-              <option value="gap">Trier par écart</option>
-              <option value="percentage">Trier par progression</option>
-              <option value="weight">Trier par poids</option>
+              <option value="gap">{t('indicators.sortByGap')}</option>
+              <option value="percentage">{t('indicators.sortByProgress')}</option>
+              <option value="weight">{t('indicators.sortByWeight')}</option>
             </select>
           </div>
         </div>
@@ -369,37 +366,37 @@ export default function IndicatorComparison() {
 
       {filtered.length > 0 ? (
         <>
-          {/* Graphiques */}
+          {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Bar Chart */}
             <Card>
               <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                Top 10 - Performance vs Objectif
+                {t('indicators.barChartTitle')}
               </h3>
               <ResponsiveContainer width="100%" height={400}>
                 <ComposedChart data={barData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="code" style={{ fontSize: '11px' }} />
                   <YAxis style={{ fontSize: '11px' }} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'white', 
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'white',
                       border: '1px solid #e5e7eb',
                       borderRadius: '8px'
                     }}
                   />
                   <Legend />
-                  <Bar dataKey="current" name="Valeur Actuelle" radius={[4, 4, 0, 0]}>
+                  <Bar dataKey="current" name={t('indicators.currentValue2')} radius={[4, 4, 0, 0]}>
                     {barData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={getPillarColor(entry.pillar)} />
                     ))}
                   </Bar>
-                  <Line 
-                    type="monotone" 
-                    dataKey="target" 
-                    stroke="#f59e0b" 
+                  <Line
+                    type="monotone"
+                    dataKey="target"
+                    stroke="#f59e0b"
                     strokeWidth={2}
-                    name="Objectif"
+                    name={t('indicators.objective')}
                     dot={{ r: 4 }}
                   />
                 </ComposedChart>
@@ -409,26 +406,26 @@ export default function IndicatorComparison() {
             {/* Radar Chart */}
             <Card>
               <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                Radar - Top 6 Indicateurs
+                {t('indicators.radarChartTitle')}
               </h3>
               <ResponsiveContainer width="100%" height={400}>
                 <RadarChart data={radarData}>
                   <PolarGrid stroke="#e5e7eb" />
                   <PolarAngleAxis dataKey="indicator" style={{ fontSize: '11px' }} />
                   <PolarRadiusAxis style={{ fontSize: '10px' }} />
-                  <Radar 
-                    name="Valeur Actuelle" 
-                    dataKey="current" 
-                    stroke="#6366f1" 
-                    fill="#6366f1" 
-                    fillOpacity={0.5} 
+                  <Radar
+                    name={t('indicators.currentValue2')}
+                    dataKey="current"
+                    stroke="#6366f1"
+                    fill="#6366f1"
+                    fillOpacity={0.5}
                   />
-                  <Radar 
-                    name="Objectif" 
-                    dataKey="target" 
-                    stroke="#10b981" 
-                    fill="#10b981" 
-                    fillOpacity={0.3} 
+                  <Radar
+                    name={t('indicators.objective')}
+                    dataKey="target"
+                    stroke="#10b981"
+                    fill="#10b981"
+                    fillOpacity={0.3}
                   />
                   <Legend />
                   <Tooltip />
@@ -437,23 +434,23 @@ export default function IndicatorComparison() {
             </Card>
           </div>
 
-          {/* Tableau Comparatif */}
+          {/* Comparison Table */}
           <Card>
             <h3 className="text-lg font-semibold text-gray-900 mb-6">
-              Tableau Comparatif Détaillé
+              {t('indicators.detailedTable')}
             </h3>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b-2 border-gray-200">
                   <tr>
-                    <th className="text-left py-4 px-6 font-semibold text-gray-700">Code</th>
-                    <th className="text-left py-4 px-6 font-semibold text-gray-700">Indicateur</th>
-                    <th className="text-left py-4 px-6 font-semibold text-gray-700">Pilier</th>
-                    <th className="text-right py-4 px-6 font-semibold text-gray-700">Actuel</th>
-                    <th className="text-right py-4 px-6 font-semibold text-gray-700">Objectif</th>
-                    <th className="text-right py-4 px-6 font-semibold text-gray-700">Écart</th>
-                    <th className="text-right py-4 px-6 font-semibold text-gray-700">Progression</th>
-                    <th className="text-center py-4 px-6 font-semibold text-gray-700">Statut</th>
+                    <th className="text-left py-4 px-6 font-semibold text-gray-700">{t('indicators.colCode')}</th>
+                    <th className="text-left py-4 px-6 font-semibold text-gray-700">{t('indicators.colIndicator')}</th>
+                    <th className="text-left py-4 px-6 font-semibold text-gray-700">{t('indicators.colPillar')}</th>
+                    <th className="text-right py-4 px-6 font-semibold text-gray-700">{t('indicators.colCurrent')}</th>
+                    <th className="text-right py-4 px-6 font-semibold text-gray-700">{t('indicators.colTarget')}</th>
+                    <th className="text-right py-4 px-6 font-semibold text-gray-700">{t('indicators.colGap')}</th>
+                    <th className="text-right py-4 px-6 font-semibold text-gray-700">{t('indicators.colProgress')}</th>
+                    <th className="text-center py-4 px-6 font-semibold text-gray-700">{t('indicators.colStatus')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -463,10 +460,10 @@ export default function IndicatorComparison() {
                     const PillarIcon = pillar?.icon || Activity;
 
                     return (
-                      <tr 
-                        key={row.id} 
+                      <tr
+                        key={row.id}
                         className="hover:bg-gray-50 cursor-pointer transition-colors"
-                        onClick={() => toast.info("Détails disponibles prochainement")}
+                        onClick={() => toast.info(t('indicators.detailsComingSoon'))}
                       >
                         <td className="py-4 px-6">
                           <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
@@ -528,17 +525,17 @@ export default function IndicatorComparison() {
                         <td className="py-4 px-6 text-center">
                           {row.target === 0 ? (
                             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                              Pas d'objectif
+                              {t('indicators.noObjective')}
                             </span>
                           ) : onTrack ? (
                             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
                               <CheckCircle className="h-3 w-3" />
-                              Atteint
+                              {t('indicators.reached')}
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
                               <TrendingUp className="h-3 w-3" />
-                              En cours
+                              {t('indicators.inProgress')}
                             </span>
                           )}
                         </td>
@@ -557,24 +554,24 @@ export default function IndicatorComparison() {
                 <AlertCircle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <h4 className="font-semibold text-orange-900 mb-2">
-                    {stats.belowTarget} indicateur{stats.belowTarget > 1 ? 's' : ''} en-dessous de l'objectif
+                    {t('indicators.belowTargetInsight', { count: stats.belowTarget })}
                   </h4>
                   <p className="text-sm text-orange-800 mb-4">
-                    Ces indicateurs nécessitent une attention particulière pour atteindre les objectifs définis.
+                    {t('indicators.insightExplanation')}
                   </p>
                   <div className="flex gap-3">
-                    <Button 
+                    <Button
                       size="sm"
                       onClick={() => navigate('/api/v1/indicators')}
                     >
-                      Voir les indicateurs
+                      {t('indicators.viewIndicators')}
                     </Button>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="secondary"
                       onClick={() => navigate('/data/upload')}
                     >
-                      Importer données
+                      {t('indicators.importData')}
                     </Button>
                   </div>
                 </div>
@@ -587,14 +584,14 @@ export default function IndicatorComparison() {
           <div className="text-center py-16">
             <Activity className="h-16 w-16 mx-auto text-gray-300 mb-4" />
             <p className="text-gray-500 font-medium text-lg mb-2">
-              Aucune donnée disponible pour la comparaison
+              {t('indicators.noComparisonData')}
             </p>
             <p className="text-sm text-gray-400 mb-6">
-              Importez des données et définissez des objectifs sur vos indicateurs
+              {t('indicators.noComparisonHint')}
             </p>
             <Button onClick={() => navigate('/api/v1/indicators')}>
               <ArrowLeft className="h-5 w-5 mr-2" />
-              Retour aux indicateurs
+              {t('indicators.backToIndicators')}
             </Button>
           </div>
         </Card>

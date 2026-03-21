@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Search,
   TrendingUp,
@@ -27,52 +28,53 @@ interface Indicator {
   is_active: boolean;
 }
 
-const PILLARS = [
-  {
-    id: 'environmental',
-    name: 'Environnemental',
-    icon: Leaf,
-    tone: {
-      badge: 'bg-green-100 text-green-800',
-      soft: 'bg-green-50',
-      text: 'text-green-600',
-      border: 'border-green-500',
-      buttonActive: 'bg-green-600 text-white',
-    },
-  },
-  {
-    id: 'social',
-    name: 'Social',
-    icon: Users,
-    tone: {
-      badge: 'bg-blue-100 text-blue-800',
-      soft: 'bg-blue-50',
-      text: 'text-blue-600',
-      border: 'border-blue-500',
-      buttonActive: 'bg-blue-600 text-white',
-    },
-  },
-  {
-    id: 'governance',
-    name: 'Gouvernance',
-    icon: Scale,
-    tone: {
-      badge: 'bg-purple-100 text-purple-800',
-      soft: 'bg-purple-50',
-      text: 'text-purple-600',
-      border: 'border-purple-500',
-      buttonActive: 'bg-purple-600 text-white',
-    },
-  },
-] as const;
-
 export default function IndicatorsList() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [indicators, setIndicators] = useState<Indicator[]>([]);
   const [loading, setLoading] = useState(true);
   const [initializing, setInitializing] = useState(false);
   const [search, setSearch] = useState('');
   const [pillarFilter, setPillarFilter] = useState('');
+
+  const PILLARS = [
+    {
+      id: 'environmental',
+      name: t('indicators.environmental'),
+      icon: Leaf,
+      tone: {
+        badge: 'bg-green-100 text-green-800',
+        soft: 'bg-green-50',
+        text: 'text-green-600',
+        border: 'border-green-500',
+        buttonActive: 'bg-green-600 text-white',
+      },
+    },
+    {
+      id: 'social',
+      name: t('indicators.social'),
+      icon: Users,
+      tone: {
+        badge: 'bg-blue-100 text-blue-800',
+        soft: 'bg-blue-50',
+        text: 'text-blue-600',
+        border: 'border-blue-500',
+        buttonActive: 'bg-blue-600 text-white',
+      },
+    },
+    {
+      id: 'governance',
+      name: t('indicators.governance'),
+      icon: Scale,
+      tone: {
+        badge: 'bg-purple-100 text-purple-800',
+        soft: 'bg-purple-50',
+        text: 'text-purple-600',
+        border: 'border-purple-500',
+        buttonActive: 'bg-purple-600 text-white',
+      },
+    },
+  ];
 
   useEffect(() => {
     loadIndicators();
@@ -95,7 +97,7 @@ export default function IndicatorsList() {
       setIndicators(items);
     } catch (error: any) {
       console.error('Error loading indicators:', error);
-      toast.error('Erreur lors du chargement des indicateurs');
+      toast.error(t('indicators.errorLoading'));
       setIndicators([]);
     } finally {
       setLoading(false);
@@ -139,10 +141,10 @@ export default function IndicatorsList() {
     setInitializing(true);
     try {
       await api.post('/onboarding/setup', { org_name: 'Mon Organisation', sector: 'general' });
-      toast.success('Catalogue d\'indicateurs initialisé !');
+      toast.success(t('indicators.initSuccess'));
       await loadIndicators();
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || 'Erreur lors de l\'initialisation');
+      toast.error(err.response?.data?.detail || t('indicators.initError'));
     } finally {
       setInitializing(false);
     }
@@ -163,32 +165,31 @@ export default function IndicatorsList() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/90 ring-1 ring-white/15">
               <BarChart3 className="h-3.5 w-3.5" />
-              Catalogue ESG
+              {t('indicators.catalogue')}
             </div>
 
             <h1 className="mt-4 flex items-center gap-3 text-4xl font-bold tracking-tight">
               <TrendingUp className="h-10 w-10" />
-              Indicateurs ESG
+              {t('indicators.catalogueTitle')}
             </h1>
 
             <p className="mt-3 max-w-2xl text-sm text-white/80 md:text-base">
-              Gérez vos indicateurs environnementaux, sociaux et de gouvernance
-              dans une vue claire, moderne et structurée.
+              {t('indicators.catalogueSubtitle')}
             </p>
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-white/70">Total</p>
+              <p className="text-xs uppercase tracking-wide text-white/70">{t('indicators.statsTotal')}</p>
               <p className="mt-1 text-2xl font-semibold">{getStats()}</p>
             </div>
             <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-white/70">Piliers</p>
+              <p className="text-xs uppercase tracking-wide text-white/70">{t('indicators.statsPillars')}</p>
               <p className="mt-1 text-2xl font-semibold">3</p>
             </div>
             <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-white/70">Recherche</p>
-              <p className="mt-1 text-2xl font-semibold">Instantanée</p>
+              <p className="text-xs uppercase tracking-wide text-white/70">{t('indicators.statsSearch')}</p>
+              <p className="mt-1 text-2xl font-semibold">{t('indicators.statsInstant')}</p>
             </div>
           </div>
         </div>
@@ -199,7 +200,7 @@ export default function IndicatorsList() {
         <Card className="border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total indicateurs</p>
+              <p className="text-sm text-gray-600">{t('indicators.totalIndicators')}</p>
               <p className="mt-2 text-3xl font-bold text-gray-900">{getStats()}</p>
             </div>
             <div className="rounded-2xl bg-teal-50 p-3">
@@ -241,7 +242,7 @@ export default function IndicatorsList() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Rechercher par nom, code ou catégorie..."
+                placeholder={t('indicators.searchPlaceholder')}
                 className="w-full rounded-xl border border-gray-300 bg-white pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
@@ -256,7 +257,7 @@ export default function IndicatorsList() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Tous ({getStats()})
+              {t('indicators.all')} ({getStats()})
             </button>
 
             {PILLARS.map((pillar) => (
@@ -285,14 +286,13 @@ export default function IndicatorsList() {
         ) : filteredIndicators.length === 0 ? (
           <div className="py-16 text-center">
             <TrendingUp className="mx-auto mb-4 h-16 w-16 text-gray-300" />
-            <p className="text-xl font-semibold text-gray-900">Aucun indicateur trouvé</p>
+            <p className="text-xl font-semibold text-gray-900">{t('indicators.noResults')}</p>
             {search ? (
-              <p className="mt-2 text-gray-600">Essaie une autre recherche ou change le filtre.</p>
+              <p className="mt-2 text-gray-600">{t('indicators.noResultsHint')}</p>
             ) : (
               <>
                 <p className="mt-2 text-gray-500 max-w-md mx-auto">
-                  Votre catalogue ESG est vide. Initialisez-le avec les indicateurs standards
-                  (ESRS, GRI, CSRD) pour commencer à piloter vos données.
+                  {t('indicators.emptyCatalogue')}
                 </p>
                 <button
                   onClick={initializeIndicators}
@@ -300,12 +300,12 @@ export default function IndicatorsList() {
                   className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-xl font-semibold hover:bg-teal-700 transition-colors disabled:opacity-60"
                 >
                   {initializing
-                    ? <><RefreshCw className="h-4 w-4 animate-spin" />Initialisation...</>
-                    : <><Sparkles className="h-4 w-4" />Initialiser le catalogue ESG</>
+                    ? <><RefreshCw className="h-4 w-4 animate-spin" />{t('indicators.initializing')}</>
+                    : <><Sparkles className="h-4 w-4" />{t('indicators.initCatalogue')}</>
                   }
                 </button>
                 <p className="mt-3 text-xs text-gray-400">
-                  14 indicateurs standards (ENV, SOC, GOV) seront créés automatiquement.
+                  {t('indicators.initNote')}
                 </p>
               </>
             )}
@@ -314,9 +314,9 @@ export default function IndicatorsList() {
           <>
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Liste des indicateurs</h2>
+                <h2 className="text-lg font-semibold text-gray-900">{t('indicators.listTitle')}</h2>
                 <p className="text-sm text-gray-500">
-                  {filteredIndicators.length} résultat{filteredIndicators.length > 1 ? 's' : ''}
+                  {t('indicators.resultsCount', { count: filteredIndicators.length })}
                 </p>
               </div>
             </div>
@@ -379,7 +379,7 @@ export default function IndicatorsList() {
                                 : 'bg-gray-100 text-gray-500'
                             }`}
                           >
-                            {indicator.is_active ? 'Actif' : 'Inactif'}
+                            {indicator.is_active ? t('indicators.active') : t('indicators.inactive')}
                           </span>
                         </div>
                       </div>

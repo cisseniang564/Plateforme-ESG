@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Calculator, RefreshCw, History, CheckCircle } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
@@ -9,6 +10,7 @@ import ESGScoreCard from '@/components/ESG/ESGScoreCard';
 import api from '@/services/api';
 
 export default function OrganizationScoring() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const [organization, setOrganization] = useState<any>(null);
@@ -54,10 +56,10 @@ export default function OrganizationScoring() {
 
       setCurrentScore(response.data);
       await loadData();
-      
-      alert('✅ Score ESG calculé avec succès !');
+
+      alert(t('scores.calcSuccess'));
     } catch (error: any) {
-      alert(error.response?.data?.detail || 'Erreur lors du calcul');
+      alert(error.response?.data?.detail || t('scores.calcScoreError'));
     } finally {
       setCalculating(false);
     }
@@ -74,8 +76,8 @@ export default function OrganizationScoring() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`Score ESG - ${organization?.name || 'Organisation'}`}
-        subtitle="Évaluation ESG complète avec pondération sectorielle"
+        title={`${t('scores.esgScorePrefix')} - ${organization?.name || t('scores.defaultOrg')}`}
+        subtitle={t('scores.sectoralSubtitle')}
         showBack={true}
         backTo="/scores"
       />
@@ -86,20 +88,20 @@ export default function OrganizationScoring() {
           {calculating ? (
             <>
               <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              Calcul en cours...
+              {t('scores.calculating2')}
             </>
           ) : (
             <>
               <Calculator className="h-4 w-4 mr-2" />
-              Calculer le Score
+              {t('scores.calculateScore2')}
             </>
           )}
         </Button>
-        
+
         {historicalScores.length > 0 && (
           <Button variant="secondary" onClick={() => navigate(`/scores/${id}/history`)}>
             <History className="h-4 w-4 mr-2" />
-            Historique
+            {t('scores.history')}
           </Button>
         )}
       </div>
@@ -108,7 +110,7 @@ export default function OrganizationScoring() {
         {/* Score principal */}
         <div className="lg:col-span-2">
           {currentScore ? (
-            <ESGScoreCard 
+            <ESGScoreCard
               score={currentScore}
               previousScore={historicalScores[1]?.overall_score}
             />
@@ -116,13 +118,13 @@ export default function OrganizationScoring() {
             <Card>
               <div className="text-center py-12">
                 <Calculator className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-500 font-medium mb-2">Aucun score calculé</p>
+                <p className="text-gray-500 font-medium mb-2">{t('scores.noScoreCalculated')}</p>
                 <p className="text-sm text-gray-400 mb-6">
-                  Cliquez sur "Calculer le Score" pour générer l'évaluation ESG
+                  {t('scores.noScoreHint')}
                 </p>
                 <Button onClick={handleCalculateScore} disabled={calculating}>
                   <Calculator className="h-4 w-4 mr-2" />
-                  Calculer maintenant
+                  {t('scores.calculateNow')}
                 </Button>
               </div>
             </Card>
@@ -134,20 +136,20 @@ export default function OrganizationScoring() {
           <Card>
             <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-primary-600" />
-              Qualité des Données
+              {t('scores.dataQuality')}
             </h3>
-            
+
             {dataQuality ? (
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between text-sm mb-2">
-                    <span className="text-gray-600">Score Global</span>
+                    <span className="text-gray-600">{t('scores.globalScore')}</span>
                     <span className="font-semibold text-gray-900">
                       {dataQuality.overall_quality.toFixed(0)}%
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
+                    <div
                       className={`h-3 rounded-full ${dataQuality.overall_quality >= 80 ? 'bg-green-500' : dataQuality.overall_quality >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
                       style={{ width: `${dataQuality.overall_quality}%` }}
                     />
@@ -156,26 +158,26 @@ export default function OrganizationScoring() {
 
                 <div className="space-y-2 pt-4 border-t border-gray-200">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Complétude</span>
+                    <span className="text-gray-600">{t('scores.completeness')}</span>
                     <span className="font-medium">{dataQuality.completeness.toFixed(0)}%</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Cohérence</span>
+                    <span className="text-gray-600">{t('scores.consistency')}</span>
                     <span className="font-medium">{dataQuality.consistency.toFixed(0)}%</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Précision</span>
+                    <span className="text-gray-600">{t('scores.precision')}</span>
                     <span className="font-medium">{dataQuality.accuracy.toFixed(0)}%</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Fraîcheur</span>
+                    <span className="text-gray-600">{t('scores.freshness')}</span>
                     <span className="font-medium">{dataQuality.timeliness.toFixed(0)}%</span>
                   </div>
                 </div>
 
                 {dataQuality.recommendations && dataQuality.recommendations.length > 0 && (
                   <div className="pt-4 border-t border-gray-200">
-                    <p className="text-xs font-medium text-gray-700 mb-2">Recommandations:</p>
+                    <p className="text-xs font-medium text-gray-700 mb-2">{t('scores.recommendations')}</p>
                     <ul className="space-y-1">
                       {dataQuality.recommendations.map((rec: string, i: number) => (
                         <li key={i} className="text-xs text-gray-600">{rec}</li>
@@ -185,7 +187,7 @@ export default function OrganizationScoring() {
                 )}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">Chargement...</p>
+              <p className="text-sm text-gray-500">{t('common.loading')}</p>
             )}
           </Card>
         </div>

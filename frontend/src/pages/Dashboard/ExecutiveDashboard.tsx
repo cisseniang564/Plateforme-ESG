@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -76,6 +77,7 @@ interface DashboardStats {
 }
 
 export default function ExecutiveDashboard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(true);
@@ -136,7 +138,7 @@ export default function ExecutiveDashboard() {
       // toast removed to avoid noise on every navigation
     } catch (error) {
       console.error('Dashboard loading error:', error);
-      toast.error('Erreur lors du chargement');
+      toast.error(t('dashboard.loadingError'));
     } finally {
       setLoading(false);
     }
@@ -168,7 +170,7 @@ export default function ExecutiveDashboard() {
   const orgCount = organizations.length || 1;
   const pillarAverages = [
     {
-      name: 'Environnemental',
+      name: t('dashboard.environmental'),
       score: Math.round(organizations.reduce((sum, org) =>
         sum + (org.environmental_score || 0), 0) / orgCount),
       target: 75,
@@ -176,7 +178,7 @@ export default function ExecutiveDashboard() {
       icon: Leaf
     },
     {
-      name: 'Social',
+      name: t('dashboard.social'),
       score: Math.round(organizations.reduce((sum, org) =>
         sum + (org.social_score || 0), 0) / orgCount),
       target: 75,
@@ -184,7 +186,7 @@ export default function ExecutiveDashboard() {
       icon: Users
     },
     {
-      name: 'Gouvernance',
+      name: t('dashboard.governance'),
       score: Math.round(organizations.reduce((sum, org) =>
         sum + (org.governance_score || 0), 0) / orgCount),
       target: 75,
@@ -195,25 +197,25 @@ export default function ExecutiveDashboard() {
 
   // Distribution des scores
   const scoreDistribution = [
-    { 
-      name: 'Excellents (75-100)', 
-      value: organizations.filter(o => (o.overall_score || 0) >= 75).length, 
-      color: '#10b981' 
+    {
+      name: t('dashboard.scoreExcellent'),
+      value: organizations.filter(o => (o.overall_score || 0) >= 75).length,
+      color: '#10b981'
     },
-    { 
-      name: 'Bons (60-74)', 
-      value: organizations.filter(o => (o.overall_score || 0) >= 60 && (o.overall_score || 0) < 75).length, 
-      color: '#3b82f6' 
+    {
+      name: t('dashboard.scoreGood'),
+      value: organizations.filter(o => (o.overall_score || 0) >= 60 && (o.overall_score || 0) < 75).length,
+      color: '#3b82f6'
     },
-    { 
-      name: 'Moyens (45-59)', 
-      value: organizations.filter(o => (o.overall_score || 0) >= 45 && (o.overall_score || 0) < 60).length, 
-      color: '#f59e0b' 
+    {
+      name: t('dashboard.scoreAverage'),
+      value: organizations.filter(o => (o.overall_score || 0) >= 45 && (o.overall_score || 0) < 60).length,
+      color: '#f59e0b'
     },
-    { 
-      name: 'Faibles (<45)', 
-      value: organizations.filter(o => (o.overall_score || 0) < 45).length, 
-      color: '#ef4444' 
+    {
+      name: t('dashboard.scoreLow'),
+      value: organizations.filter(o => (o.overall_score || 0) < 45).length,
+      color: '#ef4444'
     }
   ].filter(d => d.value > 0);
 
@@ -239,44 +241,44 @@ export default function ExecutiveDashboard() {
 
   const kpis = [
     {
-      label: 'Organisations',
+      label: t('dashboard.organizations'),
       value: stats?.total_organizations || 0,
       change: '+4',
       icon: Building2,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
       borderColor: 'border-blue-200',
-      subtext: 'Total actif'
+      subtext: t('dashboard.totalActive')
     },
     {
-      label: 'Score Moyen',
+      label: t('dashboard.avgScore'),
       value: Math.round(stats?.average_score || 0),
       change: '+2.3%',
       icon: Award,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
       borderColor: 'border-green-200',
-      subtext: 'Sur 100 points'
+      subtext: t('dashboard.outOf100')
     },
     {
-      label: 'Leaders (≥75)',
+      label: t('dashboard.leaders'),
       value: stats?.top_performers || 0,
       change: '+3',
       icon: TrendingUp,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
       borderColor: 'border-purple-200',
-      subtext: 'Performances excellentes'
+      subtext: t('dashboard.excellentPerformances')
     },
     {
-      label: 'En amélioration',
+      label: t('dashboard.improving'),
       value: stats?.improving_orgs || 0,
       change: '+8',
       icon: Zap,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
       borderColor: 'border-orange-200',
-      subtext: 'Tendance positive'
+      subtext: t('dashboard.positiveTrend')
     }
   ];
 
@@ -291,10 +293,10 @@ export default function ExecutiveDashboard() {
 
   const getPeriodLabel = () => {
     switch (selectedPeriod) {
-      case '7d': return '7 derniers jours';
-      case '30d': return '30 derniers jours';
-      case '90d': return '90 derniers jours';
-      case '1y': return '12 derniers mois';
+      case '7d': return t('dashboard.last7days');
+      case '30d': return t('dashboard.last30days');
+      case '90d': return t('dashboard.last90days');
+      case '1y': return t('dashboard.last12months');
     }
   };
 
@@ -313,10 +315,10 @@ export default function ExecutiveDashboard() {
           <Building2 className="h-10 w-10 text-primary-600" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-3">
-          Bienvenue sur ESGFlow !
+          {t('dashboard.welcome')}
         </h2>
         <p className="text-gray-500 max-w-md mb-8">
-          Votre espace est prêt. Commencez par créer votre première organisation pour accéder au tableau de bord ESG.
+          {t('dashboard.welcomeSubtitle')}
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
           <button
@@ -324,21 +326,21 @@ export default function ExecutiveDashboard() {
             className="px-6 py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition-colors flex items-center gap-2"
           >
             <Building2 className="h-5 w-5" />
-            Créer une organisation
+            {t('dashboard.createOrganization')}
           </button>
           <button
             onClick={() => navigate('/app/data-entry')}
             className="px-6 py-3 bg-white text-gray-700 border-2 border-gray-200 rounded-xl font-semibold hover:border-primary-300 transition-colors flex items-center gap-2"
           >
             <Zap className="h-5 w-5" />
-            Saisir des données
+            {t('dashboard.enterData')}
           </button>
         </div>
         <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl w-full">
           {[
-            { step: '1', title: 'Créer une organisation', desc: 'Ajoutez l\'entité à piloter', icon: Building2 },
-            { step: '2', title: 'Saisir vos données', desc: 'Import CSV ou saisie manuelle', icon: Activity },
-            { step: '3', title: 'Analyser vos scores', desc: 'Tableaux de bord en temps réel', icon: BarChart3 },
+            { step: '1', title: t('dashboard.createOrganization'), desc: t('dashboard.step1Desc'), icon: Building2 },
+            { step: '2', title: t('dashboard.enterYourData'), desc: t('dashboard.step2Desc'), icon: Activity },
+            { step: '3', title: t('dashboard.analyzeScores'), desc: t('dashboard.step3Desc'), icon: BarChart3 },
           ].map(({ step, title, desc, icon: Icon }) => (
             <div key={step} className="bg-white rounded-xl border border-gray-200 p-4 text-left">
               <div className="w-8 h-8 bg-primary-600 text-white rounded-lg flex items-center justify-center text-sm font-bold mb-3">
@@ -366,10 +368,10 @@ export default function ExecutiveDashboard() {
             <div>
               <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
                 <Activity className="h-10 w-10" />
-                Tableau de Bord Exécutif
+                {t('dashboard.executiveDashboard')}
               </h1>
               <p className="text-primary-100 text-lg">
-                Performance ESG consolidée • {format(new Date(), 'dd MMMM yyyy', { locale: fr })}
+                {t('dashboard.consolidatedPerformance')} • {format(new Date(), 'dd MMMM yyyy', { locale: fr })}
               </p>
             </div>
             
@@ -380,13 +382,13 @@ export default function ExecutiveDashboard() {
                   <span>{getPeriodLabel()}</span>
                 </div>
               </div>
-              <Button 
+              <Button
                 onClick={loadDashboard}
                 variant="secondary"
                 size="sm"
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
-                Actualiser
+                {t('dashboard.refresh')}
               </Button>
             </div>
           </div>
@@ -394,7 +396,7 @@ export default function ExecutiveDashboard() {
           {/* Score Global */}
           <div className="flex items-end gap-6">
             <div>
-              <p className="text-primary-200 text-sm mb-2">Score ESG Moyen</p>
+              <p className="text-primary-200 text-sm mb-2">{t('dashboard.avgEsgScore')}</p>
               <div className="flex items-end gap-4">
                 <span className="text-7xl font-bold">
                   {Math.round(stats?.average_score || 0)}
@@ -406,7 +408,7 @@ export default function ExecutiveDashboard() {
             <div className="flex items-center gap-2 bg-green-500/20 px-4 py-2 rounded-lg mb-2">
               <TrendingUp className="h-5 w-5 text-green-300" />
               <span className="text-lg font-semibold">+2.3%</span>
-              <span className="text-primary-200">vs période précédente</span>
+              <span className="text-primary-200">{t('dashboard.vsPreviousPeriod')}</span>
             </div>
           </div>
         </div>
@@ -451,7 +453,7 @@ export default function ExecutiveDashboard() {
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-primary-600" />
-              Évolution des Scores - 12 Derniers Mois
+              {t('dashboard.scoreEvolution')}
             </h3>
             <div className="flex gap-2">
               {(['7d', '30d', '90d', '1y'] as const).map(period => (
@@ -497,7 +499,7 @@ export default function ExecutiveDashboard() {
                 strokeWidth={3}
                 fillOpacity={1} 
                 fill="url(#colorOverall)" 
-                name="Score Global"
+                name={t('dashboard.globalScore')}
               />
               <Line 
                 type="monotone" 
@@ -505,23 +507,23 @@ export default function ExecutiveDashboard() {
                 stroke="#10b981" 
                 strokeWidth={2}
                 dot={{ r: 4 }}
-                name="Environnemental"
+                name={t('dashboard.environmental')}
               />
-              <Line 
-                type="monotone" 
-                dataKey="social" 
-                stroke="#3b82f6" 
+              <Line
+                type="monotone"
+                dataKey="social"
+                stroke="#3b82f6"
                 strokeWidth={2}
                 dot={{ r: 4 }}
-                name="Social"
+                name={t('dashboard.social')}
               />
-              <Line 
-                type="monotone" 
-                dataKey="governance" 
-                stroke="#8b5cf6" 
+              <Line
+                type="monotone"
+                dataKey="governance"
+                stroke="#8b5cf6"
                 strokeWidth={2}
                 dot={{ r: 4 }}
-                name="Gouvernance"
+                name={t('dashboard.governance')}
               />
             </ComposedChart>
           </ResponsiveContainer>
@@ -530,7 +532,7 @@ export default function ExecutiveDashboard() {
         {/* Distribution par Rating */}
         <Card>
           <h3 className="text-lg font-semibold text-gray-900 mb-6">
-            Répartition par Rating
+            {t('dashboard.ratingDistribution')}
           </h3>
           {ratingDistribution.length > 0 ? (
             <ResponsiveContainer width="100%" height={350}>
@@ -556,7 +558,7 @@ export default function ExecutiveDashboard() {
             </ResponsiveContainer>
           ) : (
             <div className="flex items-center justify-center h-64 text-gray-400 text-sm">
-              Aucune donnée de rating disponible
+              {t('dashboard.noRatingData')}
             </div>
           )}
         </Card>
@@ -566,7 +568,7 @@ export default function ExecutiveDashboard() {
       <Card>
         <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
           <Target className="h-5 w-5 text-primary-600" />
-          Performance par Pilier vs Objectifs
+          {t('dashboard.pillarPerformance')}
         </h3>
         <div className="space-y-6">
           {pillarAverages.map((pillar) => {
@@ -584,7 +586,7 @@ export default function ExecutiveDashboard() {
                     <div>
                       <p className="font-semibold text-gray-900">{pillar.name}</p>
                       <p className="text-sm text-gray-600">
-                        Objectif: {pillar.target}/100
+                        {t('dashboard.target')}: {pillar.target}/100
                       </p>
                     </div>
                   </div>
@@ -593,7 +595,7 @@ export default function ExecutiveDashboard() {
                       {pillar.score}
                     </p>
                     <p className={`text-xs font-medium ${isOnTrack ? 'text-green-600' : 'text-orange-600'}`}>
-                      {isOnTrack ? '✓ Objectif atteint' : `${pillar.target - pillar.score} pts restants`}
+                      {isOnTrack ? `✓ ${t('dashboard.targetReached')}` : `${pillar.target - pillar.score} ${t('dashboard.ptsRemaining')}`}
                     </p>
                   </div>
                 </div>
@@ -624,14 +626,14 @@ export default function ExecutiveDashboard() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <Award className="h-5 w-5 text-green-600" />
-              Top 5 Performances
+              {t('dashboard.top5Performances')}
             </h3>
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               variant="secondary"
               onClick={() => navigate('/organizations')}
             >
-              Voir tout
+              {t('dashboard.seeAll')}
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
@@ -670,14 +672,14 @@ export default function ExecutiveDashboard() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-orange-600" />
-              Priorités d'Amélioration
+              {t('dashboard.improvementPriorities')}
             </h3>
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               variant="secondary"
               onClick={() => navigate('/organizations')}
             >
-              Voir tout
+              {t('dashboard.seeAll')}
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
@@ -711,7 +713,7 @@ export default function ExecutiveDashboard() {
       {sectorPerformance.length > 0 && (
       <Card>
         <h3 className="text-lg font-semibold text-gray-900 mb-6">
-          Performance Moyenne par Secteur
+          {t('dashboard.sectorPerformance')}
         </h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={sectorPerformance} layout="vertical">
@@ -745,25 +747,24 @@ export default function ExecutiveDashboard() {
             <AlertCircle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <h4 className="font-semibold text-orange-900 mb-2">
-                Attention: Performance globale à améliorer
+                {t('dashboard.alertTitle')}
               </h4>
               <p className="text-sm text-orange-800 mb-4">
-                Le score moyen de {Math.round(stats.average_score)}/100 indique des opportunités d'amélioration. 
-                {improvementNeeded.length} organisations nécessitent une attention particulière.
+                {t('dashboard.alertDesc', { score: Math.round(stats.average_score), count: improvementNeeded.length })}
               </p>
               <div className="flex gap-3">
-                <Button 
+                <Button
                   size="sm"
                   onClick={() => navigate('/organizations')}
                 >
-                  Voir les organisations
+                  {t('dashboard.seeOrganizations')}
                 </Button>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   variant="secondary"
                   onClick={() => navigate('/reports/generate')}
                 >
-                  Générer un rapport
+                  {t('dashboard.generateReport')}
                 </Button>
               </div>
             </div>
