@@ -5,7 +5,7 @@ import { Calculator, RefreshCw, History, CheckCircle, Download, Calendar, Trendi
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import Spinner from '@/components/common/Spinner';
-import PageHeader from '@/components/PageHeader';
+import BackButton from '@/components/common/BackButton';
 import ESGScoreCard from '@/components/ESG/ESGScoreCard';
 import api from '@/services/api';
 
@@ -98,12 +98,17 @@ export default function OrganizationScoring() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={`${t('scores.esgScorePrefix')} - ${organization?.name || t('scores.defaultOrg')}`}
-        subtitle={t('scores.sectoralSubtitle')}
-        showBack={true}
-        backTo="/scores"
-      />
+      <BackButton to="/app/scores" label="Scores ESG" />
+      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-blue-600 to-violet-700 rounded-2xl p-8 text-white shadow-xl">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZyIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLW9wYWNpdHk9IjAuMDUiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg==')] opacity-30" />
+        <div className="relative">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide uppercase">Scoring Sectoriel</span>
+          </div>
+          <h1 className="text-3xl font-bold mb-1">{t('scores.esgScorePrefix')} — {organization?.name || t('scores.defaultOrg')}</h1>
+          <p className="text-indigo-100">{t('scores.sectoralSubtitle')}</p>
+        </div>
+      </div>
 
       {/* Actions bar with period selector and export */}
       <div className="flex flex-wrap items-center gap-3">

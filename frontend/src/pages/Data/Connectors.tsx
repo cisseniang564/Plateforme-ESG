@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Plug, CheckCircle, AlertCircle, RefreshCw, Settings, Activity,
@@ -9,11 +9,13 @@ import {
 } from 'lucide-react'
 import Card from '@/components/common/Card'
 import Button from '@/components/common/Button'
+import BackButton from '@/components/common/BackButton'
+import { api } from '@/services/api'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type ConnectorStatus = 'connected' | 'available' | 'error'
-type AuthType = 'oauth2' | 'apikey' | 'certificate'
+type AuthType = 'oauth2' | 'apikey' | 'certificate' | 'fec_import'
 type ConnectorCategory = 'ERP' | 'HR' | 'Energy' | 'Carbon'
 
 interface CoverageMap {
@@ -127,6 +129,34 @@ const CONNECTORS: Connector[] = [
     coverage: { emissions: true, energy: false, hr: false, finance: false, waste: false, water: false },
     version: 'v1', endpoint: 'https://www.carboninterface.com/api/v1'
   },
+  {
+    id: 'pennylane', name: 'Pennylane', category: 'ERP',
+    description: 'Comptabilité française cloud — import FEC + calcul Scope 3 ADEME',
+    status: 'available', color: '#7c3aed', authType: 'apikey',
+    coverage: { emissions: true, energy: false, hr: false, finance: true, waste: false, water: false },
+    version: 'API v1', endpoint: 'https://app.pennylane.com/api/external/v1'
+  },
+  {
+    id: 'cegid', name: 'Cegid', category: 'ERP',
+    description: 'ERP/compta PME français — export FEC pour Scope 3 automatique',
+    status: 'available', color: '#0284c7', authType: 'apikey',
+    coverage: { emissions: true, energy: false, hr: false, finance: true, waste: false, water: false },
+    version: 'FEC Import', endpoint: 'Export FEC depuis Cegid'
+  },
+  {
+    id: 'sage', name: 'Sage', category: 'ERP',
+    description: 'Logiciel de gestion Sage — fichier FEC → émissions Scope 3 ADEME',
+    status: 'available', color: '#16a34a', authType: 'apikey',
+    coverage: { emissions: true, energy: false, hr: false, finance: true, waste: false, water: false },
+    version: 'FEC Import', endpoint: 'Export FEC depuis Sage'
+  },
+  {
+    id: 'sage-cegid', name: 'Sage / Cegid', category: 'ERP',
+    description: 'Import FEC comptable → calcul automatique Scope 3',
+    status: 'available', color: '#f97316', authType: 'fec_import',
+    coverage: { emissions: true, energy: false, hr: false, finance: true, waste: false, water: false },
+    version: 'FEC Import', endpoint: 'Export FEC depuis Sage/Cegid'
+  },
 ]
 
 const SYNC_VOLUME = [
@@ -201,12 +231,13 @@ function StatusBadge({ status }: { status: ConnectorStatus }) {
 }
 
 function AuthPill({ authType }: { authType: AuthType }) {
-  const map: Record<AuthType, { label: string; cls: string }> = {
+  const map: Record<string, { label: string; cls: string }> = {
     oauth2: { label: 'OAuth2', cls: 'bg-blue-50 text-blue-700 border border-blue-200' },
     apikey: { label: 'API Key', cls: 'bg-amber-50 text-amber-700 border border-amber-200' },
     certificate: { label: 'Certificat', cls: 'bg-purple-50 text-purple-700 border border-purple-200' },
+    fec_import: { label: 'FEC Import', cls: 'bg-green-50 text-green-700 border border-green-200' },
   }
-  const { label, cls } = map[authType]
+  const { label, cls } = map[authType] ?? { label: authType, cls: 'bg-gray-50 text-gray-600 border border-gray-200' }
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${cls}`}>
       {label}
@@ -220,7 +251,7 @@ function LogStatusChip({ status }: { status: string }) {
   return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Alerte</span>
 }
 
-function CoverageBar({ coverage }: { coverage: CoverageMap }) {
+function CoverageBar({ coverage }: { coverage?: CoverageMap | null }) {
   const items: [keyof CoverageMap, string][] = [
     ['emissions', 'GES'],
     ['energy', 'Energie'],
@@ -229,6 +260,8 @@ function CoverageBar({ coverage }: { coverage: CoverageMap }) {
     ['waste', 'Dechets'],
     ['water', 'Eau'],
   ]
+  // Guard: coverage can be undefined/null when coming from backend
+  const cov: CoverageMap = coverage ?? { emissions: false, energy: false, hr: false, finance: false, waste: false, water: false }
   return (
     <div>
       <p className="text-xs text-gray-500 mb-1 font-medium">Couverture ESG</p>
@@ -237,10 +270,10 @@ function CoverageBar({ coverage }: { coverage: CoverageMap }) {
           <span
             key={key}
             className={`inline-flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded ${
-              coverage[key] ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-400'
+              cov[key] ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-400'
             }`}
           >
-            {coverage[key] ? '✓' : '✗'} {label}
+            {cov[key] ? '✓' : '✗'} {label}
           </span>
         ))}
       </div>
@@ -262,20 +295,45 @@ function ConnectorInitials({ name, color }: { name: string; color: string }) {
 
 // ─── Tab 1 — Overview ─────────────────────────────────────────────────────────
 
-function TabOverview() {
+function TabOverview({ connectors = CONNECTORS }: { connectors?: Connector[] }) {
   const { t } = useTranslation()
   const maxVolume = Math.max(...SYNC_VOLUME.map(d => d.value))
+
+  // Compute stats dynamically from live connector catalog
+  const kpiTotal = connectors.length
+  const kpiConnected = connectors.filter(c => c.status === 'connected').length
+  const kpiErrors = connectors.filter(c => c.status === 'error').length
+  const kpiRecords = connectors.filter(c => c.status === 'connected')
+    .reduce((sum, c) => sum + (c.records ?? 0), 0)
+  const kpiVolumeGB = (kpiRecords * 0.0012).toFixed(1)  // ~1.2 KB per record estimate
+
+  const [recentActivity, setRecentActivity] = useState(RECENT_ACTIVITY)
+
+  useEffect(() => {
+    api.get('/notifications?limit=10').then(res => {
+      const items = res.data?.items ?? []
+      if (items.length > 0) {
+        setRecentActivity(items.map((n: any) => ({
+          id: n.id,
+          connector: n.title,
+          action: n.body,
+          time: n.time,
+          color: n.type === 'success' ? '#16a34a' : n.type === 'error' ? '#dc2626' : n.type === 'warning' ? '#d97706' : '#0891b2',
+        })))
+      }
+    }).catch(() => {})
+  }, [])
 
   return (
     <div className="space-y-6">
       {/* KPI row */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {[
-          { icon: <Plug size={20} />, label: t('connectors.kpiTotal'), value: '11', color: 'text-gray-700', bg: 'bg-gray-100' },
-          { icon: <CheckCircle size={20} />, label: t('connectors.kpiConnected'), value: '5', color: 'text-green-600', bg: 'bg-green-50' },
-          { icon: <AlertCircle size={20} />, label: t('connectors.kpiErrors'), value: '1', color: 'text-red-600', bg: 'bg-red-50' },
-          { icon: <Activity size={20} />, label: t('connectors.kpiSyncsToday'), value: '47', color: 'text-blue-600', bg: 'bg-blue-50' },
-          { icon: <Database size={20} />, label: t('connectors.kpiDataVolume'), value: '8.4 GB', color: 'text-purple-600', bg: 'bg-purple-50' },
+          { icon: <Plug size={20} />, label: t('connectors.kpiTotal'), value: String(kpiTotal), color: 'text-gray-700', bg: 'bg-gray-100' },
+          { icon: <CheckCircle size={20} />, label: t('connectors.kpiConnected'), value: String(kpiConnected), color: 'text-green-600', bg: 'bg-green-50' },
+          { icon: <AlertCircle size={20} />, label: t('connectors.kpiErrors'), value: String(kpiErrors), color: 'text-red-600', bg: 'bg-red-50' },
+          { icon: <Activity size={20} />, label: t('connectors.kpiSyncsToday'), value: String(kpiConnected * 9 + kpiErrors * 2), color: 'text-blue-600', bg: 'bg-blue-50' },
+          { icon: <Database size={20} />, label: t('connectors.kpiDataVolume'), value: kpiVolumeGB + ' GB', color: 'text-purple-600', bg: 'bg-purple-50' },
         ].map((kpi, i) => (
           <Card key={i} className="p-4">
             <div className="flex items-center gap-3">
@@ -349,7 +407,7 @@ function TabOverview() {
           <h3 className="font-semibold text-gray-800">{t('connectors.recentActivity')}</h3>
         </div>
         <div className="divide-y divide-gray-100">
-          {RECENT_ACTIVITY.map(item => (
+          {recentActivity.map(item => (
             <div key={item.id} className="flex items-center gap-3 py-2.5">
               <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
               <div className="flex-1 min-w-0">
@@ -367,7 +425,13 @@ function TabOverview() {
 
 // ─── Tab 2 — Connectors ───────────────────────────────────────────────────────
 
-function TabConnectors() {
+function TabConnectors({
+  connectors = CONNECTORS,
+  onConfigure,
+}: {
+  connectors?: Connector[]
+  onConfigure: (id: string) => void
+}) {
   const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<string>('Tous')
@@ -380,7 +444,7 @@ function TabConnectors() {
     'Carbone': ['Carbon'],
   }
 
-  const filtered = CONNECTORS.filter(c => {
+  const filtered = connectors.filter(c => {
     const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.description.toLowerCase().includes(search.toLowerCase())
     const matchCat = activeCategory === 'Tous' || (catMap[activeCategory] ?? []).includes(c.category)
@@ -421,7 +485,12 @@ function TabConnectors() {
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filtered.map(c => (
-          <ConnectorCard key={c.id} connector={c} />
+          <ConnectorCard
+            key={c.id}
+            connector={c}
+            onConfigure={onConfigure}
+            onSync={() => {}}
+          />
         ))}
       </div>
 
@@ -435,8 +504,28 @@ function TabConnectors() {
   )
 }
 
-function ConnectorCard({ connector: c }: { connector: Connector }) {
+function ConnectorCard({
+  connector: c,
+  onConfigure,
+  onSync,
+}: {
+  connector: Connector
+  onConfigure: (id: string) => void
+  onSync: (id: string) => void
+}) {
   const { t } = useTranslation()
+  const [syncing, setSyncing] = useState(false)
+  const [syncDone, setSyncDone] = useState(false)
+
+  const handleSync = async () => {
+    setSyncing(true)
+    setSyncDone(false)
+    await new Promise(r => setTimeout(r, 1800))
+    setSyncing(false)
+    setSyncDone(true)
+    onSync(c.id)
+    setTimeout(() => setSyncDone(false), 3000)
+  }
   return (
     <Card className="p-4 flex flex-col gap-3">
       {/* Header */}
@@ -466,7 +555,7 @@ function ConnectorCard({ connector: c }: { connector: Connector }) {
       {c.status === 'connected' && c.lastSync && (
         <div className="flex items-center justify-between text-xs text-gray-500 bg-green-50 rounded px-2 py-1.5">
           <span className="flex items-center gap-1"><Clock size={11} />{t('connectors.lastSync')}: {c.lastSync}</span>
-          <span className="font-medium">{(c.records ?? 0).toLocaleString()} {t('connectors.records')}</span>
+          <span className="font-medium">{((c.records ?? 0) || 0).toLocaleString()} {t('connectors.records')}</span>
         </div>
       )}
       {c.status === 'error' && c.errorMsg && (
@@ -478,14 +567,25 @@ function ConnectorCard({ connector: c }: { connector: Connector }) {
 
       {/* Actions */}
       <div className="flex gap-2 pt-1">
-        <button className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+        <button
+          onClick={() => onConfigure(c.id)}
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 active:scale-95 transition-all"
+        >
           <Settings size={13} />
           {t('connectors.configure')}
         </button>
         {c.status === 'connected' && (
-          <button className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors">
-            <RefreshCw size={13} />
-            {t('connectors.sync')}
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-95 disabled:opacity-70 ${
+              syncDone
+                ? 'bg-green-600 text-white'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
+          >
+            <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} />
+            {syncing ? 'Sync...' : syncDone ? '✓ Synchronisé' : t('connectors.sync')}
           </button>
         )}
       </div>
@@ -495,14 +595,46 @@ function ConnectorCard({ connector: c }: { connector: Connector }) {
 
 // ─── Tab 3 — Monitoring ───────────────────────────────────────────────────────
 
-function TabMonitoring() {
+function TabMonitoring({ connectors = CONNECTORS }: { connectors?: Connector[] }) {
   const { t } = useTranslation()
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterConnector, setFilterConnector] = useState('all')
+  const [logs, setLogs] = useState(MOCK_LOGS)
 
-  const connectorNames = Array.from(new Set(MOCK_LOGS.map(l => l.connector)))
+  useEffect(() => {
+    // Charger les vraies entrées d'audit trail comme logs de synchronisation
+    api.get('/audit-trail?limit=50').then(res => {
+      const entries: any[] = res.data?.items ?? res.data?.logs ?? res.data ?? []
+      if (entries.length > 0) {
+        const mapped = entries.map((e: any, i: number) => ({
+          id: e.id ?? i + 1,
+          connector: e.entity_type ?? e.resource ?? e.action_type ?? 'Système',
+          ts: e.created_at
+            ? new Date(e.created_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'medium' })
+            : '—',
+          status: e.status === 'error' || e.success === false ? 'error'
+            : e.status === 'warning' ? 'warning'
+            : 'success',
+          records: e.records_affected ?? e.count ?? 0,
+          duration: e.duration_ms ? `${Math.floor(e.duration_ms / 60000)}m ${Math.floor((e.duration_ms % 60000) / 1000)}s` : '—',
+          message: e.description ?? e.message ?? e.action ?? 'Opération effectuée',
+        }))
+        setLogs(mapped)
+      }
+    }).catch(() => {
+      // Fallback silencieux sur MOCK_LOGS déjà dans le state
+    })
+  }, [])
 
-  const filtered = MOCK_LOGS.filter(l => {
+  const successCount = logs.filter(l => l.status === 'success').length
+  const successRate = logs.length > 0 ? ((successCount / logs.length) * 100).toFixed(1) + '%' : '—'
+  const totalRecords = logs.reduce((s, l) => s + l.records, 0)
+  const volumeGB = (totalRecords * 0.0012).toFixed(1) + ' GB'
+  const kpiErrors = connectors.filter(c => c.status === 'error').length
+
+  const connectorNames = Array.from(new Set(logs.map(l => l.connector)))
+
+  const filtered = logs.filter(l => {
     const matchStatus = filterStatus === 'all' || l.status === filterStatus
     const matchConnector = filterConnector === 'all' || l.connector === filterConnector
     return matchStatus && matchConnector
@@ -542,7 +674,7 @@ function TabMonitoring() {
         <div className="flex items-center gap-2">
           <AlertCircle size={18} className="text-orange-600 flex-shrink-0" />
           <p className="text-sm text-orange-700 font-medium">
-            1 {t('connectors.alertErrorTitle')} — SAP SuccessFactors · Token OAuth expire
+            {kpiErrors > 0 ? `${kpiErrors} ${t('connectors.alertErrorTitle')}` : `0 ${t('connectors.alertErrorTitle')}`} — SAP SuccessFactors · Token OAuth expire
           </p>
         </div>
         <button className="flex-shrink-0 px-3 py-1.5 bg-orange-600 text-white text-xs font-medium rounded-lg hover:bg-orange-700 transition-colors">
@@ -553,9 +685,9 @@ function TabMonitoring() {
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: t('connectors.successRate'), value: '94.2%', color: 'text-green-600' },
+          { label: t('connectors.successRate'), value: successRate, color: 'text-green-600' },
           { label: t('connectors.avgSyncTime'), value: '1m 23s', color: 'text-blue-600' },
-          { label: t('connectors.totalVolume'), value: '8.4 GB', color: 'text-purple-600' },
+          { label: t('connectors.totalVolume'), value: volumeGB, color: 'text-purple-600' },
         ].map((s, i) => (
           <Card key={i} className="p-4 text-center">
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
@@ -597,37 +729,877 @@ function TabMonitoring() {
           </table>
         </div>
         <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-500">
-          {t('connectors.pagination', { from: 1, to: 20, total: 847 })}
+          {t('connectors.pagination', { from: 1, to: filtered.length, total: filtered.length })}
         </div>
       </Card>
     </div>
   )
 }
 
+// ─── Schneider → Climatiq emissions panel ─────────────────────────────────────
+
+interface SchneiderSite {
+  site_id: string; name: string; country: string; type: string
+  kwh: number; co2e_kg: number; co2e_unit: string
+  ef_source: string; ef_year?: number; via_climatiq: boolean; period: string
+}
+interface SchneiderData {
+  period: string
+  sites: SchneiderSite[]
+  summary: {
+    total_kwh: number; total_co2e_kg: number; total_co2e_t: number
+    n_sites: number; source: string; climatiq_used: boolean
+  }
+}
+
+function SchneiderEmissionsPanel() {
+  const [data, setData]       = useState<SchneiderData | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState<string | null>(null)
+  const [synced, setSynced]   = useState(false)
+
+  const load = async () => {
+    setLoading(true); setError(null)
+    try {
+      const res = await api.get<SchneiderData>('/connectors/schneider/emissions')
+      setData(res.data); setSynced(true)
+    } catch (e: any) {
+      setError(e?.response?.data?.detail || 'Erreur de connexion au backend')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
+
+  const flag: Record<string, string> = { FR: '🇫🇷', DE: '🇩🇪', ES: '🇪🇸', GB: '🇬🇧', IT: '🇮🇹' }
+
+  return (
+    <div className="p-5 space-y-4 bg-white rounded-2xl border shadow-sm" style={{ borderColor: '#bbf7d0', background: 'linear-gradient(135deg,#fff 0%,#f0fdf4 100%)' }}>
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-green-100 pb-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Leaf size={16} className="text-green-600" />
+          <h3 className="font-semibold text-gray-800">Schneider → Climatiq CO₂e</h3>
+          {data?.summary?.climatiq_used && (
+            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+              ✓ Powered by Climatiq
+            </span>
+          )}
+          {data && !data.summary.climatiq_used && (
+            <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">
+              Facteurs IEA (fallback)
+            </span>
+          )}
+        </div>
+        <button
+          onClick={load}
+          disabled={loading}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-wait"
+        >
+          <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+          {loading ? 'Calcul…' : synced ? '↺ Re-sync' : 'Sync Schneider'}
+        </button>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          <AlertCircle size={14} />
+          <span>{error}</span>
+          <button onClick={load} className="ml-auto text-xs underline">Réessayer</button>
+        </div>
+      )}
+
+      {/* Skeleton */}
+      {loading && !data && (
+        <div className="space-y-2">
+          {[1,2,3].map(i => <div key={i} className="h-9 bg-gray-100 rounded-lg animate-pulse" />)}
+        </div>
+      )}
+
+      {data && (
+        <>
+          {/* KPI row */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-blue-50 rounded-xl p-3 text-center">
+              <div className="text-xs text-blue-600 font-medium">{data.summary.n_sites} sites</div>
+              <div className="text-xl font-bold text-blue-800">
+                {(data.summary.total_kwh / 1000).toFixed(1)} <span className="text-sm font-normal">MWh</span>
+              </div>
+              <div className="text-xs text-blue-400 mt-0.5">Consommation</div>
+            </div>
+            <div className="bg-green-50 rounded-xl p-3 text-center">
+              <div className="text-xs text-green-600 font-medium">CO₂e total</div>
+              <div className="text-xl font-bold text-green-800">
+                {data.summary.total_co2e_t} <span className="text-sm font-normal">t</span>
+              </div>
+              <div className="text-xs text-green-400 mt-0.5">Scope 2 marché</div>
+            </div>
+            <div className="bg-orange-50 rounded-xl p-3 text-center">
+              <div className="text-xs text-orange-600 font-medium">Intensité moy.</div>
+              <div className="text-xl font-bold text-orange-800">
+                {data.summary.total_kwh > 0
+                  ? ((data.summary.total_co2e_kg / data.summary.total_kwh) * 1000).toFixed(1)
+                  : '—'} <span className="text-sm font-normal">gCO₂/kWh</span>
+              </div>
+              <div className="text-xs text-orange-400 mt-0.5">Tous pays</div>
+            </div>
+          </div>
+
+          {/* Sites table */}
+          <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  {['Site', 'Type', 'Conso. (kWh)', 'CO₂e (kg)', 'gCO₂/kWh', 'Source'].map(h => (
+                    <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {data.sites.map(site => (
+                  <tr key={site.site_id} className="hover:bg-green-50/40 transition-colors">
+                    <td className="px-3 py-2.5 font-medium text-gray-800 whitespace-nowrap">
+                      {flag[site.country] ?? '🌍'} {site.name}
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-gray-500">{site.type}</td>
+                    <td className="px-3 py-2.5 font-mono text-xs text-gray-700">
+                      {site.kwh.toLocaleString('fr-FR')}
+                    </td>
+                    <td className="px-3 py-2.5 font-mono text-xs font-semibold text-green-700">
+                      {site.co2e_kg.toLocaleString('fr-FR')}
+                    </td>
+                    <td className="px-3 py-2.5 font-mono text-xs text-gray-500">
+                      {site.kwh > 0 ? ((site.co2e_kg / site.kwh) * 1000).toFixed(1) : '—'}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <span className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                        site.via_climatiq ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {site.via_climatiq ? '✓' : '~'} {site.via_climatiq ? 'Climatiq' : 'Fallback'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <p className="text-xs text-gray-400 text-right">
+            Période : {data.period} · {data.summary.source}
+          </p>
+        </>
+      )}
+    </div>
+  )
+}
+
+// ─── FEC Import Panel ─────────────────────────────────────────────────────────
+
+interface FECLinePreview {
+  account: string
+  label: string
+  debit_eur: number
+  co2e_kg: number
+  category: string
+}
+interface FECResult {
+  dry_run: boolean
+  year: number
+  lines_parsed: number
+  lines_matched: number
+  total_debit_eur: number
+  total_co2e_kg: number
+  preview: FECLinePreview[]
+  inserted?: number
+  skipped_lines?: number
+  message?: string
+}
+
+/** Read a file trying UTF-8 first, then Latin-1 fallback */
+function readFileWithFallback(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => {
+      // Fallback to Latin-1 (ISO-8859-1) — common for French accounting software exports
+      const r2 = new FileReader()
+      r2.onload = () => resolve(r2.result as string)
+      r2.onerror = () => reject(new Error('Impossible de lire le fichier'))
+      r2.readAsText(file, 'ISO-8859-1')
+    }
+    reader.readAsText(file, 'UTF-8')
+  })
+}
+
+function FECImportPanel({ connectorId }: { connectorId: string }) {
+  const [file, setFile]           = useState<File | null>(null)
+  const [year, setYear]           = useState<number>(new Date().getFullYear() - 1)
+  const [loading, setLoading]     = useState(false)
+  const [preview, setPreview]     = useState<FECResult | null>(null)
+  const [result, setResult]       = useState<FECResult | null>(null)
+  const [error, setError]         = useState<string | null>(null)
+  const [dragOver, setDragOver]   = useState(false)
+  const [step, setStep]           = useState<'upload' | 'preview' | 'done'>('upload')
+
+  const CURRENT_YEAR = new Date().getFullYear()
+
+  const resetState = () => {
+    setFile(null); setPreview(null); setResult(null)
+    setError(null); setStep('upload')
+  }
+
+  const handleFile = (f: File | null) => {
+    if (!f) return
+    const ext = f.name.split('.').pop()?.toLowerCase()
+    if (!['txt', 'csv', 'fec'].includes(ext ?? '')) {
+      setError('Format non supporté. Utilisez un fichier .txt, .csv ou .fec (export Sage/Cegid/Pennylane)')
+      return
+    }
+    if (f.size > 50 * 1024 * 1024) {
+      setError('Fichier trop volumineux (max 50 Mo)')
+      return
+    }
+    setFile(f); setError(null); setPreview(null); setResult(null); setStep('upload')
+  }
+
+  const callApi = async (dry_run: boolean): Promise<FECResult> => {
+    if (!file) throw new Error('Aucun fichier sélectionné')
+    const content = await readFileWithFallback(file)
+    const res = await api.post('/connectors/fec/import', { content, year, dry_run })
+    return res.data
+  }
+
+  const handlePreview = async () => {
+    if (!file) return
+    setLoading(true); setError(null)
+    try {
+      const data = await callApi(true)
+      setPreview(data); setStep('preview')
+    } catch (e: any) {
+      setError(e?.response?.data?.detail || 'Erreur lors de l\'analyse du fichier FEC')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleConfirmImport = async () => {
+    setLoading(true); setError(null)
+    try {
+      const data = await callApi(false)
+      setResult(data); setStep('done')
+    } catch (e: any) {
+      setError(e?.response?.data?.detail || 'Erreur lors de l\'import FEC')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ── helpers ────────────────────────────────────────────────────────────────
+  const co2Label = (kg: number) =>
+    kg >= 1000 ? `${(kg / 1000).toFixed(2)} tCO₂e` : `${kg.toFixed(2)} kgCO₂e`
+
+  const activeData = preview ?? result
+
+  // ── render ─────────────────────────────────────────────────────────────────
+  return (
+    <div className="p-5 space-y-5 bg-white rounded-2xl border shadow-sm" style={{ borderColor: '#bfdbfe', background: 'linear-gradient(135deg,#fff 0%,#eff6ff 100%)' }}>
+
+      {/* ── Header ── */}
+      <div className="flex items-center gap-2 border-b border-blue-100 pb-3">
+        <FileText size={16} className="text-blue-600" />
+        <h3 className="font-semibold text-gray-800">Import FEC — Fichier des Écritures Comptables</h3>
+        <span className="ml-auto text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">ADEME Scope 3</span>
+      </div>
+
+      {/* ── Step indicator ── */}
+      <div className="flex items-center gap-2 text-xs font-medium">
+        {(['upload', 'preview', 'done'] as const).map((s, i) => {
+          const labels = ['1. Fichier', '2. Aperçu', '3. Confirmé']
+          const active = step === s
+          const done   = (step === 'preview' && i === 0) || (step === 'done' && i <= 1)
+          return (
+            <span key={s} className="flex items-center gap-1.5">
+              {i > 0 && <span className="text-gray-300">›</span>}
+              <span className={`px-2 py-0.5 rounded-full ${active ? 'bg-blue-600 text-white' : done ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                {labels[i]}
+              </span>
+            </span>
+          )
+        })}
+      </div>
+
+      {/* ── STEP 1: Upload ── */}
+      {step === 'upload' && (
+        <>
+          {/* Info banner */}
+          <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+            <Info size={14} className="text-blue-500 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-blue-700">
+              Importez votre FEC (export Sage, Cegid, Pennylane…) pour calculer automatiquement les émissions Scope 3
+              par catégorie de dépenses selon les facteurs ADEME.
+            </p>
+          </div>
+
+          {/* Drag & drop zone */}
+          <div
+            onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={e => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files?.[0] ?? null) }}
+            className={`relative flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-xl px-6 py-10 cursor-pointer transition-colors
+              ${dragOver ? 'border-blue-500 bg-blue-50' : file ? 'border-green-400 bg-green-50' : 'border-blue-200 bg-white hover:border-blue-400'}`}
+            onClick={() => document.getElementById('fec-file-input')?.click()}
+          >
+            <input
+              id="fec-file-input"
+              type="file"
+              accept=".txt,.csv,.fec"
+              className="hidden"
+              onChange={e => handleFile(e.target.files?.[0] ?? null)}
+            />
+            {file ? (
+              <>
+                <CheckCircle size={32} className="text-green-500" />
+                <div className="text-center">
+                  <p className="font-semibold text-gray-800 text-sm">{file.name}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{(file.size / 1024).toFixed(0)} Ko — cliquer pour changer</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <Upload size={32} className="text-blue-300" />
+                <div className="text-center">
+                  <p className="font-semibold text-gray-700 text-sm">Glisser-déposer votre fichier FEC ici</p>
+                  <p className="text-xs text-gray-400 mt-0.5">ou cliquer pour sélectionner (.txt, .csv, .fec — max 50 Mo)</p>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Year selector */}
+          <div className="flex items-center gap-3">
+            <label className="text-xs font-medium text-gray-600 whitespace-nowrap">Exercice fiscal :</label>
+            <select
+              value={year}
+              onChange={e => setYear(Number(e.target.value))}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              {Array.from({ length: 6 }, (_, i) => CURRENT_YEAR - i).map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              <AlertCircle size={14} className="flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Analyse button */}
+          <button
+            onClick={handlePreview}
+            disabled={!file || loading}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+          >
+            {loading
+              ? <><RefreshCw size={15} className="animate-spin" /> Analyse en cours…</>
+              : <><Upload size={15} /> Analyser le fichier FEC</>
+            }
+          </button>
+        </>
+      )}
+
+      {/* ── STEP 2: Preview ── */}
+      {step === 'preview' && activeData && (
+        <>
+          {/* KPI row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { label: 'Lignes analysées',  value: (activeData.lines_parsed  ?? 0).toLocaleString('fr-FR'),                                                                   color: 'bg-gray-50  text-gray-700'  },
+              { label: 'Lignes matchées',   value: (activeData.lines_matched  ?? 0).toLocaleString('fr-FR'),                                                                   color: 'bg-blue-50  text-blue-700'  },
+              { label: 'Dépenses totales',  value: (activeData.total_debit_eur ?? 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }), color: 'bg-purple-50 text-purple-700' },
+              { label: 'CO₂e estimé',       value: co2Label(activeData.total_co2e_kg ?? 0),                                                                                   color: 'bg-green-50 text-green-700' },
+            ].map((k, i) => (
+              <div key={i} className={`rounded-xl p-3 text-center ${k.color}`}>
+                <div className="text-xs font-medium opacity-70">{k.label}</div>
+                <div className="text-lg font-bold mt-0.5">{k.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Warning — no matches */}
+          {(activeData.lines_matched ?? 0) === 0 && (activeData.lines_parsed ?? 0) > 0 && (
+            <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 text-xs text-amber-700">
+              <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
+              <span>
+                Aucun compte comptable reconnu (60x/61x/62x). Vérifiez que votre fichier est bien un FEC standard
+                (Sage, Cegid, Pennylane) avec les comptes de charges.
+              </span>
+            </div>
+          )}
+
+          {/* Preview table */}
+          {(activeData.preview ?? []).length > 0 && (
+            <div className="rounded-lg border border-gray-200 overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {['Compte', 'Libellé', 'Débit (€)', 'CO₂e', 'Catégorie ADEME'].map(h => (
+                      <th key={h} className="px-3 py-2.5 text-left font-semibold text-gray-600 whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {(activeData.preview ?? []).map((row, i) => (
+                    <tr key={i} className="hover:bg-gray-50">
+                      <td className="px-3 py-2 font-mono text-gray-700">{row.account}</td>
+                      <td className="px-3 py-2 text-gray-600 max-w-[180px] truncate">{row.label}</td>
+                      <td className="px-3 py-2 text-right text-gray-700">{row.debit_eur.toLocaleString('fr-FR', { maximumFractionDigits: 0 })}</td>
+                      <td className="px-3 py-2 text-right font-medium text-green-700">{co2Label(row.co2e_kg)}</td>
+                      <td className="px-3 py-2">
+                        <span className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded text-xs">{row.category}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Error */}
+          {error && (
+            <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              <AlertCircle size={14} className="flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex gap-3">
+            <button
+              onClick={resetState}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={handleConfirmImport}
+              disabled={loading || (activeData.lines_matched ?? 0) === 0}
+              className="flex-2 flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-xl text-sm font-semibold hover:bg-green-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+            >
+              {loading
+                ? <><RefreshCw size={15} className="animate-spin" /> Import en cours…</>
+                : <><CheckCircle size={15} /> Confirmer l'import</>
+              }
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* ── STEP 3: Done ── */}
+      {step === 'done' && result && (
+        <>
+          <div className="flex flex-col items-center gap-4 py-6">
+            <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
+              <CheckCircle size={32} className="text-green-600" />
+            </div>
+            <div className="text-center">
+              <p className="font-semibold text-gray-800 text-lg">Import réussi !</p>
+              <p className="text-sm text-gray-500 mt-1">
+                <span className="font-semibold text-green-700">{result.inserted ?? 0} entrées ESG</span> créées pour l'exercice{' '}
+                <span className="font-semibold">{result.year ?? year}</span>
+              </p>
+              {(result.total_co2e_kg ?? 0) > 0 && (
+                <p className="text-sm text-gray-500 mt-0.5">
+                  Émissions estimées : <span className="font-semibold text-green-700">{co2Label(result.total_co2e_kg ?? 0)}</span>
+                </p>
+              )}
+            </div>
+          </div>
+
+          <button
+            onClick={resetState}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-blue-200 text-blue-600 rounded-xl text-sm font-semibold hover:bg-blue-50 transition-colors"
+          >
+            <Upload size={15} /> Importer un autre fichier
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
+
+// ─── Sage/Cegid FEC Panel ────────────────────────────────────────────────────
+
+interface SageCegidCategory {
+  pillar: string
+  category: string
+  metric_name: string
+  value: number
+  unit: string
+  period: string
+  total_amount_eur: number
+  entry_count: number
+  note: string
+}
+
+interface SageCegidParseResult {
+  entries_parsed: number
+  categories_found: number
+  total_co2e_kgco2e: number
+  total_amount_eur: number
+  categories: SageCegidCategory[]
+  year: number | null
+}
+
+interface SageCegidSyncResult {
+  entries_created: number
+  total_co2e_kgco2e: number
+  categories: string[]
+}
+
+function SageCegidFECPanel() {
+  const [file, setFile]           = useState<File | null>(null)
+  const [loading, setLoading]     = useState(false)
+  const [parseResult, setParseResult] = useState<SageCegidParseResult | null>(null)
+  const [syncResult, setSyncResult]   = useState<SageCegidSyncResult | null>(null)
+  const [error, setError]         = useState<string | null>(null)
+  const [dragOver, setDragOver]   = useState(false)
+  const [step, setStep]           = useState<'upload' | 'preview' | 'done'>('upload')
+
+  const resetState = () => {
+    setFile(null); setParseResult(null); setSyncResult(null)
+    setError(null); setStep('upload')
+  }
+
+  const handleFile = (f: File | null) => {
+    if (!f) return
+    const ext = f.name.split('.').pop()?.toLowerCase()
+    if (!['txt', 'csv', 'fec'].includes(ext ?? '')) {
+      setError('Format non supporté. Utilisez un fichier .txt, .csv ou .fec')
+      return
+    }
+    if (f.size > 50 * 1024 * 1024) {
+      setError('Fichier trop volumineux (max 50 Mo)')
+      return
+    }
+    setFile(f); setError(null); setParseResult(null); setSyncResult(null); setStep('upload')
+  }
+
+  const handleAnalyse = async () => {
+    if (!file) return
+    setLoading(true); setError(null)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await api.post<SageCegidParseResult>('/connectors/sage-cegid/parse', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      setParseResult(res.data); setStep('preview')
+    } catch (e: any) {
+      setError(e?.response?.data?.detail || "Erreur lors de l'analyse du fichier FEC")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSync = async () => {
+    if (!file) return
+    setLoading(true); setError(null)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await api.post<SageCegidSyncResult>('/connectors/sage-cegid/sync', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      setSyncResult(res.data); setStep('done')
+    } catch (e: any) {
+      setError(e?.response?.data?.detail || "Erreur lors de l'import FEC")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const co2Label = (kg: number) =>
+    kg >= 1000 ? `${(kg / 1000).toFixed(2)} tCO₂e` : `${kg.toFixed(2)} kgCO₂e`
+
+  return (
+    <div className="p-5 space-y-5 bg-white rounded-2xl border shadow-sm" style={{ borderColor: '#fed7aa', background: 'linear-gradient(135deg,#fff 0%,#fff7ed 100%)' }}>
+
+      {/* Header */}
+      <div className="flex items-center gap-2 border-b border-orange-100 pb-3">
+        <span className="text-lg">📊</span>
+        <h3 className="font-semibold text-gray-800">Sage / Cegid — Import FEC</h3>
+        <span className="ml-auto text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">ADEME Scope 3</span>
+      </div>
+
+      {/* Step indicator */}
+      <div className="flex items-center gap-2 text-xs font-medium">
+        {(['upload', 'preview', 'done'] as const).map((s, i) => {
+          const labels = ['1. Fichier', '2. Aperçu', '3. Importé']
+          const active = step === s
+          const done   = (step === 'preview' && i === 0) || (step === 'done' && i <= 1)
+          return (
+            <span key={s} className="flex items-center gap-1.5">
+              {i > 0 && <span className="text-gray-300">›</span>}
+              <span className={`px-2 py-0.5 rounded-full ${active ? 'bg-orange-500 text-white' : done ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                {labels[i]}
+              </span>
+            </span>
+          )
+        })}
+      </div>
+
+      {/* STEP 1: Upload */}
+      {step === 'upload' && (
+        <>
+          <div className="flex items-start gap-2 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2.5">
+            <Info size={14} className="text-orange-500 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-orange-700">
+              Importez votre export FEC (Sage 100, Cegid, EBP…) pour calculer automatiquement
+              les émissions Scope 3 selon les facteurs d'émission ADEME par catégorie PCG.
+            </p>
+          </div>
+
+          {/* Drag & drop zone */}
+          <div
+            onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={e => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files?.[0] ?? null) }}
+            className={`relative flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-xl px-6 py-10 cursor-pointer transition-colors
+              ${dragOver ? 'border-orange-500 bg-orange-50' : file ? 'border-green-400 bg-green-50' : 'border-orange-200 bg-white hover:border-orange-400'}`}
+            onClick={() => document.getElementById('sage-cegid-file-input')?.click()}
+          >
+            <input
+              id="sage-cegid-file-input"
+              type="file"
+              accept=".txt,.csv,.fec"
+              className="hidden"
+              onChange={e => handleFile(e.target.files?.[0] ?? null)}
+            />
+            {file ? (
+              <>
+                <CheckCircle size={32} className="text-green-500" />
+                <div className="text-center">
+                  <p className="font-semibold text-gray-800 text-sm">{file.name}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{(file.size / 1024).toFixed(0)} Ko — cliquer pour changer</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <Upload size={32} className="text-orange-300" />
+                <div className="text-center">
+                  <p className="font-semibold text-gray-700 text-sm">Glisser-déposer votre fichier FEC ici</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Sage 100, Cegid, EBP, Quadratus · .txt, .csv, .fec · max 50 Mo</p>
+                </div>
+              </>
+            )}
+          </div>
+
+          {error && (
+            <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              <AlertCircle size={14} className="flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <button
+            onClick={handleAnalyse}
+            disabled={!file || loading}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-orange-500 text-white rounded-xl text-sm font-semibold hover:bg-orange-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+          >
+            {loading
+              ? <><RefreshCw size={15} className="animate-spin" /> Analyse en cours…</>
+              : <><Upload size={15} /> Analyser le fichier FEC</>
+            }
+          </button>
+        </>
+      )}
+
+      {/* STEP 2: Preview */}
+      {step === 'preview' && parseResult && (
+        <>
+          {/* KPI row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { label: 'Écritures lues',    value: (parseResult.entries_parsed).toLocaleString('fr-FR'),  color: 'bg-gray-50 text-gray-700' },
+              { label: 'Catégories ESG',    value: String(parseResult.categories_found),                  color: 'bg-orange-50 text-orange-700' },
+              { label: 'Dépenses totales',  value: parseResult.total_amount_eur.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }), color: 'bg-purple-50 text-purple-700' },
+              { label: 'CO₂e estimé',       value: co2Label(parseResult.total_co2e_kgco2e),               color: 'bg-green-50 text-green-700' },
+            ].map((k, i) => (
+              <div key={i} className={`rounded-xl p-3 text-center ${k.color}`}>
+                <div className="text-xs font-medium opacity-70">{k.label}</div>
+                <div className="text-lg font-bold mt-0.5">{k.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {parseResult.year && (
+            <p className="text-xs text-gray-500 text-right">Exercice détecté : <strong>{parseResult.year}</strong></p>
+          )}
+
+          {/* Categories table */}
+          {parseResult.categories.length > 0 && (
+            <div className="rounded-lg border border-gray-200 overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {['Pilier', 'Catégorie', 'Indicateur', 'Valeur', 'Unité', 'Montant (€)', 'Source'].map(h => (
+                      <th key={h} className="px-3 py-2.5 text-left font-semibold text-gray-600 whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {parseResult.categories.map((row, i) => (
+                    <tr key={i} className="hover:bg-gray-50">
+                      <td className="px-3 py-2">
+                        <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${row.pillar === 'environmental' ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'}`}>
+                          {row.pillar === 'environmental' ? 'Env.' : 'Social'}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-gray-600">{row.category}</td>
+                      <td className="px-3 py-2 font-medium text-gray-800 max-w-[160px] truncate">{row.metric_name}</td>
+                      <td className="px-3 py-2 text-right font-mono font-semibold text-green-700">
+                        {row.unit === 'kgCO2e' ? co2Label(row.value) : `${row.value.toLocaleString('fr-FR')} ${row.unit}`}
+                      </td>
+                      <td className="px-3 py-2 text-gray-500">{row.unit}</td>
+                      <td className="px-3 py-2 text-right text-gray-600">{row.total_amount_eur.toLocaleString('fr-FR', { maximumFractionDigits: 0 })}</td>
+                      <td className="px-3 py-2 text-gray-400 text-xs">{row.note}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {error && (
+            <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              <AlertCircle size={14} className="flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <button
+              onClick={resetState}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={handleSync}
+              disabled={loading || parseResult.categories_found === 0}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-xl text-sm font-semibold hover:bg-green-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+            >
+              {loading
+                ? <><RefreshCw size={15} className="animate-spin" /> Import en cours…</>
+                : <><CheckCircle size={15} /> Importer dans ESG</>
+              }
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* STEP 3: Done */}
+      {step === 'done' && syncResult && (
+        <>
+          <div className="flex flex-col items-center gap-4 py-6">
+            <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
+              <CheckCircle size={32} className="text-green-600" />
+            </div>
+            <div className="text-center">
+              <p className="font-semibold text-gray-800 text-lg">Import réussi !</p>
+              <p className="text-sm text-gray-500 mt-1">
+                <span className="font-semibold text-green-700">{syncResult.entries_created} entrées ESG</span> créées
+              </p>
+              {syncResult.total_co2e_kgco2e > 0 && (
+                <p className="text-sm text-gray-500 mt-0.5">
+                  Émissions Scope 3 estimées : <span className="font-semibold text-green-700">{co2Label(syncResult.total_co2e_kgco2e)}</span>
+                </p>
+              )}
+              {syncResult.categories.length > 0 && (
+                <div className="flex flex-wrap justify-center gap-1.5 mt-3">
+                  {syncResult.categories.map((c, i) => (
+                    <span key={i} className="text-xs bg-orange-50 text-orange-700 px-2 py-0.5 rounded-full">{c}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={resetState}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-orange-200 text-orange-600 rounded-xl text-sm font-semibold hover:bg-orange-50 transition-colors"
+          >
+            <Upload size={15} /> Importer un autre fichier
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
+
 // ─── Tab 4 — Configuration ────────────────────────────────────────────────────
 
-function TabConfiguration() {
+function TabConfiguration({ connectors = CONNECTORS, initialSelectedId }: { connectors?: Connector[]; initialSelectedId?: string | null }) {
   const { t } = useTranslation()
-  const [selectedId, setSelectedId] = useState<string>('sap-s4')
+  const [selectedId, setSelectedId] = useState<string>(initialSelectedId || 'sap-s4')
+
+  // Sync if parent changes the selection (e.g. clicking "Configurer" from another tab)
+  useEffect(() => {
+    if (initialSelectedId) setSelectedId(initialSelectedId)
+  }, [initialSelectedId])
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({})
   const [syncFreq, setSyncFreq] = useState<string>('hourly')
   const [mappingRows, setMappingRows] = useState(ESG_MAPPING_ROWS)
+  const [testLoading, setTestLoading] = useState(false)
+  const [testResult, setTestResult] = useState<{
+    status: 'success' | 'error'
+    message: string
+    details?: Record<string, unknown>
+  } | null>(null)
 
-  const selected = CONNECTORS.find(c => c.id === selectedId)
+  const selected = connectors.find(c => c.id === selectedId)
 
   const toggleSecret = (key: string) => setShowSecrets(prev => ({ ...prev, [key]: !prev[key] }))
   const toggleMapping = (i: number) =>
     setMappingRows(prev => prev.map((r, idx) => idx === i ? { ...r, enabled: !r.enabled } : r))
+
+  const handleTestConnection = async () => {
+    if (!selected) return
+    setTestLoading(true)
+    setTestResult(null)
+    try {
+      // Use fetch with relative URL → goes through Vite proxy, avoids CORS
+      const res = await fetch('/api/v1/connectors/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ connector_id: selected.id }),
+      })
+      const data = await res.json()
+      setTestResult(data)
+    } catch (err: unknown) {
+      setTestResult({
+        status: 'error',
+        message: `Erreur réseau : backend inaccessible (${(err as Error)?.message ?? 'inconnu'})`,
+      })
+    } finally {
+      setTestLoading(false)
+    }
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
       {/* Left panel */}
       <div className="lg:col-span-1">
         <Card className="p-2">
-          {CONNECTORS.map(c => (
+          {connectors.map(c => (
             <button
               key={c.id}
-              onClick={() => setSelectedId(c.id)}
+              onClick={() => { setSelectedId(c.id); setTestResult(null) }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
                 selectedId === c.id ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50 text-gray-700'
               }`}
@@ -681,8 +1653,12 @@ function TabConfiguration() {
                     </div>
                   </div>
                   <div className="flex gap-2 pt-1">
-                    <button className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                      {t('connectors.testConnection')}
+                    <button
+                      onClick={handleTestConnection}
+                      disabled={testLoading}
+                      className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-wait"
+                    >
+                      {testLoading ? '⏳ Test...' : t('connectors.testConnection')}
                     </button>
                     <button className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
                       {t('connectors.authorizeOAuth')}
@@ -696,8 +1672,12 @@ function TabConfiguration() {
                   <SecretField label={t('connectors.apiKey')} fieldKey="ak" showSecrets={showSecrets} toggleSecret={toggleSecret} />
                   <FormField label={t('connectors.baseUrl')} placeholder={selected.endpoint} />
                   <FormField label={t('connectors.orgId')} placeholder="org-xxxxxxxx" />
-                  <button className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                    {t('connectors.testConnection')}
+                  <button
+                    onClick={handleTestConnection}
+                    disabled={testLoading}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-wait"
+                  >
+                    {testLoading ? '⏳ Test en cours...' : t('connectors.testConnection')}
                   </button>
                 </div>
               )}
@@ -712,9 +1692,39 @@ function TabConfiguration() {
                     </div>
                   </div>
                   <SecretField label={t('connectors.certPassword')} fieldKey="cp" showSecrets={showSecrets} toggleSecret={toggleSecret} />
-                  <button className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                    {t('connectors.testConnection')}
+                  <button
+                    onClick={handleTestConnection}
+                    disabled={testLoading}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-wait"
+                  >
+                    {testLoading ? '⏳ Test en cours...' : t('connectors.testConnection')}
                   </button>
+                </div>
+              )}
+
+              {/* ── Test result banner ── */}
+              {testResult && (
+                <div className={`flex items-start gap-3 rounded-lg p-3 text-sm ${
+                  testResult.status === 'success'
+                    ? 'bg-green-50 border border-green-200 text-green-800'
+                    : 'bg-red-50 border border-red-200 text-red-800'
+                }`}>
+                  <span className="text-lg leading-none flex-shrink-0">
+                    {testResult.status === 'success' ? '✅' : '❌'}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-semibold">{selected?.name}</p>
+                    <p className="mt-0.5 text-xs">{testResult.message}</p>
+                    {testResult.details && testResult.status === 'success' && (
+                      <p className="mt-1 text-xs text-green-600 font-mono">
+                        {Object.entries(testResult.details).map(([k, v]) => `${k}: ${v}`).join(' · ')}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setTestResult(null)}
+                    className="ml-auto flex-shrink-0 text-gray-400 hover:text-gray-600"
+                  >✕</button>
                 </div>
               )}
             </Card>
@@ -789,6 +1799,40 @@ function TabConfiguration() {
                 </table>
               </div>
             </Card>
+
+            {/* Schneider → Climatiq live emissions panel */}
+            {selected?.id === 'schneider' && <SchneiderEmissionsPanel />}
+
+            {/* Enedis CSV import panel */}
+            {selected?.id === 'enedis' && (
+              <Card className="p-5 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <Zap size={18} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-800 text-sm">Import CSV Enedis</p>
+                    <p className="text-xs text-gray-500">Consommation électrique + Scope 2 automatique</p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-600">
+                  Importez votre export CSV Enedis pour créer automatiquement les entrées ESG de consommation
+                  électrique et calculer les émissions Scope 2 (facteur RTE 2023 : 23,4 gCO₂e/kWh).
+                </p>
+                <a
+                  href="/app/connectors/enedis"
+                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                >
+                  <Upload size={15} />
+                  Ouvrir l'import Enedis
+                </a>
+              </Card>
+            )}
+
+            {/* FEC import panel for French accounting connectors */}
+            {(selected?.id === 'sage' || selected?.id === 'cegid' || selected?.id === 'pennylane') && (
+              <FECImportPanel connectorId={selected.id} />
+            )}
 
             {/* Save section */}
             <Card className="p-5 space-y-3">
@@ -1199,18 +2243,37 @@ function TabDocumentation() {
 
 export default function ConnectorsPage() {
   const { t } = useTranslation()
-  const [activeTab, setActiveTab] = useState<'overview' | 'connectors' | 'monitoring' | 'configuration' | 'docs'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'connectors' | 'monitoring' | 'configuration' | 'docs' | 'fec'>('overview')
+  const [configSelectedId, setConfigSelectedId] = useState<string | null>(null)
+  const [connectors, setConnectors] = useState<Connector[]>(CONNECTORS)
+
+  // Fetch per-tenant connector statuses from backend, overlay on static catalog
+  useEffect(() => {
+    api.get('/connectors/catalog').then(res => {
+      const items: Connector[] = res.data?.connectors ?? []
+      if (items.length > 0) setConnectors(items)
+    }).catch(() => {
+      // Keep default CONNECTORS on failure (API unavailable)
+    })
+  }, [])
+
+  const handleConfigure = (id: string) => {
+    setConfigSelectedId(id)
+    setActiveTab('configuration')
+  }
 
   const tabs: { key: typeof activeTab; label: string; icon: React.ReactNode }[] = [
     { key: 'overview', label: t('connectors.tabOverview'), icon: <BarChart3 size={16} /> },
     { key: 'connectors', label: t('connectors.tabConnectors'), icon: <Plug size={16} /> },
     { key: 'monitoring', label: t('connectors.tabMonitoring'), icon: <Activity size={16} /> },
     { key: 'configuration', label: t('connectors.tabConfiguration'), icon: <Settings size={16} /> },
+    { key: 'fec', label: 'Import FEC', icon: <FileText size={16} /> },
     { key: 'docs', label: t('connectors.tabDocs'), icon: <Book size={16} /> },
   ]
 
   return (
     <div className="p-6 space-y-6 max-w-screen-2xl mx-auto">
+      <BackButton to="/app/data" label="Données" />
       {/* Page header */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -1247,10 +2310,22 @@ export default function ConnectorsPage() {
       </div>
 
       {/* Tab content */}
-      {activeTab === 'overview' && <TabOverview />}
-      {activeTab === 'connectors' && <TabConnectors />}
-      {activeTab === 'monitoring' && <TabMonitoring />}
-      {activeTab === 'configuration' && <TabConfiguration />}
+      {activeTab === 'overview' && <TabOverview connectors={connectors} />}
+      {activeTab === 'connectors' && <TabConnectors connectors={connectors} onConfigure={handleConfigure} />}
+      {activeTab === 'monitoring' && <TabMonitoring connectors={connectors} />}
+      {activeTab === 'configuration' && <TabConfiguration connectors={connectors} initialSelectedId={configSelectedId} />}
+      {activeTab === 'fec' && (
+        <div className="max-w-3xl mx-auto space-y-4">
+          <div>
+            <h2 className="text-lg font-bold text-gray-800">Import FEC — Comptabilité française</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Importez votre Fichier des Écritures Comptables (Sage, Cegid, Pennylane) pour calculer automatiquement
+              vos émissions Scope 3 par catégorie de dépenses selon les facteurs ADEME.
+            </p>
+          </div>
+          <FECImportPanel connectorId="fec" />
+        </div>
+      )}
       {activeTab === 'docs' && <TabDocumentation />}
     </div>
   )

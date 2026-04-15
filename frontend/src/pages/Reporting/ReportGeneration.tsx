@@ -18,10 +18,10 @@ import {
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import Spinner from '@/components/common/Spinner';
+import BackButton from '@/components/common/BackButton';
 import api from '@/services/api';
-import { generateConsistentScores, generateEvolutionData } from '@/utils/mockScores';
+import { getOrgLatestScore, getOrgScores } from '@/services/esgScoringService';
 import { generateExcel, generateWord } from '@/utils/reportGenerator';
-import { jsPDF } from 'jspdf';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
@@ -45,6 +45,7 @@ async function generatePdfReport(reportData: {
   type: ReportType;
   generatedAt: string;
 }) {
+  const { jsPDF } = await import('jspdf');
   const doc = new jsPDF();
   const generatedDate = format(new Date(reportData.generatedAt), 'dd/MM/yyyy HH:mm');
   const start = format(new Date(reportData.period.start), 'dd/MM/yyyy');
@@ -191,23 +192,43 @@ export default function ReportGeneration() {
         return;
       }
 
-      const scores = generateConsistentScores(selectedOrg);
-      const evolution = generateEvolutionData(selectedOrg, 12);
+      // Charge les vrais scores depuis l'API
+      const [latestScore, scoreHistory] = await Promise.all([
+        getOrgLatestScore(selectedOrg),
+        getOrgScores(selectedOrg, 12),
+      ]);
+
+      const MONTHS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+      const evolution = [...scoreHistory].reverse().map((s) => ({
+        month: MONTHS[new Date(s.date).getMonth()],
+        overall: s.overall_score,
+        environmental: s.environmental_score,
+        social: s.social_score,
+        governance: s.governance_score,
+      }));
 
       const reportData = {
         organization: org,
-        scores: scores,
-        evolution: evolution,
+        scores: latestScore ? {
+          overall: latestScore.overall_score,
+          environmental: latestScore.environmental_score,
+          social: latestScore.social_score,
+          governance: latestScore.governance_score,
+          rating: latestScore.rating,
+          trend: 0,
+          data_completeness: latestScore.data_completeness ?? 0,
+        } : {
+          overall: 0, environmental: 0, social: 0,
+          governance: 0, rating: '—', trend: 0, data_completeness: 0,
+        },
+        evolution,
         period: { start: startDate, end: endDate },
         type: reportType,
-        generatedAt: new Date().toISOString()
+        generatedAt: new Date().toISOString(),
       };
 
       const progressToast = toast.loading(t('reporting.generatingProgress'));
-
       await new Promise(resolve => setTimeout(resolve, 1500));
-
-      console.log('Generating report format:', reportFormat);
 
       switch (reportFormat) {
         case 'pdf':
@@ -286,6 +307,7 @@ export default function ReportGeneration() {
 
   return (
     <div className="space-y-6">
+      <BackButton to="/app/reports" label="Rapports" />
       {/* Header */}
       <div className="rounded-3xl border border-gray-200 bg-gradient-to-r from-slate-900 via-slate-800 to-primary-700 p-8 text-white shadow-sm">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -600,7 +622,7 @@ export default function ReportGeneration() {
             <Button
               variant="secondary"
               className="w-full mb-3"
-              onClick={() => navigate('/reports')}
+              onClick={() => navigate('/app/reports/list')}
             >
               <FileText className="h-5 w-5 mr-2" />
               {t('reporting.viewReports')}
@@ -609,7 +631,7 @@ export default function ReportGeneration() {
             <Button
               variant="secondary"
               className="w-full"
-              onClick={() => navigate('/reports/scheduled')}
+              onClick={() => navigate('/app/reports/scheduled')}
             >
               <Calendar className="h-5 w-5 mr-2" />
               {t('reporting.scheduledReports')}

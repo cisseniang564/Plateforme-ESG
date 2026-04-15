@@ -5,6 +5,7 @@ import { Download, Eye, FileText, CheckCircle, AlertCircle } from 'lucide-react'
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import Spinner from '@/components/common/Spinner';
+import BackButton from '@/components/common/BackButton';
 import api from '@/services/api';
 import toast from 'react-hot-toast';
 
@@ -33,14 +34,6 @@ export default function ReportGeneration() {
   const [generating, setGenerating] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const [previewData, setPreviewData] = useState<any>(null);
-
-  const MOCK_PREVIEW: Record<string, any> = {
-    executive:  { data_points: { environmental: 12, social: 9, governance: 7 }, stats: { total_entries: 28 } },
-    detailed:   { data_points: { environmental: 34, social: 27, governance: 19 }, stats: { total_entries: 80 } },
-    csrd:       { data_points: { environmental: 42, social: 31, governance: 24 }, stats: { total_entries: 97 } },
-    gri:        { data_points: { environmental: 38, social: 25, governance: 18 }, stats: { total_entries: 81 } },
-    tcfd:       { data_points: { environmental: 29, social: 14, governance: 11 }, stats: { total_entries: 54 } },
-  };
 
   const getTypeName = (id: string) => {
     const map: Record<string, string> = {
@@ -80,8 +73,16 @@ export default function ReportGeneration() {
     try {
       const response = await api.get(`/reports/preview/${selectedType}?year=${year}`);
       setPreviewData(response.data);
-    } catch {
-      setPreviewData(MOCK_PREVIEW[selectedType] || MOCK_PREVIEW.executive);
+    } catch (err: any) {
+      console.error('Preview error:', err);
+      // Return empty but valid structure so UI shows "0 données"
+      setPreviewData({
+        report_type: selectedType,
+        year,
+        data_points: { environmental: 0, social: 0, governance: 0 },
+        stats: { total_entries: 0 },
+        data_available: false,
+      });
     } finally {
       setPreviewing(false);
     }
@@ -126,6 +127,7 @@ export default function ReportGeneration() {
 
   return (
     <div className="space-y-6">
+      <BackButton to="/app/reports" label="Rapports" />
       {/* Header */}
       <div className="bg-gradient-to-br from-green-600 to-emerald-700 rounded-2xl p-8 text-white shadow-xl">
         <div className="flex items-center gap-4">
@@ -281,28 +283,38 @@ export default function ReportGeneration() {
                 {previewData && (
                   <>
                     <hr className="my-4" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-600 mb-2">{t('reporting.includedData')}:</p>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>{t('reporting.environmental')}</span>
-                          <span className="font-semibold">{previewData.data_points.environmental}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>{t('reporting.social')}</span>
-                          <span className="font-semibold">{previewData.data_points.social}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>{t('reporting.governance')}</span>
-                          <span className="font-semibold">{previewData.data_points.governance}</span>
-                        </div>
-                        <hr />
-                        <div className="flex justify-between font-bold">
-                          <span>{t('common.total')}</span>
-                          <span>{previewData.stats.total_entries}</span>
+                    {previewData.data_available === false && previewData.stats.total_entries === 0 ? (
+                      <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+                        <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-amber-800">{t('reporting.noDataTitle') || 'Aucune donnée pour cette période'}</p>
+                          <p className="text-xs text-amber-600 mt-0.5">{t('reporting.noDataHint') || 'Saisissez des données dans "Saisie de données" puis relancez l\'aperçu.'}</p>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div>
+                        <p className="text-sm font-medium text-gray-600 mb-2">{t('reporting.includedData')}:</p>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>{t('reporting.environmental')}</span>
+                            <span className="font-semibold">{previewData.data_points.environmental}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>{t('reporting.social')}</span>
+                            <span className="font-semibold">{previewData.data_points.social}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>{t('reporting.governance')}</span>
+                            <span className="font-semibold">{previewData.data_points.governance}</span>
+                          </div>
+                          <hr />
+                          <div className="flex justify-between font-bold">
+                            <span>{t('common.total')}</span>
+                            <span>{previewData.stats.total_entries}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
               </div>

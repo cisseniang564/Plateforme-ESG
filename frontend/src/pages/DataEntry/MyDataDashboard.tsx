@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import BackButton from '@/components/common/BackButton';
 import {
   Database,
   Search,
@@ -197,6 +198,7 @@ export default function MyDataDashboard() {
 
   return (
     <div className="space-y-6">
+      <BackButton to="/app/data" label="Données" />
       {/* Header */}
       <div className="bg-gradient-to-br from-cyan-600 to-blue-700 rounded-2xl p-8 text-white shadow-xl">
         <div className="flex items-center justify-between">

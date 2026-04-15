@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Spinner from '@/components/common/Spinner';
+import BackButton from '@/components/common/BackButton';
 import api from '@/services/api';
 
 interface UploadItem {
@@ -66,10 +67,17 @@ function MetricCard({ metric }: { metric: QualityMetric }) {
   );
 }
 
+interface EntryStats {
+  total: number;
+  by_pillar: Record<string, number>;
+  by_verification_status: Record<string, number>;
+}
+
 export default function DataQuality() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [uploads, setUploads] = useState<UploadItem[]>([]);
+  const [entryStats, setEntryStats] = useState<EntryStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { loadData(); }, []);
@@ -77,8 +85,12 @@ export default function DataQuality() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/data/uploads', { params: { page_size: 100 } });
-      setUploads(response.data.items || []);
+      const [uploadsRes, statsRes] = await Promise.all([
+        api.get('/data/uploads', { params: { page_size: 100 } }),
+        api.get('/data-entry/stats').catch(() => ({ data: null })),
+      ]);
+      setUploads(uploadsRes.data.items || []);
+      if (statsRes.data) setEntryStats(statsRes.data);
     } catch (error) {
       console.error('Error loading quality data:', error);
     } finally {
@@ -99,7 +111,15 @@ export default function DataQuality() {
   const consistencyScore = uploads.length > 0
     ? Math.round((completedCount / uploads.length) * 100)
     : 0;
-  const coverageScore = uploads.length > 0 ? Math.min(100, uploads.length * 10) : 0;
+  // Coverage: how many ESRS pillars have data-entry records (0/3, 1/3, 2/3, 3/3 → 0/33/67/100%)
+  const pillarsWithData = entryStats
+    ? Object.values(entryStats.by_pillar).filter(v => v > 0).length
+    : (uploads.length > 0 ? 3 : 0);
+  const coverageScore = Math.round((pillarsWithData / 3) * 100);
+  // Verification: % of entries that are verified (all pending → 0%)
+  const verifiedCount = entryStats?.by_verification_status?.['verified'] ?? 0;
+  const totalEntries = entryStats?.total ?? 0;
+  const verificationScore = totalEntries > 0 ? Math.round((verifiedCount / totalEntries) * 100) : 0;
 
   const globalScore = Math.round((completenessScore + accuracyScore + consistencyScore + coverageScore) / 4);
   const globalStatus = getStatus(globalScore);
@@ -125,10 +145,20 @@ export default function DataQuality() {
       desc: t('data.quality.consistencyDesc', 'Fichiers traités / total'),
     },
     {
-      name: t('data.quality.coverage', 'Couverture'), score: coverageScore,
+      name: t('data.quality.coverage', 'Couverture ESRS'), score: coverageScore,
       status: getStatus(coverageScore), icon: TrendingUp,
       color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-400',
-      desc: t('data.quality.coverageDesc', 'Sources connectées'),
+      desc: totalEntries > 0
+        ? `${pillarsWithData}/3 piliers · ${totalEntries.toLocaleString('fr-FR')} entrées`
+        : t('data.quality.coverageDesc', 'Piliers couverts'),
+    },
+    {
+      name: t('data.quality.verification', 'Vérification'), score: verificationScore,
+      status: getStatus(verificationScore), icon: Shield,
+      color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-400',
+      desc: totalEntries > 0
+        ? `${verifiedCount.toLocaleString('fr-FR')} / ${totalEntries.toLocaleString('fr-FR')} entrées vérifiées`
+        : 'Aucune donnée saisie',
     },
   ];
 
@@ -157,6 +187,7 @@ export default function DataQuality() {
 
   return (
     <div className="space-y-6">
+      <BackButton to="/app/data" label="Données" />
       {/* Hero */}
       <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-900 to-blue-700 p-8 text-white shadow-xl">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">

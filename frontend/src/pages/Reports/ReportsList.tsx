@@ -21,7 +21,8 @@ import {
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import Spinner from '@/components/common/Spinner';
-import reportsService from '@/services/reportsService';
+import BackButton from '@/components/common/BackButton';
+import { reportsService } from '@/services/reportsService';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -64,48 +65,7 @@ const TYPE_CONFIG = {
   }
 };
 
-const MOCK_REPORTS: Report[] = [
-  {
-    id: '1',
-    name: 'Rapport ESG Annuel 2024',
-    report_type: 'executive',
-    format: 'PDF',
-    created_at: new Date(2024, 11, 15).toISOString(),
-    status: 'completed'
-  },
-  {
-    id: '2',
-    name: 'Analyse Carbone Q4 2024',
-    report_type: 'detailed',
-    format: 'PDF',
-    created_at: new Date(2024, 11, 10).toISOString(),
-    status: 'completed'
-  },
-  {
-    id: '3',
-    name: 'Rapport CSRD 2024',
-    report_type: 'regulatory',
-    format: 'PDF',
-    created_at: new Date(2024, 11, 5).toISOString(),
-    status: 'completed'
-  },
-  {
-    id: '4',
-    name: 'Indicateurs Sociaux Novembre',
-    report_type: 'standard',
-    format: 'XLSX',
-    created_at: new Date(2024, 10, 28).toISOString(),
-    status: 'completed'
-  },
-  {
-    id: '5',
-    name: 'Benchmark Sectoriel 2024',
-    report_type: 'detailed',
-    format: 'PDF',
-    created_at: new Date(2024, 10, 20).toISOString(),
-    status: 'completed'
-  }
-];
+// (no static mock data)
 
 export default function ReportsList() {
   const { t } = useTranslation();
@@ -122,11 +82,10 @@ export default function ReportsList() {
   const loadReports = async () => {
     setLoading(true);
     try {
-      const data = await reportsService.getReports();
-      const items = Array.isArray(data) ? data : data?.items || data?.reports || [];
-      setReports(items.length > 0 ? items : MOCK_REPORTS);
+      const items = await reportsService.getReports();
+      setReports(items);
     } catch (error) {
-      setReports(MOCK_REPORTS);
+      setReports([]);
     } finally {
       setLoading(false);
     }
@@ -175,6 +134,7 @@ export default function ReportsList() {
 
   return (
     <div className="space-y-6">
+      <BackButton to="/app/reports" label="Rapports" />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -194,7 +154,7 @@ export default function ReportsList() {
             <RefreshCw className="h-4 w-4 mr-2" />
             {t('common.refresh')}
           </Button>
-          <Button onClick={() => navigate('/reports/generate')}>
+          <Button onClick={() => navigate('/app/reports/generate')}>
             <Plus className="h-4 w-4 mr-2" />
             {t('reportsList.newReport')}
           </Button>
@@ -389,7 +349,7 @@ export default function ReportsList() {
                 : t('reportsList.generateFirstReport')
               }
             </p>
-            <Button onClick={() => navigate('/reports/generate')}>
+            <Button onClick={() => navigate('/app/reports/generate')}>
               <Plus className="h-4 w-4 mr-2" />
               {t('reportsList.generateReport')}
             </Button>

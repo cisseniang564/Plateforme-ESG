@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import BackButton from '@/components/common/BackButton';
 import {
   Upload,
   FileText,
@@ -12,6 +13,7 @@ import {
   X,
   RefreshCw,
   Eye,
+  Building2,
 } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
@@ -35,8 +37,14 @@ interface PreviewData {
 
 interface ImportResult {
   imported: number;
+  indicator_data_created?: number;
   errors: number;
   error_details: any[];
+}
+
+interface Organization {
+  id: string;
+  name: string;
 }
 
 export default function ImportCSV() {
@@ -50,6 +58,9 @@ export default function ImportCSV() {
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
 
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [selectedOrgId, setSelectedOrgId] = useState<string>('');
+
   const [mapping, setMapping] = useState({
     pillar: '',
     category: '',
@@ -61,6 +72,16 @@ export default function ImportCSV() {
     data_source: '',
     notes: '',
   });
+
+  useEffect(() => {
+    api.get('/organizations').then((res) => {
+      const orgs = res.data?.items || res.data?.organizations || res.data?.results || [];
+      setOrganizations(Array.isArray(orgs) ? orgs : []);
+    }).catch((err) => {
+      console.error('ImportCSV: failed to load organizations', err);
+      toast.error('Impossible de charger la liste des organisations');
+    });
+  }, []);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -145,9 +166,12 @@ export default function ImportCSV() {
     setImporting(true);
 
     try {
+      const payload: any = { ...mapping };
+      if (selectedOrgId) payload.organization_id = selectedOrgId;
+
       const response = await api.post(
         `/esg-import/uploads/${previewData.upload_id}/import`,
-        mapping
+        payload
       );
 
       setImportResult(response.data);
@@ -166,6 +190,7 @@ export default function ImportCSV() {
     setFile(null);
     setPreviewData(null);
     setImportResult(null);
+    setSelectedOrgId('');
     setMapping({
       pillar: '',
       category: '',
@@ -210,6 +235,7 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
 
   return (
     <div className="space-y-6">
+      <BackButton to="/app/data" label="Données" />
       {/* Header */}
       <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-8 text-white shadow-xl">
         <div className="flex items-center justify-between">
@@ -331,6 +357,36 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
             <h2 className="text-xl font-bold text-gray-900 mb-6">
               {t('importCsv.step2Title')}
             </h2>
+
+            {/* Organisation selector — required for ESG score bridging */}
+            <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
+              <div className="flex items-start gap-3">
+                <Building2 className="h-5 w-5 text-blue-600 mt-1 flex-shrink-0" />
+                <div className="flex-1">
+                  <label className="block text-sm font-semibold text-blue-900 mb-2">
+                    Organisation concernée
+                    <span className="ml-2 text-xs font-normal text-blue-600">
+                      (recommandé pour le calcul des scores ESG)
+                    </span>
+                  </label>
+                  <select
+                    value={selectedOrgId}
+                    onChange={(e) => setSelectedOrgId(e.target.value)}
+                    className="w-full px-4 py-2 border-2 border-blue-300 rounded-lg focus:border-blue-500 bg-white"
+                  >
+                    <option value="">— Sélectionner une organisation —</option>
+                    {organizations.map((org) => (
+                      <option key={org.id} value={org.id}>{org.name}</option>
+                    ))}
+                  </select>
+                  {!selectedOrgId && (
+                    <p className="text-xs text-amber-600 mt-1">
+                      ⚠️ Sans organisation, les données ne seront pas liées aux scores ESG.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
 
             <div className="grid grid-cols-2 gap-6">
               <div>
@@ -511,23 +567,39 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
               {t('importCsv.importSuccessTitle')}
             </h2>
 
-            <div className="grid grid-cols-2 gap-6 max-w-md mx-auto mb-8">
+            <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
               <div className="p-6 bg-green-50 rounded-xl">
                 <p className="text-4xl font-bold text-green-600">{importResult.imported}</p>
                 <p className="text-sm text-gray-600 mt-2">{t('importCsv.importedData')}</p>
+              </div>
+              <div className="p-6 bg-blue-50 rounded-xl">
+                <p className="text-4xl font-bold text-blue-600">{importResult.indicator_data_created ?? 0}</p>
+                <p className="text-sm text-gray-600 mt-2">Indicateurs ESG liés</p>
               </div>
               <div className="p-6 bg-red-50 rounded-xl">
                 <p className="text-4xl font-bold text-red-600">{importResult.errors}</p>
                 <p className="text-sm text-gray-600 mt-2">{t('importCsv.errors')}</p>
               </div>
             </div>
+            {(importResult.indicator_data_created ?? 0) > 0 && (
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg max-w-lg mx-auto text-sm text-blue-800">
+                ✅ {importResult.indicator_data_created} point(s) de données liés aux indicateurs ESG.
+                Vous pouvez maintenant <strong>recalculer les scores</strong> depuis le tableau de bord Scores.
+              </div>
+            )}
+            {(importResult.indicator_data_created ?? 0) === 0 && importResult.imported > 0 && (
+              <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg max-w-lg mx-auto text-sm text-amber-800">
+                ⚠️ Aucun indicateur ESG n'a été reconnu dans vos données. Vérifiez que les noms de métriques
+                correspondent aux indicateurs configurés dans la plateforme.
+              </div>
+            )}
 
             <div className="flex gap-4 justify-center">
               <Button variant="secondary" onClick={handleReset}>
                 <RefreshCw className="h-4 w-4 mr-2" />
                 {t('importCsv.importAnother')}
               </Button>
-              <Button onClick={() => navigate('/data-entry')}>
+              <Button onClick={() => navigate('/app/my-data')}>
                 <CheckCircle className="h-4 w-4 mr-2" />
                 {t('importCsv.viewData')}
               </Button>

@@ -4,6 +4,7 @@ import { Calculator, TrendingUp, TrendingDown, Minus, Zap , RefreshCw } from 'lu
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import Spinner from '@/components/common/Spinner';
+import BackButton from '@/components/common/BackButton';
 import api from '@/services/api';
 import toast from 'react-hot-toast';
 
@@ -88,6 +89,7 @@ export default function CalculatedMetrics() {
 
   return (
     <div className="space-y-6">
+      <BackButton to="/app/data" label="Données" />
       {/* Header */}
       <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-8 text-white shadow-xl">
         <div className="flex items-center justify-between">
