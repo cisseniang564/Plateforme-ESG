@@ -18,7 +18,8 @@ from app.db.base import Base
 from app.models.tenant import Tenant
 from app.models.organization import Organization
 from app.models.user import User
-from app.models.role import Permission, Role, UserRole, UserOrgAccess
+from app.models.role import Role, UserRole
+from app.models.supplier import Supplier  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

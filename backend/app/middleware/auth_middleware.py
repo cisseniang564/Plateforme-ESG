@@ -8,9 +8,20 @@ from starlette.responses import JSONResponse
 from app.utils.jwt import decode_token, extract_tenant_id, extract_user_id, is_token_expired
 
 PUBLIC_PATHS = frozenset([
-    "/", "/docs", "/redoc", "/openapi.json", "/health",
+    "/", "/docs", "/redoc", "/openapi.json",
+    "/health", "/health/live", "/health/ready", "/metrics",
     "/api/v1/auth/login", "/api/v1/auth/refresh",
     "/api/v1/auth/onboard", "/api/v1/auth/register",
+    "/api/v1/auth/2fa/verify",   # 2FA verification uses temp_token, not full JWT
+    "/api/v1/auth/forgot-password",  # Password reset request — no auth
+    "/api/v1/auth/reset-password",   # Password reset confirmation — no auth
+    "/webhooks/stripe",  # Stripe webhook — signature-verified, no JWT
+    "/api/v1/connectors/test",  # External API connectivity test — no user data
+])
+
+PUBLIC_PATH_PREFIXES = frozenset([
+    "/api/v1/supply-chain/portal/",
+    "/api/v1/sso/callback/",  # SSO callbacks don't carry a JWT
 ])
 
 _WWW_AUTHENTICATE = {"WWW-Authenticate": "Bearer"}
@@ -32,6 +43,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS":
             return await call_next(request)
         if request.url.path in PUBLIC_PATHS:
+            return await call_next(request)
+        if any(request.url.path.startswith(p) for p in PUBLIC_PATH_PREFIXES):
             return await call_next(request)
         try:
             token = _extract_token(request)
