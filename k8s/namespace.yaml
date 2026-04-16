@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: esgplatform
+  labels:
+    app.kubernetes.io/name: esgplatform
+    app.kubernetes.io/managed-by: helm

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: esgplatform-redis
+  namespace: esgplatform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: esgplatform-redis
+  template:
+    metadata:
+      labels:
+        app: esgplatform-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
+          ports:
+            - containerPort: 6379
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+      volumes:
+        - name: redis-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: esgplatform-redis
+  namespace: esgplatform
+spec:
+  selector:
+    app: esgplatform-redis
+  ports:
+    - port: 6379
+      targetPort: 6379

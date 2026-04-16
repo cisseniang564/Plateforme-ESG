@@ -150,15 +150,47 @@ class Settings(BaseSettings):
     AUTH0_AUDIENCE: Optional[str] = None
 
     # ========================================================================
-    # EMAIL / SMTP
+    # EMAIL / SMTP (legacy — kept for backward compat)
     # ========================================================================
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
-    SMTP_USER: str
-    SMTP_PASSWORD: str
-    SMTP_FROM_EMAIL: str
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = "noreply@esgflow.io"
     SMTP_FROM_NAME: str = "ESGFlow Platform"
     SMTP_USE_TLS: bool = True
+
+    # ========================================================================
+    # RESEND — transactional email
+    # ========================================================================
+    RESEND_API_KEY: str = "re_REPLACE_ME"
+    RESEND_FROM_EMAIL: str = "noreply@esgflow.io"
+    RESEND_FROM_NAME: str = "ESGFlow Platform"
+
+    # ========================================================================
+    # STRIPE — billing & subscriptions
+    # ========================================================================
+    STRIPE_SECRET_KEY: str = "sk_test_REPLACE_ME"
+    STRIPE_PUBLISHABLE_KEY: str = "pk_test_REPLACE_ME"
+    STRIPE_WEBHOOK_SECRET: str = "whsec_REPLACE_ME"
+    # Price IDs from Stripe Dashboard
+    STRIPE_PRICE_STARTER_MONTHLY: str = ""
+    STRIPE_PRICE_STARTER_YEARLY: str = ""
+    STRIPE_PRICE_PRO_MONTHLY: str = ""
+    STRIPE_PRICE_PRO_YEARLY: str = ""
+
+    # ========================================================================
+    # APP URL (used in emails and redirect URLs)
+    # ========================================================================
+    APP_URL: str = "http://localhost:3000"
+    TRIAL_DAYS: int = 14
+
+    # ========================================================================
+    # SENTRY — error monitoring & performance tracing
+    # ========================================================================
+    SENTRY_DSN: Optional[str] = None              # None = disabled
+    SENTRY_TRACES_SAMPLE_RATE: float = 0.1        # 10% of requests traced
+    SENTRY_PROFILES_SAMPLE_RATE: float = 0.1      # 10% profiled
 
     # ========================================================================
     # MONITORING
@@ -169,9 +201,7 @@ class Settings(BaseSettings):
     DATADOG_APP_KEY: Optional[str] = None
     DATADOG_SITE: str = "datadoghq.eu"
     DATADOG_ENABLED: bool = False
-    SENTRY_DSN: Optional[str] = None
     SENTRY_ENVIRONMENT: str = "development"
-    SENTRY_TRACES_SAMPLE_RATE: float = 0.1
 
     # ========================================================================
     # RATE LIMITING
@@ -186,11 +216,28 @@ class Settings(BaseSettings):
     # CORS
     # ========================================================================
     CORS_ORIGINS: List[str] = Field(
-        default_factory=lambda: ["http://localhost:3000", "http://localhost:8000"]
+        default_factory=lambda: [
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://localhost:8000",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:3000",
+        ]
     )
     CORS_ALLOW_CREDENTIALS: bool = True
-    CORS_ALLOW_METHODS: List[str] = Field(default_factory=lambda: ["*"])
-    CORS_ALLOW_HEADERS: List[str] = Field(default_factory=lambda: ["*"])
+    CORS_ALLOW_METHODS: List[str] = Field(
+        default_factory=lambda: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+    )
+    CORS_ALLOW_HEADERS: List[str] = Field(
+        default_factory=lambda: [
+            "Content-Type",
+            "Authorization",
+            "Accept",
+            "X-Requested-With",
+            "X-CSRF-Token",
+        ]
+    )
 
     # ========================================================================
     # LOGGING
@@ -219,10 +266,22 @@ class Settings(BaseSettings):
     REPORT_STORAGE_DAYS: int = 365
 
     # ========================================================================
+    # OPENAI / AI RECOMMENDATIONS
+    # ========================================================================
+    OPENAI_API_KEY: Optional[str] = Field(default=None)
+    OPENAI_MODEL: str = "gpt-4o-mini"
+
+    # Objectif de réduction d'émissions par défaut (−30 % d'ici N+1)
+    ML_DEFAULT_OBJECTIVE_PCT: float = -30.0
+    # Horizon de prédiction par défaut (mois)
+    ML_FORECAST_HORIZON_MONTHS: int = 12
+
+    # ========================================================================
     # FEATURE FLAGS
     # ========================================================================
     FEATURE_ANALYTICS_ENABLED: bool = True
-    FEATURE_ML_PREDICTIONS_ENABLED: bool = False
+    FEATURE_ML_PREDICTIONS_ENABLED: bool = True   # Activated — uses graceful fallback
+    FEATURE_AI_RECOMMENDATIONS_ENABLED: bool = True
     FEATURE_BLOCKCHAIN_AUDIT: bool = False
     FEATURE_REALTIME_IOT: bool = False
 
