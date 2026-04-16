@@ -28,6 +28,12 @@ interface UploadStats {
   pendingRecords: number;
 }
 
+interface EntryStats {
+  total: number;
+  by_pillar: Record<string, number>;
+  by_verification_status: Record<string, number>;
+}
+
 function formatFileSize(bytes: number): string {
   if (!bytes) return '—';
   if (bytes < 1024) return `${bytes} B`;
@@ -57,6 +63,7 @@ export default function DataManagement() {
   const navigate = useNavigate();
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [stats, setStats] = useState<UploadStats>({ totalRecords: 0, validatedRecords: 0, pendingRecords: 0 });
+  const [entryStats, setEntryStats] = useState<EntryStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -65,13 +72,17 @@ export default function DataManagement() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/data/uploads', { params: { page_size: 50 } });
-      const items: UploadItem[] = response.data.items || [];
+      const [uploadsRes, statsRes] = await Promise.all([
+        api.get('/data/uploads', { params: { page_size: 50 } }),
+        api.get('/data-entry/stats').catch(() => ({ data: null })),
+      ]);
+      const items: UploadItem[] = uploadsRes.data.items || [];
       setUploads(items);
       const totalRecords = items.reduce((sum, u) => sum + (u.total_rows || 0), 0);
       const validatedRecords = items.reduce((sum, u) => sum + (u.valid_rows || 0), 0);
       const pendingRecords = items.filter(u => u.status !== 'completed').reduce((sum, u) => sum + (u.total_rows || 0), 0);
       setStats({ totalRecords, validatedRecords, pendingRecords });
+      if (statsRes.data) setEntryStats(statsRes.data);
     } catch (error) {
       console.error('Error loading uploads:', error);
     } finally {
@@ -132,9 +143,15 @@ export default function DataManagement() {
               <span className="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/10">
                 {uploads.length} {t('data.uploadFiles', 'files')}
               </span>
-              <span className="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/10">
-                {stats.totalRecords.toLocaleString()} {t('data.rows', 'rows')}
-              </span>
+              {entryStats ? (
+                <span className="rounded-full bg-emerald-500/30 px-3 py-1 ring-1 ring-emerald-400/40 text-emerald-100 font-medium">
+                  {entryStats.total.toLocaleString('fr-FR')} {t('data.entries', 'entrées DB')}
+                </span>
+              ) : (
+                <span className="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/10">
+                  {stats.totalRecords.toLocaleString()} {t('data.rows', 'rows')}
+                </span>
+              )}
               <span className="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/10">
                 {validRate}% {t('data.valid', 'valid')}
               </span>
@@ -188,8 +205,14 @@ export default function DataManagement() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">{t('data.totalRecords', 'Total Records')}</p>
-              <p className="text-3xl font-bold text-gray-900">{stats.totalRecords.toLocaleString()}</p>
-              <p className="text-xs text-gray-400 mt-1">{uploads.length} {t('data.uploadFiles', 'files imported')}</p>
+              <p className="text-3xl font-bold text-gray-900">
+                {entryStats ? entryStats.total.toLocaleString('fr-FR') : stats.totalRecords.toLocaleString()}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                {entryStats
+                  ? t('data.dbEntries', 'entrées en base de données')
+                  : `${uploads.length} ${t('data.uploadFiles', 'files imported')}`}
+              </p>
             </div>
             <div className="p-3 bg-blue-50 rounded-xl">
               <Database className="h-6 w-6 text-blue-600" />
@@ -201,7 +224,11 @@ export default function DataManagement() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">{t('data.validated', 'Validated')}</p>
-              <p className="text-3xl font-bold text-emerald-600">{stats.validatedRecords.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-emerald-600">
+                {entryStats
+                  ? (entryStats.by_verification_status?.['verified'] ?? 0).toLocaleString('fr-FR')
+                  : stats.validatedRecords.toLocaleString()}
+              </p>
               <div className="mt-2 flex items-center gap-2">
                 <div className="flex-1 h-1.5 bg-gray-100 rounded-full">
                   <div className="h-1.5 bg-emerald-500 rounded-full" style={{ width: `${validRate}%` }} />
@@ -219,9 +246,15 @@ export default function DataManagement() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">{t('data.pendingReview', 'Pending Review')}</p>
-              <p className="text-3xl font-bold text-amber-600">{stats.pendingRecords.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-amber-600">
+                {entryStats
+                  ? (entryStats.by_verification_status?.['pending'] ?? 0).toLocaleString('fr-FR')
+                  : stats.pendingRecords.toLocaleString()}
+              </p>
               <p className="text-xs text-gray-400 mt-1">
-                {uploads.filter(u => u.status !== 'completed').length} {t('data.pendingFiles', 'files pending')}
+                {entryStats
+                  ? t('data.awaitingVerification', 'en attente de vérification')
+                  : `${uploads.filter(u => u.status !== 'completed').length} ${t('data.pendingFiles', 'files pending')}`}
               </p>
             </div>
             <div className="p-3 bg-amber-50 rounded-xl">
@@ -230,6 +263,34 @@ export default function DataManagement() {
           </div>
         </Card>
       </div>
+
+      {/* DB entries by pillar — only shown when entryStats available */}
+      {entryStats && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            { key: 'environmental', label: t('pillars.environmental', 'Environnemental'), color: 'border-green-500', bg: 'bg-green-50', text: 'text-green-700', icon: TrendingUp },
+            { key: 'social',        label: t('pillars.social', 'Social'),               color: 'border-blue-500',  bg: 'bg-blue-50',  text: 'text-blue-700',  icon: Shield },
+            { key: 'governance',    label: t('pillars.governance', 'Gouvernance'),       color: 'border-purple-500',bg: 'bg-purple-50',text: 'text-purple-700',icon: BarChart3 },
+          ].map(({ key, label, color, bg, text, icon: Icon }) => {
+            const count = entryStats.by_pillar?.[key] ?? 0;
+            const pct = entryStats.total > 0 ? Math.round((count / entryStats.total) * 100) : 0;
+            return (
+              <Card key={key} className={`border-l-4 ${color}`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">{label}</p>
+                    <p className={`text-2xl font-bold ${text}`}>{count.toLocaleString('fr-FR')}</p>
+                    <p className="text-xs text-gray-400 mt-1">{pct}% {t('data.ofTotal', 'du total')}</p>
+                  </div>
+                  <div className={`p-3 ${bg} rounded-xl`}>
+                    <Icon className={`h-6 w-6 ${text}`} />
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
       {/* Uploads Table */}
       <Card>

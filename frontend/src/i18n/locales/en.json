@@ -661,7 +661,14 @@
     "sectorRankOf47": "/ 47 companies in sector",
     "sectorTop10": "You are in the top 10% of your sector",
     "evolution12mTitle": "Evolution over 12 months",
-    "evolution12mSub": "Score trend: 58 → 65 → 69 (current)"
+    "evolution12mSub": "Score trend: 58 → 65 → 69 (current)",
+    "historySubtitle": "Evolution of your scores over time",
+    "currentScore": "Current score",
+    "periods": "periods",
+    "current": "Current",
+    "scoreTrends": "Score evolution",
+    "rating": "Rating",
+    "vsPreviousPeriod": "vs previous"
   },
   "reports": {
     "title": "Reports",
@@ -899,6 +906,8 @@
     "sectorServices": "Services",
     "sectorRealEstate": "Real Estate",
     "sectorAgriculture": "Agriculture",
+    "sectorHealth": "Healthcare",
+    "sectorTech": "Technology",
     "yourScore": "Your Score",
     "sectorAverage": "Sector average",
     "bestSector": "Best in Sector",

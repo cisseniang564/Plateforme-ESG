@@ -212,6 +212,47 @@ async def get_webhook_deliveries(
     }
 
 
+class WebhookUpdateRequest(BaseModel):
+    is_active: Optional[bool] = None
+    url: Optional[str] = None
+    events: Optional[List[str]] = None
+
+
+@router.patch("/{webhook_id}")
+async def update_webhook(
+    webhook_id: UUID,
+    data: WebhookUpdateRequest,
+    user_id: UUID = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update a webhook (toggle active state, change URL or events)."""
+    user_query = select(User).where(User.id == user_id)
+    user_result = await db.execute(user_query)
+    user = user_result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    webhook_query = select(Webhook).where(
+        Webhook.id == webhook_id,
+        Webhook.tenant_id == user.tenant_id
+    )
+    webhook_result = await db.execute(webhook_query)
+    webhook = webhook_result.scalar_one_or_none()
+    if not webhook:
+        raise HTTPException(status_code=404, detail="Webhook not found")
+
+    if data.is_active is not None:
+        webhook.is_active = data.is_active
+    if data.url is not None:
+        webhook.url = data.url
+    if data.events is not None:
+        webhook.events = data.events
+
+    await db.commit()
+    await db.refresh(webhook)
+    return {"id": str(webhook.id), "is_active": webhook.is_active, "url": webhook.url}
+
+
 @router.delete("/{webhook_id}")
 async def delete_webhook(
     webhook_id: UUID,

@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import api from '@/services/api';
+// ⚡ Export libs loaded lazily (dynamic import) to avoid bundle-init crashes
 import {
   Shield, CheckCircle, XCircle, AlertTriangle, ChevronDown,
   ChevronRight, FileText, Download, ExternalLink, Info,
@@ -459,52 +461,355 @@ function RegulationCard({ reg }: { reg: Regulation }) {
   );
 }
 
+// ─── Live score computation from real ESG data ────────────────────────────────
+function computeLiveRegulations(base: Regulation[], esgData: any): Regulation[] {
+  if (!esgData) return base;
+  // /live-summary returns flat fields: esg_score, environmental_score, social_score, governance_score
+  const env   = Math.round(esgData.environmental_score ?? 0);
+  const soc   = Math.round(esgData.social_score        ?? 0);
+  const gov   = Math.round(esgData.governance_score    ?? 0);
+  const total = Math.round(esgData.esg_score           ?? 0);
+
+  const scoreMap: Record<string, number> = {
+    csrd:             Math.min(100, Math.round(total * 0.90)),
+    taxonomie:        Math.min(100, Math.round(env   * 0.80)),
+    dpef:             Math.min(100, Math.round((env + soc) / 2 * 0.90)),
+    sapin2:           Math.min(100, Math.round(gov   * 0.75)),
+    devoir_vigilance: Math.min(100, Math.round((soc + gov) / 2 * 0.70)),
+    art29:            0,
+    sfdr:             0,
+    iso14001:         Math.min(100, Math.round(env   * 0.60)),
+    iso26000:         Math.min(100, Math.round(total * 0.75)),
+    lksg:             Math.min(100, Math.round((soc + gov) / 2 * 0.50)),
+  };
+
+  return base.map(reg => {
+    if (reg.globalStatus === 'na') return reg;
+    const score        = scoreMap[reg.id] ?? reg.score;
+    const globalStatus: Status = score >= 75 ? 'conforme' : score >= 40 ? 'partiel' : 'non_conforme';
+    return { ...reg, score, globalStatus };
+  });
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function MultiRegulatoryCompliance() {
   const { t } = useTranslation();
   const [activeCategory, setActiveCategory] = useState(CATEGORY_KEYS[0].value);
   const [search, setSearch] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
+  const [esgData, setEsgData] = useState<any>(null);
+  const [loadingData, setLoadingData] = useState(true);
 
-  const stats = computeGlobalStats(regulations);
+  const fetchESGData = useCallback(async () => {
+    try {
+      // Use accurate scores endpoint
+      let data: any = null;
+      try {
+        const r1 = await api.get('/scores/latest');
+        const s = r1.data;
+        data = {
+          esg_score: s.overall_score ?? 0,
+          environmental_score: s.environmental_score ?? 0,
+          social_score: s.social_score ?? 0,
+          governance_score: s.governance_score ?? 0,
+          has_real_data: (s.overall_score ?? 0) > 0,
+        };
+      } catch {
+        const r2 = await api.get('/esg-scoring/dashboard').catch(() => ({ data: {} }));
+        const st = r2.data?.statistics ?? {};
+        data = {
+          esg_score: st.average_score ?? 0,
+          environmental_score: st.average_environmental ?? 0,
+          social_score: st.average_social ?? 0,
+          governance_score: st.average_governance ?? 0,
+          has_real_data: (st.average_score ?? 0) > 0,
+        };
+      }
+      setEsgData(data);
+    } catch {
+      setEsgData(null);
+    } finally {
+      setLoadingData(false);
+    }
+  }, []);
 
-  const filtered = regulations.filter(r => {
+  useEffect(() => { fetchESGData(); }, [fetchESGData]);
+
+  const liveRegulations = computeLiveRegulations(regulations, esgData);
+  const stats = computeGlobalStats(liveRegulations);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await fetchESGData();
+    setLastRefreshed(new Date());
+    setIsRefreshing(false);
+  }, [fetchESGData]);
+
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+
+  const STATUS_LABELS: Record<Status, string> = {
+    conforme: 'Conforme', partiel: 'Partiel', non_conforme: 'Non conforme', na: 'N/A',
+  };
+  const dateStr = new Date().toLocaleDateString('fr-FR');
+  const fileDate = new Date().toISOString().slice(0, 10);
+
+  const handleExportCSV = useCallback(() => {
+    setExportMenuOpen(false);
+    const lines: string[] = [
+      `"RAPPORT CONFORMITÉ MULTI-RÉGLEMENTAIRE"`,
+      `"Généré le : ${dateStr}"`,
+      `"Score global : ${stats.avgScore}%"`,
+      `"Conformes : ${stats.conforme} | Partiels : ${stats.partiel} | Non conformes : ${stats.nonConforme} | N/A : ${liveRegulations.length - stats.applicable}"`,
+      `""`,
+      `"Réglementation","Catégorie","Statut Global","Score","Périmètre","Échéance","Autorité","Points de contrôle","Actions requises"`,
+    ];
+    for (const reg of liveRegulations) {
+      lines.push(`"${reg.name}","${reg.category}","${STATUS_LABELS[reg.globalStatus]}","${reg.score}%","${reg.scope}","${reg.deadline}","${reg.authority}","${reg.checks.map(c => `${c.label}: ${STATUS_LABELS[c.status]}`).join(' | ')}","${reg.actions.join(' | ')}"`);
+    }
+    const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `conformite_${fileDate}.csv` });
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }, [stats, liveRegulations, dateStr, fileDate]);
+
+  const handleExportPDF = useCallback(async () => {
+    setExportMenuOpen(false);
+    const { default: jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    // Header
+    doc.setFillColor(109, 40, 217);
+    doc.rect(0, 0, 297, 25, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16); doc.setFont('helvetica', 'bold');
+    doc.text('Rapport Conformité Multi-Réglementaire', 14, 11);
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+    doc.text(`Généré le ${dateStr}  ·  Score global : ${stats.avgScore}%  ·  ${stats.conforme} conformes · ${stats.partiel} partiels · ${stats.nonConforme} non conformes`, 14, 20);
+    // KPI boxes
+    doc.setTextColor(0, 0, 0);
+    const kpis = [
+      { label: 'Score global', val: `${stats.avgScore}%`, color: [124, 58, 237] as [number,number,number] },
+      { label: 'Conformes', val: String(stats.conforme), color: [22, 163, 74] as [number,number,number] },
+      { label: 'Partiels', val: String(stats.partiel), color: [217, 119, 6] as [number,number,number] },
+      { label: 'Non conformes', val: String(stats.nonConforme), color: [220, 38, 38] as [number,number,number] },
+    ];
+    kpis.forEach((k, i) => {
+      const x = 14 + i * 68;
+      doc.setFillColor(...k.color); doc.roundedRect(x, 28, 64, 16, 2, 2, 'F');
+      doc.setTextColor(255,255,255); doc.setFontSize(14); doc.setFont('helvetica','bold');
+      doc.text(k.val, x + 32, 37, { align: 'center' });
+      doc.setFontSize(8); doc.setFont('helvetica','normal');
+      doc.text(k.label, x + 32, 42, { align: 'center' });
+    });
+    // Table
+    autoTable(doc, {
+      startY: 50,
+      head: [['Réglementation', 'Catégorie', 'Statut', 'Score', 'Périmètre', 'Échéance', 'Autorité']],
+      body: liveRegulations.map(r => [r.name, r.category, STATUS_LABELS[r.globalStatus], `${r.score}%`, r.scope, r.deadline, r.authority]),
+      styles: { fontSize: 7.5, cellPadding: 2 },
+      headStyles: { fillColor: [109, 40, 217], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [248, 245, 255] },
+      columnStyles: { 0: { fontStyle: 'bold' }, 3: { halign: 'center' } },
+      didDrawCell: (data) => {
+        if (data.section === 'body' && data.column.index === 2) {
+          const val = data.cell.raw as string;
+          const color = val === 'Conforme' ? [22,163,74] : val === 'Partiel' ? [217,119,6] : val === 'N/A' ? [107,114,128] : [220,38,38];
+          doc.setFillColor(...(color as [number,number,number]));
+          doc.roundedRect(data.cell.x + 1, data.cell.y + 1, data.cell.width - 2, data.cell.height - 2, 1, 1, 'F');
+          doc.setTextColor(255,255,255); doc.setFontSize(7); doc.setFont('helvetica','bold');
+          doc.text(val, data.cell.x + data.cell.width / 2, data.cell.y + data.cell.height / 2 + 0.5, { align: 'center' });
+        }
+      },
+    });
+    // Checks detail pages
+    liveRegulations.filter(r => r.globalStatus !== 'na').forEach(reg => {
+      (doc as any).addPage();
+      doc.setFillColor(109, 40, 217); doc.rect(0, 0, 297, 14, 'F');
+      doc.setTextColor(255,255,255); doc.setFontSize(12); doc.setFont('helvetica','bold');
+      doc.text(`${reg.name} — ${reg.fullName}`, 14, 9);
+      autoTable(doc, {
+        startY: 18,
+        head: [['Point de contrôle', 'Statut', 'Note']],
+        body: reg.checks.map(c => [c.label, STATUS_LABELS[c.status], c.note ?? '']),
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [109, 40, 217] },
+      });
+    });
+    doc.save(`conformite_multi_reglementaire_${fileDate}.pdf`);
+  }, [stats, liveRegulations, dateStr, fileDate]);
+
+  const handleExportExcel = useCallback(async () => {
+    setExportMenuOpen(false);
+    const XLSX = await import('xlsx');
+    const wb = XLSX.utils.book_new();
+    // Sheet 1 — Synthèse
+    const synth = [
+      ['RAPPORT CONFORMITÉ MULTI-RÉGLEMENTAIRE'],
+      [`Généré le : ${dateStr}`],
+      [`Score global : ${stats.avgScore}%`],
+      [`Conformes : ${stats.conforme}`, `Partiels : ${stats.partiel}`, `Non conformes : ${stats.nonConforme}`, `N/A : ${liveRegulations.length - stats.applicable}`],
+      [],
+      ['Réglementation', 'Catégorie', 'Statut Global', 'Score (%)', 'Périmètre', 'Échéance', 'Autorité'],
+      ...liveRegulations.map(r => [r.name, r.category, STATUS_LABELS[r.globalStatus], r.score, r.scope, r.deadline, r.authority]),
+    ];
+    const ws1 = XLSX.utils.aoa_to_sheet(synth);
+    ws1['!cols'] = [{ wch: 20 }, { wch: 22 }, { wch: 14 }, { wch: 8 }, { wch: 45 }, { wch: 28 }, { wch: 30 }];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Synthèse');
+    // Sheet 2 — Points de contrôle
+    const checks = [
+      ['Réglementation', 'Point de contrôle', 'Statut', 'Note'],
+      ...liveRegulations.flatMap(r => r.checks.map(c => [r.name, c.label, STATUS_LABELS[c.status], c.note ?? ''])),
+    ];
+    const ws2 = XLSX.utils.aoa_to_sheet(checks);
+    ws2['!cols'] = [{ wch: 18 }, { wch: 50 }, { wch: 14 }, { wch: 40 }];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Points de contrôle');
+    // Sheet 3 — Actions
+    const actions = [
+      ['Réglementation', 'Catégorie', 'Statut', 'Action requise'],
+      ...liveRegulations.flatMap(r => r.actions.map(a => [r.name, r.category, STATUS_LABELS[r.globalStatus], a])),
+    ];
+    const ws3 = XLSX.utils.aoa_to_sheet(actions);
+    ws3['!cols'] = [{ wch: 18 }, { wch: 22 }, { wch: 14 }, { wch: 70 }];
+    XLSX.utils.book_append_sheet(wb, ws3, 'Actions');
+    XLSX.writeFile(wb, `conformite_multi_reglementaire_${fileDate}.xlsx`);
+  }, [stats, liveRegulations, dateStr, fileDate]);
+
+  const handleExportWord = useCallback(async () => {
+    setExportMenuOpen(false);
+    const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, HeadingLevel, WidthType, AlignmentType } = await import('docx');
+    const statusColor: Record<Status, string> = { conforme: '16a34a', partiel: 'd97706', non_conforme: 'dc2626', na: '6b7280' };
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: [
+          new Paragraph({ text: 'Rapport Conformité Multi-Réglementaire', heading: HeadingLevel.HEADING_1 }),
+          new Paragraph({ children: [new TextRun({ text: `Généré le : ${dateStr}`, italics: true, color: '6b7280' })] }),
+          new Paragraph({ children: [new TextRun({ text: `Score global : ${stats.avgScore}%  ·  Conformes : ${stats.conforme}  ·  Partiels : ${stats.partiel}  ·  Non conformes : ${stats.nonConforme}`, bold: true })] }),
+          new Paragraph({ text: '' }),
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: [
+              new TableRow({
+                tableHeader: true,
+                children: ['Réglementation','Catégorie','Statut','Score','Périmètre','Échéance'].map(h =>
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, color: 'ffffff' })], alignment: AlignmentType.CENTER })], shading: { fill: '6d28d9' } })
+                ),
+              }),
+              ...liveRegulations.map(r => new TableRow({
+                children: [
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.name, bold: true })] })] }),
+                  new TableCell({ children: [new Paragraph({ text: r.category })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: STATUS_LABELS[r.globalStatus], color: statusColor[r.globalStatus], bold: true })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${r.score}%`, bold: true })] })] }),
+                  new TableCell({ children: [new Paragraph({ text: r.scope })] }),
+                  new TableCell({ children: [new Paragraph({ text: r.deadline })] }),
+                ],
+              })),
+            ],
+          }),
+          new Paragraph({ text: '' }),
+          ...liveRegulations.filter(r => r.globalStatus !== 'na').flatMap(r => [
+            new Paragraph({ text: `${r.name} — Points de contrôle`, heading: HeadingLevel.HEADING_2 }),
+            ...r.checks.map(c => new Paragraph({ children: [new TextRun({ text: `${STATUS_LABELS[c.status].toUpperCase()}  `, color: statusColor[c.status], bold: true }), new TextRun({ text: c.label + (c.note ? ` (${c.note})` : '') })] })),
+            new Paragraph({ text: '' }),
+          ]),
+        ],
+      }],
+    });
+    const blob = await Packer.toBlob(doc);
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `conformite_multi_reglementaire_${fileDate}.docx` });
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }, [stats, liveRegulations, dateStr, fileDate]);
+
+  const filtered = liveRegulations.filter(r => {
     const matchCat = activeCategory === CATEGORY_KEYS[0].value || r.category === activeCategory;
     const matchSearch = search === '' || r.name.toLowerCase().includes(search.toLowerCase()) || r.fullName.toLowerCase().includes(search.toLowerCase());
     return matchCat && matchSearch;
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Page header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <div className="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center">
-                  <Shield className="h-6 w-6 text-violet-600" />
-                </div>
-                <h1 className="text-2xl font-bold text-gray-900">{t('compliance.title')}</h1>
-              </div>
-              <p className="text-gray-500 ml-13 text-sm">
-                {t('compliance.subtitle')}
-              </p>
+    <div className="space-y-6">
+      {loadingData ? (
+        <div className="flex items-center gap-3 p-4 bg-violet-50 border border-violet-200 rounded-xl text-sm text-violet-700 animate-pulse">
+          <RefreshCw className="h-4 w-4 animate-spin" />
+          Chargement des scores de conformité depuis vos données ESG réelles…
+        </div>
+      ) : esgData ? (
+        <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800">
+          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+          <div>
+            <span className="font-bold">Scores calculés depuis vos données réelles</span>
+            {' — '}ESG : <span className="font-bold">{Math.round(esgData.esg_score ?? 0)}/100</span>
+            {' · '}E : <span className="font-semibold">{Math.round(esgData.environmental_score ?? 0)}</span>
+            {' · '}S : <span className="font-semibold">{Math.round(esgData.social_score ?? 0)}</span>
+            {' · '}G : <span className="font-semibold">{Math.round(esgData.governance_score ?? 0)}</span>
+            {esgData.total_entries > 0 && (
+              <span className="text-green-600"> · {esgData.total_entries} données</span>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
+          <AlertTriangle className="h-4 w-4" />
+          Données ESG non disponibles — les scores affichés sont indicatifs. Importez vos données pour obtenir une analyse personnalisée.
+        </div>
+      )}
+
+      {/* ── Hero ── */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 rounded-2xl p-8 text-white shadow-xl">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZyIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLW9wYWNpdHk9IjAuMDUiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg==')] opacity-30" />
+        <div className="relative flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide uppercase">
+                Conformité Multi-Réglementaire
+              </span>
             </div>
-            <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm">
-                <RefreshCw className="h-4 w-4" />
-                {t('compliance.refresh')}
-              </button>
-              <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-xl text-sm font-semibold transition-colors">
+            <h1 className="text-3xl font-bold mb-1 flex items-center gap-3">
+              <Shield className="h-8 w-8" />
+              {t('compliance.title')}
+            </h1>
+            <p className="text-violet-100">{t('compliance.subtitle')}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/20 rounded-xl text-sm font-medium transition-all disabled:opacity-60 disabled:cursor-not-allowed active:scale-95"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Actualisation...' : t('compliance.refresh')}
+            </button>
+            <div className="relative">
+              <button
+                onClick={() => setExportMenuOpen(v => !v)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white text-violet-700 rounded-xl text-sm font-bold hover:bg-violet-50 transition-all shadow-md active:scale-95"
+              >
                 <Download className="h-4 w-4" />
-                {t('compliance.exportPdf')}
+                Exporter
+                <ChevronDown className="h-3.5 w-3.5" />
               </button>
+              {exportMenuOpen && (
+                <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
+                  {[
+                    { label: '📄 PDF', action: handleExportPDF },
+                    { label: '📊 Excel (.xlsx)', action: handleExportExcel },
+                    { label: '📝 Word (.docx)', action: handleExportWord },
+                    { label: '🗂 CSV', action: handleExportCSV },
+                  ].map(item => (
+                    <button key={item.label} onClick={item.action}
+                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-violet-50 hover:text-violet-700 transition-colors"
+                    >{item.label}</button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      {/* Content */}
+      <div className="space-y-8">
 
         {/* ── Global KPIs ── */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -513,7 +818,7 @@ export default function MultiRegulatoryCompliance() {
             { label: t('compliance.kpiCompliant'), value: stats.conforme, sub: t('compliance.kpiCompliantSub', { count: stats.applicable }), color: 'text-green-700', bg: 'bg-green-50 border-green-200' },
             { label: t('compliance.kpiPartial'), value: stats.partiel, sub: t('compliance.kpiPartialSub'), color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
             { label: t('compliance.kpiNonCompliant'), value: stats.nonConforme, sub: t('compliance.kpiNonCompliantSub'), color: 'text-red-700', bg: 'bg-red-50 border-red-200' },
-            { label: t('compliance.kpiNa'), value: regulations.length - stats.applicable, sub: t('compliance.kpiNaSub'), color: 'text-gray-500', bg: 'bg-gray-50 border-gray-200' },
+            { label: t('compliance.kpiNa'), value: liveRegulations.length - stats.applicable, sub: t('compliance.kpiNaSub'), color: 'text-gray-500', bg: 'bg-gray-50 border-gray-200' },
           ].map((kpi, i) => (
             <div key={i} className={`rounded-2xl border-2 ${kpi.bg} p-5`}>
               <div className={`text-3xl font-extrabold ${kpi.color}`}>{kpi.value}</div>

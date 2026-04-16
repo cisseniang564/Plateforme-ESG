@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '@/services/api';
 import { useTranslation } from 'react-i18next';
 import {
   CheckCircle, Settings, BookOpen, BarChart3,
-  Thermometer, ChevronDown, ChevronUp, ExternalLink, Save
+  Thermometer, ChevronDown, ChevronUp, ExternalLink, Save, ArrowLeft
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
-import PageHeader from '@/components/PageHeader';
 
 interface Methodology {
   id: string;
@@ -106,9 +107,83 @@ const DEFAULT_METHODOLOGIES: Methodology[] = [
 
 export default function MethodologyConfig() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [methodologies, setMethodologies] = useState<Methodology[]>(DEFAULT_METHODOLOGIES);
   const [expanded, setExpanded] = useState<string | null>('gri');
   const [saving, setSaving] = useState(false);
+
+  // ── ESG Pillar Weights ──────────────────────────────────────────────────────
+  const [weights, setWeights] = useState({ env: 40, soc: 35, gov: 25 }); // in %
+  const [weightsSaved, setWeightsSaved] = useState(false);
+  const [savingWeights, setSavingWeights] = useState(false);
+  const weightSum = weights.env + weights.soc + weights.gov;
+
+  useEffect(() => {
+    api.get('/esg-scoring/weights')
+      .then(res => {
+        const w = res.data?.weights;
+        if (w) setWeights({ env: Math.round(w.env * 100), soc: Math.round(w.soc * 100), gov: Math.round(w.gov * 100) });
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleSaveWeights = async () => {
+    if (Math.abs(weightSum - 100) > 1) return;
+    setSavingWeights(true);
+    try {
+      await api.put('/esg-scoring/weights', { env: weights.env / 100, soc: weights.soc / 100, gov: weights.gov / 100 });
+      setWeightsSaved(true);
+      toast.success('Pondérations ESG enregistrées');
+      setTimeout(() => setWeightsSaved(false), 3000);
+    } catch {
+      toast.error('Erreur lors de la sauvegarde');
+    } finally {
+      setSavingWeights(false);
+    }
+  };
+
+  // Fetch real data completeness to calibrate coverage indicators
+  useEffect(() => {
+    api.get('/data-entry/stats')
+      .then(res => {
+        const d = res.data
+        if (!d || (d.total ?? 0) === 0) return
+        const totalEntries = d.total ?? 0
+        const envEntries   = d.by_pillar?.['environmental'] ?? Math.round(totalEntries * 0.40)
+        const socEntries   = d.by_pillar?.['social']        ?? Math.round(totalEntries * 0.35)
+        const govEntries   = d.by_pillar?.['governance']    ?? Math.round(totalEntries * 0.25)
+
+        setMethodologies(prev => prev.map(m => {
+          // Compute real coverage: actual entries vs total methodology indicators
+          const totalIndicators = m.categories.reduce((s, c) => s + c.count, 0)
+          const realConfigured = Math.min(totalEntries, totalIndicators)
+          const realCoverage = Math.round((realConfigured / totalIndicators) * 100)
+
+          // Distribute configured counts proportionally across E/S/G categories
+          const updatedCategories = m.categories.map(cat => {
+            const catNameLower = cat.name.toLowerCase()
+            let entries: number
+            if (catNameLower.includes('env') || catNameLower.includes('climat') || catNameLower.includes('risque')) {
+              entries = envEntries
+            } else if (catNameLower.includes('soc') || catNameLower.includes('capital') || catNameLower.includes('rh') || catNameLower.includes('travail')) {
+              entries = socEntries
+            } else {
+              // Gouvernance, stratégie, finance, compliance
+              entries = govEntries
+            }
+            const configured = Math.min(cat.count, Math.round(entries * (cat.count / 20)))
+            return { ...cat, configured: Math.max(0, configured) }
+          })
+
+          return {
+            ...m,
+            coverage: realCoverage,
+            categories: updatedCategories,
+          }
+        }))
+      })
+      .catch(() => {}) // Keep defaults on error
+  }, [])
 
   const toggleActive = (id: string) => {
     setMethodologies(prev =>
@@ -129,21 +204,38 @@ export default function MethodologyConfig() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={t('methodology.title')}
-        subtitle={t('methodology.subtitle')}
-        showBack
-        backTo="/app/settings"
-        actions={
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? (
-              <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />{t('methodology.saving')}</>
-            ) : (
-              <><Save className="h-4 w-4 mr-2" />{t('methodology.save')}</>
-            )}
-          </Button>
-        }
-      />
+      {/* ── Hero ── */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700 rounded-2xl p-8 text-white shadow-xl">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZyIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLW9wYWNpdHk9IjAuMDUiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg==')] opacity-30" />
+        <div className="relative flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <button
+              onClick={() => navigate('/app/settings')}
+              className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors mb-4"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Paramètres
+            </button>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide uppercase">
+                Paramètres ESG
+              </span>
+            </div>
+            <h1 className="text-3xl font-bold mb-1">{t('methodology.title')}</h1>
+            <p className="text-emerald-100">{t('methodology.subtitle')}</p>
+          </div>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2 px-5 py-2.5 bg-white text-emerald-700 rounded-xl text-sm font-bold hover:bg-emerald-50 disabled:opacity-60 transition-all shadow-md"
+          >
+            {saving
+              ? <><div className="animate-spin h-4 w-4 border-2 border-emerald-600 border-t-transparent rounded-full" />{t('methodology.saving')}</>
+              : <><Save className="h-4 w-4" />{t('methodology.save')}</>
+            }
+          </button>
+        </div>
+      </div>
 
       {/* Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -168,6 +260,71 @@ export default function MethodologyConfig() {
               : 0}%
           </p>
           <p className="text-sm font-semibold text-gray-500 mt-1">{t('methodology.avgCoverage')}</p>
+        </div>
+      </div>
+
+      {/* ── ESG Pillar Weights ── */}
+      <div className="bg-white border-2 border-gray-100 rounded-2xl p-6">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="text-base font-bold text-gray-900">Pondération des piliers ESG</h2>
+            <p className="text-sm text-gray-500 mt-0.5">Définissez le poids de chaque pilier dans le score ESG global</p>
+          </div>
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-bold ${Math.abs(weightSum - 100) <= 1 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+            Total : {weightSum}%
+          </div>
+        </div>
+
+        <div className="space-y-5">
+          {[
+            { key: 'env' as const, label: 'Environnement', color: 'text-green-700', bar: 'bg-green-500', border: 'border-green-200 focus:ring-green-400' },
+            { key: 'soc' as const, label: 'Social',         color: 'text-blue-700',  bar: 'bg-blue-500',  border: 'border-blue-200 focus:ring-blue-400'  },
+            { key: 'gov' as const, label: 'Gouvernance',    color: 'text-purple-700',bar: 'bg-purple-500',border: 'border-purple-200 focus:ring-purple-400'},
+          ].map(({ key, label, color, bar, border }) => (
+            <div key={key}>
+              <div className="flex items-center justify-between mb-2">
+                <span className={`text-sm font-semibold ${color}`}>{label}</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number" min={0} max={100} step={1}
+                    value={weights[key]}
+                    onChange={e => setWeights(prev => ({ ...prev, [key]: Math.max(0, Math.min(100, Number(e.target.value))) }))}
+                    className={`w-16 text-center text-sm font-bold border-2 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 ${border}`}
+                  />
+                  <span className="text-sm text-gray-400">%</span>
+                </div>
+              </div>
+              <input
+                type="range" min={0} max={100} step={1}
+                value={weights[key]}
+                onChange={e => setWeights(prev => ({ ...prev, [key]: Number(e.target.value) }))}
+                className="w-full h-2 rounded-full appearance-none cursor-pointer bg-gray-100"
+              />
+              <div className="mt-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className={`h-2 ${bar} rounded-full transition-all duration-300`} style={{ width: `${weights[key]}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
+          <p className="text-xs text-gray-400">
+            {Math.abs(weightSum - 100) > 1
+              ? `⚠ La somme doit être 100% (manque ${100 - weightSum}%)`
+              : '✓ Pondérations valides'}
+          </p>
+          <button
+            onClick={handleSaveWeights}
+            disabled={savingWeights || Math.abs(weightSum - 100) > 1}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 transition-all"
+          >
+            {savingWeights
+              ? <><div className="animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full" />Sauvegarde...</>
+              : weightsSaved
+              ? <><CheckCircle className="h-3.5 w-3.5" />Enregistré</>
+              : <><Save className="h-3.5 w-3.5" />Enregistrer</>
+            }
+          </button>
         </div>
       </div>
 

@@ -1,991 +1,1218 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useSelector, useDispatch } from 'react-redux';
+import type { RootState } from '@/store';
+import { setUser } from '@/store/slices/authSlice';
+import TwoFactorSetupModal from '@/components/security/TwoFactorSetupModal';
+import { authService } from '@/services/authService';
 import {
-  Users, Webhook, Plug, FileText, Building2, Database,
-  Crown, Mail, TrendingUp, Shield, Zap, CheckCircle,
-  AlertCircle, ArrowUpRight, Calendar, Save, Sparkles,
-  Globe, CreditCard, Lock, Key, Activity, Star,
-  ChevronRight, RefreshCw, Download, Bell, X, Check,
-  Infinity, BarChart3
+  Building2, Users, Webhook, Plug, CreditCard, Shield, Key,
+  Bell, Globe, Save, Download, RefreshCw, X, Check, AlertCircle,
+  CheckCircle, Lock, Activity, ChevronRight, Zap, ExternalLink,
+  Trash2, AlertTriangle, Mail, BarChart3, FileText, Database,
+  Eye, EyeOff, Copy, Plus, ArrowUpRight, Star, ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import Card from '@/components/common/Card';
-import Button from '@/components/common/Button';
-import PageHeader from '@/components/PageHeader';
+import billingService, { Subscription } from '@/services/billingService';
+import api from '@/services/api';
 
-type Tab = 'general' | 'billing' | 'integrations' | 'security';
+// ─── Nav sections ─────────────────────────────────────────────────────────────
+type SectionId =
+  | 'workspace'
+  | 'members'
+  | 'notifications'
+  | 'integrations'
+  | 'billing'
+  | 'security'
+  | 'sso'
+  | 'api-keys'
+  | 'sessions'
+  | 'danger';
 
-const TABS_DEF: { id: Tab; labelKey: string; icon: React.ElementType }[] = [
-  { id: 'general', labelKey: 'settings.tabGeneral', icon: Building2 },
-  { id: 'billing', labelKey: 'settings.tabBilling', icon: CreditCard },
-  { id: 'integrations', labelKey: 'settings.tabIntegrations', icon: Plug },
-  { id: 'security', labelKey: 'settings.tabSecurity', icon: Shield },
-];
+interface NavItem {
+  id: SectionId;
+  label: string;
+  icon: React.ElementType;
+  badge?: string;
+  badgeColor?: string;
+}
 
-const PLANS = [
+const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
   {
-    id: 'starter',
-    name: 'Starter',
-    monthlyPrice: 29,
-    annualPrice: 290,
-    description: 'Pour les petites équipes qui démarrent',
-    color: 'gray',
-    gradient: 'from-gray-500 to-gray-600',
-    current: false,
-    features: [
-      { text: '10 utilisateurs', included: true },
-      { text: '20 organisations', included: true },
-      { text: '1 000 appels API/mois', included: true },
-      { text: '2 webhooks actifs', included: true },
-      { text: 'Rapports basiques', included: true },
-      { text: 'Support email', included: true },
-      { text: 'IA & analyses avancées', included: false },
-      { text: 'Intégrations premium', included: false },
-      { text: 'API complète', included: false },
-      { text: 'SLA garanti', included: false },
-    ]
+    title: 'Espace de travail',
+    items: [
+      { id: 'workspace',      label: 'Général',         icon: Building2 },
+      { id: 'members',        label: 'Membres',         icon: Users },
+      { id: 'notifications',  label: 'Notifications',   icon: Bell },
+      { id: 'integrations',   label: 'Intégrations',    icon: Plug },
+    ],
   },
   {
-    id: 'pro',
-    name: 'Pro',
-    monthlyPrice: 99,
-    annualPrice: 990,
-    description: 'Pour les équipes ESG professionnelles',
-    color: 'primary',
-    gradient: 'from-primary-500 to-blue-600',
-    current: true,
-    badge: 'Plan actuel',
-    features: [
-      { text: '50 utilisateurs', included: true },
-      { text: '100 organisations', included: true },
-      { text: '10 000 appels API/mois', included: true },
-      { text: '10 webhooks actifs', included: true },
-      { text: 'Rapports avancés', included: true },
-      { text: 'Support prioritaire', included: true },
-      { text: 'IA & analyses avancées', included: true },
-      { text: 'Intégrations premium', included: true },
-      { text: 'API complète', included: true },
-      { text: 'SLA garanti', included: false },
-    ]
+    title: 'Compte',
+    items: [
+      { id: 'billing',   label: 'Facturation',  icon: CreditCard },
+      { id: 'security',  label: 'Sécurité',     icon: Shield },
+      { id: 'sso',       label: 'SSO',          icon: ShieldCheck, badge: 'OIDC', badgeColor: 'bg-blue-100 text-blue-600' },
+      { id: 'api-keys',  label: 'Clés API',     icon: Key },
+      { id: 'sessions',  label: 'Sessions',     icon: Activity },
+    ],
   },
   {
-    id: 'enterprise',
-    name: 'Enterprise',
-    monthlyPrice: null,
-    annualPrice: null,
-    description: 'Pour les grands groupes et institutions',
-    color: 'purple',
-    gradient: 'from-purple-600 to-indigo-600',
-    current: false,
-    badge: 'Sur devis',
-    features: [
-      { text: 'Utilisateurs illimités', included: true },
-      { text: 'Organisations illimitées', included: true },
-      { text: 'API illimitée', included: true },
-      { text: 'Webhooks illimités', included: true },
-      { text: 'Rapports sur-mesure', included: true },
-      { text: 'Support dédié 24/7', included: true },
-      { text: 'IA & ML avancé', included: true },
-      { text: 'Intégrations custom', included: true },
-      { text: 'API complète + SDK', included: true },
-      { text: 'SLA 99.9% garanti', included: true },
-    ]
-  }
-];
-
-const SETTINGS_SECTIONS = [
-  {
-    id: 'users',
-    title: 'Gestion Utilisateurs',
-    description: 'Gérer les utilisateurs, rôles et permissions',
-    icon: Users,
-    gradient: 'from-blue-500 to-blue-600',
-    bgLight: 'bg-blue-50',
-    path: '/app/settings/users',
-    badge: '50 users',
-    badgeColor: 'bg-blue-100 text-blue-700',
-    stats: { current: 50, max: 50 },
-    status: 'full' as const,
-    activity: 'Dernière action : il y a 2h'
-  },
-  {
-    id: 'webhooks',
-    title: 'Webhooks',
-    description: 'Notifications temps réel vers vos services',
-    icon: Webhook,
-    gradient: 'from-green-500 to-emerald-600',
-    bgLight: 'bg-green-50',
-    path: '/app/settings/webhooks',
-    badge: '3 actifs',
-    badgeColor: 'bg-green-100 text-green-700',
-    stats: { current: 3, max: 10 },
-    status: 'ok' as const,
-    activity: 'Dernier envoi : il y a 5 min'
-  },
-  {
-    id: 'integrations',
-    title: 'Intégrations',
-    description: 'Google Sheets, Power BI, Salesforce...',
-    icon: Plug,
-    gradient: 'from-orange-500 to-orange-600',
-    bgLight: 'bg-orange-50',
-    path: '/app/settings/integrations',
-    badge: 'Premium',
-    badgeColor: 'bg-orange-100 text-orange-700',
-    stats: { current: 5, max: null },
-    status: 'ok' as const,
-    activity: '5 intégrations connectées'
-  },
-  {
-    id: 'insee',
-    title: 'API INSEE Sirene',
-    description: 'Données officielles entreprises françaises',
-    icon: Building2,
-    gradient: 'from-indigo-500 to-indigo-600',
-    bgLight: 'bg-indigo-50',
-    path: '/app/settings/insee',
-    badge: 'Gov API',
-    badgeColor: 'bg-indigo-100 text-indigo-700',
-    stats: { current: 29, max: null },
-    status: 'ok' as const,
-    activity: '29 entreprises enrichies'
-  },
-  {
-    id: 'enrichment',
-    title: 'Enrichissement ESG',
-    description: 'Génération automatique de données ESG par IA',
-    icon: Database,
-    gradient: 'from-purple-500 to-purple-600',
-    bgLight: 'bg-purple-50',
-    path: '/app/settings/esg-enrichment',
-    badge: 'AI-Powered',
-    badgeColor: 'bg-purple-100 text-purple-700',
-    stats: { current: 2094, max: null },
-    status: 'ok' as const,
-    activity: '2 094 points enrichis'
-  },
-  {
-    id: 'api',
-    title: 'API Documentation',
-    description: 'Documentation complète de l\'API REST',
-    icon: FileText,
-    gradient: 'from-pink-500 to-pink-600',
-    bgLight: 'bg-pink-50',
-    path: '/docs',
-    external: true,
-    badge: 'Docs',
-    badgeColor: 'bg-pink-100 text-pink-700',
-    stats: null,
-    status: 'ok' as const,
-    activity: 'Swagger UI disponible'
+    title: 'Avancé',
+    items: [
+      { id: 'danger', label: 'Zone de danger', icon: AlertTriangle, badge: '!', badgeColor: 'bg-red-100 text-red-600' },
+    ],
   },
 ];
 
-const USAGE_DATA = [
-  { label: 'Utilisateurs', used: 50, total: 50, icon: Users, status: 'full' as const, colorClass: 'text-blue-600', bgClass: 'bg-blue-50' },
-  { label: 'Organisations', used: 29, total: 100, icon: Building2, status: 'ok' as const, colorClass: 'text-green-600', bgClass: 'bg-green-50' },
-  { label: 'Appels API (ce mois)', used: 8432, total: 10000, icon: Zap, status: 'warning' as const, colorClass: 'text-yellow-600', bgClass: 'bg-yellow-50' },
-  { label: 'Webhooks actifs', used: 3, total: 10, icon: Webhook, status: 'ok' as const, colorClass: 'text-purple-600', bgClass: 'bg-purple-50' },
+// ─── Static data ──────────────────────────────────────────────────────────────
+const SETTINGS_MODULES = [
+  { id: 'webhooks',    title: 'Webhooks',            desc: 'Notifications temps réel',           icon: Webhook,    gradient: 'from-green-500 to-emerald-600',  badge: '3 actifs',       path: '/app/settings/webhooks' },
+  { id: 'insee',       title: 'API INSEE Sirene',    desc: 'Données entreprises françaises',     icon: Building2,  gradient: 'from-indigo-500 to-indigo-600',  badge: 'Gov API',        path: '/app/settings/insee' },
+  { id: 'enrichment',  title: 'Enrichissement ESG',  desc: 'Génération données IA',              icon: Database,   gradient: 'from-purple-500 to-purple-600',  badge: 'AI',             path: '/app/settings/esg-enrichment' },
+  { id: 'integrations',title: 'Connecteurs',         desc: 'Google Sheets, Power BI, SAP…',     icon: Plug,       gradient: 'from-orange-500 to-orange-600',  badge: '5 connectés',    path: '/app/settings/integrations' },
+  { id: 'methodology', title: 'Méthodologies',       desc: 'GRI, SASB, TCFD, ESRS',             icon: BarChart3,  gradient: 'from-teal-500 to-teal-600',      badge: '3 actives',      path: '/app/settings/methodology' },
+  { id: 'api-docs',    title: 'API Docs',            desc: 'Documentation Swagger',              icon: FileText,   gradient: 'from-pink-500 to-pink-600',      badge: 'Swagger',        path: '/docs', external: true },
 ];
 
 const API_KEYS = [
-  { id: 1, name: 'Production API Key', key: 'esg_prod_••••••••••••3f2a', created: '12 janv. 2026', lastUsed: 'Il y a 2h', status: 'active' },
-  { id: 2, name: 'Development API Key', key: 'esg_dev_••••••••••••8b1c', created: '5 déc. 2025', lastUsed: 'Il y a 3 jours', status: 'active' },
-  { id: 3, name: 'Test API Key', key: 'esg_test_••••••••••••4d9e', created: '2 nov. 2025', lastUsed: 'Il y a 30 jours', status: 'inactive' },
+  { id: 1, name: 'Production',  prefix: 'esg_prod_', suffix: '3f2a', created: '12 jan. 2026', lastUsed: 'Il y a 2h',    status: 'active'   as const },
+  { id: 2, name: 'Development', prefix: 'esg_dev_',  suffix: '8b1c', created: '5 déc. 2025',  lastUsed: 'Il y a 3j',    status: 'active'   as const },
+  { id: 3, name: 'Test',        prefix: 'esg_test_', suffix: '4d9e', created: '2 nov. 2025',  lastUsed: 'Il y a 30j',   status: 'inactive' as const },
 ];
 
-function getProgressColor(status: 'ok' | 'warning' | 'full') {
-  if (status === 'full') return 'from-red-500 to-red-600';
-  if (status === 'warning') return 'from-yellow-500 to-amber-500';
-  return 'from-green-500 to-emerald-500';
+const SESSIONS = [
+  { device: 'Chrome — macOS',      location: 'Paris, France',  ip: '92.184.x.x',  time: 'Maintenant',  current: true  },
+  { device: 'Safari — iPhone 15',  location: 'Paris, France',  ip: '92.184.x.x',  time: 'Il y a 2h',   current: false },
+  { device: 'Firefox — Windows',   location: 'Lyon, France',   ip: '81.57.x.x',   time: 'Il y a 1 j',  current: false },
+];
+
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-8 py-5 border-b border-gray-100 last:border-0">
+      <div className="sm:w-56 flex-shrink-0">
+        <p className="text-sm font-medium text-gray-800">{label}</p>
+        {hint && <p className="text-xs text-gray-400 mt-0.5 leading-snug">{hint}</p>}
+      </div>
+      <div className="flex-1">{children}</div>
+    </div>
+  );
 }
 
-export default function TenantSettings() {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<Tab>('general');
+function SectionHeader({ title, desc }: { title: string; desc?: string }) {
+  return (
+    <div className="mb-6">
+      <h2 className="text-base font-semibold text-gray-900">{title}</h2>
+      {desc && <p className="text-sm text-gray-500 mt-0.5">{desc}</p>}
+    </div>
+  );
+}
+
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${checked ? 'bg-violet-600' : 'bg-gray-200'}`}
+    >
+      <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ${checked ? 'translate-x-4' : 'translate-x-0'}`} />
+    </button>
+  );
+}
+
+// ─── SSO Tab ──────────────────────────────────────────────────────────────────
+function SSOTab() {
+  const [config, setConfig] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [billingAnnual, setBillingAnnual] = useState(true);
-  const [showNewKeyModal, setShowNewKeyModal] = useState(false);
-  const [newKeyName, setNewKeyName] = useState('');
-  const [formData, setFormData] = useState({
-    companyName: 'Demo Company',
-    billingEmail: 'billing@demo.com',
-    sector: 'finance',
-    timezone: 'Europe/Paris'
+  const [testing, setTesting] = useState(false);
+  const [form, setForm] = useState({
+    provider_name: '',
+    provider_type: 'oidc',
+    issuer_url: '',
+    client_id: '',
+    client_secret: '',
+    scopes: 'openid email profile',
+    email_attribute: 'email',
+    first_name_attribute: 'given_name',
+    last_name_attribute: 'family_name',
+    allowed_domains: '',
+    is_enabled: true,
   });
+
+  useEffect(() => {
+    api.get('/sso/config')
+      .then(res => {
+        if (res.data) {
+          setConfig(res.data);
+          setForm(f => ({ ...f, ...res.data, client_secret: '' }));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success(t('settings.saveSuccess'));
-    } catch {
-      toast.error(t('settings.saveError'));
+      const res = await api.post('/sso/config', form);
+      setConfig(res.data);
+      toast.success('Configuration SSO sauvegardée');
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Erreur');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleGenerateKey = () => {
-    if (!newKeyName.trim()) { toast.error(t('settings.keyNameRequired')); return; }
-    toast.success(t('settings.keyCreated', { name: newKeyName }));
-    setShowNewKeyModal(false);
-    setNewKeyName('');
+  const handleTest = async () => {
+    setTesting(true);
+    try {
+      const res = await api.get('/sso/test-config');
+      toast.success(`Connexion OK — Provider: ${res.data.issuer}`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Échec du test');
+    } finally {
+      setTesting(false);
+    }
   };
 
-  const handleRevokeKey = (keyName: string) => {
-    toast.success(t('settings.keyRevoked', { name: keyName }));
+  const handleDelete = async () => {
+    if (!confirm('Désactiver le SSO ?')) return;
+    await api.delete('/sso/config');
+    setConfig(null);
+    toast.success('SSO désactivé');
   };
+
+  if (loading) return (
+    <div className="flex justify-center p-8">
+      <div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={t('settings.title')}
-        subtitle={t('settings.subtitle')}
-      />
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-base font-semibold text-gray-900">Authentification unique (SSO)</h3>
+          <p className="text-sm text-gray-500 mt-1">
+            Connectez votre fournisseur d'identité OIDC (Okta, Microsoft Entra, Google Workspace, Keycloak...)
+          </p>
+        </div>
+        {config && (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.is_enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+            {config.is_enabled ? 'Actif' : 'Inactif'}
+          </span>
+        )}
+      </div>
 
-      {/* Tab Navigation */}
-      <div className="bg-white border-2 border-gray-100 rounded-2xl p-2 flex gap-1">
-        {TABS_DEF.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
+      {/* OIDC preset buttons */}
+      <div>
+        <p className="text-xs font-medium text-gray-700 mb-2">Pré-remplir pour :</p>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { name: 'Microsoft Entra', issuer: 'https://login.microsoftonline.com/{tenant}/v2.0', icon: '🏢' },
+            { name: 'Okta',            issuer: 'https://{domain}.okta.com',                      icon: '🔑' },
+            { name: 'Google Workspace',issuer: 'https://accounts.google.com',                    icon: '🔵' },
+            { name: 'Keycloak',        issuer: 'https://your-keycloak.com/realms/{realm}',       icon: '🔐' },
+          ].map(p => (
+            <button
+              key={p.name}
+              onClick={() => setForm(f => ({ ...f, provider_name: p.name, issuer_url: f.issuer_url || p.issuer }))}
+              className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              {p.icon} {p.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Form */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Nom du provider *</label>
+          <input
+            value={form.provider_name}
+            onChange={e => setForm(f => ({ ...f, provider_name: e.target.value }))}
+            placeholder="ex: Okta, Microsoft Entra..."
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">URL Issuer (Discovery) *</label>
+          <input
+            value={form.issuer_url}
+            onChange={e => setForm(f => ({ ...f, issuer_url: e.target.value }))}
+            placeholder="https://login.microsoftonline.com/.../v2.0"
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Client ID *</label>
+          <input
+            value={form.client_id}
+            onChange={e => setForm(f => ({ ...f, client_id: e.target.value }))}
+            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Client Secret {config ? '(laisser vide pour ne pas modifier)' : '*'}
+          </label>
+          <input
+            type="password"
+            value={form.client_secret}
+            onChange={e => setForm(f => ({ ...f, client_secret: e.target.value }))}
+            placeholder={config ? '••••••••' : 'client secret...'}
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Scopes</label>
+          <input
+            value={form.scopes}
+            onChange={e => setForm(f => ({ ...f, scopes: e.target.value }))}
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Domaines autorisés (optionnel)</label>
+          <input
+            value={form.allowed_domains}
+            onChange={e => setForm(f => ({ ...f, allowed_domains: e.target.value }))}
+            placeholder="monentreprise.com, filiale.com"
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+          <p className="text-xs text-gray-400 mt-1">Séparez les domaines par des virgules</p>
+        </div>
+      </div>
+
+      {/* Attribute mapping */}
+      <div>
+        <p className="text-sm font-medium text-gray-700 mb-2">Mapping des attributs</p>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: 'Email',  key: 'email_attribute' },
+            { label: 'Prénom', key: 'first_name_attribute' },
+            { label: 'Nom',    key: 'last_name_attribute' },
+          ].map(attr => (
+            <div key={attr.key}>
+              <label className="block text-xs font-medium text-gray-600 mb-1">{attr.label}</label>
+              <input
+                value={form[attr.key as keyof typeof form] as string}
+                onChange={e => setForm(f => ({ ...f, [attr.key]: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Enable toggle */}
+      <label className="flex items-center gap-3 cursor-pointer">
+        <div
+          onClick={() => setForm(f => ({ ...f, is_enabled: !f.is_enabled }))}
+          className={`relative w-11 h-6 rounded-full transition-colors ${form.is_enabled ? 'bg-violet-600' : 'bg-gray-200'}`}
+        >
+          <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${form.is_enabled ? 'translate-x-5' : ''}`} />
+        </div>
+        <span className="text-sm text-gray-700">Activer le SSO pour ce tenant</span>
+      </label>
+
+      {/* Actions */}
+      <div className="flex gap-3 pt-2">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="inline-flex items-center gap-2 px-6 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+        >
+          {saving
+            ? <><div className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Sauvegarde…</>
+            : <><Save size={14} /> Sauvegarder</>
+          }
+        </button>
+        {config?.issuer_url && (
+          <button
+            onClick={handleTest}
+            disabled={testing}
+            className="px-4 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            {testing ? 'Test…' : 'Tester la connexion'}
+          </button>
+        )}
+        {config && (
+          <button
+            onClick={handleDelete}
+            className="px-4 py-2 border border-red-200 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors ml-auto"
+          >
+            Désactiver
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
+export default function TenantSettings() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const currentUser = useSelector((state: RootState) => state.auth.user);
+
+  const [active, setActive] = useState<SectionId>('workspace');
+  const [saving, setSaving] = useState(false);
+
+  // 2FA
+  const [show2FA, setShow2FA]               = useState(false);
+  const [mfaEnabled, setMfaEnabled]         = useState(currentUser?.mfa_enabled ?? false);
+  const [disabling2FA, setDisabling2FA]     = useState(false);
+  const [disablePassword, setDisablePass]   = useState('');
+  const [showDisable2FA, setShowDisable2FA] = useState(false);
+  const [disable2FAError, setDisable2FAErr] = useState('');
+
+  // API keys
+  const [showNewKey, setShowNewKey]   = useState(false);
+  const [newKeyName, setNewKeyName]   = useState('');
+  const [revealedKey, setRevealedKey] = useState<number | null>(null);
+
+  // Billing
+  const [subscription, setSub]         = useState<Subscription | null>(null);
+  const [billingLoading, setBilLoad]    = useState(false);
+
+  // Form
+  const [form, setForm] = useState({
+    companyName: 'Demo Company',
+    billingEmail: 'billing@demo.com',
+    sector: 'finance',
+    timezone: 'Europe/Paris',
+    language: 'fr',
+    website: 'https://demo.com',
+  });
+
+  // Notifications
+  const [notifs, setNotifs] = useState({
+    weeklyReport: true,
+    thresholdAlerts: true,
+    productUpdates: false,
+    securityAlerts: true,
+    invoiceEmails: true,
+    apiUsageAlerts: false,
+  });
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const s = p.get('tab') as SectionId | null;
+    if (s) setActive(s);
+    if (p.get('checkout') === 'success') {
+      toast.success('Abonnement activé avec succès !');
+      setActive('billing');
+      window.history.replaceState({}, '', window.location.pathname + '?tab=billing');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (active !== 'billing') return;
+    setBilLoad(true);
+    billingService.getSubscription().then(setSub).catch(() => null).finally(() => setBilLoad(false));
+  }, [active]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    await new Promise(r => setTimeout(r, 900));
+    setSaving(false);
+    toast.success('Paramètres sauvegardés');
+  };
+
+  const handle2FAEnabled = () => {
+    setMfaEnabled(true);
+    if (currentUser) dispatch(setUser({ ...currentUser, mfa_enabled: true }));
+    toast.success('2FA activée — compte protégé');
+  };
+
+  const handleDisable2FA = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDisable2FAErr('');
+    setDisabling2FA(true);
+    try {
+      await authService.disable2FA(disablePassword);
+      setMfaEnabled(false);
+      if (currentUser) dispatch(setUser({ ...currentUser, mfa_enabled: false }));
+      setShowDisable2FA(false);
+      setDisablePass('');
+      toast.success('2FA désactivée');
+    } catch (err: any) {
+      setDisable2FAErr(err?.response?.data?.detail || 'Mot de passe incorrect');
+    } finally {
+      setDisabling2FA(false);
+    }
+  };
+
+  const handleGenerateKey = () => {
+    if (!newKeyName.trim()) { toast.error('Nom requis'); return; }
+    toast.success(`Clé "${newKeyName}" créée — copiez-la maintenant, elle ne sera plus visible.`);
+    setShowNewKey(false);
+    setNewKeyName('');
+  };
+
+  const handlePortal = async () => {
+    try {
+      const url = await billingService.createPortal();
+      window.open(url, '_blank');
+    } catch { toast.error('Portail de facturation indisponible'); }
+  };
+
+  // ── Sidebar ──────────────────────────────────────────────────────────────────
+  const Sidebar = (
+    <aside className="w-52 flex-shrink-0">
+      <nav className="space-y-6">
+        {NAV_GROUPS.map(group => (
+          <div key={group.title}>
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1 px-3">{group.title}</p>
+            <div className="space-y-0.5">
+              {group.items.map(item => {
+                const Icon = item.icon;
+                const isActive = active === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setActive(item.id)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      isActive
+                        ? 'bg-violet-50 text-violet-700'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    }`}
+                  >
+                    <Icon size={15} className={isActive ? 'text-violet-600' : 'text-gray-400'} />
+                    <span className="pointer-events-none flex-1 text-left">{item.label}</span>
+                    {item.badge && (
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full pointer-events-none ${item.badgeColor || 'bg-gray-100 text-gray-500'}`}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </nav>
+    </aside>
+  );
+
+  // ── Content sections ──────────────────────────────────────────────────────────
+
+  const WorkspaceSection = (
+    <div>
+      <SectionHeader title="Général" desc="Informations de votre organisation affichées dans les rapports et factures." />
+
+      <Field label="Nom de l'organisation">
+        <input
+          value={form.companyName}
+          onChange={e => setForm({ ...form, companyName: e.target.value })}
+          className="w-full max-w-sm px-3.5 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+        />
+      </Field>
+
+      <Field label="Email de facturation" hint="Reçoit les factures et alertes d'usage.">
+        <div className="relative max-w-sm">
+          <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="email"
+            value={form.billingEmail}
+            onChange={e => setForm({ ...form, billingEmail: e.target.value })}
+            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+      </Field>
+
+      <Field label="Site web">
+        <div className="relative max-w-sm">
+          <Globe size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="url"
+            value={form.website}
+            onChange={e => setForm({ ...form, website: e.target.value })}
+            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          />
+        </div>
+      </Field>
+
+      <Field label="Secteur d'activité">
+        <select
+          value={form.sector}
+          onChange={e => setForm({ ...form, sector: e.target.value })}
+          className="max-w-sm w-full px-3.5 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 appearance-none"
+        >
+          <option value="finance">Finance & Services</option>
+          <option value="industry">Industrie</option>
+          <option value="energy">Énergie</option>
+          <option value="tech">Technologie</option>
+          <option value="commerce">Commerce</option>
+          <option value="agriculture">Agriculture</option>
+          <option value="immobilier">Immobilier</option>
+        </select>
+      </Field>
+
+      <Field label="Fuseau horaire">
+        <select
+          value={form.timezone}
+          onChange={e => setForm({ ...form, timezone: e.target.value })}
+          className="max-w-sm w-full px-3.5 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 appearance-none"
+        >
+          <option value="Europe/Paris">🇫🇷 Europe/Paris (UTC+1)</option>
+          <option value="Europe/London">🇬🇧 Europe/London (UTC+0)</option>
+          <option value="Europe/Berlin">🇩🇪 Europe/Berlin (UTC+1)</option>
+          <option value="America/New_York">🇺🇸 America/New_York (UTC-5)</option>
+        </select>
+      </Field>
+
+      <Field label="Langue de l'interface">
+        <select
+          value={form.language}
+          onChange={e => setForm({ ...form, language: e.target.value })}
+          className="max-w-sm w-full px-3.5 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 appearance-none"
+        >
+          <option value="fr">Français</option>
+          <option value="en">English</option>
+        </select>
+      </Field>
+
+      <div className="pt-5">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-60 transition-colors"
+        >
+          {saving
+            ? <><div className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Sauvegarde…</>
+            : <><Save size={14} /> Sauvegarder</>
+          }
+        </button>
+      </div>
+    </div>
+  );
+
+  const MembersSection = (
+    <div>
+      <SectionHeader title="Membres" desc="Gérez les utilisateurs, rôles et permissions de votre espace de travail." />
+      <div className="rounded-xl border border-gray-200 overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50/50">
+          <p className="text-sm font-medium text-gray-700">3 membres actifs</p>
+          <button
+            onClick={() => navigate('/app/settings/users')}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-600 hover:text-violet-700"
+          >
+            Gérer <ArrowUpRight size={13} />
+          </button>
+        </div>
+        {[
+          { name: 'Admin Principal',     email: 'admin@demo.com',    role: 'Admin',     avatar: 'A' },
+          { name: 'Analyste ESG',        email: 'analyst@demo.com',  role: 'Analyste',  avatar: 'A' },
+          { name: 'Responsable Reporting', email: 'report@demo.com', role: 'Lecteur',   avatar: 'R' },
+        ].map((m, i) => (
+          <div key={i} className="flex items-center justify-between px-5 py-3.5 border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-xs font-bold text-violet-700">
+                {m.avatar}
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-900">{m.name}</p>
+                <p className="text-xs text-gray-400">{m.email}</p>
+              </div>
+            </div>
+            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+              m.role === 'Admin' ? 'bg-violet-100 text-violet-700' :
+              m.role === 'Analyste' ? 'bg-blue-100 text-blue-700' :
+              'bg-gray-100 text-gray-600'
+            }`}>{m.role}</span>
+          </div>
+        ))}
+        <div className="px-5 py-3.5 bg-gray-50/50">
+          <button
+            onClick={() => navigate('/app/settings/users')}
+            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700"
+          >
+            <Plus size={13} /> Inviter un membre
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const NotificationsSection = (
+    <div>
+      <SectionHeader title="Notifications" desc="Choisissez les événements pour lesquels vous souhaitez être alerté." />
+
+      {[
+        { key: 'weeklyReport' as const,    label: 'Rapport hebdomadaire',   desc: 'Résumé ESG chaque lundi matin' },
+        { key: 'thresholdAlerts' as const, label: 'Alertes de seuils',      desc: 'Quand un KPI dépasse les limites définies' },
+        { key: 'securityAlerts' as const,  label: 'Alertes de sécurité',    desc: 'Connexions suspectes, nouvelles sessions' },
+        { key: 'invoiceEmails' as const,   label: 'Emails de facturation',  desc: 'Factures, renouvellements, échecs de paiement' },
+        { key: 'apiUsageAlerts' as const,  label: "Alertes d'usage API",    desc: 'Quand vous approchez de votre limite mensuelle' },
+        { key: 'productUpdates' as const,  label: 'Nouveautés produit',     desc: 'Nouvelles fonctionnalités et mises à jour' },
+      ].map(item => (
+        <div key={item.key} className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0">
+          <div>
+            <p className="text-sm font-medium text-gray-900">{item.label}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{item.desc}</p>
+          </div>
+          <Toggle
+            checked={notifs[item.key]}
+            onChange={v => setNotifs({ ...notifs, [item.key]: v })}
+          />
+        </div>
+      ))}
+
+      <div className="pt-5">
+        <button
+          onClick={() => { toast.success('Préférences de notification sauvegardées'); }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition-colors"
+        >
+          <Save size={14} /> Sauvegarder
+        </button>
+      </div>
+    </div>
+  );
+
+  const IntegrationsSection = (
+    <div>
+      <SectionHeader title="Intégrations & Modules" desc="Configurez les connecteurs et modules actifs de votre plateforme." />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {SETTINGS_MODULES.map(mod => {
+          const Icon = mod.icon;
           return (
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
-                isActive
-                  ? 'bg-gradient-to-r from-primary-500 to-blue-600 text-white shadow-lg shadow-primary-200'
-                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-              }`}
+              key={mod.id}
+              type="button"
+              onClick={() => {
+                if ((mod as any).external) window.open(`${(import.meta.env.VITE_API_URL || '').replace('/api/v1', '')}/docs`, '_blank');
+                else navigate(mod.path);
+              }}
+              className="group flex items-center gap-4 p-4 rounded-xl border border-gray-200 bg-white hover:border-violet-200 hover:shadow-sm transition-all text-left"
             >
-              <Icon className="h-4 w-4" />
-              {t(tab.labelKey)}
+              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${mod.gradient} flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform`}>
+                <Icon size={18} className="text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+                  {mod.title}
+                  {(mod as any).external && <ExternalLink size={11} className="text-gray-400" />}
+                </p>
+                <p className="text-xs text-gray-400 truncate">{mod.desc}</p>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{mod.badge}</span>
+                <ChevronRight size={14} className="text-gray-300 group-hover:text-gray-500 group-hover:translate-x-0.5 transition-all" />
+              </div>
             </button>
           );
         })}
       </div>
 
-      {/* ─── Tab: GÉNÉRAL ─────────────────────────────────────── */}
-      {activeTab === 'general' && (
-        <div className="space-y-6">
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: t('settings.uptimeMonth'), value: '99.9%', icon: Activity, color: 'text-green-600', bg: 'bg-green-50', trend: '+0.1%' },
-              { label: t('settings.lastBackup'), value: '2h', icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50', trend: t('settings.automatic') },
-              { label: t('settings.securityScore'), value: 'A+', icon: Shield, color: 'text-purple-600', bg: 'bg-purple-50', trend: t('settings.excellent') },
-              { label: t('settings.responseTime'), value: '< 1h', icon: Bell, color: 'text-orange-600', bg: 'bg-orange-50', trend: t('settings.support') },
-            ].map((stat) => {
-              const Icon = stat.icon;
-              return (
-                <div key={stat.label} className="bg-white border-2 border-gray-100 rounded-2xl p-5 hover:shadow-lg hover:border-primary-100 transition-all">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className={`p-2.5 ${stat.bg} rounded-xl`}>
-                      <Icon className={`h-5 w-5 ${stat.color}`} />
-                    </div>
-                    <span className="text-xs font-semibold text-gray-400 bg-gray-50 px-2 py-1 rounded-full">{stat.trend}</span>
-                  </div>
-                  <p className="text-xs text-gray-500 font-medium mb-1">{stat.label}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Company Info Form */}
-            <Card className="border-2">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2.5 bg-primary-50 rounded-xl">
-                  <Building2 className="h-5 w-5 text-primary-600" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900">{t('settings.generalInfo')}</h2>
-                  <p className="text-xs text-gray-500">{t('settings.orgData')}</p>
-                </div>
-              </div>
-
-              <div className="space-y-5">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">{t('settings.companyName')}</label>
-                  <input
-                    type="text"
-                    value={formData.companyName}
-                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all text-gray-900"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">{t('settings.billingEmail')}</label>
-                  <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                      type="email"
-                      value={formData.billingEmail}
-                      onChange={(e) => setFormData({ ...formData, billingEmail: e.target.value })}
-                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">{t('settings.sector')}</label>
-                  <select
-                    value={formData.sector}
-                    onChange={(e) => setFormData({ ...formData, sector: e.target.value })}
-                    aria-label="Secteur d'activité"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 appearance-none bg-white cursor-pointer"
-                  >
-                    <option value="finance">Finance & Services</option>
-                    <option value="industry">Industrie</option>
-                    <option value="energy">Énergie</option>
-                    <option value="tech">Technologie</option>
-                    <option value="commerce">Commerce</option>
-                    <option value="agriculture">Agriculture</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">{t('settings.timezone')}</label>
-                  <div className="relative">
-                    <Globe className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <select
-                      value={formData.timezone}
-                      onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
-                      aria-label="Fuseau horaire"
-                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 appearance-none bg-white cursor-pointer"
-                    >
-                      <option value="Europe/Paris">🇫🇷 Europe/Paris (UTC+1)</option>
-                      <option value="Europe/London">🇬🇧 Europe/London (UTC+0)</option>
-                      <option value="America/New_York">🇺🇸 America/New_York (UTC-5)</option>
-                      <option value="Asia/Tokyo">🇯🇵 Asia/Tokyo (UTC+9)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <Button className="w-full py-3 text-sm font-semibold" onClick={handleSave} disabled={saving}>
-                  {saving ? (
-                    <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />{t('settings.saving')}</>
-                  ) : (
-                    <><Save className="h-4 w-4 mr-2" />{t('settings.saveChanges')}</>
-                  )}
-                </Button>
-              </div>
-            </Card>
-
-            {/* Usage & Limits */}
-            <Card className="border-2">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-green-50 rounded-xl">
-                    <TrendingUp className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-gray-900">{t('settings.usageLimits')}</h2>
-                    <p className="text-xs text-gray-500">Plan Pro — Cycle actuel</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('billing')}
-                  className="text-xs text-primary-600 hover:text-primary-700 font-semibold flex items-center gap-1 hover:gap-2 transition-all"
-                >
-                  {t('settings.managePlan')} <ChevronRight className="h-3 w-3" />
-                </button>
-              </div>
-
-              <div className="space-y-5">
-                {USAGE_DATA.map((item) => {
-                  const Icon = item.icon;
-                  const pct = Math.round((item.used / item.total) * 100);
-                  return (
-                    <div key={item.label}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2.5">
-                          <div className={`w-8 h-8 rounded-lg ${item.bgClass} flex items-center justify-center`}>
-                            <Icon className={`h-4 w-4 ${item.colorClass}`} />
-                          </div>
-                          <span className="text-sm font-semibold text-gray-700">{item.label}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {item.status === 'full' && <AlertCircle className="h-4 w-4 text-red-500" />}
-                          {item.status === 'warning' && <AlertCircle className="h-4 w-4 text-yellow-500" />}
-                          {item.status === 'ok' && <CheckCircle className="h-4 w-4 text-green-500" />}
-                          <span className="text-sm font-bold text-gray-900">
-                            {item.used.toLocaleString()} <span className="text-gray-400 font-normal">/</span> {item.total.toLocaleString()}
-                          </span>
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                            item.status === 'full' ? 'bg-red-100 text-red-700' :
-                            item.status === 'warning' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-green-100 text-green-700'
-                          }`}>{pct}%</span>
-                        </div>
-                      </div>
-                      <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full bg-gradient-to-r ${getProgressColor(item.status)} rounded-full transition-all duration-700`}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                      {item.status === 'full' && (
-                        <p className="mt-1.5 text-xs text-red-600 font-medium">{t('settings.limitReached')}</p>
-                      )}
-                      {item.status === 'warning' && (
-                        <p className="mt-1.5 text-xs text-yellow-600 font-medium">{100 - pct}% restant — bientôt la limite</p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="mt-6 p-4 bg-gradient-to-br from-primary-50 to-blue-50 rounded-xl border border-primary-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-bold text-gray-900 mb-0.5">{t('settings.needMore')}</p>
-                    <p className="text-xs text-gray-600">{t('settings.enterpriseUnlimited')}</p>
-                  </div>
-                  <Button size="sm" onClick={() => setActiveTab('billing')}>
-                    <Crown className="h-3.5 w-3.5 mr-1.5" />
-                    {t('settings.seePlans')}
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </div>
+      {/* Methodologies */}
+      <div className="mt-6">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-semibold text-gray-700">Référentiels actifs</p>
+          <button onClick={() => navigate('/app/settings/methodology')} className="text-xs text-violet-600 hover:text-violet-700 font-medium flex items-center gap-1">
+            Configurer <ChevronRight size={12} />
+          </button>
         </div>
-      )}
-
-      {/* ─── Tab: FACTURATION ─────────────────────────────────── */}
-      {activeTab === 'billing' && (
-        <div className="space-y-6">
-          {/* Current Plan Banner */}
-          <div className="relative overflow-hidden bg-gradient-to-r from-primary-600 via-primary-500 to-blue-600 rounded-2xl p-7 text-white shadow-xl">
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,255,255,0.15),_transparent_60%)]" />
-            <div className="relative flex items-center justify-between">
-              <div className="flex items-center gap-5">
-                <div className="p-3.5 bg-white/20 rounded-2xl backdrop-blur-sm">
-                  <Crown className="h-8 w-8" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-2xl font-bold">Plan Pro</h3>
-                    <span className="px-3 py-1 bg-white/25 rounded-full text-xs font-bold border border-white/30">
-                      ✨ Actif
-                    </span>
-                  </div>
-                  <p className="text-white/90 mb-3">99€/mois · Facturation annuelle · Renouvellement le 28 mars 2026</p>
-                  <div className="flex items-center gap-6 text-sm">
-                    {['50 utilisateurs', 'API illimitée', 'Support prioritaire', 'IA incluse'].map((f) => (
-                      <div key={f} className="flex items-center gap-1.5">
-                        <CheckCircle className="h-4 w-4" /><span className="font-medium">{f}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {[
+            { name: 'GRI Standards 2024',      version: 'v1.0', emoji: '🌿' },
+            { name: 'SASB Framework',           version: 'v2.1', emoji: '📊' },
+            { name: 'TCFD Recommendations',     version: 'v3.0', emoji: '🌡️' },
+          ].map(m => (
+            <div key={m.name} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100">
+              <span className="text-lg">{m.emoji}</span>
+              <div>
+                <p className="text-xs font-semibold text-gray-800">{m.name}</p>
+                <p className="text-[10px] text-gray-400">{m.version}</p>
               </div>
-              <div className="text-right">
-                <p className="text-white/70 text-xs mb-2">Prochaine facture</p>
-                <p className="text-2xl font-bold">990€</p>
-                <p className="text-white/70 text-xs">28 mars 2026</p>
-              </div>
+              <span className="ml-auto text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">Actif</span>
             </div>
-          </div>
-
-          {/* Billing Toggle */}
-          <div className="flex items-center justify-center gap-4">
-            <span className={`text-sm font-semibold ${!billingAnnual ? 'text-gray-900' : 'text-gray-400'}`}>{t('settings.monthly')}</span>
-            <button
-              type="button"
-              onClick={() => setBillingAnnual(!billingAnnual)}
-              className={`relative w-14 h-7 rounded-full transition-colors duration-300 ${billingAnnual ? 'bg-primary-600' : 'bg-gray-200'}`}
-            >
-              <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${billingAnnual ? 'translate-x-8' : 'translate-x-1'}`} />
-            </button>
-            <span className={`text-sm font-semibold ${billingAnnual ? 'text-gray-900' : 'text-gray-400'}`}>
-              {t('settings.annual')}
-              <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded-full">-17%</span>
-            </span>
-          </div>
-
-          {/* Plans Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {PLANS.map((plan) => {
-              const price = billingAnnual ? plan.annualPrice : plan.monthlyPrice;
-              return (
-                <div
-                  key={plan.id}
-                  className={`relative rounded-2xl border-2 overflow-hidden transition-all duration-300 ${
-                    plan.current
-                      ? 'border-primary-400 shadow-xl shadow-primary-100 scale-[1.02]'
-                      : 'border-gray-100 hover:border-gray-300 hover:shadow-lg'
-                  }`}
-                >
-                  {/* Header */}
-                  <div className={`bg-gradient-to-br ${plan.gradient} p-6 text-white`}>
-                    {plan.badge && (
-                      <span className="inline-block px-3 py-1 bg-white/25 rounded-full text-xs font-bold mb-3 border border-white/30">
-                        {plan.current ? '✨ Plan actuel' : plan.badge}
-                      </span>
-                    )}
-                    <h3 className="text-xl font-bold mb-1">{plan.name}</h3>
-                    <p className="text-white/80 text-sm mb-4">{plan.description}</p>
-                    <div className="flex items-end gap-1">
-                      {price !== null ? (
-                        <>
-                          <span className="text-4xl font-black">{price}€</span>
-                          <span className="text-white/70 mb-1.5 text-sm">/{billingAnnual ? 'an' : 'mois'}</span>
-                        </>
-                      ) : (
-                        <span className="text-3xl font-black">{t('settings.onQuote')}</span>
-                      )}
-                    </div>
-                    {billingAnnual && price !== null && (
-                      <p className="text-white/70 text-xs mt-1">
-                        Soit {Math.round(price / 12)}€/mois · économisez {Math.round((plan.monthlyPrice! * 12 - price) / (plan.monthlyPrice! * 12) * 100)}%
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Features */}
-                  <div className="bg-white p-6">
-                    <ul className="space-y-3 mb-6">
-                      {plan.features.map((feature) => (
-                        <li key={feature.text} className="flex items-center gap-3">
-                          {feature.included ? (
-                            <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                              <Check className="h-3 w-3 text-green-600" />
-                            </div>
-                          ) : (
-                            <div className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                              <X className="h-3 w-3 text-gray-400" />
-                            </div>
-                          )}
-                          <span className={`text-sm ${feature.included ? 'text-gray-800 font-medium' : 'text-gray-400'}`}>
-                            {feature.text}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    {plan.current ? (
-                      <div className="w-full py-2.5 bg-primary-50 border-2 border-primary-200 rounded-xl text-primary-700 text-sm font-bold text-center">
-                        {t('settings.currentPlan')}
-                      </div>
-                    ) : plan.id === 'enterprise' ? (
-                      <Button variant="secondary" className="w-full">
-                        {t('settings.contactSales')}
-                      </Button>
-                    ) : (
-                      <Button variant="secondary" className="w-full hover:bg-gray-900 hover:text-white transition-colors">
-                        {plan.id === 'starter' ? t('settings.downgrade') : t('settings.upgradeEnterprise')}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Invoice History */}
-          <Card className="border-2">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-gray-50 rounded-xl">
-                  <CreditCard className="h-5 w-5 text-gray-600" />
-                </div>
-                <h2 className="text-lg font-bold text-gray-900">{t('settings.invoiceHistory')}</h2>
-              </div>
-              <Button variant="secondary" size="sm">
-                <Download className="h-3.5 w-3.5 mr-1.5" />
-                {t('settings.downloadAll')}
-              </Button>
-            </div>
-
-            <div className="overflow-hidden rounded-xl border border-gray-100">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600">{t('settings.date')}</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600">{t('settings.description')}</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600">{t('settings.amount')}</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600">{t('settings.status')}</th>
-                    <th className="px-4 py-3" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { date: '28 mars 2025', desc: 'Plan Pro — Annuel', amount: '990,00€', status: 'Payée' },
-                    { date: '28 mars 2024', desc: 'Plan Pro — Annuel', amount: '990,00€', status: 'Payée' },
-                    { date: '28 mars 2023', desc: 'Plan Pro — Annuel', amount: '890,00€', status: 'Payée' },
-                  ].map((invoice, i) => (
-                    <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3.5 text-gray-600">{invoice.date}</td>
-                      <td className="px-4 py-3.5 font-medium text-gray-900">{invoice.desc}</td>
-                      <td className="px-4 py-3.5 font-bold text-gray-900">{invoice.amount}</td>
-                      <td className="px-4 py-3.5">
-                        <span className="px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">{invoice.status}</span>
-                      </td>
-                      <td className="px-4 py-3.5 text-right">
-                        <button type="button" className="text-primary-600 hover:text-primary-700 font-semibold text-xs flex items-center gap-1 ml-auto">
-                          <Download className="h-3 w-3" /> PDF
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+          ))}
         </div>
-      )}
+      </div>
+    </div>
+  );
 
-      {/* ─── Tab: CONFIG & INTÉGRATIONS ───────────────────────── */}
-      {activeTab === 'integrations' && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">Configuration & Intégrations</h2>
-              <p className="text-sm text-gray-500 mt-0.5">{SETTINGS_SECTIONS.length} modules disponibles</p>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-gray-500 bg-green-50 text-green-700 px-3 py-2 rounded-lg font-medium border border-green-200">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              Tous les services opérationnels
-            </div>
-          </div>
+  const BillingSection = (
+    <div>
+      <SectionHeader title="Facturation" desc="Plan actuel, usage et historique de vos factures." />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {SETTINGS_SECTIONS.map((section) => {
-              const Icon = section.icon;
-              return (
-                <div
-                  key={section.id}
-                  onClick={() => {
-                    if (section.external) {
-                      window.open(
-                        `${(import.meta.env.VITE_API_URL || 'http://localhost:8000').replace('/api/v1', '')}/docs`,
-                        '_blank'
-                      );
-                    } else {
-                      navigate(section.path);
-                    }
-                  }}
-                  className="group relative bg-white border-2 border-gray-100 rounded-2xl p-6 hover:shadow-xl hover:border-primary-200 cursor-pointer transition-all duration-300 hover:-translate-y-1"
-                >
-                  {/* Status dot */}
-                  <div className="absolute top-4 right-4 flex items-center gap-1.5">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                    <span className="text-xs font-semibold text-green-600">{t('settings.active')}</span>
-                  </div>
-
-                  {/* Icon */}
-                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${section.gradient} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-md`}>
-                    <Icon className="h-7 w-7 text-white" />
-                  </div>
-
-                  {/* Content */}
-                  <h3 className="font-bold text-gray-900 text-base mb-1 flex items-center gap-2">
-                    {section.title}
-                    {section.external && <ArrowUpRight className="h-3.5 w-3.5 text-gray-400" />}
-                  </h3>
-                  <p className="text-sm text-gray-500 mb-4 leading-relaxed">{section.description}</p>
-
-                  {/* Stats bar */}
-                  {section.stats && (
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between text-xs mb-1.5">
-                        <span className="text-gray-400">{t('settings.usage')}</span>
-                        <span className="font-bold text-gray-800">
-                          {section.stats.current.toLocaleString()}
-                          {section.stats.max && ` / ${section.stats.max.toLocaleString()}`}
-                        </span>
-                      </div>
-                      {section.stats.max && (
-                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full bg-gradient-to-r ${section.gradient} rounded-full transition-all`}
-                            style={{ width: `${Math.min((section.stats.current / section.stats.max) * 100, 100)}%` }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Activity + Badge */}
-                  <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${section.badgeColor}`}>
-                      {section.badge}
-                    </span>
-                    <span className="text-xs text-gray-400">{section.activity}</span>
-                  </div>
-
-                  {/* Hover action */}
-                  <div className="mt-3 flex items-center text-sm font-semibold text-primary-600 group-hover:gap-2 gap-1 transition-all">
-                    <span>{section.external ? t('settings.open') : t('settings.configure')}</span>
-                    <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Methodology Section */}
-          <Card className="border-2">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-teal-50 rounded-xl">
-                  <BarChart3 className="h-5 w-5 text-teal-600" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900">{t('settings.activeMethodologies')}</h2>
-                  <p className="text-xs text-gray-500">{t('settings.reportingFrameworks')}</p>
-                </div>
+      {billingLoading ? (
+        <div className="flex items-center gap-2 text-sm text-gray-400 py-8 justify-center">
+          <div className="h-4 w-4 border-2 border-gray-200 border-t-violet-600 rounded-full animate-spin" /> Chargement…
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* Plan tile */}
+          <div className="rounded-xl border border-gray-200 p-5 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                <Star size={18} className="text-white" />
               </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => navigate('/app/settings/methodology')}
-              >
-                {t('settings.configure')}
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                { name: 'GRI Standards 2024', version: 'v1.0', status: 'Actif', color: 'green', icon: '🌿' },
-                { name: 'SASB Framework', version: 'v2.1', status: 'Actif', color: 'blue', icon: '📊' },
-                { name: 'TCFD Recommendations', version: 'v3.0', status: 'Actif', color: 'purple', icon: '🌡️' },
-              ].map((method) => (
-                <div key={method.name} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
-                  <span className="text-2xl">{method.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-gray-900 text-sm truncate">{method.name}</p>
-                    <p className="text-xs text-gray-500">{method.version}</p>
-                  </div>
-                  <span className="text-xs font-bold px-2 py-1 bg-green-100 text-green-700 rounded-full flex-shrink-0">
-                    {t('settings.active')}
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-gray-900">
+                    Plan {billingService.planLabel(subscription?.plan_tier || 'free')}
+                  </p>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    subscription?.status === 'active' || !subscription?.status
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : subscription?.status === 'past_due'
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {subscription?.status === 'active' ? 'Actif' : subscription?.status === 'trialing' ? 'Essai' : subscription?.status === 'past_due' ? 'En retard' : 'Free'}
                   </span>
                 </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* ─── Tab: SÉCURITÉ ────────────────────────────────────── */}
-      {activeTab === 'security' && (
-        <div className="space-y-6">
-          {/* Security Score */}
-          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-7 text-white">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-5">
-                <div className="p-3.5 bg-white/20 rounded-2xl">
-                  <Shield className="h-8 w-8" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold mb-1">{t('settings.securityScore')}</h3>
-                  <p className="text-white/80 text-sm">{t('settings.basedOnConfig')}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-5xl font-black">A+</p>
-                <p className="text-white/70 text-sm mt-1">Excellent</p>
-              </div>
-            </div>
-            <div className="mt-5 grid grid-cols-3 gap-4">
-              {[
-                { label: '2FA activé', ok: true },
-                { label: 'Chiffrement TLS', ok: true },
-                { label: 'Audit logs', ok: true },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2">
-                  <CheckCircle className="h-4 w-4 text-green-300 flex-shrink-0" />
-                  <span className="text-sm font-medium">{item.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* API Keys */}
-            <Card className="border-2">
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-orange-50 rounded-xl">
-                    <Key className="h-5 w-5 text-orange-600" />
-                  </div>
-                  <h2 className="text-lg font-bold text-gray-900">{t('settings.apiKeys')}</h2>
-                </div>
-                <Button size="sm" onClick={() => setShowNewKeyModal(true)}>
-                  + {t('settings.newKey')}
-                </Button>
-              </div>
-
-              <div className="space-y-3">
-                {API_KEYS.map((apiKey) => (
-                  <div key={apiKey.id} className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-bold text-gray-900 text-sm">{apiKey.name}</p>
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                            apiKey.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                          }`}>
-                            {apiKey.status === 'active' ? 'Active' : 'Inactive'}
-                          </span>
-                        </div>
-                        <p className="text-xs font-mono text-gray-500 mb-1">{apiKey.key}</p>
-                        <p className="text-xs text-gray-400">Créée le {apiKey.created} · Dernière utilisation : {apiKey.lastUsed}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRevokeKey(apiKey.name)}
-                        className="text-xs text-red-500 hover:text-red-700 font-semibold flex-shrink-0"
-                      >
-                        {t('settings.revoke')}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Sessions & 2FA */}
-            <div className="space-y-5">
-              {/* 2FA */}
-              <Card className="border-2">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-green-50 rounded-xl">
-                      <Lock className="h-5 w-5 text-green-600" />
-                    </div>
-                    <div>
-                      <h2 className="text-base font-bold text-gray-900">{t('settings.twoFa')}</h2>
-                      <p className="text-xs text-gray-500">{t('settings.twoFaEnabled')}</p>
-                    </div>
-                  </div>
-                  <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">Activé</span>
-                </div>
-                <div className="p-3 bg-green-50 rounded-xl border border-green-100 text-sm text-green-800">
-                  <CheckCircle className="inline h-4 w-4 mr-2" />
-                  Votre compte est protégé par une authentification à deux facteurs.
-                </div>
-              </Card>
-
-              {/* Active Sessions */}
-              <Card className="border-2">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-blue-50 rounded-xl">
-                      <Activity className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <h2 className="text-base font-bold text-gray-900">{t('settings.activeSessions')}</h2>
-                  </div>
-                  <button type="button" className="text-xs text-red-500 hover:text-red-700 font-semibold">
-                    {t('settings.disconnectAll')}
-                  </button>
-                </div>
-                <div className="space-y-2.5">
-                  {[
-                    { device: 'Chrome — macOS', location: 'Paris, France', time: 'Maintenant', current: true },
-                    { device: 'Safari — iPhone', location: 'Paris, France', time: 'Il y a 2h', current: false },
-                    { device: 'Firefox — Windows', location: 'Lyon, France', time: 'Il y a 1j', current: false },
-                  ].map((session, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                          {session.device}
-                          {session.current && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">Actuelle</span>}
-                        </p>
-                        <p className="text-xs text-gray-500">{session.location} · {session.time}</p>
-                      </div>
-                      {!session.current && (
-                        <button type="button" className="text-xs text-red-400 hover:text-red-600 font-medium">
-                          <X className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
-              {/* Audit Logs */}
-              <Card className="border-2">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-gray-50 rounded-xl">
-                      <RefreshCw className="h-5 w-5 text-gray-600" />
-                    </div>
-                    <h2 className="text-base font-bold text-gray-900">{t('settings.auditLogs')}</h2>
-                  </div>
-                  <Button variant="secondary" size="sm">
-                    <Download className="h-3.5 w-3.5 mr-1.5" />
-                    {t('settings.export')}
-                  </Button>
-                </div>
-                <p className="text-sm text-gray-500 mb-3">
-                  Suivi complet de toutes les actions effectuées sur la plateforme.
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {subscription?.current_period_end
+                    ? `Renouvellement le ${new Date(subscription.current_period_end).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}`
+                    : 'Aucun abonnement actif'}
                 </p>
-                <div className="space-y-2">
-                  {[
-                    { action: 'Connexion réussie', user: 'admin@demo.com', time: 'Il y a 2 min', color: 'text-green-600' },
-                    { action: 'Rapport généré', user: 'analyst@demo.com', time: 'Il y a 1h', color: 'text-blue-600' },
-                    { action: 'Donnée importée', user: 'manager@demo.com', time: 'Il y a 3h', color: 'text-purple-600' },
-                  ].map((log, i) => (
-                    <div key={i} className="flex items-center justify-between text-xs py-2 border-b border-gray-50 last:border-0">
-                      <span className={`font-semibold ${log.color}`}>{log.action}</span>
-                      <span className="text-gray-500">{log.user}</span>
-                      <span className="text-gray-400">{log.time}</span>
-                    </div>
-                  ))}
-                </div>
-              </Card>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              {subscription?.stripe_customer_id && (
+                <button onClick={handlePortal}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                  <ExternalLink size={12} /> Portail Stripe
+                </button>
+              )}
+              <button
+                onClick={() => navigate('/app/billing')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 rounded-lg text-xs font-medium text-white hover:bg-violet-700 transition-colors">
+                Gérer <ArrowUpRight size={12} />
+              </button>
             </div>
           </div>
+
+          {/* Usage bars */}
+          {subscription && (
+            <div className="rounded-xl border border-gray-200 p-5 space-y-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Usage du mois</p>
+              {[
+                { label: 'Appels API',     used: 8432, max: subscription.max_monthly_api_calls || 10000, color: 'bg-violet-500' },
+                { label: 'Utilisateurs',   used: 12,   max: subscription.max_users || 50,                color: 'bg-blue-500' },
+                { label: 'Organisations',  used: 29,   max: subscription.max_orgs || 100,               color: 'bg-emerald-500' },
+              ].map(item => {
+                const pct = item.max > 0 ? Math.min(100, Math.round((item.used / item.max) * 100)) : 0;
+                const warn = pct >= 80;
+                return (
+                  <div key={item.label}>
+                    <div className="flex justify-between text-xs mb-1.5">
+                      <span className="text-gray-600 font-medium">{item.label}</span>
+                      <span className={`font-semibold ${warn ? 'text-orange-600' : 'text-gray-700'}`}>
+                        {item.used.toLocaleString()} / {item.max > 0 ? item.max.toLocaleString() : '∞'}
+                        <span className="text-gray-400 font-normal ml-1">({pct}%)</span>
+                      </span>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full transition-all ${warn ? 'bg-orange-400' : item.color}`}
+                        style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <p className="text-xs text-gray-400 flex items-center gap-1">
+            <Zap size={11} />
+            Pour gérer les plans, les factures et les moyens de paiement, rendez-vous sur la{' '}
+            <button onClick={() => navigate('/app/billing')} className="text-violet-600 hover:underline font-medium">page Facturation</button>.
+          </p>
         </div>
       )}
+    </div>
+  );
 
-      {/* ─── Modal: Nouvelle clé API ──────────────────────────── */}
-      {showNewKeyModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+  const SecuritySection = (
+    <div>
+      <SectionHeader title="Sécurité" desc="Authentification à deux facteurs et paramètres de sécurité du compte." />
+
+      {/* Security score */}
+      <div className="rounded-xl bg-gradient-to-r from-slate-800 to-slate-700 p-5 text-white mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium text-white/60 uppercase tracking-wide">Score de sécurité</p>
+            <p className="text-3xl font-black mt-1">{mfaEnabled ? 'A+' : 'B'}</p>
+            <p className="text-xs text-white/70 mt-0.5">{mfaEnabled ? 'Excellent — tous les contrôles actifs' : 'Activez la 2FA pour atteindre A+'}</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: '2FA',            ok: mfaEnabled },
+              { label: 'TLS',            ok: true },
+              { label: 'Audit logs',     ok: true },
+            ].map(c => (
+              <div key={c.label} className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${c.ok ? 'bg-white/10' : 'bg-amber-400/20'}`}>
+                {c.ok
+                  ? <CheckCircle size={14} className="text-emerald-400" />
+                  : <AlertCircle size={14} className="text-amber-400" />
+                }
+                <span className="text-[10px] font-medium">{c.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 2FA */}
+      <div className="rounded-xl border border-gray-200 p-5 mb-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className={`mt-0.5 p-2 rounded-lg ${mfaEnabled ? 'bg-emerald-50' : 'bg-amber-50'}`}>
+              <Lock size={15} className={mfaEnabled ? 'text-emerald-600' : 'text-amber-500'} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Authentification à deux facteurs</p>
+              <p className="text-xs text-gray-400 mt-0.5">Application TOTP (Google Authenticator, Authy, 1Password…)</p>
+            </div>
+          </div>
+          <span className={`text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0 ${mfaEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+            {mfaEnabled ? 'Activée' : 'Désactivée'}
+          </span>
+        </div>
+
+        <div className="mt-4 pl-10">
+          {mfaEnabled ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2">
+                <CheckCircle size={13} /> Votre compte est protégé par la 2FA.
+              </div>
+              {!showDisable2FA ? (
+                <button type="button" onClick={() => setShowDisable2FA(true)} className="text-xs text-gray-400 hover:text-red-500 transition-colors">
+                  Désactiver la 2FA…
+                </button>
+              ) : (
+                <form onSubmit={handleDisable2FA} className="space-y-2 max-w-xs">
+                  <p className="text-xs text-gray-600">Confirmez votre mot de passe :</p>
+                  {disable2FAError && <p className="text-xs text-red-500">{disable2FAError}</p>}
+                  <div className="flex gap-2">
+                    <input type="password" value={disablePassword} onChange={e => setDisablePass(e.target.value)}
+                      placeholder="Mot de passe"
+                      className="flex-1 text-sm px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-400"
+                    />
+                    <button type="submit" disabled={disabling2FA || !disablePassword}
+                      className="px-3 py-1.5 bg-red-500 text-white text-xs font-semibold rounded-lg disabled:opacity-50 hover:bg-red-600 transition-colors">
+                      {disabling2FA ? '…' : 'OK'}
+                    </button>
+                    <button type="button" onClick={() => { setShowDisable2FA(false); setDisablePass(''); setDisable2FAErr(''); }}
+                      className="px-3 py-1.5 border border-gray-200 text-gray-500 text-xs rounded-lg hover:bg-gray-50">
+                      Annuler
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => setShow2FA(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-700 transition-colors"
+            >
+              <Shield size={14} /> Activer la 2FA
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Password change */}
+      <div className="rounded-xl border border-gray-200 p-5">
+        <div className="flex items-start gap-3 mb-4">
+          <div className="mt-0.5 p-2 rounded-lg bg-gray-50">
+            <Key size={15} className="text-gray-500" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900">Changer le mot de passe</p>
+            <p className="text-xs text-gray-400 mt-0.5">Utilisez un mot de passe fort de 12+ caractères.</p>
+          </div>
+        </div>
+        <div className="space-y-3 max-w-xs pl-10">
+          {['Mot de passe actuel', 'Nouveau mot de passe', 'Confirmer le nouveau'].map((ph, i) => (
+            <input key={i} type="password" placeholder={ph}
+              className="w-full px-3.5 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent" />
+          ))}
+          <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            <Save size={13} /> Mettre à jour
+          </button>
+        </div>
+      </div>
+
+      {show2FA && <TwoFactorSetupModal onClose={() => setShow2FA(false)} onEnabled={handle2FAEnabled} />}
+    </div>
+  );
+
+  const ApiKeysSection = (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-base font-semibold text-gray-900">Clés API</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Accès programmatique à l'API ESGFlow.</p>
+        </div>
+        <button
+          onClick={() => setShowNewKey(true)}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-700 transition-colors"
+        >
+          <Plus size={14} /> Nouvelle clé
+        </button>
+      </div>
+
+      <div className="rounded-xl border border-gray-200 overflow-hidden mb-4">
+        <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-0 text-xs font-semibold text-gray-400 uppercase tracking-wide px-5 py-3 bg-gray-50 border-b border-gray-100">
+          <span>Nom</span><span>Clé</span><span>Dernière utilisation</span><span />
+        </div>
+        {API_KEYS.map(k => (
+          <div key={k.id} className="grid grid-cols-[1fr_1fr_auto_auto] items-center gap-4 px-5 py-4 border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
+            <div className="flex items-center gap-2">
+              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${k.status === 'active' ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+              <span className="text-sm font-medium text-gray-900">{k.name}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <code className="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                {revealedKey === k.id ? `${k.prefix}${'x'.repeat(12)}${k.suffix}` : `${k.prefix}••••••••••••${k.suffix}`}
+              </code>
+              <button type="button" onClick={() => setRevealedKey(revealedKey === k.id ? null : k.id)}
+                className="text-gray-400 hover:text-gray-600 p-1">
+                {revealedKey === k.id ? <EyeOff size={12} /> : <Eye size={12} />}
+              </button>
+              <button type="button" onClick={() => { navigator.clipboard.writeText(`${k.prefix}${'x'.repeat(12)}${k.suffix}`); toast.success('Clé copiée'); }}
+                className="text-gray-400 hover:text-gray-600 p-1">
+                <Copy size={12} />
+              </button>
+            </div>
+            <span className="text-xs text-gray-400 whitespace-nowrap">{k.lastUsed}</span>
+            <button type="button" onClick={() => toast.success(`Clé "${k.name}" révoquée`)}
+              className="text-xs text-red-400 hover:text-red-600 font-medium whitespace-nowrap">
+              Révoquer
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-xl bg-amber-50 border border-amber-100 p-4 flex gap-3 text-sm text-amber-800">
+        <AlertCircle size={16} className="flex-shrink-0 mt-0.5 text-amber-500" />
+        <p>Ne partagez jamais vos clés API. En cas de compromission, révoquez immédiatement et régénérez.</p>
+      </div>
+
+      {/* New key modal */}
+      {showNewKey && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-gray-900">{t('settings.generateApiKey')}</h3>
-              <button type="button" onClick={() => setShowNewKeyModal(false)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
-                <X className="h-5 w-5 text-gray-400" />
+              <h3 className="text-base font-semibold text-gray-900">Nouvelle clé API</h3>
+              <button type="button" onClick={() => setShowNewKey(false)} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400">
+                <X size={16} />
               </button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">{t('settings.keyName')}</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">Nom de la clé</label>
                 <input
-                  type="text"
-                  value={newKeyName}
-                  onChange={(e) => setNewKeyName(e.target.value)}
-                  placeholder="ex. Mobile App Key"
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                  type="text" value={newKeyName} onChange={e => setNewKeyName(e.target.value)}
+                  placeholder="ex. Mobile App, CI/CD Pipeline…"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
                   autoFocus
                 />
               </div>
-              <div className="p-3 bg-yellow-50 rounded-xl border border-yellow-100 text-xs text-yellow-800">
-                <AlertCircle className="inline h-3.5 w-3.5 mr-1.5" />
-                La clé ne sera affichée qu'une seule fois. Copiez-la immédiatement.
+              <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-lg p-3 text-xs text-amber-700">
+                <AlertCircle size={13} className="flex-shrink-0 mt-0.5 text-amber-500" />
+                La clé sera affichée une seule fois. Copiez-la immédiatement.
               </div>
-              <div className="flex gap-3 pt-2">
-                <Button variant="secondary" className="flex-1" onClick={() => setShowNewKeyModal(false)}>
-                  {t('settings.cancel')}
-                </Button>
-                <Button className="flex-1" onClick={handleGenerateKey}>
-                  <Key className="h-4 w-4 mr-2" />
-                  {t('settings.generate')}
-                </Button>
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => setShowNewKey(false)}
+                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50">
+                  Annuler
+                </button>
+                <button onClick={handleGenerateKey}
+                  className="flex-1 px-4 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 transition-colors">
+                  Générer la clé
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
+    </div>
+  );
+
+  const SessionsSection = (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-base font-semibold text-gray-900">Sessions actives</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Appareils connectés à votre compte.</p>
+        </div>
+        <button type="button" onClick={() => toast.success('Toutes les autres sessions ont été déconnectées')}
+          className="text-sm text-red-500 hover:text-red-700 font-medium">
+          Déconnecter tout
+        </button>
+      </div>
+
+      <div className="space-y-2">
+        {SESSIONS.map((s, i) => (
+          <div key={i} className={`flex items-center justify-between p-4 rounded-xl border ${s.current ? 'border-violet-200 bg-violet-50/30' : 'border-gray-100 bg-white'}`}>
+            <div className="flex items-center gap-3">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${s.current ? 'bg-violet-100' : 'bg-gray-100'}`}>
+                <Activity size={15} className={s.current ? 'text-violet-600' : 'text-gray-400'} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-gray-900">{s.device}</p>
+                  {s.current && <span className="text-[10px] font-bold bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">Session actuelle</span>}
+                </div>
+                <p className="text-xs text-gray-400 mt-0.5">{s.location} · {s.ip} · {s.time}</p>
+              </div>
+            </div>
+            {!s.current && (
+              <button type="button" onClick={() => toast.success('Session déconnectée')}
+                className="text-gray-300 hover:text-red-500 transition-colors p-1.5 hover:bg-red-50 rounded-lg">
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Audit log preview */}
+      <div className="mt-6">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-semibold text-gray-700">Journal d'audit récent</p>
+          <button onClick={() => navigate('/app/audit-trail')} className="text-xs text-violet-600 hover:text-violet-700 font-medium flex items-center gap-1">
+            Tout voir <ArrowUpRight size={12} />
+          </button>
+        </div>
+        <div className="rounded-xl border border-gray-100 overflow-hidden">
+          {[
+            { action: 'Connexion réussie',       user: 'admin@demo.com',    time: 'Il y a 2 min',  color: 'text-emerald-600' },
+            { action: 'Rapport ESG généré',      user: 'analyst@demo.com',  time: 'Il y a 1h',     color: 'text-blue-600' },
+            { action: 'Import CSV déclenché',    user: 'manager@demo.com',  time: 'Il y a 3h',     color: 'text-purple-600' },
+            { action: 'Clé API utilisée',        user: 'api@demo.com',      time: 'Il y a 4h',     color: 'text-orange-600' },
+          ].map((log, i) => (
+            <div key={i} className="flex items-center justify-between px-4 py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
+              <span className={`text-xs font-semibold ${log.color}`}>{log.action}</span>
+              <span className="text-xs text-gray-400 mx-4 flex-1 truncate">{log.user}</span>
+              <span className="text-xs text-gray-300 whitespace-nowrap">{log.time}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const DangerSection = (
+    <div>
+      <SectionHeader title="Zone de danger" desc="Actions irréversibles. Lisez attentivement avant de procéder." />
+
+      <div className="space-y-3">
+        {[
+          {
+            title:   'Exporter toutes les données',
+            desc:    'Téléchargez une archive ZIP de l\'ensemble de vos données ESG, rapports et configurations.',
+            action:  'Exporter',
+            style:   'border-gray-200 hover:border-gray-300',
+            btn:     'border border-gray-300 text-gray-700 hover:bg-gray-50',
+            icon:    Download,
+            danger:  false,
+          },
+          {
+            title:   'Réinitialiser les données ESG',
+            desc:    'Supprime toutes les saisies de données ESG. Les organisations et paramètres sont conservés.',
+            action:  'Réinitialiser les données',
+            style:   'border-orange-200 bg-orange-50/30',
+            btn:     'border border-orange-300 text-orange-700 hover:bg-orange-50',
+            icon:    RefreshCw,
+            danger:  true,
+          },
+          {
+            title:   'Supprimer l\'espace de travail',
+            desc:    'Suppression définitive de l\'ensemble du compte, données, organisations et abonnement Stripe.',
+            action:  'Supprimer le compte',
+            style:   'border-red-200 bg-red-50/30',
+            btn:     'border border-red-300 text-red-700 hover:bg-red-50',
+            icon:    Trash2,
+            danger:  true,
+          },
+        ].map(item => {
+          const Icon = item.icon;
+          return (
+            <div key={item.title} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-xl border ${item.style}`}>
+              <div className="flex items-start gap-3">
+                <Icon size={16} className={`mt-0.5 flex-shrink-0 ${item.danger ? 'text-red-500' : 'text-gray-500'}`} />
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">{item.title}</p>
+                  <p className="text-xs text-gray-500 mt-0.5 max-w-md">{item.desc}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (item.danger) {
+                    if (!confirm(`Confirmez-vous : "${item.title}" ? Cette action est irréversible.`)) return;
+                    toast.error('Action annulée — contactez le support pour procéder.');
+                  } else {
+                    toast.success('Export en cours de préparation…');
+                  }
+                }}
+                className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${item.btn}`}
+              >
+                {item.action}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const CONTENT_MAP: Record<SectionId, React.ReactNode> = {
+    workspace:     WorkspaceSection,
+    members:       MembersSection,
+    notifications: NotificationsSection,
+    integrations:  IntegrationsSection,
+    billing:       BillingSection,
+    security:      SecuritySection,
+    sso:           <SSOTab />,
+    'api-keys':    ApiKeysSection,
+    sessions:      SessionsSection,
+    danger:        DangerSection,
+  };
+
+  return (
+    <div className="space-y-0">
+      {/* Hero */}
+      <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-gray-800 to-slate-900 p-8 text-white shadow-xl mb-6">
+        <div className="flex items-end justify-between gap-6 flex-wrap">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15 mb-4">
+              <Building2 size={12} /> Administration
+            </div>
+            <h1 className="text-4xl font-bold tracking-tight">Paramètres</h1>
+            <p className="mt-2 text-sm text-white/70">Gérez votre espace de travail, la sécurité et les intégrations.</p>
+          </div>
+          <div className="flex items-center gap-2 bg-white/10 rounded-2xl px-4 py-2 ring-1 ring-white/10">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-xs font-medium text-white/80">Tous les services opérationnels</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Layout: sidebar + content */}
+      <div className="flex gap-8 items-start">
+        {Sidebar}
+
+        <main className="flex-1 min-w-0 bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+          {CONTENT_MAP[active]}
+        </main>
+      </div>
     </div>
   );
 }

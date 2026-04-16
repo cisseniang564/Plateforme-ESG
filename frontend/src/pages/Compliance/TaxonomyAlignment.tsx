@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import {
   Leaf,
   Thermometer,
@@ -14,9 +15,13 @@ import {
   X,
   FileText,
   Download,
+  ArrowLeft,
+  RefreshCw,
+  Info,
 } from 'lucide-react';
 import Card from '@/components/common/Card';
 import api from '@/services/api';
+import toast from 'react-hot-toast';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,13 +29,16 @@ type AlignmentStatus = 'aligned' | 'partial' | 'not_aligned';
 type ObjectiveKey = 'mitigation' | 'adaptation' | 'water' | 'circular' | 'pollution' | 'biodiversity';
 
 interface Activity {
-  id: number;
+  id: string | number;
   name: string;
   sector: string;
   objective: ObjectiveKey;
   dnsh: boolean;
   safeguards: boolean;
+  contribution: boolean;
   status: AlignmentStatus;
+  nace?: string;
+  threshold?: string;
 }
 
 interface NewActivityForm {
@@ -42,16 +50,23 @@ interface NewActivityForm {
   safeguards: boolean;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+interface ApiSector {
+  id: string;
+  name: string;
+}
 
-const INITIAL_ACTIVITIES: Activity[] = [
-  { id: 1, name: "Production d'énergie solaire", sector: 'Énergie', objective: 'mitigation', dnsh: true, safeguards: true, status: 'aligned' },
-  { id: 2, name: 'Transport ferroviaire', sector: 'Transport', objective: 'mitigation', dnsh: true, safeguards: true, status: 'aligned' },
-  { id: 3, name: 'Rénovation de bâtiments', sector: 'Immobilier', objective: 'mitigation', dnsh: false, safeguards: true, status: 'partial' },
-  { id: 4, name: 'Gestion des déchets', sector: 'Environnement', objective: 'circular', dnsh: true, safeguards: true, status: 'aligned' },
-  { id: 5, name: 'Agriculture biologique', sector: 'Agriculture', objective: 'biodiversity', dnsh: true, safeguards: false, status: 'partial' },
-  { id: 6, name: "Production d'acier", sector: 'Industrie', objective: 'mitigation', dnsh: false, safeguards: false, status: 'not_aligned' },
-];
+interface ApiActivity {
+  id: string;
+  nace: string;
+  name: string;
+  sector: string;
+  objective: string;
+  threshold: string;
+  dnsh_summary: string;
+  eligible: boolean;
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const DEFAULT_FORM: NewActivityForm = {
   name: '',
@@ -61,6 +76,12 @@ const DEFAULT_FORM: NewActivityForm = {
   dnsh: false,
   safeguards: false,
 };
+
+function deriveStatus(contribution: boolean, dnsh: boolean, safeguards: boolean): AlignmentStatus {
+  if (contribution && dnsh && safeguards) return 'aligned';
+  if (contribution || dnsh || safeguards) return 'partial';
+  return 'not_aligned';
+}
 
 // ─── Helper components ────────────────────────────────────────────────────────
 
@@ -92,12 +113,77 @@ function BooleanBadge({ value }: { value: boolean }) {
 
 export default function TaxonomyAlignment() {
   const { t } = useTranslation();
-  const [activities, setActivities] = useState<Activity[]>(INITIAL_ACTIVITIES);
+  const navigate = useNavigate();
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [selectedObjective, setSelectedObjective] = useState<ObjectiveKey | 'all'>('all');
   const [assessmentMode, setAssessmentMode] = useState<'view' | 'edit'>('view');
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<NewActivityForm>(DEFAULT_FORM);
   const [generating, setGenerating] = useState(false);
+  const [loadingActivities, setLoadingActivities] = useState(true);
+  const [planLoaded, setPlanLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [sectors, setSectors] = useState<ApiSector[]>([]);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Load sectors from API
+  useEffect(() => {
+    api.get('/taxonomy/sectors')
+      .then(res => setSectors(res.data?.sectors || []))
+      .catch(() => {});
+  }, []);
+
+  // Load saved plan OR fall back to reference activities
+  useEffect(() => {
+    setLoadingActivities(true);
+    api.get('/taxonomy/plan')
+      .then(res => {
+        const saved: Activity[] = res.data?.activities || [];
+        if (saved.length > 0) {
+          setActivities(saved);
+          setPlanLoaded(true);
+        } else {
+          // No saved plan → load reference activities from API
+          return api.get('/taxonomy/activities').then(r => {
+            const refActivities: ApiActivity[] = r.data?.activities || [];
+            setActivities(refActivities.map(a => ({
+              id: a.id,
+              name: a.name,
+              sector: a.sector,
+              objective: a.objective as ObjectiveKey,
+              nace: a.nace,
+              threshold: a.threshold,
+              dnsh: true,
+              safeguards: true,
+              contribution: true,
+              status: 'aligned' as AlignmentStatus,
+            })));
+            setPlanLoaded(true);
+          });
+        }
+      })
+      .catch(() => setPlanLoaded(true))
+      .finally(() => setLoadingActivities(false));
+  }, []);
+
+  // Auto-save plan (debounced 1.5s)
+  const savePlan = useCallback((currentActivities: Activity[]) => {
+    if (!planLoaded) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      setSaving(true);
+      api.post('/taxonomy/plan', {
+        activities: currentActivities,
+        saved_at: new Date().toISOString(),
+      })
+        .catch(() => toast.error('Impossible de sauvegarder le plan'))
+        .finally(() => setSaving(false));
+    }, 1500);
+  }, [planLoaded]);
+
+  useEffect(() => {
+    if (planLoaded && activities.length > 0) savePlan(activities);
+  }, [activities, planLoaded, savePlan]);
 
   // ── Objectives config ────────────────────────────────────────────────────────
   const OBJECTIVES: {
@@ -184,37 +270,33 @@ export default function TaxonomyAlignment() {
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleAddActivity = () => {
     if (!form.name.trim() || !form.sector.trim()) return;
-
-    const status: AlignmentStatus =
-      form.contribution && form.dnsh && form.safeguards
-        ? 'aligned'
-        : form.contribution || form.dnsh || form.safeguards
-        ? 'partial'
-        : 'not_aligned';
-
+    const status = deriveStatus(form.contribution, form.dnsh, form.safeguards);
     const newActivity: Activity = {
-      id: Date.now(),
+      id: `custom-${Date.now()}`,
       name: form.name.trim(),
       sector: form.sector.trim(),
       objective: form.objective,
       dnsh: form.dnsh,
       safeguards: form.safeguards,
+      contribution: form.contribution,
       status,
     };
-
     setActivities((prev) => [...prev, newActivity]);
     setForm(DEFAULT_FORM);
     setShowModal(false);
+    toast.success('Activité ajoutée au plan');
   };
 
-  const handleToggleStatus = (id: number) => {
+  const handleToggleStatus = (id: string | number) => {
     if (assessmentMode !== 'edit') return;
     setActivities((prev) =>
       prev.map((a) => {
         if (a.id !== id) return a;
         const cycle: AlignmentStatus[] = ['aligned', 'partial', 'not_aligned'];
         const next = cycle[(cycle.indexOf(a.status) + 1) % cycle.length];
-        return { ...a, status: next };
+        const contrib = next === 'aligned';
+        const dnsh = next !== 'not_aligned';
+        return { ...a, status: next, contribution: contrib, dnsh, safeguards: contrib };
       })
     );
   };
@@ -222,9 +304,32 @@ export default function TaxonomyAlignment() {
   const handleGenerateReport = async () => {
     setGenerating(true);
     try {
-      await api.post('/taxonomy/report', { activities });
+      const res = await api.post('/taxonomy/report', { activities });
+      const summary = res.data?.summary;
+      // Export CSV
+      const rows = [
+        ['Activité', 'Secteur', 'Objectif', 'Contribution substantielle', 'DNSH', 'Garanties min.', 'Statut', 'Code NACE', 'Seuil technique'],
+        ...activities.map(a => [
+          a.name, a.sector, a.objective,
+          a.contribution ? 'Oui' : 'Non',
+          a.dnsh ? 'Oui' : 'Non',
+          a.safeguards ? 'Oui' : 'Non',
+          a.status, a.nace || '', a.threshold || '',
+        ]),
+      ];
+      const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `taxonomie-ue-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+      if (summary) {
+        toast.success(`Rapport généré · ${summary.aligned_activities}/${summary.total_activities} activités alignées (${summary.aligned_capex_pct}% CapEx)`);
+      }
     } catch {
-      // silently ignore — report generation is best-effort
+      toast.error('Impossible de générer le rapport');
     } finally {
       setGenerating(false);
     }
@@ -236,6 +341,15 @@ export default function TaxonomyAlignment() {
       {/* ── Hero banner ─────────────────────────────────────────────────────── */}
       <div className="bg-gradient-to-r from-slate-900 via-teal-900 to-emerald-700 text-white">
         <div className="max-w-7xl mx-auto px-6 py-12">
+          {/* Back button */}
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-teal-200 hover:text-white text-sm font-medium mb-6 transition-colors"
+          >
+            <ArrowLeft size={16} />
+            Retour
+          </button>
+
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
               <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white text-sm font-semibold px-3 py-1.5 rounded-full mb-4">
@@ -247,7 +361,17 @@ export default function TaxonomyAlignment() {
                 {t('taxonomy.subtitle')}
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              {saving && (
+                <span className="text-xs text-teal-200 flex items-center gap-1">
+                  <RefreshCw size={12} className="animate-spin" /> Sauvegarde…
+                </span>
+              )}
+              {!saving && planLoaded && activities.length > 0 && (
+                <span className="text-xs text-teal-200 flex items-center gap-1">
+                  <CheckCircle size={12} /> Plan sauvegardé
+                </span>
+              )}
               <button
                 onClick={() => setAssessmentMode(assessmentMode === 'view' ? 'edit' : 'view')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
@@ -385,11 +509,23 @@ export default function TaxonomyAlignment() {
             </div>
           </div>
 
+          {loadingActivities ? (
+            <div className="flex items-center justify-center py-12 text-gray-400">
+              <RefreshCw size={20} className="animate-spin mr-2" /> Chargement des activités…
+            </div>
+          ) : (
           <div className="overflow-x-auto rounded-lg border border-gray-200">
+            {assessmentMode === 'edit' && (
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border-b border-amber-200 text-xs text-amber-700">
+                <Info size={13} />
+                Cliquez sur une ligne pour changer son statut d'alignement (Aligné → Partiel → Non aligné)
+              </div>
+            )}
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 text-left">
                   <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide">{t('taxonomy.activity')}</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide hidden md:table-cell">NACE</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide">{t('taxonomy.sector')}</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide">{t('taxonomy.objective')}</th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wide text-center">
@@ -416,9 +552,18 @@ export default function TaxonomyAlignment() {
                       className={`bg-white hover:bg-gray-50 transition-colors ${
                         assessmentMode === 'edit' ? 'cursor-pointer' : ''
                       }`}
+                      title={activity.threshold ? `Seuil technique : ${activity.threshold}` : undefined}
                     >
-                      <td className="px-4 py-3 font-medium text-gray-900">{activity.name}</td>
-                      <td className="px-4 py-3 text-gray-600">{activity.sector}</td>
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        {activity.name}
+                        {activity.threshold && (
+                          <div className="text-xs text-gray-400 mt-0.5 hidden lg:block truncate max-w-xs" title={activity.threshold}>
+                            {activity.threshold}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 font-mono text-xs hidden md:table-cell">{activity.nace || '—'}</td>
+                      <td className="px-4 py-3 text-gray-600 capitalize">{activity.sector}</td>
                       <td className="px-4 py-3">
                         {obj && (
                           <span
@@ -430,7 +575,7 @@ export default function TaxonomyAlignment() {
                         )}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <BooleanBadge value={true} />
+                        <BooleanBadge value={activity.contribution} />
                       </td>
                       <td className="px-4 py-3 text-center">
                         <BooleanBadge value={activity.dnsh} />
@@ -454,11 +599,6 @@ export default function TaxonomyAlignment() {
             )}
           </div>
 
-          {assessmentMode === 'edit' && (
-            <p className="mt-3 text-xs text-amber-600 flex items-center gap-1">
-              <AlertCircle size={12} />
-              {t('taxonomy.editModeHint')}
-            </p>
           )}
         </Card>
 
@@ -532,13 +672,26 @@ export default function TaxonomyAlignment() {
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   {t('taxonomy.sectorRequired')} <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={form.sector}
-                  onChange={(e) => setForm((f) => ({ ...f, sector: e.target.value }))}
-                  placeholder={t('taxonomy.sectorPlaceholder')}
-                  className="input"
-                />
+                {sectors.length > 0 ? (
+                  <select
+                    value={form.sector}
+                    onChange={(e) => setForm((f) => ({ ...f, sector: e.target.value }))}
+                    className="input"
+                  >
+                    <option value="">-- Sélectionner un secteur --</option>
+                    {sectors.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={form.sector}
+                    onChange={(e) => setForm((f) => ({ ...f, sector: e.target.value }))}
+                    placeholder={t('taxonomy.sectorPlaceholder')}
+                    className="input"
+                  />
+                )}
               </div>
 
               <div>

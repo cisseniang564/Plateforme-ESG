@@ -86,7 +86,7 @@ export default function IndicatorComparison() {
 
   const loadData = async () => {
     try {
-      const indicatorsRes = await api.get('/api/v1/indicators');
+      const indicatorsRes = await api.get('/indicators/');
       const indicators: Indicator[] = indicatorsRes.data.items || [];
 
       if (indicators.length === 0) {
@@ -238,7 +238,7 @@ export default function IndicatorComparison() {
       {/* Header */}
       <div>
         <button
-          onClick={() => navigate('/api/v1/indicators')}
+          onClick={() => navigate('/app/indicators')}
           className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4 transition-colors"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -463,7 +463,7 @@ export default function IndicatorComparison() {
                       <tr
                         key={row.id}
                         className="hover:bg-gray-50 cursor-pointer transition-colors"
-                        onClick={() => toast.info(t('indicators.detailsComingSoon'))}
+                        onClick={() => toast(t('indicators.detailsComingSoon'))}
                       >
                         <td className="py-4 px-6">
                           <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
@@ -562,14 +562,14 @@ export default function IndicatorComparison() {
                   <div className="flex gap-3">
                     <Button
                       size="sm"
-                      onClick={() => navigate('/api/v1/indicators')}
+                      onClick={() => navigate('/app/indicators')}
                     >
                       {t('indicators.viewIndicators')}
                     </Button>
                     <Button
                       size="sm"
                       variant="secondary"
-                      onClick={() => navigate('/data/upload')}
+                      onClick={() => navigate('/app/data/upload')}
                     >
                       {t('indicators.importData')}
                     </Button>
@@ -589,7 +589,7 @@ export default function IndicatorComparison() {
             <p className="text-sm text-gray-400 mb-6">
               {t('indicators.noComparisonHint')}
             </p>
-            <Button onClick={() => navigate('/api/v1/indicators')}>
+            <Button onClick={() => navigate('/app/indicators')}>
               <ArrowLeft className="h-5 w-5 mr-2" />
               {t('indicators.backToIndicators')}
             </Button>

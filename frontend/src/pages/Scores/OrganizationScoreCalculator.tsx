@@ -66,7 +66,7 @@ export default function OrganizationScoreCalculator({
           <div className="text-center">
             <p className="text-sm font-medium text-gray-600">{t('scores.globalScore')}</p>
             <p className="mt-2 text-5xl font-bold text-gray-900">
-              {result.overall_score.toFixed(1)}
+              {Math.round(result.overall_score)}
             </p>
             <span className={`mt-3 inline-block rounded-xl px-4 py-2 text-lg font-bold ${getRatingColor(result.rating)}`}>
               {result.rating}

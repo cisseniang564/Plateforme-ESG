@@ -1,5 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import api from '@/services/api';
+import toast from 'react-hot-toast';
 import {
   Leaf, Target, TrendingDown, Zap, Truck, ShoppingBag,
   Factory, Building2, Users, BarChart3, CheckCircle,
@@ -12,6 +14,15 @@ import {
 type Difficulty = 'Facile' | 'Moyen' | 'Difficile';
 type ActionStatus = 'à_faire' | 'en_cours' | 'terminé';
 type TabId = 'overview' | 'actions' | 'scenarios' | 'trajectory';
+
+interface HistoricalPoint {
+  year: number;
+  total_tco2e: number;
+  scope1: number;
+  scope2: number;
+  scope3: number;
+  has_data: boolean;
+}
 
 interface Action {
   id: string;
@@ -29,27 +40,24 @@ interface Action {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const BASE_EMISSIONS = 12_500; // tCO2e (2024 baseline)
-const SBTI_TARGET_2030 = 7_250; // -42% vs 2024 (SBTi 1.5°C)
+const DEFAULT_BASE_EMISSIONS = 12_500;
 const NET_ZERO_2050 = 800;
 
-// Trajectory year points (2024–2050)
-function buildTrajectory() {
+function buildTrajectory(baseEmissions: number) {
+  const sbtiTarget2030 = Math.round(baseEmissions * 0.58); // -42% SBTi 1.5°C
   const years = Array.from({ length: 27 }, (_, i) => 2024 + i);
   return years.map(y => {
     const t = (y - 2024) / (2050 - 2024);
-    const bau = BASE_EMISSIONS * (1 + t * 0.08);                           // +8% BAU drift
+    const bau = baseEmissions * (1 + t * 0.08);
     const sbti = y <= 2030
-      ? BASE_EMISSIONS * Math.pow(1 - 0.058, y - 2024)                    // -5.8%/yr to 2030
-      : SBTI_TARGET_2030 * Math.pow(1 - 0.08, y - 2030);                  // steeper after 2030
+      ? baseEmissions * Math.pow(1 - 0.058, y - 2024)
+      : sbtiTarget2030 * Math.pow(1 - 0.08, y - 2030);
     const current = y <= 2030
-      ? BASE_EMISSIONS * Math.pow(1 - 0.028, y - 2024)                    // current pace -2.8%/yr
+      ? baseEmissions * Math.pow(1 - 0.028, y - 2024)
       : undefined;
     return { year: y, bau: Math.round(bau), sbti: Math.round(Math.max(sbti, NET_ZERO_2050)), current };
   });
 }
-
-const trajectory = buildTrajectory();
 
 // ─── Actions catalog ─────────────────────────────────────────────────────────
 const CATALOG: Action[] = [
@@ -120,12 +128,12 @@ const DIFF_CFG: Record<Difficulty, string> = {
 };
 
 // ─── Mini SVG trajectory chart ────────────────────────────────────────────────
-function TrajectoryChart({ planReduction }: { planReduction: number }) {
+function TrajectoryChart({ planReduction, baseEmissions, trajectory, historicalData = [] }: { planReduction: number; baseEmissions: number; trajectory: ReturnType<typeof buildTrajectory>; historicalData?: HistoricalPoint[] }) {
   const { t: tr } = useTranslation();
   const W = 700, H = 260, PAD = { t: 20, r: 20, b: 40, l: 60 };
   const cw = W - PAD.l - PAD.r;
   const ch = H - PAD.t - PAD.b;
-  const maxVal = BASE_EMISSIONS * 1.1;
+  const maxVal = baseEmissions * 1.1;
 
   const xScale = (year: number) => PAD.l + ((year - 2024) / 26) * cw;
   const yScale = (v: number) => PAD.t + ch - (v / maxVal) * ch;
@@ -182,14 +190,28 @@ function TrajectoryChart({ planReduction }: { planReduction: number }) {
 
       {/* Legend */}
       {[
-        { label: tr('decarbonation.legendBau'), color: '#ef4444', dash: '6 4' },
-        { label: tr('decarbonation.legendSbtiPath'), color: '#16a34a', dash: '' },
-        { label: tr('decarbonation.legendCurrentPace'), color: '#f59e0b', dash: '4 3' },
-        ...(planReduction > 0 ? [{ label: tr('decarbonation.legendWithPlan'), color: '#3b82f6', dash: '6 3' }] : []),
+        { label: tr('decarbonation.legendBau'), color: '#ef4444', dash: '6 4', dot: false },
+        { label: tr('decarbonation.legendSbtiPath'), color: '#16a34a', dash: '', dot: false },
+        { label: tr('decarbonation.legendCurrentPace'), color: '#f59e0b', dash: '4 3', dot: false },
+        ...(planReduction > 0 ? [{ label: tr('decarbonation.legendWithPlan'), color: '#3b82f6', dash: '6 3', dot: false }] : []),
+        ...(historicalData.some(h => h.has_data) ? [{ label: 'Données réelles', color: '#8b5cf6', dash: '', dot: true }] : []),
       ].map((l, i) => (
-        <g key={i} transform={`translate(${PAD.l + i * 160}, ${H - 8})`}>
-          <line x1={0} y1={0} x2={24} y2={0} stroke={l.color} strokeWidth={2} strokeDasharray={l.dash} />
-          <text x={28} y={4} fontSize={9} fill="#6b7280">{l.label}</text>
+        <g key={i} transform={`translate(${PAD.l + i * 145}, ${H - 8})`}>
+          {l.dot
+            ? <circle cx={12} cy={0} r={4} fill={l.color} />
+            : <line x1={0} y1={0} x2={24} y2={0} stroke={l.color} strokeWidth={2} strokeDasharray={l.dash} />
+          }
+          <text x={l.dot ? 20 : 28} y={4} fontSize={9} fill="#6b7280">{l.label}</text>
+        </g>
+      ))}
+
+      {/* Real historical data points */}
+      {historicalData.filter(h => h.has_data && h.total_tco2e > 0).map((h, i) => (
+        <g key={h.year}>
+          <circle cx={xScale(h.year)} cy={yScale(h.total_tco2e)} r={5} fill="#8b5cf6" stroke="white" strokeWidth={1.5} />
+          <text x={xScale(h.year)} y={yScale(h.total_tco2e) - 8} textAnchor="middle" fontSize={9} fill="#8b5cf6" fontWeight="bold">
+            {(h.total_tco2e / 1000).toFixed(1)}k
+          </text>
         </g>
       ))}
 
@@ -263,6 +285,25 @@ function ActionCard({ action, onTogglePlan, onStatusChange }: {
         </div>
       </div>
 
+      {/* Progress bar */}
+      <div className="mb-3">
+        <div className="flex justify-between text-xs text-gray-400 mb-1">
+          <span>Avancement</span>
+          <span className="font-semibold">
+            {action.status === 'terminé' ? '100%' : action.status === 'en_cours' ? '50%' : '0%'}
+          </span>
+        </div>
+        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${
+              action.status === 'terminé' ? 'bg-green-500' :
+              action.status === 'en_cours' ? 'bg-blue-400' : 'bg-gray-200'
+            }`}
+            style={{ width: action.status === 'terminé' ? '100%' : action.status === 'en_cours' ? '50%' : '4%' }}
+          />
+        </div>
+      </div>
+
       {/* Status */}
       <div className="flex items-center justify-between">
         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${sc.bg} ${sc.color}`}>
@@ -297,13 +338,94 @@ export default function DecarbonationPlan() {
   const [quickWinOnly, setQuickWinOnly] = useState(false);
   const [scenarioSelected, setScenarioSelected] = useState<string[]>([]);
 
+  // ── Real emissions from API ──────────────────────────────────────────────
+  const [baseEmissions, setBaseEmissions] = useState(DEFAULT_BASE_EMISSIONS);
+  const [scope1, setScope1] = useState(0);
+  const [scope2, setScope2] = useState(0);
+  const [scope3, setScope3] = useState(0);
+  const [hasRealData, setHasRealData] = useState(false);
+  const [loadingEmissions, setLoadingEmissions] = useState(true);
+  const [historicalData, setHistoricalData] = useState<HistoricalPoint[]>([]);
+  const [planLoaded, setPlanLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Load real emissions (current year)
+  useEffect(() => {
+    api.get('/carbon/scope-summary', { params: { year: new Date().getFullYear() } })
+      .then(res => {
+        const d = res.data;
+        const s1 = d.scope1?.total_tco2e || 0;
+        const s2 = d.scope2?.total_tco2e || 0;
+        const s3 = d.scope3?.total_tco2e || 0;
+        const total = s1 + s2 + s3;
+        if (total > 0) {
+          setScope1(s1); setScope2(s2); setScope3(s3);
+          setBaseEmissions(Math.round(total));
+          setHasRealData(true);
+        } else if (d.has_real_data) {
+          setHasRealData(true);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingEmissions(false));
+  }, []);
+
+  // Load historical emissions (last 5 years)
+  useEffect(() => {
+    api.get('/carbon/history', { params: { years: 5 } })
+      .then(res => {
+        setHistoricalData(res.data?.history || []);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Load saved plan from API
+  useEffect(() => {
+    api.get('/carbon/plan')
+      .then(res => {
+        const savedActions: { id: string; inPlan: boolean; status: ActionStatus }[] = res.data?.actions || [];
+        if (savedActions.length > 0) {
+          setActions(prev => prev.map(a => {
+            const saved = savedActions.find(s => s.id === a.id);
+            return saved ? { ...a, inPlan: saved.inPlan, status: saved.status } : a;
+          }));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setPlanLoaded(true));
+  }, []);
+
+  // Auto-save plan (debounced 1.5s) after plan is loaded
+  const savePlan = useCallback((currentActions: Action[]) => {
+    if (!planLoaded) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      setSaving(true);
+      const payload = {
+        actions: currentActions.map(a => ({ id: a.id, inPlan: a.inPlan, status: a.status })),
+        saved_at: new Date().toISOString(),
+      };
+      api.post('/carbon/plan', payload)
+        .catch(() => toast.error('Impossible de sauvegarder le plan'))
+        .finally(() => setSaving(false));
+    }, 1500);
+  }, [planLoaded]);
+
+  useEffect(() => {
+    if (planLoaded) savePlan(actions);
+  }, [actions, planLoaded, savePlan]);
+
+  const trajectory = useMemo(() => buildTrajectory(baseEmissions), [baseEmissions]);
+  const sbtiTarget2030 = Math.round(baseEmissions * 0.58);
+
   // Compute plan stats
   const planActions = useMemo(() => actions.filter(a => a.inPlan), [actions]);
   const planReduction = useMemo(() => planActions.reduce((s, a) => s + a.impact, 0), [planActions]);
   const planCost = useMemo(() => planActions.reduce((s, a) => s + a.cost, 0), [planActions]);
-  const planPct = Math.min(Math.round((planReduction / (BASE_EMISSIONS - SBTI_TARGET_2030)) * 100), 100);
-  const projected2030 = Math.max(BASE_EMISSIONS - planReduction, SBTI_TARGET_2030);
-  const onTrack = projected2030 <= SBTI_TARGET_2030;
+  const planPct = Math.min(Math.round((planReduction / Math.max(baseEmissions - sbtiTarget2030, 1)) * 100), 100);
+  const projected2030 = Math.max(baseEmissions - planReduction, sbtiTarget2030);
+  const onTrack = projected2030 <= sbtiTarget2030;
 
   const completedActions = actions.filter(a => a.status === 'terminé').length;
   const inProgressActions = actions.filter(a => a.status === 'en_cours').length;
@@ -352,36 +474,59 @@ export default function DecarbonationPlan() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                <FlameKindling className="h-6 w-6 text-green-600" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">{tr('decarbonation.title')}</h1>
-                <p className="text-sm text-gray-500 mt-0.5">{tr('decarbonation.subtitle')}</p>
-              </div>
+    <div className="space-y-6">
+
+      {/* ── Hero gradient ─────────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-800 via-emerald-700 to-teal-600 p-8 text-white shadow-xl">
+        <div className="absolute inset-0 opacity-10">
+          <svg width="100%" height="100%"><defs><pattern id="dp" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M12 0 L24 12 L12 24 L0 12 Z" stroke="white" strokeWidth="0.5" fill="none"/></pattern></defs><rect width="100%" height="100%" fill="url(#dp)"/></svg>
+        </div>
+        <div className="relative flex items-start justify-between gap-6 flex-wrap">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
+              <FlameKindling className="h-7 w-7 text-white" />
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+            <div>
+              <h1 className="text-2xl font-bold text-white">{tr('decarbonation.title')}</h1>
+              <p className="text-sm text-green-100 mt-0.5">{tr('decarbonation.subtitle')}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {saving && (
+              <span className="text-xs text-green-200 flex items-center gap-1">
+                <RefreshCw className="h-3 w-3 animate-spin" /> Sauvegarde…
+              </span>
+            )}
+            {!saving && planLoaded && planActions.length > 0 && (
+              <span className="text-xs text-green-200">✓ Plan sauvegardé</span>
+            )}
+            <button
+              onClick={() => {
+                const rows = [
+                  ['Catégorie', 'Action', 'Scope', 'Impact (tCO2e/an)', 'Coût (k€)', 'ROI (mois)', 'Difficulté', 'Statut', 'Dans le plan'],
+                  ...actions.map(a => [a.category, a.title, a.scope, a.impact, a.cost, a.roi, a.difficulty, a.status, a.inPlan ? 'Oui' : 'Non']),
+                ];
+                const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = `plan-decarbonisation-${new Date().toISOString().slice(0, 10)}.csv`;
+                a.click(); URL.revokeObjectURL(url);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 border border-white/30 text-white rounded-xl text-sm font-medium transition-colors backdrop-blur-sm"
+            >
               <Download className="h-4 w-4" />
               {tr('decarbonation.exportPlan')}
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="bg-white border-b border-gray-200 px-6">
-        <div className="max-w-7xl mx-auto flex gap-0">
+        {/* Tabs */}
+        <div className="relative mt-6 flex gap-2">
           {tabs.map(t => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`px-6 py-4 text-sm font-semibold border-b-2 transition-colors ${tab === t.id ? 'border-green-500 text-green-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+              className={`px-5 py-2.5 text-sm font-semibold rounded-xl transition-all ${tab === t.id ? 'bg-white text-green-700 shadow-md' : 'text-white/80 hover:bg-white/20'}`}
             >
               {t.label}
             </button>
@@ -389,16 +534,27 @@ export default function DecarbonationPlan() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-0 py-0">
 
         {/* ── Overview tab ── */}
         {tab === 'overview' && (
           <div className="space-y-8">
+            {/* Source données */}
+            {hasRealData && (
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700">
+                <CheckCircle className="h-4 w-4 flex-shrink-0" />
+                <span>Émissions calculées depuis vos données réelles —
+                  Scope 1 : <strong>{scope1.toLocaleString()} tCO₂e</strong> ·
+                  Scope 2 : <strong>{scope2.toLocaleString()} tCO₂e</strong>
+                  {scope3 > 0 ? <> · Scope 3 : <strong>{scope3.toLocaleString()} tCO₂e</strong></> : null}
+                </span>
+              </div>
+            )}
             {/* KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: tr('decarbonation.kpiBase2024'), value: `${(BASE_EMISSIONS / 1000).toFixed(1)}k`, unit: 'tCO₂e', color: 'text-gray-900', bg: 'bg-white border-gray-200' },
-                { label: tr('decarbonation.kpiSbtiTarget'), value: `${(SBTI_TARGET_2030 / 1000).toFixed(1)}k`, unit: 'tCO₂e (-42%)', color: 'text-green-700', bg: 'bg-green-50 border-green-200' },
+                { label: tr('decarbonation.kpiBase2024'), value: `${(baseEmissions / 1000).toFixed(1)}k`, unit: 'tCO₂e', color: 'text-gray-900', bg: 'bg-white border-gray-200' },
+                { label: tr('decarbonation.kpiSbtiTarget'), value: `${(sbtiTarget2030 / 1000).toFixed(1)}k`, unit: 'tCO₂e (-42%)', color: 'text-green-700', bg: 'bg-green-50 border-green-200' },
                 { label: tr('decarbonation.kpiPlanReduction'), value: planReduction.toLocaleString(), unit: 'tCO₂e/an', color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
                 { label: tr('decarbonation.kpiTotalInvestment'), value: `${planCost}k`, unit: '€', color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
               ].map((k, i) => (
@@ -415,7 +571,7 @@ export default function DecarbonationPlan() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-gray-900">{tr('decarbonation.sbtiProgressTitle')}</h2>
                 <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${onTrack ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                  {onTrack ? `✓ ${tr('decarbonation.onTrack')}` : `${tr('decarbonation.offTrack')} ${(projected2030 - SBTI_TARGET_2030).toLocaleString()} tCO₂e`}
+                  {onTrack ? `✓ ${tr('decarbonation.onTrack')}` : `${tr('decarbonation.offTrack')} ${(projected2030 - sbtiTarget2030).toLocaleString()} tCO₂e`}
                 </span>
               </div>
               <div className="space-y-3">
@@ -423,7 +579,7 @@ export default function DecarbonationPlan() {
                 <div>
                   <div className="flex justify-between text-xs text-gray-500 mb-1.5">
                     <span>{tr('decarbonation.sbtiRequired')}</span>
-                    <span className="font-semibold">{(BASE_EMISSIONS - SBTI_TARGET_2030).toLocaleString()} tCO₂e</span>
+                    <span className="font-semibold">{(baseEmissions - sbtiTarget2030).toLocaleString()} tCO₂e</span>
                   </div>
                   <div className="h-4 bg-gray-100 rounded-full overflow-hidden">
                     <div
@@ -455,10 +611,58 @@ export default function DecarbonationPlan() {
               </div>
             </div>
 
+            {/* ── Progression du plan ─────────────────────────────────────── */}
+            {planActions.length > 0 && (() => {
+              const planCompleted = planActions.filter(a => a.status === 'terminé');
+              const planInProgress = planActions.filter(a => a.status === 'en_cours');
+              const achievedReduction = planCompleted.reduce((s, a) => s + a.impact, 0);
+              const completionPct = Math.round((planCompleted.length / planActions.length) * 100);
+              return (
+                <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                  <h2 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    Progression du plan
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+                    <div className="bg-green-50 rounded-xl p-4 text-center border border-green-100">
+                      <p className="text-3xl font-bold text-green-700">{completionPct}%</p>
+                      <p className="text-xs text-green-600 mt-1 font-medium">Actions terminées</p>
+                      <p className="text-xs text-gray-400">{planCompleted.length}/{planActions.length} actions</p>
+                    </div>
+                    <div className="bg-emerald-50 rounded-xl p-4 text-center border border-emerald-100">
+                      <p className="text-3xl font-bold text-emerald-700">{achievedReduction.toLocaleString()}</p>
+                      <p className="text-xs text-emerald-600 mt-1 font-medium">tCO₂e économisées</p>
+                      <p className="text-xs text-gray-400">réductions réalisées</p>
+                    </div>
+                    <div className="bg-blue-50 rounded-xl p-4 text-center border border-blue-100">
+                      <p className="text-3xl font-bold text-blue-700">{(planReduction - achievedReduction).toLocaleString()}</p>
+                      <p className="text-xs text-blue-600 mt-1 font-medium">tCO₂e restantes</p>
+                      <p className="text-xs text-gray-400">{planInProgress.length} en cours</p>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+                      <span>Avancement global du plan</span>
+                      <span className="font-bold text-gray-700">{completionPct}%</span>
+                    </div>
+                    <div className="h-3 bg-gray-100 rounded-full overflow-hidden flex">
+                      <div className="h-full bg-green-500 transition-all duration-700" style={{ width: `${completionPct}%` }} />
+                      <div className="h-full bg-blue-300 transition-all duration-700" style={{ width: `${Math.round((planInProgress.length / planActions.length) * 100)}%` }} />
+                    </div>
+                    <div className="flex gap-4 mt-2 text-xs text-gray-400">
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />Terminé</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-300 inline-block" />En cours</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-200 inline-block" />À faire</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Trajectory preview */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4">{tr('decarbonation.trajectoryTitle')}</h2>
-              <TrajectoryChart planReduction={planReduction} />
+              <TrajectoryChart planReduction={planReduction} baseEmissions={baseEmissions} trajectory={trajectory} historicalData={historicalData} />
             </div>
 
             {/* Quick wins */}
@@ -576,7 +780,7 @@ export default function DecarbonationPlan() {
                         <div className="flex justify-between"><span className="text-gray-500">{tr('decarbonation.scenarioActions')}</span><span className="font-semibold">{scActions.length}</span></div>
                         <div className="flex justify-between"><span className="text-gray-500">{tr('decarbonation.scenarioReduction')}</span><span className="font-semibold text-green-700">{scImpact.toLocaleString()} tCO₂e/an</span></div>
                         <div className="flex justify-between"><span className="text-gray-500">{tr('decarbonation.scenarioInvestment')}</span><span className="font-semibold text-amber-700">{scCost}k€</span></div>
-                        <div className="flex justify-between"><span className="text-gray-500">{tr('decarbonation.scenarioSbtiCoverage')}</span><span className="font-semibold">{Math.min(Math.round(scImpact / (BASE_EMISSIONS - SBTI_TARGET_2030) * 100), 100)}%</span></div>
+                        <div className="flex justify-between"><span className="text-gray-500">{tr('decarbonation.scenarioSbtiCoverage')}</span><span className="font-semibold">{Math.min(Math.round(scImpact / Math.max(baseEmissions - sbtiTarget2030, 1) * 100), 100)}%</span></div>
                       </div>
                     </div>
                   );
@@ -601,7 +805,7 @@ export default function DecarbonationPlan() {
                   </div>
                 ))}
               </div>
-              <TrajectoryChart planReduction={planReduction} />
+              <TrajectoryChart planReduction={planReduction} baseEmissions={baseEmissions} trajectory={trajectory} historicalData={historicalData} />
             </div>
 
             {/* Impact matrix */}
@@ -656,7 +860,7 @@ export default function DecarbonationPlan() {
                   <span className="text-sm font-semibold text-green-700">{tr('decarbonation.netZeroBadge')} : {NET_ZERO_2050} tCO₂e</span>
                 </div>
               </div>
-              <TrajectoryChart planReduction={planReduction} />
+              <TrajectoryChart planReduction={planReduction} baseEmissions={baseEmissions} trajectory={trajectory} historicalData={historicalData} />
             </div>
 
             {/* Milestones table */}
@@ -702,11 +906,66 @@ export default function DecarbonationPlan() {
               </table>
             </div>
 
+            {/* Real historical data table */}
+            {historicalData.some(h => h.has_data && h.total_tco2e > 0) && (
+              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-purple-500" />
+                  <h2 className="text-lg font-bold text-gray-900">Historique réel des émissions</h2>
+                  <span className="ml-auto text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">Source : vos données</span>
+                </div>
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left">Année</th>
+                      <th className="px-6 py-3 text-right">Scope 1</th>
+                      <th className="px-6 py-3 text-right">Scope 2</th>
+                      <th className="px-6 py-3 text-right">Scope 3</th>
+                      <th className="px-6 py-3 text-right font-bold">Total</th>
+                      <th className="px-6 py-3 text-right">Évolution</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {historicalData.filter(h => h.has_data && h.total_tco2e > 0).map((h, idx, arr) => {
+                      const prev = arr[idx - 1];
+                      const change = prev && prev.total_tco2e > 0
+                        ? ((h.total_tco2e - prev.total_tco2e) / prev.total_tco2e * 100).toFixed(1)
+                        : null;
+                      const isDown = change !== null && parseFloat(change) < 0;
+                      return (
+                        <tr key={h.year} className={h.year === new Date().getFullYear() ? 'bg-purple-50' : ''}>
+                          <td className="px-6 py-3 font-bold text-gray-900">{h.year}
+                            {h.year === new Date().getFullYear() && <span className="ml-2 text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full">En cours</span>}
+                          </td>
+                          <td className="px-6 py-3 text-right text-gray-700">{h.scope1 > 0 ? `${h.scope1.toLocaleString()} t` : '—'}</td>
+                          <td className="px-6 py-3 text-right text-gray-700">{h.scope2 > 0 ? `${h.scope2.toLocaleString()} t` : '—'}</td>
+                          <td className="px-6 py-3 text-right text-gray-700">{h.scope3 > 0 ? `${h.scope3.toLocaleString()} t` : '—'}</td>
+                          <td className="px-6 py-3 text-right font-bold text-gray-900">{h.total_tco2e.toLocaleString()} tCO₂e</td>
+                          <td className="px-6 py-3 text-right">
+                            {change !== null ? (
+                              <span className={`text-xs font-bold ${isDown ? 'text-green-600' : 'text-red-500'}`}>
+                                {isDown ? '↓' : '↑'} {Math.abs(parseFloat(change))}%
+                              </span>
+                            ) : '—'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
             {/* Info box */}
             <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700">
               <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
               <div>
                 {tr('decarbonation.trajectoryInfoBox')}
+                {!historicalData.some(h => h.has_data && h.total_tco2e > 0) && (
+                  <span className="block mt-1 text-xs text-blue-500">
+                    💡 Aucune donnée historique trouvée. Importez vos données via <strong>Saisie de données</strong> pour voir l'évolution réelle de vos émissions.
+                  </span>
+                )}
               </div>
             </div>
           </div>

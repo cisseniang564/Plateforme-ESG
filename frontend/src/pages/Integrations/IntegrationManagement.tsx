@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { 
-  Plug, 
-  Plus,
+import {
+  Plug,
   CheckCircle,
   XCircle,
   RefreshCw,
@@ -11,12 +9,24 @@ import {
   Upload,
   Download,
   Activity,
-  AlertCircle
+  AlertCircle,
+  ArrowLeft,
+  Building2,
+  Table2,
+  BarChart2,
+  PieChart,
+  FileSpreadsheet,
+  Search,
+  Zap,
+  Globe,
+  ChevronRight,
+  Link2,
+  Clock,
+  Shield,
+  Star,
 } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
-import Spinner from '@/components/common/Spinner';
-import PageHeader from '@/components/PageHeader';
 import GoogleSheetsConfigModal from '@/components/modals/GoogleSheetsConfigModal';
 import GoogleSheetsImportModal from '@/components/modals/GoogleSheetsImportModal';
 import api from '@/services/api';
@@ -40,8 +50,77 @@ interface IntegrationType {
   requires_oauth: boolean;
 }
 
+interface Notification {
+  id: string;
+  type: 'success' | 'error';
+  message: string;
+}
+
+const TYPE_CONFIG: Record<string, {
+  icon: React.ReactNode;
+  color: string;
+  bg: string;
+  border: string;
+  badge: string;
+}> = {
+  google_sheets: {
+    icon: <Table2 className="h-6 w-6" />,
+    color: 'text-green-600',
+    bg: 'bg-green-50',
+    border: 'border-green-200',
+    badge: 'bg-green-100 text-green-700',
+  },
+  power_bi: {
+    icon: <BarChart2 className="h-6 w-6" />,
+    color: 'text-yellow-600',
+    bg: 'bg-yellow-50',
+    border: 'border-yellow-200',
+    badge: 'bg-yellow-100 text-yellow-700',
+  },
+  tableau: {
+    icon: <PieChart className="h-6 w-6" />,
+    color: 'text-blue-600',
+    bg: 'bg-blue-50',
+    border: 'border-blue-200',
+    badge: 'bg-blue-100 text-blue-700',
+  },
+  excel_online: {
+    icon: <FileSpreadsheet className="h-6 w-6" />,
+    color: 'text-emerald-600',
+    bg: 'bg-emerald-50',
+    border: 'border-emerald-200',
+    badge: 'bg-emerald-100 text-emerald-700',
+  },
+  looker: {
+    icon: <Search className="h-6 w-6" />,
+    color: 'text-purple-600',
+    bg: 'bg-purple-50',
+    border: 'border-purple-200',
+    badge: 'bg-purple-100 text-purple-700',
+  },
+};
+
+const DEFAULT_CONFIG = {
+  icon: <Plug className="h-6 w-6" />,
+  color: 'text-gray-600',
+  bg: 'bg-gray-50',
+  border: 'border-gray-200',
+  badge: 'bg-gray-100 text-gray-700',
+};
+
+function formatRelativeTime(dateStr: string | null): string {
+  if (!dateStr) return 'Jamais';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'À l\'instant';
+  if (m < 60) return `il y a ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `il y a ${h}h`;
+  const d = Math.floor(h / 24);
+  return `il y a ${d}j`;
+}
+
 export default function IntegrationManagement() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [types, setTypes] = useState<IntegrationType[]>([]);
@@ -50,40 +129,48 @@ export default function IntegrationManagement() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
   const [testingIntegration, setTestingIntegration] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const notify = (type: 'success' | 'error', message: string) => {
+    const id = Math.random().toString(36).slice(2);
+    setNotifications(prev => [...prev, { id, type, message }]);
+    setTimeout(() => setNotifications(prev => prev.filter(n => n.id !== id)), 4000);
+  };
+
+  const loadData = async (quiet = false) => {
+    if (!quiet) setLoading(true);
+    else setRefreshing(true);
     try {
       const [integrationsRes, typesRes] = await Promise.all([
         api.get('/integrations'),
         api.get('/integrations/types'),
       ]);
-
       setIntegrations(integrationsRes.data.items || []);
       setTypes(typesRes.data.types || []);
     } catch (error) {
       console.error('Error loading integrations:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
   const handleTestConnection = async (integration: Integration) => {
     setTestingIntegration(integration.id);
-    
     try {
       const response = await api.post(`/integrations/${integration.id}/test`);
-      
       if (response.data.status === 'success') {
-        alert(`✅ Connection successful!\nUser: ${response.data.user_email}`);
+        notify('success', `Connexion réussie — ${response.data.user_email}`);
       } else {
-        alert(`❌ ${response.data.message}`);
+        notify('error', response.data.message);
       }
     } catch (error: any) {
-      alert(`❌ Test failed: ${error.response?.data?.detail || 'Unknown error'}`);
+      notify('error', `Échec du test : ${error.response?.data?.detail || 'Erreur inconnue'}`);
     } finally {
       setTestingIntegration(null);
     }
@@ -94,23 +181,21 @@ export default function IntegrationManagement() {
       await api.patch(`/integrations/${integration.id}`, {
         is_active: !integration.is_active,
       });
-      
-      loadData();
+      notify('success', integration.is_active ? 'Intégration désactivée' : 'Intégration activée');
+      loadData(true);
     } catch (error: any) {
-      alert(error.response?.data?.detail || 'Failed to update integration');
+      notify('error', error.response?.data?.detail || 'Échec de la mise à jour');
     }
   };
 
   const handleDelete = async (integration: Integration) => {
-    if (!confirm(`Are you sure you want to delete "${integration.name}"?`)) {
-      return;
-    }
-
+    if (!confirm(`Supprimer "${integration.name}" ?`)) return;
     try {
       await api.delete(`/integrations/${integration.id}`);
-      loadData();
+      notify('success', 'Intégration supprimée');
+      loadData(true);
     } catch (error: any) {
-      alert(error.response?.data?.detail || 'Failed to delete integration');
+      notify('error', error.response?.data?.detail || 'Échec de la suppression');
     }
   };
 
@@ -118,7 +203,7 @@ export default function IntegrationManagement() {
     if (type.id === 'google_sheets') {
       setShowGoogleSheetsConfig(true);
     } else {
-      alert(`Configuration for ${type.name} coming soon!`);
+      notify('error', `Configuration de ${type.name} bientôt disponible`);
     }
   };
 
@@ -127,235 +212,319 @@ export default function IntegrationManagement() {
     setShowImportModal(true);
   };
 
-  const getTypeIcon = (type: string) => {
-    const icons: Record<string, string> = {
-      google_sheets: '📊',
-      power_bi: '📈',
-      tableau: '📉',
-      excel_online: '📑',
-      looker: '🔍',
-    };
-    return icons[type] || '🔌';
-  };
+  const cfg = (type: string) => TYPE_CONFIG[type] || DEFAULT_CONFIG;
 
-  const getStatusColor = (integration: Integration) => {
-    if (!integration.is_active) return 'text-gray-400';
-    if (integration.last_error) return 'text-red-600';
-    return 'text-green-600';
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
+  const activeCount = integrations.filter(i => i.is_active).length;
+  const errorCount = integrations.filter(i => i.last_error).length;
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Integrations"
-        subtitle="Connect ESGFlow with your favorite tools and services"
-        showBack={true}
-        backTo="/app/settings"
-      />
 
-      {/* Available Integration Types */}
-      <div>
-
-      {/* Carte INSEE spéciale */}
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">🇫🇷 Données Entreprises Françaises</h2>
-        <Card 
-          className="hover:shadow-lg transition-shadow cursor-pointer"
-          onClick={() => navigate('/settings/insee')}
-        >
-          <div className="text-center space-y-3">
-            <div className="text-4xl">🏢</div>
-            <h3 className="font-semibold text-gray-900">API INSEE Sirene</h3>
-            <p className="text-sm text-gray-600 h-10">Accès à la base officielle des entreprises françaises</p>
-            <div className="flex gap-2 justify-center flex-wrap">
-              <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">
-                SIREN/SIRET
-              </span>
-              <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded">
-                Gratuit
-              </span>
-              <span className="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded">
-                Temps réel
-              </span>
-            </div>
-            <div className="pt-2">
-              <p className="text-xs text-gray-500 mb-3">
-                Recherchez et enrichissez vos données ESG avec les informations officielles
-              </p>
-              <Button size="sm" variant="primary" className="w-full">
-                Accéder à la recherche →
-              </Button>
-            </div>
+      {/* Notifications */}
+      <div className="fixed top-4 right-4 z-50 space-y-2 pointer-events-none">
+        {notifications.map(n => (
+          <div
+            key={n.id}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium pointer-events-auto transition-all ${
+              n.type === 'success'
+                ? 'bg-green-50 border border-green-200 text-green-800'
+                : 'bg-red-50 border border-red-200 text-red-800'
+            }`}
+          >
+            {n.type === 'success'
+              ? <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+              : <XCircle className="h-4 w-4 text-red-600 flex-shrink-0" />}
+            {n.message}
           </div>
-        </Card>
+        ))}
       </div>
 
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Available Integrations</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {types.map(type => {
-            const existing = integrations.find(i => i.type === type.id);
-            return (
-              <Card key={type.id} className="hover:shadow-lg transition-shadow">
-                <div className="text-center space-y-3">
-                  <div className="text-4xl">{getTypeIcon(type.id)}</div>
-                  <h3 className="font-semibold text-gray-900">{type.name}</h3>
-                  <p className="text-sm text-gray-600 h-10">{type.description}</p>
-                  <div className="flex gap-2 justify-center flex-wrap">
+      {/* Hero */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-cyan-600 via-blue-600 to-indigo-700 rounded-2xl p-8 text-white shadow-xl">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZyIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLW9wYWNpdHk9IjAuMDUiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg==')] opacity-30" />
+        <div className="relative">
+          {/* Back button */}
+          <button
+            onClick={() => navigate('/app/settings')}
+            className="flex items-center gap-1.5 text-white/70 hover:text-white text-sm mb-4 transition-colors group"
+          >
+            <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
+            Paramètres
+          </button>
+
+          <div className="flex items-start justify-between gap-6">
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide uppercase">
+                  Connecteurs Tiers
+                </span>
+              </div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-white/20 rounded-xl">
+                  <Link2 className="h-7 w-7" />
+                </div>
+                <h1 className="text-3xl font-bold">Intégrations</h1>
+              </div>
+              <p className="text-cyan-100 max-w-xl">
+                Connectez ESGFlow à vos outils préférés et synchronisez vos données ESG en temps réel
+              </p>
+            </div>
+
+            <button
+              onClick={() => loadData(true)}
+              disabled={refreshing}
+              className="flex items-center gap-2 px-4 py-2 bg-white/15 hover:bg-white/25 rounded-xl text-sm font-medium transition-colors flex-shrink-0"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              Actualiser
+            </button>
+          </div>
+
+          {/* Stats strip */}
+          <div className="grid grid-cols-4 gap-4 mt-6 pt-6 border-t border-white/20">
+            {[
+              { label: 'Types disponibles', value: types.length || '—', icon: <Globe className="h-4 w-4" /> },
+              { label: 'Mes intégrations', value: integrations.length, icon: <Link2 className="h-4 w-4" /> },
+              { label: 'Actives', value: activeCount, icon: <Zap className="h-4 w-4" /> },
+              { label: 'Erreurs', value: errorCount, icon: <AlertCircle className="h-4 w-4" /> },
+            ].map(stat => (
+              <div key={stat.label} className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
+                <div className="flex items-center gap-2 text-white/70 text-xs mb-1">
+                  {stat.icon}
+                  {stat.label}
+                </div>
+                <div className="text-2xl font-bold">{loading ? '—' : stat.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* INSEE Card — Données françaises */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <Shield className="h-4 w-4 text-blue-600" />
+          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Données entreprises françaises</h2>
+        </div>
+        <div
+          onClick={() => navigate('/app/settings/insee')}
+          className="group flex items-center gap-5 p-5 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer transition-all"
+        >
+          <div className="p-3 bg-blue-50 rounded-xl group-hover:bg-blue-100 transition-colors flex-shrink-0">
+            <Building2 className="h-7 w-7 text-blue-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-semibold text-gray-900">API INSEE Sirene</h3>
+              <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full font-medium">Gratuit</span>
+              <span className="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded-full font-medium">Temps réel</span>
+            </div>
+            <p className="text-sm text-gray-500">
+              Accédez à la base officielle SIREN/SIRET — recherchez et enrichissez vos données ESG avec les informations officielles des entreprises françaises
+            </p>
+          </div>
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <span className="text-xs text-gray-400 hidden sm:block">10M+ entreprises</span>
+            <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all" />
+          </div>
+        </div>
+      </div>
+
+      {/* Available Integrations */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <Star className="h-4 w-4 text-amber-500" />
+          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Intégrations disponibles</h2>
+        </div>
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="animate-pulse bg-gray-100 rounded-xl h-48" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {types.map(type => {
+              const existing = integrations.find(i => i.type === type.id);
+              const c = cfg(type.id);
+              return (
+                <div
+                  key={type.id}
+                  className={`relative flex flex-col p-5 bg-white border rounded-xl shadow-sm hover:shadow-md transition-all ${c.border}`}
+                >
+                  {existing && (
+                    <div className="absolute top-3 right-3">
+                      <span className="flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                        <CheckCircle className="h-3 w-3" />
+                        Connecté
+                      </span>
+                    </div>
+                  )}
+                  <div className={`p-3 ${c.bg} rounded-xl w-fit mb-3 ${c.color}`}>
+                    {c.icon}
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-1">{type.name}</h3>
+                  <p className="text-xs text-gray-500 mb-3 flex-1">{type.description}</p>
+                  <div className="flex gap-1.5 flex-wrap mb-3">
                     {type.features.map(feature => (
-                      <span key={feature} className="px-2 py-0.5 text-xs bg-primary-100 text-primary-700 rounded">
+                      <span key={feature} className={`px-2 py-0.5 text-xs rounded-full ${c.badge}`}>
                         {feature}
                       </span>
                     ))}
                   </div>
                   {existing ? (
-                    <div className="pt-2">
-                      <span className="text-xs text-green-600 flex items-center justify-center gap-1">
-                        <CheckCircle className="h-3 w-3" />
-                        Connected
-                      </span>
-                    </div>
-                  ) : (
-                    <Button 
-                      size="sm" 
-                      variant="secondary" 
-                      className="w-full"
-                      onClick={() => handleConfigureIntegration(type)}
+                    <button
+                      onClick={() => handleTestConnection(existing)}
+                      disabled={testingIntegration === existing.id}
+                      className={`flex items-center justify-center gap-2 w-full py-2 text-xs font-medium rounded-lg border ${c.border} ${c.color} hover:${c.bg} transition-colors`}
                     >
-                      {type.requires_oauth ? 'Connect' : 'Configure'}
-                    </Button>
+                      {testingIntegration === existing.id
+                        ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                        : <Activity className="h-3.5 w-3.5" />}
+                      Tester la connexion
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleConfigureIntegration(type)}
+                      className="w-full py-2 text-xs font-medium rounded-lg bg-gray-900 text-white hover:bg-gray-700 transition-colors"
+                    >
+                      {type.requires_oauth ? 'Connecter' : 'Configurer'}
+                    </button>
                   )}
                 </div>
-              </Card>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Active Integrations */}
+      {/* My Integrations */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Integrations</h2>
-        <Card>
-          {integrations.length === 0 ? (
-            <div className="text-center py-12">
-              <Plug className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-500 font-medium mb-2">No integrations configured</p>
-              <p className="text-sm text-gray-400 mb-6">Connect your first integration to sync data</p>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Link2 className="h-4 w-4 text-gray-500" />
+            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Mes intégrations</h2>
+          </div>
+          {integrations.length > 0 && (
+            <span className="text-xs text-gray-500">{integrations.length} intégration{integrations.length > 1 ? 's' : ''}</span>
+          )}
+        </div>
+
+        {loading ? (
+          <div className="animate-pulse bg-gray-100 rounded-xl h-32" />
+        ) : integrations.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-14 bg-white border border-gray-200 rounded-xl text-center">
+            <div className="p-4 bg-gray-50 rounded-2xl mb-4">
+              <Plug className="h-10 w-10 text-gray-300" />
             </div>
-          ) : (
-            <div className="space-y-4">
-              {integrations.map(integration => (
-                <div key={integration.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="text-3xl">{getTypeIcon(integration.type)}</div>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-gray-900">{integration.name}</h4>
-                        {integration.user_email && (
-                          <span className="text-xs text-gray-500">({integration.user_email})</span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600 capitalize">{integration.type.replace('_', ' ')}</p>
-                      
-                      {integration.last_sync_at && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Last synced: {new Date(integration.last_sync_at).toLocaleString()}
-                        </p>
-                      )}
-                      
-                      {integration.last_error && (
-                        <div className="flex items-center gap-1 mt-1">
-                          <AlertCircle className="h-3 w-3 text-red-500" />
-                          <p className="text-xs text-red-600">{integration.last_error}</p>
-                        </div>
+            <p className="font-medium text-gray-700 mb-1">Aucune intégration configurée</p>
+            <p className="text-sm text-gray-400 max-w-xs">
+              Connectez votre première intégration ci-dessus pour synchroniser vos données
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {integrations.map(integration => {
+              const c = cfg(integration.type);
+              return (
+                <div
+                  key={integration.id}
+                  className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all"
+                >
+                  {/* Icon */}
+                  <div className={`p-2.5 ${c.bg} rounded-lg ${c.color} flex-shrink-0`}>
+                    {c.icon}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="font-medium text-gray-900 truncate">{integration.name}</span>
+                      {integration.user_email && (
+                        <span className="text-xs text-gray-400 truncate hidden sm:block">({integration.user_email})</span>
                       )}
                     </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    {/* Status Toggle */}
-                    <button
-                      onClick={() => handleToggleActive(integration)}
-                      className={`flex items-center gap-2 ${getStatusColor(integration)}`}
-                    >
-                      {integration.is_active ? (
-                        <>
-                          <CheckCircle className="h-5 w-5" />
-                          <span className="text-sm font-medium">Active</span>
-                        </>
-                      ) : (
-                        <>
-                          <XCircle className="h-5 w-5" />
-                          <span className="text-sm font-medium">Inactive</span>
-                        </>
+                    <div className="flex items-center gap-3 text-xs text-gray-500">
+                      <span className="capitalize">{integration.type.replace(/_/g, ' ')}</span>
+                      {integration.last_sync_at && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          Sync. {formatRelativeTime(integration.last_sync_at)}
+                        </span>
                       )}
-                    </button>
-                    
-                    {/* Actions */}
+                    </div>
+                    {integration.last_error && (
+                      <div className="flex items-center gap-1.5 mt-1.5 px-2.5 py-1 bg-red-50 rounded-lg w-fit">
+                        <AlertCircle className="h-3 w-3 text-red-500 flex-shrink-0" />
+                        <p className="text-xs text-red-600 truncate max-w-xs">{integration.last_error}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Status toggle */}
+                  <button
+                    onClick={() => handleToggleActive(integration)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors flex-shrink-0 ${
+                      integration.is_active
+                        ? 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'
+                        : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
+                    }`}
+                  >
+                    {integration.is_active
+                      ? <><CheckCircle className="h-3.5 w-3.5" /> Actif</>
+                      : <><XCircle className="h-3.5 w-3.5" /> Inactif</>}
+                  </button>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
                     {integration.type === 'google_sheets' && integration.is_active && (
                       <>
-                        <Button 
-                          size="sm" 
-                          variant="secondary"
+                        <button
                           onClick={() => handleImport(integration)}
+                          className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Importer"
                         >
-                          <Upload className="h-4 w-4 mr-2" />
-                          Import
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="secondary"
-                          onClick={() => alert('Export feature coming soon!')}
+                          <Upload className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => notify('error', 'Export bientôt disponible')}
+                          className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Exporter"
                         >
-                          <Download className="h-4 w-4 mr-2" />
-                          Export
-                        </Button>
+                          <Download className="h-4 w-4" />
+                        </button>
                       </>
                     )}
-                    
-                    <Button 
-                      size="sm" 
-                      variant="secondary"
+                    <button
                       onClick={() => handleTestConnection(integration)}
                       disabled={testingIntegration === integration.id}
+                      className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      title="Tester"
                     >
-                      {testingIntegration === integration.id ? (
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <>
-                          <Activity className="h-4 w-4 mr-2" />
-                          Test
-                        </>
-                      )}
-                    </Button>
-                    
-                    <button 
+                      {testingIntegration === integration.id
+                        ? <RefreshCw className="h-4 w-4 animate-spin" />
+                        : <Activity className="h-4 w-4" />}
+                    </button>
+                    <button
                       onClick={() => handleDelete(integration)}
-                      className="text-red-600 hover:text-red-900 p-2"
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Supprimer"
                     >
-                      <Trash2 className="h-5 w-5" />
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Modals */}
       <GoogleSheetsConfigModal
         isOpen={showGoogleSheetsConfig}
         onClose={() => setShowGoogleSheetsConfig(false)}
-        onSuccess={loadData}
+        onSuccess={() => { loadData(true); notify('success', 'Google Sheets connecté avec succès'); }}
       />
 
       {selectedIntegration && (

@@ -2,7 +2,7 @@
 Authentication service - Business logic for auth operations.
 """
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 from uuid import UUID
 
@@ -23,8 +23,10 @@ from app.schemas.auth import (
     UserLoginRequest,
     UserRegisterRequest,
     UserResponse,
+    TwoFactorSetupResponse,
+    TwoFactorEnableResponse,
 )
-from app.utils.jwt import create_access_token, create_refresh_token, decode_token
+from app.utils.jwt import create_access_token, create_refresh_token, create_2fa_temp_token, decode_token
 from app.utils.security import get_password_hash, verify_password
 
 
@@ -94,9 +96,19 @@ class AuthService:
         self.db.add(user)
         await self.db.commit()
         await self.db.refresh(user)
-        
+
+        # Notify the newly added user (fire-and-forget)
+        from app.services.email_service import EmailService
+        from app.config import settings as app_settings
+        EmailService.send_user_invited(
+            email=user.email,
+            inviter_name=tenant.name,
+            company=tenant.name,
+            invite_url=f"{app_settings.APP_URL}/login",
+        )
+
         return user
-    
+
     async def login(self, request: UserLoginRequest) -> LoginResponse:
         """
         Authenticate user and return tokens.
@@ -148,22 +160,37 @@ class AuthService:
         # Update last login
         user.update_last_login()
         await self.db.commit()
-        
-        # Generate tokens
+
+        # ── Compute needs_onboarding ──────────────────────────────────────
+        needs_onboarding = not bool(
+            tenant.settings.get("onboarding_done") if tenant.settings else False
+        )
+        user_resp = UserResponse.model_validate(user)
+        user_resp.needs_onboarding = needs_onboarding
+
+        # ── 2FA gate ──────────────────────────────────────────────────────
+        if getattr(user, "mfa_enabled", False):
+            temp_token = create_2fa_temp_token(user_id=user.id)
+            return LoginResponse(
+                user=user_resp,
+                requires_2fa=True,
+                temp_token=temp_token,
+            )
+
+        # Generate full tokens
         access_token = create_access_token(
             subject=user.email,
             tenant_id=user.tenant_id,
             user_id=user.id,
         )
-        
         refresh_token = create_refresh_token(
             subject=user.email,
             tenant_id=user.tenant_id,
             user_id=user.id,
         )
-        
+
         return LoginResponse(
-            user=UserResponse.model_validate(user),
+            user=user_resp,
             tokens=TokenResponse(
                 access_token=access_token,
                 refresh_token=refresh_token,
@@ -172,6 +199,74 @@ class AuthService:
             ),
         )
     
+    async def demo_login(self) -> LoginResponse:
+        """
+        Log in instantly as the pre-seeded demo account.
+        Looks up admin@demo.esgflow.com and issues full JWT tokens.
+        If the demo account doesn't exist yet it is created on the fly.
+        """
+        DEMO_EMAIL = "admin@demo.esgflow.com"
+        DEMO_PASSWORD = "Admin123!"
+
+        stmt = select(User).where(User.email == DEMO_EMAIL)
+        result = await self.db.execute(stmt)
+        user = result.scalar_one_or_none()
+
+        if not user:
+            # Auto-provision demo tenant + admin if seed script hasn't run
+            from app.schemas.auth import TenantOnboardRequest
+            onboard_req = TenantOnboardRequest(
+                tenant_name="ESGFlow Demo",
+                tenant_slug="demo",
+                plan_tier="pro",
+                admin_email=DEMO_EMAIL,
+                admin_password=DEMO_PASSWORD,
+                admin_first_name="Admin",
+                admin_last_name="Demo",
+                org_name="ESGFlow Demo Corp",
+            )
+            try:
+                await self.onboard_tenant(onboard_req)
+                result2 = await self.db.execute(select(User).where(User.email == DEMO_EMAIL))
+                user = result2.scalar_one_or_none()
+            except Exception:
+                pass
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Demo account not available. Please try again later.",
+            )
+
+        tenant = await self.db.get(Tenant, user.tenant_id)
+        needs_onboarding = not bool(
+            tenant.settings.get("onboarding_done") if tenant and tenant.settings else False
+        )
+
+        user_resp = UserResponse.model_validate(user)
+        user_resp.needs_onboarding = needs_onboarding
+
+        access_token = create_access_token(
+            subject=user.email,
+            tenant_id=user.tenant_id,
+            user_id=user.id,
+        )
+        refresh_token = create_refresh_token(
+            subject=user.email,
+            tenant_id=user.tenant_id,
+            user_id=user.id,
+        )
+
+        return LoginResponse(
+            user=user_resp,
+            tokens=TokenResponse(
+                access_token=access_token,
+                refresh_token=refresh_token,
+                token_type="bearer",
+                expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            ),
+        )
+
     async def refresh_access_token(self, refresh_token: str) -> TokenResponse:
         """
         Refresh access token using refresh token.
@@ -304,21 +399,41 @@ class AuthService:
             org = Organization(
                 tenant_id=tenant.id,
                 name=request.org_name,
-                org_type="group",
-                siren=request.org_siren,
-                sector_code=request.org_sector_code,
-                country_code=request.org_country_code,
-                employee_count=request.org_employee_count,
+                org_type="company",
+                external_id=getattr(request, "org_siren", None),
+                industry=getattr(request, "org_sector_code", None),
+                custom_data={
+                    k: v for k, v in {
+                        "siren": getattr(request, "org_siren", None),
+                        "country_code": getattr(request, "org_country_code", None),
+                        "employee_count": getattr(request, "org_employee_count", None),
+                    }.items() if v is not None
+                },
             )
             self.db.add(org)
             await self.db.flush()
             organization_id = org.id
         
         await self.db.commit()
-        
+
+        # Send welcome + trial emails (fire-and-forget)
+        from app.services.email_service import EmailService
+        trial_end = (datetime.now(timezone.utc) + timedelta(days=14)).strftime("%d/%m/%Y")
+        EmailService.send_welcome(
+            email=admin_user.email,
+            first_name=admin_user.first_name or "",
+            company=tenant.name,
+        )
+        EmailService.send_trial_started(
+            email=admin_user.email,
+            first_name=admin_user.first_name or "",
+            company=tenant.name,
+            trial_end=trial_end,
+        )
+
         # Generate a cryptographically secure API key
         api_key = f"esgflow_live_{secrets.token_urlsafe(32)}"
-        
+
         return OnboardResponse(
             tenant_id=tenant.id,
             tenant_slug=tenant.slug,
@@ -397,5 +512,122 @@ class AuthService:
         # Update password
         user.password_hash = get_password_hash(new_password)
         await self.db.commit()
-        
+
+        from app.services.email_service import EmailService
+        EmailService.send_password_changed(
+            email=user.email,
+            first_name=user.first_name or "",
+        )
+
         return True
+
+    # ── 2FA / TOTP ────────────────────────────────────────────────────────────
+
+    async def setup_2fa(self, user_id: UUID) -> dict:
+        """Generate a TOTP secret and return the provisioning URI for QR code display.
+        The secret is stored on the user but 2FA is NOT yet enabled — the user
+        must confirm by calling ``enable_2fa()`` with a valid TOTP code.
+        """
+        import pyotp
+
+        user = await self.db.get(User, user_id)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Utilisateur introuvable")
+
+        secret = pyotp.random_base32()
+        totp = pyotp.TOTP(secret)
+        uri = totp.provisioning_uri(name=user.email, issuer_name="ESGFlow")
+
+        # Persist secret (not yet enabled)
+        user.totp_secret = secret
+        await self.db.commit()
+
+        return {"secret": secret, "uri": uri}
+
+    async def enable_2fa(self, user_id: UUID, totp_code: str) -> dict:
+        """Verify the first TOTP code and activate 2FA. Returns backup codes."""
+        import pyotp, secrets as _secrets
+
+        user = await self.db.get(User, user_id)
+        if not user or not user.totp_secret:
+            raise HTTPException(status_code=400, detail="Setup 2FA non commencé")
+
+        if not pyotp.TOTP(user.totp_secret).verify(totp_code, valid_window=1):
+            raise HTTPException(status_code=400, detail="Code invalide")
+
+        backup_codes = [
+            f"{_secrets.token_hex(3).upper()}-{_secrets.token_hex(3).upper()}"
+            for _ in range(8)
+        ]
+        user.mfa_enabled = True
+        user.mfa_backup_codes = backup_codes
+        await self.db.commit()
+
+        return {"backup_codes": backup_codes}
+
+    async def disable_2fa(self, user_id: UUID, password: str) -> dict:
+        """Disable 2FA after verifying the user's password."""
+        user = await self.db.get(User, user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+        if not user.password_hash or not verify_password(password, user.password_hash):
+            raise HTTPException(status_code=400, detail="Mot de passe incorrect")
+
+        user.mfa_enabled = False
+        user.totp_secret = None
+        user.mfa_backup_codes = None
+        await self.db.commit()
+        return {"message": "2FA désactivé"}
+
+    async def verify_2fa_login(self, temp_token: str, totp_code: str, response_obj=None) -> "LoginResponse":
+        """Verify a TOTP code (or backup code) and issue full JWT tokens."""
+        import pyotp
+        from jose import JWTError as _JWTError
+
+        try:
+            payload = decode_token(temp_token)
+            if payload.get("type") != "2fa_temp":
+                raise ValueError("bad type")
+            user_id = UUID(payload["user_id"])
+        except Exception:
+            raise HTTPException(status_code=401, detail="Token temporaire invalide ou expiré")
+
+        user = await self.db.get(User, user_id)
+        if not user or not getattr(user, "mfa_enabled", False) or not user.totp_secret:
+            raise HTTPException(status_code=400, detail="2FA non configuré sur ce compte")
+
+        totp = pyotp.TOTP(user.totp_secret)
+        code_clean = totp_code.strip().upper().replace("-", "").replace(" ", "")
+
+        if totp.verify(totp_code.strip(), valid_window=1):
+            pass  # Valid TOTP
+        elif user.mfa_backup_codes and code_clean in [
+            c.replace("-", "") for c in (user.mfa_backup_codes or [])
+        ]:
+            # Consume the backup code
+            remaining = [c for c in user.mfa_backup_codes if c.replace("-", "") != code_clean]
+            user.mfa_backup_codes = remaining
+            await self.db.commit()
+        else:
+            raise HTTPException(status_code=400, detail="Code invalide")
+
+        tenant = await self.db.get(Tenant, user.tenant_id)
+        needs_onboarding = not bool(
+            tenant.settings.get("onboarding_done") if tenant and tenant.settings else False
+        )
+
+        access_token = create_access_token(subject=user.email, tenant_id=user.tenant_id, user_id=user.id)
+        refresh_token_val = create_refresh_token(subject=user.email, tenant_id=user.tenant_id, user_id=user.id)
+
+        user_resp = UserResponse.model_validate(user)
+        user_resp.needs_onboarding = needs_onboarding
+
+        return LoginResponse(
+            user=user_resp,
+            tokens=TokenResponse(
+                access_token=access_token,
+                refresh_token=refresh_token_val,
+                token_type="bearer",
+                expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            ),
+        )

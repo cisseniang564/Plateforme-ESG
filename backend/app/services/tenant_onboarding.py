@@ -62,6 +62,14 @@ _SECTOR_EXTRA = {
         {"code": "RET-003", "name": "Indice de conditions de travail", "pillar": "social", "category": "Conditions de travail", "unit": "score", "framework": "GRI 402"},
         {"code": "RET-004", "name": "Fournisseurs audités (droits humains)", "pillar": "governance", "category": "Supply chain", "unit": "%", "framework": "GRI 412"},
     ],
+    "immo": [
+        {"code": "IMM-001", "name": "Intensité énergétique du parc immobilier", "pillar": "environmental", "category": "Énergie", "unit": "kWh/m²", "framework": "ESRS E1"},
+        {"code": "IMM-002", "name": "Émissions GES du parc (Scope 1+2)", "pillar": "environmental", "category": "Climat", "unit": "kgCO2e/m²", "framework": "ESRS E1"},
+        {"code": "IMM-003", "name": "Part du parc certifié (HQE, BREEAM, LEED)", "pillar": "environmental", "category": "Certification", "unit": "%", "framework": "EU Taxonomy"},
+        {"code": "IMM-004", "name": "Score de satisfaction locataire", "pillar": "social", "category": "Clients", "unit": "score/10", "framework": "GRI 416"},
+        {"code": "IMM-005", "name": "Part de logements accessibles PMR", "pillar": "social", "category": "Inclusion", "unit": "%", "framework": "GRI 203"},
+        {"code": "IMM-006", "name": "Taux d'occupation moyen", "pillar": "governance", "category": "Performance", "unit": "%", "framework": "GRI 102"},
+    ],
 }
 
 
@@ -105,7 +113,7 @@ class TenantOnboardingService:
             org = Organization(
                 tenant_id=self.tenant_id,
                 name=org_name,
-                type="company",
+                org_type="company",
                 industry=sector,
             )
             self.db.add(org)
@@ -137,6 +145,15 @@ class TenantOnboardingService:
                 )
                 self.db.add(indicator)
                 created_count += 1
+
+        # Mark onboarding as completed in tenant settings
+        from app.models.tenant import Tenant as TenantModel
+        tenant = await self.db.get(TenantModel, self.tenant_id)
+        if tenant:
+            settings_copy = dict(tenant.settings or {})
+            settings_copy["onboarding_done"] = True
+            settings_copy["onboarding_sector"] = sector
+            tenant.settings = settings_copy
 
         await self.db.commit()
 

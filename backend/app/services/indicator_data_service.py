@@ -38,25 +38,27 @@ class IndicatorDataService:
         if not upload:
             raise ValueError("Upload not found")
         
-        if not upload.data_preview:
+        # Lire toutes les lignes (data_preview = 10 lignes seulement pour l'UI)
+        all_rows = (upload.file_metadata or {}).get('all_rows') or upload.data_preview or []
+        if not all_rows:
             raise ValueError("No data to import")
-        
+
         imported = 0
         skipped = 0
         errors = []
-        
+
         # Récupérer tous les indicators du tenant
         indicators_query = select(Indicator).where(Indicator.tenant_id == tenant_id)
         indicators_result = await self.db.execute(indicators_query)
         indicators = {ind.code: ind for ind in indicators_result.scalars().all()}
-        
+
         # Récupérer toutes les organizations
         orgs_query = select(Organization).where(Organization.tenant_id == tenant_id)
         orgs_result = await self.db.execute(orgs_query)
         organizations = {org.name: org for org in orgs_result.scalars().all()}
-        
+
         # Importer chaque ligne
-        for idx, row in enumerate(upload.data_preview):
+        for idx, row in enumerate(all_rows):
             try:
                 indicator_code = row.get('indicator_code')
                 value = row.get('value')

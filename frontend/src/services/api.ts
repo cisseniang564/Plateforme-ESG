@@ -98,10 +98,10 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         isRefreshing = false;
-        console.error('Échec du refresh token :', refreshError);
-        // Ne pas supprimer la session automatiquement ici.
-        // On laisse le composant appelant gérer le 401 pour éviter
-        // les déconnexions intempestives sur les pages détail.
+        // Supprimer les tokens expirés/invalides pour éviter une fenêtre
+        // d'exploitation si les tokens sont compromis
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
         return Promise.reject(refreshError);
       }
     }

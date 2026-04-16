@@ -1,35 +1,17 @@
-import { useState, useRef, useEffect } from 'react';
-import { Bell, Settings, LogOut, CheckCheck, X, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Bell, Settings, LogOut, CheckCheck, X, AlertTriangle, CheckCircle, Info, User, Menu } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from '@/components/LanguageSelector';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import TourLauncher from '@/components/tour/TourLauncher';
+import { notificationsService, type AppNotification } from '@/services/notificationsService';
 
-type NotificationType = 'error' | 'warning' | 'success' | 'info';
 type FilterType = 'all' | 'unread' | 'alerts';
 
-interface Notification {
-  id: number;
-  type: NotificationType;
-  title: string;
-  body: string;
-  time: string;
-  read: boolean;
-  link: string;
-}
+const POLL_INTERVAL_MS = 30_000; // 30 s
 
-const INITIAL_NOTIFICATIONS: Notification[] = [
-  { id: 1, type: 'error', title: 'SAP SuccessFactors — Erreur auth', body: 'Token OAuth expir\u00e9. Reconfigurez le connecteur.', time: 'il y a 5 min', read: false, link: '/app/data/connectors' },
-  { id: 2, type: 'warning', title: 'Score ESG en baisse', body: 'Le score Environnement a baiss\u00e9 de 3.2 pts ce mois.', time: 'il y a 1h', read: false, link: '/app/dashboard' },
-  { id: 3, type: 'success', title: 'Rapport CSRD g\u00e9n\u00e9r\u00e9', body: 'Votre rapport CSRD 2024 est pr\u00eat au t\u00e9l\u00e9chargement.', time: 'il y a 2h', read: false, link: '/app/reports' },
-  { id: 4, type: 'info', title: 'Synchronisation termin\u00e9e', body: 'SAP S/4HANA \u2014 1 250 entr\u00e9es synchronis\u00e9es avec succ\u00e8s.', time: 'il y a 3h', read: true, link: '/app/data/connectors' },
-  { id: 5, type: 'warning', title: 'Donn\u00e9es manquantes \u2014 Q3 2024', body: '8 indicateurs n\'ont pas de donn\u00e9es pour Q3 2024.', time: 'il y a 5h', read: true, link: '/app/data-entry' },
-  { id: 6, type: 'success', title: 'Workday synchronis\u00e9', body: '890 collaborateurs import\u00e9s depuis Workday.', time: 'hier', read: true, link: '/app/data/connectors' },
-  { id: 7, type: 'info', title: 'Mise \u00e0 jour plateforme', body: 'Nouveaux connecteurs disponibles : Enedis et EDF Data.', time: 'hier', read: true, link: '/app/data/connectors' },
-  { id: 8, type: 'warning', title: 'D\u00e9lai CSRD approche', body: 'Votre rapport CSRD est d\u00fb dans 23 jours.', time: 'il y a 2 jours', read: true, link: '/app/compliance' },
-];
-
-function NotificationIcon({ type }: { type: NotificationType }) {
+function NotificationIcon({ type }: { type: AppNotification['type'] }) {
   if (type === 'error') {
     return (
       <div className="flex-shrink-0 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
@@ -58,19 +40,39 @@ function NotificationIcon({ type }: { type: NotificationType }) {
   );
 }
 
-export default function Header() {
+interface HeaderProps {
+  onMenuToggle?: () => void;
+}
+
+export default function Header({ onMenuToggle }: HeaderProps) {
   const { user, logout } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const [notifications, setNotifications] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [panelOpen, setPanelOpen] = useState(false);
   const [filter, setFilter] = useState<FilterType>('all');
 
   const panelRef = useRef<HTMLDivElement>(null);
   const bellRef = useRef<HTMLButtonElement>(null);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  // ── Polling réel toutes les 30 s ──────────────────────────────────────────
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const data = await notificationsService.list();
+      setNotifications(data.items);
+      setUnreadCount(data.unread_count);
+    } catch {
+      // silent — network errors shouldn't disrupt the UI
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchNotifications();
+    const id = setInterval(fetchNotifications, POLL_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [fetchNotifications]);
 
   const filteredNotifications = notifications.filter((n) => {
     if (filter === 'unread') return !n.read;
@@ -78,16 +80,20 @@ export default function Header() {
     return true;
   });
 
-  function markAllRead() {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  async function markAllRead() {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setUnreadCount(0);
+    try { await notificationsService.markAllRead(); } catch { /* silent */ }
   }
 
-  function markRead(id: number) {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  async function markRead(id: string) {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    setUnreadCount(prev => Math.max(0, prev - 1));
+    try { await notificationsService.markOneRead(id); } catch { /* silent */ }
   }
 
-  function handleNotificationClick(notif: Notification) {
-    markRead(notif.id);
+  function handleNotificationClick(notif: AppNotification) {
+    if (!notif.read) markRead(notif.id);
     setPanelOpen(false);
     navigate(notif.link);
   }
@@ -103,12 +109,8 @@ export default function Header() {
         setPanelOpen(false);
       }
     }
-    if (panelOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    if (panelOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [panelOpen]);
 
   const filterLabels: Record<FilterType, string> = {
@@ -118,14 +120,23 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">ESGFlow</h2>
+    <header className="bg-white sticky top-0 z-30 border-b border-gray-100 px-6 h-[60px] flex items-center shadow-sm shadow-gray-100/50">
+      <div className="flex items-center justify-between w-full">
+        <div className="flex items-center">
+          <button
+            onClick={onMenuToggle}
+            className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors mr-2"
+            aria-label="Menu"
+          >
+            <Menu className="h-5 w-5 text-gray-600" />
+          </button>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <LanguageSelector />
+
+          {/* ── Tour guidé ─────────────────────────────────────────────────── */}
+          <TourLauncher />
 
           {/* Bell button with notification panel */}
           <div className="relative">
@@ -206,7 +217,7 @@ export default function Header() {
                   ) : (
                     filteredNotifications.map((notif) => (
                       <button
-                        key={notif.id}
+                        key={String(notif.id)}
                         onClick={() => handleNotificationClick(notif)}
                         className={`w-full text-left flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors ${
                           !notif.read ? 'bg-green-50/30' : ''
@@ -255,19 +266,26 @@ export default function Header() {
             <Settings className="h-5 w-5 text-gray-600" />
           </button>
 
-          <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">
-                {user?.first_name} {user?.last_name}
-              </p>
-              <p className="text-xs text-gray-500">{user?.email}</p>
-            </div>
+          <div className="flex items-center gap-2 pl-4 border-l border-gray-200">
+            <Link to="/app/profile" className="flex items-center gap-2.5 hover:bg-gray-50 rounded-xl px-2 py-1.5 transition-colors group">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <span className="text-white text-xs font-bold">
+                  {[user?.first_name?.[0], user?.last_name?.[0]].filter(Boolean).join('') || <User className="h-3.5 w-3.5" />}
+                </span>
+              </div>
+              <div className="text-right hidden md:block">
+                <p className="text-sm font-semibold text-gray-900 group-hover:text-green-700 transition-colors leading-tight">
+                  {user?.first_name} {user?.last_name}
+                </p>
+                <p className="text-xs text-gray-400">{user?.email}</p>
+              </div>
+            </Link>
             <button
               onClick={logout}
               className="p-2 hover:bg-red-50 rounded-lg transition-colors group"
-              title="D\u00e9connexion"
+              title="Déconnexion"
             >
-              <LogOut className="h-5 w-5 text-gray-600 group-hover:text-red-600" />
+              <LogOut className="h-5 w-5 text-gray-500 group-hover:text-red-600" />
             </button>
           </div>
         </div>

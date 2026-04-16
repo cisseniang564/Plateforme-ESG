@@ -113,16 +113,32 @@ async def lister_etablissements(
 
 @router.get("/secteurs")
 async def lister_secteurs():
-    """Liste les secteurs ESG disponibles pour la recherche."""
-    
+    """Liste tous les secteurs d'activité disponibles (nomenclature NAF/APE)."""
+
     return {
         'secteurs': [
-            {'id': 'energie', 'nom': 'Énergie', 'description': 'Production et distribution d\'énergie'},
-            {'id': 'dechets', 'nom': 'Gestion des déchets', 'description': 'Collecte et traitement des déchets'},
-            {'id': 'chimie', 'nom': 'Industrie chimique', 'description': 'Fabrication de produits chimiques'},
-            {'id': 'transport', 'nom': 'Transport', 'description': 'Transport de marchandises et de voyageurs'},
-            {'id': 'construction', 'nom': 'Construction', 'description': 'Construction de bâtiments'},
-            {'id': 'agriculture', 'nom': 'Agriculture', 'description': 'Cultures et élevage'},
+            # Secteurs ESG prioritaires
+            {'id': 'energie', 'nom': 'Énergie', 'description': 'Production et distribution d\'électricité, gaz, vapeur'},
+            {'id': 'dechets', 'nom': 'Gestion des déchets', 'description': 'Collecte, traitement et valorisation des déchets'},
+            {'id': 'chimie', 'nom': 'Industrie chimique', 'description': 'Fabrication de produits chimiques et pharmaceutiques'},
+            {'id': 'transport', 'nom': 'Transport & Logistique', 'description': 'Transport de marchandises et de voyageurs'},
+            {'id': 'construction', 'nom': 'Construction & BTP', 'description': 'Construction de bâtiments et travaux publics'},
+            {'id': 'agriculture', 'nom': 'Agriculture & Agroalimentaire', 'description': 'Cultures, élevage et industrie agroalimentaire'},
+            # Autres secteurs
+            {'id': 'commerce', 'nom': 'Commerce de détail & Gros', 'description': 'Commerce de gros et de détail, grande distribution'},
+            {'id': 'industrie', 'nom': 'Industrie manufacturière', 'description': 'Fabrication de biens industriels et de consommation'},
+            {'id': 'immobilier', 'nom': 'Immobilier', 'description': 'Promotion, location et gestion de biens immobiliers'},
+            {'id': 'finance', 'nom': 'Finance & Assurance', 'description': 'Banques, assurances, fonds d\'investissement'},
+            {'id': 'sante', 'nom': 'Santé & Action sociale', 'description': 'Hôpitaux, cliniques, maisons de retraite, médecine'},
+            {'id': 'informatique', 'nom': 'Informatique & Numérique', 'description': 'Édition logicielle, services informatiques, cloud'},
+            {'id': 'conseil', 'nom': 'Conseil & Services aux entreprises', 'description': 'Audit, conseil, juridique, comptabilité, RH'},
+            {'id': 'education', 'nom': 'Éducation & Formation', 'description': 'Enseignement scolaire, supérieur et formation professionnelle'},
+            {'id': 'restauration', 'nom': 'Restauration & Hôtellerie', 'description': 'Restaurants, hôtels, cafés et hébergement touristique'},
+            {'id': 'telecom', 'nom': 'Télécommunications & Médias', 'description': 'Opérateurs télécom, presse, audiovisuel, publicité'},
+            {'id': 'extractif', 'nom': 'Industries extractives & Mines', 'description': 'Extraction de minerais, pétrole, gaz naturel'},
+            {'id': 'eau', 'nom': 'Eau & Assainissement', 'description': 'Distribution d\'eau, assainissement et dépollution'},
+            {'id': 'sport', 'nom': 'Arts, Culture & Sport', 'description': 'Spectacles vivants, musées, activités sportives et récréatives'},
+            {'id': 'services', 'nom': 'Services à la personne', 'description': 'Aide à domicile, gardiennage, nettoyage, blanchisserie'},
         ]
     }
 

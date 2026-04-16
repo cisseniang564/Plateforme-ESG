@@ -136,8 +136,16 @@ class PasswordResetConfirmRequest(BaseModel):
 
 class EmailVerificationRequest(BaseModel):
     """Request schema for email verification."""
-    
+
     token: str = Field(..., description="Email verification token")
+
+
+class ProfileUpdateRequest(BaseModel):
+    """Request schema for updating user profile."""
+
+    first_name: Optional[str] = Field(None, max_length=100, description="First name")
+    last_name: Optional[str] = Field(None, max_length=100, description="Last name")
+    job_title: Optional[str] = Field(None, max_length=150, description="Job title")
 
 
 # ============================================================================
@@ -166,7 +174,7 @@ class TokenResponse(BaseModel):
 
 class UserResponse(BaseModel):
     """Response schema for user information."""
-    
+
     id: UUID
     tenant_id: UUID
     email: str
@@ -176,7 +184,9 @@ class UserResponse(BaseModel):
     is_active: bool
     email_verified_at: Optional[datetime]
     created_at: datetime
-    
+    mfa_enabled: bool = False
+    needs_onboarding: bool = False  # Injected by endpoint, not a DB field
+
     model_config = {
         "from_attributes": True,
         "json_schema_extra": {
@@ -190,35 +200,66 @@ class UserResponse(BaseModel):
                 "is_active": True,
                 "email_verified_at": "2025-02-11T10:00:00Z",
                 "created_at": "2025-02-01T10:00:00Z",
+                "mfa_enabled": False,
+                "needs_onboarding": False,
             }
         }
     }
 
 
 class LoginResponse(BaseModel):
-    """Response schema for successful login."""
-    
+    """Response schema for successful login.
+
+    If ``requires_2fa`` is True, the tokens field is None and the frontend must
+    call POST /auth/2fa/verify with the ``temp_token`` + the TOTP code.
+    """
     user: UserResponse
-    tokens: TokenResponse
-    
+    tokens: Optional[TokenResponse] = None
+    requires_2fa: bool = False
+    temp_token: Optional[str] = None  # Short-lived token (5 min) for 2FA step
+
     model_config = {
         "json_schema_extra": {
             "example": {
-                "user": {
-                    "id": "550e8400-e29b-41d4-a716-446655440000",
-                    "email": "user@example.com",
-                    "first_name": "John",
-                    "last_name": "Doe",
-                },
+                "user": {"id": "550e8400-e29b-41d4-a716-446655440000", "email": "user@example.com"},
                 "tokens": {
-                    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "access_token": "eyJ...",
+                    "refresh_token": "eyJ...",
                     "token_type": "bearer",
                     "expires_in": 1800,
                 },
+                "requires_2fa": False,
             }
         }
     }
+
+
+class TwoFactorSetupResponse(BaseModel):
+    """Response for GET /auth/2fa/setup — returns secret + provisioning URI."""
+    secret: str
+    uri: str  # otpauth:// URI for QR code generation
+
+
+class TwoFactorEnableRequest(BaseModel):
+    """Confirm 2FA setup by verifying first TOTP code."""
+    totp_code: str = Field(..., min_length=6, max_length=8)
+
+
+class TwoFactorEnableResponse(BaseModel):
+    """Returns single-use backup codes after enabling 2FA."""
+    backup_codes: list[str]
+    message: str = "2FA activé avec succès"
+
+
+class TwoFactorDisableRequest(BaseModel):
+    """Disable 2FA — requires current password."""
+    password: str
+
+
+class TwoFactorVerifyRequest(BaseModel):
+    """Complete login when 2FA is required."""
+    temp_token: str
+    totp_code: str = Field(..., min_length=6, max_length=8)
 
 
 class OnboardResponse(BaseModel):

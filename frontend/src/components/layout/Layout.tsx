@@ -1,9 +1,20 @@
-import { Component, type ReactNode } from 'react';
+import { Component, type ReactNode, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { useOnboarding } from '@/hooks/useOnboarding';
+import { TourProvider, useTourContext } from '@/components/tour/TourContext';
+import GuidedTour from '@/components/tour/GuidedTour';
+import QuickActions from '@/components/common/QuickActions';
+
+// Monte Joyride UNIQUEMENT quand le tour est actif (run=true)
+// Évite que l'overlay Joyride (z-index:9999) bloque les clics sur toutes les pages
+function ConditionalGuidedTour() {
+  const { run } = useTourContext();
+  if (!run) return null;
+  return <GuidedTour />;
+}
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; message: string }> {
   constructor(props: { children: ReactNode }) {
@@ -36,6 +47,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 export default function Layout() {
   const { t } = useTranslation();
   const { checked } = useOnboarding(); // Redirige vers /app/setup si l'onboarding n'est pas terminé
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Empêcher le flash du dashboard avant que le check onboarding soit terminé
   if (!checked) {
@@ -47,27 +59,35 @@ export default function Layout() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-6">
-          <ErrorBoundary>
-            <Outlet />
-          </ErrorBoundary>
-        </main>
-        <footer className="bg-white border-t border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between text-sm text-gray-600">
-            <p>© 2026 {t('footer.allRightsReserved')}</p>
-            <div className="flex gap-4">
-              <a href="#" className="hover:text-gray-900">{t('footer.privacy')}</a>
-              <a href="#" className="hover:text-gray-900">{t('footer.terms')}</a>
-              <a href="#" className="hover:text-gray-900">{t('footer.support')}</a>
+    <TourProvider>
+      {/* Joyride monté uniquement si le tour est actif — évite l'overlay bloquant */}
+      <ConditionalGuidedTour />
+
+      <div className="flex h-screen bg-[#f4f6f9] overflow-hidden">
+        <Sidebar mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <Header onMenuToggle={() => setMobileMenuOpen(o => !o)} />
+          <main className="flex-1 overflow-y-auto">
+            <div className="p-6 max-w-[1600px] mx-auto">
+              <ErrorBoundary>
+                <Outlet />
+              </ErrorBoundary>
             </div>
-            <p className="text-primary-600">{t('common.version')} 0.1.0</p>
-          </div>
-        </footer>
+          </main>
+          <QuickActions />
+          <footer className="bg-white/80 border-t border-gray-100 px-6 py-3 flex-shrink-0">
+            <div className="flex items-center justify-between text-xs text-gray-400 max-w-[1600px] mx-auto">
+              <p>© 2026 {t('footer.allRightsReserved')}</p>
+              <div className="flex gap-4">
+                <a href="#" className="hover:text-gray-600 transition-colors">{t('footer.privacy')}</a>
+                <a href="#" className="hover:text-gray-600 transition-colors">{t('footer.terms')}</a>
+                <a href="#" className="hover:text-gray-600 transition-colors">{t('footer.support')}</a>
+              </div>
+              <p className="text-primary-500 font-medium">{t('common.version')} 0.1.0</p>
+            </div>
+          </footer>
+        </div>
       </div>
-    </div>
+    </TourProvider>
   );
 }

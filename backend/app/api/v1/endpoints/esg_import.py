@@ -1,6 +1,7 @@
 """
 ESG Data Import API - Import CSV to data_entries
 """
+from typing import Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,15 +15,17 @@ router = APIRouter()
 
 
 class ColumnMappingRequest(BaseModel):
-    pillar: str
-    category: str
+    pillar: str = ''
+    category: str = ''
     metric_name: str
     value_numeric: str
-    unit: str = None
-    period_start: str = None
-    period_end: str = None
-    data_source: str = None
-    notes: str = None
+    unit: Optional[str] = None
+    period_start: Optional[str] = None
+    period_end: Optional[str] = None
+    data_source: Optional[str] = None
+    notes: Optional[str] = None
+    # When provided, IndicatorData bridge records will be linked to this org
+    organization_id: Optional[UUID] = None
 
 
 @router.post("/upload-preview")
@@ -81,12 +84,18 @@ async def import_data(
     """Import data from upload to data_entries table."""
     
     service = ESGDataImportService(db)
-    
+
+    # Extract organization_id before building column_mapping dict
+    org_id = mapping.organization_id
+    mapping_dict = mapping.dict(exclude_none=True)
+    mapping_dict.pop('organization_id', None)
+
     result = await service.import_to_data_entries(
         upload_id=upload_id,
-        column_mapping=mapping.dict(exclude_none=True),
+        column_mapping=mapping_dict,
         tenant_id=current_user.tenant_id,
-        user_id=current_user.id
+        user_id=current_user.id,
+        organization_id=org_id,
     )
-    
+
     return result

@@ -45,7 +45,7 @@ export default function ScoreCard({
           <div className={`flex items-center gap-1 ${getTrendColor()}`}>
             {getTrendIcon()}
             <span className="text-xs font-medium">
-              {trend > 0 ? '+' : ''}{trend.toFixed(1)}%
+              {trend > 0 ? '+' : ''}{(trend ?? 0).toFixed(1)}%
             </span>
           </div>
         )}
@@ -53,7 +53,7 @@ export default function ScoreCard({
       
       <div className="flex items-baseline gap-2 mb-3">
         <span className={`text-4xl font-bold ${scoreColor}`}>
-          {score.toFixed(1)}
+          {Math.round(score)}
         </span>
         <span className="text-lg text-gray-500">/ {maxScore}</span>
       </div>

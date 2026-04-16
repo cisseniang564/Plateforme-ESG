@@ -13,6 +13,7 @@ from app.db.session import get_db
 from app.middleware.auth_middleware import get_current_user_id
 from app.models.user import User
 from app.models.esg_score import ESGScore
+from app.models.organization import Organization
 from app.services.score_calculation_service import ScoreCalculationService
 
 router = APIRouter()
@@ -49,6 +50,7 @@ async def calculate_score(
         organization_id=organization_id,
     )
     
+    pillars = {"environmental": score.environmental_score, "social": score.social_score, "governance": score.governance_score}
     return {
         "id": str(score.id),
         "calculation_date": score.calculation_date.isoformat(),
@@ -56,11 +58,11 @@ async def calculate_score(
         "environmental_score": round(score.environmental_score, 2),
         "social_score": round(score.social_score, 2),
         "governance_score": round(score.governance_score, 2),
-        "grade": score.grade,
-        "best_pillar": score.best_pillar,
-    "worst_pillar": score.worst_pillar,
-        "data_points_count": score.data_points_count,
-        "calculated_at": score.calculated_at.isoformat() if score.calculated_at else None,
+        "grade": score.rating,
+        "best_pillar": max(pillars, key=pillars.get),
+        "worst_pillar": min(pillars, key=pillars.get),
+        "data_points_count": None,
+        "calculated_at": score.created_at.isoformat() if score.created_at else None,
     }
 
 
@@ -79,18 +81,23 @@ async def get_latest_score(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    # Resolve organization_id — required (NOT NULL in DB)
+    if not organization_id:
+        org_result = await db.execute(
+            select(Organization).where(Organization.tenant_id == user.tenant_id).limit(1)
+        )
+        org = org_result.scalar_one_or_none()
+        if org:
+            organization_id = org.id
+
     query = select(ESGScore).where(ESGScore.tenant_id == user.tenant_id)
-    
     if organization_id:
         query = query.where(ESGScore.organization_id == organization_id)
-    else:
-        query = query.where(ESGScore.organization_id.is_(None))
-    
     query = query.order_by(ESGScore.calculation_date.desc()).limit(1)
-    
+
     result = await db.execute(query)
     score = result.scalar_one_or_none()
-    
+
     if not score:
         service = ScoreCalculationService(db)
         score = await service.calculate_score(
@@ -106,9 +113,9 @@ async def get_latest_score(
         "environmental_score": round(score.environmental_score, 2),
         "social_score": round(score.social_score, 2),
         "governance_score": round(score.governance_score, 2),
-        "grade": score.grade,
-        "best_pillar": score.best_pillar,
-        "worst_pillar": score.worst_pillar
+        "grade": score.rating,
+        "best_pillar": max({"environmental": score.environmental_score, "social": score.social_score, "governance": score.governance_score}, key=lambda k: {"environmental": score.environmental_score, "social": score.social_score, "governance": score.governance_score}[k]),
+        "worst_pillar": min({"environmental": score.environmental_score, "social": score.social_score, "governance": score.governance_score}, key=lambda k: {"environmental": score.environmental_score, "social": score.social_score, "governance": score.governance_score}[k]),
     }
 
 
@@ -163,7 +170,7 @@ async def get_score_history(
             "environmental_score": round(s.environmental_score, 2),
             "social_score": round(s.social_score, 2),
             "governance_score": round(s.governance_score, 2),
-            "grade": s.grade,
+            "grade": s.rating,
         } for s in scores],
         "count": len(scores),
     }
@@ -249,46 +256,78 @@ async def get_score_trends(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    query = select(ESGScore).where(
-        ESGScore.tenant_id == user.tenant_id,
-        ESGScore.organization_id.is_(None)
-    ).order_by(ESGScore.calculation_date.desc()).limit(2)
-    
-    result = await db.execute(query)
-    scores = list(result.scalars().all())
-    
-    if len(scores) < 2:
-        return {
-            "current_score": scores[0].overall_score if scores else 0,
-            "trend": 0,
-            "change": 0,
-            "message": "Not enough data to calculate trend"
-        }
-    
-    current = scores[0]
-    previous = scores[1]
-    
-    change = current.overall_score - previous.overall_score
-    trend_percentage = (change / previous.overall_score * 100) if previous.overall_score > 0 else 0
-    
+    # Get the 2 most recent distinct calculation dates for this tenant
+    # then average scores across all orgs per date for a tenant-level trend
+    from sqlalchemy import func as sqlfunc, distinct
+    dates_result = await db.execute(
+        select(distinct(ESGScore.calculation_date))
+        .where(ESGScore.tenant_id == user.tenant_id)
+        .order_by(ESGScore.calculation_date.desc())
+        .limit(2)
+    )
+    dates = [row[0] for row in dates_result.all()]
+
+    if len(dates) < 2:
+        # Only one date available — return current average with no trend
+        if dates:
+            avg_result = await db.execute(
+                select(
+                    sqlfunc.avg(ESGScore.overall_score),
+                    sqlfunc.avg(ESGScore.environmental_score),
+                    sqlfunc.avg(ESGScore.social_score),
+                    sqlfunc.avg(ESGScore.governance_score),
+                ).where(
+                    ESGScore.tenant_id == user.tenant_id,
+                    ESGScore.calculation_date == dates[0],
+                )
+            )
+            row = avg_result.first()
+            return {
+                "current_score": round(row[0] or 0, 2),
+                "trend": 0,
+                "change": 0,
+                "message": "Not enough history to calculate trend",
+            }
+        return {"current_score": 0, "trend": 0, "change": 0, "message": "No scores available"}
+
+    # Average per date
+    async def _avg_for_date(d):
+        r = await db.execute(
+            select(
+                sqlfunc.avg(ESGScore.overall_score),
+                sqlfunc.avg(ESGScore.environmental_score),
+                sqlfunc.avg(ESGScore.social_score),
+                sqlfunc.avg(ESGScore.governance_score),
+            ).where(ESGScore.tenant_id == user.tenant_id, ESGScore.calculation_date == d)
+        )
+        return r.first()
+
+    cur_row = await _avg_for_date(dates[0])
+    prev_row = await _avg_for_date(dates[1])
+
+    cur_overall  = round(cur_row[0]  or 0, 2)
+    prev_overall = round(prev_row[0] or 0, 2)
+    change = round(cur_overall - prev_overall, 2)
+    trend_pct = round((change / prev_overall * 100) if prev_overall > 0 else 0, 2)
+
     return {
-        "current_score": round(current.overall_score, 2),
-        "previous_score": round(previous.overall_score, 2),
-        "change": round(change, 2),
-        "trend_percentage": round(trend_percentage, 2),
-        "trend_direction": "up" if change > 0 else "down" if change < 0 else "stable",
+        "current_score":    cur_overall,
+        "previous_score":   prev_overall,
+        "change":           change,
+        "trend_percentage": trend_pct,
+        "trend_direction":  "up" if change > 0 else "down" if change < 0 else "stable",
         "pillars": {
             "environmental": {
-                "current": round(current.environmental_score, 2),
-                "change": round(current.environmental_score - previous.environmental_score, 2),
+                "current": round(cur_row[1]  or 0, 2),
+                "change":  round((cur_row[1] or 0) - (prev_row[1] or 0), 2),
             },
             "social": {
-                "current": round(current.social_score, 2),
-                "change": round(current.social_score - previous.social_score, 2),
+                "current": round(cur_row[2]  or 0, 2),
+                "change":  round((cur_row[2] or 0) - (prev_row[2] or 0), 2),
             },
             "governance": {
-                "current": round(current.governance_score, 2),
-                "change": round(current.governance_score - previous.governance_score, 2),
+                "current": round(cur_row[3]  or 0, 2),
+                "change":  round((cur_row[3] or 0) - (prev_row[3] or 0), 2),
             },
         },
     }

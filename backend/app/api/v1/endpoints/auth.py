@@ -6,13 +6,13 @@ from typing import Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel, EmailStr
 
-from app.core.security import create_access_token, verify_password, get_password_hash
-from app.core.config import settings
+from app.utils.security import verify_password, get_password_hash
+from app.utils.jwt import create_access_token, create_password_reset_token
 from app.dependencies import get_db
 from app.models.user import User
 from app.models.organization import Organization
@@ -46,39 +46,51 @@ class RegisterResponse(BaseModel):
     email: str
 
 
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
 @router.post("/login", response_model=TokenResponse)
 async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
+    data: LoginRequest,
     db: AsyncSession = Depends(get_db)
 ):
-    """Login endpoint"""
-    
-    # Chercher l'utilisateur
+    """Login endpoint — accepts JSON body"""
+
+    # Chercher l'utilisateur avec son rôle chargé
     result = await db.execute(
-        select(User).where(User.email == form_data.username)
+        select(User)
+        .options(selectinload(User.role))
+        .where(User.email == data.email)
     )
     user = result.scalar_one_or_none()
-    
-    if not user or not verify_password(form_data.password, user.password_hash):
+
+    if not user or not verify_password(data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Inactive user"
         )
-    
-    # Créer les tokens
+
+    # Créer les tokens (format compatible avec auth_middleware extract_user_id)
     access_token = create_access_token(
-        data={"sub": str(user.id), "tenant_id": str(user.tenant_id)}
+        subject=user.email,
+        tenant_id=user.tenant_id,
+        user_id=user.id,
     )
     refresh_token = create_access_token(
-        data={"sub": str(user.id), "tenant_id": str(user.tenant_id), "type": "refresh"},
-        expires_delta=timedelta(days=7)
+        subject=user.email,
+        tenant_id=user.tenant_id,
+        user_id=user.id,
+        expires_delta=timedelta(days=7),
+        additional_claims={"type": "refresh"},
     )
     
     return {
@@ -92,8 +104,10 @@ async def login(
             "email": user.email,
             "first_name": user.first_name,
             "last_name": user.last_name,
-            "role": "admin",  # À adapter selon votre modèle
-            "tenant_id": str(user.tenant_id)
+            "role": user.role.name if user.role else "viewer",
+            "tenant_id": str(user.tenant_id),
+            "email_verified_at": user.email_verified_at.isoformat() if user.email_verified_at else None,
+            "mfa_enabled": user.mfa_enabled,
         }
     }
 
@@ -141,9 +155,33 @@ async def register(
         email_verified_at=None  # À vérifier par email plus tard
     )
     db.add(new_user)
-    
     await db.commit()
-    
+
+    # Send verification email (fire-and-forget)
+    try:
+        from app.services.email_service import EmailService
+        from app.config import settings as app_settings
+        from datetime import datetime, timedelta, timezone
+        from jose import jwt as _jwt
+        _token = _jwt.encode(
+            {
+                "sub": str(new_user.id),
+                "tenant_id": str(new_user.tenant_id),
+                "purpose": "email_verification",
+                "exp": datetime.now(timezone.utc) + timedelta(hours=24),
+            },
+            app_settings.JWT_SECRET_KEY,
+            algorithm="HS256",
+        )
+        verify_url = f"{app_settings.APP_URL}/verify-email?token={_token}"
+        EmailService.send_email_verification(
+            email=new_user.email,
+            first_name=new_user.first_name or new_user.email.split("@")[0],
+            verify_url=verify_url,
+        )
+    except Exception:
+        pass  # Never block registration on email failure
+
     return RegisterResponse(
         message="Account created successfully. Please check your email to verify your account.",
         user_id=str(new_user.id),
@@ -165,10 +203,19 @@ async def forgot_password(
         select(User).where(User.email == email)
     )
     user = result.scalar_one_or_none()
-    
+
     # Toujours retourner succès (sécurité - ne pas révéler si email existe)
-    # En production, envoyer un vrai email ici
-    
+    if user:
+        from app.services.email_service import EmailService
+        from app.config import settings as app_settings
+        token = create_password_reset_token(user.email, user.id)
+        reset_url = f"{app_settings.APP_URL}/reset-password?token={token}"
+        EmailService.send_password_reset(
+            email=user.email,
+            first_name=user.first_name or "",
+            reset_url=reset_url,
+        )
+
     return {
         "message": "If this email is registered, you will receive password reset instructions."
     }

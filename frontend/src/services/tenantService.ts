@@ -7,6 +7,6 @@ export interface TenantStats {
 }
 
 export async function getTenantStats(): Promise<TenantStats> {
-  const response = await api.get("/api/v1/tenants/me/stats");
+  const response = await api.get("/tenants/me/stats");
   return response.data;
 }

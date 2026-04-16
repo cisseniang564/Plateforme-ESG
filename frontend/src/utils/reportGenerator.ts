@@ -1,7 +1,3 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
-import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, HeadingLevel, AlignmentType, WidthType } from 'docx';
 import { format } from 'date-fns';
 
 interface ReportData {
@@ -39,7 +35,9 @@ interface ReportData {
 // GÉNÉRATION PDF PROFESSIONNELLE
 // ═══════════════════════════════════════════════════════════════
 
-export const generatePDF = (data: ReportData) => {
+export const generatePDF = async (data: ReportData) => {
+  const { default: jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
   const doc = new jsPDF();
   const { organization, scores, evolution, period, type } = data;
   
@@ -241,9 +239,10 @@ export const generatePDF = (data: ReportData) => {
 // GÉNÉRATION EXCEL PROFESSIONNELLE
 // ═══════════════════════════════════════════════════════════════
 
-export const generateExcel = (data: ReportData) => {
+export const generateExcel = async (data: ReportData) => {
+  const XLSX = await import('xlsx');
   const { organization, scores, evolution, period } = data;
-  
+
   const wb = XLSX.utils.book_new();
   
   // ─── ONGLET 1: RÉSUMÉ ───
@@ -256,7 +255,7 @@ export const generateExcel = (data: ReportData) => {
     ['ID Externe:', organization.external_id || 'N/A'],
     [],
     ['SCORE GLOBAL', scores.overall, scores.rating],
-    ['Tendance', scores.trend > 0 ? `+${scores.trend.toFixed(1)}%` : `${scores.trend.toFixed(1)}%`],
+    ['Tendance', scores.trend != null ? (scores.trend > 0 ? `+${scores.trend.toFixed(1)}%` : `${scores.trend.toFixed(1)}%`) : '—'],
     ['Complétude des données', `${scores.data_completeness}%`],
     [],
     ['SCORES PAR PILIER'],
@@ -335,8 +334,9 @@ export const generateExcel = (data: ReportData) => {
 // ═══════════════════════════════════════════════════════════════
 
 export const generateWord = async (data: ReportData) => {
+  const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, HeadingLevel, AlignmentType, WidthType } = await import('docx');
   const { organization, scores, evolution, period, type } = data;
-  
+
   const doc = new Document({
     sections: [{
       properties: {},

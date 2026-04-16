@@ -109,7 +109,7 @@ async def seed_final():
                     )
                 """), {
                     "id": str(uuid4()), "tid": str(tenant_id),
-                    "oid": str(org_id), "date": date(2026, 12, 31),
+                    "oid": str(org_id), "date": date.today() - timedelta(days=30),
                     "env": 75.5, "soc": 82.3, "gov": 88.7,
                     "overall": 82.2, "rating": "B+", "complete": 95.0
                 })

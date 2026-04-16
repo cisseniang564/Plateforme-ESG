@@ -4,6 +4,15 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  safelist: [
+    // Sidebar arbitrary values
+    'bg-[#0d1117]',
+    'w-[232px]',
+    'w-[60px]',
+    'h-[60px]',
+    'grid-rows-[0fr]',
+    'grid-rows-[1fr]',
+  ],
   theme: {
     extend: {
       colors: {

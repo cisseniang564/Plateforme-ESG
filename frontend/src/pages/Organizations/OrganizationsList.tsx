@@ -1,29 +1,186 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  Building2,
-  TrendingUp,
-  TrendingDown,
-  Search,
-  Filter,
-  Download,
-  BarChart3,
-  Eye,
-  Zap,
-  Award,
-  ArrowUpDown,
-  Grid3x3,
-  List,
-  Sparkles,
-  Activity,
-  X
+  Building2, TrendingUp, TrendingDown, Search, Filter, Download,
+  BarChart3, Eye, Zap, Award, ArrowUpDown, Grid3x3, List,
+  Sparkles, Activity, X, Minus, Plus, Loader2
 } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import Spinner from '@/components/common/Spinner';
 import api from '@/services/api';
-import { generateConsistentScores } from '@/utils/mockScores';
+import { getBatchOrgScores } from '@/services/esgScoringService';
+import toast from 'react-hot-toast';
+
+// ─── Modal Création Organisation ──────────────────────────────────────────────
+
+const ORG_TYPES = [
+  { id: 'company',       label: 'Entreprise' },
+  { id: 'group',         label: 'Groupe' },
+  { id: 'business_unit', label: 'Business Unit' },
+  { id: 'site',          label: 'Site / Établissement' },
+  { id: 'department',    label: 'Département' },
+]
+
+const INDUSTRIES = [
+  'Énergie', 'Finance & Assurance', 'Industrie manufacturière',
+  'Services', 'Immobilier', 'Santé', 'Technologies', 'Agriculture',
+  'Transport', 'Commerce', 'Construction', 'Alimentaire', 'Autre',
+]
+
+interface CreateOrgModalProps {
+  onClose: () => void
+  onCreated: () => void
+}
+
+function CreateOrgModal({ onClose, onCreated }: CreateOrgModalProps) {
+  const [name, setName] = useState('')
+  const [orgType, setOrgType] = useState('company')
+  const [industry, setIndustry] = useState('')
+  const [externalId, setExternalId] = useState('')
+  const [saving, setSaving] = useState(false)
+  const nameRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => { nameRef.current?.focus() }, [])
+
+  // Fermer sur Échap
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name.trim()) return
+    try {
+      setSaving(true)
+      await api.post('/organizations', {
+        name: name.trim(),
+        org_type: orgType,
+        industry: industry || null,
+        external_id: externalId.trim() || null,
+      })
+      toast.success(`Organisation "${name.trim()}" créée avec succès`)
+      onCreated()
+      onClose()
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail ?? 'Erreur lors de la création'
+      toast.error(msg)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Modal */}
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center">
+              <Building2 size={18} className="text-primary-600" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-gray-900">Nouvelle organisation</h2>
+              <p className="text-xs text-gray-400">Ajoutez une entité à votre portefeuille</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+            <X size={15} />
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          {/* Nom */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+              Nom de l'organisation <span className="text-red-400">*</span>
+            </label>
+            <input
+              ref={nameRef}
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Ex : GreenCo France SAS"
+              required
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {/* Type */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">Type</label>
+              <select
+                value={orgType}
+                onChange={e => setOrgType(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+              >
+                {ORG_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+              </select>
+            </div>
+
+            {/* Secteur */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">Secteur</label>
+              <select
+                value={industry}
+                onChange={e => setIndustry(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+              >
+                <option value="">— Choisir —</option>
+                {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* ID externe (optionnel) */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+              Identifiant externe <span className="text-gray-400 font-normal">(SIREN, code interne…)</span>
+            </label>
+            <input
+              type="text"
+              value={externalId}
+              onChange={e => setExternalId(e.target.value)}
+              placeholder="Optionnel"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-2.5 px-4 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={saving || !name.trim()}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? (
+                <><Loader2 size={14} className="animate-spin" />Création…</>
+              ) : (
+                <><Plus size={14} />Créer</>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
 
 interface Organization {
   id: string;
@@ -31,605 +188,492 @@ interface Organization {
   external_id?: string;
   industry?: string;
   type?: string;
-  esg_score?: number;
-  environmental_score?: number;
-  social_score?: number;
-  governance_score?: number;
-  rating?: string;
-  trend?: number;
-  data_completeness?: number;
+  esg_score: number | null;
+  environmental_score: number | null;
+  social_score: number | null;
+  governance_score: number | null;
+  rating: string | null;
+  trend: number | null;
+  data_completeness: number | null;
 }
 
 type ViewMode = 'grid' | 'list';
 type SortBy = 'name' | 'score' | 'rating';
 
-// ─── SVG Score Ring ──────────────────────────────────────────────────────────
-function ScoreRing({ score, size = 80, strokeWidth = 8 }: { score: number; size?: number; strokeWidth?: number }) {
+// ─── Score Ring ───────────────────────────────────────────────────────────────
+function ScoreRing({ score, size = 76, strokeWidth = 7 }: { score: number; size?: number; strokeWidth?: number }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const progress = Math.min(Math.max(score, 0), 100);
   const dashOffset = circumference - (progress / 100) * circumference;
   const color = score >= 75 ? '#16a34a' : score >= 60 ? '#2563eb' : score >= 45 ? '#ea580c' : '#dc2626';
   const trackColor = score >= 75 ? '#dcfce7' : score >= 60 ? '#dbeafe' : score >= 45 ? '#ffedd5' : '#fee2e2';
-
   return (
-    <svg width={size} height={size} className="transform -rotate-90">
-      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={trackColor} strokeWidth={strokeWidth} />
-      <circle
-        cx={size / 2} cy={size / 2} r={radius} fill="none"
-        stroke={color} strokeWidth={strokeWidth}
-        strokeDasharray={circumference} strokeDashoffset={dashOffset}
-        strokeLinecap="round"
-        className="transition-all duration-700"
-      />
+    <svg width={size} height={size} className="-rotate-90">
+      <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke={trackColor} strokeWidth={strokeWidth} />
+      <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke={color} strokeWidth={strokeWidth}
+        strokeDasharray={circumference} strokeDashoffset={dashOffset} strokeLinecap="round"
+        className="transition-all duration-700" />
     </svg>
   );
 }
 
-function PillarRing({ score, color, label }: { score: number; color: string; label: string }) {
-  const size = 48; const sw = 5;
-  const radius = (size - sw) / 2;
-  const circ = 2 * Math.PI * radius;
-  const offset = circ - (Math.min(score, 100) / 100) * circ;
+function PillarBar({ score, color, label }: { score: number | null; color: string; label: string }) {
+  const val = score ?? 0;
   return (
-    <div className="flex flex-col items-center gap-1">
-      <div className="relative">
-        <svg width={size} height={size} className="transform -rotate-90">
-          <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="#f3f4f6" strokeWidth={sw} />
-          <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke={color} strokeWidth={sw}
-            strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" />
-        </svg>
-        <span className="absolute inset-0 flex items-center justify-center text-xs font-bold" style={{ color }}>
-          {score}
-        </span>
+    <div className="flex flex-col items-center gap-1 flex-1">
+      <span className="text-[10px] font-bold text-gray-500">{label}</span>
+      <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${val}%`, backgroundColor: color }} />
       </div>
-      <span className="text-[10px] font-semibold text-gray-500">{label}</span>
+      <span className="text-[11px] font-semibold" style={{ color: score != null ? color : '#9ca3af' }}>
+        {score != null ? score : '—'}
+      </span>
     </div>
   );
 }
 
+function ScoreBadge({ score }: { score: number | null }) {
+  if (score == null) return (
+    <div className="flex flex-col items-center justify-center w-[76px] h-[76px] rounded-full border-2 border-dashed border-gray-200 bg-gray-50">
+      <span className="text-lg font-bold text-gray-300">—</span>
+      <span className="text-[9px] text-gray-400 uppercase tracking-wide">ESG</span>
+    </div>
+  );
+  const color = score >= 75 ? '#16a34a' : score >= 60 ? '#2563eb' : score >= 45 ? '#ea580c' : '#dc2626';
+  return (
+    <div className="relative w-[76px] h-[76px] flex-shrink-0">
+      <ScoreRing score={score} size={76} strokeWidth={7} />
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-xl font-bold leading-none" style={{ color }}>{score}</span>
+        <span className="text-[9px] text-gray-400 font-medium uppercase tracking-wide mt-0.5">ESG</span>
+      </div>
+    </div>
+  );
+}
+
+function RatingBadge({ rating }: { rating: string | null }) {
+  if (!rating) return <span className="text-xs text-gray-400 italic">Non scoré</span>;
+  const cls = rating.startsWith('A')
+    ? 'bg-green-50 text-green-700 border-green-200'
+    : rating.startsWith('B')
+    ? 'bg-blue-50 text-blue-700 border-blue-200'
+    : 'bg-orange-50 text-orange-700 border-orange-200';
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold border ${cls}`}>
+      {rating}
+    </span>
+  );
+}
+
+function TrendCell({ trend }: { trend: number | null }) {
+  if (trend == null) return <span className="text-gray-300 text-sm">—</span>;
+  if (trend > 0) return (
+    <span className="inline-flex items-center gap-1 text-green-600 font-semibold text-sm">
+      <TrendingUp className="h-3.5 w-3.5" />+{trend.toFixed(1)}%
+    </span>
+  );
+  if (trend < 0) return (
+    <span className="inline-flex items-center gap-1 text-red-500 font-semibold text-sm">
+      <TrendingDown className="h-3.5 w-3.5" />{trend.toFixed(1)}%
+    </span>
+  );
+  return (
+    <span className="inline-flex items-center gap-1 text-gray-400 text-sm">
+      <Minus className="h-3.5 w-3.5" />0%
+    </span>
+  );
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 export default function OrganizationsList() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedIndustry, setSelectedIndustry] = useState<string>('all');
-  const [selectedRating, setSelectedRating] = useState<string>('all');
-  const [scoreRange, setScoreRange] = useState<[number, number]>([0, 100]);
-
+  const [selectedIndustry, setSelectedIndustry] = useState('all');
+  const [selectedRating, setSelectedRating] = useState('all');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [sortBy, setSortBy] = useState<SortBy>('score');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     loadOrganizations();
+    // Ouvrir automatiquement le modal si navigué depuis le FAB
+    if ((location.state as any)?.openCreate) {
+      setShowCreateModal(true);
+      // Nettoyer le state pour éviter re-ouverture à la prochaine navigation
+      window.history.replaceState({}, '');
+    }
   }, []);
 
   const loadOrganizations = async () => {
     try {
       const res = await api.get('/organizations');
-      const orgs = res.data?.organizations || res.data?.items || [];
-
-      const enrichedOrgs = orgs.map((org: any) => {
-        const scores = generateConsistentScores(org.id);
+      const orgs: any[] = res.data?.organizations || res.data?.items || [];
+      const scoreMap = await getBatchOrgScores(orgs.map((o) => o.id));
+      const enriched: Organization[] = orgs.map((org) => {
+        const s = scoreMap[org.id];
         return {
           ...org,
-          esg_score: scores.overall,
-          environmental_score: scores.environmental,
-          social_score: scores.social,
-          governance_score: scores.governance,
-          rating: scores.rating,
-          trend: scores.trend,
-          data_completeness: scores.data_completeness
+          esg_score: s?.overall_score ?? null,
+          environmental_score: s?.environmental_score ?? null,
+          social_score: s?.social_score ?? null,
+          governance_score: s?.governance_score ?? null,
+          rating: s?.rating ?? null,
+          trend: null,
+          data_completeness: s ? s.data_completeness : null,
         };
       });
-
-      setOrganizations(enrichedOrgs);
-    } catch (error) {
-      console.error('Error loading organizations:', error);
+      setOrganizations(enriched);
+    } catch (err: any) {
+      console.error('OrganizationsList: load error', err);
+      const status = err?.response?.status;
+      if (status === 429) {
+        toast.error('Trop de requêtes — réessayez dans quelques secondes');
+      } else if (status !== 401) {
+        toast.error('Impossible de charger les organisations');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredAndSorted = useMemo(() => {
-    let result = organizations.filter(org => {
-      const matchesSearch = org.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           org.external_id?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesIndustry = selectedIndustry === 'all' || org.industry === selectedIndustry;
-      const matchesRating = selectedRating === 'all' || org.rating === selectedRating;
-      const matchesScore = (org.esg_score || 0) >= scoreRange[0] && (org.esg_score || 0) <= scoreRange[1];
-
-      return matchesSearch && matchesIndustry && matchesRating && matchesScore;
-    });
-
-    result.sort((a, b) => {
-      const dir = sortDir === 'asc' ? 1 : -1;
-
-      if (sortBy === 'name') {
-        return a.name.localeCompare(b.name) * dir;
-      }
-      if (sortBy === 'score') {
-        return ((b.esg_score || 0) - (a.esg_score || 0)) * dir;
-      }
-      if (sortBy === 'rating') {
-        const ratings = ['AAA', 'AA', 'A', 'BBB', 'BB', 'B', 'CCC', 'CC', 'C'];
-        return (ratings.indexOf(a.rating || 'C') - ratings.indexOf(b.rating || 'C')) * dir;
-      }
-
-      return 0;
-    });
-
-    return result;
-  }, [organizations, searchQuery, selectedIndustry, selectedRating, scoreRange, sortBy, sortDir]);
-
   const industries = useMemo(() =>
     Array.from(new Set(organizations.map(o => o.industry).filter(Boolean))) as string[],
-    [organizations]
-  );
+    [organizations]);
 
   const ratings = useMemo(() =>
-    Array.from(new Set(organizations.map(o => o.rating).filter(Boolean))).sort(),
-    [organizations]
+    Array.from(new Set(organizations.map(o => o.rating).filter(Boolean))).sort() as string[],
+    [organizations]);
+
+  const filtered = useMemo(() => {
+    let r = organizations.filter(org => {
+      const q = searchQuery.toLowerCase();
+      const matchSearch = org.name.toLowerCase().includes(q) || org.external_id?.toLowerCase().includes(q);
+      const matchIndustry = selectedIndustry === 'all' || org.industry === selectedIndustry;
+      const matchRating = selectedRating === 'all' || org.rating === selectedRating;
+      return matchSearch && matchIndustry && matchRating;
+    });
+    r.sort((a, b) => {
+      const d = sortDir === 'asc' ? 1 : -1;
+      if (sortBy === 'name') return a.name.localeCompare(b.name) * d;
+      if (sortBy === 'score') return ((b.esg_score ?? -1) - (a.esg_score ?? -1)) * d;
+      if (sortBy === 'rating') {
+        const idx = ['AAA','AA','A','BBB','BB','B','CCC','CC','C'];
+        return (idx.indexOf(a.rating ?? 'C') - idx.indexOf(b.rating ?? 'C')) * d;
+      }
+      return 0;
+    });
+    return r;
+  }, [organizations, searchQuery, selectedIndustry, selectedRating, sortBy, sortDir]);
+
+  const stats = useMemo(() => {
+    const scored = organizations.filter(o => o.esg_score != null);
+    return {
+      total: organizations.length,
+      avgScore: scored.length ? Math.round(scored.reduce((s, o) => s + o.esg_score!, 0) / scored.length) : 0,
+      leaders: organizations.filter(o => (o.esg_score ?? 0) >= 75).length,
+      scored: scored.length,
+      sectors: industries.length,
+    };
+  }, [organizations, industries]);
+
+  const clearFilters = () => { setSelectedIndustry('all'); setSelectedRating('all'); };
+  const hasFilters = selectedIndustry !== 'all' || selectedRating !== 'all' || searchQuery;
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-96"><Spinner size="lg" /></div>
   );
-
-  const stats = useMemo(() => ({
-    total: organizations.length,
-    avgScore: Math.round(organizations.reduce((sum, o) => sum + (o.esg_score || 0), 0) / organizations.length),
-    topPerformers: organizations.filter(o => (o.esg_score || 0) >= 75).length,
-    improving: organizations.filter(o => (o.trend || 0) > 0).length,
-    sectors: industries.length
-  }), [organizations, industries]);
-
-  const getRatingColor = (rating: string) => {
-    if (rating?.startsWith('A')) return 'bg-green-100 text-green-800 border-green-200';
-    if (rating?.startsWith('B')) return 'bg-blue-100 text-blue-800 border-blue-200';
-    return 'bg-orange-100 text-orange-800 border-orange-200';
-  };
-
-  const getScoreColor = (score: number) => {
-    if (score >= 75) return 'text-green-600';
-    if (score >= 60) return 'text-blue-600';
-    if (score >= 45) return 'text-orange-600';
-    return 'text-red-600';
-  };
-
-  const getScoreBgColor = (score: number) => {
-    if (score >= 75) return 'bg-green-500';
-    if (score >= 60) return 'bg-blue-500';
-    if (score >= 45) return 'bg-orange-500';
-    return 'bg-red-500';
-  };
-
-  const activeFilters = useMemo(() => {
-    const filters = [];
-    if (selectedIndustry !== 'all') filters.push({ key: 'industry', label: selectedIndustry });
-    if (selectedRating !== 'all') filters.push({ key: 'rating', label: `Rating ${selectedRating}` });
-    if (scoreRange[0] !== 0 || scoreRange[1] !== 100)
-      filters.push({ key: 'score', label: `Score ${scoreRange[0]}-${scoreRange[1]}` });
-    return filters;
-  }, [selectedIndustry, selectedRating, scoreRange]);
-
-  const clearFilters = () => {
-    setSelectedIndustry('all');
-    setSelectedRating('all');
-    setScoreRange([0, 100]);
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
+      {/* Modal création */}
+      {showCreateModal && (
+        <CreateOrgModal
+          onClose={() => setShowCreateModal(false)}
+          onCreated={loadOrganizations}
+        />
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <Building2 className="h-8 w-8 text-primary-600" />
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Building2 className="h-6 w-6 text-primary-600" />
             {t('organizations.title')}
           </h1>
-          <p className="text-gray-600 mt-1">
-            {filteredAndSorted.length} {t('organizations.company')}{filteredAndSorted.length > 1 ? 's' : ''}
-            {filteredAndSorted.length !== organizations.length && ` ${t('organizations.outOf')} ${organizations.length}`}
+          <p className="text-sm text-gray-500 mt-0.5">
+            {filtered.length} organisation{filtered.length > 1 ? 's' : ''}
+            {filtered.length !== organizations.length && ` sur ${organizations.length}`}
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="secondary"
-            onClick={() => navigate('/app/organizations/compare')}
-          >
-            <BarChart3 className="h-4 w-4 mr-2" />
-            {t('organizations.compare')}
+          <Button variant="secondary" size="sm" onClick={() => navigate('/app/organizations/compare')}>
+            <BarChart3 className="h-4 w-4 mr-1.5" />{t('organizations.compare')}
           </Button>
-          <Button onClick={() => {}}>
-            <Download className="h-4 w-4 mr-2" />
-            {t('common.export')}
+          <Button size="sm" onClick={() => setShowCreateModal(true)}>
+            <Plus className="h-4 w-4 mr-1.5" />Nouvelle organisation
           </Button>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <Card className="bg-gradient-to-br from-primary-50 to-primary-100 border-primary-200">
-          <div className="flex items-center justify-between">
+      {/* KPI strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: 'Total', value: stats.total, icon: Building2, color: 'text-slate-600', bg: 'bg-slate-50' },
+          { label: 'Score moyen', value: stats.avgScore || '—', icon: Zap, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: 'Leaders ≥75', value: stats.leaders, icon: Award, color: 'text-blue-600', bg: 'bg-blue-50' },
+          { label: 'Secteurs', value: stats.sectors, icon: Sparkles, color: 'text-purple-600', bg: 'bg-purple-50' },
+        ].map(({ label, value, icon: Icon, color, bg }) => (
+          <div key={label} className={`${bg} rounded-xl p-4 flex items-center gap-3`}>
+            <div className={`${color} opacity-70`}><Icon className="h-5 w-5" /></div>
             <div>
-              <p className="text-sm text-primary-700 font-medium">{t('common.total')}</p>
-              <p className="text-3xl font-bold text-primary-900 mt-1">{stats.total}</p>
+              <p className="text-xs text-gray-500 font-medium">{label}</p>
+              <p className={`text-2xl font-bold ${color}`}>{value}</p>
             </div>
-            <Building2 className="h-10 w-10 text-primary-600 opacity-50" />
           </div>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-green-700 font-medium">{t('organizations.avgScore')}</p>
-              <p className="text-3xl font-bold text-green-900 mt-1">{stats.avgScore}</p>
-            </div>
-            <Zap className="h-10 w-10 text-green-600 opacity-50" />
-          </div>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-blue-700 font-medium">{t('organizations.topAPlus')}</p>
-              <p className="text-3xl font-bold text-blue-900 mt-1">{stats.topPerformers}</p>
-            </div>
-            <Award className="h-10 w-10 text-blue-600 opacity-50" />
-          </div>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-purple-700 font-medium">{t('organizations.improving')}</p>
-              <p className="text-3xl font-bold text-purple-900 mt-1">{stats.improving}</p>
-            </div>
-            <TrendingUp className="h-10 w-10 text-purple-600 opacity-50" />
-          </div>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-orange-700 font-medium">{t('organizations.sectors')}</p>
-              <p className="text-3xl font-bold text-orange-900 mt-1">{stats.sectors}</p>
-            </div>
-            <Sparkles className="h-10 w-10 text-orange-600 opacity-50" />
-          </div>
-        </Card>
+        ))}
       </div>
 
-      {/* Filters & Search */}
-      <Card>
-        <div className="space-y-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder={t('organizations.searchPlaceholder')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        {/* Search */}
+        <div className="relative flex-1 min-w-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Rechercher une organisation…"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
+          />
+        </div>
 
-            {/* Sector */}
-            <div className="flex items-center gap-2">
-              <Filter className="h-5 w-5 text-gray-400" />
-              <select
-                value={selectedIndustry}
-                onChange={(e) => setSelectedIndustry(e.target.value)}
-                className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 min-w-[180px]"
-              >
-                <option value="all">{t('organizations.allSectors')}</option>
-                {industries.map(industry => (
-                  <option key={industry} value={industry}>{industry}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Rating */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Sector */}
+          <div className="relative">
+            <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
             <select
-              value={selectedRating}
-              onChange={(e) => setSelectedRating(e.target.value)}
-              className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 min-w-[150px]"
+              value={selectedIndustry}
+              onChange={e => setSelectedIndustry(e.target.value)}
+              className="pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 bg-white appearance-none min-w-[150px]"
             >
-              <option value="all">{t('organizations.allRatings')}</option>
-              {ratings.map(rating => (
-                <option key={rating} value={rating}>Rating {rating}</option>
-              ))}
+              <option value="all">Tous secteurs</option>
+              {industries.map(i => <option key={i} value={i}>{i}</option>)}
             </select>
-
-            {/* Sort */}
-            <div className="flex items-center gap-2">
-              <ArrowUpDown className="h-5 w-5 text-gray-400" />
-              <select
-                value={`${sortBy}-${sortDir}`}
-                onChange={(e) => {
-                  const [sort, dir] = e.target.value.split('-');
-                  setSortBy(sort as SortBy);
-                  setSortDir(dir as 'asc' | 'desc');
-                }}
-                className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="score-desc">{t('organizations.sortScoreDesc')}</option>
-                <option value="score-asc">{t('organizations.sortScoreAsc')}</option>
-                <option value="name-asc">{t('organizations.sortNameAZ')}</option>
-                <option value="name-desc">{t('organizations.sortNameZA')}</option>
-                <option value="rating-asc">{t('organizations.sortRatingAsc')}</option>
-                <option value="rating-desc">{t('organizations.sortRatingDesc')}</option>
-              </select>
-            </div>
-
-            {/* View mode */}
-            <div className="flex border border-gray-300 rounded-lg overflow-hidden">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`px-4 py-2.5 flex items-center gap-2 transition-colors ${
-                  viewMode === 'grid'
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                <Grid3x3 className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`px-4 py-2.5 flex items-center gap-2 border-l border-gray-300 transition-colors ${
-                  viewMode === 'list'
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                <List className="h-4 w-4" />
-              </button>
-            </div>
           </div>
 
-          {/* Active filters */}
-          {activeFilters.length > 0 && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm text-gray-600">{t('organizations.activeFilters')}:</span>
-              {activeFilters.map(filter => (
-                <span
-                  key={filter.key}
-                  className="inline-flex items-center gap-1 px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm"
-                >
-                  {filter.label}
-                  <button
-                    onClick={() => {
-                      if (filter.key === 'industry') setSelectedIndustry('all');
-                      if (filter.key === 'rating') setSelectedRating('all');
-                      if (filter.key === 'score') setScoreRange([0, 100]);
-                    }}
-                    className="hover:text-primary-900"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              ))}
-              <button
-                onClick={clearFilters}
-                className="text-sm text-primary-600 hover:text-primary-700 font-medium"
-              >
-                {t('organizations.clearAll')}
-              </button>
-            </div>
-          )}
-        </div>
-      </Card>
+          {/* Rating */}
+          <select
+            value={selectedRating}
+            onChange={e => setSelectedRating(e.target.value)}
+            className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 bg-white min-w-[120px]"
+          >
+            <option value="all">Tous ratings</option>
+            {ratings.map(r => <option key={r} value={r}>{r}</option>)}
+          </select>
 
-      {/* Grid / List mode */}
-      {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredAndSorted.map(org => (
-            <Card
-              key={org.id}
-              className="hover:shadow-xl transition-all cursor-pointer group"
-              onClick={() => navigate(`/app/organizations/${org.id}`)}
+          {/* Sort */}
+          <div className="relative">
+            <ArrowUpDown className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+            <select
+              value={`${sortBy}-${sortDir}`}
+              onChange={e => {
+                const [s, d] = e.target.value.split('-');
+                setSortBy(s as SortBy); setSortDir(d as 'asc' | 'desc');
+              }}
+              className="pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 bg-white"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-gray-900 text-lg mb-1 truncate group-hover:text-primary-600 transition-colors">
+              <option value="score-desc">Score ↓</option>
+              <option value="score-asc">Score ↑</option>
+              <option value="name-asc">Nom A→Z</option>
+              <option value="name-desc">Nom Z→A</option>
+              <option value="rating-asc">Rating ↑</option>
+              <option value="rating-desc">Rating ↓</option>
+            </select>
+          </div>
+
+          {/* Clear */}
+          {hasFilters && (
+            <button onClick={clearFilters}
+              className="flex items-center gap-1 px-2.5 py-2 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg bg-white transition-colors">
+              <X className="h-3.5 w-3.5" /> Effacer
+            </button>
+          )}
+
+          {/* View toggle */}
+          <div className="flex border border-gray-200 rounded-lg overflow-hidden ml-1">
+            <button onClick={() => setViewMode('grid')}
+              className={`px-3 py-2 transition-colors ${viewMode === 'grid' ? 'bg-primary-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>
+              <Grid3x3 className="h-4 w-4" />
+            </button>
+            <button onClick={() => setViewMode('list')}
+              className={`px-3 py-2 border-l border-gray-200 transition-colors ${viewMode === 'list' ? 'bg-primary-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>
+              <List className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Grid view */}
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filtered.map(org => (
+            <div
+              key={org.id}
+              onClick={() => navigate(`/app/organizations/${org.id}`)}
+              className="bg-white border border-gray-200 rounded-xl p-5 hover:border-primary-300 hover:shadow-md cursor-pointer transition-all group"
+            >
+              {/* Top row */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1 min-w-0 pr-3">
+                  <h3 className="font-semibold text-gray-900 text-sm leading-snug truncate group-hover:text-primary-600 transition-colors">
                     {org.name}
                   </h3>
-                  {org.external_id && (
-                    <p className="text-xs text-gray-500">{org.external_id}</p>
-                  )}
-                </div>
-                {org.rating && (
-                  <span className={`flex-shrink-0 px-3 py-1 rounded-lg text-sm font-bold border-2 ${getRatingColor(org.rating)}`}>
-                    {org.rating}
-                  </span>
-                )}
-              </div>
-
-              {org.industry && (
-                <span className="inline-block px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full mb-4">
-                  {org.industry}
-                </span>
-              )}
-
-              {/* ESG Score Ring */}
-              <div className="flex items-center gap-4 mb-4">
-                <div className="relative flex-shrink-0">
-                  <ScoreRing score={org.esg_score || 0} size={80} strokeWidth={8} />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className={`text-xl font-bold ${getScoreColor(org.esg_score || 0)}`}>
-                      {org.esg_score}
+                  {org.industry && (
+                    <span className="inline-block mt-1 px-2 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-medium rounded-full">
+                      {org.industry}
                     </span>
-                    <span className="text-[9px] text-gray-400 font-medium uppercase tracking-wide">ESG</span>
-                  </div>
-                </div>
-                {/* E/S/G pillar rings */}
-                <div className="flex gap-3 flex-1 justify-end">
-                  <PillarRing score={org.environmental_score || 0} color="#16a34a" label="E" />
-                  <PillarRing score={org.social_score || 0} color="#2563eb" label="S" />
-                  <PillarRing score={org.governance_score || 0} color="#7c3aed" label="G" />
-                </div>
-              </div>
-
-              {/* Trend */}
-              {org.trend !== undefined && (
-                <div className="flex items-center gap-2 text-sm pb-4 border-b border-gray-200 mb-4">
-                  {org.trend > 0 ? (
-                    <>
-                      <TrendingUp className="h-4 w-4 text-green-600" />
-                      <span className="text-green-600 font-semibold">+{org.trend.toFixed(1)}%</span>
-                      <span className="text-gray-500">{t('organizations.vsPrevPeriod')}</span>
-                    </>
-                  ) : (
-                    <>
-                      <TrendingDown className="h-4 w-4 text-red-600" />
-                      <span className="text-red-600 font-semibold">{org.trend.toFixed(1)}%</span>
-                      <span className="text-gray-500">{t('organizations.vsPrevPeriod')}</span>
-                    </>
                   )}
                 </div>
-              )}
-
-              {/* Completeness */}
-              <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-                <span>{t('organizations.dataCompleteness')}</span>
-                <span className="font-semibold">{org.data_completeness}%</span>
+                <RatingBadge rating={org.rating} />
               </div>
 
-              {/* Actions */}
-              <Button
-                size="sm"
-                variant="secondary"
-                className="w-full group-hover:bg-primary-600 group-hover:text-white transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/app/organizations/${org.id}`);
-                }}
-              >
-                <Eye className="h-4 w-4 mr-2" />
-                {t('organizations.viewDetails')}
-              </Button>
-            </Card>
+              {/* Score + pillars */}
+              <div className="flex items-center gap-4 py-3 border-t border-b border-gray-100 my-3">
+                <ScoreBadge score={org.esg_score} />
+                <div className="flex gap-2 flex-1">
+                  <PillarBar score={org.environmental_score} color="#16a34a" label="E" />
+                  <PillarBar score={org.social_score} color="#2563eb" label="S" />
+                  <PillarBar score={org.governance_score} color="#7c3aed" label="G" />
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-between mt-3">
+                <div className="text-xs text-gray-500">
+                  {org.data_completeness != null
+                    ? <><span className="font-medium text-gray-700">{org.data_completeness}%</span> complété</>
+                    : <span className="text-gray-400">Données manquantes</span>
+                  }
+                </div>
+                <button
+                  onClick={e => { e.stopPropagation(); navigate(`/app/organizations/${org.id}`); }}
+                  className="flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors"
+                >
+                  <Eye className="h-3.5 w-3.5" /> Voir
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       ) : (
-        <Card>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b-2 border-gray-200">
-                <tr>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm">
-                    {t('organizations.organization')}
-                  </th>
-                  <th className="text-center py-4 px-6 font-semibold text-gray-700 text-sm">
-                    Rating
-                  </th>
-                  <th className="text-center py-4 px-6 font-semibold text-gray-700 text-sm">
-                    {t('organizations.globalScore')}
-                  </th>
-                  <th className="text-center py-4 px-6 font-semibold text-gray-700 text-sm">
-                    E / S / G
-                  </th>
-                  <th className="text-center py-4 px-6 font-semibold text-gray-700 text-sm">
-                    {t('organizations.trend')}
-                  </th>
-                  <th className="text-right py-4 px-6 font-semibold text-gray-700 text-sm">
-                    {t('common.actions')}
-                  </th>
+        /* List view */
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50">
+                <th className="text-left px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Organisation</th>
+                <th className="text-center px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Score ESG</th>
+                <th className="text-center px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Rating</th>
+                <th className="text-center px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">E / S / G</th>
+                <th className="text-center px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Tendance</th>
+                <th className="text-center px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Complétude</th>
+                <th className="w-20" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {filtered.map(org => (
+                <tr
+                  key={org.id}
+                  className="hover:bg-primary-50/40 cursor-pointer transition-colors"
+                  onClick={() => navigate(`/app/organizations/${org.id}`)}
+                >
+                  <td className="px-5 py-3.5">
+                    <p className="font-medium text-gray-900 text-sm">{org.name}</p>
+                    {org.industry && <p className="text-xs text-gray-400 mt-0.5">{org.industry}</p>}
+                  </td>
+                  <td className="px-4 py-3.5 text-center">
+                    {org.esg_score != null ? (
+                      <span className={`text-xl font-bold ${
+                        org.esg_score >= 75 ? 'text-green-600' :
+                        org.esg_score >= 60 ? 'text-blue-600' :
+                        org.esg_score >= 45 ? 'text-orange-500' : 'text-red-500'
+                      }`}>{org.esg_score}</span>
+                    ) : <span className="text-gray-300 text-lg">—</span>}
+                  </td>
+                  <td className="px-4 py-3.5 text-center">
+                    <RatingBadge rating={org.rating} />
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-center justify-center gap-2 text-xs font-semibold">
+                      <span className="text-green-600">{org.environmental_score ?? '—'}</span>
+                      <span className="text-gray-200">/</span>
+                      <span className="text-blue-600">{org.social_score ?? '—'}</span>
+                      <span className="text-gray-200">/</span>
+                      <span className="text-purple-600">{org.governance_score ?? '—'}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3.5 text-center">
+                    <TrendCell trend={org.trend} />
+                  </td>
+                  <td className="px-4 py-3.5 text-center">
+                    {org.data_completeness != null ? (
+                      <div className="flex items-center gap-2 justify-center">
+                        <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-primary-500 rounded-full" style={{ width: `${org.data_completeness}%` }} />
+                        </div>
+                        <span className="text-xs text-gray-500 w-8">{org.data_completeness}%</span>
+                      </div>
+                    ) : <span className="text-gray-300 text-sm">—</span>}
+                  </td>
+                  <td className="px-4 py-3.5 text-center">
+                    <button
+                      onClick={e => { e.stopPropagation(); navigate(`/app/organizations/${org.id}`); }}
+                      className="text-primary-600 hover:text-primary-700 transition-colors"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredAndSorted.map(org => (
-                  <tr
-                    key={org.id}
-                    className="hover:bg-gray-50 cursor-pointer transition-colors"
-                    onClick={() => navigate(`/app/organizations/${org.id}`)}
-                  >
-                    <td className="py-4 px-6">
-                      <div>
-                        <p className="font-semibold text-gray-900">{org.name}</p>
-                        <p className="text-sm text-gray-500">{org.industry}</p>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      {org.rating && (
-                        <span className={`inline-block px-3 py-1 rounded-lg text-sm font-bold border-2 ${getRatingColor(org.rating)}`}>
-                          {org.rating}
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      <span className={`text-2xl font-bold ${getScoreColor(org.esg_score || 0)}`}>
-                        {org.esg_score}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center justify-center gap-3 text-sm">
-                        <span className="text-green-600 font-semibold">{org.environmental_score}</span>
-                        <span className="text-gray-300">/</span>
-                        <span className="text-blue-600 font-semibold">{org.social_score}</span>
-                        <span className="text-gray-300">/</span>
-                        <span className="text-purple-600 font-semibold">{org.governance_score}</span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        {(org.trend || 0) > 0 ? (
-                          <>
-                            <TrendingUp className="h-4 w-4 text-green-600" />
-                            <span className="text-green-600 font-semibold">+{org.trend?.toFixed(1)}%</span>
-                          </>
-                        ) : (
-                          <>
-                            <TrendingDown className="h-4 w-4 text-red-600" />
-                            <span className="text-red-600 font-semibold">{org.trend?.toFixed(1)}%</span>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-4 px-6 text-right">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/app/organizations/${org.id}`);
-                        }}
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        {t('common.details')}
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
-      {filteredAndSorted.length === 0 && (
-        <Card>
-          <div className="text-center py-16">
-            <Activity className="h-20 w-20 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-600 text-xl font-medium mb-2">{t('organizations.notFound')}</p>
-            <p className="text-gray-500 mb-4">
-              {t('organizations.tryModifySearch')}
-            </p>
-            <Button variant="secondary" onClick={clearFilters}>
-              {t('organizations.resetFilters')}
-            </Button>
-          </div>
-        </Card>
+      {/* Empty state */}
+      {filtered.length === 0 && (
+        <div className="text-center py-20 bg-white border border-gray-200 rounded-xl">
+          <Building2 className="h-14 w-14 text-gray-200 mx-auto mb-4" />
+          {organizations.length === 0 ? (
+            <>
+              <p className="text-gray-700 font-semibold mb-1">Aucune organisation encore</p>
+              <p className="text-gray-400 text-sm mb-5">Créez votre première organisation pour commencer</p>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-semibold rounded-lg hover:bg-primary-700 transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                Créer une organisation
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-gray-700 font-semibold mb-1">Aucune organisation trouvée</p>
+              <p className="text-gray-400 text-sm mb-5">Modifiez vos critères de recherche</p>
+              {hasFilters && (
+                <Button variant="secondary" size="sm" onClick={clearFilters}>
+                  Réinitialiser les filtres
+                </Button>
+              )}
+            </>
+          )}
+        </div>
       )}
     </div>
   );

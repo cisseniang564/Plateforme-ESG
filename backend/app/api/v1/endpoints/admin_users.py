@@ -9,6 +9,7 @@ from app.db.session import get_db
 from app.models.user import User
 from app.models.tenant import Tenant
 from app.middleware.auth_middleware import get_current_user_id
+from app.core.permissions import require_role, Roles
 
 router = APIRouter()
 
@@ -16,10 +17,10 @@ router = APIRouter()
 @router.get("/registrations/recent")
 async def get_recent_registrations(
     limit: int = 10,
-    user_id: str = Depends(get_current_user_id),
+    _: None = Depends(require_role(Roles.TENANT_ADMIN)),
     db: AsyncSession = Depends(get_db)
 ):
-    """Obtenir les inscriptions récentes (admin only)."""
+    """Obtenir les inscriptions récentes (tenant_admin uniquement)."""
     
     # Query users with their tenant info
     query = select(User, Tenant).join(
@@ -52,10 +53,10 @@ async def get_recent_registrations(
 
 @router.get("/stats")
 async def get_registration_stats(
-    user_id: str = Depends(get_current_user_id),
+    _: None = Depends(require_role(Roles.TENANT_ADMIN)),
     db: AsyncSession = Depends(get_db)
 ):
-    """Statistiques des inscriptions."""
+    """Statistiques des inscriptions (tenant_admin uniquement)."""
     
     # Total users
     total_users_query = select(func.count(User.id))

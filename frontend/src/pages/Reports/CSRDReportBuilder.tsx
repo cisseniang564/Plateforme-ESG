@@ -4,12 +4,14 @@ import {
   FileText, Download, Shield, Globe, TrendingUp, Leaf,
   Settings, Calendar, CheckCircle, AlertCircle, XCircle, Clock, Plus, ChevronRight,
   ChevronDown, Code2, BarChart3, RefreshCw, ArrowRight, Target, Zap, Building2,
-  Users, Droplets, Recycle, TreePine, Scale, Eye, Share2, AlertTriangle, Info,
+  Sparkles, Users, Droplets, Recycle, TreePine, Scale, Eye, Share2, AlertTriangle, Info,
 } from 'lucide-react'
 import api from '@/services/api'
 import Card from '@/components/common/Card'
 import Button from '@/components/common/Button'
 import toast from 'react-hot-toast'
+import { usePlan } from '@/hooks/usePlan'
+import PlanGate, { PlanBadge } from '@/components/common/PlanGate'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -316,6 +318,7 @@ function TabBuilder({
   options,
   setOptions,
   onGenerate,
+  sections = ESRS_SECTIONS,
 }: {
   selectedSections: string[]
   setSelectedSections: (ids: string[]) => void
@@ -331,12 +334,19 @@ function TabBuilder({
   options: Record<string, boolean>
   setOptions: (o: Record<string, boolean>) => void
   onGenerate: () => void
+  sections?: ESRSSection[]
 }) {
   const { t } = useTranslation()
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [genStage, setGenStage] = useState<string | null>(null)
   const [genDone, setGenDone] = useState(false)
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
+  const [downloadFilename, setDownloadFilename] = useState('rapport_csrd.pdf')
+
+  useEffect(() => {
+    return () => { if (downloadUrl) URL.revokeObjectURL(downloadUrl) }
+  }, [downloadUrl])
 
   const toggleSection = (id: string) => {
     if (selectedSections.includes(id)) {
@@ -346,7 +356,7 @@ function TabBuilder({
     }
   }
 
-  const checkedSections = ESRS_SECTIONS.filter(s => selectedSections.includes(s.id))
+  const checkedSections = sections.filter(s => selectedSections.includes(s.id))
   const overallScore = checkedSections.length
     ? Math.round(checkedSections.reduce((acc, s) => acc + s.completion, 0) / checkedSections.length)
     : 0
@@ -360,14 +370,45 @@ function TabBuilder({
       t('csrdBuilder.progress.step2'),
       t('csrdBuilder.progress.step3'),
     ]
-    for (const stage of stages) {
-      setGenStage(stage)
-      await new Promise(res => setTimeout(res, 1200))
+    setGenStage(stages[0])
+    await new Promise(res => setTimeout(res, 600))
+    setGenStage(stages[1])
+
+    try {
+      const fmt = format.toLowerCase() as 'pdf' | 'excel' | 'word'
+      const response = await api.post(
+        '/reports/generate',
+        { report_type: 'csrd', period: 'annual', year: parseInt(year), format: fmt },
+        { responseType: 'blob' }
+      )
+      setGenStage(stages[2])
+
+      const blob = new Blob([response.data], { type: response.headers['content-type'] })
+      const url = URL.createObjectURL(blob)
+      const orgSlug = org.replace(/\s+/g, '_')
+      const filename = `Rapport_CSRD_${orgSlug}_${year}.${fmt}`
+
+      setDownloadUrl(url)
+      setDownloadFilename(filename)
+      setGenerating(false)
+      setGenDone(true)
+      setGenStage(null)
+      toast.success(t('csrdBuilder.successTitle'))
+      onGenerate()
+    } catch (err: any) {
+      setGenerating(false)
+      setGenStage(null)
+      const msg = err?.response?.data?.detail ?? 'Erreur lors de la génération'
+      toast.error(msg)
     }
-    setGenerating(false)
-    setGenDone(true)
-    setGenStage(null)
-    toast.success(t('csrdBuilder.successTitle'))
+  }
+
+  const handleDownload = () => {
+    if (!downloadUrl) return
+    const a = document.createElement('a')
+    a.href = downloadUrl
+    a.download = downloadFilename
+    a.click()
   }
 
   const formatButtons: { key: ExportFormat; icon: React.ElementType; label: string }[] = [
@@ -468,7 +509,7 @@ function TabBuilder({
               <div key={pillarKey}>
                 <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">{pillar.label}</p>
                 <div className="space-y-2">
-                  {ESRS_SECTIONS.filter(s => pillar.sections.includes(s.id)).map(section => (
+                  {sections.filter(s => pillar.sections.includes(s.id)).map(section => (
                     <label key={section.id} className="flex items-center gap-3 cursor-pointer group">
                       <input
                         type="checkbox"
@@ -639,7 +680,10 @@ function TabBuilder({
                     <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
                     <p className="text-xs text-green-700 font-medium">{t('csrdBuilder.successTitle')}</p>
                   </div>
-                  <button className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50">
+                  <button
+                    onClick={handleDownload}
+                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
                     <Download className="h-3.5 w-3.5" />
                     {t('csrdBuilder.downloadBtn')}
                   </button>
@@ -655,18 +699,46 @@ function TabBuilder({
 
 // ─── TAB 2 — Indicators & Data ────────────────────────────────────────────────
 
-function TabIndicators({ selectedSections }: { selectedSections: string[] }) {
+function TabIndicators({ selectedSections, sections = ESRS_SECTIONS }: { selectedSections: string[]; sections?: ESRSSection[] }) {
   const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const [filterSection, setFilterSection] = useState('')
   const [onlyMissing, setOnlyMissing] = useState(false)
   const [expanded, setExpanded] = useState<string[]>(['E1'])
 
+  // Plan / feature gates
+  const { can } = usePlan()
+
+  // Narrative generation
+  const [generatingNarrative, setGeneratingNarrative] = useState<string | null>(null)
+  const [narrativeModal, setNarrativeModal] = useState<{ section: string; text: string } | null>(null)
+  const [copiedNarrative, setCopiedNarrative] = useState(false)
+
+  const handleGenerateNarrative = async (sectionId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setGeneratingNarrative(sectionId)
+    try {
+      const res = await api.post('/reports/generate-narrative', { esrs_section: sectionId, year: new Date().getFullYear() })
+      setNarrativeModal({ section: sectionId, text: res.data.narrative })
+    } catch {
+      toast.error('Erreur lors de la génération du texte ESRS')
+    } finally {
+      setGeneratingNarrative(null)
+    }
+  }
+
+  const copyNarrative = () => {
+    if (!narrativeModal) return
+    navigator.clipboard.writeText(narrativeModal.text)
+    setCopiedNarrative(true)
+    setTimeout(() => setCopiedNarrative(false), 2000)
+  }
+
   const toggleExpand = (id: string) => {
     setExpanded(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   }
 
-  const filteredSections = ESRS_SECTIONS.filter(s => {
+  const filteredSections = sections.filter(s => {
     if (filterSection && s.id !== filterSection) return false
     return true
   })
@@ -688,7 +760,7 @@ function TabIndicators({ selectedSections }: { selectedSections: string[] }) {
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-300 outline-none"
         >
           <option value="">Toutes les sections ESRS</option>
-          {ESRS_SECTIONS.map(s => (
+          {sections.map(s => (
             <option key={s.id} value={s.id}>{s.id} — {s.name}</option>
           ))}
         </select>
@@ -717,7 +789,7 @@ function TabIndicators({ selectedSections }: { selectedSections: string[] }) {
           }
 
           return (
-            <div key={section.id} className="border border-gray-200 rounded-xl overflow-hidden">
+            <div key={section.id} id={`esrs-section-${section.id}`} className="border border-gray-200 rounded-xl overflow-hidden scroll-mt-24">
               {/* Section header */}
               <button
                 onClick={() => toggleExpand(section.id)}
@@ -737,6 +809,28 @@ function TabIndicators({ selectedSections }: { selectedSections: string[] }) {
                   <ProgressBar value={section.completion} color={section.color} />
                 </div>
                 <span className="text-xs text-gray-400 ml-2">{section.indicators.length} indicateurs</span>
+                {can('ai_narrative') ? (
+                  <button
+                    onClick={(e) => handleGenerateNarrative(section.id, e)}
+                    disabled={generatingNarrative === section.id}
+                    className="ml-2 flex items-center gap-1 px-2.5 py-1 bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg hover:bg-indigo-200 transition-colors flex-shrink-0 disabled:opacity-50"
+                    title="Générer le texte narratif ESRS pour cette section"
+                  >
+                    {generatingNarrative === section.id
+                      ? <><div className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />Génération...</>
+                      : <><Zap className="h-3 w-3" />Texte ESRS</>
+                    }
+                  </button>
+                ) : (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); window.location.href = '/app/billing' }}
+                    className="ml-2 flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-400 text-xs font-semibold rounded-lg hover:bg-purple-50 hover:text-purple-600 transition-colors flex-shrink-0"
+                    title="Fonctionnalité Pro — cliquer pour mettre à niveau"
+                  >
+                    <Zap className="h-3 w-3" />Texte ESRS
+                    <PlanBadge feature="ai_narrative" />
+                  </button>
+                )}
                 {isExpanded ? <ChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0" /> : <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />}
               </button>
 
@@ -784,37 +878,71 @@ function TabIndicators({ selectedSections }: { selectedSections: string[] }) {
           )
         })}
       </div>
+
+      {/* ── Narrative modal ── */}
+      {narrativeModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <div>
+                <h2 className="text-base font-bold text-gray-900">Texte narratif ESRS — {narrativeModal.section}</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Généré à partir de vos données. Relu et adapté avant publication.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={copyNarrative} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${copiedNarrative ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                  {copiedNarrative ? <><CheckCircle className="h-3.5 w-3.5" />Copié !</> : <><Share2 className="h-3.5 w-3.5" />Copier</>}
+                </button>
+                <button onClick={() => setNarrativeModal(null)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                  <AlertCircle className="h-4 w-4 text-gray-400" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">{narrativeModal.text}</pre>
+            </div>
+            <div className="p-4 border-t border-gray-100 bg-amber-50 rounded-b-2xl">
+              <p className="text-xs text-amber-700">⚠️ Ce texte est un modèle basé sur vos données. Il doit être relu, contextualisé et validé par votre équipe RSE avant inclusion dans le rapport officiel.</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 // ─── TAB 3 — CSRD Score ───────────────────────────────────────────────────────
 
-function TabScore() {
+function TabScore({ onGoToBuilder, sections = ESRS_SECTIONS }: { onGoToBuilder?: (sectionId?: string) => void; sections?: ESRSSection[] }) {
   const { t } = useTranslation()
   const [apiScore, setApiScore] = useState<number | null>(null)
 
   useEffect(() => {
-    api.get('/scores/dashboard')
+    // Endpoint correct : /esg-scoring/dashboard (et non /scores/dashboard)
+    api.get('/esg-scoring/dashboard')
       .then(res => {
         const data = res.data
         if (typeof data?.statistics?.average_score === 'number') {
           setApiScore(Math.round(data.statistics.average_score))
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        // Fallback sur scores/latest (réel)
+        api.get('/scores/latest')
+          .then(r => { if (r.data?.overall_score) setApiScore(Math.round(r.data.overall_score)) })
+          .catch(() => {})
+      })
   }, [])
 
-  const global = apiScore ?? globalScore(ESRS_SECTIONS)
-  const compliantSections = ESRS_SECTIONS.filter(s => s.completion >= 75).length
-  const missingTotal = missingCount(ESRS_SECTIONS, ESRS_SECTIONS.map(s => s.id))
+  const global = apiScore ?? globalScore(sections)
+  const compliantSections = sections.filter(s => s.completion >= 75).length
+  const missingTotal = missingCount(sections, sections.map(s => s.id))
 
-  const envAvg = Math.round(ESRS_SECTIONS.filter(s => ['E1','E2','E3','E4','E5'].includes(s.id)).reduce((a, s) => a + s.completion, 0) / 5)
-  const socAvg = Math.round(ESRS_SECTIONS.filter(s => ['S1','S2','S3','S4'].includes(s.id)).reduce((a, s) => a + s.completion, 0) / 4)
-  const govAvg = ESRS_SECTIONS.find(s => s.id === 'G1')?.completion ?? 0
+  const envAvg = Math.round(sections.filter(s => ['E1','E2','E3','E4','E5'].includes(s.id)).reduce((a, s) => a + s.completion, 0) / 5)
+  const socAvg = Math.round(sections.filter(s => ['S1','S2','S3','S4'].includes(s.id)).reduce((a, s) => a + s.completion, 0) / 4)
+  const govAvg = sections.find(s => s.id === 'G1')?.completion ?? 0
 
   // Lowest 3 sections
-  const lowestSections = [...ESRS_SECTIONS].sort((a, b) => a.completion - b.completion).slice(0, 3)
+  const lowestSections = [...sections].sort((a, b) => a.completion - b.completion).slice(0, 3)
 
   const recommendedActions: Record<string, string> = {
     'E3': 'Ajouter donnees consommation eau recyclee et stress hydrique',
@@ -857,7 +985,7 @@ function TabScore() {
 
       {/* Radar */}
       <Card title={t('csrdBuilder.radarTitle')}>
-        <RadarChart sections={ESRS_SECTIONS} />
+        <RadarChart sections={sections} />
       </Card>
 
       {/* Pillar analysis */}
@@ -869,7 +997,7 @@ function TabScore() {
               <span className="text-3xl font-bold text-emerald-600">{envAvg}%</span>
               <p className="text-xs text-gray-500">Score moyen</p>
             </div>
-            {ESRS_SECTIONS.filter(s => ['E1','E2','E3','E4','E5'].includes(s.id)).map(s => (
+            {sections.filter(s => ['E1','E2','E3','E4','E5'].includes(s.id)).map(s => (
               <div key={s.id}>
                 <div className="flex items-center justify-between text-xs mb-1">
                   <span className="text-gray-600">{s.id} — {s.name.slice(0, 18)}</span>
@@ -894,7 +1022,7 @@ function TabScore() {
               <span className="text-3xl font-bold text-blue-600">{socAvg}%</span>
               <p className="text-xs text-gray-500">Score moyen</p>
             </div>
-            {ESRS_SECTIONS.filter(s => ['S1','S2','S3','S4'].includes(s.id)).map(s => (
+            {sections.filter(s => ['S1','S2','S3','S4'].includes(s.id)).map(s => (
               <div key={s.id}>
                 <div className="flex items-center justify-between text-xs mb-1">
                   <span className="text-gray-600">{s.id} — {s.name.slice(0, 18)}</span>
@@ -919,7 +1047,7 @@ function TabScore() {
               <span className="text-3xl font-bold text-gray-700">{govAvg}%</span>
               <p className="text-xs text-gray-500">Score moyen</p>
             </div>
-            {ESRS_SECTIONS.filter(s => ['G1'].includes(s.id)).map(s => (
+            {sections.filter(s => ['G1'].includes(s.id)).map(s => (
               <div key={s.id}>
                 <div className="flex items-center justify-between text-xs mb-1">
                   <span className="text-gray-600">{s.id} — {s.name}</span>
@@ -953,7 +1081,10 @@ function TabScore() {
               <p className="text-xs text-gray-500 mb-3">
                 {recommendedActions[section.id] ?? 'Completer les donnees manquantes pour cette section'}
               </p>
-              <button className="flex items-center gap-1 text-xs font-semibold text-primary-600 hover:text-primary-800 transition-colors">
+              <button
+                onClick={() => onGoToBuilder?.(section.id)}
+                className="flex items-center gap-1 text-xs font-semibold text-primary-600 hover:text-primary-800 hover:underline underline-offset-2 transition-all active:scale-95 cursor-pointer"
+              >
                 {t('csrdBuilder.completeSection')} <ArrowRight className="h-3 w-3" />
               </button>
             </div>
@@ -974,6 +1105,7 @@ function TabGenerate({
   format,
   options,
   onFormatChange,
+  sections = ESRS_SECTIONS,
 }: {
   selectedSections: string[]
   org: string
@@ -982,13 +1114,20 @@ function TabGenerate({
   format: ExportFormat
   options: Record<string, boolean>
   onFormatChange: (f: ExportFormat) => void
+  sections?: ESRSSection[]
 }) {
   const { t } = useTranslation()
   const [generating, setGenerating] = useState(false)
   const [genStage, setGenStage] = useState<number>(-1)
   const [genDone, setGenDone] = useState(false)
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
+  const [downloadFilename, setDownloadFilename] = useState('rapport_csrd.pdf')
 
-  const checkedSections = ESRS_SECTIONS.filter(s => selectedSections.includes(s.id))
+  useEffect(() => {
+    return () => { if (downloadUrl) URL.revokeObjectURL(downloadUrl) }
+  }, [downloadUrl])
+
+  const checkedSections = sections.filter(s => selectedSections.includes(s.id))
   const overallScore = checkedSections.length
     ? Math.round(checkedSections.reduce((acc, s) => acc + s.completion, 0) / checkedSections.length)
     : 0
@@ -1003,13 +1142,47 @@ function TabGenerate({
   const handleGenerate = async () => {
     setGenerating(true)
     setGenDone(false)
-    for (let i = 0; i < stages.length; i++) {
-      setGenStage(i)
-      await new Promise(res => setTimeout(res, i === 2 ? 1500 : 1200))
+    setGenStage(0)
+
+    // Étapes visuelles pendant l'appel API
+    const stepDelay = (ms: number) => new Promise(res => setTimeout(res, ms))
+    await stepDelay(800)
+    setGenStage(1)
+    await stepDelay(600)
+    setGenStage(2)
+
+    try {
+      const fmt = format.toLowerCase() as 'pdf' | 'excel' | 'word'
+      const response = await api.post(
+        '/reports/generate',
+        { report_type: 'csrd', period: 'annual', year: parseInt(year), format: fmt },
+        { responseType: 'blob' }
+      )
+
+      const blob = new Blob([response.data], { type: response.headers['content-type'] })
+      const url = URL.createObjectURL(blob)
+      const orgSlug = org.replace(/\s+/g, '_')
+      const filename = `Rapport_CSRD_${orgSlug}_${year}.${fmt}`
+
+      setDownloadUrl(url)
+      setDownloadFilename(filename)
+      setGenerating(false)
+      setGenDone(true)
+      toast.success(t('csrdBuilder.successTitle'))
+    } catch (err: any) {
+      setGenerating(false)
+      setGenStage(-1)
+      const msg = err?.response?.data?.detail ?? 'Erreur lors de la génération du rapport CSRD'
+      toast.error(msg)
     }
-    setGenerating(false)
-    setGenDone(true)
-    toast.success(t('csrdBuilder.successTitle'))
+  }
+
+  const handleDownload = () => {
+    if (!downloadUrl) return
+    const a = document.createElement('a')
+    a.href = downloadUrl
+    a.download = downloadFilename
+    a.click()
   }
 
   const optionLabels: Record<string, string> = {
@@ -1163,7 +1336,10 @@ function TabGenerate({
                 <p className="text-xs text-green-600 mt-0.5">Taille estimee: ~2.4 MB</p>
               </div>
               <div className="flex gap-3">
-                <button className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition-colors">
+                <button
+                  onClick={handleDownload}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition-colors"
+                >
                   <Download className="h-4 w-4" />
                   {t('csrdBuilder.downloadBtn')}
                 </button>
@@ -1188,9 +1364,59 @@ function TabGenerate({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+// ─── Enrich ESRS sections with real data ──────────────────────────────────────
+function enrichSections(base: ESRSSection[], carbon: any, esg: any): ESRSSection[] {
+  return base.map(section => {
+    if (section.id === 'E1' && carbon) {
+      const scope1 = carbon.scope1_total ?? carbon.scope1 ?? null
+      const scope2 = carbon.scope2_total ?? carbon.scope2 ?? null
+      const scope3 = carbon.scope3_total ?? carbon.scope3 ?? null
+      const renewablePct = carbon.renewable_pct ?? carbon.renewable_percentage ?? null
+      const indicators = section.indicators.map(ind => {
+        if (ind.code === 'GHG-S1' && scope1 !== null)
+          return { ...ind, value: Math.round(scope1).toLocaleString('fr-FR'), status: 'validated' as const, source: 'ESGFlow Carbon' }
+        if (ind.code === 'GHG-S2' && scope2 !== null)
+          return { ...ind, value: Math.round(scope2).toLocaleString('fr-FR'), status: 'validated' as const, source: 'ESGFlow Carbon' }
+        if (ind.code === 'GHG-S3' && scope3 !== null)
+          return { ...ind, value: Math.round(scope3).toLocaleString('fr-FR'), status: scope3 > 0 ? 'validated' as const : 'partial' as const, source: 'ESGFlow Carbon' }
+        if (ind.code === 'ENR-%' && renewablePct !== null)
+          return { ...ind, value: `${Math.round(renewablePct)}%`, status: 'validated' as const, source: 'ESGFlow Carbon' }
+        return ind
+      })
+      // Recompute completion: validated=full, partial=half, missing=0
+      const validated = indicators.filter(i => i.status === 'validated').length
+      const partial = indicators.filter(i => i.status === 'partial').length
+      const completion = Math.round(((validated + partial * 0.5) / indicators.length) * 100)
+      return { ...section, indicators, completion }
+    }
+
+    if (esg) {
+      // Map pillar scores to ESRS completion percentages
+      const envScore = esg.environmental_score ?? esg.environmental ?? null
+      const socScore = esg.social_score ?? esg.social ?? null
+      const govScore = esg.governance_score ?? esg.governance ?? null
+      if (['E2', 'E3', 'E4', 'E5'].includes(section.id) && envScore !== null) {
+        const completion = Math.min(100, Math.round(envScore * 0.9))
+        return { ...section, completion }
+      }
+      if (['S1', 'S2', 'S3', 'S4'].includes(section.id) && socScore !== null) {
+        const completion = Math.min(100, Math.round(socScore * 0.9))
+        return { ...section, completion }
+      }
+      if (section.id === 'G1' && govScore !== null) {
+        const completion = Math.min(100, Math.round(govScore * 0.9))
+        return { ...section, completion }
+      }
+    }
+
+    return section
+  })
+}
+
 export default function CSRDReportBuilder() {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<TabKey>('builder')
+  const [esgSections, setEsgSections] = useState<ESRSSection[]>(ESRS_SECTIONS)
   const [selectedSections, setSelectedSections] = useState<string[]>(ESRS_SECTIONS.map(s => s.id))
   const [org, setOrg] = useState('Demo Organization')
   const [orgs, setOrgs] = useState<string[]>(['Demo Organization'])
@@ -1206,6 +1432,41 @@ export default function CSRDReportBuilder() {
     doubleMateriality: true,
   })
 
+  const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null)
+  const [syncing, setSyncing] = useState(false)
+
+  const syncFromESGData = async () => {
+    setSyncing(true)
+    try {
+      const [carbonRes, esgRes, dataRes] = await Promise.allSettled([
+        api.get('/carbon/scope-summary'),
+        api.get('/scores/latest').catch(() => api.get('/scores/history')),
+        api.get('/data-entry?limit=200'),
+      ])
+      const carbon = carbonRes.status === 'fulfilled' ? carbonRes.value.data : null
+      let esg: any = null
+      if (esgRes.status === 'fulfilled') {
+        const d = esgRes.value.data
+        esg = d?.scores ? d.scores[0] : d
+      }
+      const dataEntries = dataRes.status === 'fulfilled'
+        ? (dataRes.value.data?.items ?? dataRes.value.data ?? [])
+        : []
+      let updated = esgSections
+      if (carbon || esg) updated = enrichSections(updated, carbon, esg)
+      // Count filled indicators vs total
+      const filledCount = updated.flatMap(s => s.indicators).filter(i => i.value !== null).length
+      setEsgSections(updated)
+      setLastSyncAt(new Date())
+      toast.success(`${filledCount} indicateurs synchronisés depuis vos données ESG`)
+    } catch {
+      toast.error('Impossible de synchroniser les données ESG')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  // Load organisations
   useEffect(() => {
     api.get('/organizations')
       .then(res => {
@@ -1219,6 +1480,12 @@ export default function CSRDReportBuilder() {
       .catch(() => {})
   }, [])
 
+  // Auto-enrich on mount
+  useEffect(() => {
+    syncFromESGData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
     { key: 'builder', label: t('csrdBuilder.tabs.builder'), icon: Settings },
     { key: 'indicators', label: t('csrdBuilder.tabs.indicators'), icon: BarChart3 },
@@ -1229,18 +1496,32 @@ export default function CSRDReportBuilder() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">{t('csrdBuilder.title')}</h1>
           <p className="mt-1 text-gray-500 text-sm">{t('csrdBuilder.subtitle')}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="px-3 py-1 bg-violet-100 text-violet-700 text-xs font-bold rounded-full uppercase tracking-wider">
             CSRD 2024
           </span>
           <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full uppercase tracking-wider">
             ESRS
           </span>
+          <button
+            type="button"
+            onClick={syncFromESGData}
+            disabled={syncing}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all disabled:opacity-60"
+          >
+            <Sparkles size={15} className={syncing ? 'animate-spin' : ''} />
+            {syncing ? 'Synchronisation…' : 'Auto-remplir depuis les données ESG'}
+          </button>
+          {lastSyncAt && (
+            <span className="text-xs text-gray-400">
+              Sync. {lastSyncAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
         </div>
       </div>
 
@@ -1281,12 +1562,24 @@ export default function CSRDReportBuilder() {
           options={options}
           setOptions={setOptions}
           onGenerate={() => setActiveTab('generate')}
+          sections={esgSections}
         />
       )}
       {activeTab === 'indicators' && (
-        <TabIndicators selectedSections={selectedSections} />
+        <TabIndicators selectedSections={selectedSections} sections={esgSections} />
       )}
-      {activeTab === 'score' && <TabScore />}
+      {activeTab === 'score' && (
+        <TabScore sections={esgSections} onGoToBuilder={(sectionId) => {
+          setActiveTab('builder');
+          // Brief delay so tab renders before potential scroll/highlight
+          setTimeout(() => {
+            if (sectionId) {
+              const el = document.getElementById(`esrs-section-${sectionId}`);
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }, 150);
+        }} />
+      )}
       {activeTab === 'generate' && (
         <TabGenerate
           selectedSections={selectedSections}
@@ -1296,6 +1589,7 @@ export default function CSRDReportBuilder() {
           format={format}
           options={options}
           onFormatChange={setFormat}
+          sections={esgSections}
         />
       )}
     </div>

@@ -1,6 +1,6 @@
 import asyncio
 from uuid import UUID, uuid4
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from sqlalchemy import text
 import sys
 
@@ -115,7 +115,13 @@ async def seed_demo_data():
             print("📈 CRÉATION DONNÉES ESG 2026")
             print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
             
-            # Données de test pour 3 premières organisations
+            # Données de test pour TOUTES les organisations
+            # Dates dans les 12 derniers mois (3 points de mesure)
+            data_dates = [
+                date.today() - timedelta(days=270),
+                date.today() - timedelta(days=150),
+                date.today() - timedelta(days=30),
+            ]
             test_data = [
                 ("Scope 1", 1000.0),
                 ("Scope 2", 500.0),
@@ -132,27 +138,37 @@ async def seed_demo_data():
             ]
             
             count = 0
-            for org_id, org_name in org_ids[:3]:  # 3 premières orgas
-                for metric_name, value in test_data:
+            import random
+            for org_id, org_name in org_ids:  # Toutes les organisations
+                org_factor = random.uniform(0.7, 1.3)
+                for metric_name, base_value in test_data:
                     if metric_name in indicator_ids:
-                        await session.execute(text("""
-                            INSERT INTO indicator_data (
-                                id, tenant_id, organization_id, indicator_id,
-                                period_start, period_end, value, source,
-                                created_at, updated_at
-                            ) VALUES (
-                                :id, :tenant_id, :org_id, :ind_id,
-                                '2026-01-01', '2026-12-31', :value, 'seed_demo',
-                                NOW(), NOW()
-                            )
-                        """), {
-                            "id": str(uuid4()),
-                            "tenant_id": str(tenant_id),
-                            "org_id": str(org_id),
-                            "ind_id": str(indicator_ids[metric_name]),
-                            "value": value
-                        })
-                        count += 1
+                        for i, d in enumerate(data_dates):
+                            # Légère progression positive dans le temps
+                            trend = 1.0 - (0.03 * (len(data_dates) - 1 - i))
+                            value = round(base_value * org_factor * trend, 2)
+                            await session.execute(text("""
+                                INSERT INTO indicator_data (
+                                    id, tenant_id, organization_id, indicator_id,
+                                    date, value, source,
+                                    is_verified, is_estimated,
+                                    created_at, updated_at
+                                ) VALUES (
+                                    :id, :tenant_id, :org_id, :ind_id,
+                                    :date, :value, 'seed_demo',
+                                    false, true,
+                                    NOW(), NOW()
+                                )
+                                ON CONFLICT DO NOTHING
+                            """), {
+                                "id": str(uuid4()),
+                                "tenant_id": str(tenant_id),
+                                "org_id": str(org_id),
+                                "ind_id": str(indicator_ids[metric_name]),
+                                "date": d,
+                                "value": value,
+                            })
+                            count += 1
             
             print(f"   ✅ {count} points de données créés")
             

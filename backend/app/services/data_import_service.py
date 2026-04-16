@@ -50,17 +50,12 @@ class DataImportService:
             else:
                 raise ValueError(f"Unsupported file type: {filename}")
             
-            # Extraire les données
             total_rows = len(df)
-            preview = df.head(10).to_dict('records')
-            
-            # Nettoyer les NaN pour JSON
-            preview = self._clean_nan(preview)
-            
-            # Valider les données
+            all_rows = self._clean_nan(df.to_dict('records'))  # ← toutes les lignes
+            preview = all_rows[:10]                             # ← 10 premières pour l'UI
+
             validation_result = self._validate_data(df)
-            
-            # Mettre à jour l'upload
+
             upload.total_rows = total_rows
             upload.valid_rows = validation_result['valid_count']
             upload.invalid_rows = validation_result['invalid_count']
@@ -69,6 +64,7 @@ class DataImportService:
             upload.file_metadata = {
                 'columns': list(df.columns),
                 'dtypes': {col: str(dtype) for col, dtype in df.dtypes.items()},
+                'all_rows': all_rows,   # ← stockage complet pour l'import réel
             }
             upload.status = "completed"
             upload.processing_completed_at = datetime.utcnow()
@@ -84,14 +80,14 @@ class DataImportService:
         return upload
     
     def _detect_file_type(self, filename: str) -> str:
-        """Detect MIME type from filename."""
+        """Detect file type identifier from filename (kept ≤ 50 chars)."""
         if filename.endswith('.csv'):
-            return 'text/csv'
+            return 'csv'
         elif filename.endswith('.xlsx'):
-            return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            return 'xlsx'
         elif filename.endswith('.xls'):
-            return 'application/vnd.ms-excel'
-        return 'application/octet-stream'
+            return 'xls'
+        return 'unknown'
     
     def _clean_nan(self, data: list[dict]) -> list[dict]:
         """Replace NaN values with None for JSON serialization."""

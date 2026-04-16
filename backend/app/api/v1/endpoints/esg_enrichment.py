@@ -17,7 +17,7 @@ router = APIRouter()
 
 
 class EnrichOrganizationRequest(BaseModel):
-    organization_id: UUID
+    organization_id: Optional[UUID] = None   # None = créer nouvelle org depuis INSEE
     siren: str
     generer_donnees: bool = True
 

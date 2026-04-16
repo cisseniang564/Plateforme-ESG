@@ -50,8 +50,15 @@ const authSlice = createSlice({
       state.isInitializing = false;
       state.error = null;
     },
+    // Utilisé quand /auth/me échoue pour une raison temporaire (429, réseau)
+    // mais que le token existe encore — on reste "connecté" sans profil complet
+    setSessionPending: (state) => {
+      state.isAuthenticated = true;  // laisse passer PrivateRoute
+      state.isInitializing = false;
+      state.error = null;
+    },
   },
 });
 
-export const { setUser, setInitialized, setLoading, setError, logout } = authSlice.actions;
+export const { setUser, setInitialized, setLoading, setError, logout, setSessionPending } = authSlice.actions;
 export default authSlice.reducer;

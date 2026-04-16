@@ -256,6 +256,7 @@
     "seeAll": "Voir tout",
     "avgSectorPerformance": "Performance Moyenne par Secteur",
     "alertTitle": "Attention: Performance globale à améliorer",
+    "alertDesc": "Score moyen de {{score}}/100 — {{count}} organisation(s) nécessitent une attention prioritaire.",
     "alertBody": "Le score moyen indique des opportunités d'amélioration.",
     "seeOrganisations": "Voir les organisations",
     "welcome": "Bienvenue sur ESGFlow !",
@@ -661,7 +662,14 @@
     "sectorRankOf47": "/ 47 entreprises du secteur",
     "sectorTop10": "Vous etes dans le top 10% de votre secteur",
     "evolution12mTitle": "Evolution sur 12 mois",
-    "evolution12mSub": "Tendance du score : 58 → 65 → 69 (actuel)"
+    "evolution12mSub": "Tendance du score : 58 → 65 → 69 (actuel)",
+    "historySubtitle": "Évolution de vos scores dans le temps",
+    "currentScore": "Score actuel",
+    "periods": "périodes",
+    "current": "Actuel",
+    "scoreTrends": "Évolution des scores",
+    "rating": "Note",
+    "vsPreviousPeriod": "vs précédent"
   },
   "reports": {
     "title": "Rapports",
@@ -899,6 +907,8 @@
     "sectorServices": "Services",
     "sectorRealEstate": "Immobilier",
     "sectorAgriculture": "Agriculture",
+    "sectorHealth": "Santé",
+    "sectorTech": "Technologie",
     "yourScore": "Votre Score",
     "sectorAverage": "Moyenne secteur",
     "bestSector": "Meilleur secteur",

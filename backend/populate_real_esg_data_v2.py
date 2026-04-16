@@ -90,11 +90,11 @@ async def populate_data():
                 priority = 'high' if avg >= 75 else 'medium' if avg >= 50 else 'low'
                 
                 await session.execute(text("""
-                    INSERT INTO materiality_issues 
-                    (tenant_id, name, description, category, financial_impact, esg_impact, 
+                    INSERT INTO materiality_issues
+                    (id, tenant_id, name, description, category, financial_impact, esg_impact,
                      stakeholders, is_material, priority, created_at, updated_at)
-                    VALUES 
-                    (:tid, :name, :desc, :cat, :fi, :ei, :sh, :mat, :pri, NOW(), NOW())
+                    VALUES
+                    (gen_random_uuid(), :tid, :name, :desc, :cat, :fi, :ei, :sh, :mat, :pri, NOW(), NOW())
                 """), {
                     'tid': tenant_id, 'name': issue['name'], 'desc': issue.get('description'),
                     'cat': issue['category'], 'fi': issue['financial_impact'], 'ei': issue['esg_impact'],
@@ -111,11 +111,11 @@ async def populate_data():
                 
                 await session.execute(text("""
                     INSERT INTO esg_risks
-                    (tenant_id, title, description, category, probability, impact, risk_score,
+                    (id, tenant_id, title, description, category, probability, impact, risk_score,
                      severity, status, mitigation_plan, mitigation_status, responsible_person,
                      target_date, created_at, updated_at)
                     VALUES
-                    (:tid, :title, :desc, :cat, :prob, :imp, :score, :sev, :status, :mit, :mstat, :resp, :td, NOW(), NOW())
+                    (gen_random_uuid(), :tid, :title, :desc, :cat, :prob, :imp, :score, :sev, :status, :mit, :mstat, :resp, :td, NOW(), NOW())
                 """), {
                     'tid': tenant_id, 'title': risk['title'], 'desc': risk.get('description'),
                     'cat': risk['category'], 'prob': risk['probability'], 'imp': risk['impact'],

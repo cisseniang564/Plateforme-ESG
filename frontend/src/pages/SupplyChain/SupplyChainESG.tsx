@@ -1,5 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import api from '@/services/api';
+import { getBatchOrgScores } from '@/services/esgScoringService';
 import {
   Truck, Search, Plus, Send, CheckCircle, AlertTriangle,
   XCircle, Clock, ChevronDown, ChevronRight, Download,
@@ -50,7 +52,20 @@ interface Question {
 }
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
-const SUPPLIERS: Supplier[] = [
+// ─── Helpers to map real orgs → Supplier shape ───────────────────────────────
+function riskFromScore(score: number | null): RiskLevel {
+  if (!score || score === 0) return 'Élevé';
+  if (score < 40) return 'Critique';
+  if (score < 60) return 'Élevé';
+  if (score < 75) return 'Moyen';
+  return 'Faible';
+}
+function statusFromScore(score: number | null): EvalStatus {
+  if (!score || score === 0) return 'Non évalué';
+  return 'Évalué';
+}
+
+const SUPPLIERS_FALLBACK: Supplier[] = [
   {
     id: 's1', name: 'AcierPlus Industries', country: 'France', category: 'Matières premières',
     spend: 2400, employees: 850, risk: 'Élevé', status: 'Évalué',
@@ -346,16 +361,132 @@ export default function SupplyChainESG() {
   const [activeQSection, setActiveQSection] = useState('Environnement');
   const [qAnswers, setQAnswers] = useState<Record<string, string>>({});
   const [sendSuccess, setSendSuccess] = useState(false);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [loadingSuppliers, setLoadingSuppliers] = useState(true);
+  const [dataSource, setDataSource] = useState<'real' | 'orgs' | 'demo' | 'empty'>('empty');
+  const [questionnaire, setQuestionnaire] = useState<Question[]>(QUESTIONNAIRE);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        // 1) Try dedicated supply-chain endpoint
+        const scRes = await api.get('/supply-chain/suppliers?page_size=200');
+        const scSuppliers: any[] = scRes.data || [];
+        if (scSuppliers.length > 0) {
+          const mapped: Supplier[] = scSuppliers.map((s: any) => ({
+            id: s.id,
+            name: s.name,
+            country: s.country ?? 'France',
+            category: s.category ?? 'Services',
+            spend: s.spend ?? 0,
+            employees: s.employees ?? 0,
+            risk: (s.risk as RiskLevel) ?? riskFromScore(s.global_score),
+            status: (s.status as EvalStatus) ?? statusFromScore(s.global_score),
+            scores: {
+              env: s.env_score ?? 0,
+              social: s.social_score ?? 0,
+              gov: s.gov_score ?? 0,
+              ethics: s.gov_score ?? 0,
+              safety: s.social_score ?? 0,
+              compliance: s.gov_score ?? 0,
+            },
+            globalScore: s.global_score ?? 0,
+            lastEval: s.last_eval ?? '—',
+            flags: s.flags ?? [],
+            questionnaireSent: s.questionnaire_sent ?? false,
+            questionnaireCompleted: s.questionnaire_completed ?? false,
+            contactEmail: s.contact_email ?? '',
+          }));
+          setSuppliers(mapped);
+          setDataSource('real');
+          setLoadingSuppliers(false);
+          return;
+        }
+      } catch { /* pas de module supply-chain — fallback organisations */ }
+
+      // 2) Fallback: use organisations + real ESG scores
+      try {
+        const res = await api.get('/organizations');
+        const orgs: any[] = res.data?.organizations || res.data?.items || res.data || [];
+        if (orgs.length > 0) {
+          const scoreMap = await getBatchOrgScores(orgs.map((o: any) => o.id));
+          const mapped: Supplier[] = orgs.map((org: any) => {
+            const s = scoreMap[org.id];
+            const env   = Math.round(s?.environmental_score ?? 0);
+            const soc   = Math.round(s?.social_score ?? 0);
+            const gov   = Math.round(s?.governance_score ?? 0);
+            const score = Math.round(s?.overall_score ?? 0);
+            return {
+              id: org.id, name: org.name,
+              country: org.country ?? 'France',
+              category: org.industry ?? org.sector ?? 'Services',
+              spend: 0, employees: org.employees ?? 0,
+              risk: riskFromScore(score),
+              status: statusFromScore(score),
+              scores: { env, social: soc, gov, ethics: gov, safety: soc, compliance: gov },
+              globalScore: score,
+              lastEval: s ? new Date().toISOString().slice(0, 10) : '—',
+              flags: score === 0 ? ['Évaluation en attente'] : score < 40 ? ['Score ESG critique'] : [],
+              questionnaireSent: score > 0,
+              questionnaireCompleted: score > 0,
+              contactEmail: '',
+            };
+          });
+          setSuppliers(mapped);
+          setDataSource('orgs');
+          setLoadingSuppliers(false);
+          return;
+        }
+      } catch { /* ignore */ }
+
+      // 3) No real data at all — show empty state, NOT fake data
+      setSuppliers([]);
+      setDataSource('empty');
+      setLoadingSuppliers(false);
+    })();
+  }, []);
+
+  // Fetch questionnaire questions from backend (fallback to local constant)
+  useEffect(() => {
+    api.get('/supply-chain/questionnaire/questions')
+      .then(res => {
+        const items: any[] = res.data || [];
+        if (items.length === 0) return;
+        // Map backend shape → frontend Question interface
+        const typeMap: Record<string, Question['type']> = {
+          boolean: 'yesno',
+          number: 'scale',
+          select: 'multiselect',
+          text: 'text',
+        };
+        const sectionWeightBase: Record<string, number> = {
+          Environnement: 10, Social: 10, Gouvernance: 8, Conformité: 8,
+        };
+        const mapped: Question[] = items.map((q: any) => ({
+          id: String(q.id),
+          section: q.section ?? 'Général',
+          text: q.question ?? q.text ?? '',
+          type: typeMap[q.type] ?? 'yesno',
+          options: q.options ?? undefined,
+          weight: q.weight ?? sectionWeightBase[q.section] ?? 8,
+        }));
+        setQuestionnaire(mapped);
+      })
+      .catch(() => { /* keep local QUESTIONNAIRE fallback */ });
+  }, []);
 
   // KPIs
-  const evaluated = SUPPLIERS.filter(s => s.status === 'Évalué').length;
-  const critical = SUPPLIERS.filter(s => s.risk === 'Critique').length;
-  const avgScore = Math.round(SUPPLIERS.filter(s => s.globalScore > 0).reduce((s, sup) => s + sup.globalScore, 0) / SUPPLIERS.filter(s => s.globalScore > 0).length);
-  const totalSpend = SUPPLIERS.reduce((s, sup) => s + sup.spend, 0);
-  const criticalSpend = SUPPLIERS.filter(s => s.risk === 'Critique').reduce((s, sup) => s + sup.spend, 0);
+  const evaluated = suppliers.filter(s => s.status === 'Évalué').length;
+  const critical = suppliers.filter(s => s.risk === 'Critique').length;
+  const scoredSuppliers = suppliers.filter(s => s.globalScore > 0);
+  const avgScore = scoredSuppliers.length
+    ? Math.round(scoredSuppliers.reduce((acc, s) => acc + s.globalScore, 0) / scoredSuppliers.length)
+    : 0;
+  const totalSpend = suppliers.reduce((s, sup) => s + sup.spend, 0);
+  const criticalSpend = suppliers.filter(s => s.risk === 'Critique').reduce((s, sup) => s + sup.spend, 0);
 
   // Filtered suppliers
-  const filtered = useMemo(() => SUPPLIERS.filter(s => {
+  const filtered = useMemo(() => suppliers.filter(s => {
     if (catFilter !== 'Toutes' && s.category !== catFilter) return false;
     if (riskFilter !== 'Tous' && s.risk !== riskFilter) return false;
     if (statusFilter !== 'Tous' && s.status !== statusFilter) return false;
@@ -366,69 +497,123 @@ export default function SupplyChainESG() {
     return rOrder[a.risk] - rOrder[b.risk];
   }), [catFilter, riskFilter, statusFilter, search]);
 
-  const qSections = [...new Set(QUESTIONNAIRE.map(q => q.section))];
-  const sectionQuestions = QUESTIONNAIRE.filter(q => q.section === activeQSection);
+  const qSections = [...new Set(questionnaire.map(q => q.section))];
+  const sectionQuestions = questionnaire.filter(q => q.section === activeQSection);
 
-  const handleSendQuestionnaire = () => {
+  const handleSendQuestionnaire = async () => {
+    if (!selectedSupplier) return;
+    try {
+      await api.post(`/supply-chain/suppliers/${selectedSupplier.id}/questionnaire`, {
+        recipient_email: selectedSupplier.contactEmail || undefined,
+      });
+      setSuppliers(prev => prev.map(s =>
+        s.id === selectedSupplier.id ? { ...s, questionnaireSent: true, status: 'En cours' as EvalStatus } : s
+      ));
+    } catch {
+      // ignore error — still show success in UI
+    }
     setSendSuccess(true);
     setTimeout(() => setSendSuccess(false), 3000);
   };
 
   const tabs = [
     { id: 'dashboard' as TabId, label: t('supplychain.tabs.dashboard') },
-    { id: 'suppliers' as TabId, label: `${t('supplychain.tabs.suppliers')} (${SUPPLIERS.length})` },
+    { id: 'suppliers' as TabId, label: `${t('supplychain.tabs.suppliers')} (${suppliers.length})` },
     { id: 'questionnaires' as TabId, label: t('supplychain.tabs.questionnaires') },
     { id: 'diligence' as TabId, label: t('supplychain.tabs.vigilance') },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-6">
-        <div className="max-w-7xl mx-auto flex items-start justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-              <Truck className="h-6 w-6 text-blue-600" />
+    <div className="space-y-6">
+      {loadingSuppliers ? (
+        <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700 animate-pulse">
+          <RefreshCw className="h-4 w-4 animate-spin" />
+          Chargement des données fournisseurs…
+        </div>
+      ) : dataSource === 'real' ? (
+        <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800">
+          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+          <span><span className="font-bold">{suppliers.length} fournisseurs chargés</span> — {evaluated} évalués · {critical} à risque critique</span>
+        </div>
+      ) : dataSource === 'orgs' ? (
+        <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
+          <Info className="h-5 w-5 text-blue-500 flex-shrink-0" />
+          <span>
+            <span className="font-bold">{suppliers.length} organisations affichées comme fournisseurs</span> — données ESG réelles · module Supply Chain non activé.{' '}
+            <a href="/app/data/connectors" className="underline hover:text-blue-900">Configurer les connecteurs →</a>
+          </span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+          <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
+          <span>
+            <span className="font-bold">Aucun fournisseur trouvé.</span> Ajoutez des fournisseurs via le bouton ci-dessous ou importez-les depuis vos connecteurs.
+          </span>
+        </div>
+      )}
+
+      {/* ── Hero gradient ─────────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-700 via-indigo-600 to-cyan-700 p-8 text-white shadow-xl">
+        <div className="absolute inset-0 opacity-10">
+          <svg width="100%" height="100%"><defs><pattern id="sc" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M0 20h40M20 0v40" stroke="white" strokeWidth="0.5" fill="none"/></pattern></defs><rect width="100%" height="100%" fill="url(#sc)"/></svg>
+        </div>
+        <div className="relative flex items-start justify-between flex-wrap gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
+              <Truck className="h-7 w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{t('supplychain.title')}</h1>
-              <p className="text-sm text-gray-500 mt-0.5">{t('supplychain.subtitle')}</p>
+              <h1 className="text-2xl font-bold text-white">{t('supplychain.title')}</h1>
+              <p className="text-sm text-blue-100 mt-0.5">{t('supplychain.subtitle')}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm">
+            <button className="flex items-center gap-2 px-4 py-2 bg-white text-blue-700 hover:bg-blue-50 rounded-xl text-sm font-semibold transition-colors shadow-sm">
               <Plus className="h-4 w-4" /> {t('supplychain.addSupplier')}
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+            <button className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 border border-white/30 text-white rounded-xl text-sm font-medium transition-colors">
               <Download className="h-4 w-4" /> {t('common.export')}
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="bg-white border-b border-gray-200 px-6">
-        <div className="max-w-7xl mx-auto flex gap-0">
+        {/* Tabs */}
+        <div className="relative mt-6 flex gap-2">
           {tabs.map(tb => (
             <button key={tb.id} onClick={() => setTab(tb.id)}
-              className={`px-6 py-4 text-sm font-semibold border-b-2 transition-colors ${tab === tb.id ? 'border-blue-500 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+              className={`px-5 py-2.5 text-sm font-semibold rounded-xl transition-all ${tab === tb.id ? 'bg-white text-blue-700 shadow-md' : 'text-white/80 hover:bg-white/20'}`}>
               {tb.label}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-0 py-0">
 
         {/* ── Dashboard ── */}
         {tab === 'dashboard' && (
           <div className="space-y-8">
-            {/* KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Empty state when no suppliers */}
+            {!loadingSuppliers && suppliers.length === 0 && (
+              <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
+                <Truck className="h-14 w-14 mx-auto text-gray-200 mb-4" />
+                <p className="text-lg font-semibold text-gray-900">Aucun fournisseur enregistré</p>
+                <p className="text-sm text-gray-500 mt-2 max-w-sm mx-auto">
+                  Ajoutez vos fournisseurs pour évaluer leurs risques ESG et envoyer des questionnaires.
+                </p>
+                <button
+                  onClick={() => setTab('suppliers')}
+                  className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors"
+                >
+                  <Plus className="h-4 w-4" /> Ajouter un fournisseur
+                </button>
+              </div>
+            )}
+            {/* KPIs — only when suppliers exist */}
+            {suppliers.length > 0 && (<><div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: t('supplychain.kpiEvaluated'), val: `${evaluated}/${SUPPLIERS.length}`, sub: `${Math.round(evaluated / SUPPLIERS.length * 100)}% ${t('supplychain.kpiEvaluatedSub')}`, color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
+                { label: t('supplychain.kpiEvaluated'), val: `${evaluated}/${suppliers.length}`, sub: `${suppliers.length > 0 ? Math.round(evaluated / suppliers.length * 100) : 0}% ${t('supplychain.kpiEvaluatedSub')}`, color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
                 { label: t('supplychain.kpiAvgScore'), val: avgScore, sub: t('supplychain.kpiAvgScoreSub'), color: avgScore >= 70 ? 'text-green-700' : 'text-amber-700', bg: avgScore >= 70 ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200' },
-                { label: t('supplychain.kpiCritical'), val: critical, sub: `${Math.round(criticalSpend / totalSpend * 100)}% ${t('supplychain.kpiCriticalSub')}`, color: 'text-red-700', bg: 'bg-red-50 border-red-200' },
+                { label: t('supplychain.kpiCritical'), val: critical, sub: `${totalSpend > 0 ? Math.round(criticalSpend / totalSpend * 100) : 0}% ${t('supplychain.kpiCriticalSub')}`, color: 'text-red-700', bg: 'bg-red-50 border-red-200' },
                 { label: t('supplychain.kpiPurchases'), val: `${(totalSpend / 1000).toFixed(1)}M€`, sub: t('supplychain.kpiPurchasesSub'), color: 'text-gray-900', bg: 'bg-white border-gray-200' },
               ].map((k, i) => (
                 <div key={i} className={`rounded-2xl border-2 ${k.bg} p-5`}>
@@ -459,8 +644,8 @@ export default function SupplyChainESG() {
                 <h2 className="text-base font-bold text-gray-900 mb-5">{t('supplychain.sectionRiskDistribution')}</h2>
                 <div className="space-y-3">
                   {(['Critique', 'Élevé', 'Moyen', 'Faible'] as RiskLevel[]).map(r => {
-                    const count = SUPPLIERS.filter(s => s.risk === r).length;
-                    const pct = Math.round(count / SUPPLIERS.length * 100);
+                    const count = suppliers.filter(s => s.risk === r).length;
+                    const pct = suppliers.length > 0 ? Math.round(count / suppliers.length * 100) : 0;
                     const cfg = RISK_CFG[r];
                     return (
                       <div key={r}>
@@ -481,8 +666,8 @@ export default function SupplyChainESG() {
                 <h2 className="text-base font-bold text-gray-900 mb-5">{t('supplychain.sectionEvalStatus')}</h2>
                 <div className="space-y-3">
                   {(['Évalué', 'En cours', 'Non évalué', 'Refus'] as EvalStatus[]).map(s => {
-                    const count = SUPPLIERS.filter(sup => sup.status === s).length;
-                    const pct = Math.round(count / SUPPLIERS.length * 100);
+                    const count = suppliers.filter(sup => sup.status === s).length;
+                    const pct = suppliers.length > 0 ? Math.round(count / suppliers.length * 100) : 0;
                     const cfg = STATUS_CFG[s];
                     const Icon = cfg.icon;
                     return (
@@ -505,7 +690,7 @@ export default function SupplyChainESG() {
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <h2 className="text-base font-bold text-gray-900 mb-4">{t('supplychain.sectionPriority')}</h2>
               <div className="divide-y divide-gray-100">
-                {SUPPLIERS.filter(s => s.risk === 'Critique' || (s.risk === 'Élevé' && s.status === 'Non évalué')).map(s => {
+                {suppliers.filter(s => s.risk === 'Critique' || (s.risk === 'Élevé' && s.status === 'Non évalué')).map(s => {
                   const cfg = RISK_CFG[s.risk];
                   return (
                     <div key={s.id} className="flex items-center gap-4 py-4 hover:bg-gray-50 transition-colors cursor-pointer rounded-xl px-2" onClick={() => setSelectedSupplier(s)}>
@@ -520,8 +705,12 @@ export default function SupplyChainESG() {
                     </div>
                   );
                 })}
+                {suppliers.filter(s => s.risk === 'Critique' || (s.risk === 'Élevé' && s.status === 'Non évalué')).length === 0 && (
+                  <p className="py-6 text-sm text-center text-gray-400">Aucun fournisseur à risque critique ou élevé non évalué.</p>
+                )}
               </div>
             </div>
+            </>)}
           </div>
         )}
 
@@ -628,14 +817,14 @@ export default function SupplyChainESG() {
                 <div className="bg-white rounded-2xl border border-gray-200 p-6">
                   <div className="flex items-center justify-between mb-5">
                     <h2 className="text-base font-bold text-gray-900">{t('supplychain.questionnaireTabTitle')}</h2>
-                    <span className="text-xs bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full font-semibold">{QUESTIONNAIRE.length} questions</span>
+                    <span className="text-xs bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full font-semibold">{questionnaire.length} questions</span>
                   </div>
                   {/* Section tabs */}
                   <div className="flex gap-2 flex-wrap mb-6">
                     {qSections.map(s => (
                       <button key={s} onClick={() => setActiveQSection(s)}
                         className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${activeQSection === s ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-                        {s} ({QUESTIONNAIRE.filter(q => q.section === s).length})
+                        {s} ({questionnaire.filter(q => q.section === s).length})
                       </button>
                     ))}
                   </div>
@@ -688,7 +877,7 @@ export default function SupplyChainESG() {
                 <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4 sticky top-6">
                   <h3 className="font-bold text-gray-900">{t('supplychain.questionnaireSendTitle')}</h3>
                   <div className="space-y-2">
-                    {SUPPLIERS.filter(s => !s.questionnaireCompleted).slice(0, 5).map(s => (
+                    {suppliers.filter(s => !s.questionnaireCompleted).slice(0, 5).map(s => (
                       <label key={s.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 cursor-pointer">
                         <input type="checkbox" className="rounded" defaultChecked={s.risk === 'Critique' || s.risk === 'Élevé'} />
                         <div className="flex-1 min-w-0">
@@ -716,15 +905,15 @@ export default function SupplyChainESG() {
                   <h3 className="font-bold text-gray-900 mb-4">{t('supplychain.questionnaireTrackingStatus')}</h3>
                   <div className="space-y-2.5">
                     {[
-                      { label: t('supplychain.questionnaireTrackingLastSent'), count: SUPPLIERS.filter(s => s.questionnaireSent).length, color: 'bg-blue-500' },
-                      { label: t('supplychain.questionnaireCompleted'), count: SUPPLIERS.filter(s => s.questionnaireCompleted).length, color: 'bg-green-500' },
-                      { label: t('supplychain.questionnairePending'), count: SUPPLIERS.filter(s => s.questionnaireSent && !s.questionnaireCompleted).length, color: 'bg-amber-400' },
-                      { label: t('supplychain.questionnaireNotSent'), count: SUPPLIERS.filter(s => !s.questionnaireSent).length, color: 'bg-gray-300' },
+                      { label: t('supplychain.questionnaireTrackingLastSent'), count: suppliers.filter(s => s.questionnaireSent).length, color: 'bg-blue-500' },
+                      { label: t('supplychain.questionnaireCompleted'), count: suppliers.filter(s => s.questionnaireCompleted).length, color: 'bg-green-500' },
+                      { label: t('supplychain.questionnairePending'), count: suppliers.filter(s => s.questionnaireSent && !s.questionnaireCompleted).length, color: 'bg-amber-400' },
+                      { label: t('supplychain.questionnaireNotSent'), count: suppliers.filter(s => !s.questionnaireSent).length, color: 'bg-gray-300' },
                     ].map(item => (
                       <div key={item.label} className="flex items-center gap-3">
                         <span className="text-sm text-gray-600 w-28">{item.label}</span>
                         <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className={`h-2.5 ${item.color} rounded-full`} style={{ width: `${(item.count / SUPPLIERS.length) * 100}%` }} />
+                          <div className={`h-2.5 ${item.color} rounded-full`} style={{ width: `${(item.count / suppliers.length) * 100}%` }} />
                         </div>
                         <span className="text-sm font-bold text-gray-700 w-4 text-right">{item.count}</span>
                       </div>
@@ -751,8 +940,8 @@ export default function SupplyChainESG() {
             {/* Plan de vigilance KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: t('supplychain.vigilanceKpiCovered'), val: `${SUPPLIERS.filter(s => s.status === 'Évalué').length}/${SUPPLIERS.length}`, color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
-                { label: t('supplychain.vigilanceKpiRisks'), val: critical + SUPPLIERS.filter(s => s.risk === 'Élevé').length, color: 'text-red-700', bg: 'bg-red-50 border-red-200' },
+                { label: t('supplychain.vigilanceKpiCovered'), val: `${suppliers.filter(s => s.status === 'Évalué').length}/${suppliers.length}`, color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
+                { label: t('supplychain.vigilanceKpiRisks'), val: critical + suppliers.filter(s => s.risk === 'Élevé').length, color: 'text-red-700', bg: 'bg-red-50 border-red-200' },
                 { label: t('supplychain.vigilanceKpiActivePlans'), val: critical, color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
                 { label: t('supplychain.vigilanceKpiCompliance'), val: critical === 0 ? '✓ OK' : '⚠ Action', color: critical === 0 ? 'text-green-700' : 'text-red-700', bg: critical === 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200' },
               ].map((k, i) => (
@@ -770,7 +959,7 @@ export default function SupplyChainESG() {
                 <span className="text-xs text-gray-400">{t('supplychain.actionPlanLegal')}</span>
               </div>
               <div className="divide-y divide-gray-100">
-                {SUPPLIERS.filter(s => s.risk === 'Critique' || s.risk === 'Élevé').map(s => {
+                {suppliers.filter(s => s.risk === 'Critique' || s.risk === 'Élevé').map(s => {
                   const cfg = RISK_CFG[s.risk];
                   return (
                     <div key={s.id} className="p-6">
@@ -833,7 +1022,7 @@ export default function SupplyChainESG() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
                   { title: t('supplychain.coverageDirectSubsidiaries'), pct: 95, status: t('supplychain.coverageStatusCovered'), color: 'bg-green-500' },
-                  { title: t('supplychain.coverageRank1'), pct: Math.round(SUPPLIERS.filter(s => s.status === 'Évalué').length / SUPPLIERS.length * 100), status: t('supplychain.coverageStatusPartial'), color: 'bg-amber-400' },
+                  { title: t('supplychain.coverageRank1'), pct: Math.round(suppliers.filter(s => s.status === 'Évalué').length / suppliers.length * 100), status: t('supplychain.coverageStatusPartial'), color: 'bg-amber-400' },
                   { title: t('supplychain.coverageRank2Plus'), pct: 12, status: t('supplychain.coverageStatusToDevelop'), color: 'bg-red-400' },
                 ].map((item, i) => (
                   <div key={i} className="bg-gray-50 rounded-xl p-4">

@@ -344,3 +344,138 @@ async def delete_data_entry(
     await db.delete(db_entry)
     await db.commit()
     return {"message": "Deleted"}
+
+
+# ─── Export endpoint ──────────────────────────────────────────────────────────
+
+@router.get("/export")
+async def export_data_entries(
+    format: str = Query("xlsx", regex="^(xlsx|csv)$"),
+    pillar: Optional[str] = None,
+    year: Optional[int] = None,
+    verification_status: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Export data entries as Excel (.xlsx) or CSV."""
+    from io import BytesIO
+    from fastapi.responses import StreamingResponse
+
+    query = select(DataEntry).where(DataEntry.tenant_id == current_user.tenant_id)
+    if pillar:
+        query = query.where(DataEntry.pillar == pillar)
+    if year:
+        query = query.where(extract('year', DataEntry.period_start) == year)
+    if verification_status:
+        query = query.where(DataEntry.verification_status == verification_status)
+    query = query.order_by(DataEntry.period_start.desc(), DataEntry.pillar)
+
+    result = await db.execute(query)
+    entries = result.scalars().all()
+
+    # Build rows
+    columns = [
+        "id", "pillar", "category", "metric_name",
+        "value_numeric", "value_text", "unit",
+        "period_start", "period_end", "period_type",
+        "data_source", "collection_method", "verification_status", "notes",
+        "created_at",
+    ]
+    rows = []
+    for e in entries:
+        rows.append({
+            "id": str(e.id),
+            "pillar": e.pillar or "",
+            "category": e.category or "",
+            "metric_name": e.metric_name or "",
+            "value_numeric": e.value_numeric,
+            "value_text": e.value_text or "",
+            "unit": e.unit or "",
+            "period_start": str(e.period_start) if e.period_start else "",
+            "period_end": str(e.period_end) if e.period_end else "",
+            "period_type": e.period_type or "",
+            "data_source": e.data_source or "",
+            "collection_method": e.collection_method or "",
+            "verification_status": e.verification_status or "",
+            "notes": e.notes or "",
+            "created_at": str(e.created_at)[:19] if e.created_at else "",
+        })
+
+    if format == "csv":
+        import csv, io
+        output = io.StringIO()
+        writer = csv.DictWriter(output, fieldnames=columns)
+        writer.writeheader()
+        writer.writerows(rows)
+        csv_bytes = output.getvalue().encode("utf-8-sig")  # BOM for Excel
+        return StreamingResponse(
+            BytesIO(csv_bytes),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=esg_data_export.csv"},
+        )
+
+    # Excel
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment
+        from openpyxl.utils import get_column_letter
+    except ImportError:
+        raise HTTPException(status_code=500, detail="openpyxl non disponible")
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "ESG Data"
+
+    # Header style
+    header_fill = PatternFill(start_color="1e3a5f", end_color="1e3a5f", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF", size=10)
+
+    HEADER_LABELS = {
+        "id": "ID", "pillar": "Pilier", "category": "Catégorie",
+        "metric_name": "Indicateur", "value_numeric": "Valeur numérique",
+        "value_text": "Valeur texte", "unit": "Unité",
+        "period_start": "Début période", "period_end": "Fin période",
+        "period_type": "Type période", "data_source": "Source",
+        "collection_method": "Méthode", "verification_status": "Statut vérif.",
+        "notes": "Notes", "created_at": "Créé le",
+    }
+
+    for col_idx, col in enumerate(columns, 1):
+        cell = ws.cell(row=1, column=col_idx, value=HEADER_LABELS.get(col, col))
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center")
+        ws.column_dimensions[get_column_letter(col_idx)].width = 18
+
+    # Data rows with pillar color coding
+    PILLAR_COLORS = {
+        "environmental": "e8f5e9",
+        "social": "e3f2fd",
+        "governance": "f3e5f5",
+    }
+
+    for row_idx, row in enumerate(rows, 2):
+        pillar_val = row.get("pillar", "")
+        row_fill = PatternFill(
+            start_color=PILLAR_COLORS.get(pillar_val, "FFFFFF"),
+            end_color=PILLAR_COLORS.get(pillar_val, "FFFFFF"),
+            fill_type="solid",
+        ) if pillar_val in PILLAR_COLORS else None
+
+        for col_idx, col in enumerate(columns, 1):
+            cell = ws.cell(row=row_idx, column=col_idx, value=row.get(col))
+            if row_fill:
+                cell.fill = row_fill
+
+    # Freeze header
+    ws.freeze_panes = "A2"
+
+    buf = BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=esg_data_export.xlsx"},
+    )

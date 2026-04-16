@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   Download,
   CheckCircle2,
+  Database,
 } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Spinner from '@/components/common/Spinner';
@@ -29,6 +30,9 @@ interface Indicator {
   unit: string;
   description: string;
   is_active: boolean;
+  has_data: boolean;
+  data_count: number;
+  latest_date: string | null;
 }
 
 export default function IndicatorsList() {
@@ -39,6 +43,7 @@ export default function IndicatorsList() {
   const [initializing, setInitializing] = useState(false);
   const [search, setSearch] = useState('');
   const [pillarFilter, setPillarFilter] = useState('');
+  const [dataFilter, setDataFilter] = useState<'all' | 'with_data' | 'no_data'>('all');
 
   const PILLARS = [
     {
@@ -87,7 +92,7 @@ export default function IndicatorsList() {
     try {
       setLoading(true);
 
-      const response = await api.get('/indicators', {
+      const response = await api.get('/indicators/', {
         params: pillarFilter ? { pillar: pillarFilter } : {},
       });
 
@@ -112,13 +117,19 @@ export default function IndicatorsList() {
 
     return indicators.filter((ind) => {
       const matchesSearch =
+        !q ||
         ind.name?.toLowerCase().includes(q) ||
         ind.code?.toLowerCase().includes(q) ||
         ind.category?.toLowerCase().includes(q);
 
-      return matchesSearch;
+      const matchesData =
+        dataFilter === 'all' ||
+        (dataFilter === 'with_data' && ind.has_data) ||
+        (dataFilter === 'no_data' && !ind.has_data);
+
+      return matchesSearch && matchesData;
     });
-  }, [indicators, search]);
+  }, [indicators, search, dataFilter]);
 
   const getPillar = (pillar: string) => {
     return PILLARS.find((p) => p.id === pillar);
@@ -252,50 +263,69 @@ export default function IndicatorsList() {
         <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <Leaf className="h-5 w-5 flex-shrink-0 text-green-500" />
           <div>
-            <p className="text-2xl font-bold text-gray-900">{indicators.length || 87}</p>
+            <p className="text-2xl font-bold text-gray-900">{indicators.length}</p>
             <p className="text-xs text-gray-500">{t('indicators.kpiTotal')}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-green-500" />
           <div>
-            <p className="text-2xl font-bold text-gray-900">{indicators.filter((i) => i.is_active).length || 74}</p>
+            <p className="text-2xl font-bold text-gray-900">{indicators.filter((i) => i.is_active).length}</p>
             <p className="text-xs text-gray-500">{t('indicators.kpiActive')}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <BarChart3 className="h-5 w-5 flex-shrink-0 text-blue-500" />
+        <button
+          onClick={() => setDataFilter(dataFilter === 'with_data' ? 'all' : 'with_data')}
+          className={`flex items-center gap-3 rounded-xl border p-4 shadow-sm text-left transition ${
+            dataFilter === 'with_data'
+              ? 'border-blue-400 bg-blue-50 ring-2 ring-blue-300'
+              : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50'
+          }`}
+        >
+          <Database className={`h-5 w-5 flex-shrink-0 ${dataFilter === 'with_data' ? 'text-blue-600' : 'text-blue-500'}`} />
           <div>
-            <p className="text-2xl font-bold text-gray-900">61</p>
+            <p className={`text-2xl font-bold ${dataFilter === 'with_data' ? 'text-blue-700' : 'text-gray-900'}`}>
+              {indicators.filter((i) => i.has_data).length}
+            </p>
             <p className="text-xs text-gray-500">{t('indicators.kpiWithData')}</p>
           </div>
-        </div>
-        <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <AlertTriangle className="h-5 w-5 flex-shrink-0 text-amber-500" />
+        </button>
+        <button
+          onClick={() => setDataFilter(dataFilter === 'no_data' ? 'all' : 'no_data')}
+          className={`flex items-center gap-3 rounded-xl border p-4 shadow-sm text-left transition ${
+            dataFilter === 'no_data'
+              ? 'border-amber-400 bg-amber-50 ring-2 ring-amber-300'
+              : 'border-gray-200 bg-white hover:border-amber-300 hover:bg-amber-50'
+          }`}
+        >
+          <AlertTriangle className={`h-5 w-5 flex-shrink-0 ${dataFilter === 'no_data' ? 'text-amber-600' : 'text-amber-500'}`} />
           <div>
-            <p className="text-2xl font-bold text-gray-900">26</p>
+            <p className={`text-2xl font-bold ${dataFilter === 'no_data' ? 'text-amber-700' : 'text-gray-900'}`}>
+              {indicators.filter((i) => !i.has_data).length}
+            </p>
             <p className="text-xs text-gray-500">{t('indicators.kpiNoData')}</p>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Filters */}
       <Card className="border border-gray-200 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="w-full lg:max-w-md">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={t('indicators.searchPlaceholder')}
-                className="w-full rounded-xl border border-gray-300 bg-white pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-              />
-            </div>
+        <div className="flex flex-col gap-4">
+          {/* Row 1: Search */}
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('indicators.searchPlaceholder')}
+              className="w-full rounded-xl border border-gray-300 bg-white pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          {/* Row 2: Pillar filter */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mr-1">Pilier :</span>
             <button
               onClick={() => setPillarFilter('')}
               className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
@@ -320,6 +350,55 @@ export default function IndicatorsList() {
                 {pillar.name} ({getStats(pillar.id)})
               </button>
             ))}
+          </div>
+
+          {/* Row 3: Data availability filter — segmented 3-state control */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mr-1">Données :</span>
+            <div className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1 gap-1">
+              <button
+                onClick={() => setDataFilter('all')}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                  dataFilter === 'all'
+                    ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Tous ({indicators.length})
+              </button>
+              <button
+                onClick={() => setDataFilter('with_data')}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                  dataFilter === 'with_data'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-gray-500 hover:text-blue-600'
+                }`}
+              >
+                <Database className="h-3.5 w-3.5" />
+                Avec données ({indicators.filter((i) => i.has_data).length})
+              </button>
+              <button
+                onClick={() => setDataFilter('no_data')}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                  dataFilter === 'no_data'
+                    ? 'bg-amber-500 text-white shadow-sm'
+                    : 'text-gray-500 hover:text-amber-600'
+                }`}
+              >
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Sans données ({indicators.filter((i) => !i.has_data).length})
+              </button>
+            </div>
+
+            {/* Active filter badge */}
+            {dataFilter !== 'all' && (
+              <button
+                onClick={() => setDataFilter('all')}
+                className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-red-500 transition ml-1"
+              >
+                ✕ Réinitialiser filtre données
+              </button>
+            )}
           </div>
         </div>
       </Card>
@@ -470,25 +549,48 @@ export default function IndicatorsList() {
                           >
                             {indicator.is_active ? t('indicators.active') : t('indicators.inactive')}
                           </span>
+
+                          {/* Data availability badge */}
+                          {indicator.has_data ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700">
+                              <Database className="h-3 w-3" />
+                              {indicator.data_count} entrée{indicator.data_count > 1 ? 's' : ''}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">
+                              <AlertTriangle className="h-3 w-3" />
+                              Sans données
+                            </span>
+                          )}
                         </div>
 
-                        {/* Completion bar */}
-                        {indicator.is_active && (() => {
-                          const pct = getCompletion(indicator);
-                          return (
-                            <div className="mt-3">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-xs text-gray-400">{t('indicators.completed', { n: pct })}</span>
-                              </div>
-                              <div className="h-1 w-full overflow-hidden rounded-full bg-gray-100">
-                                <div
-                                  className="h-1 rounded-full bg-teal-400 transition-all"
-                                  style={{ width: `${pct}%` }}
-                                />
-                              </div>
+                        {/* Data progress bar */}
+                        {indicator.is_active && (
+                          <div className="mt-3">
+                            <div className="flex items-center justify-between mb-1">
+                              {indicator.has_data ? (
+                                <>
+                                  <span className="text-xs text-gray-400">
+                                    {indicator.data_count} point{indicator.data_count > 1 ? 's' : ''} de données
+                                  </span>
+                                  {indicator.latest_date && (
+                                    <span className="text-xs text-gray-400">
+                                      Dernier : {new Date(indicator.latest_date).toLocaleDateString('fr-FR')}
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="text-xs text-amber-500">Aucune donnée enregistrée</span>
+                              )}
                             </div>
-                          );
-                        })()}
+                            <div className="h-1 w-full overflow-hidden rounded-full bg-gray-100">
+                              <div
+                                className={`h-1 rounded-full transition-all ${indicator.has_data ? 'bg-teal-400' : 'bg-amber-200'}`}
+                                style={{ width: indicator.has_data ? `${Math.min(100, (indicator.data_count / 10) * 100)}%` : '0%' }}
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </button>

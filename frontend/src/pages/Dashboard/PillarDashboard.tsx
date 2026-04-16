@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Activity, Award } from 'lucide-react';
 import Card from '@/components/common/Card';
@@ -14,6 +14,7 @@ interface PillarScore {
   social_score: number;
   governance_score: number;
   grade: string;
+  rating?: string;
   score_date: string;
 }
 
@@ -66,8 +67,8 @@ export default function PillarDashboard() {
     setLoading(true);
     try {
       const [scoreRes, indicatorsRes, uploadsRes] = await Promise.all([
-        api.get('/esg-scoring/latest').catch(() => null),
-        api.get('/indicators', { params: { pillar } }).catch(() => ({ data: { items: [] } })),
+        api.get('/scores/latest').catch(() => null),
+        api.get('/indicators/', { params: { pillar } }).catch(() => ({ data: { items: [] } })),
         api.get('/data/uploads', { params: { page_size: 3 } }).catch(() => ({ data: { items: [] } })),
       ]);
 
@@ -182,7 +183,7 @@ export default function PillarDashboard() {
             <div className="space-y-0">
               <div className="flex justify-between items-center py-3 border-b border-gray-100">
                 <span className="text-sm text-gray-600">{t('scores.rating', 'Grade')}</span>
-                <span className="font-bold text-xl text-primary-600">{score.rating}</span>
+                <span className="font-bold text-xl text-primary-600">{score.rating ?? score.grade}</span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-gray-100">
                 <span className="text-sm text-gray-600">{t('indicators.count', 'Indicators')}</span>
@@ -203,7 +204,7 @@ export default function PillarDashboard() {
             <Award className="h-12 w-12 mx-auto text-gray-300 mb-3" />
             <p className="text-gray-500 font-medium">{t('scores.noScores', 'No scores calculated yet')}</p>
             <button
-              onClick={() => navigate('/scores')}
+              onClick={() => navigate('/app/scores/calculate')}
               className="mt-3 text-primary-600 hover:underline text-sm font-medium"
             >
               {t('scores.calculateScore', 'Calculate scores')} →
@@ -249,13 +250,16 @@ export default function PillarDashboard() {
                 {indicators.map(ind => (
                   <tr
                     key={ind.id}
-                    className="hover:bg-gray-50 cursor-pointer transition-colors"
-                    onClick={() => toast.info("Détails disponibles prochainement")}
+                    className="hover:bg-gray-50 transition-colors"
                   >
                     <td className="px-4 py-3 text-sm font-mono text-gray-500 bg-gray-50 rounded">
                       {ind.code}
                     </td>
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{ind.name}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                      <Link to={`/app/indicators/${ind.id}`} className="hover:text-primary-600 hover:underline transition-colors">
+                        {ind.name}
+                      </Link>
+                    </td>
                     <td className="px-4 py-3 text-sm text-gray-600">{ind.unit}</td>
                     <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900">
                       {ind.weight}

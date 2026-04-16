@@ -11,9 +11,18 @@ export const reportsService = {
     return response.data;
   },
 
-  getReports: async () => {
-    const response = await api.get('/reports');
-    return response.data;
+  getReports: async (): Promise<any[]> => {
+    try {
+      const response = await api.get('/reports');
+      const data = response.data;
+      return Array.isArray(data) ? data : data?.items || data?.reports || [];
+    } catch (err: any) {
+      // GET /reports not yet implemented on backend — return empty list gracefully
+      if (err?.response?.status === 404 || err?.response?.status === 405) {
+        return [];
+      }
+      throw err;
+    }
   },
 
   downloadReport: async (reportId: string): Promise<Blob> => {

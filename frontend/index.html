@@ -12,15 +12,6 @@
     <meta name="apple-mobile-web-app-title" content="ESGFlow" />
     <meta name="mobile-web-app-capable" content="yes" />
     <style>
-      /* Prevent FOUC (Flash of Unstyled Content) */
-      body {
-        opacity: 0;
-        transition: opacity 0.2s ease-in;
-      }
-      body.loaded {
-        opacity: 1;
-      }
-      
       /* Loading spinner */
       #app-loading {
         position: fixed;
@@ -51,15 +42,5 @@
     </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      // Remove loading spinner and show content when DOM is ready
-      window.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => {
-          const loading = document.getElementById('app-loading');
-          if (loading) loading.style.display = 'none';
-          document.body.classList.add('loaded');
-        }, 100);
-      });
-    </script>
   </body>
 </html>

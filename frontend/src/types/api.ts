@@ -74,6 +74,9 @@ export interface User {
   timezone?: string;
   last_login_at?: ISO8601 | null;
   created_at: ISO8601;
+  mfa_enabled?: boolean;
+  /** True when the tenant onboarding wizard has not been completed yet */
+  needs_onboarding?: boolean;
 }
 
 export interface UserRegisterRequest {
@@ -149,7 +152,9 @@ export interface OnboardResponse {
 
 export interface LoginResponse {
   user: User;
-  tokens: TokenResponse;
+  tokens?: TokenResponse;          // null when requires_2fa is true
+  requires_2fa?: boolean;
+  temp_token?: string;              // short-lived token for 2FA step
 }
 
 // ── ESG Scores ────────────────────────────────────────────────────────────────

@@ -24,7 +24,7 @@ class Organization(Base, UUIDMixin, TenantMixin, TimestampMixin):
     
     name: Mapped[str] = mapped_column(String(200), nullable=False, index=True)
     external_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
-    type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default="company")
+    org_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default="company")
     industry: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     custom_data: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True, default=dict)
     

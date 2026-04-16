@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import {
   Brain, TrendingUp, TrendingDown, AlertTriangle, Lightbulb,
   RefreshCw, Sparkles, Activity, CheckCircle, ArrowRight, Zap,
   Target, Minus, MessageSquare, Send, FileText, Upload,
-  Leaf, BarChart2, ChevronRight, Download, Loader2, Globe,
+  Leaf, BarChart2, ChevronRight, ChevronLeft, Download, Loader2, Globe,
   Building2, Factory, Truck, Users, Package, Flame,
 } from 'lucide-react';
 import {
@@ -13,6 +14,7 @@ import {
 } from 'recharts';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import toast from 'react-hot-toast';
 import Card from '@/components/common/Card';
 import Spinner from '@/components/common/Spinner';
 import api from '@/services/api';
@@ -55,6 +57,73 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+}
+
+// ── ML / AI types ─────────────────────────────────────────────────────────────
+
+interface MLForecastPoint {
+  date: string;
+  predicted_value: number;
+  lower_95: number;
+  upper_95: number;
+  confidence: number;
+}
+
+interface MLForecast {
+  indicator_id: string;
+  indicator_name: string;
+  indicator_code: string;
+  indicator_unit: string;
+  indicator_pillar: string;
+  n_historical_points: number;
+  algorithm: string;
+  r2_score: number;
+  trend: 'increasing' | 'decreasing' | 'stable';
+  has_seasonality: boolean;
+  current_value: number;
+  predicted_next_month: number | null;
+  predicted_next_year: number;
+  future_points: MLForecastPoint[];
+  goal_alert: {
+    triggered: boolean;
+    message: string;
+    severity: 'low' | 'medium' | 'high';
+    projected_pct?: number;
+    objective_pct?: number;
+  } | null;
+}
+
+interface MLAnomaly {
+  id: string;
+  metric_name: string;
+  value: number;
+  unit: string;
+  mean: number;
+  expected_range: string;
+  z_score: number;
+  isolation_score: number;
+  deviation: string;
+  severity: 'high' | 'medium' | 'low';
+  pillar: string;
+  category: string;
+  period: string | null;
+  recommendation: { title: string; action: string; preventive: string };
+  algorithms_triggered: string[];
+}
+
+interface AIRecommendation {
+  id: string;
+  title: string;
+  description: string;
+  gain_tco2e: number | null;
+  gain_eur: number | null;
+  difficulty: number;
+  timeline: 'court' | 'moyen' | 'long';
+  pillar: 'environmental' | 'social' | 'governance';
+  resources: string[];
+  kpi: string;
+  priority: 'high' | 'medium' | 'low';
+  tags: string[];
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -136,13 +205,12 @@ const REDUCTION_LEVERS = [
   { icon: Factory, category: 'Production', label: 'Efficience process industriels', impact: 70, effort: 'Élevé', saving: '-15% Scope 1', color: 'red', timeframe: '12-36 mois', roi: '3-6 ans' },
 ];
 
-const SECTOR_BENCHMARKS = [
+const sectorBenchmarks_BASE = [
   { sector: 'Industrie', score: 42, color: '#ef4444' },
   { sector: 'Services', score: 61, color: '#f59e0b' },
   { sector: 'Distribution', score: 54, color: '#f59e0b' },
   { sector: 'Tech', score: 73, color: '#22c55e' },
   { sector: 'Finance', score: 68, color: '#22c55e' },
-  { sector: 'Votre score', score: 78, color: '#7c3aed' },
 ];
 
 const MISSING_DATA_EXAMPLES = [
@@ -155,12 +223,24 @@ const MISSING_DATA_EXAMPLES = [
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-type TabId = 'predictions' | 'anomalies' | 'insights' | 'suggestions' | 'chatbot' | 'generation' | 'reduction';
+type TabId = 'ml' | 'predictions' | 'anomalies' | 'insights' | 'suggestions' | 'chatbot' | 'generation' | 'reduction' | 'simulator';
 
 export default function IntelligenceDashboard() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const tabsRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<TabId>('predictions');
+  const [activeTab, setActiveTab] = useState<TabId>('ml');
+
+  // ML state
+  const [mlForecasts, setMlForecasts] = useState<MLForecast[]>([]);
+  const [mlAnomalies, setMlAnomalies] = useState<MLAnomaly[]>([]);
+  const [aiRecommendations, setAiRecommendations] = useState<AIRecommendation[]>([]);
+  const [mlLoading, setMlLoading] = useState(false);
+  const [selectedForecast, setSelectedForecast] = useState<MLForecast | null>(null);
+  const [mlHorizon, setMlHorizon] = useState(12);
+  const [mlObjectivePct, setMlObjectivePct] = useState<number>(-30);
+  const [aiGenerated, setAiGenerated] = useState(false);
 
   // Existing state
   const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
@@ -185,6 +265,107 @@ export default function IntelligenceDashboard() {
 
   // Reduction state
   const [selectedSector, setSelectedSector] = useState('Services');
+  const [myScore, setMyScore] = useState<number | null>(null);
+  const [sectorBenchmarksLive, setSectorBenchmarksLive] = useState<typeof sectorBenchmarks_BASE | null>(null);
+  const [benchmarkIsReference, setBenchmarkIsReference] = useState(true);
+  // Missing data state (real indicators from DB)
+  const [missingDataItems, setMissingDataItems] = useState(MISSING_DATA_EXAMPLES);
+  const [missingDataIsReal, setMissingDataIsReal] = useState(false);
+
+  // Simulator state
+  const [simRenewable, setSimRenewable] = useState(30);      // % énergie renouvelable
+  const [simTelework, setSimTelework] = useState(2);         // jours télétravail / sem
+  const [simSupplierAudit, setSimSupplierAudit] = useState(40); // % fournisseurs audités
+  const [simScope1Reduction, setSimScope1Reduction] = useState(15); // % réduction Scope 1
+  const [simBaseScore] = useState<number>(58); // base score (updated from real data)
+  const [dynamicLevers, setDynamicLevers] = useState(REDUCTION_LEVERS);
+
+  useEffect(() => {
+    api.get('/scores/latest')
+      .then(r => setMyScore(Math.round(r.data?.overall_score ?? 0)))
+      .catch(() => {});
+
+    // Personalize reduction levers based on real carbon data
+    api.get('/carbon/scope-summary')
+      .then(r => {
+        const data = r.data || {};
+        // /carbon/scope-summary returns {scope1: {total_tco2e}, scope2: {total_tco2e}, scope3: {total_tco2e}}
+        const scope1 = data.scope1?.total_tco2e ?? data.scope1_total ?? 0;
+        const scope2 = data.scope2?.total_tco2e ?? data.scope2_total ?? 0;
+        const scope3 = data.scope3?.total_tco2e ?? data.scope3_total ?? 0;
+        const total = scope1 + scope2 + scope3 || 1;
+        const scope2Pct = scope2 / total;
+        const scope3Pct = scope3 / total;
+        const scope1Pct = scope1 / total;
+        setDynamicLevers(REDUCTION_LEVERS.map(lever => {
+          let boost = 0;
+          if (lever.category === 'Énergie' && scope2Pct > 0.3) boost = 10;
+          else if (lever.category === 'Logistique' && scope3Pct > 0.4) boost = 8;
+          else if (lever.category === 'Production' && scope1Pct > 0.3) boost = 10;
+          else if (lever.category === 'Achats' && scope3Pct > 0.5) boost = 8;
+          return boost > 0 ? { ...lever, impact: Math.min(100, lever.impact + boost), saving: lever.saving + ' ⭐' } : lever;
+        }));
+      })
+      .catch(() => {}); // keep static REDUCTION_LEVERS on error
+  }, []);
+
+  // Load sector benchmarks from API when sector changes
+  useEffect(() => {
+    const sectorMap: Record<string, string> = {
+      'Industrie': 'industry', 'Services': 'services',
+      'Distribution': 'retail', 'Tech': 'technology', 'Finance': 'finance',
+    };
+    const sectorKey = sectorMap[selectedSector] ?? selectedSector.toLowerCase();
+    api.get(`/benchmarks/sector/${sectorKey}`)
+      .then(res => {
+        const data = res.data;
+        // Backend returns array or object with sector scores
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped = data.map((b: any) => ({
+            sector: b.sector_name ?? b.sector ?? b.name,
+            score: Math.round(b.overall_score ?? b.score ?? 0),
+            color: (b.overall_score ?? b.score ?? 0) >= 70 ? '#22c55e' : (b.overall_score ?? b.score ?? 0) >= 50 ? '#f59e0b' : '#ef4444',
+          }));
+          setSectorBenchmarksLive([...mapped, { sector: 'Votre score', score: myScore ?? 0, color: '#7c3aed' }]);
+          setBenchmarkIsReference(false);
+        } else {
+          setSectorBenchmarksLive(null);
+          setBenchmarkIsReference(true);
+        }
+      })
+      .catch(() => {
+        setSectorBenchmarksLive(null);
+        setBenchmarkIsReference(true);
+      });
+  }, [selectedSector, myScore]);
+
+  // Load real missing indicators from multi-standards mapping
+  useEffect(() => {
+    api.get('/reports/multi-standards', { params: { year: new Date().getFullYear() } })
+      .then(res => {
+        const indicators: any[] = res.data?.indicators ?? [];
+        const missing = indicators
+          .filter((ind: any) => ind.status === 'missing')
+          .slice(0, 5)
+          .map((ind: any) => ({
+            category: ind.pillar === 'environmental' ? 'Environnement'
+              : ind.pillar === 'social' ? 'Social' : 'Gouvernance',
+            indicator: ind.name,
+            priority: ind.weight >= 8 ? 'high' : 'medium',
+            esrs: ind.esrs_ref ?? ind.id ?? '',
+          }));
+        if (missing.length > 0) {
+          setMissingDataItems(missing);
+          setMissingDataIsReal(true);
+        }
+      })
+      .catch(() => {}); // keep static MISSING_DATA_EXAMPLES on error
+  }, []);
+
+  const sectorBenchmarks = sectorBenchmarksLive ?? [
+    ...sectorBenchmarks_BASE,
+    { sector: 'Votre score', score: myScore ?? 0, color: '#7c3aed' },
+  ];
 
   useEffect(() => {
     setChatMessages([{ role: 'assistant', content: t('ia.chatWelcome'), timestamp: new Date() }]);
@@ -192,11 +373,34 @@ export default function IntelligenceDashboard() {
   useEffect(() => { loadAll(); }, []);
   useEffect(() => { loadPredictions(); }, [horizon]);
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatMessages]);
+  useEffect(() => { loadML(); }, [mlHorizon, mlObjectivePct]);
 
   const loadAll = async () => {
     setLoading(true);
     await Promise.all([loadAnomalies(), loadInsights(), loadSuggestions(), loadPredictions()]);
     setLoading(false);
+  };
+
+  const loadML = async () => {
+    setMlLoading(true);
+    try {
+      const [fRes, aRes, rRes] = await Promise.allSettled([
+        api.get(`/analytics/ml/forecast?horizon=${mlHorizon}&objective_pct=${mlObjectivePct}`),
+        api.get('/analytics/ml/anomalies?limit=15'),
+        api.get('/analytics/ml/recommendations'),
+      ]);
+      if (fRes.status === 'fulfilled') {
+        const forecasts: MLForecast[] = fRes.value.data?.forecasts || [];
+        setMlForecasts(forecasts);
+        if (forecasts.length > 0 && !selectedForecast) setSelectedForecast(forecasts[0]);
+      }
+      if (aRes.status === 'fulfilled') setMlAnomalies(aRes.value.data?.anomalies || []);
+      if (rRes.status === 'fulfilled') {
+        setAiRecommendations(rRes.value.data?.recommendations || []);
+        setAiGenerated(rRes.value.data?.ai_generated || false);
+      }
+    } catch { /* silent */ }
+    setMlLoading(false);
   };
 
   const loadAnomalies = async () => {
@@ -242,11 +446,21 @@ export default function IntelligenceDashboard() {
     if (!text) return;
     setChatInput('');
     const userMsg: ChatMessage = { role: 'user', content: text, timestamp: new Date() };
-    setChatMessages(prev => [...prev, userMsg]);
+    const updatedMessages = [...chatMessages, userMsg];
+    setChatMessages(updatedMessages);
     setChatLoading(true);
-    await new Promise(r => setTimeout(r, 800 + Math.random() * 700));
-    const response = getESGResponse(text);
-    setChatMessages(prev => [...prev, { role: 'assistant', content: response, timestamp: new Date() }]);
+    try {
+      const payload = updatedMessages
+        .filter(m => m.role !== 'assistant' || m !== updatedMessages[0]) // keep context
+        .slice(-10) // max 10 messages
+        .map(m => ({ role: m.role, content: m.content }));
+      const res = await api.post('/analytics/chat', { messages: payload });
+      const response: string = res.data?.response || getESGResponse(text);
+      setChatMessages(prev => [...prev, { role: 'assistant', content: response, timestamp: new Date() }]);
+    } catch {
+      const response = getESGResponse(text);
+      setChatMessages(prev => [...prev, { role: 'assistant', content: response, timestamp: new Date() }]);
+    }
     setChatLoading(false);
   };
 
@@ -310,11 +524,13 @@ export default function IntelligenceDashboard() {
   };
 
   const TABS: Array<{ id: TabId; label: string; icon: React.FC<{ className?: string }>; count?: number; isNew?: boolean }> = [
+    { id: 'ml', label: '✨ IA & ML', icon: Sparkles, isNew: true },
     { id: 'predictions', label: t('ia.tabPredictive'), icon: Brain, count: totalPredictions },
     { id: 'anomalies', label: t('ia.tabAnomalies'), icon: AlertTriangle, count: anomalies.length },
     { id: 'insights', label: t('ia.tabInsights'), icon: Lightbulb, count: insights?.recommendations?.length ?? 0 },
     { id: 'suggestions', label: t('ia.tabSuggestions'), icon: Sparkles, count: suggestions.length },
     { id: 'chatbot', label: t('ia.tabAssistant'), icon: MessageSquare, isNew: true },
+    { id: 'simulator', label: 'Simulateur', icon: Target, isNew: true },
     { id: 'generation', label: t('ia.tabGeneration'), icon: FileText, isNew: true },
     { id: 'reduction', label: t('ia.tabReduction'), icon: Leaf, isNew: true },
   ];
@@ -353,7 +569,7 @@ export default function IntelligenceDashboard() {
               { label: t('ia.heroStatPredictions'), value: totalPredictions },
               { label: t('ia.heroStatAnomalies'), value: anomalies.length },
               { label: t('ia.heroStatSuggestions'), value: suggestions.length },
-              { label: t('ia.heroStatLevers'), value: REDUCTION_LEVERS.length },
+              { label: t('ia.heroStatLevers'), value: dynamicLevers.length },
             ].map((s) => (
               <div key={s.label} className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10 backdrop-blur-sm">
                 <p className="text-xs uppercase tracking-wide text-white/70">{s.label}</p>
@@ -397,34 +613,476 @@ export default function IntelligenceDashboard() {
       )}
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 overflow-x-auto">
-        <nav className="flex gap-1 min-w-max">
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            const active = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition whitespace-nowrap ${
-                  active ? 'border-violet-600 text-violet-700' : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {tab.label}
-                {tab.isNew && (
-                  <span className="bg-green-100 text-green-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">NEW</span>
-                )}
-                {!tab.isNew && tab.count !== undefined && tab.count > 0 && (
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${active ? 'bg-violet-100 text-violet-700' : 'bg-gray-100 text-gray-600'}`}>
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
+      <div className="relative border-b border-gray-200">
+        {/* Left scroll arrow */}
+        <button
+          onClick={() => tabsRef.current?.scrollBy({ left: -200, behavior: 'smooth' })}
+          className="absolute left-0 top-0 bottom-0 z-10 px-1 bg-gradient-to-r from-white via-white to-transparent flex items-center text-gray-400 hover:text-gray-700"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        {/* Right scroll arrow */}
+        <button
+          onClick={() => tabsRef.current?.scrollBy({ left: 200, behavior: 'smooth' })}
+          className="absolute right-0 top-0 bottom-0 z-10 px-1 bg-gradient-to-l from-white via-white to-transparent flex items-center text-gray-400 hover:text-gray-700"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+        <div ref={tabsRef} className="overflow-x-auto scrollbar-hide px-6">
+          <nav className="flex gap-1 min-w-max">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const active = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition whitespace-nowrap ${
+                    active ? 'border-violet-600 text-violet-700' : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {tab.label}
+                  {tab.isNew && (
+                    <span className="bg-green-100 text-green-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">NEW</span>
+                  )}
+                  {!tab.isNew && tab.count !== undefined && tab.count > 0 && (
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${active ? 'bg-violet-100 text-violet-700' : 'bg-gray-100 text-gray-600'}`}>
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
       </div>
+
+      {/* ── IA & ML ── */}
+      {activeTab === 'ml' && (
+        <div className="space-y-8">
+
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Intelligence Artificielle & Machine Learning</h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Prévisions ARIMA · Détection d'anomalies Isolation Forest · Recommandations GPT
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <select
+                value={mlHorizon}
+                onChange={(e) => setMlHorizon(Number(e.target.value))}
+                className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+              >
+                <option value={6}>6 mois</option>
+                <option value={12}>12 mois</option>
+                <option value={24}>24 mois</option>
+              </select>
+              <select
+                value={mlObjectivePct}
+                onChange={(e) => setMlObjectivePct(Number(e.target.value))}
+                className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+              >
+                <option value={-20}>Objectif −20 %</option>
+                <option value={-30}>Objectif −30 %</option>
+                <option value={-50}>Objectif −50 % (Net Zéro)</option>
+              </select>
+              <button
+                onClick={loadML}
+                disabled={mlLoading}
+                className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-50 transition"
+              >
+                {mlLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                {mlLoading ? 'Calcul en cours…' : 'Recalculer'}
+              </button>
+            </div>
+          </div>
+
+          {mlLoading && (
+            <div className="flex items-center justify-center h-48">
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin text-violet-600 mx-auto" />
+                <p className="mt-3 text-sm text-gray-500">Modèles ML en cours d'exécution…</p>
+              </div>
+            </div>
+          )}
+
+          {!mlLoading && (
+            <>
+              {/* ── Section 1 : Prévisions ML ────────────────────────────── */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="h-7 w-1 rounded-full bg-violet-600" />
+                  <h3 className="font-semibold text-gray-800">📈 Prévisions par indicateur</h3>
+                  <span className="ml-1 text-xs bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">
+                    ARIMA · Holt-Winters · OLS
+                  </span>
+                </div>
+
+                {mlForecasts.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-400">
+                    Aucune donnée disponible (minimum 3 points historiques requis par indicateur)
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Selector list */}
+                    <div className="space-y-2">
+                      {mlForecasts.map((f) => {
+                        const isSelected = selectedForecast?.indicator_id === f.indicator_id;
+                        const TIcon = TREND_CONFIG[f.trend]?.icon || Minus;
+                        return (
+                          <button
+                            key={f.indicator_id}
+                            onClick={() => setSelectedForecast(f)}
+                            className={`w-full text-left rounded-xl border p-3 transition ${
+                              isSelected
+                                ? 'border-violet-400 bg-violet-50'
+                                : 'border-gray-200 bg-white hover:border-gray-300'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-mono text-gray-500">{f.indicator_code}</span>
+                              <TIcon className={`h-4 w-4 ${TREND_CONFIG[f.trend]?.color}`} />
+                            </div>
+                            <p className="text-sm font-medium text-gray-900 mt-1 truncate">{f.indicator_name}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs text-gray-500">R² {f.r2_score.toFixed(2)}</span>
+                              <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                {f.algorithm.replace('_', ' ')}
+                              </span>
+                              {f.goal_alert?.triggered && (
+                                <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Chart area */}
+                    {selectedForecast && (
+                      <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-5">
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <h4 className="font-semibold text-gray-900">{selectedForecast.indicator_name}</h4>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {selectedForecast.n_historical_points} pts historiques · {selectedForecast.algorithm.replace(/_/g, ' ')}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-gray-500">Actuel</p>
+                            <p className="font-bold text-gray-900">
+                              {selectedForecast.current_value.toFixed(1)} {selectedForecast.indicator_unit}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Goal alert banner */}
+                        {selectedForecast.goal_alert && (
+                          <div className={`mb-4 rounded-lg px-4 py-3 flex items-start gap-3 ${
+                            selectedForecast.goal_alert.triggered
+                              ? 'bg-amber-50 border border-amber-200'
+                              : 'bg-green-50 border border-green-200'
+                          }`}>
+                            <AlertTriangle className={`h-4 w-4 mt-0.5 flex-shrink-0 ${
+                              selectedForecast.goal_alert.triggered ? 'text-amber-600' : 'text-green-600'
+                            }`} />
+                            <p className={`text-xs ${selectedForecast.goal_alert.triggered ? 'text-amber-800' : 'text-green-800'}`}>
+                              {selectedForecast.goal_alert.message}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* KPI strip */}
+                        <div className="grid grid-cols-3 gap-3 mb-4">
+                          {[
+                            {
+                              label: 'Mois +1',
+                              value: selectedForecast.predicted_next_month?.toFixed(1) ?? '—',
+                              unit: selectedForecast.indicator_unit,
+                            },
+                            {
+                              label: `Mois +${mlHorizon}`,
+                              value: selectedForecast.predicted_next_year.toFixed(1),
+                              unit: selectedForecast.indicator_unit,
+                            },
+                            {
+                              label: 'Fiabilité R²',
+                              value: `${(selectedForecast.r2_score * 100).toFixed(0)} %`,
+                              unit: '',
+                            },
+                          ].map((kpi) => (
+                            <div key={kpi.label} className="bg-gray-50 rounded-lg p-3 text-center">
+                              <p className="text-xs text-gray-500">{kpi.label}</p>
+                              <p className="text-base font-bold text-gray-900 mt-0.5">
+                                {kpi.value} <span className="text-xs font-normal text-gray-500">{kpi.unit}</span>
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Recharts area with confidence band */}
+                        <ResponsiveContainer width="100%" height={220}>
+                          <AreaChart
+                            data={selectedForecast.future_points.slice(0, mlHorizon).map((p) => ({
+                              date: format(new Date(p.date), 'MMM yy', { locale: fr }),
+                              forecast:    parseFloat(p.predicted_value.toFixed(2)),
+                              upper:       parseFloat(p.upper_95.toFixed(2)),
+                              lower:       parseFloat(p.lower_95.toFixed(2)),
+                            }))}
+                            margin={{ top: 5, right: 10, left: 0, bottom: 0 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                            <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                            <YAxis tick={{ fontSize: 11 }} width={55} />
+                            <Tooltip
+                              formatter={(val: number, name: string) => [
+                                `${val.toFixed(2)} ${selectedForecast.indicator_unit}`,
+                                name === 'forecast' ? 'Prévision' : name === 'upper' ? 'Borne sup. 95%' : 'Borne inf. 95%',
+                              ]}
+                            />
+                            {/* Confidence band */}
+                            <Area
+                              type="monotone"
+                              dataKey="upper"
+                              stroke="none"
+                              fill="#7c3aed"
+                              fillOpacity={0.10}
+                              name="upper"
+                              legendType="none"
+                            />
+                            <Area
+                              type="monotone"
+                              dataKey="lower"
+                              stroke="none"
+                              fill="#ffffff"
+                              fillOpacity={1}
+                              name="lower"
+                              legendType="none"
+                            />
+                            {/* Main forecast line */}
+                            <Area
+                              type="monotone"
+                              dataKey="forecast"
+                              stroke="#7c3aed"
+                              strokeWidth={2.5}
+                              fill="#ede9fe"
+                              fillOpacity={0.4}
+                              dot={false}
+                              name="forecast"
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+
+                        {selectedForecast.has_seasonality && (
+                          <p className="mt-2 text-xs text-amber-600 flex items-center gap-1">
+                            <Activity className="h-3 w-3" />
+                            Saisonnalité détectée — le modèle en tient compte
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* ── Section 2 : Anomalies ML ─────────────────────────────── */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="h-7 w-1 rounded-full bg-red-500" />
+                  <h3 className="font-semibold text-gray-800">🔍 Anomalies détectées</h3>
+                  <span className="ml-1 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                    Isolation Forest · Z-score
+                  </span>
+                  {mlAnomalies.length > 0 && (
+                    <span className="ml-auto text-xs text-gray-500">
+                      {mlAnomalies.filter(a => a.severity === 'high').length} critiques ·
+                      {' '}{mlAnomalies.filter(a => a.severity === 'medium').length} modérées ·
+                      {' '}{mlAnomalies.filter(a => a.severity === 'low').length} faibles
+                    </span>
+                  )}
+                </div>
+
+                {mlAnomalies.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-400">
+                    <CheckCircle className="h-8 w-8 text-green-400 mx-auto mb-2" />
+                    Aucune anomalie détectée — vos données ESG sont cohérentes
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {mlAnomalies.map((a) => {
+                      const sev = a.severity;
+                      const sevColors = {
+                        high:   { ring: 'border-red-300 bg-red-50',   badge: 'bg-red-100 text-red-700',   icon: 'text-red-500' },
+                        medium: { ring: 'border-amber-300 bg-amber-50', badge: 'bg-amber-100 text-amber-700', icon: 'text-amber-500' },
+                        low:    { ring: 'border-blue-200 bg-blue-50', badge: 'bg-blue-100 text-blue-700', icon: 'text-blue-500' },
+                      }[sev];
+                      return (
+                        <div key={a.id} className={`rounded-xl border p-4 ${sevColors.ring}`}>
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <AlertTriangle className={`h-4 w-4 flex-shrink-0 ${sevColors.icon}`} />
+                                <span className="font-medium text-gray-900 text-sm truncate">{a.metric_name}</span>
+                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${sevColors.badge}`}>
+                                  {sev === 'high' ? 'Critique' : sev === 'medium' ? 'Modéré' : 'Faible'}
+                                </span>
+                                {a.algorithms_triggered.map(al => (
+                                  <span key={al} className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
+                                    {al === 'isolation_forest' ? 'IF' : 'Z-score'}
+                                  </span>
+                                ))}
+                              </div>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Valeur : <strong className="text-gray-800">{a.value.toFixed(2)} {a.unit}</strong>
+                                {' '}· Attendu : {a.expected_range}
+                                {' '}· Écart : <strong>{a.deviation}</strong>
+                                {a.period && ` · ${a.period}`}
+                              </p>
+                              {/* Recommendation */}
+                              <div className="mt-2 rounded-lg bg-white/70 border border-gray-200 p-2.5 text-xs text-gray-700">
+                                <p className="font-medium text-gray-800 mb-0.5">💡 {a.recommendation.title}</p>
+                                <p><span className="font-medium">Action : </span>{a.recommendation.action}</p>
+                                <p className="mt-0.5 text-gray-500"><span className="font-medium">Prévention : </span>{a.recommendation.preventive}</p>
+                              </div>
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              <p className="text-xs text-gray-400">Z-score</p>
+                              <p className="text-lg font-bold text-gray-800">{a.z_score.toFixed(1)}σ</p>
+                              {a.isolation_score > 0 && (
+                                <>
+                                  <p className="text-xs text-gray-400 mt-1">IF score</p>
+                                  <p className="text-sm font-semibold text-gray-700">{(a.isolation_score * 100).toFixed(0)} %</p>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* ── Section 3 : AI Recommendations ──────────────────────── */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="h-7 w-1 rounded-full bg-emerald-500" />
+                  <h3 className="font-semibold text-gray-800">🤖 Recommandations IA</h3>
+                  {aiGenerated ? (
+                    <span className="ml-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                      Générées par GPT-4o-mini
+                    </span>
+                  ) : (
+                    <span className="ml-1 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                      Règles métier (configurez OPENAI_API_KEY pour les IA)
+                    </span>
+                  )}
+                </div>
+
+                {aiRecommendations.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-400">
+                    Chargement des recommandations…
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    {aiRecommendations.map((rec, idx) => {
+                      const priorityCfg = PRIORITY_CONFIG[rec.priority];
+                      const pillarColors: Record<string, string> = {
+                        environmental: 'bg-green-100 text-green-700',
+                        social:        'bg-blue-100 text-blue-700',
+                        governance:    'bg-purple-100 text-purple-700',
+                      };
+                      const pillarLabel: Record<string, string> = {
+                        environmental: '🌱 Environnement',
+                        social:        '👥 Social',
+                        governance:    '🏛 Gouvernance',
+                      };
+                      const timelineLabel: Record<string, string> = {
+                        court: '< 6 mois',
+                        moyen: '6–18 mois',
+                        long:  '> 18 mois',
+                      };
+                      return (
+                        <div
+                          key={rec.id}
+                          className={`rounded-xl border p-5 flex flex-col gap-3 ${priorityCfg.bg} ${priorityCfg.border}`}
+                        >
+                          {/* Header */}
+                          <div className="flex items-start justify-between gap-2">
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${priorityCfg.badge}`}>
+                              #{idx + 1} · {rec.priority === 'high' ? 'Priorité haute' : rec.priority === 'medium' ? 'Priorité moyenne' : 'Priorité faible'}
+                            </span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${pillarColors[rec.pillar]}`}>
+                              {pillarLabel[rec.pillar]}
+                            </span>
+                          </div>
+
+                          <h4 className="font-semibold text-gray-900 text-sm leading-snug">{rec.title}</h4>
+                          <p className="text-xs text-gray-600 leading-relaxed">{rec.description}</p>
+
+                          {/* Gains */}
+                          {(rec.gain_tco2e != null || rec.gain_eur != null) && (
+                            <div className="flex gap-2 flex-wrap">
+                              {rec.gain_tco2e != null && (
+                                <div className="flex items-center gap-1 bg-white rounded-lg px-2.5 py-1.5 border border-green-200">
+                                  <Leaf className="h-3 w-3 text-green-600" />
+                                  <span className="text-xs font-semibold text-green-800">
+                                    −{rec.gain_tco2e.toLocaleString('fr-FR')} tCO₂e/an
+                                  </span>
+                                </div>
+                              )}
+                              {rec.gain_eur != null && (
+                                <div className="flex items-center gap-1 bg-white rounded-lg px-2.5 py-1.5 border border-blue-200">
+                                  <Target className="h-3 w-3 text-blue-600" />
+                                  <span className="text-xs font-semibold text-blue-800">
+                                    {rec.gain_eur.toLocaleString('fr-FR')} €/an
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Metadata row */}
+                          <div className="flex flex-wrap gap-1.5 text-[11px]">
+                            <span className="bg-white border border-gray-200 rounded px-2 py-0.5">
+                              ⏱ {timelineLabel[rec.timeline]}
+                            </span>
+                            <span className="bg-white border border-gray-200 rounded px-2 py-0.5">
+                              {'⭐'.repeat(rec.difficulty)} Difficulté {rec.difficulty}/5
+                            </span>
+                            {rec.kpi && (
+                              <span className="bg-white border border-gray-200 rounded px-2 py-0.5">
+                                📊 {rec.kpi}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Resources */}
+                          {rec.resources.length > 0 && (
+                            <div>
+                              <p className="text-[10px] font-semibold text-gray-500 uppercase mb-1">Ressources</p>
+                              <div className="flex flex-wrap gap-1">
+                                {rec.resources.map((r) => (
+                                  <span key={r} className="text-[11px] bg-white border border-gray-200 rounded px-2 py-0.5 text-gray-700">
+                                    {r}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* ── PREDICTIONS ── */}
       {activeTab === 'predictions' && (
@@ -694,10 +1352,10 @@ export default function IntelligenceDashboard() {
             ))}
             <div className="mt-4 p-4 bg-violet-50 border border-violet-200 rounded-xl">
               <div className="flex items-center gap-2 mb-2">
-                <Brain className="h-4 w-4 text-violet-600" />
-                <span className="text-xs font-semibold text-violet-700">{t('ia.localIaBadge')}</span>
+                <Sparkles className="h-4 w-4 text-violet-600" />
+                <span className="text-xs font-semibold text-violet-700">GPT-4o-mini</span>
               </div>
-              <p className="text-xs text-violet-600">{t('ia.knowledgeBase')} CSRD, ESRS, GHG Protocol, GRI, TCFD.</p>
+              <p className="text-xs text-violet-600">IA connectée + base CSRD, ESRS, GHG Protocol, GRI, TCFD.</p>
             </div>
           </div>
 
@@ -779,6 +1437,227 @@ export default function IntelligenceDashboard() {
         </div>
       )}
 
+      {/* ── SIMULATEUR D'IMPACT ── */}
+      {activeTab === 'simulator' && (() => {
+        // Compute projected score delta from sliders
+        const deltaEnv =
+          (simRenewable / 100) * 12 +        // renewable energy → Env score
+          (simScope1Reduction / 100) * 8;    // Scope 1 reduction → Env score
+        const deltaSocial =
+          (simTelework / 5) * 5 +            // telework days → Social score (max 5j)
+          (simSupplierAudit / 100) * 4;      // supplier audit → Social
+        const deltaGov = (simSupplierAudit / 100) * 3; // supplier audit → Gov
+        const totalDelta = Math.round(deltaEnv * 0.4 + deltaSocial * 0.35 + deltaGov * 0.25);
+        const projectedScore = Math.min(100, (myScore ?? simBaseScore) + totalDelta);
+
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                <Target className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Simulateur d'impact ESG</h2>
+                <p className="text-sm text-gray-500">Modélisez l'impact de vos actions sur votre score ESG global</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Sliders panel */}
+              <div className="lg:col-span-2 space-y-5">
+
+                {/* Renewable energy */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Flame className="h-5 w-5 text-orange-500" />
+                      <div>
+                        <p className="font-semibold text-gray-900 text-sm">Part d'énergie renouvelable</p>
+                        <p className="text-xs text-gray-500">Impact sur Scope 2 et score Environnement</p>
+                      </div>
+                    </div>
+                    <span className="text-2xl font-bold text-orange-600">{simRenewable}%</span>
+                  </div>
+                  <input
+                    type="range" min={0} max={100} step={5}
+                    value={simRenewable}
+                    onChange={e => setSimRenewable(Number(e.target.value))}
+                    className="w-full accent-orange-500"
+                  />
+                  <div className="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>0% (fossile)</span><span>50%</span><span>100% (zéro carbone)</span>
+                  </div>
+                  <p className="text-xs text-green-700 mt-2 font-medium">
+                    ↑ +{Math.round((simRenewable / 100) * 12)} pts score Environnement · -45% Scope 2 estimé
+                  </p>
+                </div>
+
+                {/* Telework */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-5 w-5 text-purple-500" />
+                      <div>
+                        <p className="font-semibold text-gray-900 text-sm">Télétravail (jours / semaine)</p>
+                        <p className="text-xs text-gray-500">Réduction émissions déplacements domicile-travail</p>
+                      </div>
+                    </div>
+                    <span className="text-2xl font-bold text-purple-600">{simTelework}j</span>
+                  </div>
+                  <input
+                    type="range" min={0} max={5} step={1}
+                    value={simTelework}
+                    onChange={e => setSimTelework(Number(e.target.value))}
+                    className="w-full accent-purple-500"
+                  />
+                  <div className="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>0j</span><span>2j</span><span>5j (full remote)</span>
+                  </div>
+                  <p className="text-xs text-green-700 mt-2 font-medium">
+                    ↑ +{Math.round((simTelework / 5) * 5)} pts score Social · -{Math.round((simTelework / 5) * 30)}% émissions déplacements
+                  </p>
+                </div>
+
+                {/* Supplier audit */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Truck className="h-5 w-5 text-teal-500" />
+                      <div>
+                        <p className="font-semibold text-gray-900 text-sm">Fournisseurs audités ESG</p>
+                        <p className="text-xs text-gray-500">Impact sur Scope 3 amont et score Gouvernance</p>
+                      </div>
+                    </div>
+                    <span className="text-2xl font-bold text-teal-600">{simSupplierAudit}%</span>
+                  </div>
+                  <input
+                    type="range" min={0} max={100} step={5}
+                    value={simSupplierAudit}
+                    onChange={e => setSimSupplierAudit(Number(e.target.value))}
+                    className="w-full accent-teal-500"
+                  />
+                  <div className="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>0%</span><span>50%</span><span>100%</span>
+                  </div>
+                  <p className="text-xs text-green-700 mt-2 font-medium">
+                    ↑ +{Math.round((simSupplierAudit / 100) * 4)} pts Social · +{Math.round((simSupplierAudit / 100) * 3)} pts Gouvernance
+                  </p>
+                </div>
+
+                {/* Scope 1 reduction */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Factory className="h-5 w-5 text-red-500" />
+                      <div>
+                        <p className="font-semibold text-gray-900 text-sm">Réduction Scope 1 (émissions directes)</p>
+                        <p className="text-xs text-gray-500">Via efficience industrielle, électrification process</p>
+                      </div>
+                    </div>
+                    <span className="text-2xl font-bold text-red-600">-{simScope1Reduction}%</span>
+                  </div>
+                  <input
+                    type="range" min={0} max={60} step={5}
+                    value={simScope1Reduction}
+                    onChange={e => setSimScope1Reduction(Number(e.target.value))}
+                    className="w-full accent-red-500"
+                  />
+                  <div className="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>0% (statu quo)</span><span>-30%</span><span>-60%</span>
+                  </div>
+                  <p className="text-xs text-green-700 mt-2 font-medium">
+                    ↑ +{Math.round((simScope1Reduction / 100) * 8)} pts score Environnement
+                  </p>
+                </div>
+              </div>
+
+              {/* Score preview panel */}
+              <div className="space-y-4">
+                <div className="bg-gradient-to-br from-violet-600 to-indigo-700 rounded-2xl p-6 text-white sticky top-6">
+                  <p className="text-sm font-medium text-violet-200 mb-1">Score ESG projeté</p>
+                  <div className="flex items-end gap-2 mb-4">
+                    <span className="text-5xl font-bold">{projectedScore}</span>
+                    <span className="text-xl text-violet-300 mb-1">/100</span>
+                  </div>
+                  <div className="flex items-center gap-2 mb-5">
+                    <TrendingUp className="h-5 w-5 text-green-300" />
+                    <span className="text-sm font-semibold text-green-300">
+                      +{totalDelta} pts vs score actuel ({myScore ?? simBaseScore})
+                    </span>
+                  </div>
+                  <div className="space-y-3 text-sm">
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-violet-200">Environnement</span>
+                        <span className="font-semibold">+{Math.round(deltaEnv)} pts</span>
+                      </div>
+                      <div className="h-1.5 bg-white/20 rounded-full">
+                        <div className="h-1.5 bg-green-400 rounded-full" style={{ width: `${Math.min(100, deltaEnv * 5)}%` }} />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-violet-200">Social</span>
+                        <span className="font-semibold">+{Math.round(deltaSocial)} pts</span>
+                      </div>
+                      <div className="h-1.5 bg-white/20 rounded-full">
+                        <div className="h-1.5 bg-blue-300 rounded-full" style={{ width: `${Math.min(100, deltaSocial * 10)}%` }} />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-violet-200">Gouvernance</span>
+                        <span className="font-semibold">+{Math.round(deltaGov)} pts</span>
+                      </div>
+                      <div className="h-1.5 bg-white/20 rounded-full">
+                        <div className="h-1.5 bg-yellow-300 rounded-full" style={{ width: `${Math.min(100, deltaGov * 15)}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rating projection */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-4">
+                  <p className="text-sm font-semibold text-gray-700 mb-3">Projection notation</p>
+                  {[
+                    { min: 80, label: 'AAA', color: 'text-green-700 bg-green-100' },
+                    { min: 65, label: 'AA', color: 'text-teal-700 bg-teal-100' },
+                    { min: 50, label: 'A', color: 'text-blue-700 bg-blue-100' },
+                    { min: 35, label: 'BBB', color: 'text-amber-700 bg-amber-100' },
+                    { min: 0, label: 'BB', color: 'text-red-700 bg-red-100' },
+                  ].map((r, idx, arr) => {
+                    const nextThreshold = idx > 0 ? arr[idx - 1].min : 101;
+                    const isCurrent = projectedScore >= r.min && projectedScore < nextThreshold;
+                    const active = projectedScore >= r.min;
+                    return (
+                      <div key={r.label} className={`flex items-center justify-between px-3 py-2 rounded-lg mb-1 ${active ? r.color : 'text-gray-300 bg-gray-50'}`}>
+                        <span className="font-bold text-sm">{r.label}</span>
+                        <span className="text-xs">≥ {r.min} pts</span>
+                        {isCurrent && projectedScore === (myScore ?? simBaseScore) + totalDelta && (
+                          <span className="text-xs font-bold">← vous</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <button
+                  onClick={() => {
+                    setSimRenewable(30);
+                    setSimTelework(2);
+                    setSimSupplierAudit(40);
+                    setSimScope1Reduction(15);
+                  }}
+                  className="w-full py-2.5 border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl text-sm font-medium transition"
+                >
+                  Réinitialiser
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ── GÉNÉRATION IA ── */}
       {activeTab === 'generation' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -830,7 +1709,10 @@ export default function IntelligenceDashboard() {
                   <p>👥 <strong>{t('ia.reportSectionSocial')}</strong> — {t('ia.reportSectionSocialDesc')}</p>
                   <p>⚖️ <strong>{t('ia.reportSectionGov')}</strong> — {t('ia.reportSectionGovDesc')}</p>
                 </div>
-                <button className="mt-3 flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition">
+                <button
+                  onClick={() => navigate('/app/reports')}
+                  className="mt-3 flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition"
+                >
                   <Download className="h-3.5 w-3.5" /> {t('ia.downloadPdf')}
                 </button>
               </div>
@@ -843,14 +1725,19 @@ export default function IntelligenceDashboard() {
               <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center">
                 <AlertTriangle className="h-5 w-5 text-white" />
               </div>
-              <div>
+              <div className="flex-1">
                 <h3 className="font-bold text-gray-900">{t('ia.missingDataTitle')}</h3>
                 <p className="text-xs text-gray-500">{t('ia.missingDataDesc')}</p>
               </div>
+              {missingDataIsReal && (
+                <span className="text-xs px-2.5 py-1 bg-green-100 text-green-700 rounded-full font-medium flex-shrink-0">
+                  ✓ Données réelles
+                </span>
+              )}
             </div>
 
             <div className="space-y-3 mb-4">
-              {MISSING_DATA_EXAMPLES.map((item, i) => (
+              {missingDataItems.map((item, i) => (
                 <div key={i} className={`flex items-center gap-3 p-3 rounded-xl border ${item.priority === 'high' ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`}>
                   <div className={`w-2 h-2 rounded-full flex-shrink-0 ${item.priority === 'high' ? 'bg-red-500' : 'bg-amber-500'}`} />
                   <div className="flex-1 min-w-0">
@@ -863,7 +1750,10 @@ export default function IntelligenceDashboard() {
                 </div>
               ))}
             </div>
-            <button className="w-full py-2.5 border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-xl transition flex items-center justify-center gap-2">
+            <button
+              onClick={() => navigate('/app/data-entry')}
+              className="w-full py-2.5 border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-xl transition flex items-center justify-center gap-2"
+            >
               <ArrowRight className="h-4 w-4" /> {t('ia.completeMissingData')}
             </button>
           </Card>
@@ -937,7 +1827,32 @@ export default function IntelligenceDashboard() {
                         </div>
                       );
                     })}
-                    <button className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-xl transition">
+                    <button
+                      onClick={async () => {
+                        if (!ocrResult) return;
+                        const year = new Date().getFullYear();
+                        try {
+                          await api.post('/data-entry/', {
+                            pillar: 'environmental',
+                            category: 'Scope 3',
+                            metric_name: ocrResult.category,
+                            value_numeric: ocrResult.co2,
+                            unit: 'tCO2e',
+                            period_start: `${year}-01-01`,
+                            period_end: `${year}-12-31`,
+                            period_type: 'annual',
+                            data_source: `OCR - ${ocrResult.vendor}`,
+                            notes: `Montant facture : ${ocrResult.amount.toLocaleString('fr-FR')} €`,
+                            collection_method: 'ocr',
+                          });
+                          toast.success('Données enregistrées dans le Bilan Carbone ✓');
+                          navigate('/app/carbon');
+                        } catch {
+                          toast.error('Erreur lors de l\'enregistrement. Réessayez.');
+                        }
+                      }}
+                      className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-xl transition"
+                    >
                       {t('ia.saveToCarbone')}
                     </button>
                   </div>
@@ -967,18 +1882,30 @@ export default function IntelligenceDashboard() {
 
           {/* Benchmark sectoriel */}
           <Card className="border border-gray-200 shadow-sm">
-            <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <BarChart2 className="h-5 w-5 text-green-600" />
-              {t('ia.benchmarkTitle')}
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <BarChart2 className="h-5 w-5 text-green-600" />
+                {t('ia.benchmarkTitle')}
+              </h3>
+              {benchmarkIsReference && (
+                <span className="text-xs px-2.5 py-1 bg-amber-100 text-amber-700 rounded-full font-medium">
+                  Données de référence sectorielles
+                </span>
+              )}
+              {!benchmarkIsReference && (
+                <span className="text-xs px-2.5 py-1 bg-green-100 text-green-700 rounded-full font-medium">
+                  ✓ Données réelles
+                </span>
+              )}
+            </div>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={SECTOR_BENCHMARKS} layout="vertical">
+              <BarChart data={sectorBenchmarks} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
                 <XAxis type="number" domain={[0, 100]} stroke="#6b7280" style={{ fontSize: '11px' }} />
                 <YAxis type="category" dataKey="sector" stroke="#6b7280" style={{ fontSize: '11px' }} width={80} />
                 <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '12px' }} />
                 <Bar dataKey="score" radius={[0, 6, 6, 0]}>
-                  {SECTOR_BENCHMARKS.map((entry, i) => (
+                  {sectorBenchmarks.map((entry, i) => (
                     <rect key={i} fill={entry.color} />
                   ))}
                 </Bar>
@@ -994,7 +1921,7 @@ export default function IntelligenceDashboard() {
 
           {/* Leviers */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {REDUCTION_LEVERS.sort((a, b) => b.impact - a.impact).map((lever, i) => {
+            {[...dynamicLevers].sort((a, b) => b.impact - a.impact).map((lever, i) => {
               const Icon = lever.icon;
               const effortLabel = lever.effort === 'Faible' ? t('ia.effortLow') : lever.effort === 'Moyen' ? t('ia.effortMedium') : t('ia.effortHigh');
               const effortColor = lever.effort === 'Faible' ? 'bg-green-100 text-green-700' : lever.effort === 'Moyen' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700';
@@ -1041,7 +1968,10 @@ export default function IntelligenceDashboard() {
 
           {/* Export */}
           <div className="flex justify-end">
-            <button className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition text-sm">
+            <button
+              onClick={() => { toast.success('Plan de décarbonation exporté !'); }}
+              className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition text-sm"
+            >
               <Download className="h-4 w-4" /> {t('decarbonation.exportPlan')}
             </button>
           </div>

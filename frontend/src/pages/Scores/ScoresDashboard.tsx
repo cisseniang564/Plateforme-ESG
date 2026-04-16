@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import {
   RefreshCw,
   Award,
@@ -10,6 +11,10 @@ import {
   Building2,
   Sparkles,
   ShieldCheck,
+  ChevronRight,
+  ExternalLink,
+  DatabaseZap,
+  Info,
 } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
@@ -19,14 +24,48 @@ import toast from 'react-hot-toast';
 
 export default function ScoresDashboard() {
   const { t } = useTranslation();
-  const { loading, getDashboard, recalculateAll } = useESGScoring();
+  const navigate = useNavigate();
+  const { loading, getDashboard, recalculateAll, populateSampleData } = useESGScoring();
   const [dashboard, setDashboard] = useState<any>(null);
   const [recalculating, setRecalculating] = useState(false);
+  const [populating, setPopulating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [lastLoadedAt, setLastLoadedAt] = useState<Date | null>(null);
+  const [skippedCount, setSkippedCount] = useState(0);
+  // Rang sectoriel dynamique
+  const [sectorRank, setSectorRank] = useState<number | null>(null);
+  const [sectorTotal, setSectorTotal] = useState<number | null>(null);
+  // Sparkline réelle (12 derniers scores)
+  const [sparklinePoints, setSparklinePoints] = useState<number[]>([]);
+  // Modal de confirmation (remplace confirm() natif)
+  const [confirmModal, setConfirmModal] = useState<{ open: boolean; message: string; onConfirm: () => void }>({
+    open: false, message: '', onConfirm: () => {},
+  });
 
   useEffect(() => {
     loadDashboard();
+    // Rang sectoriel
+    import('@/services/api').then(({ default: api }) => {
+      api.get('/benchmarks/sector').then(res => {
+        const d = res.data;
+        const rankStr: string = d?.rank ?? d?.your_rank ?? '';
+        const parts = rankStr.toString().split('/').map((s: string) => parseInt(s.trim(), 10));
+        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+          setSectorRank(parts[0]);
+          setSectorTotal(parts[1]);
+        }
+      }).catch(() => {});
+      // Sparkline : historique des scores
+      api.get('/scores/history').then(res => {
+        const scores: any[] = res.data?.scores ?? res.data ?? [];
+        const pts = [...scores]
+          .reverse()
+          .slice(-12)
+          .map((s: any) => Math.round(s.overall_score ?? s.global_score ?? 0))
+          .filter((v: number) => v > 0);
+        if (pts.length >= 2) setSparklinePoints(pts);
+      }).catch(() => {});
+    });
   }, []);
 
   const loadDashboard = async () => {
@@ -47,31 +86,75 @@ export default function ScoresDashboard() {
     }
   };
 
-  const handleRecalculateAll = async () => {
-    if (!confirm(t('scores.recalculateConfirm'))) {
-      return;
-    }
+  const handleRecalculateAll = () => {
+    setConfirmModal({
+      open: true,
+      message: t('scores.recalculateConfirm', 'Recalculer tous les scores ESG ? Cette opération peut prendre quelques secondes.'),
+      onConfirm: async () => {
+        setConfirmModal(m => ({ ...m, open: false }));
+        try {
+          setRecalculating(true);
+          setErrorMessage('');
+          const result = await recalculateAll(12);
+          if (result) {
+            if (result.successful > 0) await loadDashboard();
+            setSkippedCount(result.skipped ?? 0);
+            if (result.failed > 0) setErrorMessage(`${result.failed} organisation(s) en erreur technique. Vérifiez les logs.`);
+          } else {
+            setErrorMessage(t('scores.recalcFailed'));
+          }
+        } catch {
+          setErrorMessage(t('scores.recalcFailed'));
+          toast.error(t('scores.recalcError'));
+        } finally {
+          setRecalculating(false);
+        }
+      },
+    });
+  };
 
-    try {
-      setRecalculating(true);
-      setErrorMessage('');
+  const handlePopulateSampleData = () => {
+    setConfirmModal({
+      open: true,
+      message: `Générer des données de démonstration pour les ${skippedCount} organisations sans données ? Ces données sont simulées (is_estimated=true).`,
+      onConfirm: async () => {
+        setConfirmModal(m => ({ ...m, open: false }));
+        try {
+          setPopulating(true);
+          const result = await populateSampleData();
+          if (result) {
+            toast.success(`✅ ${result.populated} organisations renseignées (${result.data_points_created} points de données)`);
+            setSkippedCount(0);
+          }
+        } finally {
+          setPopulating(false);
+        }
+      },
+    });
+  };
 
-      const result = await recalculateAll(12);
-
-      if (result) {
-        toast.success(t('scores.recalcSuccess'));
-        await loadDashboard();
-      } else {
-        setErrorMessage(t('scores.recalcFailed'));
-        toast.error(t('scores.recalcFailed'));
-      }
-    } catch (error) {
-      console.error('Erreur recalcul des scores :', error);
-      setErrorMessage(t('scores.recalcFailed'));
-      toast.error(t('scores.recalcError'));
-    } finally {
-      setRecalculating(false);
-    }
+  const handleExportCSV = () => {
+    const performers = dashboard?.top_performers || [];
+    if (!performers.length) return;
+    const headers = ['Rang', 'Organisation', 'Score Global', 'Rating', 'Environnement', 'Social', 'Gouvernance'];
+    const rows = performers.map((org: any, i: number) => [
+      i + 1,
+      org.name,
+      org.score?.toFixed(1) || '0',
+      org.rating,
+      org.environmental?.toFixed(0) || '0',
+      org.social?.toFixed(0) || '0',
+      org.governance?.toFixed(0) || '0',
+    ]);
+    const csv = [headers, ...rows].map((r) => r.join(';')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `scores-esg-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Export CSV téléchargé');
   };
 
   const getRatingColor = (rating: string) => {
@@ -141,6 +224,7 @@ export default function ScoresDashboard() {
       iconColor: 'text-teal-600',
       border: 'border-teal-500',
       helper: t('scores.analyzedOrgsHelper'),
+      onClick: () => navigate('/app/organizations'),
     },
     {
       title: t('scores.avgCompleteness'),
@@ -201,6 +285,30 @@ export default function ScoresDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Modal de confirmation (remplace confirm() natif) */}
+      {confirmModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <h3 className="text-base font-semibold text-gray-900">Confirmation</h3>
+            <p className="mt-2 text-sm text-gray-600">{confirmModal.message}</p>
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmModal(m => ({ ...m, open: false }))}
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={confirmModal.onConfirm}
+                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+              >
+                Confirmer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-3xl bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-800 p-8 text-white shadow-xl">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -273,6 +381,45 @@ export default function ScoresDashboard() {
         </Card>
       )}
 
+      {skippedCount > 0 && (
+        <Card className="border border-amber-200 bg-amber-50">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-start gap-3">
+              <Info className="mt-0.5 h-5 w-5 text-amber-600 shrink-0" />
+              <div>
+                <p className="font-medium text-amber-900">
+                  {skippedCount} organisation{skippedCount > 1 ? 's' : ''} sans données ESG
+                </p>
+                <p className="mt-1 text-sm text-amber-700">
+                  Ces organisations n'ont aucune donnée d'indicateur dans les 12 derniers mois.
+                  Importez des données ou générez des données de démonstration pour les scorer.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => navigate('/app/data-entry')}
+                className="border-amber-300 text-amber-800 hover:bg-amber-100"
+              >
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Saisir des données
+              </Button>
+              <Button
+                size="sm"
+                onClick={handlePopulateSampleData}
+                disabled={populating}
+                className="bg-amber-600 text-white hover:bg-amber-700"
+              >
+                {populating ? <Spinner size="sm" /> : <DatabaseZap className="mr-2 h-4 w-4" />}
+                Générer données de démo
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {loading ? (
         <div className="flex justify-center py-20">
           <Spinner size="lg" />
@@ -283,7 +430,11 @@ export default function ScoresDashboard() {
             {statCards.map((item) => {
               const Icon = item.icon;
               return (
-                <Card key={item.title} className={`border-l-4 ${item.border}`}>
+                <Card
+                  key={item.title}
+                  className={`border-l-4 ${item.border}${(item as any).onClick ? ' cursor-pointer transition-shadow hover:shadow-md' : ''}`}
+                  onClick={(item as any).onClick}
+                >
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-sm text-gray-600">{item.title}</p>
@@ -293,8 +444,11 @@ export default function ScoresDashboard() {
                       </div>
                       <p className="mt-2 text-xs text-gray-500">{item.helper}</p>
                     </div>
-                    <div className={`rounded-2xl p-3 ${item.iconWrap}`}>
-                      <Icon className={`h-6 w-6 ${item.iconColor}`} />
+                    <div className="flex flex-col items-end gap-2">
+                      <div className={`rounded-2xl p-3 ${item.iconWrap}`}>
+                        <Icon className={`h-6 w-6 ${item.iconColor}`} />
+                      </div>
+                      {(item as any).onClick && <ChevronRight className="h-4 w-4 text-gray-400" />}
                     </div>
                   </div>
                 </Card>
@@ -305,23 +459,47 @@ export default function ScoresDashboard() {
           {/* Classement sectoriel + Sparkline */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Classement sectoriel */}
-            <Card className="border-l-4 border-green-500">
-              <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <Award className="h-5 w-5 text-green-600" />
-                {t('scores.sectorRankTitle')}
-              </h3>
+            <Card
+              className="border-l-4 border-green-500 cursor-pointer transition-shadow hover:shadow-md"
+              onClick={() => navigate('/app/benchmarking')}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                  <Award className="h-5 w-5 text-green-600" />
+                  {t('scores.sectorRankTitle')}
+                </h3>
+                <ExternalLink className="h-4 w-4 text-gray-400" />
+              </div>
               <div className="flex items-center gap-3 mb-3">
-                <span className="text-3xl font-bold text-green-700">3e</span>
-                <span className="text-sm text-gray-600">{t('scores.sectorRankOf47')}</span>
+                <span className="text-3xl font-bold text-green-700">
+                  {sectorRank !== null ? `${sectorRank}e` : '—'}
+                </span>
+                <span className="text-sm text-gray-600">
+                  {sectorTotal !== null
+                    ? t('scores.sectorRankOf', { total: sectorTotal, defaultValue: `sur ${sectorTotal} entreprises` })
+                    : t('scores.sectorRankOf47')}
+                </span>
               </div>
-              <div className="relative h-3 bg-gray-200 rounded-full mb-2">
-                <div className="absolute h-3 bg-green-100 rounded-full" style={{ width: '100%' }} />
-                <div
-                  className="absolute w-4 h-4 bg-green-600 rounded-full border-2 border-white shadow"
-                  style={{ left: 'calc(6% - 8px)', top: '-2px' }}
-                />
-              </div>
-              <p className="text-xs text-green-700 font-medium">{t('scores.sectorTop10')}</p>
+              {sectorRank !== null && sectorTotal !== null ? (
+                <div className="relative h-3 bg-gray-200 rounded-full mb-2">
+                  <div className="absolute h-3 bg-green-100 rounded-full" style={{ width: '100%' }} />
+                  <div
+                    className="absolute w-4 h-4 bg-green-600 rounded-full border-2 border-white shadow"
+                    style={{ left: `calc(${((sectorRank - 1) / Math.max(sectorTotal - 1, 1)) * 100}% - 8px)`, top: '-2px' }}
+                  />
+                </div>
+              ) : (
+                <div className="h-3 bg-gray-100 rounded-full mb-2 animate-pulse" />
+              )}
+              <p className="text-xs text-green-700 font-medium">
+                {sectorRank !== null && sectorTotal !== null
+                  ? sectorRank <= Math.ceil(sectorTotal * 0.1)
+                    ? t('scores.sectorTop10')
+                    : sectorRank <= Math.ceil(sectorTotal * 0.25)
+                      ? t('scores.sectorTop25', { defaultValue: 'Top 25% du secteur' })
+                      : t('scores.sectorAboveAvg', { defaultValue: 'Au-dessus de la moyenne' })
+                  : t('scores.sectorTop10')}
+              </p>
             </Card>
 
             {/* Evolution 12 mois sparkline */}
@@ -331,7 +509,9 @@ export default function ScoresDashboard() {
                 {t('scores.evolution12mTitle')}
               </h3>
               {(() => {
-                const points = [58, 59, 60, 59, 61, 62, 63, 64, 64, 65, 67, 69];
+                const points = sparklinePoints.length >= 2
+                  ? sparklinePoints
+                  : [58, 59, 60, 59, 61, 62, 63, 64, 64, 65, 67, 69];
                 const w = 260, h = 60, pad = 8;
                 const minV = Math.min(...points) - 2;
                 const maxV = Math.max(...points) + 2;
@@ -422,8 +602,14 @@ export default function ScoresDashboard() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl bg-amber-50 p-4">
-                  <p className="text-sm text-amber-700">{t('scores.watchPoint')}</p>
+                <div
+                  className={`rounded-2xl bg-amber-50 p-4${statistics?.average_completeness < 60 ? ' cursor-pointer hover:bg-amber-100 transition-colors' : ''}`}
+                  onClick={() => statistics?.average_completeness < 60 && navigate('/app/data-entry')}
+                >
+                  <p className="text-sm text-amber-700 flex items-center justify-between">
+                    {t('scores.watchPoint')}
+                    {statistics?.average_completeness < 60 && <ChevronRight className="h-4 w-4" />}
+                  </p>
                   <p className="mt-2 text-sm font-medium text-amber-900">
                     {statistics?.average_completeness < 60
                       ? t('scores.lowCompletenessWarning')
@@ -440,13 +626,14 @@ export default function ScoresDashboard() {
                 <h2 className="text-xl font-semibold text-gray-900">{t('scores.top5Title')}</h2>
                 <p className="mt-1 text-sm text-gray-500">{t('scores.top5Sub')}</p>
               </div>
-              <Button variant="secondary" size="sm">
+              <Button variant="secondary" size="sm" onClick={handleExportCSV}>
                 <Download className="mr-2 h-4 w-4" />
                 {t('scores.export')}
               </Button>
             </div>
 
             {dashboard?.top_performers?.length ? (
+              <>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
@@ -462,14 +649,22 @@ export default function ScoresDashboard() {
                   </thead>
                   <tbody>
                     {dashboard.top_performers.map((org: any, index: number) => (
-                      <tr key={org.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <tr
+                        key={org.id}
+                        className="border-b border-gray-100 hover:bg-purple-50 cursor-pointer transition-colors"
+                        onClick={() => navigate(`/app/organizations/${org.id}`)}
+                        title={`Voir ${org.name}`}
+                      >
                         <td className="py-4">
                           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 text-sm font-bold text-purple-700">
                             {index + 1}
                           </div>
                         </td>
                         <td className="py-4">
-                          <p className="font-medium text-gray-900">{org.name}</p>
+                          <p className="font-medium text-gray-900 flex items-center gap-1">
+                            {org.name}
+                            <ChevronRight className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100" />
+                          </p>
                         </td>
                         <td className="py-4">
                           <p className="text-lg font-bold text-gray-900">{org.score?.toFixed(1) || '0.0'}</p>
@@ -499,6 +694,16 @@ export default function ScoresDashboard() {
                   </tbody>
                 </table>
               </div>
+              <div className="mt-4 flex justify-end">
+                <button
+                  className="flex items-center gap-1 text-sm text-purple-600 hover:text-purple-800 font-medium"
+                  onClick={() => navigate('/app/organizations')}
+                >
+                  Voir toutes les organisations
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+              </>
             ) : (
               <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-6 py-12 text-center text-sm text-gray-500">
                 {t('scores.noPerformers')}

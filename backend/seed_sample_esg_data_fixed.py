@@ -102,7 +102,7 @@ async def seed_sample_data():
             
             # Insérer les données
             count = 0
-            calc_date = date(2026, 12, 31)
+            calc_date = date.today() - timedelta(days=30)
             
             for org_id, org_name in organizations:
                 print(f"  📊 {org_name}...")

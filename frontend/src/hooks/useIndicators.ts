@@ -11,7 +11,7 @@ export const useIndicators = (pillar?: string) => {
     const fetchIndicators = async () => {
       try {
         const params = pillar ? { pillar } : {};
-        const response = await api.get('/indicators', { params });
+        const response = await api.get('/indicators/', { params });
         setIndicators(response.data.items || []);
         setError(null);
       } catch (err: any) {

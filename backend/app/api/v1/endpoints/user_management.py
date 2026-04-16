@@ -6,8 +6,9 @@ from typing import Optional
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from sqlalchemy import select, func, or_
+from sqlalchemy import select, func, or_, text
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 from pydantic import BaseModel, EmailStr
 from passlib.context import CryptContext
 
@@ -16,6 +17,7 @@ from app.middleware.auth_middleware import get_current_user_id
 from app.models.user import User
 from app.models.role import Role
 from app.models.audit_log import AuditLog
+from app.core.permissions import require_role, Roles
 
 router = APIRouter()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -87,10 +89,11 @@ async def list_users(
     search: Optional[str] = Query(None),
     role_id: Optional[UUID] = Query(None),
     is_active: Optional[bool] = Query(None),
+    _: None = Depends(require_role(*Roles.MANAGER_OR_ABOVE)),
     user_id: UUID = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
-    """List all users in tenant with filtering."""
+    """Lister les utilisateurs du tenant (manager+ requis)."""
     
     user_query = select(User).where(User.id == user_id)
     user_result = await db.execute(user_query)
@@ -183,42 +186,60 @@ async def list_roles(
 async def create_user(
     data: UserCreate,
     request: Request,
+    _: None = Depends(require_role(*Roles.ADMIN_OR_ABOVE)),
     user_id: UUID = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
-    """Create a new user (Admin only)."""
+    """Créer un utilisateur (esg_admin / tenant_admin uniquement)."""
     
-    user_query = select(User).where(User.id == user_id)
-    user_result = await db.execute(user_query)
-    current_user = user_result.scalar_one_or_none()
-    
-    if not current_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    existing_query = select(User).where(
-        User.email == data.email,
-        User.tenant_id == current_user.tenant_id
+    # Récupérer le tenant_id du user courant via SQL brut (contourne RLS)
+    cur = await db.execute(
+        text("SELECT tenant_id FROM users WHERE id = :uid"),
+        {"uid": str(user_id)},
     )
-    existing_result = await db.execute(existing_query)
-    if existing_result.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Email already exists")
-    
+    cur_row = cur.first()
+    if not cur_row:
+        raise HTTPException(status_code=404, detail="User not found")
+    tenant_id = cur_row.tenant_id
+
+    # Vérifier doublon email (global, sans RLS) via SQL brut
+    dup = await db.execute(
+        text("SELECT id FROM users WHERE email = :email"),
+        {"email": data.email},
+    )
+    if dup.first():
+        raise HTTPException(status_code=400, detail="Cet email est déjà utilisé")
+
+    # Si role_id non fourni, prendre le rôle 'viewer' par défaut
+    role_id = data.role_id
+    if not role_id:
+        default_role = await db.execute(
+            text("SELECT id FROM roles WHERE name = 'viewer' LIMIT 1")
+        )
+        row = default_role.first()
+        if row:
+            role_id = row.id
+
     new_user = User(
-        tenant_id=current_user.tenant_id,
+        tenant_id=tenant_id,
         email=data.email,
         first_name=data.first_name,
         last_name=data.last_name,
-        role_id=data.role_id,
+        role_id=role_id,
         password_hash=pwd_context.hash(data.password),
         is_active=True,
     )
-    
+
     db.add(new_user)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(status_code=400, detail="Cet email est déjà utilisé")
     await db.refresh(new_user)
     
     await log_audit(
-        db, user_id, current_user.tenant_id,
+        db, user_id, tenant_id,
         "create", "user", new_user.id,
         f"Created user {data.email}",
         request
@@ -236,43 +257,55 @@ async def update_user(
     target_user_id: UUID,
     data: UserUpdate,
     request: Request,
+    _: None = Depends(require_role(*Roles.ADMIN_OR_ABOVE)),
     user_id: UUID = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     """Update user fields (Admin only)."""
 
-    user_query = select(User).where(User.id == user_id)
-    user_result = await db.execute(user_query)
-    current_user = user_result.scalar_one_or_none()
-
-    if not current_user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    target_query = select(User).where(
-        User.id == target_user_id,
-        User.tenant_id == current_user.tenant_id,
+    # Récupérer le tenant_id du user courant via SQL brut (contourne RLS)
+    cur = await db.execute(
+        text("SELECT tenant_id FROM users WHERE id = :uid"),
+        {"uid": str(user_id)},
     )
-    target_result = await db.execute(target_query)
-    target_user = target_result.scalar_one_or_none()
+    cur_row = cur.first()
+    if not cur_row:
+        raise HTTPException(status_code=404, detail="User not found")
+    tenant_id = cur_row.tenant_id
 
-    if not target_user:
+    # Récupérer l'utilisateur cible (même tenant)
+    target_result = await db.execute(
+        text("SELECT id, email FROM users WHERE id = :tid AND tenant_id = :ten"),
+        {"tid": str(target_user_id), "ten": str(tenant_id)},
+    )
+    target_row = target_result.first()
+    if not target_row:
         raise HTTPException(status_code=404, detail="Target user not found")
 
+    # Construire la mise à jour dynamiquement
+    updates = {}
     if data.first_name is not None:
-        target_user.first_name = data.first_name
+        updates["first_name"] = data.first_name
     if data.last_name is not None:
-        target_user.last_name = data.last_name
+        updates["last_name"] = data.last_name
     if data.role_id is not None:
-        target_user.role_id = data.role_id
+        updates["role_id"] = str(data.role_id)
     if data.is_active is not None:
-        target_user.is_active = data.is_active
+        updates["is_active"] = data.is_active
 
-    await db.commit()
+    if updates:
+        set_clause = ", ".join(f"{k} = :{k}" for k in updates)
+        updates["tid"] = str(target_user_id)
+        await db.execute(
+            text(f"UPDATE users SET {set_clause} WHERE id = :tid"),
+            updates,
+        )
+        await db.commit()
 
     await log_audit(
-        db, user_id, current_user.tenant_id,
+        db, user_id, tenant_id,
         "update", "user", target_user_id,
-        f"Updated user {target_user.email}",
+        f"Updated user {target_row.email}",
         request,
     )
 
@@ -283,38 +316,44 @@ async def update_user(
 async def delete_user(
     target_user_id: UUID,
     request: Request,
+    _: None = Depends(require_role(Roles.TENANT_ADMIN)),
     user_id: UUID = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
-    """Delete a user (Admin only). Cannot delete yourself."""
-
-    user_query = select(User).where(User.id == user_id)
-    user_result = await db.execute(user_query)
-    current_user = user_result.scalar_one_or_none()
-
-    if not current_user:
-        raise HTTPException(status_code=404, detail="User not found")
+    """Supprimer un utilisateur (tenant_admin uniquement). Impossible de se supprimer soi-même."""
 
     if target_user_id == user_id:
         raise HTTPException(status_code=400, detail="Vous ne pouvez pas supprimer votre propre compte")
 
-    target_query = select(User).where(
-        User.id == target_user_id,
-        User.tenant_id == current_user.tenant_id,
+    # Récupérer le tenant_id du user courant via SQL brut (contourne RLS)
+    cur = await db.execute(
+        text("SELECT tenant_id FROM users WHERE id = :uid"),
+        {"uid": str(user_id)},
     )
-    target_result = await db.execute(target_query)
-    target_user = target_result.scalar_one_or_none()
+    cur_row = cur.first()
+    if not cur_row:
+        raise HTTPException(status_code=404, detail="User not found")
+    tenant_id = cur_row.tenant_id
 
-    if not target_user:
+    # Vérifier que la cible appartient au même tenant
+    target_result = await db.execute(
+        text("SELECT id, email FROM users WHERE id = :tid AND tenant_id = :ten"),
+        {"tid": str(target_user_id), "ten": str(tenant_id)},
+    )
+    target_row = target_result.first()
+    if not target_row:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
 
-    email = target_user.email
+    email = target_row.email
 
-    await db.delete(target_user)
+    await db.execute(
+        text("DELETE FROM users WHERE id = :tid"),
+        {"tid": str(target_user_id)},
+    )
     await db.commit()
 
     await log_audit(
-        db, user_id, current_user.tenant_id,
+        db, user_id, tenant_id,
         "delete", "user", target_user_id,
         f"Deleted user {email}",
         request,

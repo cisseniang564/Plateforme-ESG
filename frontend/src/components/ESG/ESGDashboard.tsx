@@ -174,7 +174,7 @@ function DeltaBadge({ label, delta }: { label: string; delta: number | null }) {
     >
       {up ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
       {label}: {up ? '+' : ''}
-      {delta.toFixed(1)}
+      {(delta ?? 0).toFixed(1)}
     </span>
   );
 }
@@ -538,28 +538,28 @@ export const ESGDashboard: React.FC<{ companyId: string }> = ({ companyId }) => 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <StatCard
           title="Score global"
-          value={latest.overall_score.toFixed(0)}
+          value={Math.round(latest.overall_score ?? 0).toString()}
           subtitle="Sur 100"
           icon={<ActivityIcon />}
           accentClass="bg-gray-900 text-white"
         />
         <StatCard
           title="Environnement"
-          value={latest.environmental_score.toFixed(0)}
+          value={Math.round(latest.environmental_score ?? 0).toString()}
           subtitle="Pilier E"
           icon={<Leaf className="h-6 w-6 text-emerald-700" />}
           accentClass="bg-emerald-50"
         />
         <StatCard
           title="Social"
-          value={latest.social_score.toFixed(0)}
+          value={Math.round(latest.social_score ?? 0).toString()}
           subtitle="Pilier S"
           icon={<Users className="h-6 w-6 text-blue-700" />}
           accentClass="bg-blue-50"
         />
         <StatCard
           title="Gouvernance"
-          value={latest.governance_score.toFixed(0)}
+          value={Math.round(latest.governance_score ?? 0).toString()}
           subtitle="Pilier G"
           icon={<Gavel className="h-6 w-6 text-violet-700" />}
           accentClass="bg-violet-50"
@@ -679,7 +679,7 @@ export const ESGDashboard: React.FC<{ companyId: string }> = ({ companyId }) => 
                 </div>
 
                 <div className="mt-3 flex items-end justify-between">
-                  <div className="text-3xl font-semibold text-gray-900">{score.toFixed(0)}</div>
+                  <div className="text-3xl font-semibold text-gray-900">{Math.round(score ?? 0)}</div>
                   <div className="text-sm text-gray-500">/100</div>
                 </div>
 

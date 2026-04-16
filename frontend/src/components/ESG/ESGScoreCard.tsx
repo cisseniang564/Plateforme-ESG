@@ -44,8 +44,8 @@ export default function ESGScoreCard({ score, previousScore }: ESGScoreCardProps
     if (!previousScore) return null;
     const diff = score.overall_score - previousScore;
     
-    if (diff > 2) return { icon: TrendingUp, color: 'text-green-600', text: `+${diff.toFixed(1)}` };
-    if (diff < -2) return { icon: TrendingDown, color: 'text-red-600', text: diff.toFixed(1) };
+    if (diff > 2) return { icon: TrendingUp, color: 'text-green-600', text: `+${(diff ?? 0).toFixed(1)}` };
+    if (diff < -2) return { icon: TrendingDown, color: 'text-red-600', text: (diff ?? 0).toFixed(1) };
     return { icon: Minus, color: 'text-gray-600', text: '~0' };
   };
 
@@ -59,7 +59,7 @@ export default function ESGScoreCard({ score, previousScore }: ESGScoreCardProps
           <h3 className="text-sm font-medium text-gray-500 mb-1">Score ESG Global</h3>
           <div className="flex items-baseline gap-3">
             <span className={`text-5xl font-bold ${getScoreColor(score.overall_score)}`}>
-              {score.overall_score.toFixed(1)}
+              {Math.round(score.overall_score)}
             </span>
             <span className="text-2xl text-gray-400">/100</span>
           </div>
@@ -85,7 +85,7 @@ export default function ESGScoreCard({ score, previousScore }: ESGScoreCardProps
           <div className="flex items-center justify-between text-sm mb-1">
             <span className="font-medium text-gray-700">🌍 Environmental</span>
             <span className={`font-semibold ${getScoreColor(score.pillar_scores.environmental)}`}>
-              {score.pillar_scores.environmental.toFixed(1)}
+              {Math.round(score.pillar_scores?.environmental ?? 0)}
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
@@ -100,7 +100,7 @@ export default function ESGScoreCard({ score, previousScore }: ESGScoreCardProps
           <div className="flex items-center justify-between text-sm mb-1">
             <span className="font-medium text-gray-700">👥 Social</span>
             <span className={`font-semibold ${getScoreColor(score.pillar_scores.social)}`}>
-              {score.pillar_scores.social.toFixed(1)}
+              {Math.round(score.pillar_scores?.social ?? 0)}
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
@@ -115,7 +115,7 @@ export default function ESGScoreCard({ score, previousScore }: ESGScoreCardProps
           <div className="flex items-center justify-between text-sm mb-1">
             <span className="font-medium text-gray-700">⚖️ Governance</span>
             <span className={`font-semibold ${getScoreColor(score.pillar_scores.governance)}`}>
-              {score.pillar_scores.governance.toFixed(1)}
+              {Math.round(score.pillar_scores?.governance ?? 0)}
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
@@ -131,7 +131,7 @@ export default function ESGScoreCard({ score, previousScore }: ESGScoreCardProps
       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200">
         <div>
           <p className="text-xs text-gray-500 mb-1">Complétude des données</p>
-          <p className="text-lg font-semibold text-gray-900">{score.data_completeness.toFixed(0)}%</p>
+          <p className="text-lg font-semibold text-gray-900">{Math.round(score.data_completeness ?? 0)}%</p>
         </div>
         <div>
           <p className="text-xs text-gray-500 mb-1">Niveau de confiance</p>
@@ -140,13 +140,13 @@ export default function ESGScoreCard({ score, previousScore }: ESGScoreCardProps
         {score.percentile_rank !== undefined && (
           <div>
             <p className="text-xs text-gray-500 mb-1">Percentile sectoriel</p>
-            <p className="text-lg font-semibold text-gray-900">{score.percentile_rank.toFixed(0)}%</p>
+            <p className="text-lg font-semibold text-gray-900">{Math.round(score.percentile_rank ?? 0)}%</p>
           </div>
         )}
         {score.sector_median !== undefined && (
           <div>
             <p className="text-xs text-gray-500 mb-1">Médiane secteur</p>
-            <p className="text-lg font-semibold text-gray-900">{score.sector_median.toFixed(1)}</p>
+            <p className="text-lg font-semibold text-gray-900">{Math.round(score.sector_median ?? 0)}</p>
           </div>
         )}
       </div>

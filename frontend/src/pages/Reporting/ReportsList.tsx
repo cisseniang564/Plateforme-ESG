@@ -37,8 +37,7 @@ export default function ReportsList() {
   const loadReports = async () => {
     setLoading(true);
     try {
-      const data = await reportsService.getReports();
-      const items = Array.isArray(data) ? data : data?.items || data?.reports || [];
+      const items = await reportsService.getReports();
       setReports(items);
     } catch {
       setReports([]);

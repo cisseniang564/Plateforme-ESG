@@ -140,7 +140,7 @@ async def seed_everything():
                             "tenant_id": str(tenant_id),
                             "org_id": str(org_id),
                             "ind_id": str(ind_id),
-                            "date": date(2026, 12, 31),
+                            "date": date.today() - timedelta(days=30),
                             "value": value,
                             "unit": unit
                         })

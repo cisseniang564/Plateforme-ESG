@@ -85,12 +85,19 @@ class ScoreCalculationService:
                 pillar_scores[pillar] = 0.0
         
         overall = sum(pillar_scores.values()) / 3 if pillar_scores else 0.0
-        
+
+        # Derive letter rating from overall score
+        if overall >= 80:   rating = "A"
+        elif overall >= 65: rating = "B"
+        elif overall >= 50: rating = "C"
+        elif overall >= 35: rating = "D"
+        else:               rating = "E"
+
         existing_query = select(ESGScore).where(
             ESGScore.tenant_id == tenant_id,
             ESGScore.calculation_date == calculation_date
         )
-        
+
         if organization_id:
             existing_query = existing_query.where(
                 ESGScore.organization_id == organization_id
@@ -108,8 +115,8 @@ class ScoreCalculationService:
             existing_score.environmental_score = pillar_scores.get('environmental', 0.0)
             existing_score.social_score = pillar_scores.get('social', 0.0)
             existing_score.governance_score = pillar_scores.get('governance', 0.0)
-            existing_score.data_points_count = total_data_points
-            existing_score.calculated_at = datetime.utcnow()
+            existing_score.rating = rating
+            existing_score.data_completeness = round(total_data_points / max(total_data_points, 1), 2)
             score = existing_score
         else:
             score = ESGScore(
@@ -120,8 +127,9 @@ class ScoreCalculationService:
                 environmental_score=pillar_scores.get('environmental', 0.0),
                 social_score=pillar_scores.get('social', 0.0),
                 governance_score=pillar_scores.get('governance', 0.0),
+                rating=rating,
                 calculation_method='weighted_average',
-                data_points_count=total_data_points,
+                data_completeness=round(total_data_points / max(total_data_points, 1), 2),
             )
             self.db.add(score)
         
@@ -201,7 +209,7 @@ class ScoreCalculationService:
                 'environmental_score': score.environmental_score,
                 'social_score': score.social_score,
                 'governance_score': score.governance_score,
-                'grade': score.grade,
+                'grade': score.rating,
             })
         
         # Sort by overall score descending

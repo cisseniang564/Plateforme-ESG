@@ -10,12 +10,25 @@ export const useAuth = () => {
   const navigate = useNavigate();
   const auth = useSelector((state: RootState) => state.auth);
 
-  const login = async (email: string, password: string): Promise<void> => {
+  const login = async (email: string, password: string): Promise<{ requires_2fa?: boolean; temp_token?: string }> => {
     try {
       const response = await authService.login({ email, password });
-      // Tokens stored in localStorage by authService.login()
+
+      // 2FA required — return info to the caller (Login page handles it)
+      if (response.requires_2fa) {
+        return { requires_2fa: true, temp_token: response.temp_token };
+      }
+
+      // Normal login — tokens are stored by authService.login()
       dispatch(setUser(response.user));
-      navigate('/app'); // ← MODIFIÉ: redirection vers /app au lieu de /
+
+      // Onboarding guard: redirect to setup wizard on first login
+      if (response.user?.needs_onboarding) {
+        navigate('/app/setup', { replace: true });
+      } else {
+        navigate('/app', { replace: true });
+      }
+      return {};
     } catch (err: unknown) {
       const message =
         err instanceof Error

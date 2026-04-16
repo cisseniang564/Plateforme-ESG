@@ -94,6 +94,7 @@ export default function IndicatorDetail() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submittingIds, setSubmittingIds] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState({ date: new Date().toISOString().split('T')[0], value: '', notes: '', is_estimated: false });
 
   useEffect(() => {
@@ -164,12 +165,20 @@ export default function IndicatorDetail() {
   };
 
   const handleSubmitForReview = async (entryId: string) => {
+    setSubmittingIds(prev => new Set(prev).add(entryId));
     try {
-      await api.post('/validation/submit-for-review', { entry_ids: [entryId] });
-      toast.success(t('indicators.submitSuccess'));
-      await loadData();
+      const res = await api.post('/validation/submit-for-review', { entry_ids: [entryId] });
+      const updated = res.data?.updated ?? 0;
+      if (updated > 0) {
+        toast.success(t('indicators.submitSuccess') || 'Entrée soumise pour validation');
+      } else {
+        toast.error('Impossible de soumettre cette entrée (statut non compatible)');
+      }
+      await loadAll();
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || t('indicators.submitError'));
+      toast.error(err.response?.data?.detail || t('indicators.submitError') || 'Erreur lors de la soumission');
+    } finally {
+      setSubmittingIds(prev => { const s = new Set(prev); s.delete(entryId); return s; });
     }
   };
 
@@ -549,13 +558,56 @@ export default function IndicatorDetail() {
       {data.length > 0 && (
         <Card>
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">
-              {t('indicators.dataPointsTable')} ({data.length})
-            </h3>
-            <Button variant="secondary" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              {t('indicators.exportCSV')}
-            </Button>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {t('indicators.dataPointsTable')} ({data.length})
+              </h3>
+              {/* Draft count */}
+              {(() => {
+                const draftCount = data.filter(p => !p.validation_status || p.validation_status === 'draft').length;
+                return draftCount > 0 ? (
+                  <p className="text-xs text-amber-600 mt-0.5">
+                    {draftCount} entrée{draftCount > 1 ? 's' : ''} en brouillon — à soumettre pour validation
+                  </p>
+                ) : null;
+              })()}
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Bulk submit all drafts */}
+              {data.some(p => !p.validation_status || p.validation_status === 'draft') && (
+                <button
+                  onClick={async () => {
+                    const draftIds = data
+                      .filter(p => !p.validation_status || p.validation_status === 'draft')
+                      .map(p => p.id);
+                    if (!draftIds.length) return;
+                    draftIds.forEach(id => setSubmittingIds(prev => new Set(prev).add(id)));
+                    try {
+                      const res = await api.post('/validation/submit-for-review', { entry_ids: draftIds });
+                      const updated = res.data?.updated ?? 0;
+                      if (updated > 0) {
+                        toast.success(`${updated} entrée${updated > 1 ? 's' : ''} soumise${updated > 1 ? 's' : ''} pour validation`);
+                      } else {
+                        toast.error('Aucune entrée mise à jour');
+                      }
+                      await loadAll();
+                    } catch (err: any) {
+                      toast.error(err.response?.data?.detail || 'Erreur lors de la soumission groupée');
+                    } finally {
+                      setSubmittingIds(new Set());
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  Soumettre tout ({data.filter(p => !p.validation_status || p.validation_status === 'draft').length})
+                </button>
+              )}
+              <Button variant="secondary" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                {t('indicators.exportCSV')}
+              </Button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -598,34 +650,39 @@ export default function IndicatorDetail() {
                       {point.validation_status === 'approved' ? (
                         <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
                           <CheckCircle className="h-4 w-4" />
-                          {t('indicators.approved')}
+                          {t('indicators.approved') || 'Approuvé'}
                         </span>
                       ) : point.validation_status === 'pending_review' ? (
                         <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
                           <Send className="h-4 w-4" />
-                          {t('indicators.inReview')}
+                          {t('indicators.inReview') || 'En révision'}
                         </span>
                       ) : point.validation_status === 'rejected' ? (
                         <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">
                           <XCircle className="h-4 w-4" />
-                          {t('indicators.rejected')}
+                          {t('indicators.rejected') || 'Rejeté'}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-sm font-medium">
                           <Clock className="h-4 w-4" />
-                          {t('indicators.draft')}
+                          {t('indicators.draft') || 'Brouillon'}
                         </span>
                       )}
                     </td>
                     <td className="py-4 px-6">
-                      {point.validation_status === 'draft' && (
+                      {/* Show Soumettre for draft OR null/undefined (old entries without explicit status) */}
+                      {(!point.validation_status || point.validation_status === 'draft') && (
                         <button
                           onClick={() => handleSubmitForReview(point.id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
-                          title={t('indicators.submitForValidation')}
+                          disabled={submittingIds.has(point.id)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-colors"
+                          title={t('indicators.submitForValidation') || 'Soumettre pour validation'}
                         >
-                          <Send className="h-3.5 w-3.5" />
-                          {t('indicators.submit')}
+                          {submittingIds.has(point.id)
+                            ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                            : <Send className="h-3.5 w-3.5" />
+                          }
+                          {submittingIds.has(point.id) ? 'Envoi…' : (t('indicators.submit') || 'Soumettre')}
                         </button>
                       )}
                     </td>

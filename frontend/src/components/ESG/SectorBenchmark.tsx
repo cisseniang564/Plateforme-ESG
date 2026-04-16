@@ -27,7 +27,7 @@ export const SectorBenchmark: React.FC<Props> = ({ organizationId, sector }) => 
   const fetchBenchmark = async () => {
     try {
       // Récupérer d'abord le score pour avoir le secteur
-      const scoreResponse = await api.get(`/esg/scoring/organization/${organizationId}`);
+      const scoreResponse = await api.get(`/esg-scoring/organization/${organizationId}`);
       const scoreData = scoreResponse.data;
       
       // Récupérer les benchmarks

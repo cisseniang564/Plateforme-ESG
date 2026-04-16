@@ -24,6 +24,7 @@ class IntegrationType(str, enum.Enum):
     EXCEL_ONLINE = "excel_online"
     LOOKER = "looker"
     CUSTOM_API = "custom_api"
+    ENEDIS = "enedis"
 
 
 class Integration(Base, UUIDMixin, TenantMixin, TimestampMixin):

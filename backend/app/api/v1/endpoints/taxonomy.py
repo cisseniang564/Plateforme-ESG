@@ -1,13 +1,27 @@
 """EU Taxonomy Regulation 2020/852 - Alignment assessment endpoints."""
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
 from datetime import datetime
+import json
+import logging
 
 from app.dependencies import get_current_user
 from app.models.user import User
+from app.config import settings
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/taxonomy", tags=["EU Taxonomy"])
+
+
+def _get_redis():
+    try:
+        import redis as _redis
+        redis_url = str(settings.REDIS_URL) if settings.REDIS_URL else "redis://redis:6379/0"
+        return _redis.from_url(redis_url, decode_responses=True, socket_connect_timeout=2)
+    except Exception as e:
+        logger.warning("Taxonomy: Redis unavailable — %s", e)
+        return None
 
 # ─── Static EU Taxonomy Reference Data ───────────────────────────────────────
 
@@ -255,4 +269,73 @@ async def get_taxonomy_kpis(current_user: User = Depends(get_current_user)):
         "regulation": "EU 2020/852",
         "last_update": "2023-12-01",
         "reporting_framework": "Annexes I & II - Actes délégués climatiques",
+    }
+
+
+@router.get("/plan", response_model=Dict[str, Any])
+async def get_taxonomy_plan(current_user: User = Depends(get_current_user)):
+    """Load the tenant's saved taxonomy assessment plan from Redis."""
+    r = _get_redis()
+    if r:
+        try:
+            key = f"taxonomy:plan:{current_user.tenant_id}"
+            data = r.get(key)
+            if data:
+                return json.loads(data)
+        except Exception as e:
+            logger.warning("get_taxonomy_plan Redis error: %s", e)
+    return {"activities": []}
+
+
+@router.post("/plan", response_model=Dict[str, Any])
+async def save_taxonomy_plan(
+    payload: Dict[str, Any],
+    current_user: User = Depends(get_current_user),
+):
+    """Save the tenant's taxonomy assessment plan to Redis (TTL 1 year)."""
+    r = _get_redis()
+    if r:
+        try:
+            key = f"taxonomy:plan:{current_user.tenant_id}"
+            r.set(key, json.dumps(payload), ex=365 * 24 * 3600)
+            return {"saved": True}
+        except Exception as e:
+            logger.warning("save_taxonomy_plan Redis error: %s", e)
+    return {"saved": False}
+
+
+@router.post("/report", response_model=Dict[str, Any])
+async def generate_taxonomy_report(
+    payload: Dict[str, Any],
+    current_user: User = Depends(get_current_user),
+):
+    """Generate a taxonomy alignment report from saved activities (frontend-driven)."""
+    activities = payload.get("activities", [])
+    total = len(activities)
+    aligned = sum(1 for a in activities if a.get("status") == "aligned")
+    partial = sum(1 for a in activities if a.get("status") == "partial")
+    not_aligned = sum(1 for a in activities if a.get("status") == "not_aligned")
+    capex_pct = round((aligned / total * 100) if total > 0 else 0, 1)
+
+    by_objective: dict = {}
+    for a in activities:
+        obj = a.get("objective", "unknown")
+        if obj not in by_objective:
+            by_objective[obj] = {"total": 0, "aligned": 0}
+        by_objective[obj]["total"] += 1
+        if a.get("status") == "aligned":
+            by_objective[obj]["aligned"] += 1
+
+    return {
+        "reporting_year": datetime.now().year,
+        "generated_at": datetime.utcnow().isoformat(),
+        "summary": {
+            "total_activities": total,
+            "aligned_activities": aligned,
+            "partial_activities": partial,
+            "not_aligned_activities": not_aligned,
+            "aligned_capex_pct": capex_pct,
+        },
+        "by_objective": by_objective,
+        "regulation": "EU 2020/852",
     }

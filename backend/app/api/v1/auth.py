@@ -14,9 +14,17 @@ from app.schemas.auth import (
     MessageResponse,
     OnboardResponse,
     PasswordChangeRequest,
+    PasswordResetRequest,
+    PasswordResetConfirmRequest,
+    ProfileUpdateRequest,
     TenantOnboardRequest,
     TokenRefreshRequest,
     TokenResponse,
+    TwoFactorDisableRequest,
+    TwoFactorEnableRequest,
+    TwoFactorEnableResponse,
+    TwoFactorSetupResponse,
+    TwoFactorVerifyRequest,
     UserLoginRequest,
     UserRegisterRequest,
     UserResponse,
@@ -138,7 +146,8 @@ async def login(
     """Login with email and password."""
     auth_service = AuthService(db)
     result = await auth_service.login(request)
-    _set_auth_cookies(response, result.tokens)
+    if result.tokens:
+        _set_auth_cookies(response, result.tokens)
     return result
 
 
@@ -189,21 +198,194 @@ async def refresh_token(
     "/me",
     response_model=UserResponse,
     summary="Get current user",
-    description="""
-    Get information about the currently authenticated user.
-    
-    Requires valid access token in Authorization header.
-    """,
 )
 async def get_current_user(
     user_id: UUID = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ) -> UserResponse:
-    """Get current authenticated user information."""
+    """Get current authenticated user information, including onboarding status."""
+    from app.models.tenant import Tenant as TenantModel
     auth_service = AuthService(db)
     user = await auth_service.get_current_user(user_id)
-    
-    return UserResponse.model_validate(user)
+    tenant = await db.get(TenantModel, user.tenant_id)
+    needs_onboarding = not bool(
+        tenant.settings.get("onboarding_done") if tenant and tenant.settings else False
+    )
+    resp = UserResponse.model_validate(user)
+    resp.needs_onboarding = needs_onboarding
+    return resp
+
+
+# ── 2FA endpoints ──────────────────────────────────────────────────────────────
+
+@router.get(
+    "/2fa/setup",
+    response_model=TwoFactorSetupResponse,
+    summary="Initiate 2FA setup — returns secret + provisioning URI",
+)
+async def setup_2fa(
+    user_id: UUID = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    auth_service = AuthService(db)
+    data = await auth_service.setup_2fa(user_id)
+    return TwoFactorSetupResponse(**data)
+
+
+@router.post(
+    "/2fa/enable",
+    response_model=TwoFactorEnableResponse,
+    summary="Confirm 2FA setup with first TOTP code — activates 2FA and returns backup codes",
+)
+async def enable_2fa(
+    body: TwoFactorEnableRequest,
+    user_id: UUID = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    auth_service = AuthService(db)
+    data = await auth_service.enable_2fa(user_id, body.totp_code)
+    return TwoFactorEnableResponse(**data)
+
+
+@router.post(
+    "/2fa/disable",
+    response_model=MessageResponse,
+    summary="Disable 2FA — requires current password",
+)
+async def disable_2fa(
+    body: TwoFactorDisableRequest,
+    user_id: UUID = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    auth_service = AuthService(db)
+    await auth_service.disable_2fa(user_id, body.password)
+    return MessageResponse(message="2FA désactivé avec succès")
+
+
+@router.post(
+    "/2fa/verify",
+    response_model=LoginResponse,
+    summary="Complete login when 2FA is required",
+)
+async def verify_2fa(
+    body: TwoFactorVerifyRequest,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+):
+    """Verify TOTP code (or backup code) and issue full JWT tokens."""
+    auth_service = AuthService(db)
+    result = await auth_service.verify_2fa_login(body.temp_token, body.totp_code)
+    if result.tokens:
+        _set_auth_cookies(response, result.tokens)
+    return result
+
+
+# demo-login endpoint removed — access requires explicit registration or login
+
+
+@router.post(
+    "/forgot-password",
+    response_model=MessageResponse,
+    summary="Request password reset email",
+)
+async def forgot_password(
+    request: PasswordResetRequest,
+    db: AsyncSession = Depends(get_db),
+) -> MessageResponse:
+    """Send password reset email. Always returns success to prevent user enumeration."""
+    from sqlalchemy import select
+    from app.models.user import User
+    from app.utils.jwt import create_password_reset_token
+    from app.services.email_service import EmailService
+
+    stmt = select(User).where(User.email == request.email)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+
+    if user and user.is_active:
+        token = create_password_reset_token(user.email, user.id)
+        reset_url = f"{settings.APP_URL}/reset-password?token={token}"
+        try:
+            EmailService.send_password_reset(
+                email=user.email,
+                first_name=user.first_name or "",
+                reset_url=reset_url,
+            )
+        except Exception:
+            pass  # Never reveal email errors to caller
+
+    return MessageResponse(message="Si cet email est enregistré, vous recevrez les instructions de réinitialisation.")
+
+
+@router.post(
+    "/reset-password",
+    response_model=MessageResponse,
+    summary="Confirm password reset with token",
+)
+async def reset_password(
+    request: PasswordResetConfirmRequest,
+    db: AsyncSession = Depends(get_db),
+) -> MessageResponse:
+    """Verify reset token and set new password."""
+    from jose import JWTError
+    from uuid import UUID as _UUID
+    from sqlalchemy import select
+    from app.models.user import User
+    from app.utils.jwt import decode_token
+    from app.utils.security import get_password_hash
+
+    try:
+        payload = decode_token(request.token)
+        if payload.get("type") != "password_reset":
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token invalide ou expiré.")
+        user_id = _UUID(payload["user_id"])
+    except (JWTError, KeyError, ValueError):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token invalide ou expiré.")
+
+    user = await db.get(User, user_id)
+    if not user or not user.is_active:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token invalide ou expiré.")
+
+    user.password_hash = get_password_hash(request.new_password)
+    await db.commit()
+    return MessageResponse(message="Mot de passe réinitialisé avec succès.")
+
+
+@router.patch(
+    "/me",
+    response_model=UserResponse,
+    summary="Update current user profile",
+)
+async def update_profile(
+    request: ProfileUpdateRequest,
+    user_id: UUID = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+) -> UserResponse:
+    """Update first name, last name, or job title."""
+    from app.models.user import User
+    from app.models.tenant import Tenant as TenantModel
+
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+
+    if request.first_name is not None:
+        user.first_name = request.first_name
+    if request.last_name is not None:
+        user.last_name = request.last_name
+    if request.job_title is not None:
+        user.job_title = request.job_title
+
+    await db.commit()
+    await db.refresh(user)
+
+    tenant = await db.get(TenantModel, user.tenant_id)
+    needs_onboarding = not bool(
+        tenant.settings.get("onboarding_done") if tenant and tenant.settings else False
+    )
+    resp = UserResponse.model_validate(user)
+    resp.needs_onboarding = needs_onboarding
+    return resp
 
 
 @router.post(

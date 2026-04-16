@@ -1,5 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
+import api from '@/services/api';
 import {
   Flame, Zap, Package, Truck, Trash2, Briefcase, Users, Home,
   ArrowDownRight, Settings, ShoppingBag, BarChart3, Leaf, Download,
@@ -133,8 +135,8 @@ const initialCategories: Scope3Category[] = [
   },
 ];
 
-const SCOPE1_DEFAULT = 320;  // tCO2e
-const SCOPE2_DEFAULT = 185;  // tCO2e
+const SCOPE1_DEFAULT = 0;
+const SCOPE2_DEFAULT = 0;
 
 const COLOR_MAP: Record<string, { bg: string; text: string; border: string; badge: string }> = {
   emerald: { bg: 'bg-emerald-50',  text: 'text-emerald-700',  border: 'border-emerald-200', badge: 'bg-emerald-100 text-emerald-700' },
@@ -188,7 +190,36 @@ export default function BilanCarbone() {
   const [showUpstream, setShowUpstream] = useState(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [applyingAI, setApplyingAI] = useState<number | null>(null);
-  const [year] = useState(2025);
+  const [hasRealData, setHasRealData] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [year] = useState(new Date().getFullYear());
+
+  // ── Charger Scope 1, 2 & 3 depuis les vraies données ─────────────────────
+  useEffect(() => {
+    api.get('/carbon/scope-summary', { params: { year } })
+      .then(res => {
+        const d = res.data;
+        const s1 = d?.scope1?.total_tco2e ?? 0;
+        const s2 = d?.scope2?.total_tco2e ?? 0;
+        const s3ByCat: Record<string, number> = d?.scope3?.by_category ?? {};
+
+        if (s1 > 0 || s2 > 0) {
+          setScope1(Math.round(s1));
+          setScope2(Math.round(s2));
+          setHasRealData(true);
+        }
+
+        // Pre-fill Scope 3 categories from real data keyed by cat_id
+        if (Object.keys(s3ByCat).length > 0) {
+          setHasRealData(true);
+          setCategories(prev => prev.map(cat => {
+            const val = s3ByCat[String(cat.id)];
+            return val != null ? { ...cat, value: Math.round(val) } : cat;
+          }));
+        }
+      })
+      .catch(() => {});
+  }, [year]);
 
   // ── Totals ───────────────────────────────────────────────────────────────────
   const scope3Total = useMemo(
@@ -221,6 +252,35 @@ export default function BilanCarbone() {
     setCategories(prev =>
       prev.map(c => (c.value === null && c.aiEstimate !== null) ? { ...c, value: c.aiEstimate } : c)
     );
+  };
+
+  const saveScope3 = async () => {
+    const filled = categories.filter(c => c.value !== null && c.value > 0);
+    if (!filled.length) {
+      toast.error('Aucune valeur à sauvegarder. Saisissez au moins une catégorie.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await api.post('/carbon/save-scope3', {
+        year,
+        entries: filled.map(c => ({
+          cat_id: c.id,
+          name: c.name,
+          num: c.num,
+          value: c.value,
+          unit: 'tCO2e',
+          ademe_factor: c.ademe_factor,
+          ademe_unit: c.ademe_unit,
+        })),
+      });
+      toast.success(`${res.data.inserted} catégorie(s) Scope 3 sauvegardées en base de données ✓`);
+      setHasRealData(true);
+    } catch {
+      toast.error('Erreur lors de la sauvegarde. Réessayez.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const exportCSV = () => {
@@ -263,26 +323,39 @@ export default function BilanCarbone() {
   const filteredCategories = categories.filter(c => c.upstream === showUpstream);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* ── Header ───────────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-gray-200 px-6 py-5">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6">
+      {hasRealData && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700">
+          <CheckCircle className="h-4 w-4 flex-shrink-0" />
+          <span>
+            Scope 1 & 2 chargés depuis vos données réelles —
+            <strong> Scope 1 : {fmt(scope1)} tCO₂e</strong> ·
+            <strong> Scope 2 : {fmt(scope2)} tCO₂e</strong>
+            {' '}· Renseignez les catégories Scope 3 ci-dessous pour compléter votre bilan.
+          </span>
+        </div>
+      )}
+
+      {/* ── Hero gradient ─────────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-700 via-green-600 to-teal-700 p-8 text-white shadow-xl">
+        <div className="absolute inset-0 opacity-10">
+          <svg width="100%" height="100%"><defs><pattern id="cg" width="32" height="32" patternUnits="userSpaceOnUse"><circle cx="16" cy="16" r="1.5" fill="white"/></pattern></defs><rect width="100%" height="100%" fill="url(#cg)"/></svg>
+        </div>
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/25">
-              <Leaf className="h-6 w-6 text-white" />
+            <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
+              <Leaf className="h-7 w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{t('carbon.title')}</h1>
-              <p className="text-sm text-gray-500 mt-0.5">
-                {t('carbon.subtitle15cat')} {year}
-              </p>
+              <h1 className="text-2xl font-bold text-white">{t('carbon.title')}</h1>
+              <p className="text-sm text-emerald-100 mt-0.5">{t('carbon.subtitle15cat')} {year}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             {aiAvailable > 0 && (
               <button
                 onClick={applyAllAI}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 font-medium rounded-xl transition-colors text-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 border border-white/30 text-white font-medium rounded-xl transition-colors text-sm backdrop-blur-sm"
               >
                 <Sparkles className="h-4 w-4" />
                 {t('carbon.completeWithAI')} ({aiAvailable})
@@ -290,24 +363,23 @@ export default function BilanCarbone() {
             )}
             <button
               onClick={exportCSV}
-              className="flex items-center gap-2 px-4 py-2 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 font-medium rounded-xl transition-colors text-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 border border-white/30 text-white font-medium rounded-xl transition-colors text-sm backdrop-blur-sm"
             >
               <Download className="h-4 w-4" />
               {t('carbon.exportCSV')}
             </button>
           </div>
         </div>
-
         {/* Tabs */}
-        <div className="max-w-7xl mx-auto mt-5 flex gap-1">
+        <div className="relative mt-6 flex gap-2">
           {(['overview', 'scope3'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                 activeTab === tab
-                  ? 'bg-green-600 text-white shadow-md shadow-green-500/20'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  ? 'bg-white text-emerald-700 shadow-md'
+                  : 'text-white/80 hover:bg-white/20'
               }`}
             >
               {tab === 'overview' ? t('carbon.tabOverview') : t('carbon.tabScope3')}
@@ -316,7 +388,7 @@ export default function BilanCarbone() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-0">
 
         {/* ════════════════════════════════════════════════════════════════════ */}
         {/* TAB: OVERVIEW                                                       */}
@@ -350,6 +422,51 @@ export default function BilanCarbone() {
                 );
               })}
             </div>
+
+            {/* ── Trajectoire SBTi ── */}
+            {grandTotal > 0 && (() => {
+              const sbtiTarget2030 = Math.round(grandTotal * 0.58); // -42% SBTi 1.5°C
+              const requiredReduction = grandTotal - sbtiTarget2030;
+              const onTrack = grandTotal < 5000; // simplistic heuristic
+              return (
+                <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <TrendingDown className="h-5 w-5 text-emerald-700" />
+                    <h3 className="text-base font-bold text-gray-900">Trajectoire de réduction — SBTi 1,5°C</h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                    <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-emerald-100">
+                      <p className="text-xs text-gray-400 mb-1">Total actuel</p>
+                      <p className="text-2xl font-bold text-gray-900">{fmt(grandTotal)}</p>
+                      <p className="text-xs text-gray-500">tCO₂e / an</p>
+                    </div>
+                    <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-emerald-100">
+                      <p className="text-xs text-gray-400 mb-1">Objectif SBTi 2030</p>
+                      <p className="text-2xl font-bold text-emerald-700">{fmt(sbtiTarget2030)}</p>
+                      <p className="text-xs text-emerald-600">−42% par rapport à aujourd'hui</p>
+                    </div>
+                    <div className={`rounded-xl p-4 text-center shadow-sm border ${onTrack ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
+                      <p className="text-xs text-gray-400 mb-1">Réduction nécessaire</p>
+                      <p className={`text-2xl font-bold ${onTrack ? 'text-green-700' : 'text-amber-700'}`}>{fmt(requiredReduction)}</p>
+                      <p className={`text-xs ${onTrack ? 'text-green-600' : 'text-amber-600'}`}>tCO₂e à éliminer d'ici 2030</p>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+                      <span>Chemin vers l'objectif 2030</span>
+                      <span className="font-bold">{Math.max(0, Math.round((1 - grandTotal / (grandTotal * 1.42)) * 100))}% réalisé</span>
+                    </div>
+                    <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-700" style={{ width: '0%' }} />
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
+                      <Info className="h-3.5 w-3.5 flex-shrink-0" />
+                      Basé sur la Science-Based Targets initiative (SBTi) — trajectoire 1,5°C, réduction −42% d'ici 2030 vs baseline
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Donut + breakdown */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -689,6 +806,18 @@ export default function BilanCarbone() {
                       {t('carbon.aiCompleteRemaining')} {aiAvailable} {t('carbon.aiCompleteRemainingUnit')}
                     </button>
                   )}
+                  <button
+                    onClick={saveScope3}
+                    disabled={saving}
+                    className="flex items-center gap-2 px-5 py-3 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 text-white rounded-xl font-bold text-sm transition-colors shadow-lg"
+                  >
+                    {saving ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <CheckCircle className="h-4 w-4" />
+                    )}
+                    {saving ? 'Sauvegarde...' : t('carbon.saveToDb', 'Sauvegarder en DB')}
+                  </button>
                   <button onClick={exportCSV} className="flex items-center gap-2 px-5 py-3 bg-white text-green-900 rounded-xl font-bold text-sm hover:bg-green-50 transition-colors shadow-lg">
                     <Download className="h-4 w-4" />
                     {t('carbon.export')}

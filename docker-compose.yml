@@ -176,16 +176,26 @@ services:
       S3_SECRET_ACCESS_KEY: minioadmin
       
       # Security
-      SECRET_KEY: dev-secret-key-change-this-in-production-min-32-chars-long
-      JWT_SECRET_KEY: dev-jwt-secret-key-change-this-in-production-also-32-chars
-      ENCRYPTION_KEY: dev-encryption-key-base64-encoded-fernet-key-here
+      SECRET_KEY: ${SECRET_KEY}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      STRIPE_PRICE_STARTER_MONTHLY: ${STRIPE_PRICE_STARTER_MONTHLY}
+      STRIPE_PRICE_STARTER_YEARLY: ${STRIPE_PRICE_STARTER_YEARLY}
+      STRIPE_PRICE_PRO_MONTHLY: ${STRIPE_PRICE_PRO_MONTHLY}
+      STRIPE_PRICE_PRO_YEARLY: ${STRIPE_PRICE_PRO_YEARLY}
       # SMTP (required by Pydantic)
       SMTP_USER: noreply@esgflow.local
       SMTP_PASSWORD: dev-password
       SMTP_HOST: mailhog
       SMTP_PORT: 1025
       SMTP_FROM_EMAIL: noreply@esgflow.local
+      # External API connectors
+      CLIMATIQ_API_KEY: QBPBWW5SY93479AXWA7RK1PHXW
+      CARBON_INTERFACE_API_KEY: cd6ZW42ZImUJFag5a9iybOg
     ports:
       - "8000:8000"
     volumes:
@@ -250,9 +260,9 @@ services:
       S3_SECRET_ACCESS_KEY: minioadmin
       
       # Security
-      SECRET_KEY: dev-secret-key-change-this-in-production-min-32-chars-long
-      JWT_SECRET_KEY: dev-jwt-secret-key-change-this-in-production-also-32-chars
-      ENCRYPTION_KEY: dev-encryption-key-base64-encoded-fernet-key-here
+      SECRET_KEY: ${SECRET_KEY}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       
       # SMTP
       SMTP_USER: noreply@esgflow.local
@@ -308,9 +318,9 @@ services:
       S3_SECRET_ACCESS_KEY: minioadmin
       
       # Security
-      SECRET_KEY: dev-secret-key-change-this-in-production-min-32-chars-long
-      JWT_SECRET_KEY: dev-jwt-secret-key-change-this-in-production-also-32-chars
-      ENCRYPTION_KEY: dev-encryption-key-base64-encoded-fernet-key-here
+      SECRET_KEY: ${SECRET_KEY}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       
       # SMTP
       SMTP_USER: noreply@esgflow.local

@@ -140,7 +140,7 @@ async def seed_cac40():
                             "tid": str(tenant_id),
                             "oid": str(org_id),
                             "iid": str(ind_id),
-                            "date": date(2026, 12, 31),
+                            "date": date.today() - timedelta(days=30),
                             "value": value,
                             "unit": unit
                         })

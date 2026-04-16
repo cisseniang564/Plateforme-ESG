@@ -206,7 +206,7 @@ async def get_organization(
     response_data = OrganizationResponse.model_validate(org).model_dump()
     
     # Add computed fields
-    response_data["full_path"] = org.full_path
+    response_data["full_path"] = getattr(org, 'full_path', None) or org.name
     response_data["is_root"] = org.parent_org_id is None
     response_data["is_leaf"] = len(org.children) == 0
     response_data["children_count"] = len(org.children)

@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import {
   Users as UsersIcon, Plus, Search, Edit2, Trash2, Shield,
   CheckCircle, XCircle, Mail, Calendar, Download, X,
   ChevronDown, UserCheck, UserX, Eye, EyeOff, RefreshCw,
-  Crown, BarChart3, Zap, Lock
+  Crown, BarChart3, Zap, Lock, ArrowLeft
 } from 'lucide-react';
 import Button from '@/components/common/Button';
 import Spinner from '@/components/common/Spinner';
-import PageHeader from '@/components/PageHeader';
 import api from '@/services/api';
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
@@ -226,7 +226,7 @@ function SideModal({
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex">
+    <div className="fixed inset-0 z-[100] flex">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       {/* Panel */}
@@ -253,6 +253,7 @@ function SideModal({
 /* ─── Main Component ─────────────────────────────────────────────────────── */
 export default function UserManagement() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const [users, setUsers]   = useState<User[]>([]);
   const [roles, setRoles]   = useState<Role[]>([]);
@@ -323,7 +324,7 @@ export default function UserManagement() {
     if (!form.last_name.trim())  errors.last_name  = 'Nom requis';
     if (!form.email)             errors.email = 'Email requis';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = 'Email invalide';
-    if (!form.role_id && !roleLabel.trim()) errors.role_label = 'Rôle requis';
+    if (!isEdit && !form.role_id && !roleLabel.trim()) errors.role_label = 'Rôle requis';
     if (!isEdit) {
       if (!form.password) errors.password = 'Mot de passe requis';
       else if (form.password.length < 8) errors.password = 'Min. 8 caractères';
@@ -457,6 +458,51 @@ export default function UserManagement() {
       toast.error(err.response?.data?.detail || t('users.deleteError'));
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Suppression directe — confirmation via toast (évite window.confirm bloqué par Safari)
+  const handleDeleteDirect = (user: User) => {
+    toast((t_toast) => (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <span style={{ fontWeight: 600 }}>Supprimer {user.first_name} {user.last_name} ?</span>
+        <span style={{ fontSize: 12, color: '#6b7280' }}>{user.email}</span>
+        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+          <button
+            onClick={async () => {
+              toast.dismiss(t_toast.id);
+              try {
+                await api.delete(`/users/${user.id}`);
+                toast.success('Utilisateur supprimé');
+                await loadData();
+              } catch (err: any) {
+                toast.error(err.response?.data?.detail || 'Erreur lors de la suppression');
+              }
+            }}
+            style={{ padding: '4px 12px', background: '#dc2626', color: '#fff', borderRadius: 6, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 12 }}
+          >
+            Confirmer
+          </button>
+          <button
+            onClick={() => toast.dismiss(t_toast.id)}
+            style={{ padding: '4px 12px', background: '#f3f4f6', color: '#374151', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12 }}
+          >
+            Annuler
+          </button>
+        </div>
+      </div>
+    ), { duration: 8000 });
+  };
+
+  const handleToggleActiveDirect = async (user: User) => {
+    const userId = user.id;
+    const newState = !user.is_active;
+    try {
+      await api.patch(`/users/${userId}`, { is_active: newState });
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_active: newState } : u));
+      toast.success(newState ? 'Utilisateur réactivé' : 'Utilisateur désactivé');
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Erreur');
     }
   };
 
@@ -611,25 +657,54 @@ export default function UserManagement() {
   /* ── Render ─────────────────────────────────────────────────────────────── */
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={t('users.title')}
-        subtitle={t('users.subtitle')}
-        showBack
-        backTo="/app/settings"
-        actions={
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={exportCSV}>
-              <Download className="h-4 w-4 mr-2" />{t('users.exportCsv')}
-            </Button>
-            <Button variant="secondary" onClick={loadData}>
-              <RefreshCw className="h-4 w-4 mr-2" />{t('users.refresh')}
-            </Button>
-            <Button onClick={openCreate}>
-              <Plus className="h-4 w-4 mr-2" />{t('users.newUser')}
-            </Button>
+      {/* ── Hero ── */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 rounded-2xl p-8 text-white shadow-xl">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZyIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLW9wYWNpdHk9IjAuMDUiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg==')] opacity-30" />
+        <div className="relative flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <button
+              onClick={() => navigate('/app/settings')}
+              className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors mb-4"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Paramètres
+            </button>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide uppercase">
+                Gestion des Utilisateurs
+              </span>
+            </div>
+            <h1 className="text-3xl font-bold mb-1 flex items-center gap-3">
+              <UsersIcon className="h-8 w-8" />
+              {t('users.title')}
+            </h1>
+            <p className="text-blue-100">{t('users.subtitle')}</p>
           </div>
-        }
-      />
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={exportCSV}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/20 rounded-xl text-sm font-medium transition-all"
+            >
+              <Download className="h-4 w-4" />
+              {t('users.exportCsv')}
+            </button>
+            <button
+              onClick={loadData}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/20 rounded-xl text-sm font-medium transition-all"
+            >
+              <RefreshCw className="h-4 w-4" />
+              {t('users.refresh')}
+            </button>
+            <button
+              onClick={openCreate}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white text-blue-700 rounded-xl text-sm font-bold hover:bg-blue-50 transition-all shadow-md"
+            >
+              <Plus className="h-4 w-4" />
+              {t('users.newUser')}
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* ── Stats ──────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -818,35 +893,30 @@ export default function UserManagement() {
                       </div>
                     </td>
 
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <td className="px-6 py-4 text-right" style={{ position: 'relative', zIndex: 20 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
                         <button
                           type="button"
-                          onClick={() => openEdit(user)}
-                          className="p-2 hover:bg-primary-50 text-gray-400 hover:text-primary-600 rounded-lg transition-colors"
-                          title="Modifier"
+                          onMouseDown={() => openEdit(user)}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', cursor: 'pointer' }}
                         >
-                          <Edit2 className="h-4 w-4" />
+                          <Edit2 style={{ width: 14, height: 14 }} />
+                          Modifier
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleToggleActive(user)}
-                          className={`p-2 rounded-lg transition-colors ${
-                            user.is_active
-                              ? 'hover:bg-orange-50 text-gray-400 hover:text-orange-600'
-                              : 'hover:bg-green-50 text-gray-400 hover:text-green-600'
-                          }`}
-                          title={user.is_active ? 'Désactiver' : 'Réactiver'}
+                          onMouseDown={() => handleToggleActiveDirect(user)}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, color: user.is_active ? '#ea580c' : '#16a34a', background: user.is_active ? '#fff7ed' : '#f0fdf4', border: `1px solid ${user.is_active ? '#fed7aa' : '#bbf7d0'}`, borderRadius: '8px', cursor: 'pointer' }}
                         >
-                          {user.is_active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                          {user.is_active ? <><UserX style={{ width: 14, height: 14 }} />Désactiver</> : <><UserCheck style={{ width: 14, height: 14 }} />Réactiver</>}
                         </button>
                         <button
                           type="button"
-                          onClick={() => openDelete(user)}
-                          className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-lg transition-colors"
-                          title="Supprimer"
+                          onMouseDown={() => handleDeleteDirect(user)}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', cursor: 'pointer' }}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 style={{ width: 14, height: 14 }} />
+                          Supprimer
                         </button>
                       </div>
                     </td>
@@ -913,7 +983,7 @@ export default function UserManagement() {
 
       {/* ── Modal Suppression ────────────────────────────────────────────────── */}
       {deleteModal && deletingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteModal(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
             <div className="flex items-start gap-4 mb-5">

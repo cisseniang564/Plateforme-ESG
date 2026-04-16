@@ -35,7 +35,7 @@ class DataUpload(Base, UUIDMixin, TenantMixin, TimestampMixin):
         comment="File size in bytes",
     )
     file_type: Mapped[str] = mapped_column(
-        String(50),
+        String(255),
         nullable=False,
         comment="MIME type",
     )

@@ -117,8 +117,8 @@ export default function MaterialityMatrix() {
   const [loading, setLoading]   = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // tabs: 'matrix' | 'questionnaire' | 'suggestions' | 'risks'
-  const [activeTab, setActiveTab] = useState<'matrix' | 'questionnaire' | 'suggestions' | 'risks'>('matrix');
+  // tabs: 'matrix' | 'questionnaire' | 'suggestions' | 'risks' | 'esrs'
+  const [activeTab, setActiveTab] = useState<'matrix' | 'questionnaire' | 'suggestions' | 'risks' | 'esrs'>('matrix');
   const [viewMode, setViewMode] = useState<'matrix' | 'list'>('matrix');
 
   // Issue modal
@@ -352,6 +352,7 @@ export default function MaterialityMatrix() {
           { key: 'questionnaire', label: t('materiality.tabQuestionnaire'),  icon: Users      },
           { key: 'suggestions',   label: t('materiality.tabIaSuggestions'),  icon: Sparkles   },
           { key: 'risks',         label: t('materiality.tabRisks'),          icon: ShieldAlert },
+          { key: 'esrs',          label: 'Analyse ESRS',                     icon: Target      },
         ] as const).map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 ${activeTab === tab.key ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
@@ -877,6 +878,142 @@ export default function MaterialityMatrix() {
           )}
         </div>
       )}
+
+      {/* ══ ESRS GAP ANALYSIS TAB ═══════════════════════════════════════════ */}
+      {activeTab === 'esrs' && (() => {
+        const ESRS_TOPICS = [
+          { code: 'E1', name: 'Changement climatique', pillar: 'environmental', kws: ['co2','carbone','ges','ghg','scope','émission','énergie','climat','transition'] },
+          { code: 'E2', name: 'Pollution',              pillar: 'environmental', kws: ['pollution','polluant','rejet','atmosphérique','contamination','sol','substance'] },
+          { code: 'E3', name: 'Ressources hydriques',   pillar: 'environmental', kws: ['eau','hydrique','water','marine','ressource','prélèvement'] },
+          { code: 'E4', name: 'Biodiversité',           pillar: 'environmental', kws: ['biodiversité','écosystème','faune','flore','sol','protégé','artificialisé'] },
+          { code: 'E5', name: 'Économie circulaire',    pillar: 'environmental', kws: ['déchet','recyclage','circulaire','réemploi','emballage','matière'] },
+          { code: 'S1', name: 'Effectifs propres',      pillar: 'social',        kws: ['effectif','salarié','employé','accident','turnover','formation','parité','diversité','rémunération','santé','sécurité'] },
+          { code: 'S2', name: 'Chaîne de valeur',       pillar: 'social',        kws: ['fournisseur','chaîne','supply','sous-traitant','vigilance','prestataire'] },
+          { code: 'S3', name: 'Communautés locales',    pillar: 'social',        kws: ['communauté','local','territoire','riverain','mécénat','ancrage'] },
+          { code: 'S4', name: 'Consommateurs',          pillar: 'social',        kws: ['consommateur','client','satisfaction','réclamation','qualité','produit'] },
+          { code: 'G1', name: 'Conduite des affaires',  pillar: 'governance',    kws: ['gouvernance','éthique','anticorruption','conformité','fiscalité','transparence','alerte','whistleblowing'] },
+        ];
+
+        const covered = ESRS_TOPICS.map(topic => {
+          const matchingIssues = issues.filter(issue => {
+            const text = ((issue.name || '') + ' ' + (issue.description || '')).toLowerCase();
+            const catMatch = issue.category === topic.pillar;
+            const kwMatch = topic.kws.some(kw => text.includes(kw));
+            return catMatch && (kwMatch || issues.filter(i => i.category === topic.pillar).some(i => topic.kws.some(kw => ((i.name || '') + ' ' + (i.description || '')).toLowerCase().includes(kw))));
+          });
+          const directMatch = issues.filter(issue => {
+            const text = ((issue.name || '') + ' ' + (issue.description || '')).toLowerCase();
+            return topic.kws.some(kw => text.includes(kw));
+          });
+          return { ...topic, covered: directMatch.length > 0, matchCount: directMatch.length, material: directMatch.some(i => i.is_material) };
+        });
+
+        const coveredCount = covered.filter(t => t.covered).length;
+        const materialCount = covered.filter(t => t.material).length;
+        const coveragePct = Math.round((coveredCount / ESRS_TOPICS.length) * 100);
+
+        const pillarGroups = [
+          { label: 'Environnement (E1–E5)', topics: covered.filter(t => t.pillar === 'environmental'), color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200', dot: 'bg-green-500' },
+          { label: 'Social (S1–S4)',        topics: covered.filter(t => t.pillar === 'social'),        color: 'text-blue-700',  bg: 'bg-blue-50',  border: 'border-blue-200',  dot: 'bg-blue-500'  },
+          { label: 'Gouvernance (G1)',      topics: covered.filter(t => t.pillar === 'governance'),    color: 'text-purple-700',bg: 'bg-purple-50',border: 'border-purple-200',dot: 'bg-purple-500'},
+        ];
+
+        const exportDMA = () => {
+          const rows = ['Section ESRS,Thématique,Couverte,Matérielle,Issues identifiées'];
+          covered.forEach(t => rows.push(`${t.code},"${t.name}",${t.covered ? 'Oui' : 'Non'},${t.material ? 'Oui' : 'Non'},${t.matchCount}`));
+          const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a'); a.href = url; a.download = 'analyse_esrs_dma.csv'; a.click();
+          URL.revokeObjectURL(url);
+        };
+
+        return (
+          <div className="space-y-6">
+            {/* KPIs */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { label: 'Topics ESRS couverts', val: `${coveredCount}/${ESRS_TOPICS.length}`, color: 'text-indigo-700', bg: 'bg-indigo-50 border-indigo-200' },
+                { label: 'Taux de couverture DMA', val: `${coveragePct}%`, color: coveragePct >= 70 ? 'text-green-700' : 'text-amber-700', bg: coveragePct >= 70 ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200' },
+                { label: 'Topics matériels', val: materialCount, color: 'text-red-700', bg: 'bg-red-50 border-red-200' },
+                { label: 'Topics manquants', val: ESRS_TOPICS.length - coveredCount, color: 'text-gray-600', bg: 'bg-gray-50 border-gray-200' },
+              ].map((k, i) => (
+                <div key={i} className={`rounded-2xl border-2 ${k.bg} p-5`}>
+                  <div className={`text-3xl font-extrabold ${k.color}`}>{k.val}</div>
+                  <div className="text-sm font-semibold text-gray-700 mt-1">{k.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Coverage bar */}
+            <div className="bg-white border-2 border-gray-100 rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold text-gray-900">Couverture CSRD globale</h3>
+                <button onClick={exportDMA} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
+                  <Download className="h-3.5 w-3.5" /> Export DMA CSV
+                </button>
+              </div>
+              <div className="h-3 bg-gray-100 rounded-full overflow-hidden mb-1">
+                <div className="h-3 bg-indigo-500 rounded-full transition-all duration-700" style={{ width: `${coveragePct}%` }} />
+              </div>
+              <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
+                <span>0%</span><span className="font-semibold text-indigo-700">{coveragePct}% couverts</span><span>100%</span>
+              </div>
+              {coveragePct < 60 && (
+                <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+                  ⚠️ Couverture insuffisante pour un rapport CSRD complet. Ajoutez des enjeux matériels pour les topics manquants via l'onglet <strong>Suggestions IA</strong> ou <strong>Questionnaire</strong>.
+                </div>
+              )}
+            </div>
+
+            {/* Topic breakdown by pillar */}
+            {pillarGroups.map(pg => (
+              <div key={pg.label} className={`bg-white border-2 ${pg.border} rounded-2xl overflow-hidden`}>
+                <div className={`px-5 py-3 ${pg.bg} border-b ${pg.border}`}>
+                  <h3 className={`font-bold ${pg.color}`}>{pg.label}</h3>
+                </div>
+                <div className="divide-y divide-gray-50">
+                  {pg.topics.map(topic => (
+                    <div key={topic.code} className="flex items-center gap-4 px-5 py-3.5">
+                      <div className="flex items-center gap-2 w-16 flex-shrink-0">
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${pg.bg} ${pg.color}`}>{topic.code}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-semibold text-gray-900">{topic.name}</span>
+                        {topic.matchCount > 0 && (
+                          <span className="ml-2 text-xs text-gray-400">{topic.matchCount} enjeu{topic.matchCount > 1 ? 'x' : ''} identifié{topic.matchCount > 1 ? 's' : ''}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {topic.material && <span className="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full font-semibold">Matériel</span>}
+                        {topic.covered
+                          ? <span className="flex items-center gap-1 text-xs text-green-700 font-semibold bg-green-100 px-2.5 py-1 rounded-full"><CheckCircle className="h-3.5 w-3.5" /> Couvert</span>
+                          : <span className="flex items-center gap-1 text-xs text-gray-500 font-semibold bg-gray-100 px-2.5 py-1 rounded-full"><AlertCircle className="h-3.5 w-3.5" /> Manquant</span>
+                        }
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {/* Actions */}
+            {coveredCount < ESRS_TOPICS.length && (
+              <div className="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-5">
+                <h3 className="font-bold text-indigo-900 mb-3">Topics ESRS à compléter</h3>
+                <div className="flex flex-wrap gap-2">
+                  {covered.filter(t => !t.covered).map(t => (
+                    <button key={t.code} onClick={() => setActiveTab('suggestions')}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-indigo-200 text-indigo-700 text-sm font-semibold rounded-xl hover:bg-indigo-100 transition-colors">
+                      <Plus className="h-3.5 w-3.5" /> {t.code} — {t.name}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-indigo-600 mt-3">→ Cliquez sur un topic pour accéder aux suggestions IA correspondantes.</p>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ══ ISSUE MODAL ══════════════════════════════════════════════════════ */}
       {showModal && (

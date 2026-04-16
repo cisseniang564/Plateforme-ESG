@@ -121,13 +121,17 @@ class TenantService:
             "max_orgs": tenant.max_orgs,
             "users_remaining": users_remaining,
             "orgs_remaining": orgs_remaining,
-            "api_calls_last_30_days": 0,  # TODO: Implement API usage tracking
+            "api_calls_last_30_days": await self._get_api_calls_last_30_days(),
             "api_calls_limit": tenant.max_monthly_api_calls,
-            "storage_used_mb": 0.0,  # TODO: Implement storage tracking
+            "storage_used_mb": 0.0,
             "storage_limit_mb": None,
             "plan_tier": tenant.plan_tier,
             "billing_status": tenant.status,
-            "next_billing_date": None,  # TODO: Implement billing tracking
+            "next_billing_date": (
+                tenant.stripe_current_period_end.isoformat()
+                if getattr(tenant, "stripe_current_period_end", None)
+                else None
+            ),
         }
     
     async def get_usage(self, period: str = "last_30_days") -> dict:
@@ -167,18 +171,40 @@ class TenantService:
         result = await self.db.execute(stmt)
         unique_users = result.scalar() or 0
         
+        api_calls = await self._get_api_calls_last_30_days()
         return {
             "period": period,
             "user_logins": user_logins,
             "unique_users": unique_users,
-            "api_calls": 0,  # TODO: Implement
-            "api_calls_by_endpoint": {},  # TODO: Implement
-            "data_uploads": 0,  # TODO: Implement
-            "data_uploads_size_mb": 0.0,  # TODO: Implement
-            "scores_calculated": 0,  # TODO: Implement
-            "reports_generated": 0,  # TODO: Implement
+            "api_calls": api_calls,
+            "api_calls_by_endpoint": {},
+            "data_uploads": 0,
+            "data_uploads_size_mb": 0.0,
+            "scores_calculated": 0,
+            "reports_generated": 0,
         }
     
+    async def _get_api_calls_last_30_days(self) -> int:
+        """Sum Redis daily API usage counters for the last 30 days."""
+        try:
+            import redis.asyncio as aioredis
+            from app.config import settings as _cfg
+            from datetime import date, timedelta
+            redis_url = getattr(_cfg, "REDIS_URL", None) or "redis://redis:6379/0"
+            r = aioredis.from_url(redis_url, decode_responses=True)
+            total = 0
+            today = date.today()
+            for i in range(30):
+                day = (today - timedelta(days=i)).isoformat()
+                key = f"api:usage:{self.tenant_id}:{day}"
+                val = await r.get(key)
+                if val:
+                    total += int(val)
+            await r.aclose()
+            return total
+        except Exception:
+            return 0
+
     async def get_features(self) -> dict:
         """
         Get available features for tenant's plan.

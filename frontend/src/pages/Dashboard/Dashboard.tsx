@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { 
-  TrendingUp, 
+import {
+  TrendingUp,
   TrendingDown,
   Award,
   Leaf,
@@ -15,6 +15,7 @@ import {
   RefreshCw,
   ChevronRight,
   ArrowUpRight,
+  CheckCircle,
   ArrowDownRight,
   Target,
   BarChart3,
@@ -52,7 +53,97 @@ import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import Spinner from '@/components/common/Spinner';
 import api from '@/services/api';
-import { generateConsistentScores, generateEvolutionData } from '@/utils/mockScores';
+import { usePlan } from '@/hooks/usePlan';
+
+// ─── Onboarding checklist ──────────────────────────────────────────────────────
+interface CheckStep {
+  id: string
+  label: string
+  detail: string
+  icon: React.ElementType
+  path: string
+  done: boolean
+}
+
+function OnboardingChecklist({ steps, collapsed, onToggleCollapse, onDismiss }: {
+  steps: CheckStep[]
+  collapsed: boolean
+  onToggleCollapse: () => void
+  onDismiss: () => void
+}) {
+  const navigate = useNavigate();
+  const done = steps.filter(s => s.done).length
+  const pct = Math.round((done / steps.length) * 100)
+
+  return (
+    <div className="bg-white border border-indigo-100 rounded-2xl shadow-sm overflow-hidden">
+      {/* Header — always visible */}
+      <div className="flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-indigo-50 to-purple-50">
+        <div className="flex items-center gap-3">
+          <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center flex-shrink-0">
+            <Star className="h-3.5 w-3.5 text-white" />
+          </div>
+          <div>
+            <h3 className="font-bold text-gray-800 text-sm">Premiers pas sur ESGFlow</h3>
+            <p className="text-xs text-gray-500">{done}/{steps.length} étapes complétées</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Progress pill */}
+          <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-indigo-100 shadow-sm">
+            <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+            </div>
+            <span className="text-xs font-bold text-indigo-600">{pct}%</span>
+          </div>
+          <button
+            onClick={onToggleCollapse}
+            className="text-gray-400 hover:text-gray-700 transition-colors p-1 rounded-lg hover:bg-white"
+            title={collapsed ? 'Développer' : 'Réduire'}
+          >
+            <ChevronRight className={`h-4 w-4 transition-transform duration-200 ${collapsed ? '' : 'rotate-90'}`} />
+          </button>
+          <button onClick={onDismiss} className="text-gray-300 hover:text-red-400 transition-colors p-1 rounded-lg hover:bg-white" title="Fermer">
+            ✕
+          </button>
+        </div>
+      </div>
+
+      {/* Steps — collapsible */}
+      {!collapsed && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 border-t border-indigo-50">
+          {steps.map(step => {
+            const Icon = step.icon
+            return (
+              <button
+                key={step.id}
+                onClick={() => navigate(step.path)}
+                className={`flex items-start gap-3 p-4 text-left transition-colors hover:bg-indigo-50/40 ${step.done ? 'opacity-60' : ''}`}
+              >
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                  step.done ? 'bg-green-100' : 'bg-indigo-100'
+                }`}>
+                  {step.done
+                    ? <CheckCircle className="h-4 w-4 text-green-600" />
+                    : <Icon className="h-3.5 w-3.5 text-indigo-600" />
+                  }
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className={`text-xs font-semibold truncate ${step.done ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                    {step.label}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5 leading-tight">{step.detail}</p>
+                </div>
+                {!step.done && <ChevronRight className="h-3.5 w-3.5 text-gray-300 flex-shrink-0 ml-auto mt-1" />}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+import { getBatchOrgScores } from '@/services/esgScoringService';
 import toast from 'react-hot-toast';
 
 interface Organization {
@@ -69,26 +160,83 @@ interface Organization {
 export default function Dashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { plan } = usePlan();
   const [loading, setLoading] = useState(true);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [evolutionData, setEvolutionData] = useState<any[]>([]);
+  const [showChecklist, setShowChecklist] = useState(true);
+  const [checklistCollapsed, setChecklistCollapsed] = useState(() => {
+    return localStorage.getItem('onboarding_collapsed') === '1'
+  });
+  const [checklistDone, setChecklistDone] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     loadDashboard();
   }, []);
+
+  // Check onboarding steps completion
+  useEffect(() => {
+    const check = async () => {
+      const done: Record<string, boolean> = {}
+      try {
+        const [orgsRes, dataRes, connRes] = await Promise.allSettled([
+          api.get('/organizations?limit=1'),
+          api.get('/data-entry?limit=1'),
+          api.get('/connectors/catalog'),
+        ])
+        done['org'] = orgsRes.status === 'fulfilled' &&
+          ((orgsRes.value.data?.total ?? orgsRes.value.data?.items?.length ?? 0) > 0)
+        done['data'] = dataRes.status === 'fulfilled' &&
+          ((dataRes.value.data?.total ?? dataRes.value.data?.items?.length ?? 0) > 0)
+        done['connector'] = connRes.status === 'fulfilled' &&
+          (connRes.value.data?.connectors ?? []).some((c: any) => c.status === 'connected')
+        done['score'] = organizations.length > 0 && organizations.some(o => (o as any).overall_score > 0)
+        done['report'] = false // will stay unchecked until user generates one
+      } catch {/* ignore */}
+      setChecklistDone(done)
+    }
+    check()
+  }, [organizations]);
 
   const loadDashboard = async () => {
     setLoading(true);
     try {
       const res = await api.get('/organizations');
       const orgs = res.data?.organizations || res.data?.items || [];
-      
+
+      const scoreMap = await getBatchOrgScores(orgs.map((o: any) => o.id));
       const enrichedOrgs = orgs.map((org: any) => {
-        const scores = generateConsistentScores(org.id);
-        return { ...org, ...scores };
+        const s = scoreMap[org.id];
+        return {
+          ...org,
+          overall: s?.overall_score ?? null,
+          overall_score: s?.overall_score ?? null,
+          environmental_score: s?.environmental_score ?? null,
+          social_score: s?.social_score ?? null,
+          governance_score: s?.governance_score ?? null,
+          rating: s?.rating ?? null,
+        };
       });
 
       setOrganizations(enrichedOrgs);
+
+      // Charger l'historique des scores pour le graphique d'évolution
+      try {
+        const histRes = await api.get('/scores/history');
+        const scores: any[] = histRes.data?.scores ?? [];
+        const mapped = [...scores].reverse().map((s: any) => ({
+          date: new Date(s.calculation_date).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }),
+          global: Math.round(s.overall_score ?? 0),
+          env: Math.round(s.environmental_score ?? 0),
+          soc: Math.round(s.social_score ?? 0),
+          gov: Math.round(s.governance_score ?? 0),
+        }));
+        setEvolutionData(mapped);
+      } catch {
+        // Graphique vide si pas de scores, sans bloquer le reste
+      }
+
       toast.success(t('dashboard.refreshed'));
     } catch (error) {
       console.error('Dashboard error:', error);
@@ -115,15 +263,17 @@ export default function Dashboard() {
     );
   }
 
-  // Calculs
+  // Calculs — guard against division by zero
   const totalOrgs = organizations.length;
-  const avgScore = organizations.reduce((sum, org) => sum + (org.overall_score || 0), 0) / totalOrgs;
+  const safeDivisor = totalOrgs || 1;
+  const scoredOrgs = organizations.filter(o => (o.overall_score ?? 0) > 0);
+  const avgScore = scoredOrgs.length > 0
+    ? scoredOrgs.reduce((sum, org) => sum + (org.overall_score || 0), 0) / scoredOrgs.length
+    : 0;
   const topPerformers = organizations.filter(org => (org.overall_score || 0) >= 75).length;
-  const avgEnv = Math.round(organizations.reduce((sum, org) => sum + (org.environmental_score || 0), 0) / totalOrgs);
-  const avgSoc = Math.round(organizations.reduce((sum, org) => sum + (org.social_score || 0), 0) / totalOrgs);
-  const avgGov = Math.round(organizations.reduce((sum, org) => sum + (org.governance_score || 0), 0) / totalOrgs);
-
-  const evolutionData = generateEvolutionData('dashboard', 12);
+  const avgEnv = Math.round(organizations.reduce((sum, org) => sum + (org.environmental_score || 0), 0) / safeDivisor);
+  const avgSoc = Math.round(organizations.reduce((sum, org) => sum + (org.social_score || 0), 0) / safeDivisor);
+  const avgGov = Math.round(organizations.reduce((sum, org) => sum + (org.governance_score || 0), 0) / safeDivisor);
 
   const topOrgs = [...organizations].sort((a, b) => (b.overall_score || 0) - (a.overall_score || 0)).slice(0, 5);
   const needsImprovement = [...organizations].sort((a, b) => (a.overall_score || 0) - (b.overall_score || 0)).slice(0, 5);
@@ -146,11 +296,14 @@ export default function Dashboard() {
     { name: 'Score', value: Math.round(avgScore), fill: avgScore >= 75 ? '#10b981' : avgScore >= 50 ? '#3b82f6' : '#f59e0b' }
   ];
 
+  const scoredCount = scoredOrgs.length;
+  const needsImprovementCount = organizations.filter(o => (o.overall_score ?? 0) > 0 && (o.overall_score ?? 0) < 50).length;
+
   const kpis = [
     {
       label: t('dashboard.avgEsgScore'),
-      value: Math.round(avgScore),
-      change: '+2.3%',
+      value: Math.round(avgScore) || '—',
+      change: null,
       trend: 'up',
       icon: Award,
       color: 'from-green-500 to-emerald-600',
@@ -161,7 +314,7 @@ export default function Dashboard() {
     {
       label: t('dashboard.organizations'),
       value: totalOrgs,
-      change: '+4',
+      change: null,
       trend: 'up',
       icon: Building2,
       color: 'from-blue-500 to-indigo-600',
@@ -172,7 +325,7 @@ export default function Dashboard() {
     {
       label: t('dashboard.esgLeaders'),
       value: topPerformers,
-      change: '+3',
+      change: scoredCount > 0 ? `${Math.round((topPerformers / scoredCount) * 100)}%` : null,
       trend: 'up',
       icon: Star,
       color: 'from-purple-500 to-pink-600',
@@ -182,14 +335,14 @@ export default function Dashboard() {
     },
     {
       label: t('dashboard.improving'),
-      value: Math.floor(totalOrgs * 0.68),
-      change: '+12%',
+      value: scoredCount,
+      change: null,
       trend: 'up',
       icon: TrendingUp,
       color: 'from-orange-500 to-red-600',
       textColor: 'text-orange-600',
       bgColor: 'bg-orange-50',
-      detail: t('dashboard.positiveTrend')
+      detail: needsImprovementCount > 0 ? `${needsImprovementCount} en dessous de 50` : t('dashboard.positiveTrend')
     }
   ];
 
@@ -206,6 +359,62 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 pb-8">
+      {/* Freemium upgrade banner */}
+      {plan.is_free && !plan.is_trial && (
+        <div className="flex items-center justify-between gap-4 px-5 py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg">
+          <div className="flex items-center gap-3">
+            <Sparkles size={18} className="flex-shrink-0 text-yellow-300" />
+            <div>
+              <span className="font-semibold text-sm">Plan gratuit</span>
+              <span className="text-purple-200 text-sm ml-2">— Débloquez CSRD, SFDR, IA ESRS et les connecteurs avancés</span>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/app/billing')}
+            className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-white text-purple-700 text-sm font-bold rounded-xl hover:bg-purple-50 transition-colors"
+          >
+            <Zap size={13} />
+            Mettre à niveau
+          </button>
+        </div>
+      )}
+      {/* Onboarding checklist */}
+      {showChecklist && (
+        <OnboardingChecklist
+          collapsed={checklistCollapsed}
+          onToggleCollapse={() => {
+            const next = !checklistCollapsed
+            setChecklistCollapsed(next)
+            localStorage.setItem('onboarding_collapsed', next ? '1' : '0')
+          }}
+          onDismiss={() => {
+            setShowChecklist(false)
+          }}
+          steps={[
+            {
+              id: 'org', label: 'Créer une organisation', detail: 'Ajoutez votre première entité ESG',
+              icon: Building2, path: '/app/organizations', done: !!checklistDone['org']
+            },
+            {
+              id: 'data', label: 'Saisir des données', detail: 'Renseignez vos premiers indicateurs',
+              icon: Activity, path: '/app/data-entry', done: !!checklistDone['data']
+            },
+            {
+              id: 'connector', label: 'Connecter une source', detail: 'Branchez un connecteur ou importez un FEC',
+              icon: Zap, path: '/app/data/connectors', done: !!checklistDone['connector']
+            },
+            {
+              id: 'score', label: 'Calculer le score ESG', detail: 'Obtenez votre note et les piliers',
+              icon: Star, path: '/app/scores', done: !!checklistDone['score']
+            },
+            {
+              id: 'report', label: 'Générer un rapport', detail: 'Produisez votre premier rapport CSRD/GRI',
+              icon: Download, path: '/app/reports', done: !!checklistDone['report']
+            },
+          ]}
+        />
+      )}
+
       {/* Header Premium avec Glassmorphism */}
       <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-3xl shadow-2xl">
         {/* Animated Background */}
@@ -244,7 +453,7 @@ export default function Dashboard() {
                 {t('dashboard.refresh')}
               </Button>
               <Button
-                onClick={() => navigate('/reports/generate')}
+                onClick={() => navigate('/app/reports/generate')}
                 className="bg-white text-indigo-600 hover:bg-white/90"
               >
                 <Download className="h-4 w-4 mr-2" />
@@ -267,15 +476,17 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 bg-white/20 backdrop-blur-lg px-6 py-3 rounded-2xl border border-white/30 mb-2">
-              <div className="p-2 bg-green-500/30 rounded-xl">
-                <TrendingUp className="h-6 w-6 text-white" />
+            {scoredCount > 0 && (
+              <div className="flex items-center gap-3 bg-white/20 backdrop-blur-lg px-6 py-3 rounded-2xl border border-white/30 mb-2">
+                <div className="p-2 bg-green-500/30 rounded-xl">
+                  <TrendingUp className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-white">{scoredCount}/{totalOrgs}</p>
+                  <p className="text-sm text-white/70">organisations scorées</p>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-white">+2.3%</p>
-                <p className="text-sm text-white/70">{t('dashboard.vsPreviousPeriod')}</p>
-              </div>
-            </div>
+            )}
 
             <div className="flex gap-4 mb-2">
               <div className="text-center">
@@ -320,12 +531,14 @@ export default function Dashboard() {
                   <div className={`p-3 ${kpi.bgColor} rounded-xl group-hover:scale-110 transition-transform`}>
                     <Icon className={`h-6 w-6 ${kpi.textColor}`} />
                   </div>
-                  <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full ${
-                    kpi.trend === 'up' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                  }`}>
-                    {kpi.trend === 'up' ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                    <span className="text-xs font-bold">{kpi.change}</span>
-                  </div>
+                  {kpi.change != null && (
+                    <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full ${
+                      kpi.trend === 'up' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    }`}>
+                      {kpi.trend === 'up' ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                      <span className="text-xs font-bold">{kpi.change}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-1">
@@ -472,7 +685,7 @@ export default function Dashboard() {
               </div>
               <h3 className="text-xl font-bold text-gray-900">{t('dashboard.top5Performances')}</h3>
             </div>
-            <Button size="sm" variant="secondary" onClick={() => navigate('/organizations')}>
+            <Button size="sm" variant="secondary" onClick={() => navigate('/app/organizations')}>
               {t('dashboard.seeAll')} <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
@@ -482,7 +695,7 @@ export default function Dashboard() {
               <div
                 key={org.id}
                 className="group flex items-center gap-4 p-4 bg-gradient-to-r from-gray-50 to-white rounded-2xl hover:from-green-50 hover:to-emerald-50 transition-all cursor-pointer border border-gray-100 hover:border-green-200"
-                onClick={() => toast.info(t('dashboard.detailsSoon'))}
+                onClick={() => navigate(`/app/organizations/${org.id}`)}
               >
                 <div className={`flex items-center justify-center w-10 h-10 rounded-xl font-bold text-sm shadow-lg ${
                   idx === 0 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white' :
@@ -499,7 +712,7 @@ export default function Dashboard() {
                   <p className="text-sm text-gray-600">{org.industry}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-black text-green-600">{org.overall_score}</p>
+                  <p className="text-2xl font-black text-green-600">{Math.round(org.overall_score ?? 0)}</p>
                   <span className={`inline-block mt-1 text-xs px-3 py-1 rounded-full font-bold ${getRatingBadge(org.rating || '')}`}>
                     {org.rating}
                   </span>
@@ -518,7 +731,7 @@ export default function Dashboard() {
               </div>
               <h3 className="text-xl font-bold text-gray-900">{t('dashboard.improvementPriorities')}</h3>
             </div>
-            <Button size="sm" variant="secondary" onClick={() => navigate('/organizations')}>
+            <Button size="sm" variant="secondary" onClick={() => navigate('/app/organizations')}>
               {t('dashboard.seeAll')} <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
@@ -528,7 +741,7 @@ export default function Dashboard() {
               <div
                 key={org.id}
                 className="group flex items-center gap-4 p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-2xl hover:from-orange-100 hover:to-red-100 transition-all cursor-pointer border border-orange-200"
-                onClick={() => toast.info(t('dashboard.detailsSoon'))}
+                onClick={() => navigate(`/app/organizations/${org.id}`)}
               >
                 <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-red-500 text-white font-bold text-sm shadow-lg">
                   {idx + 1}
@@ -538,7 +751,7 @@ export default function Dashboard() {
                   <p className="text-sm text-gray-600">{org.industry}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-black text-orange-600">{org.overall_score}</p>
+                  <p className="text-2xl font-black text-orange-600">{Math.round(org.overall_score ?? 0)}</p>
                   <span className={`inline-block mt-1 text-xs px-3 py-1 rounded-full font-bold ${getRatingBadge(org.rating || '')}`}>
                     {org.rating}
                   </span>
@@ -553,7 +766,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div 
           className="group p-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl cursor-pointer hover:shadow-2xl transition-all"
-          onClick={() => navigate('/calculated-metrics')}
+          onClick={() => navigate('/app/calculated-metrics')}
         >
           <Zap className="h-8 w-8 text-white mb-3" />
           <h4 className="text-white font-bold text-lg mb-1">{t('dashboard.autoCalcs')}</h4>
@@ -563,7 +776,7 @@ export default function Dashboard() {
 
         <div 
           className="group p-6 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl cursor-pointer hover:shadow-2xl transition-all"
-          onClick={() => navigate('/reports/generate')}
+          onClick={() => navigate('/app/reports/generate')}
         >
           <Download className="h-8 w-8 text-white mb-3" />
           <h4 className="text-white font-bold text-lg mb-1">{t('dashboard.pdfReports')}</h4>
@@ -573,7 +786,7 @@ export default function Dashboard() {
 
         <div 
           className="group p-6 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl cursor-pointer hover:shadow-2xl transition-all"
-          onClick={() => navigate('/my-data')}
+          onClick={() => navigate('/app/my-data')}
         >
           <Eye className="h-8 w-8 text-white mb-3" />
           <h4 className="text-white font-bold text-lg mb-1">{t('dashboard.myData')}</h4>

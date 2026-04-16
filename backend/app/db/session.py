@@ -86,12 +86,28 @@ async def init_db() -> None:
     Create all tables from the current metadata.
 
     For development and testing only — use Alembic migrations in production.
+    Also runs incremental ADD COLUMN IF NOT EXISTS for new columns added to
+    existing models, so that hot-reload picks them up automatically.
     """
     from app.db.base import Base  # noqa: PLC0415 (local import avoids circular refs)
 
     if settings.APP_ENV in {"development", "test"}:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+
+            # ── Incremental schema migrations ─────────────────────────────
+            # ADD COLUMN IF NOT EXISTS is idempotent — safe to run every startup.
+            _migrations = [
+                # 2FA fields on users
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret VARCHAR(64)",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_backup_codes JSONB",
+            ]
+            for sql in _migrations:
+                try:
+                    await conn.execute(text(sql))
+                except Exception:
+                    pass  # Column may already exist or table may not exist yet
 
 
 async def close_db() -> None:

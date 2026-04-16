@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Upload, FileText, CheckCircle, XCircle, AlertCircle, Database,
-  CloudUpload, ArrowLeft, FileSpreadsheet, Info, ChevronRight,
+  UploadCloud, ArrowLeft, FileSpreadsheet, Info, ChevronRight,
 } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
@@ -119,7 +119,7 @@ export default function UploadData() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15">
-              <CloudUpload size={13} />
+              <UploadCloud size={13} />
               {t('upload.heroTag', 'Import de données ESG')}
             </div>
             <h1 className="mt-4 flex items-center gap-3 text-3xl font-bold tracking-tight">
@@ -164,7 +164,7 @@ export default function UploadData() {
                 <div className={`w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center transition-colors ${
                   dragActive ? 'bg-blue-100' : 'bg-gray-100'
                 }`}>
-                  <CloudUpload size={32} className={dragActive ? 'text-blue-600' : 'text-gray-400'} />
+                  <UploadCloud size={32} className={dragActive ? 'text-blue-600' : 'text-gray-400'} />
                 </div>
                 <p className="text-lg font-semibold text-gray-900 mb-1">{t('upload.dropFile', 'Glissez votre fichier ici')}</p>
                 <p className="text-sm text-gray-500 mb-5">{t('upload.supportedFormats', 'CSV, XLSX, XLS — max 10 Mo')}</p>

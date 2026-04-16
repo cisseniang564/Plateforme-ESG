@@ -20,11 +20,13 @@ interface ScoreResult {
 interface RecalculateAllResult {
   total: number;
   successful: number;
-  failed: number;
+  skipped: number;   // pas de données — normal
+  failed: number;    // erreurs techniques
   details: Array<{
     organization_id: string;
     organization_name: string;
     success: boolean;
+    skipped?: boolean;
     overall_score?: number;
     rating?: string;
     error?: string;
@@ -143,13 +145,17 @@ export const useESGScoring = () => {
         params: { period_months: periodMonths },
       });
 
-      const { successful, failed, total } = response.data;
-      
-      if (failed === 0) {
+      const { successful, failed, skipped = 0, total } = response.data;
+
+      if (failed === 0 && skipped === 0) {
         toast.success(`✅ ${successful} scores calculés avec succès !`);
-      } else {
+      } else if (failed === 0) {
         toast.success(
-          `✅ ${successful}/${total} scores calculés (${failed} échecs)`
+          `✅ ${successful} scores calculés — ${skipped} organisations sans données`
+        );
+      } else {
+        toast.error(
+          `⚠️ ${successful}/${total} scores calculés — ${skipped} sans données, ${failed} erreur(s)`
         );
       }
 
@@ -206,11 +212,30 @@ export const useESGScoring = () => {
     }
   };
 
+  const populateSampleData = async (): Promise<{
+    populated: number;
+    data_points_created: number;
+    message: string;
+  } | null> => {
+    try {
+      setLoading(true);
+      const response = await api.post('/esg-scoring/populate-sample-data');
+      return response.data;
+    } catch (error: any) {
+      console.error('Error populating sample data:', error);
+      toast.error('Erreur lors de la génération des données de démo');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     calculateScore,
     calculateHistorical,
     recalculateAll,
+    populateSampleData,
     getDashboard,
     getOrganizationScores,
     checkDataQuality,

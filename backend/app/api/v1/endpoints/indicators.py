@@ -32,14 +32,15 @@ class IndicatorResponse(IndicatorBase):
     id: str
     is_active: bool
     is_mandatory: bool
-    
+    has_data: bool = False
+    data_count: int = 0
+    latest_date: Optional[str] = None
+
     class Config:
         from_attributes = True
 
 class IndicatorWithStats(IndicatorResponse):
-    data_count: int
     latest_value: Optional[float] = None
-    latest_date: Optional[str] = None
 
 class DataPoint(BaseModel):
     date: str
@@ -66,27 +67,34 @@ async def list_indicators(
         tenant_id = '00000000-0000-0000-0000-000000000001'
     
     sql = """
-        SELECT id, code, name, pillar, category, unit, data_type, 
-               description, framework, target_value, is_active, is_mandatory
-        FROM indicators
-        WHERE tenant_id = :tenant_id
-          AND is_active = :is_active
+        SELECT
+            i.id, i.code, i.name, i.pillar, i.category, i.unit, i.data_type,
+            i.description, i.framework, i.target_value, i.is_active, i.is_mandatory,
+            COUNT(id_data.id)         AS data_count,
+            MAX(id_data.date)         AS latest_date
+        FROM indicators i
+        LEFT JOIN indicator_data id_data
+               ON id_data.indicator_id = i.id
+              AND id_data.tenant_id = :tenant_id
+        WHERE i.tenant_id = :tenant_id
+          AND i.is_active = :is_active
     """
-    
+
     params = {
         "tenant_id": tenant_id,
-        "is_active": is_active
+        "is_active": is_active,
     }
-    
+
     if pillar:
-        sql += " AND pillar = :pillar"
+        sql += " AND i.pillar = :pillar"
         params["pillar"] = pillar
-    
-    sql += " ORDER BY pillar, code"
-    
+
+    sql += " GROUP BY i.id, i.code, i.name, i.pillar, i.category, i.unit, i.data_type, i.description, i.framework, i.target_value, i.is_active, i.is_mandatory"
+    sql += " ORDER BY i.pillar, i.code"
+
     result = await db.execute(text(sql), params)
     rows = result.fetchall()
-    
+
     return [
         IndicatorResponse(
             id=str(row.id),
@@ -100,7 +108,10 @@ async def list_indicators(
             framework=row.framework,
             target_value=float(row.target_value) if row.target_value else None,
             is_active=row.is_active,
-            is_mandatory=row.is_mandatory
+            is_mandatory=row.is_mandatory,
+            has_data=row.data_count > 0,
+            data_count=row.data_count,
+            latest_date=row.latest_date.isoformat() if row.latest_date else None,
         )
         for row in rows
     ]

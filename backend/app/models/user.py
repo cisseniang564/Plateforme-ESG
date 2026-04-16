@@ -80,6 +80,11 @@ class User(Base, UUIDMixin, TenantMixin, TimestampMixin):
     email_verified_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     last_login_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
 
+    # 2FA / MFA (TOTP)
+    mfa_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    totp_secret: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    mfa_backup_codes: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
+
     # Preferences
     locale: Mapped[str] = mapped_column(
         String(10),

@@ -24,19 +24,15 @@ import {
 } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
+import api from '@/services/api';
+import { reportsService } from '@/services/reportsService';
+import toast from 'react-hot-toast';
+import { usePlan, FeatureKey } from '@/hooks/usePlan';
+import { PlanBadge } from '@/components/common/PlanGate';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type ReportStatus = 'generated' | 'in_progress' | 'failed';
-
-interface MockReport {
-  id: number;
-  name: string;
-  type: string;
-  period: string;
-  status: ReportStatus;
-  created: string;
-}
 
 interface ScheduledReport {
   id: number;
@@ -115,22 +111,7 @@ const TEMPLATES: Template[] = [
   },
 ];
 
-const MOCK_REPORTS: MockReport[] = [
-  { id: 1, name: 'Rapport CSRD 2024 - Acme Corp', type: 'CSRD', period: '2024', status: 'generated', created: '15/03/2025' },
-  { id: 2, name: 'GRI Standards Q4 2024', type: 'GRI', period: 'T4 2024', status: 'generated', created: '10/03/2025' },
-  { id: 3, name: 'SFDR Article 9 - Fonds Vert', type: 'SFDR', period: '2024', status: 'in_progress', created: '20/03/2025' },
-  { id: 4, name: 'Bilan Carbone 2024', type: 'Personnalise', period: '2024', status: 'generated', created: '05/03/2025' },
-  { id: 5, name: 'DPEF Rapport Annuel 2023', type: 'DPEF', period: '2023', status: 'generated', created: '28/02/2025' },
-  { id: 6, name: 'Rapport GRI T3 2024', type: 'GRI', period: 'T3 2024', status: 'failed', created: '01/03/2025' },
-  { id: 7, name: 'CSRD Rapport Pilote', type: 'CSRD', period: 'T1 2024', status: 'generated', created: '20/01/2025' },
-  { id: 8, name: 'Analyse ESG Personnalisee', type: 'Personnalise', period: '2024', status: 'in_progress', created: '18/03/2025' },
-];
-
-const SCHEDULED_REPORTS: ScheduledReport[] = [
-  { id: 1, name: 'Rapport CSRD Mensuel', frequency: 'Mensuel', nextRun: '01/04/2025', template: 'CSRD / ESRS 2024' },
-  { id: 2, name: 'GRI Trimestriel', frequency: 'Trimestriel', nextRun: '01/07/2025', template: 'GRI Standards' },
-  { id: 3, name: 'Bilan Carbone Annuel', frequency: 'Annuel', nextRun: '01/01/2026', template: 'Bilan Carbone ADEME' },
-];
+// (no static mock data)
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -173,6 +154,16 @@ function FrequencyBadge({ freq }: { freq: string }) {
   );
 }
 
+// Map template id → feature gate key
+const TEMPLATE_FEATURE: Record<number, FeatureKey | null> = {
+  1: 'csrd_report',
+  2: null, // GRI — free
+  3: 'sfdr_report', // Pro
+  4: 'carbon_report', // Starter
+  5: 'dpef_report', // Starter
+  6: null,
+}
+
 function TemplateCard({
   template,
   compact = false,
@@ -184,18 +175,28 @@ function TemplateCard({
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { can } = usePlan();
+  const featureKey = TEMPLATE_FEATURE[template.id] ?? null;
+  const locked = featureKey !== null && !can(featureKey);
   const Icon = template.icon;
   return (
     <div
-      className={`border border-gray-200 rounded-xl p-5 hover:border-primary-400 hover:shadow-md transition-all cursor-pointer ${compact ? '' : 'flex flex-col gap-4'}`}
-      onClick={() => onSelect && onSelect(template)}
+      className={`border rounded-xl p-5 transition-all cursor-pointer ${compact ? '' : 'flex flex-col gap-4'} ${
+        locked
+          ? 'border-gray-200 bg-gray-50/60 opacity-80 hover:opacity-100 hover:border-purple-200'
+          : 'border-gray-200 hover:border-primary-400 hover:shadow-md'
+      }`}
+      onClick={() => !locked && onSelect && onSelect(template)}
     >
       <div className="flex items-start gap-3">
-        <div className={`w-10 h-10 rounded-lg ${template.colorBg} ${template.colorText} flex items-center justify-center flex-shrink-0`}>
+        <div className={`w-10 h-10 rounded-lg ${locked ? 'bg-gray-100 text-gray-400' : `${template.colorBg} ${template.colorText}`} flex items-center justify-center flex-shrink-0`}>
           <Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-gray-900 text-sm">{template.name}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-gray-900 text-sm">{template.name}</h3>
+            {locked && featureKey && <PlanBadge feature={featureKey} />}
+          </div>
           <p className="text-xs text-gray-500 mt-1 leading-relaxed">{template.desc}</p>
         </div>
       </div>
@@ -208,20 +209,32 @@ function TemplateCard({
       </div>
       {!compact && (
         <div className="flex gap-2 mt-2 flex-wrap">
-          <Button size="sm" onClick={(e: React.MouseEvent) => { e.stopPropagation(); onSelect && onSelect(template); }}>
-            {t('reports.useTemplate')}
-          </Button>
-          <Button size="sm" variant="secondary">
-            {t('reports.preview')}
-          </Button>
-          {template.id === 1 && (
+          {locked ? (
             <Button
               size="sm"
-              variant="secondary"
-              onClick={(e: React.MouseEvent) => { e.stopPropagation(); navigate('/app/reports/csrd-builder'); }}
+              onClick={(e: React.MouseEvent) => { e.stopPropagation(); navigate('/app/billing'); }}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
             >
-              Ouvrir le builder CSRD →
+              Mettre à niveau →
             </Button>
+          ) : (
+            <>
+              <Button size="sm" onClick={(e: React.MouseEvent) => { e.stopPropagation(); onSelect && onSelect(template); }}>
+                {t('reports.useTemplate')}
+              </Button>
+              <Button size="sm" variant="secondary">
+                {t('reports.preview')}
+              </Button>
+              {template.id === 1 && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={(e: React.MouseEvent) => { e.stopPropagation(); navigate('/app/reports/csrd-builder'); }}
+                >
+                  Ouvrir le builder CSRD →
+                </Button>
+              )}
+            </>
           )}
         </div>
       )}
@@ -233,12 +246,28 @@ function TemplateCard({
 
 function TabDashboard() {
   const { t } = useTranslation();
+  const [reports, setReports] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    reportsService.getReports()
+      .then(setReports)
+      .catch(() => setReports([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const now = new Date();
+  const thisMonth = reports.filter(r => {
+    const d = new Date(r.created_at || r.generated_at || '');
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length;
+  const pending = reports.filter(r => r.status === 'in_progress' || r.status === 'pending').length;
 
   const kpis = [
-    { label: t('reports.kpiGenerated'), value: 24, icon: FileText, color: 'bg-blue-50 text-blue-600' },
-    { label: t('reports.kpiDownloads'), value: 156, icon: Download, color: 'bg-green-50 text-green-600' },
-    { label: t('reports.kpiPending'), value: 3, icon: Clock, color: 'bg-amber-50 text-amber-600' },
-    { label: t('reports.kpiScheduled'), value: 8, icon: Calendar, color: 'bg-purple-50 text-purple-600' },
+    { label: t('reports.kpiGenerated'), value: reports.length, icon: FileText, color: 'bg-blue-50 text-blue-600' },
+    { label: t('reports.kpiDownloads'), value: thisMonth, icon: Download, color: 'bg-green-50 text-green-600' },
+    { label: t('reports.kpiPending'), value: pending, icon: Clock, color: 'bg-amber-50 text-amber-600' },
+    { label: t('reports.kpiScheduled'), value: 0, icon: Calendar, color: 'bg-purple-50 text-purple-600' },
   ];
 
   return (
@@ -265,72 +294,58 @@ function TabDashboard() {
 
       {/* Recent Reports Table */}
       <Card title={t('reports.recentReports')}>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="text-left py-2 px-3 font-medium text-gray-600">{t('reports.colName')}</th>
-                <th className="text-left py-2 px-3 font-medium text-gray-600">{t('reports.colType')}</th>
-                <th className="text-left py-2 px-3 font-medium text-gray-600">{t('reports.colPeriod')}</th>
-                <th className="text-left py-2 px-3 font-medium text-gray-600">{t('reports.colStatus')}</th>
-                <th className="text-left py-2 px-3 font-medium text-gray-600">{t('reports.colCreated')}</th>
-                <th className="text-left py-2 px-3 font-medium text-gray-600">{t('reports.colActions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {MOCK_REPORTS.map((r) => (
-                <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                  <td className="py-2.5 px-3 font-medium text-gray-900">{r.name}</td>
-                  <td className="py-2.5 px-3">
-                    <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">{r.type}</span>
-                  </td>
-                  <td className="py-2.5 px-3 text-gray-600">{r.period}</td>
-                  <td className="py-2.5 px-3">
-                    <StatusBadge status={r.status} />
-                  </td>
-                  <td className="py-2.5 px-3 text-gray-500">{r.created}</td>
-                  <td className="py-2.5 px-3">
-                    <div className="flex items-center gap-1">
-                      <button
-                        className="p-1.5 rounded hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors"
-                        title={t('reports.download')}
-                      >
-                        <Download className="h-4 w-4" />
-                      </button>
-                      <button
-                        className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
-                        title={t('reports.view')}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
+        {loading ? (
+          <div className="flex items-center justify-center py-10 text-gray-400">
+            <Loader2 className="h-5 w-5 animate-spin mr-2" />
+            <span className="text-sm">Chargement…</span>
+          </div>
+        ) : reports.length === 0 ? (
+          <div className="text-center py-10 text-gray-400">
+            <FileText className="h-10 w-10 mx-auto mb-3 opacity-30" />
+            <p className="text-sm font-medium">Aucun rapport généré</p>
+            <p className="text-xs mt-1">Créez votre premier rapport depuis l'onglet "Nouveau rapport"</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="text-left py-2 px-3 font-medium text-gray-600">{t('reports.colName')}</th>
+                  <th className="text-left py-2 px-3 font-medium text-gray-600">{t('reports.colType')}</th>
+                  <th className="text-left py-2 px-3 font-medium text-gray-600">{t('reports.colStatus')}</th>
+                  <th className="text-left py-2 px-3 font-medium text-gray-600">{t('reports.colCreated')}</th>
+                  <th className="text-left py-2 px-3 font-medium text-gray-600">{t('reports.colActions')}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {/* Scheduled Reports */}
-      <Card title={t('reports.scheduledReports')}>
-        <div className="space-y-3">
-          {SCHEDULED_REPORTS.map((sr) => (
-            <div key={sr.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:border-gray-200 transition-colors">
-              <div className="flex items-center gap-3">
-                <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                <div>
-                  <p className="font-medium text-gray-900 text-sm">{sr.name}</p>
-                  <p className="text-xs text-gray-500">{sr.template}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <FrequencyBadge freq={sr.frequency} />
-                <span className="text-xs text-gray-500">{sr.nextRun}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+              </thead>
+              <tbody>
+                {reports.slice(0, 8).map((r: any) => {
+                  const status: ReportStatus = r.status === 'completed' ? 'generated' : r.status === 'in_progress' ? 'in_progress' : 'failed';
+                  const created = r.created_at ? new Date(r.created_at).toLocaleDateString('fr-FR') : '—';
+                  return (
+                    <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                      <td className="py-2.5 px-3 font-medium text-gray-900">{r.name || r.title || `Rapport #${r.id}`}</td>
+                      <td className="py-2.5 px-3">
+                        <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">{r.report_type || r.type || '—'}</span>
+                      </td>
+                      <td className="py-2.5 px-3"><StatusBadge status={status} /></td>
+                      <td className="py-2.5 px-3 text-gray-500">{created}</td>
+                      <td className="py-2.5 px-3">
+                        <div className="flex items-center gap-1">
+                          <button className="p-1.5 rounded hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors" title={t('reports.download')}>
+                            <Download className="h-4 w-4" />
+                          </button>
+                          <button className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors" title={t('reports.view')}>
+                            <Eye className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
     </div>
   );
@@ -354,26 +369,83 @@ function TabNewReport({ onSelectTemplate }: { onSelectTemplate: (t: Template) =>
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [downloadFilename, setDownloadFilename] = useState('rapport.pdf');
+
+  // Mapping template → report_type backend
+  const TEMPLATE_TYPE_MAP: Record<number, string> = {
+    1: 'csrd',
+    2: 'gri',
+    3: 'sfdr',
+    4: 'carbon',
+    5: 'dpef',
+    6: 'detailed',
+  };
+
+  const FORMAT_MAP: Record<string, string> = {
+    PDF: 'pdf',
+    Excel: 'excel',
+    Word: 'word',
+    JSON: 'pdf', // fallback
+  };
+
+  // Nettoyage de l'URL objet à la destruction du composant
+  useEffect(() => {
+    return () => { if (downloadUrl) URL.revokeObjectURL(downloadUrl); };
+  }, [downloadUrl]);
 
   const handleSelectTemplate = (tmpl: Template) => {
     setSelectedTemplate(tmpl);
     setStep(2);
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
+    if (!selectedTemplate) return;
     setGenerating(true);
     setProgress(0);
+
+    // Fausse progression visuelle pendant l'appel API
     const interval = setInterval(() => {
-      setProgress((p) => {
-        if (p >= 100) {
-          clearInterval(interval);
-          setGenerating(false);
-          setGenerated(true);
-          return 100;
-        }
-        return p + 5;
-      });
-    }, 150);
+      setProgress((p) => (p < 85 ? p + 3 : p));
+    }, 200);
+
+    try {
+      const reportType = TEMPLATE_TYPE_MAP[selectedTemplate.id] ?? 'detailed';
+      const format = FORMAT_MAP[exportFormat] ?? 'pdf';
+      const year = new Date().getFullYear();
+
+      const response = await api.post(
+        '/reports/generate',
+        { report_type: reportType, period: 'annual', year, format },
+        { responseType: 'blob' }
+      );
+
+      // Créer une URL objet pour le téléchargement
+      const blob = new Blob([response.data], { type: response.headers['content-type'] });
+      const url = URL.createObjectURL(blob);
+      const filename = `rapport_${reportType}_${year}.${format}`;
+
+      setDownloadUrl(url);
+      setDownloadFilename(filename);
+      clearInterval(interval);
+      setProgress(100);
+      setGenerating(false);
+      setGenerated(true);
+    } catch (err: any) {
+      clearInterval(interval);
+      setGenerating(false);
+      setProgress(0);
+      const msg = err?.response?.data?.detail ?? 'Erreur lors de la génération du rapport';
+      toast.error(msg);
+    }
+  };
+
+  const handleDownload = () => {
+    if (!downloadUrl) return;
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = downloadFilename;
+    a.click();
   };
 
   const steps = [
@@ -573,7 +645,7 @@ function TabNewReport({ onSelectTemplate }: { onSelectTemplate: (t: Template) =>
                   <CheckCircle className="h-5 w-5 flex-shrink-0" />
                   {t('reports.successMsg')}
                 </div>
-                <Button className="w-full justify-center" onClick={() => {}}>
+                <Button className="w-full justify-center" onClick={handleDownload}>
                   <Download className="h-5 w-5 mr-2" />
                   {t('reports.downloadBtn')}
                 </Button>
@@ -616,7 +688,7 @@ function TabTemplates({ onUse }: { onUse: (tmpl: Template) => void }) {
 
 function TabSchedule() {
   const { t } = useTranslation();
-  const [scheduled, setScheduled] = useState<ScheduledReport[]>(SCHEDULED_REPORTS);
+  const [scheduled, setScheduled] = useState<ScheduledReport[]>([]);
   const [form, setForm] = useState({ template: '', frequency: 'Mensuel', day: '1', recipient: '' });
 
   const handleDelete = (id: number) => setScheduled((s) => s.filter((r) => r.id !== id));

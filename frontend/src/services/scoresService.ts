@@ -21,8 +21,9 @@ export const scoresService = {
     return response.data;
   },
 
-  getScoreHistory: async (indicatorId: string) => {
-    const response = await api.get(`/scores/history/${indicatorId}`);
+  // Historique sur les N derniers jours (endpoint: GET /scores/history)
+  getScoreHistory: async (params?: { start_date?: string; end_date?: string; organization_id?: string }) => {
+    const response = await api.get('/scores/history', { params });
     return response.data;
   },
 };

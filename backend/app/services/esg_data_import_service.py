@@ -12,6 +12,8 @@ from sqlalchemy import select
 
 from app.models.data_upload import DataUpload
 from app.models.data_entry import DataEntry
+from app.models.indicator import Indicator
+from app.models.indicator_data import IndicatorData
 from app.services.audit_service import log_change
 
 
@@ -63,13 +65,13 @@ class ESGDataImportService:
                 raise ValueError(f"Unsupported file type: {filename}")
             
             detected_mapping = self._auto_detect_columns(df.columns.tolist())
-            
+
             total_rows = len(df)
-            preview = df.head(10).to_dict('records')
-            preview = self._clean_nan(preview)
-            
+            all_rows = self._clean_nan(df.to_dict('records'))   # ← toutes les lignes
+            preview = all_rows[:10]                              # ← 10 premières pour l'UI
+
             validation_result = self._validate_for_import(df, detected_mapping)
-            
+
             upload.total_rows = total_rows
             upload.valid_rows = validation_result['valid_count']
             upload.invalid_rows = validation_result['invalid_count']
@@ -79,6 +81,7 @@ class ESGDataImportService:
                 'columns': list(df.columns),
                 'detected_mapping': detected_mapping,
                 'dtypes': {col: str(dtype) for col, dtype in df.dtypes.items()},
+                'all_rows': all_rows,   # ← stockage complet pour l'import réel
             }
             upload.status = "completed"
             upload.processing_completed_at = datetime.utcnow()
@@ -99,9 +102,15 @@ class ESGDataImportService:
         column_mapping: dict[str, str],
         tenant_id: UUID,
         user_id: UUID,
+        organization_id: Optional[UUID] = None,
     ) -> dict[str, Any]:
-        """Import data from upload to data_entries table."""
-        
+        """Import data from upload to data_entries table.
+
+        Also creates IndicatorData records for any row whose metric_name
+        matches a known Indicator (by name or code), so the ESG scoring
+        engine can pick up the data immediately.
+        """
+
         result = await self.db.execute(
             select(DataUpload).where(
                 DataUpload.id == upload_id,
@@ -109,31 +118,59 @@ class ESGDataImportService:
             )
         )
         upload = result.scalar_one_or_none()
-        
+
         if not upload:
             raise ValueError("Upload not found")
-        
+
+        # ------------------------------------------------------------------
+        # Build indicator lookup: name (lowercase) → Indicator
+        #                        code (lowercase) → Indicator
+        # ------------------------------------------------------------------
+        ind_result = await self.db.execute(
+            select(Indicator).where(
+                Indicator.tenant_id == tenant_id,
+                Indicator.is_active == True,
+            )
+        )
+        indicators_by_name: dict[str, Indicator] = {}
+        indicators_by_code: dict[str, Indicator] = {}
+        for ind in ind_result.scalars().all():
+            indicators_by_name[ind.name.lower().strip()] = ind
+            indicators_by_code[ind.code.lower().strip()] = ind
+
         imported_count = 0
+        indicator_data_created = 0
         error_count = 0
         errors = []
-        
-        for idx, row_data in enumerate(upload.data_preview or []):
+
+        # Lire toutes les lignes (data_preview = 10 lignes seulement pour l'UI)
+        all_rows = (upload.file_metadata or {}).get('all_rows') or upload.data_preview or []
+
+        for idx, row_data in enumerate(all_rows):
             try:
                 entry_data = self._map_row_to_entry(row_data, column_mapping)
-                
-                # FIX: Valider les types AVANT insertion
+
+                # Valider les types AVANT insertion
                 self._validate_entry_types(entry_data, idx)
-                
+
+                # Resolve organization_id: explicit arg > CSV 'organisation' column
+                resolved_org_id = organization_id
+                if not resolved_org_id:
+                    # Some CSVs may carry an org name; skip lookup here –
+                    # callers who need multi-org should use IndicatorDataService.
+                    pass
+
                 entry = DataEntry(
                     tenant_id=tenant_id,
                     created_by=user_id,
                     collection_method='csv_import',
+                    organization_id=resolved_org_id,
                     **entry_data
                 )
-                
+
                 self.db.add(entry)
                 await self.db.flush()
-                
+
                 await log_change(
                     db=self.db,
                     tenant_id=tenant_id,
@@ -142,9 +179,40 @@ class ESGDataImportService:
                     action='create',
                     new_values={'source': 'csv_import', 'filename': upload.filename},
                 )
-                
+
                 imported_count += 1
-                
+
+                # ----------------------------------------------------------
+                # Bridge: also write to indicator_data so the scoring engine
+                # can find this data (it only queries indicator_data).
+                # Match metric_name against Indicator.name or Indicator.code.
+                # ----------------------------------------------------------
+                if resolved_org_id and entry_data.get('value_numeric') is not None:
+                    metric_key = str(entry_data.get('metric_name', '')).lower().strip()
+                    matched_indicator = (
+                        indicators_by_name.get(metric_key)
+                        or indicators_by_code.get(metric_key)
+                    )
+                    if matched_indicator:
+                        data_date = entry_data.get('period_start')
+                        if not isinstance(data_date, date):
+                            data_date = date.today()
+
+                        ind_data = IndicatorData(
+                            tenant_id=tenant_id,
+                            indicator_id=matched_indicator.id,
+                            organization_id=resolved_org_id,
+                            upload_id=upload_id,
+                            date=data_date,
+                            value=float(entry_data['value_numeric']),
+                            unit=entry_data.get('unit') or matched_indicator.unit,
+                            notes=entry_data.get('notes'),
+                            source='upload',
+                            is_verified=False,
+                        )
+                        self.db.add(ind_data)
+                        indicator_data_created += 1
+
             except Exception as e:
                 error_count += 1
                 errors.append({
@@ -154,16 +222,17 @@ class ESGDataImportService:
                 })
                 # Continue avec les autres lignes
                 continue
-        
+
         await self.db.commit()
-        
+
         upload.valid_rows = imported_count
         upload.invalid_rows = error_count
         upload.status = 'imported'
         await self.db.commit()
-        
+
         return {
             'imported': imported_count,
+            'indicator_data_created': indicator_data_created,
             'errors': error_count,
             'error_details': errors[:50],
             'upload_id': str(upload_id)
@@ -303,14 +372,14 @@ class ESGDataImportService:
         }
     
     def _detect_file_type(self, filename: str) -> str:
-        """Detect MIME type."""
+        """Detect file type identifier from filename (kept ≤ 50 chars)."""
         if filename.endswith('.csv'):
-            return 'text/csv'
+            return 'csv'
         elif filename.endswith('.xlsx'):
-            return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            return 'xlsx'
         elif filename.endswith('.xls'):
-            return 'application/vnd.ms-excel'
-        return 'application/octet-stream'
+            return 'xls'
+        return 'unknown'
     
     def _clean_nan(self, data: list[dict]) -> list[dict]:
         """Replace NaN with None."""

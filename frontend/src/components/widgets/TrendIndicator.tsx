@@ -35,7 +35,7 @@ export default function TrendIndicator({ value, label, size = 'md' }: TrendIndic
         <TrendingDown className={iconSizes[size]} />
       )}
       <span className={`font-medium ${sizeClasses[size]}`}>
-        {isPositive ? '+' : ''}{value.toFixed(1)}%
+        {isPositive ? '+' : ''}{(value ?? 0).toFixed(1)}%
       </span>
       {label && (
         <span className={`text-gray-500 ${sizeClasses[size]}`}>{label}</span>

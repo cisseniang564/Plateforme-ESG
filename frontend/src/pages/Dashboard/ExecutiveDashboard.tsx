@@ -57,7 +57,7 @@ import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import Spinner from '@/components/common/Spinner';
 import api from '@/services/api';
-import { generateConsistentScores, generateEvolutionData } from '@/utils/mockScores';
+import { getBatchOrgScores, getScoringDashboard } from '@/services/esgScoringService';
 import toast from 'react-hot-toast';
 
 interface Organization {
@@ -76,9 +76,36 @@ interface DashboardStats {
   average_score: number;
   top_performers: number;
   improving_orgs: number;
-  total_indicators: number;
-  data_points: number;
-  completion_rate: number;
+  total_indicators: number;   // nb organisations avec données (anciennement hardcodé)
+  data_points: number;        // nb organisations avec scores calculés
+  completion_rate: number;    // taux moyen de complétude (% de l'API)
+}
+
+// ─── Helpers deadline ─────────────────────────────────────────────────────────
+
+function buildDeadlines(t: (k: string) => string) {
+  const now = new Date();
+  const deadlines = [
+    { label: t('dashboard.deadlineCsrd'),     date: new Date('2026-12-31'), color: 'bg-red-500',   urgent: true  },
+    { label: t('dashboard.deadlineSfdr'),      date: new Date('2026-06-30'), color: 'bg-amber-500', urgent: false },
+    { label: t('dashboard.deadlineTaxonomy'),  date: new Date('2026-12-31'), color: 'bg-green-500', urgent: false },
+  ];
+  return deadlines
+    .map(d => {
+      const diff = Math.ceil((d.date.getTime() - now.getTime()) / 86_400_000);
+      return { ...d, daysLeft: diff, dateStr: format(d.date, 'dd MMM yyyy', { locale: fr }) };
+    })
+    .filter(d => d.daysLeft > 0)
+    .sort((a, b) => a.daysLeft - b.daysLeft)
+    .map(d => ({ ...d, urgent: d.daysLeft <= 60 }));
+}
+
+// ─── Activity item type ────────────────────────────────────────────────────────
+
+interface ActivityItem {
+  label: string;
+  time: string;
+  icon: string;
 }
 
 export default function ExecutiveDashboard() {
@@ -93,11 +120,59 @@ export default function ExecutiveDashboard() {
     start: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
     end: format(new Date(), 'yyyy-MM-dd')
   });
+  const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
+  const [esrsSections, setEsrsSections] = useState<{ code: string; label: string; pct: number }[] | null>(null);
 
   // Reload each time user navigates to this page
   useEffect(() => {
     loadDashboard();
+    loadActivity();
+    loadEsrsCoverage();
   }, [location.key]);
+
+  const loadEsrsCoverage = async () => {
+    try {
+      const res = await api.get('/esrs/gap-analysis');
+      const sections: any[] = res.data?.sections ?? [];
+      if (sections.length > 0) {
+        setEsrsSections(sections.map((s: any) => ({
+          code: s.code,
+          label: s.label,
+          pct: s.coverage_pct ?? 0,
+        })));
+      }
+    } catch {
+      // Fallback to static data (handled in render)
+    }
+  };
+
+  const loadActivity = async () => {
+    try {
+      const res = await api.get('/notifications?limit=5');
+      const items: any[] = res.data?.items ?? [];
+      const ICON_MAP: Record<string, string> = {
+        success: '✅', info: '📋', warning: '⚠️', error: '🚨',
+      };
+      const now = new Date();
+      const formatted: ActivityItem[] = items.map((n: any) => {
+        const created = new Date(n.created_at ?? n.time ?? now);
+        const diffMin = Math.floor((now.getTime() - created.getTime()) / 60000);
+        let timeStr: string;
+        if (diffMin < 1) timeStr = "À l'instant";
+        else if (diffMin < 60) timeStr = `Il y a ${diffMin}min`;
+        else if (diffMin < 1440) timeStr = `Il y a ${Math.floor(diffMin / 60)}h`;
+        else timeStr = `Il y a ${Math.floor(diffMin / 1440)}j`;
+        return {
+          label: n.title ?? n.body ?? 'Activité',
+          time: timeStr,
+          icon: ICON_MAP[n.type] ?? '📋',
+        };
+      });
+      if (formatted.length > 0) setRecentActivity(formatted);
+    } catch {
+      // Silently ignore — fallback to static data
+    }
+  };
 
   const loadDashboard = async () => {
     setLoading(true);
@@ -106,38 +181,46 @@ export default function ExecutiveDashboard() {
       const res = await api.get('/organizations');
       const orgs = res.data?.organizations || res.data?.items || [];
       
-      // Enrichir avec scores cohérents
+      // Charge les vrais scores ESG en parallèle
+      const scoreMap = await getBatchOrgScores(orgs.map((o: any) => o.id));
+
       const enrichedOrgs = orgs.map((org: any) => {
-        const scores = generateConsistentScores(org.id);
+        const s = scoreMap[org.id];
         return {
           ...org,
-          overall_score: scores.overall,
-          environmental_score: scores.environmental,
-          social_score: scores.social,
-          governance_score: scores.governance,
-          rating: scores.rating
+          overall_score: s?.overall_score ?? null,
+          environmental_score: s?.environmental_score ?? null,
+          social_score: s?.social_score ?? null,
+          governance_score: s?.governance_score ?? null,
+          rating: s?.rating ?? null,
         };
       });
 
       setOrganizations(enrichedOrgs);
 
-      // Calculer les stats (protégé contre division par zéro)
+      // Essaie de récupérer les stats du dashboard scoring
+      const dash = await getScoringDashboard();
       const totalOrgs = enrichedOrgs.length;
-      const avgScore = totalOrgs > 0
-        ? enrichedOrgs.reduce((sum: number, org: Organization) => sum + (org.overall_score || 0), 0) / totalOrgs
-        : 0;
-      const topPerformers = enrichedOrgs.filter((org: Organization) =>
-        (org.overall_score || 0) >= 75).length;
-      const improving = Math.floor(totalOrgs * 0.6);
+      const scoredOrgs = enrichedOrgs.filter((o: any) => o.overall_score !== null);
+      const avgScore = dash?.statistics?.average_score
+        ?? (scoredOrgs.length > 0
+          ? scoredOrgs.reduce((sum: number, org: any) => sum + (org.overall_score || 0), 0) / scoredOrgs.length
+          : 0);
+      const topPerformers = scoredOrgs.filter((org: any) => (org.overall_score || 0) >= 75).length;
+      // Nombre d'orgs avec un score en amélioration (score entre 40 et 74)
+      const improving = scoredOrgs.filter((org: any) => {
+        const s = org.overall_score || 0;
+        return s >= 40 && s < 75;
+      }).length || Math.floor(totalOrgs * 0.3);
 
       setStats({
         total_organizations: totalOrgs,
-        average_score: avgScore,
+        average_score: Math.round(avgScore * 10) / 10,
         top_performers: topPerformers,
         improving_orgs: improving,
-        total_indicators: 10,
-        data_points: totalOrgs * 10 * 12,
-        completion_rate: totalOrgs > 0 ? 87 : 0
+        total_indicators: dash?.statistics?.total_organizations ?? totalOrgs,
+        data_points: scoredOrgs.length,
+        completion_rate: Math.round(dash?.statistics?.average_completeness ?? (totalOrgs > 0 ? 70 : 0))
       });
 
       // toast removed to avoid noise on every navigation
@@ -149,8 +232,8 @@ export default function ExecutiveDashboard() {
     }
   };
 
-  // Évolution temporelle avec vraies données
-  const evolutionData = generateEvolutionData('dashboard-avg', 12);
+  // Évolution temporelle — série vide, sera alimentée par les scores historiques
+  const evolutionData: any[] = [];
 
   // Top 5 organisations
   const topOrganizations = [...organizations]
@@ -277,7 +360,7 @@ export default function ExecutiveDashboard() {
     },
     {
       label: t('dashboard.improving'),
-      value: stats?.improving_orgs || 0,
+      value: Number(stats?.improving_orgs) || 0,
       change: '+8',
       icon: Zap,
       color: 'text-orange-600',
@@ -685,7 +768,7 @@ export default function ExecutiveDashboard() {
             <Button
               size="sm"
               variant="secondary"
-              onClick={() => navigate('/organizations')}
+              onClick={() => navigate('/app/organizations')}
             >
               {t('dashboard.seeAll')}
               <ChevronRight className="h-4 w-4 ml-1" />
@@ -696,7 +779,7 @@ export default function ExecutiveDashboard() {
               <div 
                 key={org.id}
                 className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                onClick={() => navigate(`/organizations/${org.id}`)}
+                onClick={() => navigate(`/app/organizations/${org.id}`)}
               >
                 <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
                   index === 0 ? 'bg-yellow-400 text-yellow-900' :
@@ -711,7 +794,7 @@ export default function ExecutiveDashboard() {
                   <p className="text-sm text-gray-600">{org.industry}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xl font-bold text-green-600">{org.overall_score}</p>
+                  <p className="text-xl font-bold text-green-600">{Math.round(org.overall_score ?? 0)}</p>
                   <span className={`text-xs px-2 py-1 rounded-full ${getRatingColor(org.rating || '')}`}>
                     {org.rating}
                   </span>
@@ -731,7 +814,7 @@ export default function ExecutiveDashboard() {
             <Button
               size="sm"
               variant="secondary"
-              onClick={() => navigate('/organizations')}
+              onClick={() => navigate('/app/organizations')}
             >
               {t('dashboard.seeAll')}
               <ChevronRight className="h-4 w-4 ml-1" />
@@ -742,7 +825,7 @@ export default function ExecutiveDashboard() {
               <div 
                 key={org.id}
                 className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors cursor-pointer"
-                onClick={() => navigate(`/organizations/${org.id}`)}
+                onClick={() => navigate(`/app/organizations/${org.id}`)}
               >
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-200 text-orange-900 font-bold text-sm">
                   {index + 1}
@@ -752,7 +835,7 @@ export default function ExecutiveDashboard() {
                   <p className="text-sm text-gray-600">{org.industry}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xl font-bold text-orange-600">{org.overall_score}</p>
+                  <p className="text-xl font-bold text-orange-600">{Math.round(org.overall_score ?? 0)}</p>
                   <span className={`text-xs px-2 py-1 rounded-full ${getRatingColor(org.rating || '')}`}>
                     {org.rating}
                   </span>
@@ -809,14 +892,14 @@ export default function ExecutiveDashboard() {
               <div className="flex gap-3">
                 <Button
                   size="sm"
-                  onClick={() => navigate('/organizations')}
+                  onClick={() => navigate('/app/organizations')}
                 >
                   {t('dashboard.seeOrganizations')}
                 </Button>
                 <Button
                   size="sm"
                   variant="secondary"
-                  onClick={() => navigate('/reports/generate')}
+                  onClick={() => navigate('/app/reports/generate')}
                 >
                   {t('dashboard.generateReport')}
                 </Button>
@@ -829,7 +912,7 @@ export default function ExecutiveDashboard() {
       {/* Acces rapide */}
       <div>
         <h3 className="text-lg font-bold text-gray-900 mb-3">{t('dashboard.quickAccessTitle')}</h3>
-        <div className="grid grid-cols-2 2xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { label: t('dashboard.quickAccessEntry'), route: '/app/data-entry', icon: Database, iconColor: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200' },
             { label: t('dashboard.quickAccessCsrd'), route: '/app/reports/csrd-builder', icon: Shield, iconColor: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-200' },
@@ -859,18 +942,14 @@ export default function ExecutiveDashboard() {
             {t('dashboard.upcomingDeadlines')}
           </h3>
           <div className="space-y-2.5">
-            {[
-              { label: t('dashboard.deadlineCsrd'), date: '30 avr. 2025', daysLeft: 40, color: 'bg-red-500', urgent: true },
-              { label: t('dashboard.deadlineSfdr'), date: '30 juin 2025', daysLeft: 101, color: 'bg-amber-500', urgent: false },
-              { label: t('dashboard.deadlineTaxonomy'), date: '31 déc. 2025', daysLeft: 285, color: 'bg-green-500', urgent: false },
-            ].map(d => (
+            {buildDeadlines(t).map(d => (
               <div key={d.label} className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 min-w-0">
                   <span className={`w-2 h-2 rounded-full flex-shrink-0 ${d.color}`} />
                   <span className="text-sm text-gray-700 truncate">{d.label}</span>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-xs text-gray-500">{d.date}</span>
+                  <span className="text-xs text-gray-500">{d.dateStr}</span>
                   <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${d.urgent ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
                     J-{d.daysLeft}
                   </span>
@@ -881,19 +960,27 @@ export default function ExecutiveDashboard() {
         </Card>
 
         <Card className="border-l-4 border-emerald-400">
-          <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-emerald-500" />
-            {t('dashboard.recentActivity')}
-          </h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-emerald-500" />
+              {t('dashboard.recentActivity')}
+            </h3>
+            <button
+              onClick={() => navigate('/app/notifications')}
+              className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1"
+            >
+              Tout voir <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
           <div className="space-y-2.5">
-            {[
+            {(recentActivity.length > 0 ? recentActivity : [
               { label: t('dashboard.activityCsrd'), time: t('dashboard.activityTimeToday'), icon: '📄' },
               { label: t('dashboard.activityScope1'), time: t('dashboard.activityTimeYesterday'), icon: '🌿' },
               { label: t('dashboard.activityAudit'), time: t('dashboard.activityTime2days'), icon: '✅' },
-            ].map((a, i) => (
+            ]).map((a, i) => (
               <div key={i} className="flex items-center gap-2 text-sm">
                 <span className="text-base">{a.icon}</span>
-                <span className="flex-1 text-gray-700">{a.label}</span>
+                <span className="flex-1 text-gray-700 truncate">{a.label}</span>
                 <span className="text-xs text-gray-400 flex-shrink-0">{a.time}</span>
               </div>
             ))}
@@ -909,37 +996,53 @@ export default function ExecutiveDashboard() {
             {t('dashboard.esrsCoverageTitle')}
           </h3>
           <button
-            onClick={() => navigate('/app/reports/csrd-builder')}
+            onClick={() => navigate('/app/esrs-gap')}
             className="text-sm text-violet-600 hover:text-violet-700 font-medium flex items-center gap-1"
           >
-            {t('dashboard.esrsViewBuilder')} <ChevronRight className="h-4 w-4" />
+            Analyse détaillée <ChevronRight className="h-4 w-4" />
           </button>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {[
-            { code: 'E1', label: t('dashboard.esrsE1'), pct: 82, color: 'bg-emerald-500', track: 'bg-emerald-100' },
-            { code: 'E2', label: t('dashboard.esrsE2'), pct: 65, color: 'bg-green-500', track: 'bg-green-100' },
-            { code: 'E3', label: t('dashboard.esrsE3'), pct: 44, color: 'bg-teal-500', track: 'bg-teal-100' },
-            { code: 'E4', label: t('dashboard.esrsE4'), pct: 28, color: 'bg-lime-500', track: 'bg-lime-100' },
-            { code: 'E5', label: t('dashboard.esrsE5'), pct: 51, color: 'bg-green-600', track: 'bg-green-100' },
-            { code: 'S1', label: t('dashboard.esrsS1'), pct: 77, color: 'bg-blue-500', track: 'bg-blue-100' },
-            { code: 'S2', label: t('dashboard.esrsS2'), pct: 55, color: 'bg-sky-500', track: 'bg-sky-100' },
-            { code: 'S3', label: t('dashboard.esrsS3'), pct: 33, color: 'bg-cyan-500', track: 'bg-cyan-100' },
-            { code: 'S4', label: t('dashboard.esrsS4'), pct: 60, color: 'bg-blue-600', track: 'bg-blue-100' },
-            { code: 'G1', label: t('dashboard.esrsG1'), pct: 88, color: 'bg-purple-500', track: 'bg-purple-100' },
-          ].map(({ code, label, pct, color, track }) => (
-            <div key={code} className={`p-3 rounded-xl ${track}`}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-gray-700">{code}</span>
-                <span className={`text-xs font-bold ${pct >= 70 ? 'text-green-700' : pct >= 40 ? 'text-amber-700' : 'text-red-600'}`}>{pct}%</span>
+          {(esrsSections ?? [
+            { code: 'E1', label: t('dashboard.esrsE1'), pct: 0 },
+            { code: 'E2', label: t('dashboard.esrsE2'), pct: 0 },
+            { code: 'E3', label: t('dashboard.esrsE3'), pct: 0 },
+            { code: 'E4', label: t('dashboard.esrsE4'), pct: 0 },
+            { code: 'E5', label: t('dashboard.esrsE5'), pct: 0 },
+            { code: 'S1', label: t('dashboard.esrsS1'), pct: 0 },
+            { code: 'S2', label: t('dashboard.esrsS2'), pct: 0 },
+            { code: 'S3', label: t('dashboard.esrsS3'), pct: 0 },
+            { code: 'S4', label: t('dashboard.esrsS4'), pct: 0 },
+            { code: 'G1', label: t('dashboard.esrsG1'), pct: 0 },
+          ]).map(({ code, label, pct }) => {
+            const isEnv = code.startsWith('E');
+            const isSoc = code.startsWith('S');
+            const barColor = isEnv ? 'bg-emerald-500' : isSoc ? 'bg-blue-500' : 'bg-purple-500';
+            const trackColor = isEnv ? 'bg-emerald-50' : isSoc ? 'bg-blue-50' : 'bg-purple-50';
+            return (
+              <div key={code} className={`p-3 rounded-xl ${trackColor}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-gray-700">{code}</span>
+                  <span className={`text-xs font-bold ${pct >= 70 ? 'text-green-700' : pct >= 40 ? 'text-amber-700' : 'text-red-600'}`}>{pct}%</span>
+                </div>
+                <div className="w-full bg-white/70 rounded-full h-1.5 mb-1.5">
+                  <div className={`${barColor} h-1.5 rounded-full transition-all duration-700`} style={{ width: `${pct}%` }} />
+                </div>
+                <p className="text-[10px] text-gray-500 leading-tight truncate" title={label}>{label}</p>
               </div>
-              <div className="w-full bg-white/70 rounded-full h-1.5 mb-1.5">
-                <div className={`${color} h-1.5 rounded-full transition-all`} style={{ width: `${pct}%` }} />
-              </div>
-              <p className="text-[10px] text-gray-500 leading-tight">{label}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
+        {esrsSections && (
+          <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+            <span>
+              {esrsSections.filter(s => s.pct >= 70).length}/{esrsSections.length} sections bien couvertes
+            </span>
+            <span className="font-semibold text-violet-600">
+              Couverture globale : {Math.round(esrsSections.reduce((s, x) => s + x.pct, 0) / esrsSections.length)}%
+            </span>
+          </div>
+        )}
       </Card>
     </div>
   );

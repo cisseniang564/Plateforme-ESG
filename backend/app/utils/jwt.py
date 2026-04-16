@@ -169,3 +169,19 @@ def create_password_reset_token(email: str, user_id: UUID) -> str:
         "type": "password_reset",
     }
     return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+
+
+def create_2fa_temp_token(user_id: UUID) -> str:
+    """Create a short-lived (5 min) token for the 2FA login step.
+
+    The token type ``2fa_temp`` is checked by ``verify_2fa_login()`` so it
+    cannot be used as a normal access token.
+    """
+    now = datetime.now(timezone.utc)
+    payload: Dict[str, Any] = {
+        "user_id": str(user_id),
+        "exp": now + timedelta(minutes=5),
+        "iat": now,
+        "type": "2fa_temp",
+    }
+    return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
