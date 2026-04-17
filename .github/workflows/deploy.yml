@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
 
-# Require CI to pass before deploying
 concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: true
@@ -30,7 +29,8 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Extract metadata
+      # ── Backend ────────────────────────────────────────────────────────────
+      - name: Extract backend metadata
         id: meta-backend
         uses: docker/metadata-action@v5
         with:
@@ -48,6 +48,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # ── Frontend ───────────────────────────────────────────────────────────
       - name: Extract frontend metadata
         id: meta-frontend
         uses: docker/metadata-action@v5
@@ -66,7 +67,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # Optional SSH deploy step — requires SSH_HOST and SSH_KEY secrets
+  # ── SSH Deploy — nécessite SSH_HOST + SSH_USER + SSH_PASSWORD dans les secrets ──
   deploy:
     name: Deploy to Production
     needs: build-and-push
@@ -74,14 +75,41 @@ jobs:
     if: ${{ secrets.SSH_HOST != '' }}
 
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy docker-compose.prod.yml to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          source: "docker-compose.prod.yml,nginx/nginx.conf,nginx/nginx.http.conf"
+          target: /opt/esgflow
+          strip_components: 0
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
+          password: ${{ secrets.SSH_PASSWORD }}
           script: |
+            set -e
             cd /opt/esgflow
+
+            # Authentification GHCR pour pouvoir pull les images privées
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io \
+              -u ${{ secrets.SSH_USER }} --password-stdin || \
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
+              -u cisseniang564 --password-stdin || true
+
+            # Pull les nouvelles images
             docker compose -f docker-compose.prod.yml pull
+
+            # Redémarrer les services
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
+
+            # Nettoyage des vieilles images
             docker image prune -f
+
+            echo "✅ Déploiement terminé — $(date)"
