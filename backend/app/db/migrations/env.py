@@ -93,8 +93,8 @@ async def run_async_migrations() -> None:
     """
     # Get the alembic configuration
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = settings.database_url_sync
-    
+    configuration["sqlalchemy.url"] = str(settings.DATABASE_URL)
+
     # Create async engine
     connectable = async_engine_from_config(
         configuration,
