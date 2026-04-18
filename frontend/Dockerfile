@@ -8,6 +8,8 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
+# URL relative → nginx proxie /api/ vers le backend (fonctionne quel que soit le domaine)
+RUN echo "VITE_API_URL=/api/v1" > .env.production
 RUN npm run build
 
 # ──────────────────────────────────────────────────────────────
