@@ -146,7 +146,6 @@ class ESGDataEnrichmentService:
             external_id=siren,
             org_type='company',
             industry=secteur,
-            country='FR',
             custom_data={
                 'insee': {
                     'siren': siren,
