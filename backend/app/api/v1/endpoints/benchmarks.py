@@ -5,7 +5,7 @@ from typing import Optional
 from app.services.sector_benchmark_service import SectorBenchmarkService
 from app.db.session import get_db
 
-router = APIRouter(prefix="/benchmarking", tags=["Benchmarking"])
+router = APIRouter(prefix="/benchmarks", tags=["Benchmarking"])
 
 @router.get("/sector/{sector}")
 async def get_sector_benchmarks(
