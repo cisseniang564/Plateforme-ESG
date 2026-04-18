@@ -115,14 +115,17 @@ class ESGScoringEngine:
             period_months=period_months,
             use_rolling_avg=use_rolling_avg,
         )
-        if not indicator_data:
-            # Fallback: lire depuis data_entries (données enrichissement legacy)
-            indicator_data = await self._collect_from_data_entries(
+        # Fallback si aucune donnée ou données insuffisantes pour scorer
+        # (< 5 métriques = impossible de calculer les 3 piliers E/S/G correctement)
+        if not indicator_data or len(indicator_data) < 5:
+            data_entries_data = await self._collect_from_data_entries(
                 tenant_id=tenant_id,
                 organization_id=organization_id,
                 calculation_date=calculation_date,
                 period_months=period_months,
             )
+            if data_entries_data and len(data_entries_data) >= len(indicator_data or {}):
+                indicator_data = data_entries_data
         if not indicator_data:
             raise ValueError("No indicator data found for scoring")
 
@@ -355,8 +358,9 @@ class ESGScoringEngine:
 
         return indicator_results
 
-    # Reverse-mapping metric_name → code (built from DEFAULT_METRICS)
+    # Reverse-mapping metric_name → code (DEFAULT_METRICS + variantes historiques)
     _METRIC_NAME_TO_CODE: Dict[str, str] = {
+        # ── Noms DEFAULT_METRICS actuels ──────────────────────────────────────
         'Émissions Scope 1 (tCO2e)': 'ENV-001',
         'Émissions Scope 2 (tCO2e)': 'ENV-002',
         'Consommation énergie totale (MWh)': 'ENV-003',
@@ -377,6 +381,26 @@ class ESGScoringEngine:
         'Scope 3 Cat.9 - Transport & distribution aval (tCO2e)': 'S3-009',
         'Scope 3 Cat.11 - Utilisation des produits vendus (tCO2e)': 'S3-011',
         'Scope 3 Cat.15 - Investissements financés (tCO2e)': 'S3-015',
+        # ── Variantes / noms hérités ──────────────────────────────────────────
+        'Émissions GES scope 1': 'ENV-001',
+        'Émissions GES Scope 1': 'ENV-001',
+        'Émissions GES scope 2': 'ENV-002',
+        'Émissions GES Scope 2': 'ENV-002',
+        'Consommation énergie': 'ENV-003',
+        "Consommation d'énergie totale": 'ENV-003',
+        "Part d'énergie renouvelable": 'ENV-004',
+        'Énergie renouvelable': 'ENV-004',
+        "Consommation d'eau": 'ENV-005',
+        'Effectif total': 'SOC-001',
+        "Taux d'accidents du travail (TAF)": 'SOC-003',
+        'Taux de turnover': 'SOC-003',
+        'Heures de formation par salarié': 'SOC-004',
+        'Heures formation': 'SOC-004',
+        "Part de femmes dans l'encadrement": 'SOC-005',
+        'Administrateurs indépendants': 'GOV-001',
+        "Part de femmes au conseil d'administration": 'GOV-001',
+        'Indice de corruption et éthique': 'GOV-002',
+        'Réunions du conseil par an': 'GOV-003',
     }
 
     async def _collect_from_data_entries(
