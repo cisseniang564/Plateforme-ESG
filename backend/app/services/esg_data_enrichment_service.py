@@ -172,8 +172,10 @@ class ESGDataEnrichmentService:
         tranche_effectifs: str = '21',
     ) -> Dict[str, Any]:
         """
-        Générer 12 mois de données ESG dans data_entries (visible dans le dashboard).
-        Utilise les métriques par défaut — ne requiert pas d'indicateurs actifs.
+        Générer 12 mois de données ESG dans data_entries ET indicator_data.
+
+        - DataEntry  → visible dans les dashboards / saisie
+        - Indicator + IndicatorData → requis par le moteur de scoring ESG
         """
 
         size_factor = SIZE_MULTIPLIERS.get(tranche_effectifs, 0.75)
@@ -182,11 +184,40 @@ class ESGDataEnrichmentService:
         created = 0
         today = date.today()
 
+        # ── Étape 1 : Upsert des indicateurs pour ce tenant ───────────────────
+        indicator_id_map: Dict[str, UUID] = {}
+        for metric in DEFAULT_METRICS:
+            code = metric['code']
+            res = await self.db.execute(
+                select(Indicator).where(
+                    Indicator.tenant_id == tenant_id,
+                    Indicator.code == code,
+                )
+            )
+            indicator = res.scalar_one_or_none()
+            if not indicator:
+                indicator = Indicator(
+                    tenant_id=tenant_id,
+                    code=code,
+                    name=metric['metric_name'],
+                    pillar=metric['pillar'],
+                    category=metric.get('category'),
+                    unit=metric['unit'],
+                    data_type='numeric',
+                    is_active=True,
+                    is_mandatory=False,
+                )
+                self.db.add(indicator)
+                await self.db.flush()  # obtenir l'ID avant la boucle suivante
+            indicator_id_map[code] = indicator.id
+
+        # ── Étape 2 : Générer DataEntry + IndicatorData par métrique et mois ─
         for metric in DEFAULT_METRICS:
             code = metric['code']
             base_value = sector_values.get(code, 100)
+            indicator_id = indicator_id_map[code]
 
-            # Apply size factor only for absolute values, not percentages/counts
+            # Appliquer le facteur taille seulement pour les valeurs absolues
             if metric['unit'] not in ('%', 'score', 'reunions', 'accidents'):
                 value_with_size = base_value * size_factor
             else:
@@ -200,14 +231,17 @@ class ESGDataEnrichmentService:
                     year -= 1
 
                 period_start = date(year, month, 1)
-                # Last day of month
+                # Dernier jour du mois
                 if month == 12:
                     period_end = date(year, 12, 31)
                 else:
                     period_end = date(year, month + 1, 1) - timedelta(days=1)
 
-                # Check if already exists for this metric/period
-                existing = await self.db.execute(
+                variation = random.uniform(0.88, 1.12)
+                final_value = round(value_with_size * variation, 2)
+
+                # ── DataEntry (dashboard / saisie) ────────────────────────────
+                existing_de = await self.db.execute(
                     select(DataEntry).where(
                         DataEntry.tenant_id == tenant_id,
                         DataEntry.organization_id == organization_id,
@@ -215,29 +249,48 @@ class ESGDataEnrichmentService:
                         DataEntry.period_start == period_start,
                     )
                 )
-                if existing.scalar_one_or_none():
-                    continue
+                if not existing_de.scalar_one_or_none():
+                    entry = DataEntry(
+                        tenant_id=tenant_id,
+                        organization_id=organization_id,
+                        period_start=period_start,
+                        period_end=period_end,
+                        pillar=metric['pillar'],
+                        category=metric['category'],
+                        metric_name=metric['metric_name'],
+                        value_numeric=final_value,
+                        unit=metric['unit'],
+                        collection_method='automatic',
+                        verification_status='pending',
+                        data_source='INSEE + ESGFlow AI',
+                        notes=f'Auto-généré — Secteur: {secteur}, Taille: {tranche_effectifs}',
+                    )
+                    self.db.add(entry)
+                    created += 1
 
-                variation = random.uniform(0.88, 1.12)
-                final_value = round(value_with_size * variation, 2)
-
-                entry = DataEntry(
-                    tenant_id=tenant_id,
-                    organization_id=organization_id,
-                    period_start=period_start,
-                    period_end=period_end,
-                    pillar=metric['pillar'],
-                    category=metric['category'],
-                    metric_name=metric['metric_name'],
-                    value_numeric=final_value,
-                    unit=metric['unit'],
-                    collection_method='automatic',
-                    verification_status='pending',
-                    data_source='INSEE + ESGFlow AI',
-                    notes=f'Auto-généré — Secteur: {secteur}, Taille: {tranche_effectifs}',
+                # ── IndicatorData (moteur de scoring) ─────────────────────────
+                existing_id = await self.db.execute(
+                    select(IndicatorData).where(
+                        IndicatorData.tenant_id == tenant_id,
+                        IndicatorData.organization_id == organization_id,
+                        IndicatorData.indicator_id == indicator_id,
+                        IndicatorData.date == period_start,
+                    )
                 )
-                self.db.add(entry)
-                created += 1
+                if not existing_id.scalar_one_or_none():
+                    ind_data = IndicatorData(
+                        tenant_id=tenant_id,
+                        organization_id=organization_id,
+                        indicator_id=indicator_id,
+                        date=period_start,
+                        value=final_value,
+                        unit=metric['unit'],
+                        source='api',
+                        is_estimated=True,
+                        validation_status='draft',
+                        notes=f'Auto-généré — Secteur: {secteur}, Taille: {tranche_effectifs}',
+                    )
+                    self.db.add(ind_data)
 
         await self.db.commit()
 

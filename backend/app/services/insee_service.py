@@ -491,30 +491,40 @@ class INSEEService:
     
     async def obtenir_details_entreprise(self, siren: str) -> Dict[str, Any]:
         """Obtenir les détails complets d'une entreprise par SIREN."""
-        
-        if self.DEMO_MODE or not self.api_key:
-            for entreprise in self.DEMO_ENTREPRISES:
-                if entreprise.get('siren') == siren:
-                    return entreprise
-            raise ValueError(f"Entreprise {siren} non trouvée")
-        
-        # API réelle...
-        return {}
-    
+
+        # 1. Chercher dans les données démo en premier (instantané)
+        for entreprise in self.DEMO_ENTREPRISES:
+            if entreprise.get('siren') == siren:
+                return entreprise
+
+        # 2. Toujours essayer l'API publique gratuite (pas de clé requise)
+        try:
+            result = await self._recherche_api(siren, 1)
+            if result.get('total', 0) > 0 and result.get('entreprises'):
+                return result['entreprises'][0]
+        except Exception:
+            pass
+
+        raise ValueError(f"Entreprise {siren} non trouvée")
+
     async def lister_etablissements(
         self,
         siren: str,
         actifs_seulement: bool = True,
     ) -> List[Dict[str, Any]]:
         """Lister tous les établissements d'une entreprise."""
-        
-        if self.DEMO_MODE or not self.api_key:
-            for entreprise in self.DEMO_ENTREPRISES:
-                if entreprise.get('siren') == siren:
-                    return [entreprise]
+
+        # Check demo data first
+        for entreprise in self.DEMO_ENTREPRISES:
+            if entreprise.get('siren') == siren:
+                return [entreprise]
+
+        # Try real free API
+        try:
+            result = await self._recherche_api(siren, 5)
+            return result.get('entreprises', [])
+        except Exception:
             return []
-        
-        return []
     
     async def rechercher_par_secteur(
         self,

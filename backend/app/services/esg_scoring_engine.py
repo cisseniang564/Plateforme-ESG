@@ -15,6 +15,7 @@ from app.models.indicator_data import IndicatorData
 from app.models.organization import Organization
 from app.models.esg_score import ESGScore
 from app.models.sector_weight import SectorWeight
+from app.models.data_entry import DataEntry
 
 
 class ESGScoringEngine:
@@ -106,7 +107,7 @@ class ESGScoringEngine:
         # 3) Pondérations sectorielles
         sector_weights = await self._get_sector_weights(tenant_id, sector_code)
 
-        # 4) Données indicateurs
+        # 4) Données indicateurs (IndicatorData en priorité, DataEntry en fallback)
         indicator_data = await self._collect_indicator_data(
             tenant_id=tenant_id,
             organization_id=organization_id,
@@ -114,6 +115,14 @@ class ESGScoringEngine:
             period_months=period_months,
             use_rolling_avg=use_rolling_avg,
         )
+        if not indicator_data:
+            # Fallback: lire depuis data_entries (données enrichissement legacy)
+            indicator_data = await self._collect_from_data_entries(
+                tenant_id=tenant_id,
+                organization_id=organization_id,
+                calculation_date=calculation_date,
+                period_months=period_months,
+            )
         if not indicator_data:
             raise ValueError("No indicator data found for scoring")
 
@@ -338,6 +347,111 @@ class ESGScoringEngine:
                 "avg_value": round(robust_avg, 2),
                 "normalized_score": round(normalized_score, 2),
                 "weight": weight,
+                "trend": trend,
+                "min_value": round(min(values), 2),
+                "max_value": round(max(values), 2),
+                "std_dev": round(float(np.std(values)), 2) if len(values) > 1 else 0.0,
+            }
+
+        return indicator_results
+
+    # Reverse-mapping metric_name → code (built from DEFAULT_METRICS)
+    _METRIC_NAME_TO_CODE: Dict[str, str] = {
+        'Émissions Scope 1 (tCO2e)': 'ENV-001',
+        'Émissions Scope 2 (tCO2e)': 'ENV-002',
+        'Consommation énergie totale (MWh)': 'ENV-003',
+        'Part énergie renouvelable (%)': 'ENV-004',
+        'Consommation eau (m3)': 'ENV-005',
+        'Effectif total (ETP)': 'SOC-001',
+        'Accidents du travail': 'SOC-003',
+        'Heures de formation': 'SOC-004',
+        'Part femmes encadrement (%)': 'SOC-005',
+        'Part administrateurs indépendants (%)': 'GOV-001',
+        'Score politique anti-corruption': 'GOV-002',
+        'Réunions conseil administration': 'GOV-003',
+        'Scope 3 Cat.1 - Achats de biens & services (tCO2e)': 'S3-001',
+        'Scope 3 Cat.4 - Transport & distribution amont (tCO2e)': 'S3-004',
+        'Scope 3 Cat.5 - Déchets générés exploitation (tCO2e)': 'S3-005',
+        'Scope 3 Cat.6 - Déplacements professionnels (tCO2e)': 'S3-006',
+        'Scope 3 Cat.7 - Trajets domicile-travail (tCO2e)': 'S3-007',
+        'Scope 3 Cat.9 - Transport & distribution aval (tCO2e)': 'S3-009',
+        'Scope 3 Cat.11 - Utilisation des produits vendus (tCO2e)': 'S3-011',
+        'Scope 3 Cat.15 - Investissements financés (tCO2e)': 'S3-015',
+    }
+
+    async def _collect_from_data_entries(
+        self,
+        tenant_id: UUID,
+        organization_id: UUID,
+        calculation_date: date,
+        period_months: int,
+    ) -> Dict[str, Dict[str, Any]]:
+        """
+        Fallback: collecte les données depuis data_entries (avant migration IndicatorData).
+        Retourne le même format que _collect_indicator_data.
+        """
+        start_date = calculation_date - timedelta(days=period_months * 30)
+
+        query = (
+            select(DataEntry)
+            .where(
+                and_(
+                    DataEntry.tenant_id == tenant_id,
+                    DataEntry.organization_id == organization_id,
+                    DataEntry.period_start >= start_date,
+                    DataEntry.period_start <= calculation_date,
+                )
+            )
+            .order_by(DataEntry.period_start.desc())
+        )
+        result = await self.db.execute(query)
+        rows = result.scalars().all()
+        if not rows:
+            return {}
+
+        # Regrouper par métrique
+        groups: Dict[str, List[DataEntry]] = {}
+        for entry in rows:
+            groups.setdefault(entry.metric_name, []).append(entry)
+
+        indicator_results: Dict[str, Dict[str, Any]] = {}
+
+        for metric_name, entries in groups.items():
+            code = self._METRIC_NAME_TO_CODE.get(metric_name, metric_name[:10])
+            values = [float(e.value_numeric) for e in entries if e.value_numeric is not None]
+            if not values:
+                continue
+
+            avg_value = sum(values) / len(values)
+            clean_values = self._remove_outliers(values)
+            robust_avg = (sum(clean_values) / len(clean_values)) if clean_values else avg_value
+
+            higher_is_better = self.INDICATOR_DIRECTION.get(code, True)
+            normalized_score = self._normalize_value(
+                value=robust_avg,
+                indicator_code=code,
+                higher_is_better=higher_is_better,
+            )
+            trend = self._calculate_indicator_trend(values, indicator_code=code)
+
+            pillar = str(entries[0].pillar or 'environmental').lower()
+            # Normaliser le nom du pilier
+            pillar_map = {
+                'e': 'environmental', 'environmental': 'environmental', 'environnement': 'environmental',
+                's': 'social', 'social': 'social',
+                'g': 'governance', 'governance': 'governance', 'gouvernance': 'governance',
+            }
+            pillar = pillar_map.get(pillar, 'environmental')
+
+            indicator_results[code] = {
+                "pillar": pillar,
+                "name": metric_name,
+                "unit": entries[0].unit or '',
+                "values": values[:6],
+                "count": len(values),
+                "avg_value": round(robust_avg, 2),
+                "normalized_score": round(normalized_score, 2),
+                "weight": 1.0,
                 "trend": trend,
                 "min_value": round(min(values), 2),
                 "max_value": round(max(values), 2),
