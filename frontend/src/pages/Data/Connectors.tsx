@@ -745,6 +745,7 @@ interface SchneiderSite {
 }
 interface SchneiderData {
   period: string
+  is_demo: boolean
   sites: SchneiderSite[]
   summary: {
     total_kwh: number; total_co2e_kg: number; total_co2e_t: number
@@ -801,6 +802,17 @@ function SchneiderEmissionsPanel() {
           {loading ? 'Calcul…' : synced ? '↺ Re-sync' : 'Sync Schneider'}
         </button>
       </div>
+
+      {/* Demo banner */}
+      {data?.is_demo && (
+        <div className="flex items-start gap-2 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+          <Info size={15} className="mt-0.5 shrink-0 text-amber-500" />
+          <span>
+            <strong>Données de démonstration</strong> — Ces sites et consommations sont fictifs.
+            Connectez votre compte EcoStruxure pour afficher vos données réelles.
+          </span>
+        </div>
+      )}
 
       {/* Error */}
       {error && (
