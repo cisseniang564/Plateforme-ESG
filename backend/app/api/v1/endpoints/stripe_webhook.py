@@ -138,7 +138,8 @@ async def _handle_checkout_completed(db, session, EmailService):
         plan_name = config["plan_tier"].capitalize()
         # Send activation email (non-blocking)
         try:
-            EmailService.send_subscription_activated(
+            from app.tasks.email_tasks import send_subscription_activated_email
+            send_subscription_activated_email.delay(
                 email=user.email,
                 first_name=user.first_name or "cher client",
                 plan_name=plan_name,
@@ -167,9 +168,10 @@ async def _handle_subscription_canceled(db, subscription, EmailService):
 
     if user:
         try:
+            from app.tasks.email_tasks import send_subscription_canceled_email
             cancel_at = subscription.get("canceled_at") or subscription.get("current_period_end")
             end_date = datetime.fromtimestamp(cancel_at, tz=timezone.utc).strftime("%d/%m/%Y") if cancel_at else "—"
-            EmailService.send_subscription_canceled(
+            send_subscription_canceled_email.delay(
                 email=user.email,
                 first_name=user.first_name or "cher client",
                 plan_name=tenant.plan_tier.capitalize(),
@@ -190,7 +192,8 @@ async def _handle_trial_ending(db, subscription, EmailService):
                 days_left = max(1, (datetime.fromtimestamp(trial_end, tz=timezone.utc) - datetime.now(timezone.utc)).days)
             else:
                 days_left = 3
-            EmailService.send_trial_ending_soon(
+            from app.tasks.email_tasks import send_trial_ending_soon_email
+            send_trial_ending_soon_email.delay(
                 email=user.email,
                 first_name=user.first_name or "cher client",
                 days_left=days_left,
@@ -206,7 +209,8 @@ async def _handle_invoice_paid(db, invoice, EmailService):
     if user:
         try:
             amount = f"{invoice.get('amount_paid', 0) / 100:.2f} {(invoice.get('currency','eur')).upper()}"
-            EmailService.send_invoice_paid(
+            from app.tasks.email_tasks import send_invoice_paid_email
+            send_invoice_paid_email.delay(
                 email=user.email,
                 first_name=user.first_name or "cher client",
                 amount=amount,
@@ -248,7 +252,8 @@ async def _handle_subscription_resumed(db, subscription, EmailService):
     if user:
         # Reuse subscription_activated email to notify the user their access is restored
         try:
-            EmailService.send_subscription_activated(
+            from app.tasks.email_tasks import send_subscription_activated_email
+            send_subscription_activated_email.delay(
                 email=user.email,
                 first_name=user.first_name or "cher client",
                 plan_name=tenant.plan_tier.capitalize(),
@@ -278,7 +283,8 @@ async def _handle_payment_failed(db, invoice, EmailService):
                 datetime.fromtimestamp(next_attempt, tz=timezone.utc).strftime("%d/%m/%Y")
                 if next_attempt else None
             )
-            EmailService.send_payment_failed(
+            from app.tasks.email_tasks import send_payment_failed_email
+            send_payment_failed_email.delay(
                 email=user.email,
                 first_name=user.first_name or "cher client",
                 amount=amount,

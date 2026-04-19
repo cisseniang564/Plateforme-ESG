@@ -157,12 +157,12 @@ async def register(
     db.add(new_user)
     await db.commit()
 
-    # Send verification email (fire-and-forget)
+    # Send verification email via Celery (non-blocking)
     try:
-        from app.services.email_service import EmailService
         from app.config import settings as app_settings
         from datetime import datetime, timedelta, timezone
         from jose import jwt as _jwt
+        from app.tasks.email_tasks import send_email_verification
         _token = _jwt.encode(
             {
                 "sub": str(new_user.id),
@@ -174,7 +174,7 @@ async def register(
             algorithm="HS256",
         )
         verify_url = f"{app_settings.APP_URL}/verify-email?token={_token}"
-        EmailService.send_email_verification(
+        send_email_verification.delay(
             email=new_user.email,
             first_name=new_user.first_name or new_user.email.split("@")[0],
             verify_url=verify_url,
@@ -206,11 +206,11 @@ async def forgot_password(
 
     # Toujours retourner succès (sécurité - ne pas révéler si email existe)
     if user:
-        from app.services.email_service import EmailService
         from app.config import settings as app_settings
+        from app.tasks.email_tasks import send_password_reset_email
         token = create_password_reset_token(user.email, user.id)
         reset_url = f"{app_settings.APP_URL}/reset-password?token={token}"
-        EmailService.send_password_reset(
+        send_password_reset_email.delay(
             email=user.email,
             first_name=user.first_name or "",
             reset_url=reset_url,
@@ -218,4 +218,96 @@ async def forgot_password(
 
     return {
         "message": "If this email is registered, you will receive password reset instructions."
+    }
+
+
+@router.post("/demo-login")
+async def demo_login(db: AsyncSession = Depends(get_db)):
+    """
+    Auto-login as the shared read-only demo account.
+    Creates the demo user on first call (piggybacks on the admin tenant
+    so the demo sees real pre-populated ESG data).
+    """
+    from datetime import datetime, timezone
+
+    DEMO_EMAIL = "demo@greenconnect.cloud"
+
+    # 1. Lookup or create demo user
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.role))
+        .where(User.email == DEMO_EMAIL)
+    )
+    demo_user = result.scalar_one_or_none()
+
+    if not demo_user:
+        # Reuse admin tenant so demo shows real data; fallback to own org
+        admin_res = await db.execute(
+            select(User).where(User.email == "admin@greenconnect.cloud")
+        )
+        admin = admin_res.scalar_one_or_none()
+
+        if admin:
+            tenant_id = admin.tenant_id
+        else:
+            # No admin — create a standalone demo tenant
+            from uuid import uuid4 as _uuid4
+            from app.models.tenant import Tenant as _Tenant
+            _slug = f"greenconnect-demo-{str(_uuid4())[:8]}"
+            fallback_tenant = _Tenant(
+                id=_uuid4(),
+                name="GreenConnect — Démo",
+                slug=_slug,
+            )
+            db.add(fallback_tenant)
+            await db.flush()
+            tenant_id = fallback_tenant.id
+
+        demo_user = User(
+            id=uuid4(),
+            tenant_id=tenant_id,
+            email=DEMO_EMAIL,
+            # Random hash — demo account is never logged-in with a password
+            password_hash=get_password_hash(str(uuid4())),
+            first_name="Compte",
+            last_name="Démo",
+            is_active=True,
+            email_verified_at=datetime.now(timezone.utc),
+            mfa_enabled=False,
+        )
+        db.add(demo_user)
+        await db.commit()
+        await db.refresh(demo_user)
+
+    # 2. Issue short-lived tokens (8 h — demo sessions expire same day)
+    access_token = create_access_token(
+        subject=demo_user.email,
+        tenant_id=demo_user.tenant_id,
+        user_id=demo_user.id,
+    )
+    refresh_token = create_access_token(
+        subject=demo_user.email,
+        tenant_id=demo_user.tenant_id,
+        user_id=demo_user.id,
+        expires_delta=timedelta(hours=8),
+        additional_claims={"type": "refresh"},
+    )
+
+    return {
+        "tokens": {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+        },
+        "user": {
+            "id": str(demo_user.id),
+            "email": demo_user.email,
+            "first_name": demo_user.first_name,
+            "last_name": demo_user.last_name,
+            "role": demo_user.role.name if demo_user.role else "viewer",
+            "tenant_id": str(demo_user.tenant_id),
+            "email_verified_at": demo_user.email_verified_at.isoformat() if demo_user.email_verified_at else None,
+            "mfa_enabled": demo_user.mfa_enabled,
+            "needs_onboarding": False,
+        },
     }

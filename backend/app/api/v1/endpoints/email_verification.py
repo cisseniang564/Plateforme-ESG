@@ -17,7 +17,7 @@ from app.config import settings
 from app.db.session import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
-from app.services.email_service import EmailService
+from app.tasks.email_tasks import send_email_verification as _send_verification_task
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -62,7 +62,7 @@ async def send_verification_email(
     app_url = getattr(settings, "APP_URL", "http://localhost:3000")
     verify_url = f"{app_url}/verify-email?token={token}"
 
-    EmailService.send_email_verification(
+    _send_verification_task.delay(
         email=current_user.email,
         first_name=current_user.first_name or current_user.email.split("@")[0],
         verify_url=verify_url,

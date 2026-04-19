@@ -117,3 +117,71 @@ def send_payment_failed_email(
     if not result:
         raise self.retry(countdown=120)
     return result
+
+
+@shared_task(
+    name="email.send_trial_started",
+    bind=True,
+    max_retries=2,
+    default_retry_delay=60,
+)
+def send_trial_started_email(
+    self, email: str, first_name: str, company: str, trial_end: str
+) -> bool:
+    """Send trial started confirmation email."""
+    logger.info("Trial started email to %s", email)
+    result = _email_svc().send_trial_started(email, first_name, company, trial_end)
+    if not result:
+        raise self.retry(countdown=60)
+    return result
+
+
+@shared_task(
+    name="email.send_subscription_activated",
+    bind=True,
+    max_retries=3,
+    default_retry_delay=60,
+)
+def send_subscription_activated_email(
+    self, email: str, first_name: str, plan_name: str, amount: str, next_date: str
+) -> bool:
+    """Notify user that their subscription was activated."""
+    logger.info("Subscription activated email to %s (plan=%s)", email, plan_name)
+    result = _email_svc().send_subscription_activated(email, first_name, plan_name, amount, next_date)
+    if not result:
+        raise self.retry(countdown=60)
+    return result
+
+
+@shared_task(
+    name="email.send_subscription_canceled",
+    bind=True,
+    max_retries=2,
+    default_retry_delay=120,
+)
+def send_subscription_canceled_email(
+    self, email: str, first_name: str, plan_name: str, end_date: str
+) -> bool:
+    """Notify user that their subscription was canceled."""
+    logger.info("Subscription canceled email to %s", email)
+    result = _email_svc().send_subscription_canceled(email, first_name, plan_name, end_date)
+    if not result:
+        raise self.retry(countdown=120)
+    return result
+
+
+@shared_task(
+    name="email.send_invoice_paid",
+    bind=True,
+    max_retries=3,
+    default_retry_delay=60,
+)
+def send_invoice_paid_email(
+    self, email: str, first_name: str, amount: str, invoice_url: str, invoice_number: str
+) -> bool:
+    """Send invoice paid confirmation email."""
+    logger.info("Invoice paid email to %s (%s)", email, invoice_number)
+    result = _email_svc().send_invoice_paid(email, first_name, amount, invoice_url, invoice_number)
+    if not result:
+        raise self.retry(countdown=60)
+    return result

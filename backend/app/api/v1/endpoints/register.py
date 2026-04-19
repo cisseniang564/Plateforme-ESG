@@ -105,19 +105,19 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
 
     # ── Email: welcome + trial started ────────────────────────────────────
     try:
-        from app.services.email_service import EmailService
         from app.config import settings
+        from app.tasks.email_tasks import send_welcome_email, send_trial_started_email
         from datetime import timedelta, timezone, datetime
 
         trial_days = getattr(settings, "TRIAL_DAYS", 14)
         trial_end = (datetime.now(timezone.utc) + timedelta(days=trial_days)).strftime("%d/%m/%Y")
 
-        EmailService.send_welcome(
+        send_welcome_email.delay(
             email=user.email,
             first_name=user.first_name,
             company=data.company_name,
         )
-        EmailService.send_trial_started(
+        send_trial_started_email.delay(
             email=user.email,
             first_name=user.first_name,
             company=data.company_name,

@@ -244,15 +244,15 @@ async def send_questionnaire(
     sent_at = datetime.utcnow().isoformat()
     if recipient:
         try:
-            from app.services.email_service import EmailService
-            EmailService.send_user_invited(
+            from app.tasks.email_tasks import send_user_invited_email
+            send_user_invited_email.delay(
                 email=recipient,
                 inviter_name=current_user.first_name or "ESGFlow",
                 company=supplier.name if supplier else "",
                 invite_url=portal_url,
             )
         except Exception as e:
-            logger.warning("Could not send questionnaire email to %s: %s", recipient, e)
+            logger.warning("Could not queue questionnaire email to %s: %s", recipient, e)
 
     return {
         "status": "sent",
