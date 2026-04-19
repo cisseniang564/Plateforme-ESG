@@ -280,7 +280,109 @@ async def verify_2fa(
     return result
 
 
-# demo-login endpoint removed — access requires explicit registration or login
+@router.post(
+    "/demo-login",
+    summary="Auto-login as shared read-only demo account",
+    description="""
+    Issues short-lived tokens (8 h) for the shared demo account.
+    Looks up or creates the demo user on first call.
+    No credentials required — intended for the public demo page.
+    """,
+)
+async def demo_login(db: AsyncSession = Depends(get_db)):
+    """
+    Auto-login as the shared read-only demo account.
+    Creates the demo user on first call (piggybacks on the admin tenant
+    so the demo sees real pre-populated ESG data).
+    """
+    from datetime import datetime, timezone, timedelta
+    from uuid import uuid4 as _uuid4
+    from sqlalchemy.orm import selectinload
+    from app.models.user import User
+    from app.utils.jwt import create_access_token
+    from app.utils.security import get_password_hash
+
+    DEMO_EMAIL = "demo@greenconnect.cloud"
+
+    # 1. Lookup or create demo user
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.role))
+        .where(User.email == DEMO_EMAIL)
+    )
+    demo_user = result.scalar_one_or_none()
+
+    if not demo_user:
+        # Reuse admin tenant so demo shows real data; fallback to own tenant
+        admin_res = await db.execute(
+            select(User).where(User.email == "admin@greenconnect.cloud")
+        )
+        admin = admin_res.scalar_one_or_none()
+
+        if admin:
+            tenant_id = admin.tenant_id
+        else:
+            # No admin — create a standalone demo tenant
+            from app.models.tenant import Tenant as _Tenant
+            _slug = f"greenconnect-demo-{str(_uuid4())[:8]}"
+            fallback_tenant = _Tenant(
+                id=_uuid4(),
+                name="GreenConnect — Démo",
+                slug=_slug,
+            )
+            db.add(fallback_tenant)
+            await db.flush()
+            tenant_id = fallback_tenant.id
+
+        demo_user = User(
+            id=_uuid4(),
+            tenant_id=tenant_id,
+            email=DEMO_EMAIL,
+            # Random hash — demo account is never logged-in with a password
+            password_hash=get_password_hash(str(_uuid4())),
+            first_name="Compte",
+            last_name="Démo",
+            is_active=True,
+            email_verified_at=datetime.now(timezone.utc),
+            mfa_enabled=False,
+        )
+        db.add(demo_user)
+        await db.commit()
+        await db.refresh(demo_user)
+
+    # 2. Issue short-lived tokens (8 h — demo sessions expire same day)
+    access_token = create_access_token(
+        subject=demo_user.email,
+        tenant_id=demo_user.tenant_id,
+        user_id=demo_user.id,
+        expires_delta=timedelta(hours=8),
+    )
+    refresh_token = create_access_token(
+        subject=demo_user.email,
+        tenant_id=demo_user.tenant_id,
+        user_id=demo_user.id,
+        expires_delta=timedelta(hours=8),
+        additional_claims={"type": "refresh"},
+    )
+
+    return {
+        "tokens": {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+        },
+        "user": {
+            "id": str(demo_user.id),
+            "email": demo_user.email,
+            "first_name": demo_user.first_name,
+            "last_name": demo_user.last_name,
+            "role": demo_user.role.name if demo_user.role else "viewer",
+            "tenant_id": str(demo_user.tenant_id),
+            "email_verified_at": demo_user.email_verified_at.isoformat() if demo_user.email_verified_at else None,
+            "mfa_enabled": demo_user.mfa_enabled,
+            "needs_onboarding": False,
+        },
+    }
 
 
 @router.post(

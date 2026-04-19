@@ -70,7 +70,7 @@ class TestDemoLoginTokenShape:
         demo = _make_user("demo@greenconnect.cloud")
         db = _make_db(demo_user=demo)
 
-        from app.api.v1.endpoints.auth import demo_login
+        from app.api.v1.auth import demo_login
         response = await demo_login(db=db)
 
         assert "tokens" in response
@@ -87,7 +87,7 @@ class TestDemoLoginTokenShape:
         demo = _make_user("demo@greenconnect.cloud")
         db = _make_db(demo_user=demo)
 
-        from app.api.v1.endpoints.auth import demo_login
+        from app.api.v1.auth import demo_login
         response = await demo_login(db=db)
 
         secret = os.environ["JWT_SECRET_KEY"]
@@ -103,7 +103,7 @@ class TestDemoLoginTokenShape:
         demo = _make_user("demo@greenconnect.cloud")
         db = _make_db(demo_user=demo)
 
-        from app.api.v1.endpoints.auth import demo_login
+        from app.api.v1.auth import demo_login
         response = await demo_login(db=db)
 
         user = response["user"]
@@ -117,7 +117,7 @@ class TestDemoLoginTokenShape:
         demo.email_verified_at = datetime(2026, 1, 1, tzinfo=timezone.utc)
         db = _make_db(demo_user=demo)
 
-        from app.api.v1.endpoints.auth import demo_login
+        from app.api.v1.auth import demo_login
         response = await demo_login(db=db)
 
         assert response["user"]["email_verified_at"] is not None
@@ -134,7 +134,7 @@ class TestDemoUserCreation:
         admin = _make_user("admin@greenconnect.cloud")
         db = _make_db(demo_user=None, admin_user=admin)
 
-        from app.api.v1.endpoints.auth import demo_login
+        from app.api.v1.auth import demo_login
         response = await demo_login(db=db)
 
         # add() called at least once (for the new demo User)
@@ -169,7 +169,7 @@ class TestDemoUserCreation:
         db.flush = AsyncMock()
         db.refresh = AsyncMock()
 
-        from app.api.v1.endpoints.auth import demo_login
+        from app.api.v1.auth import demo_login
         response = await demo_login(db=db)
 
         # The user in the response must carry the admin's tenant_id
@@ -180,7 +180,7 @@ class TestDemoUserCreation:
         """When no admin exists, demo_login creates a standalone Tenant."""
         db = _make_db(demo_user=None, admin_user=None)
 
-        from app.api.v1.endpoints.auth import demo_login
+        from app.api.v1.auth import demo_login
         response = await demo_login(db=db)
 
         # add() and flush() must have been called (for the new Tenant + User)
@@ -199,7 +199,7 @@ class TestDemoLoginEdgeCases:
         demo.role = None
         db = _make_db(demo_user=demo)
 
-        from app.api.v1.endpoints.auth import demo_login
+        from app.api.v1.auth import demo_login
         response = await demo_login(db=db)
 
         assert response["user"]["role"] == "viewer"
@@ -211,7 +211,7 @@ class TestDemoLoginEdgeCases:
         demo = _make_user("demo@greenconnect.cloud", role=role)
         db = _make_db(demo_user=demo)
 
-        from app.api.v1.endpoints.auth import demo_login
+        from app.api.v1.auth import demo_login
         response = await demo_login(db=db)
 
         assert response["user"]["role"] == "admin"
@@ -222,7 +222,7 @@ class TestDemoLoginEdgeCases:
         demo.mfa_enabled = False
         db = _make_db(demo_user=demo)
 
-        from app.api.v1.endpoints.auth import demo_login
+        from app.api.v1.auth import demo_login
         response = await demo_login(db=db)
 
         assert response["user"]["mfa_enabled"] is False
@@ -233,7 +233,7 @@ class TestDemoLoginEdgeCases:
         demo = _make_user("demo@greenconnect.cloud")
         db = _make_db(demo_user=demo)
 
-        from app.api.v1.endpoints.auth import demo_login
+        from app.api.v1.auth import demo_login
         response = await demo_login(db=db)
 
         tokens = response["tokens"]
@@ -245,7 +245,7 @@ class TestDemoLoginEdgeCases:
         demo = _make_user("demo@greenconnect.cloud")
         db = _make_db(demo_user=demo)
 
-        from app.api.v1.endpoints.auth import demo_login
+        from app.api.v1.auth import demo_login
         await demo_login(db=db)
 
         # Existing user → no add(), no commit()
