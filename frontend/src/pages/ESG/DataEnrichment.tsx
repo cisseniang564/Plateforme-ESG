@@ -66,11 +66,11 @@ const EFFECTIFS_LABELS: Record<string, string> = {
 };
 
 const QUICK_EXAMPLES = [
-  { label: 'EDF', siren: '552081317' },
-  { label: 'LVMH', siren: '318673200' },
-  { label: 'Doctolib', siren: '529518792' },
-  { label: 'SNCF', siren: '552049447' },
-  { label: 'BNP Paribas', siren: '662042449' },
+  { label: 'EDF',        siren: '552081317' },
+  { label: 'LVMH',       siren: '908836505' },
+  { label: 'Doctolib',   siren: '794598813' },
+  { label: 'SNCF',       siren: '552049447' },
+  { label: 'BNP Paribas',siren: '662042449' },
 ];
 
 // ── Step indicator ──────────────────────────────────────────────
@@ -596,16 +596,35 @@ export default function DataEnrichment() {
                       <button
                         key={label}
                         onClick={() => {
-                          if (searchType === 'name') {
-                            setQuery(label);
-                            if (debounceRef.current) clearTimeout(debounceRef.current);
-                            setSuggestLoading(true);
-                            setShowSuggest(true);
-                            debounceRef.current = setTimeout(() => fetchSuggestions(label), 400);
-                          } else {
-                            switchSearchType('siren');
-                            setTimeout(() => setQuery(s), 10);
-                          }
+                          // Toujours basculer en mode SIREN et lancer la recherche directement
+                          setSearchType('siren');
+                          setQuery(s);
+                          setSearchError('');
+                          setSuggestions([]);
+                          setShowSuggest(false);
+                          setCompany(null);
+                          setSirenStep('input');
+                          // Lancer la recherche après le prochain rendu
+                          setTimeout(async () => {
+                            setSearching(true);
+                            try {
+                              const res = await (await import('@/services/api')).default.get(
+                                '/insee/rechercher', { params: { q: s, nombre: 1 } }
+                              );
+                              const found = (res.data.entreprises || [])[0];
+                              if (found) {
+                                setCompany(found);
+                                setSiren(found.siren || s);
+                                setSirenStep('preview');
+                              } else {
+                                setSearchError(`Aucune entreprise trouvée pour ce SIREN dans la base INSEE.`);
+                              }
+                            } catch (err: any) {
+                              setSearchError(err.response?.data?.detail || 'Erreur lors de la recherche INSEE.');
+                            } finally {
+                              setSearching(false);
+                            }
+                          }, 0);
                         }}
                         className="group flex items-center gap-1.5 px-3.5 py-1.5 bg-gray-50 hover:bg-teal-50 text-gray-600 hover:text-teal-700 text-xs font-medium rounded-xl transition-colors border border-gray-200 hover:border-teal-200"
                       >
