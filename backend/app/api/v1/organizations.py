@@ -210,9 +210,11 @@ async def get_organization(
     response_data["is_root"] = org.parent_org_id is None
     response_data["is_leaf"] = len(org.children) == 0
     response_data["children_count"] = len(org.children)
-    
-    # TODO: Calculate descendants_count recursively
-    response_data["descendants_count"] = len(org.children)
+
+    def _count_descendants(node) -> int:
+        return sum(1 + _count_descendants(c) for c in node.children)
+
+    response_data["descendants_count"] = _count_descendants(org)
     
     return OrganizationDetailResponse(**response_data)
 

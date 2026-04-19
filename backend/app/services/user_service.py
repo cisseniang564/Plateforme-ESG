@@ -379,11 +379,21 @@ class UserService:
         result = await self.db.execute(stmt)
         recent_logins = result.scalar() or 0
         
+        # Users by role (via User.role_id direct FK)
+        stmt = (
+            select(Role.name, func.count(User.id))
+            .outerjoin(Role, Role.id == User.role_id)
+            .where(User.tenant_id == self.tenant_id)
+            .group_by(Role.name)
+        )
+        result = await self.db.execute(stmt)
+        users_by_role = {(row[0] or "no_role"): row[1] for row in result.fetchall()}
+
         return {
             "total_users": total_users,
             "active_users": active_users,
             "inactive_users": total_users - active_users,
             "verified_users": verified_users,
             "recent_logins": recent_logins,
-            "users_by_role": {},  # TODO: Implement role counts
+            "users_by_role": users_by_role,
         }

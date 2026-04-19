@@ -139,12 +139,13 @@ async def get_schneider_emissions(
     return {
         "period": period,
         "sites":  results,
+        "is_demo": True,
         "summary": {
             "total_kwh":     round(total_kwh, 0),
             "total_co2e_kg": round(total_co2e, 1),
             "total_co2e_t":  round(total_co2e / 1000, 2),
             "n_sites":       len(results),
-            "source":        "Schneider Electric EcoStruxure (mock)",
+            "source":        "Schneider Electric EcoStruxure (demo — connect your EcoStruxure account to use real data)",
             "climatiq_used": any(s.get("via_climatiq") for s in results),
         },
     }
