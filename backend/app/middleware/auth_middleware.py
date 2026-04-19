@@ -11,6 +11,7 @@ PUBLIC_PATHS = frozenset([
     "/", "/docs", "/redoc", "/openapi.json",
     "/health", "/health/live", "/health/ready", "/metrics",
     "/api/v1/auth/login", "/api/v1/auth/refresh",
+    "/api/v1/auth/demo-login",
     "/api/v1/auth/onboard", "/api/v1/auth/register",
     "/api/v1/auth/2fa/verify",   # 2FA verification uses temp_token, not full JWT
     "/api/v1/auth/forgot-password",  # Password reset request — no auth
