@@ -180,6 +180,18 @@ class Settings(BaseSettings):
     STRIPE_PRICE_PRO_YEARLY: str = ""
 
     # ========================================================================
+    # ENEDIS DATAHUB — OAuth2 connector
+    # ========================================================================
+    ENEDIS_CLIENT_ID: Optional[str] = None
+    ENEDIS_CLIENT_SECRET: Optional[str] = None
+    # Redirect URI must match what's registered on https://datahub-enedis.fr
+    ENEDIS_REDIRECT_URI: Optional[str] = None
+    # Base URLs (override for sandbox)
+    ENEDIS_AUTH_URL: str = "https://mon-compte-particulier.enedis.fr/dataconnect/v1/oauth2/authorize"
+    ENEDIS_TOKEN_URL: str = "https://datahub-enedis.fr/oauth2/v3/token"
+    ENEDIS_API_BASE: str = "https://datahub-enedis.fr"
+
+    # ========================================================================
     # APP URL (used in emails and redirect URLs)
     # ========================================================================
     APP_URL: str = "http://localhost:3000"
