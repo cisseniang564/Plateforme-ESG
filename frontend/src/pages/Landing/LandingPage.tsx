@@ -1229,31 +1229,48 @@ const PREVIEWS: Record<string, () => JSX.Element> = {
   dataquality: PreviewDataQuality,
 };
 
-// ─── Competitive comparison data ──────────────────────────────────────────────
-const COMPETITORS = ['ESGFlow', 'Greenly', 'Sweep', 'Tennaxia'];
-const COMP_ROWS = [
-  { label: 'Dashboard ESG temps réel', values: [true, true, true, true] },
-  { label: 'Scope 3 — 15 catégories GHG', values: [true, true, true, false] },
-  { label: 'Plan décarbonation + ROI', values: [true, true, false, false] },
-  { label: 'Matrice matérialité drag & drop', values: [true, false, true, true] },
-  { label: 'Supply Chain ESG & due diligence', values: [true, false, true, true] },
-  { label: 'Conformité multi-réglementaire (10)', values: [true, false, false, true] },
-  { label: 'Piste d\'audit certifiable ISAE', values: [true, false, true, true] },
-  { label: 'Chatbot IA ESG expert', values: [true, true, true, false] },
-  { label: 'OCR factures fournisseurs', values: [true, true, false, false] },
-  { label: 'Scores ESG automatiques /100', values: [true, true, false, true] },
-  { label: 'Workflow validation données', values: [true, false, true, true] },
-  { label: 'Analyse ESRS / Gap analysis CSRD', values: [true, false, true, true] },
-  { label: 'Taxonomie UE (6 objectifs)', values: [true, false, false, true] },
-  { label: 'Benchmarking sectoriel', values: [true, true, true, false] },
-  { label: 'Import FEC / Scope 3 comptable', values: [true, false, false, false] },
-  { label: 'CSRD Report Builder multi-format', values: [true, false, true, false] },
-  { label: 'Mapping GRI / CDP / TCFD / SDG', values: [true, false, true, false] },
-  { label: 'Alertes intelligentes personnalisées', values: [true, false, false, false] },
-  { label: 'API REST + SSO SAML + Clés API', values: [true, false, true, false] },
-  { label: 'Hébergement France + RGPD', values: [true, true, false, false] },
-  { label: 'Prix accessible PME (< 500€/mois)', values: [true, true, false, false] },
-  { label: 'Connecteurs natifs ERP/RH/Energie (11)', values: [true, false, true, false] },
+// ─── Why ESGFlow pillars ───────────────────────────────────────────────────────
+const WHY_PILLARS = [
+  {
+    icon: Shield,
+    color: 'from-emerald-500 to-green-600',
+    lightBg: 'bg-emerald-50',
+    lightText: 'text-emerald-700',
+    border: 'border-emerald-100',
+    title: 'Conformité totale, zéro angle mort',
+    desc: 'CSRD/ESRS, Taxonomie UE, GRI, CDP, TCFD, SFDR, ISO 14001/26000, Loi Sapin II, Devoir de Vigilance — 10 référentiels couverts nativement. Un seul outil, aucun oubli.',
+    points: ['82 exigences ESRS mappées', 'Gap analysis automatique', 'Roadmap priorisée', 'Rapports certifiables ISAE 3000'],
+  },
+  {
+    icon: Lock,
+    color: 'from-blue-500 to-indigo-600',
+    lightBg: 'bg-blue-50',
+    lightText: 'text-blue-700',
+    border: 'border-blue-100',
+    title: 'Données fiables, auditables, sécurisées',
+    desc: 'Piste d\'audit infalsifiable (SHA-256), workflow de validation en 3 étapes, hébergement 100 % en France ISO 27001. Vos données restent vos données.',
+    points: ['Empreintes SHA-256', 'Hébergement France · RGPD', 'Workflow Brouillon → Approuvé', 'Export auditeurs ISAE / Big 4'],
+  },
+  {
+    icon: Brain,
+    color: 'from-violet-500 to-purple-600',
+    lightBg: 'bg-violet-50',
+    lightText: 'text-violet-700',
+    border: 'border-violet-100',
+    title: 'Intelligence artificielle de bout en bout',
+    desc: 'Chatbot ESG expert, détection d\'anomalies en temps réel, prédictions de tendances, suggestions sectorielles et OCR factures fournisseurs — l\'IA travaille pour vous.',
+    points: ['Chatbot ESG générative', 'Anomalies temps réel', 'Prédictions ML', 'OCR & automatisation'],
+  },
+  {
+    icon: Plug,
+    color: 'from-cyan-500 to-teal-600',
+    lightBg: 'bg-cyan-50',
+    lightText: 'text-cyan-700',
+    border: 'border-cyan-100',
+    title: 'Intégré à votre écosystème dès le J+1',
+    desc: '11 connecteurs natifs (SAP, Oracle, Workday, Enedis, Schneider, Climatiq…), API REST complète, webhooks temps réel et import FEC/CSV. Fini la double saisie.',
+    points: ['11 connecteurs ERP/RH/Energie', 'API REST + OAuth2', 'Webhooks HMAC-SHA256', 'Import FEC · Scope 3 comptable'],
+  },
 ];
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -1263,13 +1280,9 @@ export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [activeModule, setActiveModule] = useState(0);
   const [autoPlay, setAutoPlay] = useState(true);
-  const [compVisible, setCompVisible] = useState(false);
 
   const { ref: heroRef, inView: heroInView } = useInView(0.3);
   const { ref: statsRef, inView: statsInView } = useInView(0.3);
-  const { ref: compRef, inView: compInView } = useInView(0.2);
-
-  useEffect(() => { if (compInView) setCompVisible(true); }, [compInView]);
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', h);
@@ -1377,8 +1390,8 @@ export default function LandingPage() {
                 )}
               </div>
             ))}
-            <button onClick={() => scrollTo('comparaison')} className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>Comparatif</button>
             <button onClick={() => scrollTo('tarifs')} className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>Tarifs</button>
+            <button onClick={() => scrollTo('faq')} className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>FAQ</button>
             <div className="h-5 w-px bg-gray-300 mx-2" />
             <Link to="/login" className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600' : 'text-white/90 hover:text-white'}`}>Connexion</Link>
             <Link to="/demo">
@@ -1405,20 +1418,20 @@ export default function LandingPage() {
           <div className="space-y-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/15 border border-green-500/30 rounded-full text-green-300 text-sm font-medium">
               <Sparkles className="h-4 w-4" />
-              Plateforme ESG complète — 22 modules intégrés
+              22 modules · CSRD · Scope 3 · IA générative
               <span className="bg-green-500/20 px-2 py-0.5 rounded-full text-xs text-green-400">2026</span>
             </div>
 
             <h1 className="text-5xl lg:text-6xl xl:text-7xl font-extrabold text-white leading-[1.05] tracking-tight">
-              Le reporting ESG
+              Piloter votre ESG
               <br />
               <span className="bg-gradient-to-r from-green-400 via-emerald-300 to-teal-400 bg-clip-text text-transparent">
-                le plus complet
+                n'a jamais été aussi simple
               </span>
             </h1>
 
-            <p className="text-lg text-slate-300 leading-relaxed max-w-lg">
-              CSRD · Scope 3 · Import FEC · Scores ESG · CSRD Report Builder · Mapping GRI/CDP/TCFD · Alertes intelligentes · Workflow Validation · Analyse ESRS · Taxonomie UE · Benchmarking · Supply Chain · IA générative · API Developer Portal · Piste d'audit certifiable — tout en une seule plateforme.
+            <p className="text-xl text-slate-300 leading-relaxed max-w-lg">
+              De la collecte de données à la publication de votre rapport CSRD, ESGFlow couvre l'intégralité de votre démarche — avec l'IA, les connecteurs et la piste d'audit certifiable qu'il vous faut.
             </p>
 
             <div className="flex flex-wrap gap-3">
@@ -1633,77 +1646,130 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Competitive comparison ────────────────────────────────────────────── */}
-      <section id="comparaison" className="py-24 bg-gray-50" ref={compRef}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <span className="text-sm font-semibold text-green-600 uppercase tracking-widest">Comparatif</span>
-            <h2 className="text-4xl font-bold text-gray-900 mt-3 mb-4">ESGFlow vs la concurrence</h2>
-            <p className="text-lg text-gray-500 max-w-2xl mx-auto">Une comparaison transparente des fonctionnalités clés avec les principaux acteurs du marché.</p>
+      {/* ── Pourquoi ESGFlow ─────────────────────────────────────────────────── */}
+      <section className="py-28 bg-white relative overflow-hidden">
+        {/* Subtle background texture */}
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, rgba(16,185,129,0.05) 0%, transparent 60%), radial-gradient(circle at 10% 80%, rgba(99,102,241,0.04) 0%, transparent 60%)' }} />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
+              <span className="w-8 h-px bg-emerald-400 inline-block" />
+              Pourquoi ESGFlow
+              <span className="w-8 h-px bg-emerald-400 inline-block" />
+            </span>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">
+              Tout ce dont vous avez besoin,
+              <br />
+              <span className="text-emerald-600">rien de ce que vous n'utilisez pas</span>
+            </h2>
+            <p className="text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
+              Une plateforme pensée par des experts ESG, pour que votre équipe soit opérationnelle en 3 jours — pas en 3 mois.
+            </p>
           </div>
 
-          <div className="bg-white rounded-3xl border border-gray-200 shadow-xl overflow-hidden">
-            {/* Header */}
-            <div className="grid grid-cols-5 border-b border-gray-200">
-              <div className="col-span-1 p-5 text-sm font-semibold text-gray-500">Fonctionnalité</div>
-              {COMPETITORS.map((c, i) => (
-                <div key={i} className={`p-5 text-center ${i === 0 ? 'bg-green-50' : ''}`}>
-                  <div className={`font-bold text-sm ${i === 0 ? 'text-green-700' : 'text-gray-700'}`}>{c}</div>
-                  {i === 0 && <div className="text-xs text-green-500 font-medium mt-0.5">Vous</div>}
-                </div>
-              ))}
-            </div>
-            {/* Rows */}
-            {COMP_ROWS.map((row, ri) => (
-              <div key={ri} className={`grid grid-cols-5 border-b border-gray-100 last:border-0 ${ri % 2 === 0 ? '' : 'bg-gray-50/50'}`}>
-                <div className="col-span-1 px-5 py-4 text-sm text-gray-700 font-medium flex items-center">{row.label}</div>
-                {row.values.map((v, ci) => (
-                  <div key={ci} className={`px-5 py-4 flex items-center justify-center transition-all ${ci === 0 ? 'bg-green-50/50' : ''}`}>
-                    {compVisible ? (
-                      v ? (
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center ${ci === 0 ? 'bg-green-500' : 'bg-gray-200'}`} style={{ animation: `fadeIn 0.3s ease ${ri * 60}ms both` }}>
-                          <Check className={`h-4 w-4 ${ci === 0 ? 'text-white' : 'text-gray-500'}`} />
-                        </div>
-                      ) : (
-                        <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center" style={{ animation: `fadeIn 0.3s ease ${ri * 60}ms both` }}>
-                          <X className="h-4 w-4 text-gray-300" />
-                        </div>
-                      )
-                    ) : (
-                      <div className="w-7 h-7 rounded-full bg-gray-100 animate-pulse" />
-                    )}
+          {/* 4 piliers en grille */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {WHY_PILLARS.map((p, i) => (
+              <div key={i} className={`group relative bg-white rounded-3xl border ${p.border} p-8 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden`}>
+                {/* Gradient accent top */}
+                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${p.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+
+                <div className="flex items-start gap-5">
+                  <div className={`w-14 h-14 bg-gradient-to-br ${p.color} rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg`}>
+                    <p.icon className="h-7 w-7 text-white" />
                   </div>
-                ))}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">{p.title}</h3>
+                    <p className="text-gray-500 text-sm leading-relaxed mb-5">{p.desc}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {p.points.map((pt, j) => (
+                        <div key={j} className={`flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-xl ${p.lightBg} ${p.lightText}`}>
+                          <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                          {pt}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
 
-          <p className="text-center text-xs text-gray-400 mt-6">
-            Données basées sur les fonctionnalités publiquement documentées au T1 2026. ESGFlow se réserve le droit de mise à jour.
-          </p>
+          {/* Bande de réassurance */}
+          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6">
+            {[
+              { value: '3 jours', label: 'Mise en service', sub: 'onboarding inclus' },
+              { value: '22', label: 'Modules intégrés', sub: 'dans un seul outil' },
+              { value: '100%', label: 'Hébergement France', sub: 'ISO 27001 · RGPD' },
+              { value: 'Sans CB', label: 'Essai 14 jours', sub: 'aucun engagement' },
+            ].map((s, i) => (
+              <div key={i} className="text-center p-6 bg-gray-50 rounded-2xl border border-gray-100">
+                <div className="text-3xl font-extrabold text-gray-900 mb-1">{s.value}</div>
+                <div className="text-sm font-semibold text-gray-700">{s.label}</div>
+                <div className="text-xs text-gray-400 mt-0.5">{s.sub}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ── How it works ─────────────────────────────────────────────────────── */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-24 bg-gray-50 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(16,185,129,0.06) 0%, transparent 70%)' }} />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <span className="text-sm font-semibold text-green-600 uppercase tracking-widest">Comment ça marche</span>
-            <h2 className="text-4xl font-bold text-gray-900 mt-3 mb-4">Opérationnel en 3 étapes</h2>
+            <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
+              <span className="w-8 h-px bg-emerald-400 inline-block" />
+              Comment ça marche
+              <span className="w-8 h-px bg-emerald-400 inline-block" />
+            </span>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mt-2 mb-4">Opérationnel en 3 étapes</h2>
+            <p className="text-lg text-gray-500 max-w-xl mx-auto">Pas de mois de déploiement, pas de consultant externe. Votre équipe prend en main la plateforme dès le premier jour.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+          <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Connector line (desktop only) */}
+            <div className="hidden md:block absolute top-16 left-1/3 right-1/3 h-px bg-gradient-to-r from-transparent via-emerald-300 to-transparent" />
+
             {[
-              { num: '01', title: 'Connectez vos données', desc: 'Import CSV, API ERP ou saisie manuelle. 100+ indicateurs pré-configurés ESRS vous guident dès le premier jour.', icon: Database, color: 'from-green-500 to-emerald-600' },
-              { num: '02', title: 'L\'IA analyse & calcule', desc: 'Notre moteur IA détecte les anomalies, calcule les Scopes 1/2/3, génère vos KPIs et vous alerte en temps réel.', icon: Brain, color: 'from-purple-500 to-pink-500' },
-              { num: '03', title: 'Publiez & certifiez', desc: 'Rapports CSRD/GRI/TCFD en 1 clic, piste d\'audit certifiable ISAE 3000, partage sécurisé avec auditeurs.', icon: FileText, color: 'from-blue-500 to-cyan-500' },
+              {
+                num: '01', title: 'Connectez vos sources',
+                desc: 'Branchez vos ERP, importez vos CSV ou FEC, ou saisissez manuellement. 100+ indicateurs ESRS pré-configurés vous guident dès le premier jour.',
+                icon: Database, color: 'from-emerald-500 to-green-600',
+                detail: ['11 connecteurs natifs', 'Import CSV · FEC · Excel', '100+ indicateurs ESRS'],
+              },
+              {
+                num: '02', title: "L'IA analyse et calcule",
+                desc: "Le moteur IA détecte les anomalies, calcule vos Scopes 1/2/3, génère vos KPIs et vous alerte en temps réel avant que les problèmes deviennent critiques.",
+                icon: Brain, color: 'from-violet-500 to-purple-600',
+                detail: ['Scopes 1/2/3 automatiques', 'Anomalies temps réel', 'Chatbot ESG expert'],
+              },
+              {
+                num: '03', title: 'Publiez et certifiez',
+                desc: "Générez votre rapport CSRD, GRI ou TCFD en 1 clic. La piste d'audit SHA-256 et le workflow de validation rendent chaque donnée certifiable par vos auditeurs.",
+                icon: FileText, color: 'from-blue-500 to-indigo-600',
+                detail: ['Rapport PDF/Word/Excel/JSON', 'Piste audit ISAE 3000', 'Partage sécurisé auditeurs'],
+              },
             ].map((s, i) => (
-              <div key={i} className="flex flex-col items-center text-center p-8 bg-gray-50 rounded-2xl border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                <div className={`w-14 h-14 bg-gradient-to-br ${s.color} rounded-2xl flex items-center justify-center mb-5 shadow-lg`}>
+              <div key={i} className="relative flex flex-col bg-white rounded-3xl border border-gray-200 p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                {/* Step badge */}
+                <div className="absolute -top-4 left-8">
+                  <span className={`inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br ${s.color} text-white text-xs font-black rounded-full shadow-lg`}>{s.num}</span>
+                </div>
+                <div className={`w-14 h-14 bg-gradient-to-br ${s.color} rounded-2xl flex items-center justify-center mb-5 shadow-lg mt-2`}>
                   <s.icon className="h-7 w-7 text-white" />
                 </div>
-                <div className="text-xs font-bold text-green-500 uppercase tracking-widest mb-2">{s.num}</div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">{s.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{s.desc}</p>
+                <p className="text-gray-500 text-sm leading-relaxed flex-1 mb-5">{s.desc}</p>
+                <div className="space-y-2 pt-5 border-t border-gray-100">
+                  {s.detail.map((d, j) => (
+                    <div key={j} className="flex items-center gap-2 text-xs text-gray-600 font-medium">
+                      <CheckCircle className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
+                      {d}
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -1943,23 +2009,48 @@ export default function LandingPage() {
       </section>
 
       {/* ── Testimonials ─────────────────────────────────────────────────────── */}
-      <section className="py-24 bg-white">
+      <section className="py-24 bg-gradient-to-b from-white to-gray-50 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <span className="text-sm font-semibold text-green-600 uppercase tracking-widest">Témoignages</span>
-            <h2 className="text-4xl font-bold text-gray-900 mt-3">Ce que disent nos clients</h2>
+          <div className="text-center mb-16">
+            <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
+              <span className="w-8 h-px bg-emerald-400 inline-block" />
+              Témoignages
+              <span className="w-8 h-px bg-emerald-400 inline-block" />
+            </span>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mt-2">Ce que disent nos clients</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+          {/* Featured testimonial */}
+          <div className="mb-8 bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-10 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl" />
+            <div className="relative flex flex-col md:flex-row gap-8 items-start">
+              <div className="flex-shrink-0">
+                <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-xl font-black shadow-lg">SM</div>
+              </div>
+              <div className="flex-1">
+                <div className="flex gap-1 mb-4">{Array.from({ length: 5 }).map((_, j) => <Star key={j} className="h-4 w-4 text-yellow-400 fill-yellow-400" />)}</div>
+                <blockquote className="text-white text-lg md:text-xl leading-relaxed font-medium mb-6">
+                  "La piste d'audit certifiable ISAE et le module multi-réglementaire ont transformé notre préparation aux audits CSRD. Ce qui prenait plusieurs semaines se fait maintenant en quelques heures."
+                </blockquote>
+                <div>
+                  <div className="text-white font-bold">Sophie Martineau</div>
+                  <div className="text-slate-400 text-sm">Directrice RSE · Nexans</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
-              { name: 'Sophie Martineau', role: 'RSE Director, Nexans', text: 'La piste d\'audit certifiable ISAE et le module multi-réglementaire nous ont transformé notre préparation aux audits CSRD. Un gain de temps considérable.', stars: 5, avatar: 'SM', color: 'bg-violet-500' },
-              { name: 'Thomas Durand', role: 'CFO, Biocoop', text: 'Le plan de décarbonation avec les scénarios SBTi et les 24 actions ROI nous a permis de construire notre trajectoire Net Zero en quelques jours, contre plusieurs semaines auparavant.', stars: 5, avatar: 'TD', color: 'bg-blue-500' },
-              { name: 'Amélie Chen', role: 'Partner ESG, Deloitte France', text: 'Le module Supply Chain ESG avec due diligence est exactement ce que nos clients attendaient pour se mettre en conformité avec la loi Devoir de Vigilance. Excellent.', stars: 5, avatar: 'AC', color: 'bg-emerald-500' },
+              { name: 'Thomas Durand', role: 'CFO · Biocoop', text: 'Le plan de décarbonation avec les scénarios SBTi et les 24 actions ROI nous a permis de construire notre trajectoire Net Zero en quelques jours, contre plusieurs semaines auparavant.', stars: 5, avatar: 'TD', color: 'from-blue-500 to-indigo-600' },
+              { name: 'Amélie Chen', role: 'Partner ESG · Deloitte France', text: 'Le module Supply Chain ESG avec due diligence est exactement ce que nos clients attendaient pour se mettre en conformité avec la loi Devoir de Vigilance. Excellent outil.', stars: 5, avatar: 'AC', color: 'from-emerald-500 to-teal-600' },
             ].map((t, i) => (
-              <div key={i} className="flex flex-col p-8 bg-gray-50 rounded-2xl border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div key={i} className="flex flex-col p-8 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                 <div className="flex gap-1 mb-5">{Array.from({ length: t.stars }).map((_, j) => <Star key={j} className="h-4 w-4 text-yellow-400 fill-yellow-400" />)}</div>
-                <p className="text-gray-700 text-sm leading-relaxed flex-1 mb-6">"{t.text}"</p>
-                <div className="flex items-center gap-3 pt-5 border-t border-gray-200">
-                  <div className={`w-10 h-10 ${t.color} rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>{t.avatar}</div>
+                <blockquote className="text-gray-700 text-sm leading-relaxed flex-1 mb-6 italic">"{t.text}"</blockquote>
+                <div className="flex items-center gap-3 pt-5 border-t border-gray-100">
+                  <div className={`w-10 h-10 bg-gradient-to-br ${t.color} rounded-xl flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>{t.avatar}</div>
                   <div>
                     <div className="text-sm font-bold text-gray-900">{t.name}</div>
                     <div className="text-xs text-gray-500">{t.role}</div>
@@ -1985,36 +2076,56 @@ export default function LandingPage() {
       </section>
 
       {/* ── CTA ──────────────────────────────────────────────────────────────── */}
-      <section className="py-24 bg-gradient-to-br from-green-900 via-emerald-800 to-green-950 relative overflow-hidden">
-        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 0)', backgroundSize: '40px 40px' }} />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-green-400/10 rounded-full blur-3xl" />
+      <section className="py-28 relative overflow-hidden">
+        {/* Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900" />
+        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.025) 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/8 rounded-full blur-3xl pointer-events-none" />
+
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/20 rounded-full text-green-300 text-sm font-medium mb-8">
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500/15 border border-emerald-500/30 rounded-full text-emerald-300 text-sm font-semibold mb-10">
             <Sparkles className="h-4 w-4" />
-            17 modules · 14 jours d'essai · Sans carte bancaire
+            22 modules · 14 jours gratuits · Sans carte bancaire
           </div>
-          <h2 className="text-4xl lg:text-5xl font-extrabold text-white mb-6 leading-tight">
-            Prêt à passer à la vitesse supérieure ?
+
+          <h2 className="text-4xl lg:text-6xl font-extrabold text-white mb-6 leading-[1.05] tracking-tight">
+            Votre ESG, enfin
+            <br />
+            <span className="bg-gradient-to-r from-emerald-400 via-green-300 to-teal-400 bg-clip-text text-transparent">
+              sous contrôle total
+            </span>
           </h2>
-          <p className="text-lg text-slate-300 mb-10 max-w-2xl mx-auto">
-            Rejoignez 500+ entreprises qui pilotent leur ESG, enrichissent leurs données INSEE, automatisent leurs intégrations et leur conformité réglementaire depuis une seule plateforme.
+
+          <p className="text-xl text-slate-300 mb-12 max-w-2xl mx-auto leading-relaxed">
+            Rejoignez les équipes RSE qui ont remplacé leurs tableurs et leurs silos par une plateforme unique, intelligente et certifiable.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <Link to="/register">
-              <button className="group flex items-center gap-2 px-8 py-4 bg-white text-green-900 font-bold rounded-2xl hover:bg-gray-50 transition-all shadow-2xl text-base hover:-translate-y-0.5">
-                Démarrer gratuitement <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              <button className="group flex items-center gap-2 px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-2xl transition-all shadow-2xl shadow-emerald-500/30 text-base hover:-translate-y-0.5">
+                Démarrer gratuitement
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </button>
             </Link>
             <Link to="/demo">
-              <button className="flex items-center gap-2 px-8 py-4 bg-green-500/20 hover:bg-green-500/30 border border-green-400/30 text-white font-semibold rounded-2xl transition-all text-base backdrop-blur-sm">
-                <Play className="h-4 w-4 fill-white" /> Voir la démo
+              <button className="flex items-center gap-2 px-8 py-4 bg-white/8 hover:bg-white/15 border border-white/20 text-white font-semibold rounded-2xl transition-all text-base backdrop-blur-sm">
+                <Play className="h-4 w-4 fill-white" /> Voir la démo interactive
               </button>
             </Link>
           </div>
-          <div className="flex items-center justify-center gap-8 mt-12 pt-8 border-t border-white/10">
-            {[{ icon: Shield, label: 'RGPD conforme' }, { icon: Globe, label: 'Hébergé en France' }, { icon: Award, label: 'ISO 27001' }, { icon: Hash, label: 'ISAE 3000' }].map((item, i) => (
-              <div key={i} className="flex items-center gap-2 text-slate-400 text-sm">
-                <item.icon className="h-4 w-4 text-green-400" />{item.label}
+
+          {/* Trust badges */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mx-auto">
+            {[
+              { icon: Shield, label: 'RGPD conforme', sub: 'Données souveraines' },
+              { icon: Globe, label: 'Hébergé en France', sub: 'ISO 27001' },
+              { icon: Award, label: 'ISAE 3000', sub: 'Certifiable auditeurs' },
+              { icon: Lock, label: 'SHA-256', sub: 'Intégrité garantie' },
+            ].map((item, i) => (
+              <div key={i} className="flex flex-col items-center gap-2 p-4 bg-white/5 border border-white/10 rounded-2xl">
+                <item.icon className="h-5 w-5 text-emerald-400" />
+                <div className="text-white text-xs font-semibold">{item.label}</div>
+                <div className="text-slate-400 text-xs">{item.sub}</div>
               </div>
             ))}
           </div>
@@ -2033,7 +2144,7 @@ export default function LandingPage() {
                 <span className="text-xl font-bold">ESGFlow</span>
               </div>
               <p className="text-slate-400 text-sm leading-relaxed max-w-xs mb-6">
-                La plateforme ESG la plus complète du marché — 17 modules, 100+ indicateurs ESRS, IA intégrée, conformité CSRD garantie.
+                La plateforme ESG complète — 22 modules, 100+ indicateurs ESRS, IA intégrée, conformité CSRD certifiable.
               </p>
               <div className="flex gap-2.5">
                 {[
