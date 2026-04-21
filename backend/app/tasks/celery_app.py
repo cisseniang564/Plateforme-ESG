@@ -80,13 +80,13 @@ celery_app.conf.update(
     beat_schedule={
         # Recalculate ESG scores every night at 3 AM UTC
         "nightly-score-refresh": {
-            "task": "app.tasks.scoring_tasks.refresh_all_scores",
+            "task": "scoring.refresh_all_scores",  # matches @shared_task(name=...)
             "schedule": crontab(hour=3, minute=0),
             "options": {"queue": "scoring"},
         },
         # Clean up expired task results every Sunday at 4 AM UTC
         "weekly-result-cleanup": {
-            "task": "app.tasks.scoring_tasks.cleanup_stale_results",
+            "task": "scoring.cleanup_stale_results",  # matches @shared_task(name=...)
             "schedule": crontab(hour=4, minute=0, day_of_week=0),
         },
     },
