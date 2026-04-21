@@ -18,7 +18,8 @@
   }
 
   body {
-    @apply bg-surface-50 text-gray-900;
+    background-color: #f8fafc; /* surface-50 */
+    @apply text-gray-900;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     line-height: 1.5;
     letter-spacing: -0.01em;
