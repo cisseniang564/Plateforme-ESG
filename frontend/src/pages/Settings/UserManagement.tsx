@@ -224,6 +224,47 @@ function SidePanel({ open, onClose, title, subtitle, children, footer }: {
   );
 }
 
+/* ─── ToggleActiveModal ──────────────────────────────────────────────────────── */
+function ToggleActiveModal({ user, onClose, onConfirm }: {
+  user: User; onClose: () => void; onConfirm: () => void;
+}) {
+  const isDeactivating = user.is_active;
+  return createPortal(
+    <div className="fixed inset-0 z-[210] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-modal w-full max-w-md p-6">
+        <div className="flex items-start gap-4 mb-5">
+          <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${isDeactivating ? 'bg-orange-100' : 'bg-emerald-100'}`}>
+            {isDeactivating ? <UserX className="h-5 w-5 text-orange-600" /> : <UserCheck className="h-5 w-5 text-emerald-600" />}
+          </div>
+          <div className="flex-1">
+            <h3 className="text-base font-bold text-gray-900">
+              {isDeactivating ? 'Désactiver cet utilisateur ?' : 'Réactiver cet utilisateur ?'}
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">
+              <strong>{user.first_name} {user.last_name}</strong> ({user.email})
+            </p>
+          </div>
+        </div>
+        <div className={`px-4 py-3 rounded-xl border mb-5 ${isDeactivating ? 'bg-orange-50 border-orange-100' : 'bg-emerald-50 border-emerald-100'}`}>
+          <p className={`text-xs font-medium ${isDeactivating ? 'text-orange-700' : 'text-emerald-700'}`}>
+            {isDeactivating
+              ? "L'utilisateur ne pourra plus se connecter. Ses données seront conservées."
+              : "L'utilisateur pourra à nouveau accéder à la plateforme."}
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="secondary" className="flex-1" onClick={onClose}>Annuler</Button>
+          <Button variant="danger" className="flex-1" onClick={onConfirm} icon={isDeactivating ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}>
+            {isDeactivating ? 'Désactiver' : 'Réactiver'}
+          </Button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 /* ─── DeleteConfirmModal ────────────────────────────────────────────────────── */
 function DeleteConfirmModal({ user, onClose, onConfirm, loading }: {
   user: User; onClose: () => void; onConfirm: () => void; loading: boolean;
@@ -231,7 +272,7 @@ function DeleteConfirmModal({ user, onClose, onConfirm, loading }: {
   return createPortal(
     <div className="fixed inset-0 z-[210] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-modal w-full max-w-md p-6 animate-scale-in">
+      <div className="relative bg-white rounded-2xl shadow-modal w-full max-w-md p-6">
         <div className="flex items-start gap-4 mb-5">
           <div className="w-11 h-11 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
             <AlertTriangle className="h-5 w-5 text-red-600" />
@@ -276,6 +317,7 @@ export default function UserManagement() {
   const [editOpen, setEditOpen]     = useState(false);
   const [editingUser, setEditingUser]   = useState<User | null>(null);
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
+  const [togglingUser, setTogglingUser] = useState<User | null>(null);
 
   const [form, setForm]           = useState<UserForm>(EMPTY_FORM);
   const [formErrors, setFormErrors] = useState<Partial<UserForm & { role_label: string }>>({});
@@ -404,17 +446,18 @@ export default function UserManagement() {
     }
   };
 
-  const handleToggleActive = async (user: User) => {
+  const handleToggleActive = async () => {
+    if (!togglingUser) return;
+    const user = togglingUser;
     const newState = !user.is_active;
-    // Optimistic update
+    setTogglingUser(null);
     setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_active: newState } : u));
     try {
       await api.patch(`/users/${user.id}`, { is_active: newState });
       toast.success(newState ? 'Utilisateur réactivé' : 'Utilisateur désactivé');
     } catch (err: any) {
-      // Rollback
       setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_active: !newState } : u));
-      toast.error(err.response?.data?.detail || 'Erreur');
+      toast.error(err.response?.data?.detail || 'Erreur lors de la mise à jour');
     }
   };
 
@@ -818,7 +861,7 @@ export default function UserManagement() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleToggleActive(user)}
+                            onClick={() => setTogglingUser(user)}
                             className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all active:scale-[0.97] cursor-pointer ${
                               user.is_active
                                 ? 'text-orange-600 bg-orange-50 border-orange-200 hover:bg-orange-100 hover:border-orange-300'
@@ -903,6 +946,15 @@ export default function UserManagement() {
       >
         {formContent(true)}
       </SidePanel>
+
+      {/* ── Modal Désactiver/Réactiver ── */}
+      {togglingUser && (
+        <ToggleActiveModal
+          user={togglingUser}
+          onClose={() => setTogglingUser(null)}
+          onConfirm={handleToggleActive}
+        />
+      )}
 
       {/* ── Modal Suppression ── */}
       {deletingUser && (
