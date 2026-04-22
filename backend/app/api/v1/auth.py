@@ -409,7 +409,8 @@ async def forgot_password(
         token = create_password_reset_token(user.email, user.id)
         reset_url = f"{settings.APP_URL}/reset-password?token={token}"
         try:
-            EmailService.send_password_reset(
+            from app.tasks.email_tasks import send_password_reset_email
+            send_password_reset_email.delay(
                 email=user.email,
                 first_name=user.first_name or "",
                 reset_url=reset_url,

@@ -41,6 +41,7 @@ celery_app = Celery(
         "app.tasks.email_tasks",
         "app.tasks.report_tasks",
         "app.tasks.scoring_tasks",
+        "app.tasks.billing_tasks",
     ],
 )
 
@@ -80,14 +81,26 @@ celery_app.conf.update(
     beat_schedule={
         # Recalculate ESG scores every night at 3 AM UTC
         "nightly-score-refresh": {
-            "task": "scoring.refresh_all_scores",  # matches @shared_task(name=...)
+            "task": "scoring.refresh_all_scores",
             "schedule": crontab(hour=3, minute=0),
             "options": {"queue": "scoring"},
         },
         # Clean up expired task results every Sunday at 4 AM UTC
         "weekly-result-cleanup": {
-            "task": "scoring.cleanup_stale_results",  # matches @shared_task(name=...)
+            "task": "scoring.cleanup_stale_results",
             "schedule": crontab(hour=4, minute=0, day_of_week=0),
+        },
+        # Send trial-ending-soon reminders every day at 8 AM UTC
+        "daily-trial-reminders": {
+            "task": "billing.send_trial_reminders",
+            "schedule": crontab(hour=8, minute=0),
+            "options": {"queue": "default"},
+        },
+        # Auto-downgrade expired trials every day at 8:30 AM UTC
+        "daily-trial-downgrade": {
+            "task": "billing.downgrade_expired_trials",
+            "schedule": crontab(hour=8, minute=30),
+            "options": {"queue": "default"},
         },
     },
 )

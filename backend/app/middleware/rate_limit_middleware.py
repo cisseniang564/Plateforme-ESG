@@ -80,11 +80,20 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return self._redis
 
     async def dispatch(self, request: Request, call_next):
-        # Rate limiting is handled by nginx (rate=300r/s burst=500).
-        # Backend middleware disabled to avoid false positives on page load.
-        return await call_next(request)
+        path = request.url.path
 
-        path = request.url.path  # unreachable — kept for reference
+        # Brute-force protection — stricter limit for auth endpoints
+        if path in ("/api/v1/auth/login", "/api/v1/auth/demo-login"):
+            blocked = await self._check_brute_force(request)
+            if blocked:
+                return JSONResponse(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    content={
+                        "error": "Trop de tentatives",
+                        "detail": "Compte temporairement bloqué après plusieurs tentatives échouées. Réessayez dans 15 minutes.",
+                    },
+                    headers={"Retry-After": "900"},
+                )
 
         # Exempt paths
         if path in _EXEMPT or path.startswith(("/docs", "/redoc")):
@@ -137,6 +146,25 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             logger.warning("Rate limit check failed: %s — allowing request", e)
             return await call_next(request)
+
+    async def _check_brute_force(self, request: Request) -> bool:
+        """Return True if this IP should be blocked (brute-force protection).
+
+        Strategy: sliding 15-minute window — if ≥10 failed attempts, block.
+        The failed-attempt counter is incremented by the auth endpoint itself
+        via the Redis key  bf:<ip>  with TTL 900s.
+        """
+        redis = await self._get_redis()
+        if not redis:
+            return False
+        try:
+            ip = request.client.host if request.client else "unknown"
+            key = f"bf:{ip}"
+            count = await redis.get(key)
+            return int(count or 0) >= 10
+        except Exception as e:
+            logger.warning("Brute-force check failed: %s", e)
+            return False
 
     async def _resolve_limit_and_key(self, request: Request) -> tuple[int, str]:
         """Return (requests_per_minute, redis_key_prefix).

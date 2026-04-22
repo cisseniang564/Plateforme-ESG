@@ -5,7 +5,7 @@ from datetime import timedelta
 from typing import Optional
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,6 +16,41 @@ from app.utils.jwt import create_access_token, create_password_reset_token
 from app.dependencies import get_db
 from app.models.user import User
 from app.models.organization import Organization
+
+import logging
+logger = logging.getLogger(__name__)
+
+
+async def _record_failed_login(request: Request) -> None:
+    """Increment the brute-force counter for this IP (TTL = 15 min)."""
+    try:
+        from app.config import settings
+        import redis.asyncio as aioredis
+        redis_url = str(settings.REDIS_URL) if settings.REDIS_URL else "redis://redis:6379/0"
+        r = aioredis.from_url(redis_url, decode_responses=True)
+        ip = request.client.host if request.client else "unknown"
+        key = f"bf:{ip}"
+        pipe = r.pipeline()
+        pipe.incr(key)
+        pipe.expire(key, 900)  # reset window after 15 min of inactivity
+        await pipe.execute()
+        await r.aclose()
+    except Exception as exc:
+        logger.debug("Could not record failed login attempt: %s", exc)
+
+
+async def _clear_failed_logins(request: Request) -> None:
+    """Clear the brute-force counter on successful login."""
+    try:
+        from app.config import settings
+        import redis.asyncio as aioredis
+        redis_url = str(settings.REDIS_URL) if settings.REDIS_URL else "redis://redis:6379/0"
+        r = aioredis.from_url(redis_url, decode_responses=True)
+        ip = request.client.host if request.client else "unknown"
+        await r.delete(f"bf:{ip}")
+        await r.aclose()
+    except Exception as exc:
+        logger.debug("Could not clear failed login counter: %s", exc)
 
 router = APIRouter()
 
@@ -53,6 +88,7 @@ class LoginRequest(BaseModel):
 
 @router.post("/login", response_model=TokenResponse)
 async def login(
+    request: Request,
     data: LoginRequest,
     db: AsyncSession = Depends(get_db)
 ):
@@ -67,6 +103,7 @@ async def login(
     user = result.scalar_one_or_none()
 
     if not user or not verify_password(data.password, user.password_hash):
+        await _record_failed_login(request)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -93,6 +130,9 @@ async def login(
         additional_claims={"type": "refresh"},
     )
     
+    # Successful login — clear any brute-force counter
+    await _clear_failed_logins(request)
+
     return {
         "tokens": {
             "access_token": access_token,

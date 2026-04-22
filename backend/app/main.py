@@ -36,6 +36,7 @@ from app.api.v1.endpoints import esg_import
 from app.config import settings
 from app.db.session import close_db, init_db, AsyncSessionLocal
 from app.middleware.auth_middleware import AuthMiddleware
+from app.middleware.billing_middleware import BillingMiddleware
 from app.middleware.rate_limit_middleware import RateLimitMiddleware
 from app.middleware.prometheus_middleware import PrometheusMiddleware
 from app.core.logging_config import configure_logging
@@ -129,6 +130,7 @@ app.add_middleware(
 )
 app.add_middleware(RateLimitMiddleware, redis_url=str(settings.REDIS_URL) if settings.REDIS_URL else "redis://redis:6379/0")
 app.add_middleware(ApiUsageMiddleware, redis_url=str(settings.REDIS_URL) if settings.REDIS_URL else "redis://redis:6379/0")
+app.add_middleware(BillingMiddleware)   # must run AFTER AuthMiddleware sets request.state.tenant_id
 app.add_middleware(AuthMiddleware)
 # Security headers en dernier → s'exécute en premier (LIFO)
 app.add_middleware(SecurityHeadersMiddleware, environment=settings.APP_ENV)

@@ -1,0 +1,20 @@
+{
+  "name": "esgflow-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright E2E tests for ESGFlow platform",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:chromium": "playwright test --project=chromium",
+    "test:debug": "playwright test --debug",
+    "report": "playwright show-report",
+    "install-browsers": "playwright install --with-deps chromium firefox"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.41.0",
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  }
+}
