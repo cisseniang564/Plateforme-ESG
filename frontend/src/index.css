@@ -146,12 +146,24 @@
 
 /* ─── Animations ───────────────────────────────────────────────────────────── */
 
-/* Fade in — used on page transitions, dropdowns */
+/* Fade in — used on page transitions, dropdowns
+   NOTE: no transform here — transform creates a persistent stacking context
+   (even at translateY(0)) that traps children z-index values, making modals
+   and fixed overlays render behind Header/QuickActions. Use opacity-only. */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
-.animate-fade-in { animation: fadeIn 0.25s ease-out forwards; }
+.animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
+
+/* Slide in from right — used by SidePanel drawer */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(100%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in-right {
+  animation: slideInRight 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
 
 /* Staggered */
 .animate-fade-in-delay-1 { animation: fadeIn 0.25s ease-out 0.07s  forwards; opacity: 0; }

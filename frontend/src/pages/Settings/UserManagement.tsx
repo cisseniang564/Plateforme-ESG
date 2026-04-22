@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
@@ -198,8 +199,12 @@ function SidePanel({ open, onClose, title, subtitle, children, footer }: {
   }, [open, onClose]);
 
   if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-[100] flex">
+
+  /* Rendered via portal at document.body so z-index is always evaluated at
+     the root stacking context — bypasses any parent transform/opacity/overflow
+     stacking context that would otherwise trap the panel beneath the header. */
+  return createPortal(
+    <div className="fixed inset-0 z-[200] flex">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative ml-auto w-full max-w-lg h-full bg-white shadow-modal flex flex-col animate-slide-in-right">
         <div className="flex items-start justify-between px-6 pt-6 pb-5 border-b border-[#f0f4f8]">
@@ -208,13 +213,14 @@ function SidePanel({ open, onClose, title, subtitle, children, footer }: {
             {subtitle && <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>}
           </div>
           <button type="button" onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-xl transition-colors">
-            <X className="h-4.5 w-4.5 text-gray-400" />
+            <X className="h-5 w-5 text-gray-400" />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
         <div className="px-6 py-4 border-t border-[#f0f4f8] bg-gray-50/50 flex gap-3">{footer}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -222,8 +228,8 @@ function SidePanel({ open, onClose, title, subtitle, children, footer }: {
 function DeleteConfirmModal({ user, onClose, onConfirm, loading }: {
   user: User; onClose: () => void; onConfirm: () => void; loading: boolean;
 }) {
-  return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[210] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-modal w-full max-w-md p-6 animate-scale-in">
         <div className="flex items-start gap-4 mb-5">
@@ -248,7 +254,8 @@ function DeleteConfirmModal({ user, onClose, onConfirm, loading }: {
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
