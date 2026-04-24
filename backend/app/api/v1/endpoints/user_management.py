@@ -145,6 +145,8 @@ async def list_users(
             "last_name": u.last_name,
             "is_active": u.is_active,
             "email_verified_at": u.email_verified_at.isoformat() if u.email_verified_at else None,
+            "last_login_at": u.last_login_at.isoformat() if u.last_login_at else None,
+            "mfa_enabled": bool(u.mfa_enabled),
             "role": {
                 "id": str(role.id),
                 "name": role.name,
