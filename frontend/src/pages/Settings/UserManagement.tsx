@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -217,6 +217,7 @@ function SidePanel({ open, onClose, title, subtitle, children, footer }: {
 
   useEffect(() => {
     if (!open) return;
+    const opener = document.activeElement as HTMLElement | null;
     document.body.style.overflow = 'hidden';
 
     setTimeout(() => {
@@ -239,7 +240,11 @@ function SidePanel({ open, onClose, title, subtitle, children, footer }: {
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     };
     document.addEventListener('keydown', onKey);
-    return () => { document.body.style.overflow = ''; document.removeEventListener('keydown', onKey); };
+    return () => {
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', onKey);
+      opener?.focus();
+    };
   }, [open, onClose]);
 
   if (!open) return null;
@@ -458,9 +463,19 @@ export default function UserManagement() {
   // Current user (for self-demotion guard)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
+  // Seat usage
+  const [maxUsers, setMaxUsers] = useState<number | null>(null);
+
+  // Password reset in edit panel
+  const [resetPwdOpen, setResetPwdOpen] = useState(false);
+  const [resetPwd, setResetPwd] = useState({ password: '', confirm: '' });
+  const [resetPwdError, setResetPwdError] = useState('');
+  const [resetting, setResetting] = useState(false);
+
   useEffect(() => {
     loadData();
     api.get('/auth/me').then(r => setCurrentUserId(r.data.id)).catch(() => {});
+    api.get('/billing/subscription').then(r => setMaxUsers(r.data.max_users ?? null)).catch(() => {});
   }, []);
 
   const loadData = async () => {
@@ -515,6 +530,26 @@ export default function UserManagement() {
     });
   };
 
+  /* ── Per-field blur validation ── */
+  const validateField = (field: string, value: string) => {
+    let error = '';
+    if (field === 'first_name' && !value.trim()) error = 'Prénom requis';
+    if (field === 'last_name'  && !value.trim()) error = 'Nom requis';
+    if (field === 'email') {
+      if (!value) error = 'Email requis';
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = 'Email invalide';
+    }
+    if (field === 'password') {
+      if (!value) error = 'Mot de passe requis';
+      else if (value.length < 8) error = 'Min. 8 caractères';
+      else if (!/[A-Z]/.test(value)) error = 'Doit contenir une majuscule';
+      else if (!/[0-9]/.test(value)) error = 'Doit contenir un chiffre';
+      else if (!/[^A-Za-z0-9]/.test(value)) error = 'Doit contenir un caractère spécial';
+    }
+    if (field === 'confirm_password' && value !== form.password) error = 'Les mots de passe ne correspondent pas';
+    setFormErrors(prev => ({ ...prev, [field]: error || undefined }));
+  };
+
   /* ── Validation ── */
   const validate = (isEdit = false): boolean => {
     const errors: Partial<UserForm & { role_label: string }> = {};
@@ -539,6 +574,7 @@ export default function UserManagement() {
   /* ── Handlers ── */
   const openCreate = () => {
     setForm(EMPTY_FORM); setFormErrors({}); setRoleLabel(''); setShowPwd(false);
+    setResetPwdOpen(false); setResetPwd({ password: '', confirm: '' }); setResetPwdError('');
     setEditingUser(null); setCreateOpen(true);
   };
 
@@ -547,7 +583,26 @@ export default function UserManagement() {
     setForm({ ...EMPTY_FORM, email: user.email, first_name: user.first_name, last_name: user.last_name, role_id: user.role?.id || '' });
     setRoleLabel(user.role?.display_name || '');
     setFormErrors({});
+    setResetPwdOpen(false); setResetPwd({ password: '', confirm: '' }); setResetPwdError('');
     setEditOpen(true);
+  };
+
+  const handleResetPassword = async () => {
+    if (!editingUser) return;
+    if (resetPwd.password.length < 8) { setResetPwdError('Min. 8 caractères'); return; }
+    if (resetPwd.password !== resetPwd.confirm) { setResetPwdError('Les mots de passe ne correspondent pas'); return; }
+    setResetPwdError('');
+    setResetting(true);
+    try {
+      await api.patch(`/users/${editingUser.id}/password`, { new_password: resetPwd.password });
+      toast.success('Mot de passe réinitialisé avec succès');
+      setResetPwdOpen(false);
+      setResetPwd({ password: '', confirm: '' });
+    } catch (err: any) {
+      setResetPwdError(parseApiError(err));
+    } finally {
+      setResetting(false);
+    }
   };
 
   const resolveRoleId = () => {
@@ -563,6 +618,10 @@ export default function UserManagement() {
   };
 
   const parseApiError = (err: any): string => {
+    const status = err.response?.status;
+    if (status === 403) return "Vous n'avez pas les droits pour effectuer cette action";
+    if (status === 429) return 'Trop de requêtes — veuillez patienter avant de réessayer';
+    if (status === 409) return 'Conflit : cet email est peut-être déjà utilisé';
     const raw = err.response?.data?.detail || err.response?.data?.message;
     if (!raw) return err.message || 'Une erreur est survenue';
     if (typeof raw === 'string') return raw;
@@ -698,13 +757,13 @@ export default function UserManagement() {
     URL.revokeObjectURL(url);
   };
 
-  /* ── Stats ── */
-  const stats = {
+  /* ── Stats (memoized) ── */
+  const stats = useMemo(() => ({
     total:    users.length,
     active:   users.filter(u => u.is_active).length,
     inactive: users.filter(u => !u.is_active).length,
     byRole:   roles.map(r => ({ ...r, count: users.filter(u => u.role?.id === r.id).length })),
-  };
+  }), [users, roles]);
 
   /* ── Form content ── */
   const formContent = (isEdit: boolean) => (
@@ -721,6 +780,7 @@ export default function UserManagement() {
               autoFocus={i === 0 && !isEdit}
               value={form[field]}
               onChange={(e) => setForm(f => ({ ...f, [field]: e.target.value }))}
+              onBlur={(e) => validateField(field, e.target.value)}
               placeholder={i === 0 ? 'Jean' : 'Dupont'}
               className={`w-full px-3.5 py-2.5 border rounded-xl outline-none transition-all text-sm
                 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
@@ -742,6 +802,7 @@ export default function UserManagement() {
             type="email"
             value={form.email}
             onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
+            onBlur={(e) => !isEdit && validateField('email', e.target.value)}
             disabled={isEdit}
             placeholder="jean.dupont@entreprise.com"
             className={`w-full pl-10 pr-4 py-2.5 border rounded-xl outline-none transition-all text-sm
@@ -789,6 +850,7 @@ export default function UserManagement() {
                 type={showPwd ? 'text' : 'password'}
                 value={form.password}
                 onChange={(e) => setForm(f => ({ ...f, password: e.target.value }))}
+                onBlur={(e) => validateField('password', e.target.value)}
                 placeholder="Min. 8 caractères"
                 className={`w-full pl-10 pr-11 py-2.5 border rounded-xl outline-none transition-all text-sm
                   focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
@@ -815,6 +877,7 @@ export default function UserManagement() {
                 type={showPwd ? 'text' : 'password'}
                 value={form.confirm_password}
                 onChange={(e) => setForm(f => ({ ...f, confirm_password: e.target.value }))}
+                onBlur={(e) => validateField('confirm_password', e.target.value)}
                 placeholder="Répéter le mot de passe"
                 className={`w-full pl-10 pr-4 py-2.5 border rounded-xl outline-none transition-all text-sm
                   focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
@@ -824,6 +887,62 @@ export default function UserManagement() {
             {formErrors.confirm_password && <p className="text-xs text-red-600 mt-1" role="alert">{formErrors.confirm_password}</p>}
           </div>
         </>
+      )}
+
+      {/* ── Section reset mot de passe (mode édition uniquement) ── */}
+      {isEdit && (
+        <div className="border border-[#e8ecf0] rounded-xl overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setResetPwdOpen(v => !v)}
+            className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+            aria-expanded={resetPwdOpen}
+          >
+            <span className="flex items-center gap-2">
+              <Lock className="h-4 w-4 text-gray-400" aria-hidden />
+              Réinitialiser le mot de passe
+            </span>
+            <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${resetPwdOpen ? 'rotate-180' : ''}`} aria-hidden />
+          </button>
+
+          {resetPwdOpen && (
+            <div className="px-4 pb-4 pt-1 space-y-3 bg-gray-50/50 border-t border-[#f0f4f8]">
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" aria-hidden />
+                <input
+                  type="password"
+                  value={resetPwd.password}
+                  onChange={(e) => setResetPwd(p => ({ ...p, password: e.target.value }))}
+                  placeholder="Nouveau mot de passe"
+                  aria-label="Nouveau mot de passe"
+                  className="w-full pl-10 pr-4 py-2.5 border border-[#e2e8f0] rounded-xl outline-none text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+                />
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" aria-hidden />
+                <input
+                  type="password"
+                  value={resetPwd.confirm}
+                  onChange={(e) => setResetPwd(p => ({ ...p, confirm: e.target.value }))}
+                  placeholder="Confirmer le nouveau mot de passe"
+                  aria-label="Confirmer le nouveau mot de passe"
+                  className="w-full pl-10 pr-4 py-2.5 border border-[#e2e8f0] rounded-xl outline-none text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+                />
+              </div>
+              {resetPwdError && <p className="text-xs text-red-600" role="alert">{resetPwdError}</p>}
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleResetPassword}
+                loading={resetting}
+                disabled={!resetPwd.password || !resetPwd.confirm}
+                icon={<CheckCircle className="h-3.5 w-3.5" />}
+              >
+                Confirmer la réinitialisation
+              </Button>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
@@ -888,6 +1007,39 @@ export default function UserManagement() {
           </div>
         ))}
       </div>
+
+      {/* ── Quota de sièges ── */}
+      {maxUsers !== null && (
+        <div className="bg-white border border-[#e8ecf0] rounded-2xl px-5 py-4 shadow-card flex items-center gap-5">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-sm font-semibold text-gray-700">Sièges utilisés</p>
+              <span className={`text-sm font-bold tabular-nums ${stats.total >= maxUsers ? 'text-red-600' : 'text-gray-900'}`}>
+                {stats.total} / {maxUsers}
+              </span>
+            </div>
+            <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+              <div
+                className={`h-2 rounded-full transition-all duration-500 ${
+                  stats.total >= maxUsers ? 'bg-red-500' :
+                  stats.total / maxUsers > 0.8 ? 'bg-amber-400' : 'bg-emerald-500'
+                }`}
+                style={{ width: `${Math.min(100, (stats.total / maxUsers) * 100)}%` }}
+                role="progressbar"
+                aria-valuenow={stats.total}
+                aria-valuemin={0}
+                aria-valuemax={maxUsers}
+                aria-label={`${stats.total} sièges sur ${maxUsers} utilisés`}
+              />
+            </div>
+          </div>
+          {stats.total >= maxUsers && (
+            <div className="flex-shrink-0 text-xs font-semibold text-red-600 bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg">
+              Limite atteinte
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Répartition des rôles ── */}
       {stats.byRole.some(r => r.count > 0) && (

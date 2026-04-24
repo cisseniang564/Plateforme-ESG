@@ -38,6 +38,10 @@ class UserUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 
+class UserPasswordReset(BaseModel):
+    new_password: str
+
+
 def _format_role_name(name: str) -> str:
     """Formate un nom de rôle snake_case en libellé lisible."""
     mapping = {
@@ -312,6 +316,52 @@ async def update_user(
     )
 
     return {"message": "User updated successfully"}
+
+
+@router.patch("/{target_user_id}/password")
+async def reset_user_password(
+    target_user_id: UUID,
+    data: UserPasswordReset,
+    request: Request,
+    _: None = Depends(require_role(*Roles.ADMIN_OR_ABOVE)),
+    user_id: UUID = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    """Réinitialiser le mot de passe d'un utilisateur (admin uniquement)."""
+    if len(data.new_password) < 8:
+        raise HTTPException(status_code=422, detail="Le mot de passe doit contenir au moins 8 caractères")
+
+    cur = await db.execute(
+        text("SELECT tenant_id FROM users WHERE id = :uid"),
+        {"uid": str(user_id)},
+    )
+    cur_row = cur.first()
+    if not cur_row:
+        raise HTTPException(status_code=404, detail="User not found")
+    tenant_id = cur_row.tenant_id
+
+    target_result = await db.execute(
+        text("SELECT id, email FROM users WHERE id = :tid AND tenant_id = :ten"),
+        {"tid": str(target_user_id), "ten": str(tenant_id)},
+    )
+    target_row = target_result.first()
+    if not target_row:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+
+    await db.execute(
+        text("UPDATE users SET password_hash = :h, updated_at = NOW() WHERE id = :tid"),
+        {"h": pwd_context.hash(data.new_password), "tid": str(target_user_id)},
+    )
+    await db.commit()
+
+    await log_audit(
+        db, user_id, tenant_id,
+        "update", "user", target_user_id,
+        f"Password reset for {target_row.email}",
+        request,
+    )
+
+    return {"message": "Mot de passe réinitialisé avec succès"}
 
 
 @router.delete("/{target_user_id}")
