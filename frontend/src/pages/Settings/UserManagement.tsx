@@ -955,36 +955,64 @@ export default function UserManagement() {
 
   /* ── Render ─────────────────────────────────────────────────────────────── */
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
 
-      {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <button
-            onClick={() => navigate('/app/settings')}
-            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors mb-2"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Paramètres
-          </button>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-primary-100 flex items-center justify-center">
-              <UsersIcon className="h-5 w-5 text-primary-600" aria-hidden />
+      {/* ── Hero ── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-violet-900 to-indigo-900 p-8 text-white shadow-xl">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZyIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLW9wYWNpdHk9IjAuMDUiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg==')] opacity-30" />
+        <div className="relative flex items-start justify-between gap-6 flex-wrap">
+          <div>
+            <button
+              onClick={() => navigate('/app/settings')}
+              className="inline-flex items-center gap-1.5 text-sm text-white/60 hover:text-white transition-colors mb-4"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Paramètres
+            </button>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-11 h-11 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                <UsersIcon className="h-6 w-6 text-white" aria-hidden />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">Gestion des utilisateurs</h1>
+                <p className="text-sm text-white/70">Membres, rôles et permissions de votre organisation</p>
+              </div>
             </div>
-            Gestion des utilisateurs
-          </h1>
-          <p className="text-sm text-gray-500 mt-1 ml-11">Gérez les membres, rôles et permissions de votre organisation</p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="secondary" size="sm" onClick={exportCSV} icon={<Download className="h-4 w-4" aria-hidden />}>
-            Export CSV
-          </Button>
-          <Button variant="secondary" size="sm" onClick={loadData} icon={<RefreshCw className="h-4 w-4" aria-hidden />}>
-            Actualiser
-          </Button>
-          <Button size="sm" onClick={openCreate} icon={<Plus className="h-4 w-4" aria-hidden />}>
-            Nouvel utilisateur
-          </Button>
+            <div className="flex flex-wrap gap-2 mt-4">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15">
+                <UsersIcon className="h-3 w-3" />{stats.total} membres
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-medium ring-1 ring-emerald-400/30 text-emerald-200">
+                <CheckCircle className="h-3 w-3" />{stats.active} actifs
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15">
+                <Shield className="h-3 w-3" />{roles.length} rôles
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
+            <button
+              onClick={exportCSV}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-medium transition-all"
+            >
+              <Download className="h-4 w-4" aria-hidden />
+              Export CSV
+            </button>
+            <button
+              onClick={loadData}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-medium transition-all"
+            >
+              <RefreshCw className="h-4 w-4" aria-hidden />
+              Actualiser
+            </button>
+            <button
+              onClick={openCreate}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white text-indigo-900 hover:bg-white/90 text-sm font-semibold transition-all shadow"
+            >
+              <Plus className="h-4 w-4" aria-hidden />
+              Nouvel utilisateur
+            </button>
+          </div>
         </div>
       </div>
 

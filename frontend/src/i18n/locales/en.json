@@ -256,6 +256,7 @@
     "seeAll": "See all",
     "avgSectorPerformance": "Average Performance by Sector",
     "alertTitle": "Warning: Overall performance needs improvement",
+    "alertDesc": "Average score of {{score}}/100 — {{count}} organisation(s) require priority attention.",
     "alertBody": "The average score indicates improvement opportunities.",
     "seeOrganisations": "See organisations",
     "welcome": "Welcome to ESGFlow!",
@@ -3337,5 +3338,17 @@
     "periodLabel": "Period",
     "langLabel": "Language",
     "formatLabel": "Export Format"
+  },
+  "insee": {
+    "title": "French Companies",
+    "subtitle": "Sirene Database — INSEE",
+    "searchByName": "Search by name / SIREN",
+    "searchBySector": "Search by sector",
+    "search": "Search",
+    "export": "Export CSV",
+    "results": "results",
+    "noResults": "No results",
+    "active": "Active",
+    "siege": "Headquarters"
   }
 }

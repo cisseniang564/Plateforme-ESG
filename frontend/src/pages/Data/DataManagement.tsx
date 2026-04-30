@@ -65,12 +65,14 @@ export default function DataManagement() {
   const [stats, setStats] = useState<UploadStats>({ totalRecords: 0, validatedRecords: 0, pendingRecords: 0 });
   const [entryStats, setEntryStats] = useState<EntryStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     setLoading(true);
+    setError(null);
     try {
       const [uploadsRes, statsRes] = await Promise.all([
         api.get('/data/uploads', { params: { page_size: 50 } }),
@@ -83,8 +85,9 @@ export default function DataManagement() {
       const pendingRecords = items.filter(u => u.status !== 'completed').reduce((sum, u) => sum + (u.total_rows || 0), 0);
       setStats({ totalRecords, validatedRecords, pendingRecords });
       if (statsRes.data) setEntryStats(statsRes.data);
-    } catch (error) {
-      console.error('Error loading uploads:', error);
+    } catch (err) {
+      console.error('Error loading uploads:', err);
+      setError(t('data.loadError', 'Impossible de charger les données. Vérifiez votre connexion et réessayez.'));
     } finally {
       setLoading(false);
     }
@@ -96,8 +99,9 @@ export default function DataManagement() {
     try {
       await api.delete(`/data/uploads/${id}`);
       await loadData();
-    } catch (error) {
-      console.error('Error deleting upload:', error);
+    } catch (err) {
+      console.error('Error deleting upload:', err);
+      alert(t('data.deleteError', 'Erreur lors de la suppression. Réessayez.'));
     } finally {
       setDeletingId(null);
     }
@@ -118,6 +122,29 @@ export default function DataManagement() {
     return (
       <div className="flex items-center justify-center h-64">
         <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4 p-6 bg-red-50 border border-red-200 rounded-2xl">
+          <div className="p-2 bg-red-100 rounded-xl flex-shrink-0">
+            <AlertCircle className="h-6 w-6 text-red-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-red-900">{t('common.error', 'Erreur de chargement')}</p>
+            <p className="text-sm text-red-700 mt-0.5">{error}</p>
+          </div>
+          <button
+            onClick={loadData}
+            className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-xl transition-colors flex-shrink-0"
+          >
+            <RefreshCw size={14} />
+            {t('common.retry', 'Réessayer')}
+          </button>
+        </div>
       </div>
     );
   }
