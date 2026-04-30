@@ -30,11 +30,9 @@ export const useAuth = () => {
       }
       return {};
     } catch (err: unknown) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
-            ?? 'Login failed';
+      // Préférer le message métier du backend (response.data.detail) à l'erreur HTTP brute
+      const axiosDetail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      const message = axiosDetail || (err instanceof Error ? err.message : 'Login failed');
       throw new Error(message);
     }
   };
