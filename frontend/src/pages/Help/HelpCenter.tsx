@@ -464,10 +464,10 @@ export default function HelpCenter() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-green-950 to-emerald-900 text-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
+      <div className="rounded-3xl bg-gradient-to-r from-slate-900 via-green-950 to-emerald-900 text-white px-8 py-10 shadow-xl">
+        <div>
           {/* Top bar: back button + logo */}
           <div className="flex items-center justify-between mb-8">
             <button
@@ -523,7 +523,7 @@ export default function HelpCenter() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
+      <div>
 
         {/* Article view */}
         {activeArticle ? (

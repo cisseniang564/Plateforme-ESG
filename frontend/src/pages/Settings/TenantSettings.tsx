@@ -1187,9 +1187,9 @@ export default function TenantSettings() {
   };
 
   return (
-    <div className="space-y-0">
+    <div className="space-y-6">
       {/* Hero */}
-      <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-gray-800 to-slate-900 p-8 text-white shadow-xl mb-6">
+      <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-gray-800 to-slate-900 p-8 text-white shadow-xl">
         <div className="flex items-end justify-between gap-6 flex-wrap">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15 mb-4">

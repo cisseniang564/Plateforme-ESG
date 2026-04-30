@@ -337,10 +337,10 @@ export default function TaxonomyAlignment() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="space-y-6">
       {/* ── Hero banner ─────────────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-slate-900 via-teal-900 to-emerald-700 text-white">
-        <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="rounded-3xl bg-gradient-to-r from-slate-900 via-teal-900 to-emerald-700 text-white px-8 py-10 shadow-xl">
+        <div>
           {/* Back button */}
           <button
             onClick={() => navigate(-1)}
@@ -394,7 +394,7 @@ export default function TaxonomyAlignment() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+      <div className="space-y-6">
         {/* ── Stats cards ──────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="card flex flex-col gap-1">

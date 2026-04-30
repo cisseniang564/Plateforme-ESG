@@ -295,40 +295,38 @@ export default function ValidationWorkflow() {
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="space-y-6">
       {/* ── Hero ───────────────────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-700 text-white">
-        <div className="max-w-7xl mx-auto px-6 py-12">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white text-sm font-semibold px-3 py-1.5 rounded-full mb-4">
-                <Shield size={14} />
-                {t('validation.dataQualityBadge')}
-              </div>
-              <h1 className="text-3xl font-bold mb-2">{t('validation.workflowTitle')}</h1>
-              <p className="text-blue-200 text-sm max-w-xl">
-                {t('validation.workflowSubtitle')}
-              </p>
+      <div className="rounded-3xl bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-700 text-white shadow-xl px-8 py-10">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+          <div>
+            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white text-sm font-semibold px-3 py-1.5 rounded-full mb-4">
+              <Shield size={14} />
+              {t('validation.dataQualityBadge')}
             </div>
-            <button
-              onClick={loadData}
-              disabled={loading}
-              className="self-start md:self-auto flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-medium px-4 py-2 rounded-lg transition-all disabled:opacity-50"
-            >
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-              {t('validation.refresh')}
-            </button>
+            <h1 className="text-3xl font-bold mb-2">{t('validation.workflowTitle')}</h1>
+            <p className="text-blue-200 text-sm max-w-xl">
+              {t('validation.workflowSubtitle')}
+            </p>
           </div>
+          <button
+            onClick={loadData}
+            disabled={loading}
+            className="self-start md:self-auto flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-medium px-4 py-2 rounded-lg transition-all disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            {t('validation.refresh')}
+          </button>
+        </div>
 
-          {/* Workflow stepper */}
-          <div className="mt-8 bg-white/10 backdrop-blur-sm rounded-xl px-6 py-5 inline-block">
-            <p className="text-xs text-blue-200 font-medium uppercase tracking-wide mb-4">{t('validation.workflowSteps')}</p>
-            <WorkflowStepper />
-          </div>
+        {/* Workflow stepper */}
+        <div className="mt-8 bg-white/10 backdrop-blur-sm rounded-xl px-6 py-5 inline-block">
+          <p className="text-xs text-blue-200 font-medium uppercase tracking-wide mb-4">{t('validation.workflowSteps')}</p>
+          <WorkflowStepper />
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+      <div className="space-y-6">
         {/* ── KPI cards ─────────────────────────────────────────────────────── */}
         {loading ? (
           <div className="flex justify-center py-12">

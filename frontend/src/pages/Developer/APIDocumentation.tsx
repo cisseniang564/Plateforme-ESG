@@ -393,10 +393,10 @@ export default function APIDocumentation() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="space-y-6">
       {/* Hero */}
-      <div className="bg-gradient-to-br from-slate-900 via-emerald-900 to-slate-800 px-6 py-12 md:py-16">
-        <div className="mx-auto max-w-5xl">
+      <div className="rounded-3xl bg-gradient-to-br from-slate-900 via-emerald-900 to-slate-800 px-8 py-10 shadow-xl">
+        <div>
           <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-4 py-1.5 text-sm font-medium text-emerald-300 ring-1 ring-emerald-500/30">
             <Globe className="h-4 w-4" />
             Portail Développeur
@@ -424,7 +424,7 @@ export default function APIDocumentation() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-5xl space-y-8 px-4 py-10 sm:px-6">
+      <div className="space-y-8">
 
         {/* ── API Keys section ── */}
         <section>

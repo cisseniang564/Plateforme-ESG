@@ -583,10 +583,10 @@ export default function BenchmarkingDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="space-y-6">
       {/* Hero */}
-      <div className="bg-gradient-to-br from-slate-900 via-teal-900 to-slate-800 px-6 py-10 md:py-14">
-        <div className="mx-auto max-w-7xl">
+      <div className="rounded-3xl bg-gradient-to-br from-slate-900 via-teal-900 to-slate-800 px-8 py-10 shadow-xl">
+        <div>
           <button
             onClick={() => navigate(-1)}
             className="mb-4 inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-sm font-medium text-white/80 hover:bg-white/20 hover:text-white transition-colors"
@@ -613,7 +613,7 @@ export default function BenchmarkingDashboard() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="space-y-6">
         {/* Toolbar */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           {/* Sector selector */}
