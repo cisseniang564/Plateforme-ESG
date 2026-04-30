@@ -414,7 +414,7 @@ export default function APIDocumentation() {
               Générer une nouvelle clé
             </button>
             <button
-              onClick={() => window.open('/docs', '_blank')}
+              onClick={() => window.open('/docs', '_blank', 'noopener,noreferrer')}
               className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
             >
               <ExternalLink className="h-4 w-4" />
@@ -613,7 +613,7 @@ export default function APIDocumentation() {
                 </p>
               </div>
               <button
-                onClick={() => window.open('/docs', '_blank')}
+                onClick={() => window.open('/docs', '_blank', 'noopener,noreferrer')}
                 className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-slate-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-900"
               >
                 <ExternalLink className="h-4 w-4" />

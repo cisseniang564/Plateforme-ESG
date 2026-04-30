@@ -462,7 +462,7 @@ export default function TenantSettings() {
   const handlePortal = async () => {
     try {
       const url = await billingService.createPortal();
-      window.open(url, '_blank');
+      window.open(url, '_blank', 'noopener,noreferrer');
     } catch { toast.error('Portail de facturation indisponible'); }
   };
 
@@ -691,7 +691,7 @@ export default function TenantSettings() {
               key={mod.id}
               type="button"
               onClick={() => {
-                if ((mod as any).external) window.open(`${(import.meta.env.VITE_API_URL || '').replace('/api/v1', '')}/docs`, '_blank');
+                if ((mod as any).external) window.open(`${(import.meta.env.VITE_API_URL || '').replace('/api/v1', '')}/docs`, '_blank', 'noopener,noreferrer');
                 else navigate(mod.path);
               }}
               className="group flex items-center gap-4 p-4 rounded-xl border border-gray-200 bg-white hover:border-violet-200 hover:shadow-sm transition-all text-left"

@@ -355,7 +355,7 @@ export default function WebhookManagement() {
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
             <button
-              onClick={() => window.open(`${(import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1').replace('/api/v1', '')}/docs#/Webhooks`, '_blank')}
+              onClick={() => window.open(`${(import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1').replace('/api/v1', '')}/docs#/Webhooks`, '_blank', 'noopener,noreferrer')}
               className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 rounded-xl text-sm font-medium transition-all"
             >
               <ExternalLink className="h-4 w-4" />

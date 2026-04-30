@@ -256,7 +256,7 @@ export default function BillingPage() {
       const res = await api.post('/billing/portal', { return_url: window.location.href });
       const url = res.data.portal_url || res.data.url;
       if (!url) throw new Error('URL portail manquante');
-      window.open(url, '_blank');
+      window.open(url, '_blank', 'noopener,noreferrer');
     } catch (err: any) {
       setError(err?.response?.data?.detail || err?.message || 'Erreur portail de facturation.');
     } finally { setAction(null); }
@@ -559,7 +559,7 @@ export default function BillingPage() {
                 {!isCurrent && (
                   <button
                     onClick={() => {
-                      if (plan.id === 'enterprise') { window.open('mailto:sales@esgflow.io'); return; }
+                      if (plan.id === 'enterprise') { window.open('mailto:sales@esgflow.io', '_self'); return; }
                       if (isPaid) {
                         // Existing subscriber → change plan with proration
                         handleChangePlan(plan.id, isUpgrade ? 'create_prorations' : 'none');

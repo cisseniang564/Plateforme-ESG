@@ -446,6 +446,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
               onClick={() => setCollapsed(true)}
               className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-slate-600 hover:text-slate-400 hover:bg-white/[0.05] transition-all duration-100"
               title="Réduire"
+              aria-label="Réduire le menu"
             >
               <PanelLeftClose size={13} />
             </button>
@@ -457,6 +458,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
             onClick={() => setCollapsed(false)}
             className="absolute -right-3 top-[18px] z-20 flex h-6 w-6 items-center justify-center rounded-full border border-white/[0.08] bg-[#0c0e14] text-slate-500 hover:text-slate-300 shadow-lg transition-all duration-100"
             title="Développer"
+            aria-label="Développer le menu"
           >
             <PanelLeftOpen size={11} />
           </button>
