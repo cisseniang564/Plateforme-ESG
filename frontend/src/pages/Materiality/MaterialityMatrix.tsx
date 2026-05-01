@@ -438,12 +438,36 @@ export default function MaterialityMatrix() {
                 </div>
               </div>
 
+              {/* Méthodologie double matérialité CSRD */}
+              <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs">
+                <div className="flex items-start gap-2 p-2.5 rounded-xl bg-red-50 border border-red-200">
+                  <span className="text-base leading-none">🔴</span>
+                  <div><p className="font-bold text-red-700">Double Matérialité</p><p className="text-red-600 mt-0.5">Impact ESG élevé <strong>et</strong> risque financier élevé → priorité CSRD absolue</p></div>
+                </div>
+                <div className="flex items-start gap-2 p-2.5 rounded-xl bg-blue-50 border border-blue-200">
+                  <span className="text-base leading-none">🌍</span>
+                  <div><p className="font-bold text-blue-700">Matérialité d'impact</p><p className="text-blue-600 mt-0.5">Fort impact sur l'environnement ou la société → divulgation recommandée ESRS</p></div>
+                </div>
+                <div className="flex items-start gap-2 p-2.5 rounded-xl bg-orange-50 border border-orange-200">
+                  <span className="text-base leading-none">💰</span>
+                  <div><p className="font-bold text-orange-700">Matérialité financière</p><p className="text-orange-600 mt-0.5">Risque ou opportunité ESG avec impact sur la valeur de l'entreprise</p></div>
+                </div>
+                <div className="flex items-start gap-2 p-2.5 rounded-xl bg-gray-50 border border-gray-200">
+                  <span className="text-base leading-none">⚪</span>
+                  <div><p className="font-bold text-gray-600">Non matériel</p><p className="text-gray-500 mt-0.5">Faible impact et faible risque financier → hors périmètre CSRD</p></div>
+                </div>
+              </div>
+
               <div className="relative rounded-xl border-2 border-gray-200 bg-gradient-to-br from-slate-50 to-gray-100" style={{ height: 640, padding: '48px 48px 48px 64px' }}>
                 {/* Quadrant backgrounds */}
                 <div className="absolute rounded-xl overflow-hidden pointer-events-none" style={{ inset: '40px 40px 40px 56px' }}>
-                  <div className="absolute top-0 left-0 w-[60%] h-[40%] bg-blue-50/40" />
-                  <div className="absolute top-0 right-0 w-[40%] h-[40%] bg-blue-100/60 border-b border-l border-dashed border-blue-300" />
-                  <div className="absolute bottom-0 right-0 w-[40%] h-[60%] bg-red-100/60 border-t border-l border-dashed border-red-300" />
+                  {/* top-left  = impact matériel (fort ESG, faible financier) */}
+                  <div className="absolute top-0 left-0 w-[60%] h-[40%] bg-blue-50/60 border-b border-r border-dashed border-blue-200" />
+                  {/* top-right = DOUBLE MATÉRIALITÉ CSRD (fort ESG + fort financier) */}
+                  <div className="absolute top-0 right-0 w-[40%] h-[40%] bg-red-100/70 border-b border-l border-dashed border-red-400" />
+                  {/* bottom-right = matérialité financière (faible ESG, fort financier) */}
+                  <div className="absolute bottom-0 right-0 w-[40%] h-[60%] bg-orange-50/60 border-t border-l border-dashed border-orange-300" />
+                  {/* bottom-left = non matériel */}
                   <div className="absolute bottom-0 left-0 w-[60%] h-[60%] bg-gray-50/30" />
                 </div>
 
@@ -454,10 +478,14 @@ export default function MaterialityMatrix() {
                 </div>
 
                 {/* Quadrant labels */}
-                <div className="absolute top-11 right-11 px-2 py-1 bg-blue-100/90 rounded text-[11px] font-bold text-blue-700 shadow-sm pointer-events-none">{t('materiality.quadrantEsgHigh')}</div>
-                <div className="absolute bottom-11 right-11 px-2 py-1 bg-red-100/90 rounded text-[11px] font-bold text-red-700 shadow-sm pointer-events-none">{t('materiality.quadrantDoubleMat')}</div>
-                <div className="absolute top-11 left-16 px-2 py-1 bg-white/80 rounded text-[11px] text-gray-400 shadow-sm pointer-events-none">{t('materiality.quadrantEsgUp')}</div>
-                <div className="absolute bottom-11 left-16 px-2 py-1 bg-white/80 rounded text-[11px] text-gray-400 shadow-sm pointer-events-none">{t('materiality.quadrantFinRight')}</div>
+                {/* top-right = Double Matérialité CSRD (le plus critique) */}
+                <div className="absolute top-10 right-10 px-2.5 py-1 bg-red-100/95 rounded-lg text-[11px] font-bold text-red-700 shadow-sm pointer-events-none border border-red-200 flex items-center gap-1">🔴 Double Matérialité CSRD</div>
+                {/* bottom-right = Matérialité financière */}
+                <div className="absolute bottom-10 right-10 px-2.5 py-1 bg-orange-100/90 rounded-lg text-[11px] font-bold text-orange-700 shadow-sm pointer-events-none border border-orange-200 flex items-center gap-1">💰 Matérialité financière</div>
+                {/* top-left = Matérialité d'impact */}
+                <div className="absolute top-10 left-16 px-2.5 py-1 bg-blue-100/90 rounded-lg text-[11px] font-bold text-blue-700 shadow-sm pointer-events-none border border-blue-200 flex items-center gap-1">🌍 Matérialité d'impact</div>
+                {/* bottom-left = Non matériel */}
+                <div className="absolute bottom-10 left-16 px-2.5 py-1 bg-white/90 rounded-lg text-[11px] text-gray-400 font-medium shadow-sm pointer-events-none border border-gray-200">Non matériel</div>
 
                 {/* Plot area */}
                 <div
@@ -516,12 +544,12 @@ export default function MaterialityMatrix() {
                   ))}
                 </div>
 
-                {/* Axis labels */}
+                {/* Axis labels — terminologie CSRD double matérialité */}
                 <div className="absolute left-2 top-1/2 -translate-y-1/2 -rotate-90">
-                  <p className="text-xs font-semibold text-gray-500 whitespace-nowrap tracking-wide">{t('materiality.matrixAxisY')}</p>
+                  <p className="text-xs font-semibold text-blue-600 whitespace-nowrap tracking-wide">↑ Matérialité d'impact (société / environnement)</p>
                 </div>
                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
-                  <p className="text-xs font-semibold text-gray-500 tracking-wide">{t('materiality.matrixAxisX')}</p>
+                  <p className="text-xs font-semibold text-orange-600 tracking-wide">Matérialité financière (risques & opportunités pour l'entreprise) →</p>
                 </div>
               </div>
               <p className="mt-3 text-xs text-gray-400 text-center">
@@ -882,16 +910,56 @@ export default function MaterialityMatrix() {
       {/* ══ ESRS GAP ANALYSIS TAB ═══════════════════════════════════════════ */}
       {activeTab === 'esrs' && (() => {
         const ESRS_TOPICS = [
-          { code: 'E1', name: 'Changement climatique', pillar: 'environmental', kws: ['co2','carbone','ges','ghg','scope','émission','énergie','climat','transition'] },
-          { code: 'E2', name: 'Pollution',              pillar: 'environmental', kws: ['pollution','polluant','rejet','atmosphérique','contamination','sol','substance'] },
-          { code: 'E3', name: 'Ressources hydriques',   pillar: 'environmental', kws: ['eau','hydrique','water','marine','ressource','prélèvement'] },
-          { code: 'E4', name: 'Biodiversité',           pillar: 'environmental', kws: ['biodiversité','écosystème','faune','flore','sol','protégé','artificialisé'] },
-          { code: 'E5', name: 'Économie circulaire',    pillar: 'environmental', kws: ['déchet','recyclage','circulaire','réemploi','emballage','matière'] },
-          { code: 'S1', name: 'Effectifs propres',      pillar: 'social',        kws: ['effectif','salarié','employé','accident','turnover','formation','parité','diversité','rémunération','santé','sécurité'] },
-          { code: 'S2', name: 'Chaîne de valeur',       pillar: 'social',        kws: ['fournisseur','chaîne','supply','sous-traitant','vigilance','prestataire'] },
-          { code: 'S3', name: 'Communautés locales',    pillar: 'social',        kws: ['communauté','local','territoire','riverain','mécénat','ancrage'] },
-          { code: 'S4', name: 'Consommateurs',          pillar: 'social',        kws: ['consommateur','client','satisfaction','réclamation','qualité','produit'] },
-          { code: 'G1', name: 'Conduite des affaires',  pillar: 'governance',    kws: ['gouvernance','éthique','anticorruption','conformité','fiscalité','transparence','alerte','whistleblowing'] },
+          {
+            code: 'E1', name: 'Changement climatique', pillar: 'environmental',
+            kws: ['co2','carbone','ges','ghg','scope','émission','énergie','climat','transition'],
+            disclosures: ['E1-1 : Plan de transition vers une économie bas-carbone', 'E1-4 : Objectifs de réduction des émissions GES', 'E1-5 : Consommation & mix énergétique (EnR)', 'E1-6 : Émissions Scope 1, Scope 2 & Scope 3', 'E1-9 : Effets financiers des risques et opportunités climatiques'],
+          },
+          {
+            code: 'E2', name: 'Pollution', pillar: 'environmental',
+            kws: ['pollution','polluant','rejet','atmosphérique','contamination','sol','substance'],
+            disclosures: ['E2-1 : Politiques relatives à la pollution', 'E2-3 : Cibles de réduction des émissions polluantes', 'E2-4 : Pollution de l\'air, de l\'eau et des sols', 'E2-6 : Effets financiers potentiels des incidents de pollution'],
+          },
+          {
+            code: 'E3', name: 'Ressources hydriques & marines', pillar: 'environmental',
+            kws: ['eau','hydrique','water','marine','ressource','prélèvement'],
+            disclosures: ['E3-1 : Politiques de gestion de l\'eau et des ressources marines', 'E3-4 : Consommation d\'eau par source et zone de stress hydrique', 'E3-5 : Effets financiers potentiels des risques liés à l\'eau'],
+          },
+          {
+            code: 'E4', name: 'Biodiversité & écosystèmes', pillar: 'environmental',
+            kws: ['biodiversité','écosystème','faune','flore','sol','protégé','artificialisé'],
+            disclosures: ['E4-1 : Plan de transition & politiques biodiversité', 'E4-2 : Impacts et dépendances sur les écosystèmes', 'E4-4 : Indicateurs de biodiversité (alignés TNFD)', 'E4-6 : Effets financiers des risques liés à la biodiversité'],
+          },
+          {
+            code: 'E5', name: 'Utilisation des ressources & économie circulaire', pillar: 'environmental',
+            kws: ['déchet','recyclage','circulaire','réemploi','emballage','matière'],
+            disclosures: ['E5-1 : Politiques d\'économie circulaire', 'E5-3 : Cibles de réduction des déchets', 'E5-4 : Flux de matières (intrants / extrants)', 'E5-5 : Déchets générés, valorisés et éliminés'],
+          },
+          {
+            code: 'S1', name: 'Effectifs de l\'entreprise', pillar: 'social',
+            kws: ['effectif','salarié','employé','accident','turnover','formation','parité','diversité','rémunération','santé','sécurité'],
+            disclosures: ['S1-6 : Caractéristiques des effectifs (CDI, CDD, temps partiel)', 'S1-9 : Taux de diversité — genre, âge, handicap', 'S1-14 : Santé & sécurité (accidents, maladies pro)', 'S1-16 : Indicateurs d\'écarts de rémunération (gender pay gap)'],
+          },
+          {
+            code: 'S2', name: 'Travailleurs de la chaîne de valeur', pillar: 'social',
+            kws: ['fournisseur','chaîne','supply','sous-traitant','vigilance','prestataire'],
+            disclosures: ['S2-1 : Politiques de diligence raisonnable fournisseurs', 'S2-2 : Processus d\'engagement avec les travailleurs de la chaîne', 'S2-4 : Mesures correctives prises sur les impacts négatifs', 'S2-5 : Objectifs relatifs à la chaîne de valeur'],
+          },
+          {
+            code: 'S3', name: 'Communautés affectées', pillar: 'social',
+            kws: ['communauté','local','territoire','riverain','mécénat','ancrage'],
+            disclosures: ['S3-1 : Politiques relatives aux communautés locales', 'S3-2 : Processus de consultation et d\'engagement', 'S3-4 : Actions visant à supprimer les impacts négatifs sur les communautés'],
+          },
+          {
+            code: 'S4', name: 'Consommateurs & utilisateurs finaux', pillar: 'social',
+            kws: ['consommateur','client','satisfaction','réclamation','qualité','produit'],
+            disclosures: ['S4-1 : Politiques de protection des consommateurs', 'S4-2 : Mécanismes de recours et de réclamation', 'S4-4 : Mesures relatives à la sécurité des produits & services'],
+          },
+          {
+            code: 'G1', name: 'Conduite des affaires', pillar: 'governance',
+            kws: ['gouvernance','éthique','anticorruption','conformité','fiscalité','transparence','alerte','whistleblowing'],
+            disclosures: ['G1-1 : Culture d\'entreprise & politiques anticorruption', 'G1-2 : Gestion des relations avec les fournisseurs', 'G1-3 : Incidents de corruption avérés ou allégués', 'G1-4 : Amendes & sanctions pour infractions légales', 'G1-6 : Transparence des paiements aux administrations fiscales'],
+          },
         ];
 
         const covered = ESRS_TOPICS.map(topic => {
@@ -929,19 +997,32 @@ export default function MaterialityMatrix() {
 
         return (
           <div className="space-y-6">
-            {/* KPIs */}
+            {/* KPIs DMA */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { label: 'Topics ESRS couverts', val: `${coveredCount}/${ESRS_TOPICS.length}`, color: 'text-indigo-700', bg: 'bg-indigo-50 border-indigo-200' },
-                { label: 'Taux de couverture DMA', val: `${coveragePct}%`, color: coveragePct >= 70 ? 'text-green-700' : 'text-amber-700', bg: coveragePct >= 70 ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200' },
-                { label: 'Topics matériels', val: materialCount, color: 'text-red-700', bg: 'bg-red-50 border-red-200' },
-                { label: 'Topics manquants', val: ESRS_TOPICS.length - coveredCount, color: 'text-gray-600', bg: 'bg-gray-50 border-gray-200' },
-              ].map((k, i) => (
-                <div key={i} className={`rounded-2xl border-2 ${k.bg} p-5`}>
-                  <div className={`text-3xl font-extrabold ${k.color}`}>{k.val}</div>
-                  <div className="text-sm font-semibold text-gray-700 mt-1">{k.label}</div>
+              <div className="rounded-2xl border-2 bg-indigo-50 border-indigo-200 p-5">
+                <div className="text-3xl font-extrabold text-indigo-700">{coveredCount}<span className="text-lg font-bold text-indigo-400">/{ESRS_TOPICS.length}</span></div>
+                <div className="text-sm font-semibold text-gray-700 mt-1">Topics ESRS couverts</div>
+                <div className="mt-2 h-1.5 bg-indigo-100 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-indigo-500 rounded-full transition-all" style={{ width: `${coveragePct}%` }} />
                 </div>
-              ))}
+              </div>
+              <div className={`rounded-2xl border-2 p-5 ${coveragePct >= 80 ? 'bg-green-50 border-green-200' : coveragePct >= 60 ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200'}`}>
+                <div className={`text-3xl font-extrabold ${coveragePct >= 80 ? 'text-green-700' : coveragePct >= 60 ? 'text-amber-700' : 'text-red-700'}`}>{coveragePct}%</div>
+                <div className="text-sm font-semibold text-gray-700 mt-1">Taux de couverture DMA</div>
+                <div className={`mt-2 text-xs font-medium ${coveragePct >= 80 ? 'text-green-600' : coveragePct >= 60 ? 'text-amber-600' : 'text-red-600'}`}>
+                  {coveragePct >= 80 ? '✅ Prêt pour CSRD' : coveragePct >= 60 ? '⚠️ À compléter' : '❌ Insuffisant'}
+                </div>
+              </div>
+              <div className="rounded-2xl border-2 bg-red-50 border-red-200 p-5">
+                <div className="text-3xl font-extrabold text-red-700">{materialCount}</div>
+                <div className="text-sm font-semibold text-gray-700 mt-1">Topics doublement matériels</div>
+                <div className="mt-2 text-xs text-red-500 font-medium">{materialCount > 0 ? 'Divulgation obligatoire CSRD' : 'Aucun encore identifié'}</div>
+              </div>
+              <div className="rounded-2xl border-2 bg-gray-50 border-gray-200 p-5">
+                <div className="text-3xl font-extrabold text-gray-600">{ESRS_TOPICS.length - coveredCount}</div>
+                <div className="text-sm font-semibold text-gray-700 mt-1">Topics à compléter</div>
+                <div className="mt-2 text-xs text-gray-400 font-medium">{ESRS_TOPICS.length - coveredCount === 0 ? '🎉 Tous couverts !' : 'Voir plan d\'action ci-dessous'}</div>
+              </div>
             </div>
 
             {/* Coverage bar */}
@@ -958,11 +1039,21 @@ export default function MaterialityMatrix() {
               <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
                 <span>0%</span><span className="font-semibold text-indigo-700">{coveragePct}% couverts</span><span>100%</span>
               </div>
-              {coveragePct < 60 && (
-                <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-                  ⚠️ Couverture insuffisante pour un rapport CSRD complet. Ajoutez des enjeux matériels pour les topics manquants via l'onglet <strong>Suggestions IA</strong> ou <strong>Questionnaire</strong>.
+              <div className={`mt-3 p-3 rounded-xl text-sm border flex items-start gap-2 ${
+                coveragePct >= 80 ? 'bg-green-50 border-green-200 text-green-800'
+                : coveragePct >= 60 ? 'bg-amber-50 border-amber-200 text-amber-800'
+                : 'bg-red-50 border-red-200 text-red-800'
+              }`}>
+                <span className="text-base leading-none flex-shrink-0">{coveragePct >= 80 ? '✅' : coveragePct >= 60 ? '⚠️' : '❌'}</span>
+                <div>
+                  {coveragePct >= 80
+                    ? <><strong>Couverture ESRS solide</strong> — votre DMA couvre les principales thématiques pour un rapport CSRD de première divulgation.</>
+                    : coveragePct >= 60
+                    ? <><strong>Couverture partielle</strong> — complétez les {ESRS_TOPICS.length - coveredCount} topic{ESRS_TOPICS.length - coveredCount > 1 ? 's' : ''} manquant{ESRS_TOPICS.length - coveredCount > 1 ? 's' : ''} avant la soumission de votre CSRD.</>
+                    : <><strong>Couverture insuffisante</strong> — au moins 6/10 topics ESRS doivent être couverts. Utilisez <strong>Suggestions IA</strong> ou le <strong>Questionnaire</strong> pour identifier vos enjeux matériels.</>
+                  }
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Topic breakdown by pillar */}
@@ -973,42 +1064,84 @@ export default function MaterialityMatrix() {
                 </div>
                 <div className="divide-y divide-gray-50">
                   {pg.topics.map(topic => (
-                    <div key={topic.code} className="flex items-center gap-4 px-5 py-3.5">
-                      <div className="flex items-center gap-2 w-16 flex-shrink-0">
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${pg.bg} ${pg.color}`}>{topic.code}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-semibold text-gray-900">{topic.name}</span>
-                        {topic.matchCount > 0 && (
-                          <span className="ml-2 text-xs text-gray-400">{topic.matchCount} enjeu{topic.matchCount > 1 ? 'x' : ''} identifié{topic.matchCount > 1 ? 's' : ''}</span>
+                    <details key={topic.code} className="group">
+                      <summary className="flex items-center gap-4 px-5 py-3.5 cursor-pointer hover:bg-gray-50/70 transition-colors list-none select-none">
+                        {/* Code badge */}
+                        <div className="flex items-center gap-2 w-16 flex-shrink-0">
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${pg.bg} ${pg.color}`}>{topic.code}</span>
+                        </div>
+                        {/* Name + match count */}
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-gray-900">{topic.name}</span>
+                          {topic.matchCount > 0 && (
+                            <span className="ml-2 text-xs text-gray-400">{topic.matchCount} enjeu{topic.matchCount > 1 ? 'x' : ''} identifié{topic.matchCount > 1 ? 's' : ''}</span>
+                          )}
+                        </div>
+                        {/* Badges + expand hint */}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {topic.material && <span className="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full font-semibold border border-red-200">Matériel</span>}
+                          {topic.covered
+                            ? <span className="flex items-center gap-1 text-xs text-green-700 font-semibold bg-green-100 px-2.5 py-1 rounded-full border border-green-200"><CheckCircle className="h-3.5 w-3.5" /> Couvert</span>
+                            : <span className="flex items-center gap-1 text-xs text-amber-600 font-semibold bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200"><AlertCircle className="h-3.5 w-3.5" /> À compléter</span>
+                          }
+                          <ChevronRight className="h-3.5 w-3.5 text-gray-300 group-open:rotate-90 transition-transform flex-shrink-0" />
+                        </div>
+                      </summary>
+
+                      {/* Disclosure requirements */}
+                      <div className={`px-5 pb-4 pt-2 border-t ${pg.border} ${pg.bg} bg-opacity-30`}>
+                        <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Divulgations requises par la CSRD</p>
+                        <div className="space-y-1.5">
+                          {(topic as any).disclosures?.map((d: string, di: number) => (
+                            <div key={di} className="flex items-start gap-2">
+                              <div className={`mt-0.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${pg.dot}`} />
+                              <span className="text-xs text-gray-600">{d}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {!topic.covered && (
+                          <button
+                            onClick={() => setActiveTab('suggestions')}
+                            className={`mt-3 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg ${pg.bg} ${pg.color} border ${pg.border} hover:opacity-80 transition-opacity`}
+                          >
+                            <Plus className="h-3 w-3" /> Ajouter un enjeu {topic.code} via les suggestions
+                          </button>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {topic.material && <span className="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full font-semibold">Matériel</span>}
-                        {topic.covered
-                          ? <span className="flex items-center gap-1 text-xs text-green-700 font-semibold bg-green-100 px-2.5 py-1 rounded-full"><CheckCircle className="h-3.5 w-3.5" /> Couvert</span>
-                          : <span className="flex items-center gap-1 text-xs text-gray-500 font-semibold bg-gray-100 px-2.5 py-1 rounded-full"><AlertCircle className="h-3.5 w-3.5" /> Manquant</span>
-                        }
-                      </div>
-                    </div>
+                    </details>
                   ))}
                 </div>
               </div>
             ))}
 
-            {/* Actions */}
+            {/* Plan d'action — topics à compléter */}
             {coveredCount < ESRS_TOPICS.length && (
               <div className="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-5">
-                <h3 className="font-bold text-indigo-900 mb-3">Topics ESRS à compléter</h3>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-bold text-indigo-900">Plan d'action — Topics ESRS à compléter</h3>
+                  <span className="text-xs font-semibold px-2.5 py-1 bg-indigo-600 text-white rounded-full">{ESRS_TOPICS.length - coveredCount} restant{ESRS_TOPICS.length - coveredCount > 1 ? 's' : ''}</span>
+                </div>
+                <div className="space-y-2">
                   {covered.filter(t => !t.covered).map(t => (
-                    <button key={t.code} onClick={() => setActiveTab('suggestions')}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-indigo-200 text-indigo-700 text-sm font-semibold rounded-xl hover:bg-indigo-100 transition-colors">
-                      <Plus className="h-3.5 w-3.5" /> {t.code} — {t.name}
-                    </button>
+                    <div key={t.code} className="flex items-center justify-between px-4 py-2.5 bg-white border border-indigo-100 rounded-xl hover:border-indigo-300 transition-colors group">
+                      <div className="flex items-center gap-3">
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                          t.pillar === 'environmental' ? 'bg-emerald-100 text-emerald-700'
+                          : t.pillar === 'social' ? 'bg-blue-100 text-blue-700'
+                          : 'bg-purple-100 text-purple-700'
+                        }`}>{t.code}</span>
+                        <span className="text-sm font-medium text-gray-800">{t.name}</span>
+                      </div>
+                      <button onClick={() => setActiveTab('suggestions')}
+                        className="flex items-center gap-1.5 px-3 py-1 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors opacity-0 group-hover:opacity-100">
+                        <Plus className="h-3 w-3" /> Suggérer des enjeux
+                      </button>
+                    </div>
                   ))}
                 </div>
-                <p className="text-xs text-indigo-600 mt-3">→ Cliquez sur un topic pour accéder aux suggestions IA correspondantes.</p>
+                <p className="text-xs text-indigo-500 mt-3 flex items-center gap-1.5">
+                  <ChevronRight className="h-3 w-3" /> Survolez un topic et cliquez pour accéder aux suggestions IA sectorielles correspondantes.
+                </p>
               </div>
             )}
           </div>
