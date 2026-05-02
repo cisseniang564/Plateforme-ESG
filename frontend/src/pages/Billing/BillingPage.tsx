@@ -225,6 +225,8 @@ export default function BillingPage() {
 
   // ── New subscription (Checkout) ──
   const handleCheckout = async (planId: string) => {
+    // Free plan has no Stripe price — just go back to the app
+    if (planId === 'free') { navigate('/app'); return; }
     setAction(`checkout-${planId}`); setError(null);
     try {
       const res = await api.post('/billing/checkout', {
@@ -591,6 +593,7 @@ export default function BillingPage() {
                   <button
                     onClick={() => {
                       if (plan.id === 'enterprise') { window.open('mailto:sales@esgflow.io', '_self'); return; }
+                      if (plan.id === 'free') { navigate('/app'); return; }
                       if (isPaid) {
                         // Existing subscriber → change plan with proration
                         handleChangePlan(plan.id, isUpgrade ? 'create_prorations' : 'none');
@@ -603,11 +606,21 @@ export default function BillingPage() {
                     className={`w-full py-2.5 text-xs font-semibold rounded-xl transition disabled:opacity-60 flex items-center justify-center gap-1 ${
                       plan.highlight
                         ? 'bg-violet-600 hover:bg-violet-700 text-white'
+                        : plan.id === 'free'
+                        ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                         : 'bg-gray-900 hover:bg-gray-800 text-white'
                     }`}
                   >
                     {(actionLoading === `checkout-${plan.id}` || actionLoading === `change-${plan.id}`) && <Spinner size="sm" />}
-                    {plan.id === 'enterprise' ? 'Contacter' : isUpgrade ? 'Passer à ce plan' : isDowngrade ? 'Réduire le plan' : 'Choisir'}
+                    {plan.id === 'enterprise'
+                      ? 'Contacter'
+                      : plan.id === 'free'
+                      ? 'Continuer gratuitement'
+                      : isUpgrade
+                      ? 'Passer à ce plan'
+                      : isDowngrade
+                      ? 'Réduire le plan'
+                      : 'Choisir'}
                     <ArrowRight className="h-3 w-3" />
                   </button>
                 )}
