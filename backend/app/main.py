@@ -86,11 +86,84 @@ configure_logging(
 )
 
 
+async def _ensure_system_roles_and_assignments() -> None:
+    """
+    Idempotent startup migration:
+    1. Seed the 5 system roles if they don't yet exist.
+    2. Assign tenant_admin to every user that still has role_id = NULL.
+    3. Upgrade trialing tenants from 'starter' to 'pro' plan_tier.
+    """
+    from sqlalchemy import text
+    try:
+        async with AsyncSessionLocal() as db:
+            # 1. Seed system roles (safe: name uniqueness checked with WHERE NOT EXISTS)
+            system_roles = [
+                ("tenant_admin",  "Administrateur tenant — accès complet"),
+                ("esg_admin",     "Administrateur ESG"),
+                ("esg_manager",   "Gestionnaire ESG"),
+                ("data_entry",    "Saisie de données"),
+                ("viewer",        "Lecteur"),
+            ]
+            for role_name, role_desc in system_roles:
+                await db.execute(
+                    text("""
+                        INSERT INTO roles (id, name, description, is_system_role, created_at, updated_at)
+                        SELECT gen_random_uuid(), :name, :desc, true, now(), now()
+                        WHERE NOT EXISTS (
+                            SELECT 1 FROM roles WHERE name = :name AND (tenant_id IS NULL OR is_system_role = true)
+                        )
+                    """),
+                    {"name": role_name, "desc": role_desc},
+                )
+
+            # 2. Assign tenant_admin to users with NULL role_id
+            result = await db.execute(
+                text("""
+                    UPDATE users
+                    SET role_id = (
+                        SELECT id FROM roles
+                        WHERE name = 'tenant_admin' AND is_system_role = true
+                        LIMIT 1
+                    )
+                    WHERE role_id IS NULL
+                """)
+            )
+            updated_users = result.rowcount
+            if updated_users:
+                logger.info("Startup migration: assigned tenant_admin role to %d user(s).", updated_users)
+
+            # 3. Upgrade trialing tenants' plan_tier to 'pro'
+            result2 = await db.execute(
+                text("""
+                    UPDATE tenants
+                    SET plan_tier = 'pro',
+                        max_users = GREATEST(max_users, 50),
+                        max_orgs  = GREATEST(max_orgs,  100),
+                        max_monthly_api_calls = GREATEST(max_monthly_api_calls, 100000),
+                        data_retention_months = GREATEST(data_retention_months, 36)
+                    WHERE stripe_subscription_status = 'trialing'
+                      AND plan_tier NOT IN ('pro', 'enterprise')
+                """)
+            )
+            if result2.rowcount:
+                logger.info(
+                    "Startup migration: upgraded %d trialing tenant(s) to pro plan_tier.",
+                    result2.rowcount,
+                )
+
+            await db.commit()
+    except Exception as exc:
+        logger.warning("Startup role migration failed (non-blocking): %s", exc)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     if settings.is_development:
         await init_db()
+
+    # Seed roles + assign tenant_admin + fix trialing plan_tier (idempotent)
+    await _ensure_system_roles_and_assignments()
 
     logger.info(
         "ESGFlow Platform started | env=%s debug=%s host=%s:%s",

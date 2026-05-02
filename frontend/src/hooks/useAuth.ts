@@ -22,9 +22,12 @@ export const useAuth = () => {
       // Normal login — tokens are stored by authService.login()
       dispatch(setUser(response.user));
 
-      // Onboarding guard: redirect to setup wizard on first login
       if (response.user?.needs_onboarding) {
+        // First login ever — show setup wizard
         navigate('/app/setup', { replace: true });
+      } else if (!localStorage.getItem(`billing_welcomed_${response.user.id}`)) {
+        // Setup already done but billing page never shown — show it now
+        navigate('/app/billing?welcome=1', { replace: true });
       } else {
         navigate('/app', { replace: true });
       }

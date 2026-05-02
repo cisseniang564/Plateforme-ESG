@@ -12,7 +12,7 @@ export default function TermsOfService() {
       <div className="mx-auto max-w-4xl px-6 py-12">
         <Button
           variant="secondary"
-          onClick={() => navigate('/')}
+          onClick={() => navigate(-1)}
           className="mb-8 flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -40,7 +40,7 @@ export default function TermsOfService() {
 
             <h2>2. Définitions</h2>
             <ul>
-              <li><strong>Plateforme</strong> : désigne la solution SaaS ESGFlow accessible via l'URL https://esgflow.com</li>
+              <li><strong>Plateforme</strong> : désigne la solution SaaS ESGFlow accessible via l'URL https://greenconnect.cloud</li>
               <li><strong>Utilisateur</strong> : toute personne physique ou morale accédant et utilisant la Plateforme</li>
               <li><strong>Données ESG</strong> : ensemble des données environnementales, sociales et de gouvernance collectées et traitées</li>
               <li><strong>Organisation</strong> : entité juridique pour laquelle les données ESG sont collectées</li>
@@ -158,8 +158,8 @@ export default function TermsOfService() {
             <h2>15. Contact</h2>
             <p>
               Pour toute question concernant les CGU :<br />
-              Email : legal@esgflow.com<br />
-              Adresse : ESGFlow SAS, 123 Avenue des Champs-Élysées, 75008 Paris, France
+              Email : legal@greenconnect.cloud<br />
+              Adresse : ESGFlow SAS, 12 Vieux chemin de meaux, 93190 Livry-Gargan, France
             </p>
           </div>
         </div>

@@ -46,10 +46,11 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
     await db.commit()
 
     # Seed default organisation + indicators for this new tenant
+    # mark_done=False so the setup wizard is still shown on first login
     try:
         from app.services.tenant_onboarding import TenantOnboardingService
         onboarding = TenantOnboardingService(db, str(tenant.id))
-        await onboarding.setup(org_name=data.company_name, sector="general")
+        await onboarding.setup(org_name=data.company_name, sector="general", mark_done=False)
     except Exception:
         pass  # Non-blocking: registration succeeds even if seeding fails
 
@@ -73,35 +74,37 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
     except Exception:
         pass  # Non-blocking: score calculation failure never breaks registration
 
-    # ── Stripe: create customer + start trial ─────────────────────────────
+    # ── Trial: always set trial period (regardless of Stripe) ────────────
     try:
-        from app.services.stripe_service import StripeService, PLAN_CONFIGS
-        from app.config import settings
-        from datetime import timedelta, timezone
+        from app.config import settings as app_settings
+        from app.services.stripe_service import PLAN_CONFIGS
+        from datetime import datetime, timedelta, timezone
 
+        trial_days = getattr(app_settings, "TRIAL_DAYS", 14)
+        pro_cfg = PLAN_CONFIGS.get("pro", {})
+        tenant.plan_tier = "pro"
+        tenant.max_users = pro_cfg.get("max_users", 50)
+        tenant.max_orgs = pro_cfg.get("max_orgs", 100)
+        tenant.max_monthly_api_calls = pro_cfg.get("max_monthly_api_calls", 100000)
+        tenant.data_retention_months = pro_cfg.get("data_retention_months", 36)
+        tenant.trial_ends_at = datetime.now(timezone.utc) + timedelta(days=trial_days)
+        tenant.stripe_subscription_status = "trialing"
+        await db.commit()
+    except Exception:
+        pass  # Non-blocking
+
+    # ── Stripe: create customer (optional, non-blocking) ──────────────────
+    try:
+        from app.services.stripe_service import StripeService
         cid = StripeService.create_customer(
             email=data.email,
             name=data.company_name,
             tenant_id=str(tenant.id),
         )
         tenant.stripe_customer_id = cid
-
-        # Apply Pro trial limits
-        pro_cfg = PLAN_CONFIGS["pro"]
-        tenant.plan_tier = "pro"
-        tenant.max_users = pro_cfg["max_users"]
-        tenant.max_orgs = pro_cfg["max_orgs"]
-        tenant.max_monthly_api_calls = pro_cfg["max_monthly_api_calls"]
-        tenant.data_retention_months = pro_cfg["data_retention_months"]
-
-        from datetime import datetime
-        trial_days = getattr(settings, "TRIAL_DAYS", 14)
-        tenant.trial_ends_at = datetime.now(timezone.utc) + timedelta(days=trial_days)
-        tenant.stripe_subscription_status = "trialing"
-
         await db.commit()
-    except Exception as exc:
-        pass  # Non-blocking: billing setup fails gracefully
+    except Exception:
+        pass  # Non-blocking: Stripe unavailable does not break registration
 
     # ── Email: welcome + trial started ────────────────────────────────────
     try:

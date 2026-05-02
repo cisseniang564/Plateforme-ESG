@@ -64,6 +64,94 @@ function statusFromScore(score: number | null): EvalStatus {
   return 'Évalué';
 }
 
+// ─── Questionnaire scoring engine ─────────────────────────────────────────────
+/**
+ * Computes E/S/G/Compliance scores (0–100) from questionnaire answers.
+ * Scoring rules:
+ *   yesno   — 1st option (Oui/Yes) = 100%, 3rd (En cours/In Progress) = 50%, 2nd (Non/No) = 0%
+ *   scale   — value 1–5 mapped linearly to 0–100%
+ *   multiselect — option index mapped linearly (first = worst, last = best)
+ *
+ * The `yesLabel` and `progressLabel` must match what was stored in `qAnswers`
+ * (i.e. the translated strings rendered in the buttons).
+ */
+interface QuestionnaireScores {
+  env: number;
+  social: number;
+  gov: number;
+  compliance: number;
+  overall: number;
+  answeredCount: number;
+  totalCount: number;
+}
+
+function computeQuestionnaireScores(
+  answers: Record<string, string>,
+  questions: Question[],
+  yesLabel: string,
+  progressLabel: string,
+): QuestionnaireScores {
+  // Map section names → dimension keys
+  const SECTION_DIM: Record<string, keyof Omit<QuestionnaireScores, 'overall' | 'answeredCount' | 'totalCount'>> = {
+    'Environnement': 'env',
+    'Social':        'social',
+    'Gouvernance':   'gov',
+    'Conformité':    'compliance',
+  };
+
+  const earned:  Record<string, number> = { env: 0, social: 0, gov: 0, compliance: 0 };
+  const maxPoss: Record<string, number> = { env: 0, social: 0, gov: 0, compliance: 0 };
+  let answered = 0;
+
+  for (const q of questions) {
+    const dim = SECTION_DIM[q.section];
+    if (!dim) continue;
+
+    const answer = answers[q.id];
+    maxPoss[dim] += q.weight;
+    if (!answer) continue;
+    answered++;
+
+    if (q.type === 'yesno') {
+      if (answer === yesLabel)      earned[dim] += q.weight;         // Oui → 100%
+      else if (answer === progressLabel) earned[dim] += q.weight * 0.5; // En cours → 50%
+      // Non → 0
+    } else if (q.type === 'scale') {
+      const val = parseInt(answer) || 0;
+      if (val >= 1 && val <= 5) earned[dim] += q.weight * (val - 1) / 4;
+    } else if (q.type === 'multiselect' && q.options && q.options.length > 1) {
+      // Special: q9 (accident frequency) — lower index is BETTER (< 2 is best)
+      // Detect by checking if first option starts with '<' or is a low number
+      const idx = q.options.indexOf(answer);
+      if (idx >= 0) {
+        const firstOpt = q.options[0];
+        const isInverse = firstOpt.startsWith('<') || firstOpt === '0%';
+        if (isInverse) {
+          // Lower index = better (e.g. accident rate: < 2 is the best)
+          earned[dim] += q.weight * (1 - idx / (q.options.length - 1));
+        } else {
+          // Higher index = better (e.g. renewable energy: >75% is the best)
+          earned[dim] += q.weight * (idx / (q.options.length - 1));
+        }
+      }
+    }
+  }
+
+  const toScore = (e: number, m: number) => m > 0 ? Math.min(100, Math.round((e / m) * 100)) : 0;
+  const env        = toScore(earned.env,        maxPoss.env);
+  const social     = toScore(earned.social,     maxPoss.social);
+  const gov        = toScore(earned.gov,        maxPoss.gov);
+  const compliance = toScore(earned.compliance, maxPoss.compliance);
+
+  // Weighted average by section max possible points
+  const totalMax = (maxPoss.env + maxPoss.social + maxPoss.gov + maxPoss.compliance) || 1;
+  const overall  = Math.round(
+    (earned.env + earned.social + earned.gov + earned.compliance) / totalMax * 100
+  );
+
+  return { env, social, gov, compliance, overall, answeredCount: answered, totalCount: questions.length };
+}
+
 const SUPPLIERS_FALLBACK: Supplier[] = [
   {
     id: 's1', name: 'AcierPlus Industries', country: 'France', category: 'Matières premières',
@@ -564,6 +652,45 @@ export default function SupplyChainESG() {
   const qSections = [...new Set(questionnaire.map(q => q.section))];
   const sectionQuestions = questionnaire.filter(q => q.section === activeQSection);
 
+  // ─── Questionnaire live scoring ────────────────────────────────────────────
+  const computedScores = useMemo(() =>
+    computeQuestionnaireScores(
+      qAnswers,
+      questionnaire,
+      t('supplychain.questionnaireYes'),
+      t('supplychain.questionnaireInProgress'),
+    ),
+  [qAnswers, questionnaire, t]);
+
+  const [applySuccess, setApplySuccess] = useState(false);
+
+  const handleApplyScores = () => {
+    const ids = Array.from(checkedSupplierIds);
+    if (ids.length === 0 || computedScores.answeredCount === 0) return;
+    setSuppliers(prev => prev.map(s => {
+      if (!ids.includes(s.id)) return s;
+      const newScores: ESGScore = {
+        env:        computedScores.env,
+        social:     computedScores.social,
+        gov:        computedScores.gov,
+        ethics:     Math.round((computedScores.gov + computedScores.compliance) / 2),
+        safety:     Math.round((computedScores.social + computedScores.compliance) / 2),
+        compliance: computedScores.compliance,
+      };
+      return {
+        ...s,
+        scores:                newScores,
+        globalScore:           computedScores.overall,
+        risk:                  riskFromScore(computedScores.overall),
+        status:                'Évalué' as EvalStatus,
+        questionnaireCompleted: true,
+        lastEval:              new Date().toISOString().split('T')[0],
+      };
+    }));
+    setApplySuccess(true);
+    setTimeout(() => setApplySuccess(false), 3500);
+  };
+
   // ─── Actions ───────────────────────────────────────────────────────────────
 
   /** Send questionnaire to one or more supplier IDs */
@@ -1012,8 +1139,92 @@ export default function SupplyChainESG() {
                 </div>
               </div>
 
-              {/* Send panel */}
+              {/* Score preview + Send panel */}
               <div className="space-y-5">
+
+                {/* ── Live Score Preview ── */}
+                <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-gray-900">Score calculé en temps réel</h3>
+                    <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                      {computedScores.answeredCount}/{computedScores.totalCount} réponses
+                    </span>
+                  </div>
+
+                  {/* Overall ring */}
+                  <div className="flex items-center justify-center py-2">
+                    <div className="relative w-24 h-24">
+                      <svg className="w-24 h-24 -rotate-90" viewBox="0 0 72 72">
+                        <circle cx="36" cy="36" r="28" fill="none" stroke="#f3f4f6" strokeWidth="7" />
+                        <circle cx="36" cy="36" r="28" fill="none"
+                          stroke={computedScores.overall >= 70 ? '#16a34a' : computedScores.overall >= 40 ? '#f59e0b' : computedScores.overall > 0 ? '#ef4444' : '#e5e7eb'}
+                          strokeWidth="7"
+                          strokeDasharray={String(2 * Math.PI * 28)}
+                          strokeDashoffset={String(2 * Math.PI * 28 * (1 - computedScores.overall / 100))}
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-2xl font-extrabold text-gray-900">{computedScores.overall}</span>
+                        <span className="text-[10px] text-gray-400 font-medium">/ 100</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Risk label */}
+                  {computedScores.answeredCount > 0 && (
+                    <div className="text-center">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${RISK_CFG[riskFromScore(computedScores.overall)].bg} ${RISK_CFG[riskFromScore(computedScores.overall)].color}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${RISK_CFG[riskFromScore(computedScores.overall)].dot}`} />
+                        Risque {riskFromScore(computedScores.overall)}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Dimension bars */}
+                  <div className="space-y-2.5 pt-1">
+                    {[
+                      { label: 'Environnement', val: computedScores.env,        color: '#16a34a' },
+                      { label: 'Social',         val: computedScores.social,     color: '#2563eb' },
+                      { label: 'Gouvernance',    val: computedScores.gov,        color: '#7c3aed' },
+                      { label: 'Conformité',     val: computedScores.compliance, color: '#be185d' },
+                    ].map(dim => (
+                      <div key={dim.label}>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-gray-600 font-medium">{dim.label}</span>
+                          <span className="font-bold text-gray-700">{dim.val}/100</span>
+                        </div>
+                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-2 rounded-full transition-all duration-500"
+                            style={{ width: `${dim.val}%`, backgroundColor: dim.color }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Apply button */}
+                  {applySuccess ? (
+                    <div className="flex items-center gap-2 p-2.5 bg-green-50 border border-green-200 rounded-xl text-xs text-green-700 font-semibold">
+                      <CheckCircle className="h-4 w-4 flex-shrink-0" />
+                      Scores appliqués aux fournisseurs sélectionnés !
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleApplyScores}
+                      disabled={checkedSupplierIds.size === 0 || computedScores.answeredCount === 0}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors text-sm"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      {checkedSupplierIds.size > 0
+                        ? `Appliquer à ${checkedSupplierIds.size} fournisseur${checkedSupplierIds.size > 1 ? 's' : ''}`
+                        : 'Sélectionner des fournisseurs ci-dessous'}
+                    </button>
+                  )}
+                  {computedScores.answeredCount === 0 && (
+                    <p className="text-xs text-gray-400 text-center">Répondez aux questions pour voir le score.</p>
+                  )}
+                </div>
+
                 <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4 sticky top-6">
                   <h3 className="font-bold text-gray-900">{t('supplychain.questionnaireSendTitle')}</h3>
                   <div className="space-y-2">

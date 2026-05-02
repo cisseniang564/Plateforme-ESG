@@ -41,13 +41,13 @@ export default function LegalNotice() {
               <strong>TVA intracommunautaire :</strong> FR 12 123456789<br />
               <strong>Siège social :</strong> 123 Avenue des Champs-Élysées, 75008 Paris, France<br />
               <strong>Téléphone :</strong> +33 1 23 45 67 89<br />
-              <strong>Email :</strong> contact@esgflow.com
+              <strong>Email :</strong> contact@greenconnect.cloud
             </p>
 
             <h3>Directeur de la publication</h3>
             <p>
               M. Jean Dupont, Président<br />
-              Email : direction@esgflow.com
+              Email : direction@greenconnect.cloud
             </p>
 
             <h2>2. Hébergement</h2>
@@ -90,7 +90,7 @@ export default function LegalNotice() {
 
             <h3>Délégué à la Protection des Données (DPO)</h3>
             <p>
-              Email : dpo@esgflow.com<br />
+              Email : privacy@greenconnect.cloud<br />
               Courrier : ESGFlow SAS - DPO, 123 Avenue des Champs-Élysées, 75008 Paris, France
             </p>
 
@@ -129,9 +129,9 @@ export default function LegalNotice() {
             <h2>10. Contact</h2>
             <p>
               Pour toute question concernant ces mentions légales :<br />
-              Email : legal@esgflow.com<br />
+              Email : legal@greenconnect.cloud<br />
               Téléphone : +33 1 23 45 67 89<br />
-              Courrier : ESGFlow SAS, 123 Avenue des Champs-Élysées, 75008 Paris, France
+              Courrier : ESGFlow SAS, 12 Vieux chemin de meaux, 93190 Livry-Gargan, France
             </p>
           </div>
         </div>

@@ -155,7 +155,7 @@ async def sync_fec_to_entries(
             'period_end': period_end_date,
             'period_type': period_type,
             'data_source': 'FEC Import (Sage/Cegid)',
-            'collection_method': 'import',
+            'collection_method': 'fec_import',
             'notes': note,
             'created_at': now,
             'updated_at': now,

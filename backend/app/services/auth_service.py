@@ -392,6 +392,18 @@ class AuthService:
         admin_user.verify_email()  # Auto-verify for self-registration
         self.db.add(admin_user)
         await self.db.flush()
+
+        # Assign tenant_admin role to the admin user (non-blocking)
+        try:
+            from app.models.role import Role
+            role_result = await self.db.execute(
+                select(Role).where(Role.name == "tenant_admin", Role.is_system_role == True)
+            )
+            tenant_admin_role = role_result.scalar_one_or_none()
+            if tenant_admin_role:
+                admin_user.role_id = tenant_admin_role.id
+        except Exception:
+            pass  # Non-blocking — role assignment failure never breaks registration
         
         # Create organization if provided
         organization_id = None
@@ -414,7 +426,36 @@ class AuthService:
             await self.db.flush()
             organization_id = org.id
         
+        # Set trial period on the tenant
+        try:
+            from app.config import settings as app_settings
+            from app.services.stripe_service import PLAN_CONFIGS
+            trial_days = getattr(app_settings, 'TRIAL_DAYS', 14)
+            pro_cfg = PLAN_CONFIGS.get('pro', {})
+            tenant.plan_tier = 'pro'
+            tenant.max_users = pro_cfg.get('max_users', 50)
+            tenant.max_orgs = pro_cfg.get('max_orgs', 100)
+            tenant.max_monthly_api_calls = pro_cfg.get('max_monthly_api_calls', 100_000)
+            tenant.data_retention_months = pro_cfg.get('data_retention_months', 36)
+            tenant.trial_ends_at = datetime.now(timezone.utc) + timedelta(days=trial_days)
+            tenant.stripe_subscription_status = 'trialing'
+        except Exception:
+            pass  # Non-blocking
+
         await self.db.commit()
+
+        # Stripe customer (optional, non-blocking)
+        try:
+            from app.services.stripe_service import StripeService
+            cid = StripeService.create_customer(
+                email=admin_user.email,
+                name=tenant.name,
+                tenant_id=str(tenant.id),
+            )
+            tenant.stripe_customer_id = cid
+            await self.db.commit()
+        except Exception:
+            pass  # Non-blocking
 
         # Send welcome + trial emails (fire-and-forget)
         from app.services.email_service import EmailService

@@ -28,7 +28,7 @@ export default function FirstTimeSetup() {
     setError('');
     try {
       await api.post('/onboarding/setup', { org_name: orgName.trim(), sector });
-      navigate('/app', { replace: true });
+      navigate('/app/billing?welcome=1', { replace: true });
     } catch {
       setError(t('setup.errorOccurred'));
       setLoading(false);

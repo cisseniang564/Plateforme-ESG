@@ -4,6 +4,11 @@ import { useSelector } from 'react-redux';
 import type { RootState } from '@/store';
 import api from '@/services/api';
 
+/** localStorage key for billing welcome. Set after first visit to /app/billing. */
+function billingWelcomedKey(userId?: string | null) {
+  return userId ? `billing_welcomed_${userId}` : null;
+}
+
 interface OnboardingStatus {
   completed: boolean;
   has_organizations: boolean;
@@ -18,6 +23,7 @@ export function useOnboarding() {
   const location = useLocation();
   const isAuthenticated = useSelector((s: RootState) => s.auth.isAuthenticated);
   const isInitializing = useSelector((s: RootState) => s.auth.isInitializing);
+  const userId = useSelector((s: RootState) => s.auth.user?.id);
   const [status, setStatus] = useState<OnboardingStatus | null>(null);
   const [checked, setChecked] = useState(false);
 
@@ -37,6 +43,26 @@ export function useOnboarding() {
         setStatus(data);
         if (!data.completed) {
           navigate('/app/setup', { replace: true });
+          return;
+        }
+        // Billing welcome — redirect first-time users to billing page
+        if (location.pathname !== '/app/billing') {
+          const key = billingWelcomedKey(userId);
+          if (key && !localStorage.getItem(key)) {
+            navigate('/app/billing?welcome=1', { replace: true });
+            return;
+          }
+          // Also redirect if trial expired and no active subscription
+          try {
+            const billingRes = await api.get('/billing/subscription');
+            const billing = billingRes.data;
+            const isExpired = !billing.is_active && !billing.is_trial;
+            if (isExpired) {
+              navigate('/app/billing', { replace: true });
+            }
+          } catch {
+            // Silencieux — ne pas bloquer si la facturation est indisponible
+          }
         }
       } catch {
         // Silencieux — ne pas bloquer si l'endpoint est indisponible
@@ -46,7 +72,7 @@ export function useOnboarding() {
     };
 
     check();
-  }, [isAuthenticated, isInitializing, location.pathname]);
+  }, [isAuthenticated, isInitializing, location.pathname, userId]);
 
   return { status, checked };
 }

@@ -1,4 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import type { RootState } from '@/store';
 import {
   CreditCard, Zap, Shield, BarChart3, Users, Building2,
   CheckCircle, ArrowUpRight, Download, AlertCircle, RefreshCw,
@@ -177,14 +180,28 @@ export default function BillingPage() {
   const [error, setError]           = useState<string | null>(null);
   const [success, setSuccess]       = useState<string | null>(null);
   const [billingCycle, setCycle]    = useState<'monthly' | 'yearly'>('monthly');
+  const [isWelcome, setIsWelcome]   = useState(false);
+  const navigate                    = useNavigate();
+  const userId                      = useSelector((s: RootState) => s.auth.user?.id);
   const didInit = useRef(false);
+
+  // Mark billing as visited — stops future redirects from useOnboarding / useAuth
+  useEffect(() => {
+    if (userId) {
+      localStorage.setItem(`billing_welcomed_${userId}`, '1');
+    }
+  }, [userId]);
 
   useEffect(() => {
     if (didInit.current) return;
     didInit.current = true;
     const p = new URLSearchParams(window.location.search);
+    if (p.get('welcome') === '1') {
+      setIsWelcome(true);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
     if (p.get('checkout') === 'success') {
-      setSuccess('Abonnement activé ! Bienvenue sur ESGFlow.');
+      setSuccess('Abonnement activé ! Bienvenue sur ESG Flow.');
       window.history.replaceState({}, '', window.location.pathname);
       setTimeout(() => setSuccess(null), 10_000);
     }
@@ -343,6 +360,20 @@ export default function BillingPage() {
       </div>
 
       {/* ── Banners ── */}
+      {isWelcome && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-emerald-50 border border-emerald-200 rounded-2xl">
+          <div>
+            <p className="font-bold text-emerald-900 text-lg">🎉 Votre essai gratuit de 14 jours a commencé !</p>
+            <p className="text-sm text-emerald-700 mt-1">Aucune carte bancaire requise. Choisissez votre plan ci-dessous ou explorez la plateforme gratuitement.</p>
+          </div>
+          <button
+            onClick={() => { setIsWelcome(false); navigate('/app'); }}
+            className="flex-shrink-0 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-colors"
+          >
+            Continuer avec l'essai gratuit →
+          </button>
+        </div>
+      )}
       {success && (
         <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-sm text-emerald-800">
           <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />

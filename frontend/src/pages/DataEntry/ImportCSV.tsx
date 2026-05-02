@@ -14,6 +14,7 @@ import {
   RefreshCw,
   Eye,
   Building2,
+  Zap,
 } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
@@ -40,12 +41,38 @@ interface ImportResult {
   indicator_data_created?: number;
   errors: number;
   error_details: any[];
+  fec?: boolean;
 }
 
 interface Organization {
   id: string;
   name: string;
 }
+
+// ── FEC Detection ─────────────────────────────────────────────────────────────
+const FEC_HEADER_KEYWORDS = ['JournalCode', 'EcritureNum', 'EcritureDate', 'CompteNum'];
+const FEC_MIN_SEPARATORS = 10;
+
+async function detectFecFile(file: File): Promise<boolean> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = (e.target?.result as string) || '';
+      const firstLine = content.split('\n')[0] || '';
+      const hasKeyword = FEC_HEADER_KEYWORDS.some((kw) =>
+        firstLine.toLowerCase().includes(kw.toLowerCase()),
+      );
+      const semiCount = (firstLine.match(/;/g) || []).length;
+      const pipeCount = (firstLine.match(/\|/g) || []).length;
+      resolve(hasKeyword || semiCount >= FEC_MIN_SEPARATORS || pipeCount >= FEC_MIN_SEPARATORS);
+    };
+    reader.onerror = () => resolve(false);
+    // Read only the first 2 KB — enough to check the header line
+    reader.readAsText(file.slice(0, 2048));
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function ImportCSV() {
   const { t } = useTranslation();
@@ -54,9 +81,11 @@ export default function ImportCSV() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [fecImporting, setFecImporting] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [isFecFile, setIsFecFile] = useState(false);
 
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
@@ -86,9 +115,9 @@ export default function ImportCSV() {
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
+    if (e.type === 'dragenter' || e.type === 'dragover') {
       setDragActive(true);
-    } else if (e.type === "dragleave") {
+    } else if (e.type === 'dragleave') {
       setDragActive(false);
     }
   }, []);
@@ -102,8 +131,8 @@ export default function ImportCSV() {
     }
   }, []);
 
-  const handleFileSelect = (selectedFile: File) => {
-    const allowedTypes = ['.csv', '.xlsx', '.xls'];
+  const handleFileSelect = async (selectedFile: File) => {
+    const allowedTypes = ['.csv', '.xlsx', '.xls', '.txt', '.fec'];
     const ext = selectedFile.name.substring(selectedFile.name.lastIndexOf('.')).toLowerCase();
 
     if (!allowedTypes.includes(ext)) {
@@ -117,8 +146,57 @@ export default function ImportCSV() {
     }
 
     setFile(selectedFile);
+    setIsFecFile(false); // reset before detection
+
+    const fec = await detectFecFile(selectedFile);
+    setIsFecFile(fec);
+    if (fec) {
+      toast('Fichier FEC détecté — utilisez l\'import FEC dédié ci-dessous.', {
+        icon: '⚠️',
+        duration: 5000,
+      });
+    }
   };
 
+  // ── FEC Import via /sage-cegid/sync ────────────────────────────────────────
+  const handleFecImport = async () => {
+    if (!file) return;
+    setFecImporting(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    if (selectedOrgId) formData.append('organization_id', selectedOrgId);
+
+    try {
+      const response = await api.post('/sage-cegid/sync', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      const created =
+        response.data.entries_created ??
+        response.data.imported ??
+        response.data.count ??
+        0;
+
+      setImportResult({
+        imported: created,
+        indicator_data_created: response.data.indicator_data_created ?? 0,
+        errors: response.data.errors ?? 0,
+        error_details: response.data.error_details ?? [],
+        fec: true,
+      });
+      setStep(3);
+      toast.success(`FEC importé — ${created} entrée(s) créée(s)`);
+    } catch (error: any) {
+      console.error('FEC import error:', error);
+      toast.error(
+        error.response?.data?.detail || 'Erreur lors de l\'import FEC',
+      );
+    } finally {
+      setFecImporting(false);
+    }
+  };
+
+  // ── Generic CSV Upload ──────────────────────────────────────────────────────
   const handleUpload = async () => {
     if (!file) return;
 
@@ -171,7 +249,7 @@ export default function ImportCSV() {
 
       const response = await api.post(
         `/esg-import/uploads/${previewData.upload_id}/import`,
-        payload
+        payload,
       );
 
       setImportResult(response.data);
@@ -191,6 +269,7 @@ export default function ImportCSV() {
     setPreviewData(null);
     setImportResult(null);
     setSelectedOrgId('');
+    setIsFecFile(false);
     setMapping({
       pillar: '',
       category: '',
@@ -219,7 +298,6 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
     window.URL.revokeObjectURL(url);
   };
 
-  // Preview des donnees mappees
   const getMappedPreview = () => {
     if (!previewData || !previewData.preview[0]) return null;
 
@@ -236,6 +314,7 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
   return (
     <div className="space-y-6">
       <BackButton to="/app/data" label="Données" />
+
       {/* Header */}
       <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-8 text-white shadow-xl">
         <div className="flex items-center justify-between">
@@ -248,7 +327,6 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
               {t('importCsv.subtitle')}
             </p>
           </div>
-
           <Button variant="secondary" onClick={downloadTemplate}>
             <Download className="h-4 w-4 mr-2" />
             {t('importCsv.csvTemplate')}
@@ -260,20 +338,23 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
       <div className="flex items-center justify-center gap-4">
         {[1, 2, 3].map((s) => (
           <div key={s} className="flex items-center gap-2">
-            <div className={`
-              w-10 h-10 rounded-full flex items-center justify-center font-bold
-              ${step >= s ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-600'}
-            `}>
+            <div
+              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                step >= s ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-600'
+              }`}
+            >
               {s}
             </div>
             {s < 3 && (
-              <ArrowRight className={`h-5 w-5 ${step > s ? 'text-indigo-600' : 'text-gray-400'}`} />
+              <ArrowRight
+                className={`h-5 w-5 ${step > s ? 'text-indigo-600' : 'text-gray-400'}`}
+              />
             )}
           </div>
         ))}
       </div>
 
-      {/* Step 1: Upload */}
+      {/* ── Step 1: Upload ── */}
       {step === 1 && (
         <Card className="animate-fade-in">
           <h2 className="text-xl font-bold text-gray-900 mb-6">
@@ -286,11 +367,11 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
               onDrop={handleDrop}
-              className={`
-                border-3 border-dashed rounded-xl p-12 text-center cursor-pointer
-                transition-all duration-200
-                ${dragActive ? 'border-indigo-600 bg-indigo-50' : 'border-gray-300 hover:border-indigo-400'}
-              `}
+              className={`border-3 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all duration-200 ${
+                dragActive
+                  ? 'border-indigo-600 bg-indigo-50'
+                  : 'border-gray-300 hover:border-indigo-400'
+              }`}
               onClick={() => document.getElementById('file-input')?.click()}
             >
               <Upload className="h-16 w-16 mx-auto text-gray-400 mb-4" />
@@ -298,59 +379,154 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
                 {t('importCsv.dropZoneText')}
               </p>
               <p className="text-sm text-gray-500">
-                {t('importCsv.acceptedFormats')}
+                CSV, Excel, TXT, FEC — max 10 MB
               </p>
               <input
                 id="file-input"
                 type="file"
-                accept=".csv,.xlsx,.xls"
+                accept=".csv,.xlsx,.xls,.txt,.fec"
                 onChange={(e) => e.target.files && handleFileSelect(e.target.files[0])}
                 className="hidden"
               />
             </div>
           ) : (
-            <div className="border-2 border-green-500 rounded-xl p-6 bg-green-50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <FileText className="h-12 w-12 text-green-600" />
-                  <div>
-                    <p className="font-bold text-gray-900">{file.name}</p>
-                    <p className="text-sm text-gray-600">
-                      {(file.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
+            <div className="space-y-4">
+              {/* File card */}
+              <div
+                className={`border-2 rounded-xl p-6 ${
+                  isFecFile
+                    ? 'border-amber-400 bg-amber-50'
+                    : 'border-green-500 bg-green-50'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <FileText
+                      className={`h-12 w-12 ${isFecFile ? 'text-amber-600' : 'text-green-600'}`}
+                    />
+                    <div>
+                      <p className="font-bold text-gray-900">{file.name}</p>
+                      <p className="text-sm text-gray-600">
+                        {(file.size / 1024 / 1024).toFixed(2)} MB
+                        {isFecFile && (
+                          <span className="ml-2 px-2 py-0.5 bg-amber-200 text-amber-800 text-xs font-semibold rounded-full">
+                            FEC détecté
+                          </span>
+                        )}
+                      </p>
+                    </div>
                   </div>
+                  <button
+                    onClick={() => { setFile(null); setIsFecFile(false); }}
+                    className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                  >
+                    <X className="h-5 w-5 text-red-600" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setFile(null)}
-                  className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                >
-                  <X className="h-5 w-5 text-red-600" />
-                </button>
               </div>
 
-              <Button
-                onClick={handleUpload}
-                disabled={uploading}
-                className="w-full mt-6"
-              >
-                {uploading ? (
-                  <>
-                    <Spinner size="sm" className="mr-2" />
-                    {t('importCsv.analyzing')}
-                  </>
-                ) : (
-                  <>
-                    <ArrowRight className="h-4 w-4 mr-2" />
-                    {t('importCsv.analyzeFile')}
-                  </>
-                )}
-              </Button>
+              {/* ── FEC Warning + dedicated import ── */}
+              {isFecFile && (
+                <div className="p-5 bg-amber-50 border-2 border-amber-400 rounded-xl space-y-4">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-bold text-amber-900">
+                        Fichier des Écritures Comptables (FEC) détecté
+                      </p>
+                      <p className="text-sm text-amber-800 mt-1">
+                        L'import générique CSV ne peut pas interpréter un FEC correctement — les
+                        lignes brutes seraient stockées comme noms de métriques.
+                        Utilisez l'<strong>Import FEC dédié</strong> ci-dessous : il analyse,
+                        catégorise et agrège automatiquement chaque écriture comptable.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Organisation selector */}
+                  <div className="flex items-start gap-3">
+                    <Building2 className="h-5 w-5 text-amber-700 mt-2 flex-shrink-0" />
+                    <div className="flex-1">
+                      <label className="block text-sm font-semibold text-amber-900 mb-1">
+                        Organisation (optionnel)
+                      </label>
+                      <select
+                        value={selectedOrgId}
+                        onChange={(e) => setSelectedOrgId(e.target.value)}
+                        className="w-full px-3 py-2 border-2 border-amber-300 rounded-lg bg-white focus:border-amber-500 text-sm"
+                      >
+                        <option value="">— Toutes les organisations —</option>
+                        {organizations.map((org) => (
+                          <option key={org.id} value={org.id}>
+                            {org.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={handleFecImport}
+                    disabled={fecImporting}
+                    className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                  >
+                    {fecImporting ? (
+                      <>
+                        <Spinner size="sm" className="mr-2" />
+                        Analyse et import en cours…
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="h-4 w-4 mr-2" />
+                        Importer avec le parseur FEC dédié
+                      </>
+                    )}
+                  </Button>
+
+                  <p className="text-xs text-amber-700 text-center">
+                    Le parseur FEC extrait automatiquement les catégories comptables, les montants
+                    débit/crédit et les libellés — aucun mapping manuel requis.
+                  </p>
+                </div>
+              )}
+
+              {/* ── Generic CSV import (hidden if FEC) ── */}
+              {!isFecFile && (
+                <Button
+                  onClick={handleUpload}
+                  disabled={uploading}
+                  className="w-full mt-2"
+                >
+                  {uploading ? (
+                    <>
+                      <Spinner size="sm" className="mr-2" />
+                      {t('importCsv.analyzing')}
+                    </>
+                  ) : (
+                    <>
+                      <ArrowRight className="h-4 w-4 mr-2" />
+                      {t('importCsv.analyzeFile')}
+                    </>
+                  )}
+                </Button>
+              )}
+
+              {/* Allow forcing generic import for FEC if user really wants */}
+              {isFecFile && (
+                <button
+                  onClick={handleUpload}
+                  disabled={uploading}
+                  className="w-full text-xs text-gray-400 hover:text-gray-600 underline text-center py-1 transition-colors"
+                >
+                  {uploading ? 'Analyse…' : 'Forcer l\'import générique CSV (déconseillé pour un FEC)'}
+                </button>
+              )}
             </div>
           )}
         </Card>
       )}
 
-      {/* Step 2: Mapping */}
+      {/* ── Step 2: Mapping ── */}
       {step === 2 && previewData && (
         <div className="space-y-6 animate-fade-in">
           <Card>
@@ -358,7 +534,7 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
               {t('importCsv.step2Title')}
             </h2>
 
-            {/* Organisation selector — required for ESG score bridging */}
+            {/* Organisation selector */}
             <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
               <div className="flex items-start gap-3">
                 <Building2 className="h-5 w-5 text-blue-600 mt-1 flex-shrink-0" />
@@ -376,7 +552,9 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
                   >
                     <option value="">— Sélectionner une organisation —</option>
                     {organizations.map((org) => (
-                      <option key={org.id} value={org.id}>{org.name}</option>
+                      <option key={org.id} value={org.id}>
+                        {org.name}
+                      </option>
                     ))}
                   </select>
                   {!selectedOrgId && (
@@ -427,7 +605,6 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
                 </p>
               </div>
 
-              {/* Optional fields... */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {t('importCsv.unitColumn')}
@@ -461,20 +638,24 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
               </div>
             </div>
 
-            {/* Preview du mapping */}
+            {/* Mapping preview */}
             {mapping.metric_name && mapping.value_numeric && (
               <div className="mt-6 p-4 bg-indigo-50 rounded-lg border-2 border-indigo-200">
                 <div className="flex items-start gap-3">
                   <Eye className="h-5 w-5 text-indigo-600 mt-1" />
                   <div className="flex-1">
-                    <p className="font-bold text-indigo-900 mb-3">{t('importCsv.mappingPreviewTitle')}</p>
+                    <p className="font-bold text-indigo-900 mb-3">
+                      {t('importCsv.mappingPreviewTitle')}
+                    </p>
                     {(() => {
                       const preview = getMappedPreview();
                       return preview ? (
                         <div className="grid grid-cols-2 gap-3 text-sm">
                           <div className="p-2 bg-white rounded">
                             <span className="text-gray-600">{t('importCsv.metricLabel')}:</span>
-                            <span className="ml-2 font-semibold text-gray-900">{preview.metric_name}</span>
+                            <span className="ml-2 font-semibold text-gray-900">
+                              {preview.metric_name}
+                            </span>
                           </div>
                           <div className="p-2 bg-white rounded">
                             <span className="text-gray-600">{t('importCsv.valueLabel')}:</span>
@@ -484,7 +665,9 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
                           </div>
                           <div className="p-2 bg-white rounded col-span-2">
                             <span className="text-gray-600">{t('importCsv.pillarLabel')}:</span>
-                            <span className="ml-2 font-semibold text-gray-900">{preview.pillar}</span>
+                            <span className="ml-2 font-semibold text-gray-900">
+                              {preview.pillar}
+                            </span>
                           </div>
                         </div>
                       ) : null;
@@ -498,21 +681,31 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
             )}
           </Card>
 
-          {/* Preview table... */}
+          {/* Preview table */}
           <Card>
             <h3 className="text-lg font-bold text-gray-900 mb-4">
               {t('importCsv.dataPreviewTitle')}
             </h3>
-
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
                     {previewData.columns.map((col) => (
-                      <th key={col} className="px-4 py-2 text-left font-semibold text-gray-700 border-b">
+                      <th
+                        key={col}
+                        className="px-4 py-2 text-left font-semibold text-gray-700 border-b"
+                      >
                         {col}
-                        {col === mapping.metric_name && <span className="ml-2 text-xs text-indigo-600">({t('importCsv.metricLabel')})</span>}
-                        {col === mapping.value_numeric && <span className="ml-2 text-xs text-green-600">({t('importCsv.valueLabel')})</span>}
+                        {col === mapping.metric_name && (
+                          <span className="ml-2 text-xs text-indigo-600">
+                            ({t('importCsv.metricLabel')})
+                          </span>
+                        )}
+                        {col === mapping.value_numeric && (
+                          <span className="ml-2 text-xs text-green-600">
+                            ({t('importCsv.valueLabel')})
+                          </span>
+                        )}
                       </th>
                     ))}
                   </tr>
@@ -522,7 +715,9 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
                     <tr key={idx} className="border-b hover:bg-gray-50">
                       {previewData.columns.map((col) => (
                         <td key={col} className="px-4 py-2 text-gray-900">
-                          {row[col] !== null && row[col] !== undefined ? String(row[col]) : '-'}
+                          {row[col] !== null && row[col] !== undefined
+                            ? String(row[col])
+                            : '-'}
                         </td>
                       ))}
                     </tr>
@@ -558,14 +753,21 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
         </div>
       )}
 
-      {/* Step 3: Results */}
+      {/* ── Step 3: Results ── */}
       {step === 3 && importResult && (
         <Card className="animate-fade-in">
           <div className="text-center py-12">
             <CheckCircle className="h-20 w-20 text-green-500 mx-auto mb-6" />
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
               {t('importCsv.importSuccessTitle')}
             </h2>
+
+            {importResult.fec && (
+              <p className="text-sm text-amber-700 font-medium mb-6 flex items-center justify-center gap-2">
+                <Zap className="h-4 w-4" />
+                Import FEC — les écritures ont été catégorisées et agrégées automatiquement
+              </p>
+            )}
 
             <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
               <div className="p-6 bg-green-50 rounded-xl">
@@ -573,7 +775,9 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
                 <p className="text-sm text-gray-600 mt-2">{t('importCsv.importedData')}</p>
               </div>
               <div className="p-6 bg-blue-50 rounded-xl">
-                <p className="text-4xl font-bold text-blue-600">{importResult.indicator_data_created ?? 0}</p>
+                <p className="text-4xl font-bold text-blue-600">
+                  {importResult.indicator_data_created ?? 0}
+                </p>
                 <p className="text-sm text-gray-600 mt-2">Indicateurs ESG liés</p>
               </div>
               <div className="p-6 bg-red-50 rounded-xl">
@@ -581,16 +785,19 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
                 <p className="text-sm text-gray-600 mt-2">{t('importCsv.errors')}</p>
               </div>
             </div>
+
             {(importResult.indicator_data_created ?? 0) > 0 && (
               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg max-w-lg mx-auto text-sm text-blue-800">
-                ✅ {importResult.indicator_data_created} point(s) de données liés aux indicateurs ESG.
-                Vous pouvez maintenant <strong>recalculer les scores</strong> depuis le tableau de bord Scores.
+                ✅ {importResult.indicator_data_created} point(s) de données liés aux indicateurs
+                ESG. Vous pouvez maintenant <strong>recalculer les scores</strong> depuis le tableau
+                de bord Scores.
               </div>
             )}
-            {(importResult.indicator_data_created ?? 0) === 0 && importResult.imported > 0 && (
+
+            {(importResult.indicator_data_created ?? 0) === 0 && importResult.imported > 0 && !importResult.fec && (
               <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg max-w-lg mx-auto text-sm text-amber-800">
-                ⚠️ Aucun indicateur ESG n'a été reconnu dans vos données. Vérifiez que les noms de métriques
-                correspondent aux indicateurs configurés dans la plateforme.
+                ⚠️ Aucun indicateur ESG n'a été reconnu dans vos données. Vérifiez que les noms de
+                métriques correspondent aux indicateurs configurés dans la plateforme.
               </div>
             )}
 
@@ -599,7 +806,15 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
                 <RefreshCw className="h-4 w-4 mr-2" />
                 {t('importCsv.importAnother')}
               </Button>
-              <Button onClick={() => navigate('/app/my-data')}>
+              <Button
+                onClick={() =>
+                  navigate(
+                    importResult.fec
+                      ? '/app/my-data?source=fec_import'
+                      : '/app/my-data',
+                  )
+                }
+              >
                 <CheckCircle className="h-4 w-4 mr-2" />
                 {t('importCsv.viewData')}
               </Button>

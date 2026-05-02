@@ -1,5 +1,5 @@
-import { Component, type ReactNode, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Component, type ReactNode, useState, useEffect } from 'react';
+import { Outlet, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -53,6 +53,32 @@ class ErrorBoundary extends Component<
   }
 }
 
+// ─── Crisp helpdesk widget ───────────────────────────────────────────────────
+// Remplacez CRISP_WEBSITE_ID par votre ID Crisp (dashboard.crisp.chat → Settings → Website)
+const CRISP_WEBSITE_ID = import.meta.env.VITE_CRISP_WEBSITE_ID || '';
+
+function CrispWidget() {
+  useEffect(() => {
+    if (!CRISP_WEBSITE_ID) return;
+    // @ts-ignore
+    window.$crisp = [];
+    // @ts-ignore
+    window.CRISP_WEBSITE_ID = CRISP_WEBSITE_ID;
+    const s = document.createElement('script');
+    s.src = 'https://client.crisp.chat/l.js';
+    s.async = true;
+    document.head.appendChild(s);
+    return () => {
+      document.head.removeChild(s);
+      // @ts-ignore
+      delete window.$crisp;
+      // @ts-ignore
+      delete window.CRISP_WEBSITE_ID;
+    };
+  }, []);
+  return null;
+}
+
 // ─── Layout ───────────────────────────────────────────────────────────────────
 
 export default function Layout() {
@@ -75,6 +101,7 @@ export default function Layout() {
   return (
     <TourProvider>
       <ConditionalGuidedTour />
+      <CrispWidget />
 
       <div className="flex h-screen bg-surface-50 overflow-hidden">
         <Sidebar
@@ -99,11 +126,13 @@ export default function Layout() {
           {/* ── Footer ── */}
           <footer className="flex-shrink-0 border-t border-[#e8ecf0] bg-white/70 backdrop-blur-sm px-6 py-2.5">
             <div className="flex items-center justify-between text-xs text-gray-400 max-w-[1600px] mx-auto">
-              <p>© 2026 ESGFlow — {t('footer.allRightsReserved')}</p>
+              <p>© 2026 GreenConnect — {t('footer.allRightsReserved')}</p>
               <div className="hidden sm:flex gap-5">
-                <a href="#" className="hover:text-gray-600 transition-colors">{t('footer.privacy')}</a>
-                <a href="#" className="hover:text-gray-600 transition-colors">{t('footer.terms')}</a>
-                <a href="#" className="hover:text-gray-600 transition-colors">{t('footer.support')}</a>
+                <Link to="/privacy-policy"   className="hover:text-gray-600 transition-colors">Confidentialité</Link>
+                <Link to="/terms-of-service" className="hover:text-gray-600 transition-colors">CGU</Link>
+                <Link to="/cgv"              className="hover:text-gray-600 transition-colors">CGV</Link>
+                <Link to="/legal-notice"     className="hover:text-gray-600 transition-colors">Mentions légales</Link>
+                <a href="mailto:support@greenconnect.cloud" className="hover:text-gray-600 transition-colors">Support</a>
               </div>
               <p className="text-primary-500 font-semibold">{t('common.version')} 0.1.0</p>
             </div>

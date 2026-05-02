@@ -12,7 +12,7 @@ export default function PrivacyPolicy() {
       <div className="mx-auto max-w-4xl px-6 py-12">
         <Button
           variant="secondary"
-          onClick={() => navigate('/app/organizations')}
+          onClick={() => navigate(-1)}
           className="mb-8 flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -44,7 +44,7 @@ export default function PrivacyPolicy() {
               <strong>ESGFlow SAS</strong><br />
               Siège social : 123 Avenue des Champs-Élysées, 75008 Paris, France<br />
               SIRET : 123 456 789 00012<br />
-              Email : dpo@esgflow.com<br />
+              Email : privacy@greenconnect.cloud<br />
               Téléphone : +33 1 23 45 67 89
             </p>
 
@@ -203,7 +203,7 @@ export default function PrivacyPolicy() {
             <h3>📧 Exercer vos droits</h3>
             <p>
               Pour exercer vos droits, contactez notre DPO :<br />
-              Email : <a href="mailto:dpo@esgflow.com" className="text-primary-600 hover:underline">dpo@esgflow.com</a><br />
+              Email : <a href="mailto:privacy@greenconnect.cloud" className="text-primary-600 hover:underline">privacy@greenconnect.cloud</a><br />
               Courrier : ESGFlow SAS - DPO, 123 Avenue des Champs-Élysées, 75008 Paris<br />
               <br />
               Réponse sous 1 mois maximum.
@@ -276,8 +276,8 @@ export default function PrivacyPolicy() {
               Pour toute question relative à la protection de vos données personnelles :<br />
               <br />
               <strong>Délégué à la Protection des Données (DPO)</strong><br />
-              Email : <a href="mailto:dpo@esgflow.com" className="text-primary-600 hover:underline">dpo@esgflow.com</a><br />
-              Courrier : ESGFlow SAS - DPO, 123 Avenue des Champs-Élysées, 75008 Paris, France
+              Email : <a href="mailto:privacy@greenconnect.cloud" className="text-primary-600 hover:underline">privacy@greenconnect.cloud</a><br />
+              Courrier : ESGFlow SAS - DPO, 12 Vieux chemin de meaux, 93190 Livry-Gargan France
             </p>
           </div>
         </div>

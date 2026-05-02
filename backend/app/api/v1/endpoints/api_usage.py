@@ -105,7 +105,7 @@ async def get_usage_summary(
         async with AsyncSessionLocal() as db:
             tenant = (await db.execute(select(Tenant).where(Tenant.id == current_user.tenant_id))).scalar_one_or_none()
             if tenant:
-                plan_limit = tenant.max_api_calls
+                plan_limit = tenant.max_monthly_api_calls
     except Exception:
         pass
 

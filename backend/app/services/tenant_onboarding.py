@@ -93,18 +93,25 @@ class TenantOnboardingService:
         )
         indicator_count = indicator_count_result.scalar() or 0
 
-        completed = org_count > 0 and indicator_count > 0
+        # Use explicit flag — org/indicator counts can be seeded during registration
+        # without marking onboarding as "done" (the wizard must still be shown)
+        from app.models.tenant import Tenant as TenantModel
+        tenant = await self.db.get(TenantModel, self.tenant_id)
+        settings = (tenant.settings or {}) if tenant else {}
+        completed = bool(settings.get("onboarding_done", False))
+        sector = settings.get("onboarding_sector", "general")
+
         return {
             "completed": completed,
             "has_organizations": org_count > 0,
             "has_indicators": indicator_count > 0,
-            "sector": "general",
+            "sector": sector,
             "org_count": org_count,
             "indicator_count": indicator_count,
         }
 
-    async def setup(self, org_name: str, sector: str = "general") -> dict:
-        # Create default organization if none exists
+    async def setup(self, org_name: str, sector: str = "general", mark_done: bool = True) -> dict:
+        # Create or update default organization
         org_result = await self.db.execute(
             select(Organization).where(Organization.tenant_id == self.tenant_id).limit(1)
         )
@@ -117,6 +124,10 @@ class TenantOnboardingService:
                 industry=sector,
             )
             self.db.add(org)
+        else:
+            # Update name and sector if user changed them in the wizard
+            org.name = org_name
+            org.industry = sector
 
         # Seed indicators from templates
         indicators_to_create = list(_BASE_INDICATORS)
@@ -146,12 +157,13 @@ class TenantOnboardingService:
                 self.db.add(indicator)
                 created_count += 1
 
-        # Mark onboarding as completed in tenant settings
+        # Mark onboarding state in tenant settings
         from app.models.tenant import Tenant as TenantModel
         tenant = await self.db.get(TenantModel, self.tenant_id)
         if tenant:
             settings_copy = dict(tenant.settings or {})
-            settings_copy["onboarding_done"] = True
+            if mark_done:
+                settings_copy["onboarding_done"] = True
             settings_copy["onboarding_sector"] = sector
             tenant.settings = settings_copy
 

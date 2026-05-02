@@ -421,16 +421,75 @@ export default function UserProfile() {
         </div>
       </div>
 
-      {/* ── Danger zone ─────────────────────────────────────────────────────── */}
+      {/* ── RGPD — Zone de danger ───────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-red-100 shadow-sm p-6">
         <h2 className="font-bold text-gray-900 mb-1">Zone de danger</h2>
-        <p className="text-sm text-gray-500 mb-4">Ces actions sont irréversibles.</p>
-        <button
-          onClick={() => window.confirm('Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.') && alert('Contactez support@esgflow.com pour supprimer votre compte.')}
-          className="px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-sm font-medium transition-all"
-        >
-          Supprimer mon compte
-        </button>
+        <p className="text-sm text-gray-500 mb-6">Ces actions sont irréversibles.</p>
+
+        {/* Export RGPD Art. 15 */}
+        <div className="flex items-start justify-between gap-4 pb-5 border-b border-gray-100">
+          <div>
+            <p className="text-sm font-semibold text-gray-800">Exporter mes données (RGPD Art. 15)</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Téléchargez toutes vos données personnelles au format JSON.
+            </p>
+          </div>
+          <button
+            onClick={async () => {
+              try {
+                const res = await api.get('/users/me/export');
+                const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `mes-donnees-rgpd-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+              } catch {
+                alert('Erreur lors de l\'export. Réessayez ou contactez support@greenconnect.cloud.');
+              }
+            }}
+            className="flex-shrink-0 px-4 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-medium transition-all"
+          >
+            Télécharger
+          </button>
+        </div>
+
+        {/* Suppression RGPD Art. 17 */}
+        <div className="flex items-start justify-between gap-4 pt-5">
+          <div>
+            <p className="text-sm font-semibold text-red-700">Supprimer mon compte (RGPD Art. 17)</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Vos données personnelles seront anonymisées. Les données ESG saisies sont
+              conservées de façon anonyme pour l'intégrité du reporting réglementaire.
+            </p>
+          </div>
+          <button
+            onClick={async () => {
+              const confirmed = window.confirm(
+                'Êtes-vous sûr de vouloir supprimer votre compte ?\n\n' +
+                '• Vos données personnelles seront anonymisées immédiatement.\n' +
+                '• Vous serez déconnecté et ne pourrez plus accéder à la plateforme.\n' +
+                '• Cette action est IRRÉVERSIBLE.\n\n' +
+                'Cliquez OK pour confirmer.'
+              );
+              if (!confirmed) return;
+              try {
+                await api.delete('/users/me');
+                alert('Votre compte a été supprimé. Vous allez être redirigé.');
+                window.location.href = '/';
+              } catch (err: any) {
+                alert(
+                  err?.response?.data?.detail ||
+                  'Erreur lors de la suppression. Contactez legal@greenconnect.cloud.'
+                );
+              }
+            }}
+            className="flex-shrink-0 px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-sm font-medium transition-all"
+          >
+            Supprimer mon compte
+          </button>
+        </div>
       </div>
     </div>
   );

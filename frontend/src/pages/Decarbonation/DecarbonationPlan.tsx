@@ -419,6 +419,13 @@ export default function DecarbonationPlan() {
   const trajectory = useMemo(() => buildTrajectory(baseEmissions), [baseEmissions]);
   const sbtiTarget2030 = Math.round(baseEmissions * 0.58);
 
+  // SBTi commitment tracking state
+  type SBTiStatus = 'not_committed' | 'letter_sent' | 'targets_set' | 'validated';
+  type SBTiMethod = '1.5C' | 'WB2C' | 'FLAG' | 'SDA';
+  const [sbtiStatus, setSbtiStatus] = useState<SBTiStatus>('not_committed');
+  const [sbtiMethod, setSbtiMethod] = useState<SBTiMethod>('1.5C');
+  const [sbtiNetZeroYear, setSbtiNetZeroYear] = useState<number>(2050);
+
   // Compute plan stats
   const planActions = useMemo(() => actions.filter(a => a.inPlan), [actions]);
   const planReduction = useMemo(() => planActions.reduce((s, a) => s + a.impact, 0), [planActions]);
@@ -608,6 +615,180 @@ export default function DecarbonationPlan() {
                   <div className="text-2xl font-bold text-blue-600">{inProgressActions}</div>
                   <div className="text-xs text-gray-500 mt-0.5">{tr('decarbonation.quickStatsInProgress')}</div>
                 </div>
+              </div>
+            </div>
+
+            {/* ── SBTi Engagement & Validation ───────────────────────────── */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                    <span className="text-xl">🎯</span> Engagement SBTi — Science Based Targets
+                  </h2>
+                  <p className="text-xs text-gray-400 mt-0.5">Suivez votre parcours de validation auprès de la Science Based Targets initiative</p>
+                </div>
+                <a
+                  href="https://sciencebasedtargets.org"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-green-600 hover:underline flex-shrink-0"
+                >
+                  sbti.org →
+                </a>
+              </div>
+
+              {/* 4-step commitment tracker */}
+              <div className="relative mb-6">
+                <div className="absolute top-5 left-5 right-5 h-0.5 bg-gray-200" />
+                <div className="relative flex justify-between">
+                  {([
+                    { key: 'not_committed', label: 'Non engagé',       desc: 'Étape initiale',              icon: '○' },
+                    { key: 'letter_sent',   label: 'Lettre d\'engagement', desc: 'Envoyée à SBTi',          icon: '📩' },
+                    { key: 'targets_set',   label: 'Cibles soumises',  desc: 'En cours de validation',      icon: '📋' },
+                    { key: 'validated',     label: 'Cibles validées',  desc: 'Approuvées par SBTi',         icon: '✅' },
+                  ] as { key: SBTiStatus; label: string; desc: string; icon: string }[]).map((step, i) => {
+                    const statuses: SBTiStatus[] = ['not_committed', 'letter_sent', 'targets_set', 'validated'];
+                    const currentIdx = statuses.indexOf(sbtiStatus);
+                    const stepIdx = statuses.indexOf(step.key);
+                    const done    = stepIdx < currentIdx;
+                    const active  = stepIdx === currentIdx;
+                    return (
+                      <button
+                        key={step.key}
+                        onClick={() => setSbtiStatus(step.key)}
+                        className="flex flex-col items-center gap-1.5 w-24 relative z-10 group"
+                      >
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm border-2 transition-all ${
+                          done    ? 'bg-green-500 border-green-500 text-white' :
+                          active  ? 'bg-blue-600 border-blue-600 text-white shadow-md' :
+                                    'bg-white border-gray-300 text-gray-400 group-hover:border-blue-300'
+                        }`}>
+                          {done ? '✓' : step.icon}
+                        </div>
+                        <span className={`text-xs font-semibold text-center leading-tight ${active ? 'text-blue-700' : done ? 'text-green-700' : 'text-gray-400'}`}>
+                          {step.label}
+                        </span>
+                        <span className="text-[10px] text-gray-400 text-center leading-tight hidden sm:block">{step.desc}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Status-specific message */}
+              <div className={`mb-5 p-3 rounded-xl text-xs ${
+                sbtiStatus === 'validated'     ? 'bg-green-50 border border-green-200 text-green-800' :
+                sbtiStatus === 'targets_set'   ? 'bg-blue-50 border border-blue-200 text-blue-800' :
+                sbtiStatus === 'letter_sent'   ? 'bg-amber-50 border border-amber-200 text-amber-800' :
+                                                 'bg-gray-50 border border-gray-200 text-gray-600'
+              }`}>
+                {sbtiStatus === 'validated'   && '✅ Félicitations — vos cibles sont validées par SBTi. Publiez-les dans votre rapport CSRD (ESRS E1-1) et sur votre site corporate.'}
+                {sbtiStatus === 'targets_set' && '📋 Cibles soumises à SBTi. La validation prend généralement 3 à 6 mois. Assurez-vous que vos plans d\'action couvrent la réduction requise.'}
+                {sbtiStatus === 'letter_sent' && '📩 Lettre d\'engagement reçue par SBTi. Vous avez 24 mois pour soumettre vos cibles chiffrées (Scope 1+2 obligatoire, Scope 3 si >40% des émissions).'}
+                {sbtiStatus === 'not_committed' && '💡 Votre entreprise n\'a pas encore soumis de lettre d\'engagement SBTi. Cliquez sur une étape pour mettre à jour votre statut.'}
+              </div>
+
+              {/* Methodology & targets */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Methodology selector */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Méthodologie SBTi</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { key: '1.5C',  label: '1,5°C',          desc: 'Trajectoire ambitieuse (recommandée)', badge: 'bg-green-100 text-green-700' },
+                      { key: 'WB2C',  label: 'Well-Below 2°C',  desc: 'Trajectoire alignée 2°C',             badge: 'bg-blue-100 text-blue-700' },
+                      { key: 'FLAG',  label: 'FLAG',             desc: 'Forêts, terres & agriculture',        badge: 'bg-amber-100 text-amber-700' },
+                      { key: 'SDA',   label: 'SDA sectoriel',   desc: 'Allocation sectorielle',              badge: 'bg-purple-100 text-purple-700' },
+                    ] as { key: SBTiMethod; label: string; desc: string; badge: string }[]).map(m => (
+                      <button
+                        key={m.key}
+                        onClick={() => setSbtiMethod(m.key)}
+                        className={`p-2.5 rounded-xl border text-left transition-all ${
+                          sbtiMethod === m.key
+                            ? 'border-blue-400 bg-blue-50 shadow-sm'
+                            : 'border-gray-200 hover:border-blue-200'
+                        }`}
+                      >
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold mb-1 ${m.badge}`}>{m.label}</span>
+                        <p className="text-[11px] text-gray-500 leading-tight">{m.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Targets summary */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Objectifs cibles</p>
+                  <div className="space-y-3">
+                    {/* Near-term 2030 */}
+                    <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold text-gray-700">Objectif court terme (2030)</span>
+                        <span className="text-xs font-bold text-green-700">
+                          {sbtiMethod === '1.5C' ? '−42%' : sbtiMethod === 'WB2C' ? '−35%' : '−30%'} Scope 1+2
+                        </span>
+                      </div>
+                      <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${onTrack ? 'bg-green-500' : 'bg-amber-400'}`}
+                          style={{ width: `${Math.min(planPct, 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-1">{planPct}% de l'objectif couvert par le plan actuel</p>
+                    </div>
+                    {/* Long-term net-zero */}
+                    <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold text-gray-700">Objectif long terme (Net-Zéro)</span>
+                        <div className="flex items-center gap-1">
+                          <select
+                            value={sbtiNetZeroYear}
+                            onChange={e => setSbtiNetZeroYear(parseInt(e.target.value))}
+                            className="text-xs border border-gray-300 rounded px-1 py-0.5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400"
+                          >
+                            {[2045, 2050, 2055].map(y => (
+                              <option key={y} value={y}>{y}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-gray-500">
+                        Réduction de {sbtiMethod === '1.5C' ? '≥90%' : '≥90%'} des émissions Scope 1+2+3 + neutralisation du résiduel avec CDR permanent.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SBTi score vs plan */}
+              <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-6 text-sm">
+                  <div>
+                    <span className="text-xs text-gray-400">Cible SBTi 2030</span>
+                    <p className="font-bold text-gray-900">{(sbtiTarget2030 / 1000).toFixed(1)}k tCO₂e</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-400">Projeté 2030 (plan actuel)</span>
+                    <p className={`font-bold ${onTrack ? 'text-green-700' : 'text-red-600'}`}>{(projected2030 / 1000).toFixed(1)}k tCO₂e</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-400">Écart</span>
+                    <p className={`font-bold ${onTrack ? 'text-green-700' : 'text-red-600'}`}>
+                      {onTrack ? '✓ Dans la cible' : `+${((projected2030 - sbtiTarget2030) / 1000).toFixed(1)}k à réduire`}
+                    </p>
+                  </div>
+                </div>
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${
+                  sbtiStatus === 'validated'   ? 'bg-green-100 text-green-700 border border-green-300' :
+                  sbtiStatus === 'targets_set' ? 'bg-blue-100 text-blue-700 border border-blue-300' :
+                  sbtiStatus === 'letter_sent' ? 'bg-amber-100 text-amber-700 border border-amber-300' :
+                                                 'bg-gray-100 text-gray-500 border border-gray-300'
+                }`}>
+                  {sbtiStatus === 'validated'   ? '✅ SBTi Validé' :
+                   sbtiStatus === 'targets_set' ? '📋 En validation' :
+                   sbtiStatus === 'letter_sent' ? '📩 Engagé' :
+                                                  '○ Non soumis'}
+                </span>
               </div>
             </div>
 

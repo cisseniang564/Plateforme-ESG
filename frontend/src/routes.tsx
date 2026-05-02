@@ -48,6 +48,7 @@ const ReportsList         = lazy(() => import('@/pages/Reporting/ReportsList'));
 const ReportGeneration    = lazy(() => import('@/pages/Reporting/ReportGeneration'));
 const ScheduledReports    = lazy(() => import('@/pages/Reporting/ScheduledReports'));
 const MultiStandardMapping = lazy(() => import('@/pages/Reports/MultiStandardMapping'));
+const CSRDBuilder          = lazy(() => import('@/pages/Reports/CSRDBuilder'));
 
 // ── Lazy — Organizations ─────────────────────────────────────────────────────
 const OrganizationsList    = lazy(() => import('@/pages/Organizations/OrganizationsList'));
@@ -102,6 +103,7 @@ const SupplierPortal    = lazy(() => import('@/pages/SupplyChain/SupplierPortal'
 const TermsOfService    = lazy(() => import('@/pages/Legal/TermsOfService'));
 const PrivacyPolicy     = lazy(() => import('@/pages/Legal/PrivacyPolicy'));
 const LegalNotice       = lazy(() => import('@/pages/Legal/LegalNotice'));
+const CGV               = lazy(() => import('@/pages/Legal/CGV'));
 
 // ── Fallback de chargement ───────────────────────────────────────────────────
 function PageLoader() {
@@ -154,6 +156,7 @@ export default function AppRoutes() {
         <Route path="/terms-of-service"  element={<TermsOfService />} />
         <Route path="/privacy-policy"    element={<PrivacyPolicy />} />
         <Route path="/legal-notice"      element={<LegalNotice />} />
+        <Route path="/cgv"               element={<CGV />} />
         <Route path="/support"           element={<Support />} />
         <Route path="/demo"              element={<DemoPage />} />
         <Route path="/help"              element={<HelpCenter />} />
@@ -208,11 +211,12 @@ export default function AppRoutes() {
             <Route path="scores/:id"         element={<OrganizationScoring />} />
 
             {/* Reports */}
-            <Route path="reports"                element={<ReportsUnified />} />
-            <Route path="reports/list"           element={<ReportsList />} />
-            <Route path="reports/generate"       element={<ReportGeneration />} />
-            <Route path="reports/scheduled"      element={<ScheduledReports />} />
-            <Route path="reports/multi-standards" element={<MultiStandardMapping />} />
+            <Route path="reports"                    element={<ReportsUnified />} />
+            <Route path="reports/list"             element={<ReportsList />} />
+            <Route path="reports/generate"         element={<ReportGeneration />} />
+            <Route path="reports/scheduled"        element={<ScheduledReports />} />
+            <Route path="reports/multi-standards"  element={<MultiStandardMapping />} />
+            <Route path="reports/csrd-builder"     element={<CSRDBuilder />} />
 
             {/* Materiality & Risks */}
             <Route path="materiality" element={<MaterialityMatrix />} />

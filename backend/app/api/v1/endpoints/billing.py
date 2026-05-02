@@ -86,13 +86,17 @@ async def get_subscription(
     return {
         "plan_tier": tenant.plan_tier,
         "status": getattr(tenant, "stripe_subscription_status", None) or "active",
+        "is_active": tenant.billing_is_active,
+        "is_trial": tenant.is_in_trial,
         "stripe_subscription_id": getattr(tenant, "stripe_subscription_id", None),
         "stripe_customer_id": tenant.stripe_customer_id,
         "current_period_end": getattr(tenant, "stripe_current_period_end", None),
         "trial_ends_at": getattr(tenant, "trial_ends_at", None),
         "max_users": tenant.max_users,
         "max_orgs": tenant.max_orgs,
+        "max_organizations": tenant.max_orgs,       # alias for frontend compat
         "max_monthly_api_calls": tenant.max_monthly_api_calls,
+        "max_api_calls": tenant.max_monthly_api_calls,  # alias for frontend compat
     }
 
 

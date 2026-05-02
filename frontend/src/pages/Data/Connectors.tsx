@@ -17,6 +17,7 @@ import { api } from '@/services/api'
 type ConnectorStatus = 'connected' | 'available' | 'error'
 type AuthType = 'oauth2' | 'apikey' | 'certificate' | 'fec_import'
 type ConnectorCategory = 'ERP' | 'HR' | 'Energy' | 'Carbon'
+type BackendStatus = 'live' | 'demo'
 
 interface CoverageMap {
   emissions: boolean
@@ -33,6 +34,7 @@ interface Connector {
   category: ConnectorCategory
   description: string
   status: ConnectorStatus
+  backendStatus: BackendStatus   // 'live' = vraie intégration active, 'demo' = données de démonstration
   color: string
   authType: AuthType
   lastSync?: string
@@ -49,53 +51,49 @@ const CONNECTORS: Connector[] = [
   {
     id: 'sap-s4', name: 'SAP S/4HANA', category: 'ERP',
     description: 'ERP financier — depenses energie, achats, donnees carbone Scope 3',
-    status: 'connected', color: '#1e40af', authType: 'oauth2',
-    lastSync: 'il y a 2h', records: 1250,
+    status: 'available', backendStatus: 'demo', color: '#1e40af', authType: 'oauth2',
     coverage: { emissions: true, energy: true, hr: false, finance: true, waste: false, water: false },
     version: 'S/4HANA 2023', endpoint: 'https://api.sap.com/s4hanacloud/v1'
   },
   {
     id: 'oracle-fusion', name: 'Oracle Fusion', category: 'ERP',
     description: 'Suite ERP Oracle — donnees financieres et achats durables',
-    status: 'available', color: '#dc2626', authType: 'oauth2',
+    status: 'available', backendStatus: 'demo', color: '#dc2626', authType: 'oauth2',
     coverage: { emissions: false, energy: true, hr: false, finance: true, waste: false, water: false },
     version: 'Oracle 23c', endpoint: 'https://api.oracle.com/erp/v1'
   },
   {
     id: 'netsuite', name: 'NetSuite', category: 'ERP',
     description: 'ERP cloud Oracle — achats, fournisseurs, donnees financieres ESG',
-    status: 'connected', color: '#7c3aed', authType: 'apikey',
-    lastSync: 'il y a 6h', records: 342,
+    status: 'available', backendStatus: 'demo', color: '#7c3aed', authType: 'apikey',
     coverage: { emissions: false, energy: false, hr: false, finance: true, waste: false, water: false },
     version: '2024.1', endpoint: 'https://[accountId].suitetalk.api.netsuite.com'
   },
   {
     id: 'workday', name: 'Workday', category: 'HR',
     description: 'SIRH — effectifs, diversite, formation, egalite salariale',
-    status: 'connected', color: '#0891b2', authType: 'oauth2',
-    lastSync: 'il y a 1h', records: 890,
+    status: 'available', backendStatus: 'demo', color: '#0891b2', authType: 'oauth2',
     coverage: { emissions: false, energy: false, hr: true, finance: false, waste: false, water: false },
     version: 'API v38', endpoint: 'https://wd2-impl-services1.workday.com/ccx/service'
   },
   {
     id: 'bamboohr', name: 'BambooHR', category: 'HR',
     description: 'RH PME — donnees collaborateurs, turnover, bien-etre',
-    status: 'available', color: '#16a34a', authType: 'apikey',
+    status: 'available', backendStatus: 'demo', color: '#16a34a', authType: 'apikey',
     coverage: { emissions: false, energy: false, hr: true, finance: false, waste: false, water: false },
     version: 'v1', endpoint: 'https://api.bamboohr.com/api/gateway.php'
   },
   {
     id: 'successfactors', name: 'SAP SuccessFactors', category: 'HR',
     description: 'SIRH SAP — performance, formation, remuneration equitable',
-    status: 'error', color: '#9333ea', authType: 'oauth2',
-    lastSync: 'il y a 14h', records: 0, errorMsg: "Token OAuth expire — renouveler l'authentification",
+    status: 'available', backendStatus: 'demo', color: '#9333ea', authType: 'oauth2',
     coverage: { emissions: false, energy: false, hr: true, finance: false, waste: false, water: false },
     version: 'OData v4', endpoint: 'https://api4.successfactors.com/odata/v4'
   },
   {
     id: 'schneider', name: 'Schneider Electric', category: 'Energy',
     description: 'EcoStruxure & ION — consommation electrique, efficacite energetique batiments',
-    status: 'connected', color: '#059669', authType: 'oauth2',
+    status: 'connected', backendStatus: 'live', color: '#059669', authType: 'oauth2',
     lastSync: 'il y a 15min', records: 4200,
     coverage: { emissions: true, energy: true, hr: false, finance: false, waste: false, water: true },
     version: 'EcoStruxure v3', endpoint: 'https://api.exchange.se.com/ecostruxure/v3'
@@ -103,21 +101,21 @@ const CONNECTORS: Connector[] = [
   {
     id: 'enedis', name: 'Enedis', category: 'Energy',
     description: 'Donnees de consommation electrique reseau France — courbes de charge',
-    status: 'available', color: '#0284c7', authType: 'apikey',
+    status: 'available', backendStatus: 'demo', color: '#0284c7', authType: 'apikey',
     coverage: { emissions: true, energy: true, hr: false, finance: false, waste: false, water: false },
     version: 'API Enedis v2', endpoint: 'https://datahub-enedis.fr/api/oauth2'
   },
   {
     id: 'edf', name: 'EDF Data', category: 'Energy',
     description: "Historiques & previsions energetiques EDF — mix electrique, facteurs d'emission",
-    status: 'available', color: '#b91c1c', authType: 'certificate',
+    status: 'available', backendStatus: 'demo', color: '#b91c1c', authType: 'certificate',
     coverage: { emissions: true, energy: true, hr: false, finance: false, waste: false, water: false },
     version: 'DataAPI v1', endpoint: 'https://api.edf.fr/data/v1'
   },
   {
     id: 'climatiq', name: 'Climatiq API', category: 'Carbon',
     description: "Base de facteurs d'emission — 40 000+ facteurs GHG Protocol certifies",
-    status: 'connected', color: '#16a34a', authType: 'apikey',
+    status: 'connected', backendStatus: 'live', color: '#16a34a', authType: 'apikey',
     lastSync: 'il y a 30min', records: 156,
     coverage: { emissions: true, energy: false, hr: false, finance: false, waste: true, water: false },
     version: 'v3', endpoint: 'https://api.climatiq.io/v3'
@@ -125,35 +123,35 @@ const CONNECTORS: Connector[] = [
   {
     id: 'carbon-interface', name: 'Carbon Interface', category: 'Carbon',
     description: "Calcul d'empreinte carbone — transport, energie, expeditions",
-    status: 'available', color: '#0f766e', authType: 'apikey',
+    status: 'available', backendStatus: 'demo', color: '#0f766e', authType: 'apikey',
     coverage: { emissions: true, energy: false, hr: false, finance: false, waste: false, water: false },
     version: 'v1', endpoint: 'https://www.carboninterface.com/api/v1'
   },
   {
     id: 'pennylane', name: 'Pennylane', category: 'ERP',
     description: 'Comptabilité française cloud — import FEC + calcul Scope 3 ADEME',
-    status: 'available', color: '#7c3aed', authType: 'apikey',
+    status: 'available', backendStatus: 'demo', color: '#7c3aed', authType: 'apikey',
     coverage: { emissions: true, energy: false, hr: false, finance: true, waste: false, water: false },
     version: 'API v1', endpoint: 'https://app.pennylane.com/api/external/v1'
   },
   {
     id: 'cegid', name: 'Cegid', category: 'ERP',
     description: 'ERP/compta PME français — export FEC pour Scope 3 automatique',
-    status: 'available', color: '#0284c7', authType: 'apikey',
+    status: 'available', backendStatus: 'demo', color: '#0284c7', authType: 'apikey',
     coverage: { emissions: true, energy: false, hr: false, finance: true, waste: false, water: false },
     version: 'FEC Import', endpoint: 'Export FEC depuis Cegid'
   },
   {
     id: 'sage', name: 'Sage', category: 'ERP',
     description: 'Logiciel de gestion Sage — fichier FEC → émissions Scope 3 ADEME',
-    status: 'available', color: '#16a34a', authType: 'apikey',
+    status: 'available', backendStatus: 'demo', color: '#16a34a', authType: 'apikey',
     coverage: { emissions: true, energy: false, hr: false, finance: true, waste: false, water: false },
     version: 'FEC Import', endpoint: 'Export FEC depuis Sage'
   },
   {
     id: 'sage-cegid', name: 'Sage / Cegid', category: 'ERP',
     description: 'Import FEC comptable → calcul automatique Scope 3',
-    status: 'available', color: '#f97316', authType: 'fec_import',
+    status: 'available', backendStatus: 'demo', color: '#f97316', authType: 'fec_import',
     coverage: { emissions: true, energy: false, hr: false, finance: true, waste: false, water: false },
     version: 'FEC Import', endpoint: 'Export FEC depuis Sage/Cegid'
   },
@@ -170,39 +168,29 @@ const SYNC_VOLUME = [
 ]
 
 const RECENT_ACTIVITY = [
-  { id: 1, connector: 'SAP S/4HANA', action: 'Synchronisation reussie', time: 'il y a 2h', color: '#16a34a' },
-  { id: 2, connector: 'Workday', action: 'Synchronisation reussie', time: 'il y a 1h', color: '#16a34a' },
-  { id: 3, connector: 'Schneider Electric', action: 'Synchronisation reussie', time: 'il y a 15min', color: '#16a34a' },
-  { id: 4, connector: 'SAP SuccessFactors', action: 'Erreur : Token OAuth expire', time: 'il y a 14h', color: '#dc2626' },
-  { id: 5, connector: 'Climatiq API', action: 'Synchronisation reussie', time: 'il y a 30min', color: '#16a34a' },
-  { id: 6, connector: 'NetSuite', action: 'Synchronisation reussie', time: 'il y a 6h', color: '#16a34a' },
-  { id: 7, connector: 'SAP S/4HANA', action: 'Parametres mis a jour', time: 'il y a 5h', color: '#0891b2' },
-  { id: 8, connector: 'Oracle Fusion', action: 'Connecteur configure', time: 'il y a 1j', color: '#0891b2' },
-  { id: 9, connector: 'Workday', action: 'Mapping ESG mis a jour', time: 'il y a 2j', color: '#0891b2' },
-  { id: 10, connector: 'Schneider Electric', action: 'Alerte : volume eleve detecte', time: 'il y a 3j', color: '#d97706' },
+  { id: 1, connector: 'Schneider Electric', action: 'Synchronisation réussie — 4 200 points de mesure', time: 'il y a 15min', color: '#16a34a' },
+  { id: 2, connector: 'Climatiq API', action: 'Facteurs d\'émission mis à jour (156 facteurs)', time: 'il y a 30min', color: '#16a34a' },
+  { id: 3, connector: 'Schneider Electric', action: 'Synchronisation réussie', time: 'il y a 2h', color: '#16a34a' },
+  { id: 4, connector: 'Climatiq API', action: 'Synchronisation réussie', time: 'il y a 4h', color: '#16a34a' },
+  { id: 5, connector: 'Schneider Electric', action: 'Alerte : pic de consommation détecté (site B)', time: 'il y a 6h', color: '#d97706' },
+  { id: 6, connector: 'Schneider Electric', action: 'Synchronisation réussie', time: 'il y a 8h', color: '#16a34a' },
+  { id: 7, connector: 'Climatiq API', action: 'Synchronisation réussie', time: 'il y a 1j', color: '#16a34a' },
+  { id: 8, connector: 'Schneider Electric', action: 'Synchronisation réussie', time: 'il y a 1j', color: '#16a34a' },
 ]
 
 const MOCK_LOGS = [
-  { id: 1, connector: 'SAP S/4HANA', ts: '2026-03-21 10:42:15', status: 'success', records: 1250, duration: '1m 12s', message: 'Synchronisation complete' },
-  { id: 2, connector: 'Workday', ts: '2026-03-21 10:30:00', status: 'success', records: 890, duration: '0m 58s', message: 'Synchronisation complete' },
-  { id: 3, connector: 'Schneider Electric', ts: '2026-03-21 10:15:22', status: 'success', records: 4200, duration: '2m 04s', message: 'Synchronisation complete' },
-  { id: 4, connector: 'SAP SuccessFactors', ts: '2026-03-21 09:50:11', status: 'error', records: 0, duration: '0m 03s', message: "Token OAuth expire — renouveler l'authentification" },
-  { id: 5, connector: 'Climatiq API', ts: '2026-03-21 09:30:45', status: 'success', records: 156, duration: '0m 22s', message: 'Facteurs emission mis a jour' },
-  { id: 6, connector: 'NetSuite', ts: '2026-03-21 08:00:00', status: 'success', records: 342, duration: '1m 45s', message: 'Synchronisation complete' },
-  { id: 7, connector: 'SAP S/4HANA', ts: '2026-03-21 06:42:15', status: 'warning', records: 1198, duration: '1m 32s', message: '52 enregistrements ignores (schema invalide)' },
-  { id: 8, connector: 'Workday', ts: '2026-03-21 04:30:00', status: 'success', records: 890, duration: '0m 55s', message: 'Synchronisation complete' },
-  { id: 9, connector: 'Schneider Electric', ts: '2026-03-21 02:15:22', status: 'success', records: 4200, duration: '2m 01s', message: 'Synchronisation complete' },
-  { id: 10, connector: 'NetSuite', ts: '2026-03-21 00:00:00', status: 'success', records: 342, duration: '1m 41s', message: 'Synchronisation complete' },
-  { id: 11, connector: 'SAP S/4HANA', ts: '2026-03-20 22:42:15', status: 'success', records: 1250, duration: '1m 09s', message: 'Synchronisation complete' },
-  { id: 12, connector: 'Climatiq API', ts: '2026-03-20 21:30:45', status: 'success', records: 156, duration: '0m 19s', message: 'Facteurs emission mis a jour' },
-  { id: 13, connector: 'Workday', ts: '2026-03-20 20:30:00', status: 'warning', records: 872, duration: '1m 02s', message: '18 profils collaborateurs incomplets' },
-  { id: 14, connector: 'Schneider Electric', ts: '2026-03-20 18:15:22', status: 'success', records: 4200, duration: '1m 58s', message: 'Synchronisation complete' },
-  { id: 15, connector: 'SAP S/4HANA', ts: '2026-03-20 16:42:15', status: 'success', records: 1250, duration: '1m 15s', message: 'Synchronisation complete' },
-  { id: 16, connector: 'NetSuite', ts: '2026-03-20 14:00:00', status: 'success', records: 342, duration: '1m 44s', message: 'Synchronisation complete' },
-  { id: 17, connector: 'SAP SuccessFactors', ts: '2026-03-20 10:50:11', status: 'error', records: 0, duration: '0m 02s', message: "Connexion refusee — token expire" },
-  { id: 18, connector: 'Climatiq API', ts: '2026-03-20 09:30:45', status: 'success', records: 156, duration: '0m 21s', message: 'Facteurs emission mis a jour' },
-  { id: 19, connector: 'Workday', ts: '2026-03-20 08:30:00', status: 'success', records: 890, duration: '0m 57s', message: 'Synchronisation complete' },
-  { id: 20, connector: 'Schneider Electric', ts: '2026-03-20 06:15:22', status: 'success', records: 4200, duration: '2m 06s', message: 'Synchronisation complete' },
+  { id: 1,  connector: 'Schneider Electric', ts: '2026-05-01 10:15:22', status: 'success', records: 4200, duration: '2m 04s', message: 'Synchronisation complète — consommation énergie' },
+  { id: 2,  connector: 'Climatiq API',        ts: '2026-05-01 09:30:45', status: 'success', records: 156,  duration: '0m 22s', message: 'Facteurs d\'émission mis à jour (GHG Protocol)' },
+  { id: 3,  connector: 'Schneider Electric', ts: '2026-05-01 08:15:22', status: 'success', records: 4200, duration: '2m 01s', message: 'Synchronisation complète' },
+  { id: 4,  connector: 'Climatiq API',        ts: '2026-05-01 07:30:45', status: 'success', records: 156,  duration: '0m 19s', message: 'Facteurs d\'émission mis à jour' },
+  { id: 5,  connector: 'Schneider Electric', ts: '2026-05-01 06:15:22', status: 'warning', records: 4187, duration: '2m 12s', message: '13 capteurs hors ligne — données partielles (Site B)' },
+  { id: 6,  connector: 'Schneider Electric', ts: '2026-05-01 04:15:22', status: 'success', records: 4200, duration: '1m 58s', message: 'Synchronisation complète' },
+  { id: 7,  connector: 'Climatiq API',        ts: '2026-05-01 03:30:45', status: 'success', records: 156,  duration: '0m 21s', message: 'Facteurs d\'émission mis à jour' },
+  { id: 8,  connector: 'Schneider Electric', ts: '2026-05-01 02:15:22', status: 'success', records: 4200, duration: '2m 03s', message: 'Synchronisation complète' },
+  { id: 9,  connector: 'Schneider Electric', ts: '2026-05-01 00:15:22', status: 'success', records: 4200, duration: '1m 59s', message: 'Synchronisation complète' },
+  { id: 10, connector: 'Climatiq API',        ts: '2026-04-30 21:30:45', status: 'success', records: 156,  duration: '0m 20s', message: 'Facteurs d\'émission mis à jour' },
+  { id: 11, connector: 'Schneider Electric', ts: '2026-04-30 18:15:22', status: 'success', records: 4200, duration: '2m 06s', message: 'Synchronisation complète' },
+  { id: 12, connector: 'Climatiq API',        ts: '2026-04-30 15:30:45', status: 'success', records: 156,  duration: '0m 18s', message: 'Facteurs d\'émission mis à jour' },
 ]
 
 const ESG_MAPPING_ROWS = [
@@ -216,17 +204,24 @@ const ESG_MAPPING_ROWS = [
 
 // ─── Helper components ────────────────────────────────────────────────────────
 
-function StatusBadge({ status }: { status: ConnectorStatus }) {
+function StatusBadge({ status, backendStatus }: { status: ConnectorStatus; backendStatus?: BackendStatus }) {
   const map: Record<ConnectorStatus, { label: string; cls: string }> = {
-    connected: { label: 'Connecte', cls: 'bg-green-100 text-green-700' },
+    connected: { label: 'Connecté', cls: 'bg-green-100 text-green-700' },
     available: { label: 'Disponible', cls: 'bg-gray-100 text-gray-600' },
     error: { label: 'Erreur', cls: 'bg-red-100 text-red-700' },
   }
   const { label, cls } = map[status]
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>
-      {label}
-    </span>
+    <div className="flex items-center gap-1">
+      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>
+        {label}
+      </span>
+      {backendStatus === 'demo' && (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+          Démo
+        </span>
+      )}
+    </div>
   )
 }
 
@@ -542,7 +537,7 @@ function ConnectorCard({
             </div>
           </div>
         </div>
-        <StatusBadge status={c.status} />
+        <StatusBadge status={c.status} backendStatus={c.backendStatus} />
       </div>
 
       {/* Description */}
@@ -551,11 +546,18 @@ function ConnectorCard({
       {/* Coverage */}
       <CoverageBar coverage={c.coverage} />
 
-      {/* Sync info */}
-      {c.status === 'connected' && c.lastSync && (
+      {/* Sync info — live connectors only */}
+      {c.status === 'connected' && c.backendStatus === 'live' && c.lastSync && (
         <div className="flex items-center justify-between text-xs text-gray-500 bg-green-50 rounded px-2 py-1.5">
           <span className="flex items-center gap-1"><Clock size={11} />{t('connectors.lastSync')}: {c.lastSync}</span>
           <span className="font-medium">{((c.records ?? 0) || 0).toLocaleString()} {t('connectors.records')}</span>
+        </div>
+      )}
+      {/* Demo notice */}
+      {c.backendStatus === 'demo' && (
+        <div className="flex items-start gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded px-2 py-1.5">
+          <Info size={11} className="flex-shrink-0 mt-0.5" />
+          <span>Intégration native en cours de développement — disponible prochainement.</span>
         </div>
       )}
       {c.status === 'error' && c.errorMsg && (
@@ -574,7 +576,7 @@ function ConnectorCard({
           <Settings size={13} />
           {t('connectors.configure')}
         </button>
-        {c.status === 'connected' && (
+        {c.status === 'connected' && c.backendStatus === 'live' && (
           <button
             onClick={handleSync}
             disabled={syncing}

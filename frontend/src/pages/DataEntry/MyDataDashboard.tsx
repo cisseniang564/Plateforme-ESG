@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import BackButton from '@/components/common/BackButton';
 import {
   Database,
@@ -19,6 +20,8 @@ import {
   CheckCircle,
   Clock,
   XCircle,
+  Zap,
+  Bot,
 } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
@@ -63,23 +66,18 @@ const PILLARS = [
 ];
 
 export default function MyDataDashboard() {
+  const [searchParams] = useSearchParams();
   const [data, setData] = useState<DataEntry[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
-  
-  useEffect(() => {
-    loadData();
-    loadStats();
-  }, []); // Charger au montage
 
-  
-  // Filtres
+  // Pré-filtre depuis URL (ex: /app/my-data?source=fec_import après import FEC)
   const [filters, setFilters] = useState({
     pillar: '',
     search: '',
     verification_status: '',
-    collection_method: '',
+    collection_method: searchParams.get('source') ?? '',
   });
 
   useEffect(() => {
@@ -278,6 +276,27 @@ export default function MyDataDashboard() {
         </div>
       )}
 
+      {/* FEC import notice */}
+      {stats && (stats.by_collection_method['fec_import'] ?? 0) > 0 && (
+        <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-300 rounded-xl animate-fade-in">
+          <Zap className="h-5 w-5 text-amber-600 flex-shrink-0" />
+          <div className="flex-1">
+            <span className="font-semibold text-amber-900">
+              {stats.by_collection_method['fec_import']} entrée{stats.by_collection_method['fec_import'] > 1 ? 's' : ''} importée{stats.by_collection_method['fec_import'] > 1 ? 's' : ''} via FEC
+            </span>
+            <span className="text-sm text-amber-700 ml-2">
+              — catégorisées et agrégées automatiquement depuis votre Fichier des Écritures Comptables.
+            </span>
+          </div>
+          <button
+            onClick={() => setFilters({ ...filters, collection_method: 'fec_import' })}
+            className="text-xs font-semibold text-amber-700 hover:text-amber-900 underline whitespace-nowrap"
+          >
+            Voir uniquement
+          </button>
+        </div>
+      )}
+
       {/* Pillar distribution + verification summary */}
       {stats && stats.total > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -384,7 +403,10 @@ export default function MyDataDashboard() {
             >
               <option value="">Toutes</option>
               <option value="manual">Saisie manuelle</option>
+              <option value="manual_scope3">Saisie Scope 3</option>
               <option value="csv_import">Import CSV</option>
+              <option value="fec_import">Import FEC</option>
+              <option value="automatic">Automatique (IA)</option>
             </select>
           </div>
 
@@ -467,9 +489,12 @@ export default function MyDataDashboard() {
                           </div>
                           <div>
                             <p className="font-medium text-gray-900">{entry.metric_name}</p>
-                            {entry.category && (
-                              <p className="text-xs text-gray-500">{entry.category}</p>
-                            )}
+                            <p className="text-xs text-gray-400">
+                              {entry.category || '—'}
+                              {entry.data_source && (
+                                <span className="ml-2 text-gray-300">· {entry.data_source}</span>
+                              )}
+                            </p>
                           </div>
                         </div>
                       </td>
@@ -493,19 +518,39 @@ export default function MyDataDashboard() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-1">
-                          {entry.collection_method === 'csv_import' ? (
-                            <>
+                        {(() => {
+                          const cm = entry.collection_method;
+                          if (cm === 'fec_import') return (
+                            <div className="flex items-center gap-1">
+                              <Zap className="h-3 w-3 text-amber-600" />
+                              <span className="text-xs font-medium text-amber-700">FEC</span>
+                            </div>
+                          );
+                          if (cm === 'csv_import') return (
+                            <div className="flex items-center gap-1">
                               <UploadIcon className="h-3 w-3 text-purple-600" />
-                              <span className="text-xs text-purple-700">Import</span>
-                            </>
-                          ) : (
-                            <>
+                              <span className="text-xs text-purple-700">CSV</span>
+                            </div>
+                          );
+                          if (cm === 'automatic') return (
+                            <div className="flex items-center gap-1">
+                              <Bot className="h-3 w-3 text-cyan-600" />
+                              <span className="text-xs text-cyan-700">Auto IA</span>
+                            </div>
+                          );
+                          if (cm === 'manual_scope3') return (
+                            <div className="flex items-center gap-1">
+                              <Edit className="h-3 w-3 text-green-600" />
+                              <span className="text-xs text-green-700">Scope 3</span>
+                            </div>
+                          );
+                          return (
+                            <div className="flex items-center gap-1">
                               <Edit className="h-3 w-3 text-blue-600" />
                               <span className="text-xs text-blue-700">Manuel</span>
-                            </>
-                          )}
-                        </div>
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 text-xs font-medium rounded inline-flex items-center gap-1 ${statusBadge.color}`}>
