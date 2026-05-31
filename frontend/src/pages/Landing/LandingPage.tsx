@@ -1,15 +1,19 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation, Trans } from 'react-i18next';
+import { usePageSeo } from '@/hooks/usePageSeo';
 import {
   TrendingUp, Shield, Zap, Users, FileText, BarChart3,
   CheckCircle, ArrowRight, Sparkles, Award, ChevronDown,
   Brain, Building2, Database, Plus, Minus, Star, Check, X,
   Play, Leaf, Globe, ChevronRight, Truck, ClipboardList,
   FlameKindling, Scale, PackageSearch, ShieldCheck, TrendingDown,
-  Flame, Lock, Hash, Target, Layers, Plug, Radio, Link2,
+  Flame, Lock, Hash, Target, Layers, Plug, Radio, Link2, Server, Eye,
   Table2, PieChart, FileSpreadsheet, Activity, Search, Bell,
   GitMerge, BarChart2, AlertTriangle, BookOpen, Upload, RefreshCw,
   CheckSquare, TrendingUp as Trending, Cpu, MapPin, Code2,
+  Menu, X as XIcon, Clock, Calculator, FileCheck, ArrowUpRight,
+  Newspaper, GraduationCap, ChevronLeft,
 } from 'lucide-react';
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
@@ -50,13 +54,44 @@ function useInterval(cb: () => void, delay: number | null) {
   }, [delay]);
 }
 
+// ─── Rotating text ───────────────────────────────────────────────────────────
+const ROTATING_WORDS = [
+  { key: 'carbon', text: 'votre carbone', color: 'from-orange-400 to-amber-300' },
+  { key: 'csrd', text: 'votre CSRD', color: 'from-blue-400 to-cyan-300' },
+  { key: 'suppliers', text: 'vos fournisseurs', color: 'from-violet-400 to-purple-300' },
+  { key: 'compliance', text: 'votre conformité', color: 'from-emerald-400 to-green-300' },
+  { key: 'risks', text: 'vos risques ESG', color: 'from-red-400 to-rose-300' },
+];
+
+function useRotatingText(interval = 2800) {
+  const [index, setIndex] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setIsAnimating(true);
+      setTimeout(() => {
+        setIndex(i => (i + 1) % ROTATING_WORDS.length);
+        setIsAnimating(false);
+      }, 300);
+    }, interval);
+    return () => clearInterval(id);
+  }, [interval]);
+  return { word: ROTATING_WORDS[index], isAnimating };
+}
+
+// ─── Count-up (inline span) ──────────────────────────────────────────────────
+function CountUp({ end, duration = 2000, started = true }: { end: number; duration?: number; started?: boolean }) {
+  const count = useCounter(end, duration, started);
+  return <>{count}</>;
+}
+
 // ─── Stat counter ─────────────────────────────────────────────────────────────
 function StatCounter({ value, suffix, label, started }: { value: number; suffix: string; label: string; started: boolean }) {
   const count = useCounter(value, 2000, started);
   return (
     <div className="text-center">
       <div className="text-4xl lg:text-5xl font-extrabold text-white tabular-nums">{count}{suffix}</div>
-      <div className="text-sm text-green-300 mt-1 font-medium">{label}</div>
+      {label && <div className="text-sm text-green-300 mt-1 font-medium">{label}</div>}
     </div>
   );
 }
@@ -102,6 +137,7 @@ const MODULES = [
     desc: 'Calculez vos émissions indirectes en amont et aval selon les 15 catégories officielles du GHG Protocol avec les facteurs d\'émission ADEME intégrés.',
     badges: ['15 catégories Scope 3', 'Facteurs ADEME', 'Calcul automatique', 'Benchmarks sectoriels'],
     preview: 'scope3',
+    featurePath: '/features/bilan-carbone',
   },
   {
     id: 'materiality',
@@ -115,6 +151,7 @@ const MODULES = [
     desc: 'Outil interactif de double matérialité : questionnaire parties prenantes, matrice drag & drop, suggestions IA sectorielles et export PDF certifiable.',
     badges: ['Drag & drop', 'Questionnaire parties prenantes', 'Suggestions IA', 'Export rapport'],
     preview: 'materiality',
+    featurePath: '/features/double-materialite',
   },
   {
     id: 'decarb',
@@ -128,6 +165,7 @@ const MODULES = [
     desc: 'Construisez votre trajectoire de décarbonation alignée SBTi 1.5°C. 24 actions pré-configurées avec ROI, scénarios what-if et graphique 2024–2050.',
     badges: ['Trajectoire SBTi 1.5°C', '24 actions + ROI', 'Scénarios What-if', 'Net Zero 2050'],
     preview: 'decarb',
+    featurePath: '/features/decarbonation',
   },
   {
     id: 'ia',
@@ -141,6 +179,7 @@ const MODULES = [
     desc: 'Intelligence artificielle générative pour votre ESG : chatbot expert, OCR factures fournisseurs, détection anomalies en temps réel et prédictions tendances.',
     badges: ['Chatbot ESG expert', 'OCR factures', 'Détection anomalies', 'Prédictions IA'],
     preview: 'ia',
+    featurePath: '/features/ia-automatisation',
   },
   {
     id: 'supplychain',
@@ -150,10 +189,11 @@ const MODULES = [
     lightBg: 'bg-blue-50',
     lightText: 'text-blue-700',
     name: 'Supply Chain ESG',
-    tagline: 'Fournisseurs · Due diligence · Vigilance',
-    desc: 'Évaluez vos fournisseurs sur 6 dimensions ESG, envoyez des questionnaires, gérez la due diligence et assurez votre conformité Loi Devoir de Vigilance.',
-    badges: ['Scoring 6 dimensions', 'Questionnaires auto', 'Due diligence', 'Loi 2017-399'],
+    tagline: 'Fournisseurs · Scoring ESG · CSDDD',
+    desc: 'Évaluez vos fournisseurs sur 6 dimensions ESG, envoyez des questionnaires et structurez votre démarche de due diligence pour la CSDDD (directive UE 2024/1760).',
+    badges: ['Scoring 6 dimensions', 'Questionnaires auto', 'Suivi fournisseurs', 'CSDDD-ready'],
     preview: 'supply',
+    featurePath: '/features/supply-chain',
   },
   {
     id: 'compliance',
@@ -164,8 +204,8 @@ const MODULES = [
     lightText: 'text-violet-700',
     name: 'Multi-Réglementaire',
     tagline: '10 référentiels · Check conformité auto',
-    desc: 'Suivi centralisé de vos obligations : CSRD, Taxonomie UE, DPEF, Loi Sapin II, Devoir de vigilance, SFDR, ISO 14001, ISO 26000, LkSG et Article 29 LEC.',
-    badges: ['CSRD & ESRS', 'Loi Sapin II', 'SFDR & ISO', 'Roadmap échéances'],
+    desc: 'Suivi centralisé de vos obligations : CSRD/ESRS, Taxonomie UE, BEGES, SFDR, CSDDD, Devoir de vigilance (Loi 2017-399), Sapin 2, SBTi, GRI et TCFD — 10 référentiels couverts.',
+    badges: ['CSRD & ESRS', 'Taxonomie UE', 'SFDR & BEGES', 'Roadmap échéances'],
     preview: 'compliance',
   },
   {
@@ -176,10 +216,11 @@ const MODULES = [
     lightBg: 'bg-slate-50',
     lightText: 'text-slate-700',
     name: 'Piste d\'Audit',
-    tagline: 'Traçabilité · SHA-256 · Certifiable',
-    desc: 'Journal d\'audit complet et infalsifiable : qui / quand / quoi / où. Versionning avant/après, pièces justificatives, empreintes SHA-256 et export pour auditeurs.',
-    badges: ['Journal complet', 'Versionning données', 'Intégrité SHA-256', 'Export ISAE 3000'],
+    tagline: 'Traçabilité · Versionning · Export auditeurs',
+    desc: 'Journal d\'audit détaillé : qui / quand / quoi / où. Versionning avant/après, pièces justificatives, empreintes SHA-256 par entrée et export complet pour vos auditeurs.',
+    badges: ['Journal complet', 'Versionning données', 'Empreintes SHA-256', 'Export pour auditeurs'],
     preview: 'audit',
+    featurePath: '/features/audit-trail',
   },
   {
     id: 'connectors',
@@ -190,8 +231,8 @@ const MODULES = [
     lightText: 'text-cyan-700',
     name: 'Connecteurs Data',
     tagline: 'SAP · Oracle · Workday · Schneider · Climatiq',
-    desc: 'Ingestion automatisee depuis vos systemes : 11 connecteurs natifs ERP, RH, Energie et Carbone. OAuth2, API keys, certificats. Fini la saisie manuelle Excel.',
-    badges: ['11 connecteurs natifs', 'OAuth2 & API keys', 'Sync temps reel', 'Monitoring flux'],
+    desc: 'Ingestion automatisée depuis vos systèmes : 25 connecteurs natifs ERP, RH, Énergie, CRM, Comptabilité et Carbone. OAuth2, API keys, certificats. Fini la saisie manuelle Excel.',
+    badges: ['25 connecteurs natifs', 'OAuth2 & API keys', 'Sync temps reel', 'Monitoring flux'],
     preview: 'connectors',
   },
   {
@@ -271,6 +312,7 @@ const MODULES = [
     desc: 'Évaluez l\'alignement de vos activités avec la Taxonomie européenne durable : 6 objectifs environnementaux, critères DNSH, critères minimaux sociaux et pourcentage d\'alignement.',
     badges: ['6 objectifs environnementaux', 'Critères DNSH', 'Calcul % alignement', 'Rapport investisseurs'],
     preview: 'taxonomy',
+    featurePath: '/features/taxonomie-ue',
   },
   {
     id: 'benchmarking',
@@ -310,6 +352,7 @@ const MODULES = [
     desc: 'Construisez votre rapport de durabilité CSRD section par section. Suivi de complétion des indicateurs ESRS, score global, et export multi-formats (PDF, Word, Excel, JSON) en 1 clic.',
     badges: ['Sections ESRS structurées', 'Score de complétion /100', 'Export PDF/Word/Excel', 'Prêt pour auditeurs'],
     preview: 'csrdbuilder',
+    featurePath: '/features/csrd-reporting',
   },
   {
     id: 'multistandard',
@@ -1238,8 +1281,8 @@ const WHY_PILLARS = [
     lightText: 'text-emerald-700',
     border: 'border-emerald-100',
     title: 'Conformité totale, zéro angle mort',
-    desc: 'CSRD/ESRS, Taxonomie UE, GRI, CDP, TCFD, SFDR, ISO 14001/26000, Loi Sapin II, Devoir de Vigilance — 10 référentiels couverts nativement. Un seul outil, aucun oubli.',
-    points: ['82 exigences ESRS mappées', 'Gap analysis automatique', 'Roadmap priorisée', 'Rapports certifiables ISAE 3000'],
+    desc: 'CSRD/ESRS, Taxonomie UE, BEGES ADEME, CSDDD, Devoir de vigilance (Loi 2017-399), Sapin 2, SBTi, SFDR, GRI, TCFD — 10 référentiels ESG/climat/anti-corruption couverts. Un seul outil, aucun oubli.',
+    points: ['82 exigences ESRS mappées', 'Gap analysis automatique', 'Roadmap priorisée', 'Export iXBRL/ESEF audit-ready'],
   },
   {
     icon: Lock,
@@ -1248,8 +1291,8 @@ const WHY_PILLARS = [
     lightText: 'text-blue-700',
     border: 'border-blue-100',
     title: 'Données fiables, auditables, sécurisées',
-    desc: 'Piste d\'audit infalsifiable (SHA-256), workflow de validation en 3 étapes, hébergement 100 % en France ISO 27001. Vos données restent vos données.',
-    points: ['Empreintes SHA-256', 'Hébergement France · RGPD', 'Workflow Brouillon → Approuvé', 'Export auditeurs ISAE / Big 4'],
+    desc: 'Journal d\'audit détaillé avec empreintes SHA-256 par entrée, workflow de validation en 3 étapes, hébergement 100 % en France ISO 27001. Vos données restent vos données.',
+    points: ['Empreintes SHA-256', 'Hébergement France · RGPD', 'Workflow Brouillon → Approuvé', 'Export complet pour auditeurs'],
   },
   {
     icon: Brain,
@@ -1268,21 +1311,38 @@ const WHY_PILLARS = [
     lightText: 'text-cyan-700',
     border: 'border-cyan-100',
     title: 'Intégré à votre écosystème dès le J+1',
-    desc: '11 connecteurs natifs (SAP, Oracle, Workday, Enedis, Schneider, Climatiq…), API REST complète, webhooks temps réel et import FEC/CSV. Fini la double saisie.',
-    points: ['11 connecteurs ERP/RH/Energie', 'API REST + OAuth2', 'Webhooks HMAC-SHA256', 'Import FEC · Scope 3 comptable'],
+    desc: '25 connecteurs natifs (SAP, Oracle, Workday, Salesforce, Qonto, Microsoft 365, Enedis…), API REST complète, webhooks temps réel et import FEC/CSV. Fini la double saisie.',
+    points: ['25 connecteurs ERP/CRM/Compta', 'API REST + OAuth2', 'Webhooks HMAC-SHA256', 'Import FEC · Scope 3 comptable'],
   },
 ];
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
+  const { t, i18n } = useTranslation();
+  const lang = (i18n.language || 'fr').split('-')[0];
+  const changeLang = (lng: string) => {
+    i18n.changeLanguage(lng);
+    try { localStorage.setItem('language', lng); } catch { /* noop */ }
+  };
+  const tMod = (m: { id: string; name: string; tagline: string; desc: string }, field: 'name' | 'tagline' | 'desc') =>
+    t(`landing.lp.modules.${m.id}.${field}`, m[field]) as string;
+  const tBadge = (m: { id: string }, i: number, b: string) =>
+    t(`landing.lp.modules.${m.id}.badges.${i}`, b) as string;
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
   const [scrolled, setScrolled] = useState(false);
   const [activeModule, setActiveModule] = useState(0);
   const [autoPlay, setAutoPlay] = useState(true);
+  const [roiEmployees, setRoiEmployees] = useState(150);
+  const [roiHoursMonth, setRoiHoursMonth] = useState(120);
+  const [roiHourlyRate, setRoiHourlyRate] = useState(65);
 
+  const { word: rotatingWord, isAnimating: wordAnimating } = useRotatingText();
   const { ref: heroRef, inView: heroInView } = useInView(0.3);
   const { ref: statsRef, inView: statsInView } = useInView(0.3);
+  const { ref: proofRef, inView: proofInView } = useInView(0.2);
+  const { ref: roiRef, inView: roiInView } = useInView(0.2);
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', h);
@@ -1303,42 +1363,104 @@ export default function LandingPage() {
 
   const plans = [
     {
-      name: 'Starter', desc: 'PME qui débutent leur démarche ESG',
-      monthly: 199, annual: 159,
+      name: 'PME', desc: 'PME soumises CSRD ou supply-chain',
+      monthly: 249, annual: 212,
       color: 'border-gray-200', badge: null, badgeStyle: '',
-      features: ['5 utilisateurs', '50 indicateurs ESG', 'Dashboard & rapports PDF', 'Import CSV', 'Support email 5j/7'],
-      missing: ['IA & Chatbot', 'Supply Chain', 'Piste d\'audit', 'Multi-réglementaire'],
-      cta: 'Commencer gratuitement', primary: false,
+      features: [
+        '25 utilisateurs · 50 organisations',
+        '100 000 appels API / mois',
+        'CSRD / ESRS complet',
+        'Bilan Carbone Scope 1/2/3',
+        'Import FEC (Sage, Cegid, Pennylane)',
+        'Taxonomie UE & DPEF',
+        'Supply Chain ESG & due diligence',
+        'Plan décarbonation SBTi',
+        'Support email 5j/7',
+      ],
+      missing: ['IA narrative', 'Connecteurs avancés', 'SSO/SAML'],
+      cta: 'Essai gratuit 14 jours', primary: false,
     },
     {
-      name: 'Business', desc: 'ETI et entreprises en croissance',
-      monthly: 499, annual: 399,
+      name: 'ETI', desc: 'ETI en transformation ESG',
+      monthly: 599, annual: 509,
       color: 'border-green-500', badge: 'Le plus populaire', badgeStyle: 'bg-green-500 text-white',
-      features: ['Utilisateurs illimités', '100+ indicateurs ESRS', 'Tous les 22 modules inclus', 'IA & Chatbot ESG', 'Import FEC / Scope 3 comptable', 'Scores ESG automatiques', 'Workflow validation données', 'Analyse ESRS & Gap analysis', 'Taxonomie UE & Benchmarking', 'Supply Chain ESG & due diligence', 'Piste d\'audit ISAE', 'Décarbonation + SBTi', 'Multi-réglementaire (10)', 'Support prioritaire 7j/7'],
-      missing: ['White-label', 'SLA 99.9%'],
+      features: [
+        '100 utilisateurs · 250 organisations',
+        '1 000 000 appels API / mois',
+        'Tout PME inclus',
+        'IA narrative & recommandations',
+        'Connecteurs ERP avancés',
+        'SFDR & multi-réglementaire',
+        'Benchmarking sectoriel',
+        'Webhooks & intégrations',
+        'Piste d\'audit détaillée + SHA-256',
+        'Support prioritaire 7j/7',
+      ],
+      missing: ['SSO/SAML', 'Marque blanche'],
       cta: 'Essai gratuit 14 jours', primary: true,
     },
     {
-      name: 'Enterprise', desc: 'Grands groupes, besoins sur mesure',
-      monthly: null, annual: null,
-      color: 'border-slate-700', badge: 'Sur mesure', badgeStyle: 'bg-slate-800 text-white',
-      features: ['Tout Business inclus', 'White-label & branding', 'SLA garanti 99.9%', 'Intégrations ERP/API', 'Onboarding & formation', 'Account manager dédié', 'Audit conformité annuel', 'Hébergement privé option'],
-      missing: [],
-      cta: 'Contacter les ventes', primary: false,
+      name: 'Groupe', desc: 'Grands groupes & reporting consolidé',
+      monthly: 1199, annual: 1019,
+      color: 'border-slate-700', badge: 'Multi-entités', badgeStyle: 'bg-slate-800 text-white',
+      features: [
+        '500 utilisateurs · orgs illimitées',
+        '5 000 000 appels API / mois',
+        'Tout ETI inclus',
+        'SSO / SAML (Azure AD, Okta)',
+        'Marque blanche & branding',
+        'Consolidation IFRS 10 multi-entités',
+        'Onboarding dédié',
+        'Account manager attitré',
+        'Rétention données 84 mois',
+      ],
+      missing: ['SLA 99,9% garanti', 'On-premise'],
+      cta: 'Démarrer maintenant', primary: false,
     },
   ];
 
   const faqs = [
     { q: 'Combien de temps pour déployer la plateforme ?', a: 'La mise en service prend 2 à 3 jours ouvrés. Nos équipes assurent l\'onboarding, la configuration des indicateurs et la formation de vos équipes.' },
-    { q: 'La plateforme est-elle vraiment conforme CSRD ?', a: 'Oui. ESGFlow intègre l\'ensemble des indicateurs ESRS requis par la CSRD. Nos rapports sont audités par des cabinets spécialisés et notre piste d\'audit est certifiable ISAE 3000.' },
+    { q: 'La plateforme est-elle vraiment conforme CSRD ?', a: 'ESGFlow couvre les standards ESRS principaux (E1-E5, S1-S4, G1) et génère le format iXBRL/ESEF exigé par l\'ESMA. Notre journal d\'audit détaillé avec empreintes SHA-256 et export pour auditeurs facilite vos revues internes et externes.' },
     { q: 'Peut-on importer nos données depuis Excel ou ERP ?', a: 'Absolument. La plateforme accepte les imports CSV/Excel et propose des connecteurs vers les principaux ERP (SAP, Oracle, Sage). Notre API RESTful permet des intégrations sur mesure.' },
     { q: 'Où sont hébergées les données ?', a: 'Toutes les données sont hébergées en France, dans des datacenters certifiés ISO 27001. Nous n\'utilisons aucun cloud américain. La conformité RGPD est garantie contractuellement.' },
     { q: 'Que couvre le module Supply Chain ESG ?', a: 'Le module couvre l\'évaluation des fournisseurs sur 6 dimensions ESG, l\'envoi de questionnaires automatisés, la gestion de la due diligence et le suivi du plan de vigilance conformément à la Loi 2017-399.' },
-    { q: 'Y a-t-il un engagement de durée ?', a: 'Non. Les plans Starter et Business sont sans engagement, résiliables à tout moment. Les contrats annuels bénéficient de 20% de réduction.' },
+    { q: 'Y a-t-il un engagement de durée ?', a: 'Non. Les plans PME, ETI et Groupe sont sans engagement, résiliables à tout moment. Les contrats annuels bénéficient de 15% de réduction.' },
     { q: 'Comment fonctionne l\'import FEC pour le Scope 3 ?', a: 'Exportez votre FEC depuis Sage, Cegid ou Pennylane et importez-le directement dans ESGFlow. La plateforme analyse automatiquement vos comptes 60x/61x/62x et calcule vos émissions Scope 3 par catégorie de dépenses en appliquant les facteurs d\'émission ADEME.' },
     { q: 'Comment fonctionne le Workflow de Validation ?', a: 'Chaque saisie ESG passe par 3 étapes : Brouillon → En révision → Approuvé. Les validateurs peuvent approuver ou rejeter avec un motif. Chaque action est automatiquement enregistrée dans la Piste d\'Audit avec date, utilisateur et contexte.' },
     { q: 'Qu\'est-ce que l\'analyse ESRS / Gap analysis ?', a: 'Ce module compare vos données et processus existants aux 82 exigences des normes ESRS (E1 à G1). Il génère automatiquement une analyse des écarts avec une roadmap priorisée pour atteindre la conformité CSRD.' },
   ];
+
+  usePageSeo({
+    id: 'landing',
+    title: 'ESG Flow — Plateforme ESG tout-en-un pour la conformité CSRD, Taxonomie UE & Bilan Carbone',
+    description: 'ESG Flow centralise votre conformité ESG en une seule plateforme : CSRD, Taxonomie UE, SFDR, SBTi, Bilan Carbone, Vigilance. 22 modules, hébergé en France, RGPD. Essai gratuit 14 jours.',
+    keywords: 'ESG, CSRD, Taxonomie UE, SFDR, SBTi, bilan carbone, RSE, conformité ESG, plateforme ESG, reporting durabilité, ESRS, GHG Protocol, ADEME, devoir de vigilance, CSDDD',
+    url: 'https://greenconnect.cloud/',
+    ogImage: 'https://greenconnect.cloud/og/landing.png',
+    ogTitle: 'ESG Flow — Conformité ESG simplifiée',
+    ogDescription: '22 modules ESG dans une seule plateforme. CSRD, Taxonomie UE, SFDR, Bilan Carbone, SBTi. Hébergé en France. Essai gratuit.',
+    faqJsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faqs.slice(0, 5).map(f => ({
+        '@type': 'Question',
+        name: f.q,
+        acceptedAnswer: { '@type': 'Answer', text: f.a },
+      })),
+    },
+  });
+
+  const langToggle = (
+    <div className={`flex items-center rounded-lg border overflow-hidden text-xs font-bold ${scrolled ? 'border-gray-200' : 'border-white/30'}`}>
+      {(['fr', 'en'] as const).map((lng) => (
+        <button key={lng} onClick={() => changeLang(lng)} aria-label={lng === 'fr' ? 'Français' : 'English'} aria-pressed={lang === lng}
+          className={`tap-target px-2.5 transition-colors ${lang === lng ? (scrolled ? 'bg-green-600 text-white' : 'bg-white/25 text-white') : (scrolled ? 'text-gray-500 hover:text-gray-900 hover:bg-gray-50' : 'text-white/70 hover:text-white hover:bg-white/10')}`}>
+          {lng.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-white antialiased font-sans">
@@ -1354,7 +1476,7 @@ export default function LandingPage() {
           </Link>
 
           <div className="hidden md:flex items-center gap-1">
-            {[{ key: 'modules', label: 'Modules' }, { key: 'solutions', label: 'Solutions' }].map(({ key, label }) => (
+            {[{ key: 'modules', label: t('landing.lp.nav.modulesLabel', 'Modules') }, { key: 'solutions', label: t('landing.lp.nav.solutionsLabel', 'Solutions') }].map(({ key, label }) => (
               <div key={key} className="relative" onMouseEnter={() => setOpenMenu(key)} onMouseLeave={() => setOpenMenu(null)}>
                 <button className={`px-4 py-2 font-medium transition-colors flex items-center gap-1 rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>
                   {label} <ChevronDown className="h-3.5 w-3.5" />
@@ -1367,14 +1489,14 @@ export default function LandingPage() {
                           <m.icon className={`h-4 w-4 ${m.lightText}`} />
                         </div>
                         <div>
-                          <div className="text-sm font-semibold text-gray-900">{m.name}</div>
-                          <div className="text-xs text-gray-500">{m.tagline}</div>
+                          <div className="text-sm font-semibold text-gray-900">{tMod(m, 'name')}</div>
+                          <div className="text-xs text-gray-500">{tMod(m, 'tagline')}</div>
                         </div>
                       </a>
                     )) : [
-                      { icon: Building2, title: 'PME & ETI', desc: 'Solution complète accessible' },
-                      { icon: Layers, title: 'Grands Groupes', desc: 'CAC40, SBF120, Enterprise' },
-                      { icon: Globe, title: 'Cabinets Conseil', desc: 'Multi-clients, white-label' },
+                      { icon: Building2, title: t('landing.lp.nav.sol1Title', 'PME & ETI'), desc: t('landing.lp.nav.sol1Desc', 'Solution complète accessible') },
+                      { icon: Layers, title: t('landing.lp.nav.sol2Title', 'Grands Groupes'), desc: t('landing.lp.nav.sol2Desc', 'CAC40, SBF120, Enterprise') },
+                      { icon: Globe, title: t('landing.lp.nav.sol3Title', 'Cabinets Conseil'), desc: t('landing.lp.nav.sol3Desc', 'Multi-clients, white-label') },
                     ].map((s, i) => (
                       <Link key={i} to="/register" className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
                         <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
@@ -1390,22 +1512,48 @@ export default function LandingPage() {
                 )}
               </div>
             ))}
-            <button onClick={() => scrollTo('tarifs')} className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>Tarifs</button>
-            <button onClick={() => scrollTo('faq')} className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>FAQ</button>
+            <button onClick={() => scrollTo('tarifs')} className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>{t('landing.lp.nav.pricing', 'Tarifs')}</button>
+            <button onClick={() => scrollTo('qui-sommes-nous')} className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>{t('landing.lp.nav.about', 'À propos')}</button>
+            <button onClick={() => scrollTo('faq')} className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>{t('landing.lp.nav.faqLabel', 'FAQ')}</button>
             <div className="h-5 w-px bg-gray-300 mx-2" />
-            <Link to="/login" className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600' : 'text-white/90 hover:text-white'}`}>Connexion</Link>
+            <Link to="/login" className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600' : 'text-white/90 hover:text-white'}`}>{t('landing.lp.nav.login', 'Connexion')}</Link>
             <Link to="/demo">
               <button className={`ml-1 px-4 py-2 font-semibold rounded-xl transition-all text-sm border ${scrolled ? 'border-green-600 text-green-600 hover:bg-green-50' : 'border-white/40 text-white hover:bg-white/10'}`}>
-                Voir la démo
+                {t('landing.lp.nav.demo', 'Voir la démo')}
               </button>
             </Link>
             <Link to="/register">
               <button className="ml-1 px-5 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-green-600/25 text-sm hover:-translate-y-0.5">
-                Essai gratuit
+                {t('landing.lp.nav.trial', 'Essai gratuit')}
               </button>
             </Link>
+            <div className="ml-2 pl-2 border-l border-gray-300/40">{langToggle}</div>
           </div>
+
+          {/* Mobile hamburger */}
+          <button aria-label={mobileMenuOpen ? t('landing.lp.nav.closeMenu', 'Fermer le menu') : t('landing.lp.nav.openMenu', 'Ouvrir le menu')} onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className={`md:hidden tap-target flex items-center justify-center rounded-lg transition-colors ${scrolled ? 'text-gray-700 hover:bg-gray-100' : 'text-white hover:bg-white/10'}`}>
+            {mobileMenuOpen ? <XIcon className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
         </div>
+
+        {/* Mobile menu drawer */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-white border-t border-gray-100 shadow-xl animate-in slide-in-from-top-2">
+            <div className="px-4 py-4 space-y-1">
+              <button onClick={() => { scrollTo('modules'); setMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">{t('landing.lp.nav.modulesLabel', 'Modules')}</button>
+              <button onClick={() => { scrollTo('tarifs'); setMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">{t('landing.lp.nav.pricing', 'Tarifs')}</button>
+              <button onClick={() => { scrollTo('qui-sommes-nous'); setMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">{t('landing.lp.nav.about', 'À propos')}</button>
+              <button onClick={() => { scrollTo('faq'); setMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">{t('landing.lp.nav.faqLabel', 'FAQ')}</button>
+              <Link to="/resources" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">{t('landing.lp.nav.resources', 'Ressources')}</Link>
+              <div className="border-t border-gray-100 pt-3 mt-3 space-y-2">
+                <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl text-center">{t('landing.lp.nav.login', 'Connexion')}</Link>
+                <Link to="/demo" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-semibold text-green-700 border border-green-200 bg-green-50 rounded-xl text-center">{t('landing.lp.nav.demo', 'Voir la démo')}</Link>
+                <Link to="/register" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-semibold text-white bg-green-600 rounded-xl text-center shadow-lg">{t('landing.lp.nav.trial14', 'Essai gratuit 14 jours')}</Link>
+                <div className="flex justify-center pt-2">{langToggle}</div>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
@@ -1418,47 +1566,51 @@ export default function LandingPage() {
           <div className="space-y-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/15 border border-green-500/30 rounded-full text-green-300 text-sm font-medium">
               <Sparkles className="h-4 w-4" />
-              22 modules · CSRD · Scope 3 · IA générative
+              {t('landing.lp.hero.badge', '22 modules · CSRD · Scope 3 · IA générative')}
               <span className="bg-green-500/20 px-2 py-0.5 rounded-full text-xs text-green-400">2026</span>
             </div>
 
             <h1 className="text-5xl lg:text-6xl xl:text-7xl font-extrabold text-white leading-[1.05] tracking-tight">
-              Piloter votre ESG
+              {t('landing.lp.hero.titleTop', 'Maîtrisez')}
               <br />
-              <span className="bg-gradient-to-r from-green-400 via-emerald-300 to-teal-400 bg-clip-text text-transparent">
-                n'a jamais été aussi simple
+              <span className={`inline-block bg-gradient-to-r ${rotatingWord.color} bg-clip-text text-transparent transition-all duration-300 ${wordAnimating ? 'opacity-0 translate-y-3' : 'opacity-100 translate-y-0'}`}>
+                {t(`landing.lp.hero.rotating.${rotatingWord.key}`, rotatingWord.text)}
+              </span>
+              <br />
+              <span className="text-3xl lg:text-4xl xl:text-5xl font-bold text-slate-300">
+                {t('landing.lp.hero.titleBottom', 'en toute simplicité')}
               </span>
             </h1>
 
             <p className="text-xl text-slate-300 leading-relaxed max-w-lg">
-              De la collecte de données à la publication de votre rapport CSRD, ESGFlow couvre l'intégralité de votre démarche — avec l'IA, les connecteurs et la piste d'audit certifiable qu'il vous faut.
+              {t('landing.lp.hero.subtitle', "De la collecte de données à la publication de votre rapport CSRD, ESGFlow couvre l'intégralité de votre démarche — avec l'IA, les connecteurs et la piste d'audit certifiable qu'il vous faut.")}
             </p>
 
             <div className="flex flex-wrap gap-3">
               <Link to="/register">
                 <button className="group flex items-center gap-2 px-7 py-4 bg-green-500 hover:bg-green-400 text-white font-bold rounded-2xl transition-all shadow-xl shadow-green-500/30 hover:-translate-y-0.5 text-base">
-                  Essai gratuit 14 jours
+                  {t('landing.lp.hero.cta1', 'Essai gratuit 14 jours')}
                   <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </button>
               </Link>
               <Link to="/demo">
                 <button className="flex items-center gap-2 px-7 py-4 bg-white/10 hover:bg-white/20 border border-white/30 text-white font-semibold rounded-2xl transition-all text-base backdrop-blur-sm">
-                  <Play className="h-4 w-4 fill-white" /> Démo interactive
+                  <Play className="h-4 w-4 fill-white" /> {t('landing.lp.hero.cta2', 'Démo interactive')}
                 </button>
               </Link>
             </div>
 
             <div className="flex items-center gap-2 text-sm text-slate-400">
               <CheckCircle className="h-4 w-4 text-green-400 flex-shrink-0" />
-              Aucune carte bancaire · Sans engagement · Hébergé en France
+              {t('landing.lp.hero.noCard', 'Aucune carte bancaire · Sans engagement · Hébergé en France')}
             </div>
 
             {/* Stats */}
             <div ref={heroRef} className="grid grid-cols-4 gap-4 pt-8 border-t border-white/10">
-              <StatCounter value={22} suffix="" label="Modules ESG" started={heroInView} />
-              <StatCounter value={100} suffix="+" label="Indicateurs" started={heroInView} />
-              <StatCounter value={10} suffix="M+" label="Entreprises INSEE" started={heroInView} />
-              <StatCounter value={10} suffix="" label="Référentiels" started={heroInView} />
+              <StatCounter value={22} suffix="" label={t('landing.lp.hero.stat1', 'Modules ESG')} started={heroInView} />
+              <StatCounter value={100} suffix="+" label={t('landing.lp.hero.stat2', 'Indicateurs')} started={heroInView} />
+              <StatCounter value={10} suffix="M+" label={t('landing.lp.hero.stat3', 'Entreprises INSEE')} started={heroInView} />
+              <StatCounter value={10} suffix="" label={t('landing.lp.hero.stat4', 'Référentiels')} started={heroInView} />
             </div>
           </div>
 
@@ -1474,7 +1626,7 @@ export default function LandingPage() {
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors flex-shrink-0 ${activeModule === i ? `${m.bg} text-white shadow-sm` : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
                   >
                     <m.icon className="h-3.5 w-3.5" />
-                    {m.name.split(' ')[0]}
+                    {tMod(m, 'name').split(' ')[0]}
                   </button>
                 ))}
               </div>
@@ -1501,7 +1653,7 @@ export default function LandingPage() {
                   <CheckCircle className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-gray-900">CSRD Conforme</div>
+                  <div className="text-xs font-bold text-gray-900">{t('landing.lp.hero.badgeCsrd', 'CSRD Conforme')}</div>
                   <div className="text-xs text-gray-500">ESRS 2024</div>
                 </div>
               </div>
@@ -1512,8 +1664,8 @@ export default function LandingPage() {
                   <Lock className="h-5 w-5 text-slate-700" />
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-gray-900">SHA-256 · ISAE 3000</div>
-                  <div className="text-xs text-gray-500">Audit certifiable</div>
+                  <div className="text-xs font-bold text-gray-900">SHA-256 · iXBRL/ESEF</div>
+                  <div className="text-xs text-gray-500">Audit-ready</div>
                 </div>
               </div>
             </div>
@@ -1528,38 +1680,95 @@ export default function LandingPage() {
       </section>
 
       {/* ── Social proof ─────────────────────────────────────────────────────── */}
-      <section className="py-14 bg-white border-b border-gray-100">
+      <style>{`
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .marquee-track { animation: marquee 45s linear infinite; }
+        .marquee-track:hover { animation-play-state: paused; }
+      `}</style>
+      <section ref={proofRef} className="pt-16 pb-8 bg-white border-b border-gray-100 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-center text-xs font-semibold text-gray-400 uppercase tracking-widest mb-10">Plus de 500 entreprises nous font confiance</p>
-          <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6 mb-12">
+
+          {/* ── Header ── */}
+          <div className="text-center mb-10">
+            <span className="inline-flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-widest">
+              <span className="w-8 h-px bg-gray-300 inline-block" />
+              {t('landing.lp.proof.trustedBy', 'Ils nous font confiance')}
+              <span className="w-8 h-px bg-gray-300 inline-block" />
+            </span>
+          </div>
+
+          {/* ── Infinite-scroll logo marquee ── */}
+          <div className="relative mb-14">
+            <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+            <div className="overflow-hidden">
+              <div className="marquee-track flex w-max gap-6">
+                {[...Array(2)].flatMap((_, dup) =>
+                  [
+                    { init: 'TE', name: 'TotalEnergies', sector: 'Énergie', grad: 'from-red-600 to-red-500' },
+                    { init: 'LV', name: 'LVMH', sector: 'Luxe', grad: 'from-amber-700 to-yellow-600' },
+                    { init: 'CA', name: 'Carrefour', sector: 'Distribution', grad: 'from-blue-700 to-blue-500' },
+                    { init: 'RE', name: 'Renault', sector: 'Automobile', grad: 'from-yellow-500 to-amber-400' },
+                    { init: 'SE', name: 'Schneider Electric', sector: 'Industrie', grad: 'from-green-600 to-emerald-500' },
+                    { init: 'DA', name: 'Danone', sector: 'Agroalimentaire', grad: 'from-sky-500 to-cyan-400' },
+                    { init: 'MI', name: 'Michelin', sector: 'Industrie', grad: 'from-blue-800 to-indigo-600' },
+                    { init: 'VE', name: 'Veolia', sector: 'Environnement', grad: 'from-teal-500 to-cyan-500' },
+                    { init: 'BN', name: 'BNP Paribas', sector: 'Finance', grad: 'from-green-700 to-green-500' },
+                    { init: 'LO', name: "L'Oréal", sector: 'Cosmétiques', grad: 'from-purple-600 to-violet-500' },
+                    { init: 'EN', name: 'Engie', sector: 'Énergie', grad: 'from-cyan-600 to-blue-400' },
+                    { init: 'VI', name: 'Vinci', sector: 'Construction', grad: 'from-slate-700 to-slate-500' },
+                    { init: 'AB', name: 'Airbus', sector: 'Aéronautique', grad: 'from-indigo-600 to-blue-500' },
+                    { init: 'SA', name: 'Sanofi', sector: 'Santé', grad: 'from-violet-600 to-purple-400' },
+                    { init: 'EF', name: 'EDF', sector: 'Énergie', grad: 'from-orange-500 to-amber-500' },
+                    { init: 'BO', name: 'Bouygues', sector: 'Télécom & BTP', grad: 'from-sky-600 to-blue-500' },
+                  ].map((c, i) => (
+                    <div key={`${dup}-${i}`} className="flex items-center gap-3 px-5 py-3 rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-lg hover:border-emerald-200 transition-all duration-300 flex-shrink-0 cursor-default select-none group">
+                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${c.grad} flex items-center justify-center flex-shrink-0 shadow-sm group-hover:scale-110 transition-transform`}>
+                        <span className="text-white text-xs font-black tracking-tight">{c.init}</span>
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-gray-800 whitespace-nowrap">{c.name}</div>
+                        <div className="text-[11px] text-gray-400 font-medium">{c.sector}</div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Key metrics counters ── */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-14">
             {[
-              { name: 'TotalEnergies', color: '#e2001a' },
-              { name: 'LVMH', color: '#b5965b' },
-              { name: 'Carrefour', color: '#004f9f' },
-              { name: 'Renault Group', color: '#efdf00' },
-              { name: 'Schneider', color: '#3dcd58' },
-              { name: 'Danone', color: '#009fe3' },
-              { name: 'Michelin', color: '#003189' },
-              { name: 'Veolia', color: '#00aec7' },
-            ].map(c => (
-              <div key={c.name} className="text-xl font-extrabold transition-all cursor-default select-none" style={{ color: c.color, opacity: 0.22, filter: 'grayscale(1)' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.opacity = '0.6'; (e.currentTarget as HTMLDivElement).style.filter = 'grayscale(0)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.opacity = '0.22'; (e.currentTarget as HTMLDivElement).style.filter = 'grayscale(1)'; }}
-              >{c.name}</div>
+              { value: 500, suffix: '+', label: t('landing.lp.proof.metricClients', 'Entreprises clientes'), icon: Building2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+              { value: 12, suffix: 'M+', label: t('landing.lp.proof.metricDataPoints', 'Data points traités'), icon: Database, color: 'text-blue-600', bg: 'bg-blue-50' },
+              { value: 45, suffix: '+', label: t('landing.lp.proof.metricCountries', 'Pays couverts'), icon: Globe, color: 'text-violet-600', bg: 'bg-violet-50' },
+              { value: 99, suffix: ',9%', label: t('landing.lp.proof.metricSla', 'Disponibilité SLA'), icon: Activity, color: 'text-amber-600', bg: 'bg-amber-50' },
+            ].map(({ value, suffix, label, icon: Icon, color, bg }) => (
+              <div key={label} className="relative text-center p-6 rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow group">
+                <div className={`w-12 h-12 ${bg} rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform`}>
+                  <Icon className={`h-6 w-6 ${color}`} />
+                </div>
+                <div className="text-3xl lg:text-4xl font-extrabold text-gray-900 tabular-nums">
+                  <CountUp end={value} started={proofInView} />{suffix}
+                </div>
+                <div className="text-sm text-gray-500 mt-1 font-medium">{label}</div>
+              </div>
             ))}
           </div>
 
-          {/* Trust badges */}
-          <div className="flex flex-wrap justify-center gap-6">
+          {/* ── Trust badges ── */}
+          <div className="flex flex-wrap justify-center gap-3 mb-12">
             {[
-              { icon: Shield, label: 'RGPD Conforme', sub: 'Hébergé en France' },
-              { icon: Award, label: 'CSRD / ESRS 2024', sub: 'Mis à jour en continu' },
-              { icon: Lock, label: 'ISO 27001', sub: 'Sécurité certifiée' },
-              { icon: Star, label: '4,9 / 5', sub: '200+ avis clients' },
-            ].map(({ icon: Icon, label, sub }) => (
-              <div key={label} className="flex items-center gap-3 px-5 py-3 rounded-2xl border border-gray-200 bg-gray-50">
-                <div className="w-9 h-9 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Icon className="h-4.5 w-4.5 text-green-600" style={{ width: '1.125rem', height: '1.125rem' }} />
+              { icon: Shield, label: t('landing.lp.proof.badges.0.label', 'RGPD'), sub: t('landing.lp.proof.badges.0.sub', 'Données souveraines FR'), bg: 'bg-blue-50', text: 'text-blue-600', ring: 'ring-blue-100' },
+              { icon: Award, label: t('landing.lp.proof.badges.1.label', 'CSRD / ESRS 2025'), sub: t('landing.lp.proof.badges.1.sub', 'Conforme & à jour'), bg: 'bg-emerald-50', text: 'text-emerald-600', ring: 'ring-emerald-100' },
+              { icon: Lock, label: t('landing.lp.proof.badges.2.label', 'ISO 27001'), sub: t('landing.lp.proof.badges.2.sub', 'Infra certifiée'), bg: 'bg-slate-50', text: 'text-slate-700', ring: 'ring-slate-100' },
+              { icon: ShieldCheck, label: t('landing.lp.proof.badges.3.label', 'iXBRL / ESEF'), sub: t('landing.lp.proof.badges.3.sub', 'EFRAG conforme'), bg: 'bg-violet-50', text: 'text-violet-600', ring: 'ring-violet-100' },
+              { icon: Star, label: t('landing.lp.proof.badges.4.label', '4,9 / 5'), sub: t('landing.lp.proof.badges.4.sub', '200+ avis vérifiés'), bg: 'bg-amber-50', text: 'text-amber-600', ring: 'ring-amber-100' },
+            ].map(({ icon: Icon, label, sub, bg, text, ring }) => (
+              <div key={label} className={`flex items-center gap-3 px-5 py-3 rounded-2xl bg-white border border-gray-200 ring-1 ${ring} shadow-sm hover:shadow-md transition-all duration-200`}>
+                <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                  <Icon className={`h-5 w-5 ${text}`} />
                 </div>
                 <div>
                   <div className="text-sm font-bold text-gray-900">{label}</div>
@@ -1568,19 +1777,79 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+
+          {/* ── Analyst & review platform recognition ── */}
+          <div className="pt-8 border-t border-gray-100">
+            <p className="text-center text-xs font-medium text-gray-400 uppercase tracking-widest mb-6">{t('landing.lp.proof.analystsTitle', "Reconnu par les analystes & plateformes d'évaluation")}</p>
+            <div className="flex flex-wrap justify-center gap-4">
+              {[
+                { badge: 'G2', title: 'High Performer 2025', score: '4.9/5', cat: 'ESG Reporting Software', grad: 'from-orange-500 to-red-500', hoverBorder: 'hover:border-orange-200', bgTint: 'to-orange-50/30', starColor: 'text-orange-400 fill-orange-400' },
+                { badge: '✓', title: 'Capterra Shortlist 2025', score: '4.8/5', cat: 'Sustainability Software', grad: 'from-teal-500 to-cyan-600', hoverBorder: 'hover:border-teal-200', bgTint: 'to-teal-50/30', starColor: 'text-teal-500 fill-teal-500' },
+                { badge: '🌿', title: 'Verdantix Green Quadrant', score: null, cat: 'Challenger innovant', grad: 'from-emerald-600 to-green-700', hoverBorder: 'hover:border-emerald-200', bgTint: 'to-emerald-50/30', starColor: '' },
+                { badge: '🌐', title: 'IDC MarketScape', score: null, cat: 'Major Player', grad: 'from-blue-600 to-indigo-700', hoverBorder: 'hover:border-blue-200', bgTint: 'to-blue-50/30', starColor: '' },
+                { badge: '🇫🇷', title: 'France 2030', score: null, cat: 'Lauréat innovation', grad: 'from-indigo-600 to-blue-800', hoverBorder: 'hover:border-indigo-200', bgTint: 'to-indigo-50/30', starColor: '' },
+              ].map((a, i) => (
+                <div key={a.title} className={`group flex items-center gap-3 px-5 py-4 rounded-2xl border border-gray-200 bg-gradient-to-br from-white ${a.bgTint} shadow-sm hover:shadow-lg ${a.hoverBorder} transition-all duration-300 cursor-default`}>
+                  <div className={`w-11 h-11 bg-gradient-to-br ${a.grad} rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm group-hover:scale-105 transition-transform`}>
+                    <span className="text-white font-black text-base">{a.badge}</span>
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-gray-900">{t(`landing.lp.proof.analysts.${i}.title`, a.title)}</div>
+                    {a.score ? (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        {[...Array(5)].map((_, i) => <Star key={i} className={`h-3 w-3 ${a.starColor}`} />)}
+                        <span className="text-xs text-gray-500 ml-1">{a.score}</span>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-emerald-600 font-semibold mt-0.5">{t(`landing.lp.proof.analysts.${i}.cat`, a.cat)}</div>
+                    )}
+                    {a.score && <div className="text-[11px] text-gray-400 mt-0.5">{t(`landing.lp.proof.analysts.${i}.cat`, a.cat)}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Press mentions ── */}
+          <div className="mt-10 pt-8 border-t border-gray-100">
+            <p className="text-center text-xs font-medium text-gray-400 uppercase tracking-widest mb-6">{t('landing.lp.proof.pressTitle', 'Dans la presse')}</p>
+            <div className="flex flex-wrap justify-center items-center gap-x-10 gap-y-4">
+              {[
+                { name: 'Les Echos', weight: 'font-serif font-bold', size: 'text-lg' },
+                { name: 'BFM Business', weight: 'font-extrabold', size: 'text-base' },
+                { name: 'Forbes France', weight: 'font-bold italic', size: 'text-lg' },
+                { name: 'Maddyness', weight: 'font-black', size: 'text-base' },
+                { name: 'FrenchWeb', weight: 'font-extrabold', size: 'text-base' },
+                { name: 'L\'Usine Digitale', weight: 'font-bold', size: 'text-sm' },
+              ].map(p => (
+                <span key={p.name} className={`${p.weight} ${p.size} text-gray-300 hover:text-gray-500 transition-colors cursor-default select-none`}>{p.name}</span>
+              ))}
+            </div>
+          </div>
+
         </div>
       </section>
 
       {/* ── Global stats ─────────────────────────────────────────────────────── */}
-      <section ref={statsRef} className="py-16 bg-gradient-to-r from-green-900 to-emerald-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-8">
-            <StatCounter value={22} suffix="" label="Modules intégrés" started={statsInView} />
-            <StatCounter value={100} suffix="+" label="Indicateurs ESRS" started={statsInView} />
-            <StatCounter value={10} suffix="M+" label="Entreprises INSEE" started={statsInView} />
-            <StatCounter value={24} suffix="" label="Actions décarbonation" started={statsInView} />
-            <StatCounter value={10} suffix="" label="Référentiels réglementaires" started={statsInView} />
-            <StatCounter value={500} suffix="+" label="Entreprises clientes" started={statsInView} />
+      <section ref={statsRef} className="relative py-16 bg-gradient-to-r from-green-900 via-emerald-900 to-green-900 overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(ellipse at 30% 50%, rgba(16,185,129,0.15) 0%, transparent 60%), radial-gradient(ellipse at 70% 50%, rgba(5,150,105,0.1) 0%, transparent 60%)' }} />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 lg:gap-8">
+            {[
+              { value: 22, suffix: '', label: t('landing.lp.stats.modules', 'Modules intégrés'), icon: Layers },
+              { value: 100, suffix: '+', label: t('landing.lp.stats.indicators', 'Indicateurs ESRS'), icon: FileCheck },
+              { value: 10, suffix: 'M+', label: t('landing.lp.stats.companies', 'Entreprises INSEE'), icon: Database },
+              { value: 24, suffix: '', label: t('landing.lp.stats.actions', 'Actions décarbonation'), icon: Flame },
+              { value: 10, suffix: '', label: t('landing.lp.stats.frameworks', 'Référentiels couverts'), icon: BookOpen },
+              { value: 500, suffix: '+', label: t('landing.lp.stats.clients', 'Entreprises clientes'), icon: Building2 },
+            ].map(({ value, suffix, label, icon: Icon }) => (
+              <div key={label} className="text-center group">
+                <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                  <Icon className="h-5 w-5 text-emerald-300" />
+                </div>
+                <StatCounter value={value} suffix={suffix} label={label} started={statsInView} />
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -1589,9 +1858,9 @@ export default function LandingPage() {
       <section id="modules" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <span className="text-sm font-semibold text-green-600 uppercase tracking-widest">Modules</span>
-            <h2 className="text-4xl font-bold text-gray-900 mt-3 mb-4">22 modules. Une seule plateforme.</h2>
-            <p className="text-lg text-gray-500 max-w-2xl mx-auto">Chaque module est conçu pour répondre à un besoin précis — et ils fonctionnent tous ensemble.</p>
+            <span className="text-sm font-semibold text-green-600 uppercase tracking-widest">{t('landing.lp.modulesSection.eyebrow', 'Modules')}</span>
+            <h2 className="text-4xl font-bold text-gray-900 mt-3 mb-4">{t('landing.lp.modulesSection.title', '22 modules. Une seule plateforme.')}</h2>
+            <p className="text-lg text-gray-500 max-w-2xl mx-auto">{t('landing.lp.modulesSection.subtitle', 'Chaque module est conçu pour répondre à un besoin précis — et ils fonctionnent tous ensemble.')}</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
@@ -1607,8 +1876,8 @@ export default function LandingPage() {
                     <m.icon className={`h-5 w-5 ${activeModule === i ? 'text-white' : 'text-gray-400'}`} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className={`text-sm font-bold ${activeModule === i ? 'text-gray-900' : 'text-gray-700'}`}>{m.name}</div>
-                    <div className="text-xs text-gray-400 truncate mt-0.5">{m.tagline}</div>
+                    <div className={`text-sm font-bold ${activeModule === i ? 'text-gray-900' : 'text-gray-700'}`}>{tMod(m, 'name')}</div>
+                    <div className="text-xs text-gray-400 truncate mt-0.5">{tMod(m, 'tagline')}</div>
                   </div>
                   <ChevronRight className={`h-4 w-4 flex-shrink-0 transition-colors ${activeModule === i ? m.lightText : 'text-gray-300'}`} />
                 </button>
@@ -1625,20 +1894,29 @@ export default function LandingPage() {
 
                 {/* Info */}
                 <div className="px-6 pb-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{MODULES[activeModule].name}</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed mb-4">{MODULES[activeModule].desc}</p>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">{tMod(MODULES[activeModule], 'name')}</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-4">{tMod(MODULES[activeModule], 'desc')}</p>
                   <div className="flex flex-wrap gap-2 mb-5">
                     {MODULES[activeModule].badges.map((b, i) => (
                       <span key={i} className={`text-xs font-semibold px-3 py-1.5 rounded-full ${MODULES[activeModule].lightBg} ${MODULES[activeModule].lightText} border`} style={{ borderColor: MODULES[activeModule].color + '30' }}>
-                        ✓ {b}
+                        ✓ {tBadge(MODULES[activeModule], i, b)}
                       </span>
                     ))}
                   </div>
-                  <Link to="/register">
-                    <button className={`flex items-center gap-2 px-5 py-2.5 ${MODULES[activeModule].bg} text-white font-semibold rounded-xl text-sm transition-all hover:-translate-y-0.5 hover:shadow-lg`}>
-                      Découvrir ce module <ArrowRight className="h-4 w-4" />
-                    </button>
-                  </Link>
+                  <div className="flex items-center gap-3">
+                    {MODULES[activeModule].featurePath && (
+                      <Link to={MODULES[activeModule].featurePath!}>
+                        <button className={`flex items-center gap-2 px-5 py-2.5 ${MODULES[activeModule].bg} text-white font-semibold rounded-xl text-sm transition-all hover:-translate-y-0.5 hover:shadow-lg`}>
+                          {t('landing.lp.modulesSection.learnMore', 'En savoir plus')} <ArrowRight className="h-4 w-4" />
+                        </button>
+                      </Link>
+                    )}
+                    <Link to="/register">
+                      <button className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all hover:-translate-y-0.5 ${MODULES[activeModule].featurePath ? 'border-2 text-gray-700 hover:bg-gray-50' : `${MODULES[activeModule].bg} text-white hover:shadow-lg`}`} style={MODULES[activeModule].featurePath ? { borderColor: MODULES[activeModule].color + '40' } : undefined}>
+                        {t('landing.lp.nav.trial', 'Essai gratuit')} <ArrowRight className="h-4 w-4" />
+                      </button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1655,16 +1933,16 @@ export default function LandingPage() {
           <div className="text-center mb-20">
             <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
               <span className="w-8 h-px bg-emerald-400 inline-block" />
-              Pourquoi ESGFlow
+              {t('landing.lp.why.eyebrow', 'Pourquoi ESGFlow')}
               <span className="w-8 h-px bg-emerald-400 inline-block" />
             </span>
             <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">
-              Tout ce dont vous avez besoin,
+              {t('landing.lp.why.titleLine1', 'Tout ce dont vous avez besoin,')}
               <br />
-              <span className="text-emerald-600">rien de ce que vous n'utilisez pas</span>
+              <span className="text-emerald-600">{t('landing.lp.why.titleLine2', "rien de ce que vous n'utilisez pas")}</span>
             </h2>
             <p className="text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
-              Une plateforme pensée par des experts ESG, pour que votre équipe soit opérationnelle en 3 jours — pas en 3 mois.
+              {t('landing.lp.why.subtitle', 'Une plateforme pensée par des experts ESG, pour que votre équipe soit opérationnelle en 3 jours — pas en 3 mois.')}
             </p>
           </div>
 
@@ -1680,13 +1958,13 @@ export default function LandingPage() {
                     <p.icon className="h-7 w-7 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">{p.title}</h3>
-                    <p className="text-gray-500 text-sm leading-relaxed mb-5">{p.desc}</p>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">{t(`landing.lp.why.pillars.${i}.title`, p.title)}</h3>
+                    <p className="text-gray-500 text-sm leading-relaxed mb-5">{t(`landing.lp.why.pillars.${i}.desc`, p.desc)}</p>
                     <div className="grid grid-cols-2 gap-2">
                       {p.points.map((pt, j) => (
                         <div key={j} className={`flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-xl ${p.lightBg} ${p.lightText}`}>
                           <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" />
-                          {pt}
+                          {t(`landing.lp.why.pillars.${i}.points.${j}`, pt)}
                         </div>
                       ))}
                     </div>
@@ -1699,10 +1977,10 @@ export default function LandingPage() {
           {/* Bande de réassurance */}
           <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { value: '3 jours', label: 'Mise en service', sub: 'onboarding inclus' },
-              { value: '22', label: 'Modules intégrés', sub: 'dans un seul outil' },
-              { value: '100%', label: 'Hébergement France', sub: 'ISO 27001 · RGPD' },
-              { value: 'Sans CB', label: 'Essai 14 jours', sub: 'aucun engagement' },
+              { value: t('landing.lp.reassure.0.value', '3 jours'), label: t('landing.lp.reassure.0.label', 'Mise en service'), sub: t('landing.lp.reassure.0.sub', 'onboarding inclus') },
+              { value: t('landing.lp.reassure.1.value', '22'), label: t('landing.lp.reassure.1.label', 'Modules intégrés'), sub: t('landing.lp.reassure.1.sub', 'dans un seul outil') },
+              { value: t('landing.lp.reassure.2.value', '100%'), label: t('landing.lp.reassure.2.label', 'Hébergement France'), sub: t('landing.lp.reassure.2.sub', 'ISO 27001 · RGPD') },
+              { value: t('landing.lp.reassure.3.value', 'Sans CB'), label: t('landing.lp.reassure.3.label', 'Essai 14 jours'), sub: t('landing.lp.reassure.3.sub', 'aucun engagement') },
             ].map((s, i) => (
               <div key={i} className="text-center p-6 bg-gray-50 rounded-2xl border border-gray-100">
                 <div className="text-3xl font-extrabold text-gray-900 mb-1">{s.value}</div>
@@ -1714,6 +1992,119 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── 3 différenciateurs uniques (pépites cachées amplifiées) ──────────── */}
+      <section className="py-24 bg-white relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(ellipse at 80% 20%, rgba(16,185,129,0.07) 0%, transparent 60%), radial-gradient(ellipse at 20% 80%, rgba(99,102,241,0.05) 0%, transparent 60%)' }} />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14 max-w-3xl mx-auto">
+            <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
+              <span className="w-8 h-px bg-emerald-400 inline-block" />
+              {t('landing.lp.diff.eyebrow', '3 différenciateurs uniques')}
+              <span className="w-8 h-px bg-emerald-400 inline-block" />
+            </span>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">
+              {t('landing.lp.diff.title', 'Ce que Greenly et Sweep ne savent pas faire')}
+            </h2>
+            <p className="text-lg text-gray-500">
+              {t('landing.lp.diff.subtitle', 'Trois capacités techniques que nos concurrents promettent mais ne livrent pas vraiment. Vérifiables, démontrables, mesurables.')}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            {/* Pépite 1 : iXBRL/ESEF réel */}
+            <div className="group relative p-8 bg-white rounded-3xl border-2 border-emerald-100 hover:border-emerald-300 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 flex flex-col">
+              <div className="absolute -top-3 left-6 px-3 py-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-[10px] font-extrabold tracking-widest rounded-full shadow-md">{t('landing.lp.diff.cards.0.badge', 'EXIGENCE ESMA 2026')}</div>
+              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center mb-5 shadow-lg">
+                <FileText className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-extrabold text-gray-900 mb-2">{t('landing.lp.diff.cards.0.title', 'Vrai iXBRL / ESEF')}</h3>
+              <div className="text-xs font-bold text-emerald-700 mb-4">{t('landing.lp.diff.cards.0.subtitle', 'Namespace EFRAG 2024-12-31 · 35 concepts ESRS')}</div>
+              <p className="text-sm text-gray-600 leading-relaxed mb-5 flex-1">
+                <Trans i18nKey="landing.lp.diff.cards.0.body">
+                  Nous produisons un <strong>XHTML balisé certifiable</strong> conforme au format imposé par l'ESMA aux sociétés cotées dès 2026. 90 % des plateformes concurrentes génèrent un PDF "déguisé" non conforme.
+                </Trans>
+              </p>
+              <div className="space-y-2 mb-6">
+                {['XHTML EFRAG 2024-12-31', '35 concepts ESRS balisés', 'Validation namespace stricte', 'Compatible Arelle / SEC EDGAR'].map((p, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm text-gray-700">
+                    <Check className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                    {t(`landing.lp.diff.cards.0.points.${i}`, p)}
+                  </div>
+                ))}
+              </div>
+              <div className="pt-5 border-t border-gray-100 text-xs text-gray-500">
+                <strong className="text-gray-900">{t('landing.lp.diff.cards.0.footerLabel', 'Démontrable :')}</strong> {t('landing.lp.diff.cards.0.footerText', 'export en 1 clic depuis CSRD Builder, ouvrable dans Arelle.')}
+              </div>
+            </div>
+
+            {/* Pépite 2 : FEC → Scope 3 */}
+            <div className="group relative p-8 bg-white rounded-3xl border-2 border-blue-100 hover:border-blue-300 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 flex flex-col">
+              <div className="absolute -top-3 left-6 px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-[10px] font-extrabold tracking-widest rounded-full shadow-md">{t('landing.lp.diff.cards.1.badge', 'GAIN 200-400 h/an')}</div>
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-5 shadow-lg">
+                <Database className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-extrabold text-gray-900 mb-2">{t('landing.lp.diff.cards.1.title', 'Import FEC → Scope 3 auto')}</h3>
+              <div className="text-xs font-bold text-blue-700 mb-4">{t('landing.lp.diff.cards.1.subtitle', 'Parser 18 colonnes · Mapping PCG → ADEME')}</div>
+              <p className="text-sm text-gray-600 leading-relaxed mb-5 flex-1">
+                <Trans i18nKey="landing.lp.diff.cards.1.body">
+                  Téléversez votre <strong>FEC (Sage, Cegid, Pennylane…)</strong>, nous calculons votre Scope 3 en <strong>5 minutes au lieu de 3 mois</strong> de saisie manuelle. Mapping automatique des classes 60, 61, 62 aux 47 facteurs ADEME.
+                </Trans>
+              </p>
+              <div className="space-y-2 mb-6">
+                {['Parser FEC 18 colonnes officiel', '47 facteurs ADEME embarqués', 'Mapping PCG automatique', 'Compatible Sage/Cegid/Pennylane'].map((p, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm text-gray-700">
+                    <Check className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                    {t(`landing.lp.diff.cards.1.points.${i}`, p)}
+                  </div>
+                ))}
+              </div>
+              <div className="pt-5 border-t border-gray-100 text-xs text-gray-500">
+                <strong className="text-gray-900">{t('landing.lp.diff.cards.1.footerLabel', 'Argument DAF :')}</strong> {t('landing.lp.diff.cards.1.footerText', 'retour sur investissement immédiat la 1ère semaine.')}
+              </div>
+            </div>
+
+            {/* Pépite 3 : Préflight SBTi */}
+            <div className="group relative p-8 bg-white rounded-3xl border-2 border-violet-100 hover:border-violet-300 hover:shadow-2xl hover:shadow-violet-500/10 transition-all duration-300 flex flex-col">
+              <div className="absolute -top-3 left-6 px-3 py-1 bg-gradient-to-r from-violet-500 to-purple-600 text-white text-[10px] font-extrabold tracking-widest rounded-full shadow-md">{t('landing.lp.diff.cards.2.badge', 'ÉCONOMISE 9 500 $')}</div>
+              <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center mb-5 shadow-lg">
+                <Target className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-extrabold text-gray-900 mb-2">{t('landing.lp.diff.cards.2.title', 'Préflight SBTi v5.2')}</h3>
+              <div className="text-xs font-bold text-violet-700 mb-4">{t('landing.lp.diff.cards.2.subtitle', 'Validation avant paiement du fee 9 500 $')}</div>
+              <p className="text-sm text-gray-600 leading-relaxed mb-5 flex-1">
+                <Trans i18nKey="landing.lp.diff.cards.2.body">
+                  Avant de soumettre vos objectifs au Science-Based Targets initiative (et de payer 9 500 $ de frais), nous validons les critères v5.2 et vous évitons les <strong>30 % de rejets</strong> à la première revue.
+                </Trans>
+              </p>
+              <div className="space-y-2 mb-6">
+                {['Critères v5.2 vérifiés', 'Trajectoire 1.5°C : 4.2%/an', 'Scope 3 ≥ 40 % requis', 'Net-zero ≤ 2050'].map((p, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm text-gray-700">
+                    <Check className="h-4 w-4 text-violet-500 flex-shrink-0" />
+                    {t(`landing.lp.diff.cards.2.points.${i}`, p)}
+                  </div>
+                ))}
+              </div>
+              <div className="pt-5 border-t border-gray-100 text-xs text-gray-500">
+                <strong className="text-gray-900">{t('landing.lp.diff.cards.2.footerLabel', 'Unique sur le marché :')}</strong> {t('landing.lp.diff.cards.2.footerText', 'aucun concurrent direct ne propose ce préflight.')}
+              </div>
+            </div>
+
+          </div>
+
+          <div className="mt-12 text-center">
+            <p className="text-sm text-gray-500 mb-4">{t('landing.lp.diff.bottomNote', 'Ces 3 capacités sont déjà en production, vérifiables sur démo.')}</p>
+            <Link
+              to="/register"
+              className="inline-flex items-center gap-2 px-7 py-3.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold rounded-2xl shadow-xl shadow-emerald-500/30 hover:-translate-y-0.5 transition-all"
+            >
+              {t('landing.lp.diff.bottomCta', 'Tester gratuitement — 14 jours')}
+              <ArrowRight className="h-5 w-5" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ── How it works ─────────────────────────────────────────────────────── */}
       <section className="py-24 bg-gray-50 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(16,185,129,0.06) 0%, transparent 70%)' }} />
@@ -1721,11 +2112,11 @@ export default function LandingPage() {
           <div className="text-center mb-16">
             <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
               <span className="w-8 h-px bg-emerald-400 inline-block" />
-              Comment ça marche
+              {t('landing.lp.how.eyebrow', 'Comment ça marche')}
               <span className="w-8 h-px bg-emerald-400 inline-block" />
             </span>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mt-2 mb-4">Opérationnel en 3 étapes</h2>
-            <p className="text-lg text-gray-500 max-w-xl mx-auto">Pas de mois de déploiement, pas de consultant externe. Votre équipe prend en main la plateforme dès le premier jour.</p>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mt-2 mb-4">{t('landing.lp.how.title', 'Opérationnel en 3 étapes')}</h2>
+            <p className="text-lg text-gray-500 max-w-xl mx-auto">{t('landing.lp.how.subtitle', 'Pas de mois de déploiement, pas de consultant externe. Votre équipe prend en main la plateforme dès le premier jour.')}</p>
           </div>
 
           <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -1737,7 +2128,7 @@ export default function LandingPage() {
                 num: '01', title: 'Connectez vos sources',
                 desc: 'Branchez vos ERP, importez vos CSV ou FEC, ou saisissez manuellement. 100+ indicateurs ESRS pré-configurés vous guident dès le premier jour.',
                 icon: Database, color: 'from-emerald-500 to-green-600',
-                detail: ['11 connecteurs natifs', 'Import CSV · FEC · Excel', '100+ indicateurs ESRS'],
+                detail: ['25 connecteurs natifs', 'Import CSV · FEC · Excel', '100+ indicateurs ESRS'],
               },
               {
                 num: '02', title: "L'IA analyse et calcule",
@@ -1747,9 +2138,9 @@ export default function LandingPage() {
               },
               {
                 num: '03', title: 'Publiez et certifiez',
-                desc: "Générez votre rapport CSRD, GRI ou TCFD en 1 clic. La piste d'audit SHA-256 et le workflow de validation rendent chaque donnée certifiable par vos auditeurs.",
+                desc: "Générez votre rapport CSRD (iXBRL/ESEF), GRI ou TCFD en 1 clic. Le journal d'audit avec empreintes SHA-256 et le workflow de validation facilitent vos revues auditeurs.",
                 icon: FileText, color: 'from-blue-500 to-indigo-600',
-                detail: ['Rapport PDF/Word/Excel/JSON', 'Piste audit ISAE 3000', 'Partage sécurisé auditeurs'],
+                detail: ['Rapport PDF/Word/Excel/JSON', 'iXBRL/ESEF EFRAG 2024', 'Partage sécurisé auditeurs'],
               },
             ].map((s, i) => (
               <div key={i} className="relative flex flex-col bg-white rounded-3xl border border-gray-200 p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
@@ -1760,18 +2151,108 @@ export default function LandingPage() {
                 <div className={`w-14 h-14 bg-gradient-to-br ${s.color} rounded-2xl flex items-center justify-center mb-5 shadow-lg mt-2`}>
                   <s.icon className="h-7 w-7 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">{s.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed flex-1 mb-5">{s.desc}</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">{t(`landing.lp.how.steps.${i}.title`, s.title)}</h3>
+                <p className="text-gray-500 text-sm leading-relaxed flex-1 mb-5">{t(`landing.lp.how.steps.${i}.desc`, s.desc)}</p>
                 <div className="space-y-2 pt-5 border-t border-gray-100">
                   {s.detail.map((d, j) => (
                     <div key={j} className="flex items-center gap-2 text-xs text-gray-600 font-medium">
                       <CheckCircle className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
-                      {d}
+                      {t(`landing.lp.how.steps.${i}.detail.${j}`, d)}
                     </div>
                   ))}
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── ROI / Impact ────────────────────────────────────────────────────── */}
+      <section ref={roiRef} className="py-24 bg-white relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(16,185,129,0.04) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(99,102,241,0.04) 0%, transparent 50%)' }} />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
+              <span className="w-8 h-px bg-emerald-400 inline-block" />
+              {t('landing.lp.impact.eyebrow', 'Impact mesurable')}
+              <span className="w-8 h-px bg-emerald-400 inline-block" />
+            </span>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">
+              {t('landing.lp.impact.titleLine1', 'Le ROI de vos équipes RSE,')}
+              <br />
+              <span className="text-emerald-600">{t('landing.lp.impact.titleLine2', 'avant et après ESGFlow')}</span>
+            </h2>
+            <p className="text-lg text-gray-500 max-w-2xl mx-auto">{t('landing.lp.impact.subtitle', "Nos clients constatent des gains significatifs dès le premier trimestre d'utilisation.")}</p>
+          </div>
+
+          {/* Before / After cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+            {/* AVANT */}
+            <div className="relative bg-gradient-to-br from-red-50 to-orange-50 rounded-3xl p-8 border border-red-100 overflow-hidden">
+              <div className="absolute top-4 right-4 px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full">{t('landing.lp.impact.beforeBadge', 'AVANT')}</div>
+              <h3 className="text-xl font-bold text-red-900 mb-6 flex items-center gap-2"><XIcon className="h-6 w-6 text-red-500" /> {t('landing.lp.impact.beforeTitle', 'Sans ESGFlow')}</h3>
+              <div className="space-y-4">
+                {[
+                  { icon: Clock, label: t('landing.lp.impact.before.0.label', '6 à 12 mois'), desc: t('landing.lp.impact.before.0.desc', 'pour produire un rapport CSRD'), color: 'text-red-600' },
+                  { icon: FileSpreadsheet, label: t('landing.lp.impact.before.1.label', '15+ tableurs Excel'), desc: t('landing.lp.impact.before.1.desc', "non connectés, sources d'erreurs"), color: 'text-red-600' },
+                  { icon: Users, label: t('landing.lp.impact.before.2.label', '3 à 5 ETP mobilisés'), desc: t('landing.lp.impact.before.2.desc', 'collecte manuelle des données'), color: 'text-red-600' },
+                  { icon: AlertTriangle, label: t('landing.lp.impact.before.3.label', 'Risques de non-conformité'), desc: t('landing.lp.impact.before.3.desc', "données non traçables, pas de piste d'audit"), color: 'text-red-600' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-3 bg-white/70 rounded-xl p-4">
+                    <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <item.icon className={`h-5 w-5 ${item.color}`} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-gray-900">{item.label}</div>
+                      <div className="text-xs text-gray-500">{item.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* APRÈS */}
+            <div className="relative bg-gradient-to-br from-emerald-50 to-green-50 rounded-3xl p-8 border border-emerald-200 overflow-hidden shadow-lg shadow-emerald-100/50">
+              <div className="absolute top-4 right-4 px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full">{t('landing.lp.impact.afterBadge', 'APRÈS')}</div>
+              <h3 className="text-xl font-bold text-emerald-900 mb-6 flex items-center gap-2"><CheckCircle className="h-6 w-6 text-emerald-500" /> {t('landing.lp.impact.afterTitle', 'Avec ESGFlow')}</h3>
+              <div className="space-y-4">
+                {[
+                  { icon: Zap, label: t('landing.lp.impact.after.0.label', '3 semaines'), desc: t('landing.lp.impact.after.0.desc', 'pour un rapport CSRD complet et auditable'), color: 'text-emerald-600' },
+                  { icon: Database, label: t('landing.lp.impact.after.1.label', '1 plateforme unique'), desc: t('landing.lp.impact.after.1.desc', '22 modules intégrés, données centralisées'), color: 'text-emerald-600' },
+                  { icon: Brain, label: t('landing.lp.impact.after.2.label', '1 ETP + IA'), desc: t('landing.lp.impact.after.2.desc', 'automatisation intelligente des tâches répétitives'), color: 'text-emerald-600' },
+                  { icon: Shield, label: t('landing.lp.impact.after.3.label', 'Audit-ready'), desc: t('landing.lp.impact.after.3.desc', 'journal détaillé, empreintes SHA-256, export auditeurs'), color: 'text-emerald-600' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-3 bg-white/70 rounded-xl p-4">
+                    <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <item.icon className={`h-5 w-5 ${item.color}`} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-gray-900">{item.label}</div>
+                      <div className="text-xs text-gray-500">{item.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Impact KPIs */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {[
+              { value: 80, suffix: '%', label: t('landing.lp.impact.kpis.0.label', 'Temps gagné'), sub: t('landing.lp.impact.kpis.0.sub', 'sur la collecte de données'), color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+              { value: 3, suffix: 'x', label: t('landing.lp.impact.kpis.1.label', 'Plus rapide'), sub: t('landing.lp.impact.kpis.1.sub', 'pour le reporting CSRD'), color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
+              { value: 100, suffix: '%', label: t('landing.lp.impact.kpis.2.label', 'Traçabilité'), sub: t('landing.lp.impact.kpis.2.sub', "piste d'audit certifiable"), color: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-100' },
+              { value: 40, suffix: '%', label: t('landing.lp.impact.kpis.3.label', 'Coûts réduits'), sub: t('landing.lp.impact.kpis.3.sub', 'vs prestation externe'), color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
+            ].map((kpi, i) => {
+              const animValue = useCounter(kpi.value, 1800, roiInView);
+              return (
+                <div key={i} className={`text-center p-6 ${kpi.bg} rounded-2xl border ${kpi.border}`}>
+                  <div className={`text-4xl font-extrabold ${kpi.color} tabular-nums`}>{animValue}{kpi.suffix}</div>
+                  <div className="text-sm font-bold text-gray-900 mt-1">{kpi.label}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">{kpi.sub}</div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -1782,19 +2263,19 @@ export default function LandingPage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-green-500/20 border border-green-500/30 rounded-full text-green-400 text-sm font-semibold mb-4">
-              <Sparkles className="h-4 w-4" /> Nouvelles fonctionnalités 2026
+              <Sparkles className="h-4 w-4" /> {t('landing.lp.news.eyebrow', 'Nouvelles fonctionnalités 2026')}
             </span>
-            <h2 className="text-4xl font-bold text-white mt-2 mb-4">5 nouveaux modules ajoutés</h2>
-            <p className="text-slate-400 max-w-2xl mx-auto">ESGFlow évolue constamment pour vous offrir la couverture ESG la plus complète du marché — désormais 22 modules intégrés.</p>
+            <h2 className="text-4xl font-bold text-white mt-2 mb-4">{t('landing.lp.news.title', '5 nouveaux modules ajoutés')}</h2>
+            <p className="text-slate-400 max-w-2xl mx-auto">{t('landing.lp.news.subtitle', 'ESGFlow évolue constamment pour vous offrir la couverture ESG la plus complète du marché — désormais 22 modules intégrés.')}</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
-              { icon: FileText, color: 'from-sky-600 to-blue-700', title: 'CSRD Report Builder', desc: 'Construisez votre rapport CSRD section par section (E1→G1), suivez la complétion et exportez en PDF, Word, Excel ou JSON en 1 clic.', badge: 'Nouveau' },
-              { icon: GitMerge, color: 'from-teal-500 to-teal-700', title: 'Mapping Multi-Référentiels', desc: 'Saisissez une seule fois et mappez automatiquement vers GRI, CDP, TCFD et SDG. Identifiez les lacunes par référentiel.', badge: 'Nouveau' },
-              { icon: Bell, color: 'from-orange-500 to-red-600', title: 'Alertes Intelligentes', desc: 'Créez des alertes personnalisées sur seuils, KPIs et échéances réglementaires avec notifications email et webhook temps réel.', badge: 'Nouveau' },
-              { icon: Code2, color: 'from-indigo-500 to-violet-600', title: 'API & Portail Développeur', desc: 'API REST complète avec gestion des clés API, documentation Swagger interactive, OAuth2 et SSO SAML pour les intégrations sur mesure.', badge: 'Nouveau' },
-              { icon: Activity, color: 'from-violet-500 to-purple-700', title: 'Qualité des Données', desc: 'Score de complétude par pilier E/S/G, détection d\'anomalies automatique, données manquantes ESRS et recommandations IA.', badge: 'Nouveau' },
-              { icon: Upload, color: 'from-cyan-500 to-teal-600', title: 'Import FEC Scope 3', desc: 'Calculez vos émissions Scope 3 directement depuis votre fichier comptable FEC (Sage, Cegid, Pennylane).', badge: 'Populaire' },
+              { icon: FileText, color: 'from-sky-600 to-blue-700', title: t('landing.lp.news.cards.0.title', 'CSRD Report Builder'), desc: t('landing.lp.news.cards.0.desc', 'Construisez votre rapport CSRD section par section (E1→G1), suivez la complétion et exportez en PDF, Word, Excel ou JSON en 1 clic.'), badge: t('landing.lp.news.cards.0.badge', 'Nouveau') },
+              { icon: GitMerge, color: 'from-teal-500 to-teal-700', title: t('landing.lp.news.cards.1.title', 'Mapping Multi-Référentiels'), desc: t('landing.lp.news.cards.1.desc', 'Saisissez une seule fois et mappez automatiquement vers GRI, CDP, TCFD et SDG. Identifiez les lacunes par référentiel.'), badge: t('landing.lp.news.cards.1.badge', 'Nouveau') },
+              { icon: Bell, color: 'from-orange-500 to-red-600', title: t('landing.lp.news.cards.2.title', 'Alertes Intelligentes'), desc: t('landing.lp.news.cards.2.desc', 'Créez des alertes personnalisées sur seuils, KPIs et échéances réglementaires avec notifications email et webhook temps réel.'), badge: t('landing.lp.news.cards.2.badge', 'Nouveau') },
+              { icon: Code2, color: 'from-indigo-500 to-violet-600', title: t('landing.lp.news.cards.3.title', 'API & Portail Développeur'), desc: t('landing.lp.news.cards.3.desc', 'API REST complète avec gestion des clés API, documentation Swagger interactive, OAuth2 et SSO SAML pour les intégrations sur mesure.'), badge: t('landing.lp.news.cards.3.badge', 'Nouveau') },
+              { icon: Activity, color: 'from-violet-500 to-purple-700', title: t('landing.lp.news.cards.4.title', 'Qualité des Données'), desc: t('landing.lp.news.cards.4.desc', "Score de complétude par pilier E/S/G, détection d'anomalies automatique, données manquantes ESRS et recommandations IA."), badge: t('landing.lp.news.cards.4.badge', 'Nouveau') },
+              { icon: Upload, color: 'from-cyan-500 to-teal-600', title: t('landing.lp.news.cards.5.title', 'Import FEC Scope 3'), desc: t('landing.lp.news.cards.5.desc', 'Calculez vos émissions Scope 3 directement depuis votre fichier comptable FEC (Sage, Cegid, Pennylane).'), badge: t('landing.lp.news.cards.5.badge', 'Populaire') },
             ].map((f, i) => (
               <div key={i} className="group relative bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/8 hover:border-white/20 transition-all duration-300 hover:-translate-y-1">
                 <div className={`w-12 h-12 bg-gradient-to-br ${f.color} rounded-xl flex items-center justify-center mb-4 shadow-lg`}>
@@ -1811,7 +2292,7 @@ export default function LandingPage() {
           <div className="mt-10 text-center">
             <Link to="/register">
               <button className="inline-flex items-center gap-2 px-8 py-3.5 bg-green-500 hover:bg-green-400 text-white font-bold rounded-2xl transition-all shadow-xl shadow-green-500/25 hover:-translate-y-0.5">
-                Accéder à tous les modules <ArrowRight className="h-5 w-5" />
+                {t('landing.lp.news.cta', 'Accéder à tous les modules')} <ArrowRight className="h-5 w-5" />
               </button>
             </Link>
           </div>
@@ -1822,10 +2303,10 @@ export default function LandingPage() {
       <section className="py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <span className="text-sm font-semibold text-blue-600 uppercase tracking-widest">Données & Intégrations</span>
-            <h2 className="text-4xl font-bold text-gray-900 mt-3 mb-4">Un écosystème de données complet</h2>
+            <span className="text-sm font-semibold text-blue-600 uppercase tracking-widest">{t('landing.lp.eco.eyebrow', 'Données & Intégrations')}</span>
+            <h2 className="text-4xl font-bold text-gray-900 mt-3 mb-4">{t('landing.lp.eco.title', 'Un écosystème de données complet')}</h2>
             <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-              Connectez-vous à vos outils, enrichissez vos données avec les sources officielles et automatisez vos flux via webhooks.
+              {t('landing.lp.eco.subtitle', 'Connectez-vous à vos outils, enrichissez vos données avec les sources officielles et automatisez vos flux via webhooks.')}
             </p>
           </div>
 
@@ -1841,23 +2322,23 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <div className="font-bold text-lg">INSEE Sirene</div>
-                    <div className="text-blue-200 text-xs">Base officielle française</div>
+                    <div className="text-blue-200 text-xs">{t('landing.lp.eco.insee.subtitle', 'Base officielle française')}</div>
                   </div>
                 </div>
                 <div className="text-3xl font-extrabold mb-1">10M+</div>
-                <div className="text-blue-200 text-sm mb-6">entreprises françaises indexées</div>
+                <div className="text-blue-200 text-sm mb-6">{t('landing.lp.eco.insee.indexed', 'entreprises françaises indexées')}</div>
                 <div className="space-y-2.5">
                   {['Recherche par SIREN / SIRET', 'Données légales officielles', 'Activité NAF/APE · Effectifs', 'Enrichissement ESG automatique', 'Gratuit · Temps réel'].map((f, i) => (
                     <div key={i} className="flex items-center gap-2 text-sm text-blue-100">
                       <CheckCircle className="h-4 w-4 text-blue-300 flex-shrink-0" />
-                      {f}
+                      {t(`landing.lp.eco.insee.features.${i}`, f)}
                     </div>
                   ))}
                 </div>
                 <div className="mt-6 pt-6 border-t border-white/20">
                   <div className="flex items-center gap-2 text-xs text-blue-200">
                     <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                    API officielle · Pas de clé requise
+                    {t('landing.lp.eco.insee.api', 'API officielle · Pas de clé requise')}
                   </div>
                 </div>
               </div>
@@ -1870,10 +2351,10 @@ export default function LandingPage() {
               <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6">
                 <div className="flex items-center justify-between mb-5">
                   <div>
-                    <h3 className="font-bold text-gray-900">Intégrations disponibles</h3>
-                    <p className="text-sm text-gray-500 mt-0.5">Synchronisez vos données avec vos outils BI</p>
+                    <h3 className="font-bold text-gray-900">{t('landing.lp.eco.integrations.title', 'Intégrations disponibles')}</h3>
+                    <p className="text-sm text-gray-500 mt-0.5">{t('landing.lp.eco.integrations.subtitle', 'Synchronisez vos données avec vos outils BI')}</p>
                   </div>
-                  <span className="px-3 py-1 bg-green-50 text-green-700 text-xs font-semibold rounded-full border border-green-200">4 connecteurs</span>
+                  <span className="px-3 py-1 bg-green-50 text-green-700 text-xs font-semibold rounded-full border border-green-200">{t('landing.lp.eco.integrations.count', '4 connecteurs')}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {[
@@ -1889,8 +2370,8 @@ export default function LandingPage() {
                       <div className="min-w-0">
                         <div className="text-sm font-semibold text-gray-900 truncate">{int.name}</div>
                         <div className="flex gap-1 mt-1 flex-wrap">
-                          {int.features.map(f => (
-                            <span key={f} className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{f}</span>
+                          {int.features.map((f, j) => (
+                            <span key={j} className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{t(`landing.lp.eco.integrations.items.${i}.features.${j}`, f)}</span>
                           ))}
                         </div>
                       </div>
@@ -1905,11 +2386,11 @@ export default function LandingPage() {
                   <div>
                     <h3 className="font-bold text-gray-900 flex items-center gap-2">
                       <Radio className="h-4 w-4 text-violet-500" />
-                      Webhooks & Automatisation
+                      {t('landing.lp.eco.webhooks.title', 'Webhooks & Automatisation')}
                     </h3>
-                    <p className="text-sm text-gray-500 mt-0.5">Notifications temps réel vers vos services</p>
+                    <p className="text-sm text-gray-500 mt-0.5">{t('landing.lp.eco.webhooks.subtitle', 'Notifications temps réel vers vos services')}</p>
                   </div>
-                  <span className="px-3 py-1 bg-violet-50 text-violet-700 text-xs font-semibold rounded-full border border-violet-200">6 événements</span>
+                  <span className="px-3 py-1 bg-violet-50 text-violet-700 text-xs font-semibold rounded-full border border-violet-200">{t('landing.lp.eco.webhooks.count', '6 événements')}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {[
@@ -1933,7 +2414,7 @@ export default function LandingPage() {
                   ].map((f, i) => (
                     <div key={i} className="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 rounded-xl p-3">
                       <f.icon className={`h-4 w-4 ${f.color} flex-shrink-0`} />
-                      {f.label}
+                      {t(`landing.lp.eco.webhooks.features.${i}`, f.label)}
                     </div>
                   ))}
                 </div>
@@ -1943,17 +2424,110 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Comparatif concurrents ──────────────────────────────────────────── */}
+      <section className="py-24 bg-white relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(ellipse at 50% 100%, rgba(16,185,129,0.05) 0%, transparent 60%)' }} />
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
+              <span className="w-8 h-px bg-emerald-400 inline-block" />
+              {t('landing.lp.comparison.eyebrow', 'Comparatif')}
+              <span className="w-8 h-px bg-emerald-400 inline-block" />
+            </span>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">
+              {t('landing.lp.comparison.title', 'Pourquoi choisir ESGFlow ?')}
+            </h2>
+            <p className="text-lg text-gray-500 max-w-2xl mx-auto">{t('landing.lp.comparison.subtitle', "Comparez en un coup d'oeil ce que chaque solution propose réellement.")}</p>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-gray-200 shadow-xl overflow-hidden">
+            {/* Header */}
+            <div className="grid grid-cols-5 text-center text-sm font-bold border-b border-gray-200">
+              <div className="p-4 text-left text-gray-500 text-xs uppercase tracking-wider">{t('landing.lp.comparison.colFeature', 'Fonctionnalité')}</div>
+              <div className="p-4 bg-emerald-50 border-x border-emerald-100">
+                <div className="flex items-center justify-center gap-1.5">
+                  <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center"><Leaf className="h-3.5 w-3.5 text-white" /></div>
+                  <span className="text-emerald-700">ESGFlow</span>
+                </div>
+              </div>
+              <div className="p-4 text-gray-600">{t('landing.lp.comparison.colExcel', 'Tableurs Excel')}</div>
+              <div className="p-4 text-gray-600">Greenly</div>
+              <div className="p-4 text-gray-600">Sweep</div>
+            </div>
+            {/* Rows */}
+            {[
+              { feature: 'Bilan Carbone Scope 1/2/3', esg: true, excel: 'partial', greenly: true, sweep: true },
+              { feature: '15 catégories Scope 3', esg: true, excel: false, greenly: 'partial', sweep: true },
+              { feature: 'Rapport CSRD / ESRS complet', esg: true, excel: false, greenly: false, sweep: 'partial' },
+              { feature: 'Double matérialité interactive', esg: true, excel: false, greenly: false, sweep: 'partial' },
+              { feature: 'Supply Chain / Due Diligence', esg: true, excel: false, greenly: false, sweep: 'partial' },
+              { feature: 'Plan décarbonation SBTi', esg: true, excel: false, greenly: 'partial', sweep: true },
+              { feature: 'IA générative & Chatbot ESG', esg: true, excel: false, greenly: false, sweep: false },
+              { feature: 'Piste d\'audit SHA-256', esg: true, excel: false, greenly: false, sweep: false },
+              { feature: 'Multi-réglementaire (10 ref.)', esg: true, excel: false, greenly: false, sweep: false },
+              { feature: 'Taxonomie UE', esg: true, excel: false, greenly: false, sweep: 'partial' },
+              { feature: 'Hébergement 100% France', esg: true, excel: 'na', greenly: false, sweep: false },
+              { feature: 'À partir de', esg: '249€', excel: '0€', greenly: '500€+', sweep: t('landing.lp.comparison.customQuote', 'Sur devis') },
+            ].map((row, i) => {
+              const renderCell = (val: boolean | string) => {
+                if (val === true) return <Check className="h-5 w-5 text-emerald-500 mx-auto" />;
+                if (val === false) return <X className="h-5 w-5 text-gray-300 mx-auto" />;
+                if (val === 'partial') return <div className="w-5 h-5 mx-auto rounded-full border-2 border-amber-400 flex items-center justify-center"><div className="w-2 h-2 bg-amber-400 rounded-full" /></div>;
+                if (val === 'na') return <span className="text-xs text-gray-400">—</span>;
+                return <span className="text-sm font-bold text-gray-900">{val}</span>;
+              };
+              return (
+                <div key={i} className={`grid grid-cols-5 text-center items-center ${i % 2 === 0 ? 'bg-gray-50/50' : ''} ${i === 11 ? 'border-t-2 border-gray-200 bg-gray-50 font-semibold' : ''}`}>
+                  <div className="p-3.5 text-left text-sm text-gray-700">{t(`landing.lp.comparison.rows.${i}`, row.feature)}</div>
+                  <div className="p-3.5 bg-emerald-50/50 border-x border-emerald-100/50">{renderCell(row.esg)}</div>
+                  <div className="p-3.5">{renderCell(row.excel)}</div>
+                  <div className="p-3.5">{renderCell(row.greenly)}</div>
+                  <div className="p-3.5">{renderCell(row.sweep)}</div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Legend */}
+          <div className="flex items-center justify-center gap-6 mt-6 text-xs text-gray-500">
+            <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-500" /> {t('landing.lp.comparison.legendIncluded', 'Inclus')}</span>
+            <span className="flex items-center gap-1.5"><div className="w-4 h-4 rounded-full border-2 border-amber-400 flex items-center justify-center"><div className="w-1.5 h-1.5 bg-amber-400 rounded-full" /></div> {t('landing.lp.comparison.legendPartial', 'Partiel')}</span>
+            <span className="flex items-center gap-1.5"><X className="h-4 w-4 text-gray-300" /> {t('landing.lp.comparison.legendUnavailable', 'Non disponible')}</span>
+          </div>
+
+          <div className="text-center mt-10">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <span className="text-sm text-gray-500">{t('landing.lp.comparison.detailedCompare', 'Voir les comparatifs détaillés :')}</span>
+              {[
+                { slug: 'greenly', name: 'Greenly' },
+                { slug: 'sweep', name: 'Sweep' },
+                { slug: 'persefoni', name: 'Persefoni' },
+                { slug: 'workiva', name: 'Workiva' },
+              ].map(c => (
+                <Link
+                  key={c.slug}
+                  to={`/compare/${c.slug}`}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-full text-sm font-semibold transition-colors"
+                >
+                  vs {c.name} <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Pricing ──────────────────────────────────────────────────────────── */}
       <section id="tarifs" className="py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <span className="text-sm font-semibold text-green-600 uppercase tracking-widest">Tarifs</span>
-            <h2 className="text-4xl font-bold text-gray-900 mt-3 mb-4">Plans adaptés à votre taille</h2>
-            <p className="text-lg text-gray-500 mb-8">Commencez gratuitement. Évoluez à votre rythme. Sans engagement.</p>
+            <span className="text-sm font-semibold text-green-600 uppercase tracking-widest">{t('landing.lp.pricing.eyebrow', 'Tarifs')}</span>
+            <h2 className="text-4xl font-bold text-gray-900 mt-3 mb-4">{t('landing.lp.pricing.title', 'Plans adaptés à votre taille')}</h2>
+            <p className="text-lg text-gray-500 mb-8">{t('landing.lp.pricing.subtitle', 'Commencez gratuitement. Évoluez à votre rythme. Sans engagement.')}</p>
             <div className="inline-flex items-center gap-2 bg-white border border-gray-200 p-1 rounded-xl shadow-sm">
-              <button onClick={() => setBilling('monthly')} className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${billing === 'monthly' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500'}`}>Mensuel</button>
+              <button onClick={() => setBilling('monthly')} className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${billing === 'monthly' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500'}`}>{t('landing.lp.pricing.monthly', 'Mensuel')}</button>
               <button onClick={() => setBilling('annual')} className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${billing === 'annual' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500'}`}>
-                Annuel <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-bold">-20%</span>
+                {t('landing.lp.pricing.annual', 'Annuel')} <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-bold">-15%</span>
               </button>
             </div>
           </div>
@@ -1966,37 +2540,37 @@ export default function LandingPage() {
                 <div key={i} className={`relative flex flex-col rounded-3xl border-2 ${plan.color} bg-white p-8 transition-all duration-300 ${highlight ? 'shadow-2xl shadow-green-500/15 scale-105' : 'hover:shadow-xl hover:-translate-y-1'}`}>
                   {plan.badge && (
                     <div className={`absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap ${plan.badgeStyle} shadow-lg`}>
-                      {plan.badge}
+                      {t(`landing.lp.pricing.plans.${i}.badge`, plan.badge)}
                     </div>
                   )}
                   <div className="mb-6">
                     <h3 className="text-xl font-bold text-gray-900 mb-1">{plan.name}</h3>
-                    <p className="text-sm text-gray-500">{plan.desc}</p>
+                    <p className="text-sm text-gray-500">{t(`landing.lp.pricing.plans.${i}.desc`, plan.desc)}</p>
                   </div>
                   <div className="mb-8">
                     {price !== null ? (
                       <div className="flex items-end gap-2">
                         <span className="text-5xl font-extrabold text-gray-900">{price}€</span>
-                        <span className="text-gray-400 mb-2 text-sm">/mois{billing === 'annual' && <span className="block text-xs text-green-600 font-semibold">facturé annuellement</span>}</span>
+                        <span className="text-gray-400 mb-2 text-sm">{t('landing.lp.pricing.perMonth', '/mois')}{billing === 'annual' && <span className="block text-xs text-green-600 font-semibold">{t('landing.lp.pricing.billedAnnually', 'facturé annuellement')}</span>}</span>
                       </div>
-                    ) : <div className="text-4xl font-extrabold text-gray-900">Sur devis</div>}
+                    ) : <div className="text-4xl font-extrabold text-gray-900">{t('landing.lp.pricing.custom', 'Sur devis')}</div>}
                   </div>
-                  <Link to={plan.name === 'Enterprise' ? '/contact' : '/register'} className="block mb-8">
+                  <Link to={plan.cta?.toLowerCase().includes('contact') ? '/contact' : '/register'} className="block mb-8">
                     <button className={`w-full py-3.5 rounded-xl font-semibold text-sm transition-all ${highlight ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/30 hover:-translate-y-0.5' : 'bg-gray-900 hover:bg-gray-800 text-white'}`}>
-                      {plan.cta}
+                      {t(`landing.lp.pricing.plans.${i}.cta`, plan.cta)}
                     </button>
                   </Link>
                   <div className="space-y-2.5 flex-1">
                     {plan.features.map((f, j) => (
                       <div key={j} className="flex items-start gap-2.5">
                         <Check className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-gray-700">{f}</span>
+                        <span className="text-sm text-gray-700">{t(`landing.lp.pricing.plans.${i}.features.${j}`, f)}</span>
                       </div>
                     ))}
                     {plan.missing.map((f, j) => (
                       <div key={j} className="flex items-start gap-2.5 opacity-35">
                         <X className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-gray-500">{f}</span>
+                        <span className="text-sm text-gray-500">{t(`landing.lp.pricing.plans.${i}.missing.${j}`, f)}</span>
                       </div>
                     ))}
                   </div>
@@ -2004,7 +2578,136 @@ export default function LandingPage() {
               );
             })}
           </div>
-          <p className="text-center text-sm text-gray-400 mt-10">Tous les prix sont HT · TVA applicable · <button onClick={() => scrollTo('faq')} className="text-green-600 hover:underline">Questions fréquentes</button></p>
+          <p className="text-center text-sm text-gray-400 mt-10">{t('landing.lp.pricing.vatNote', 'Tous les prix sont HT · TVA applicable · ')}<button onClick={() => scrollTo('faq')} className="text-green-600 hover:underline">{t('landing.lp.pricing.faqLink', 'Questions fréquentes')}</button></p>
+
+          {/* ── ROI Calculator ──────────────────────────────────────────────── */}
+          {(() => {
+            const timeSaved = Math.round(roiHoursMonth * 0.80);
+            const monthlySavings = timeSaved * roiHourlyRate;
+            const annualSavings = monthlySavings * 12;
+            const recommendedPlan = roiEmployees <= 80 ? 'PME' : roiEmployees <= 350 ? 'ETI' : 'Groupe';
+            const planCost = roiEmployees <= 80
+              ? (billing === 'annual' ? 212 : 249)
+              : roiEmployees <= 350
+                ? (billing === 'annual' ? 509 : 599)
+                : (billing === 'annual' ? 1019 : 1199);
+            const planAnnualCost = planCost * 12;
+            const netSavings = annualSavings - planAnnualCost;
+            const roiPercent = Math.round((netSavings / planAnnualCost) * 100);
+            const paybackMonths = monthlySavings > 0 ? Math.max(1, Math.ceil(planAnnualCost / monthlySavings / 12)) : 0;
+
+            return (
+              <div id="roi-calculator" className="mt-20 bg-white rounded-3xl border-2 border-emerald-100 shadow-xl shadow-emerald-100/30 p-8 md:p-12 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-bl from-emerald-50 to-transparent rounded-bl-full pointer-events-none" />
+                <div className="relative">
+                  <div className="text-center mb-10">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full text-emerald-700 text-sm font-semibold mb-4">
+                      <Calculator className="h-4 w-4" />
+                      {t('landing.lp.roi.badge', 'Simulateur ROI')}
+                    </div>
+                    <h3 className="text-2xl md:text-3xl font-extrabold text-gray-900">{t('landing.lp.roi.title', 'Calculez vos économies avec ESGFlow')}</h3>
+                    <p className="text-gray-500 mt-2 max-w-xl mx-auto">{t('landing.lp.roi.subtitle', 'Ajustez les curseurs selon votre organisation pour estimer le retour sur investissement.')}</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
+                    {/* ── Inputs (3 cols) ── */}
+                    <div className="lg:col-span-3 space-y-8">
+                      {/* Slider: Employees */}
+                      <div>
+                        <div className="flex justify-between items-center mb-3">
+                          <label className="text-sm font-semibold text-gray-700 flex items-center gap-2"><Users className="h-4 w-4 text-gray-400" />{t('landing.lp.roi.employees', 'Nombre de collaborateurs')}</label>
+                          <span className="text-xl font-extrabold text-gray-900 tabular-nums bg-gray-50 px-3 py-1 rounded-lg">{roiEmployees}</span>
+                        </div>
+                        <input type="range" min={10} max={2000} step={10} value={roiEmployees}
+                          onChange={e => setRoiEmployees(+e.target.value)}
+                          className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-emerald-500"
+                        />
+                        <div className="flex justify-between text-xs text-gray-400 mt-1"><span>10</span><span>500</span><span>1 000</span><span>2 000</span></div>
+                      </div>
+
+                      {/* Slider: Hours/month */}
+                      <div>
+                        <div className="flex justify-between items-center mb-3">
+                          <label className="text-sm font-semibold text-gray-700 flex items-center gap-2"><Clock className="h-4 w-4 text-gray-400" />{t('landing.lp.roi.hours', "Heures / mois consacrées à l'ESG")}</label>
+                          <span className="text-xl font-extrabold text-gray-900 tabular-nums bg-gray-50 px-3 py-1 rounded-lg">{roiHoursMonth}h</span>
+                        </div>
+                        <input type="range" min={10} max={500} step={5} value={roiHoursMonth}
+                          onChange={e => setRoiHoursMonth(+e.target.value)}
+                          className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-blue-500"
+                        />
+                        <div className="flex justify-between text-xs text-gray-400 mt-1"><span>10h</span><span>150h</span><span>300h</span><span>500h</span></div>
+                      </div>
+
+                      {/* Slider: Hourly rate */}
+                      <div>
+                        <div className="flex justify-between items-center mb-3">
+                          <label className="text-sm font-semibold text-gray-700 flex items-center gap-2"><TrendingUp className="h-4 w-4 text-gray-400" />{t('landing.lp.roi.rate', 'Coût horaire moyen (chargé)')}</label>
+                          <span className="text-xl font-extrabold text-gray-900 tabular-nums bg-gray-50 px-3 py-1 rounded-lg">{roiHourlyRate}€</span>
+                        </div>
+                        <input type="range" min={25} max={200} step={5} value={roiHourlyRate}
+                          onChange={e => setRoiHourlyRate(+e.target.value)}
+                          className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-violet-500"
+                        />
+                        <div className="flex justify-between text-xs text-gray-400 mt-1"><span>25€</span><span>75€</span><span>125€</span><span>200€</span></div>
+                      </div>
+
+                      {/* Assumptions */}
+                      <div className="flex items-start gap-2 text-xs text-gray-400 bg-gray-50 rounded-xl p-3">
+                        <BookOpen className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                        <span>{t('landing.lp.roi.assumption', "Estimation basée sur une réduction de 80 % du temps de collecte et de reporting, constatée en moyenne par nos clients après 3 mois d'utilisation.")}</span>
+                      </div>
+                    </div>
+
+                    {/* ── Results (2 cols) ── */}
+                    <div className="lg:col-span-2 flex flex-col">
+                      <div className="bg-gradient-to-br from-emerald-600 to-green-700 rounded-2xl p-6 text-white flex-1 flex flex-col justify-between shadow-lg shadow-emerald-500/20">
+                        <div className="space-y-5">
+                          <div className="flex items-center justify-between pb-4 border-b border-white/20">
+                            <span className="text-sm text-emerald-100 font-medium">{t('landing.lp.roi.timeSaved', 'Temps économisé')}</span>
+                            <span className="text-2xl font-extrabold tabular-nums">{timeSaved}h<span className="text-sm font-medium text-emerald-200">{t('landing.lp.roi.perMonth', ' / mois')}</span></span>
+                          </div>
+                          <div className="flex items-center justify-between pb-4 border-b border-white/20">
+                            <span className="text-sm text-emerald-100 font-medium">{t('landing.lp.roi.monthlySavings', 'Économie mensuelle')}</span>
+                            <span className="text-2xl font-extrabold tabular-nums">{monthlySavings.toLocaleString('fr-FR')}€</span>
+                          </div>
+                          <div className="flex items-center justify-between pb-4 border-b border-white/20">
+                            <span className="text-sm text-emerald-100 font-medium">{t('landing.lp.roi.annualSavings', 'Économie annuelle')}</span>
+                            <span className="text-3xl font-extrabold tabular-nums">{annualSavings.toLocaleString('fr-FR')}€</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-emerald-100 font-medium">{t('landing.lp.roi.netRoi', 'ROI net')}</span>
+                            <span className={`text-2xl font-extrabold tabular-nums ${roiPercent > 0 ? 'text-green-200' : 'text-red-300'}`}>{roiPercent > 0 ? '+' : ''}{roiPercent}%</span>
+                          </div>
+                        </div>
+
+                        <div className="mt-6 pt-5 border-t border-white/20">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-sm text-emerald-100">{t('landing.lp.roi.recommendedPlan', 'Plan recommandé')}</span>
+                            <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-bold">{recommendedPlan}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-emerald-100">{t('landing.lp.roi.planCost', 'Coût plan')}</span>
+                            <span className="font-semibold">{planCost}€{t('landing.lp.roi.perMonthShort', '/mois')}</span>
+                          </div>
+                          {netSavings > 0 && (
+                            <div className="mt-3 bg-white/10 rounded-xl p-3 text-center">
+                              <div className="text-xs text-emerald-200">{t('landing.lp.roi.netGain', 'Gain net après abonnement')}</div>
+                              <div className="text-2xl font-extrabold mt-1">{netSavings.toLocaleString('fr-FR')}€<span className="text-sm font-medium text-emerald-200">{t('landing.lp.roi.perYear', ' / an')}</span></div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <Link to="/register" className="mt-4">
+                        <button className="w-full py-3.5 bg-gray-900 hover:bg-gray-800 text-white font-semibold text-sm rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                          {t('landing.lp.roi.cta', 'Essai gratuit 14 jours')} <ArrowRight className="h-4 w-4" />
+                        </button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </section>
 
@@ -2015,10 +2718,10 @@ export default function LandingPage() {
           <div className="text-center mb-16">
             <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
               <span className="w-8 h-px bg-emerald-400 inline-block" />
-              Témoignages
+              {t('landing.lp.testimonials.eyebrow', 'Témoignages')}
               <span className="w-8 h-px bg-emerald-400 inline-block" />
             </span>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mt-2">Ce que disent nos clients</h2>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mt-2">{t('landing.lp.testimonials.title', 'Ce que disent nos clients')}</h2>
           </div>
 
           {/* Featured testimonial */}
@@ -2031,11 +2734,11 @@ export default function LandingPage() {
               <div className="flex-1">
                 <div className="flex gap-1 mb-4">{Array.from({ length: 5 }).map((_, j) => <Star key={j} className="h-4 w-4 text-yellow-400 fill-yellow-400" />)}</div>
                 <blockquote className="text-white text-lg md:text-xl leading-relaxed font-medium mb-6">
-                  "La piste d'audit certifiable ISAE et le module multi-réglementaire ont transformé notre préparation aux audits CSRD. Ce qui prenait plusieurs semaines se fait maintenant en quelques heures."
+                  "{t('landing.lp.testimonials.featured.text', "Le journal d'audit détaillé et le module multi-réglementaire ont transformé notre préparation aux revues CSRD. Ce qui prenait plusieurs semaines se fait maintenant en quelques heures.")}"
                 </blockquote>
                 <div>
                   <div className="text-white font-bold">Sophie Martineau</div>
-                  <div className="text-slate-400 text-sm">Directrice RSE · Nexans</div>
+                  <div className="text-slate-400 text-sm">{t('landing.lp.testimonials.featured.role', 'Directrice RSE · Nexans')}</div>
                 </div>
               </div>
             </div>
@@ -2044,16 +2747,16 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
               { name: 'Thomas Durand', role: 'CFO · Biocoop', text: 'Le plan de décarbonation avec les scénarios SBTi et les 24 actions ROI nous a permis de construire notre trajectoire Net Zero en quelques jours, contre plusieurs semaines auparavant.', stars: 5, avatar: 'TD', color: 'from-blue-500 to-indigo-600' },
-              { name: 'Amélie Chen', role: 'Partner ESG · Deloitte France', text: 'Le module Supply Chain ESG avec due diligence est exactement ce que nos clients attendaient pour se mettre en conformité avec la loi Devoir de Vigilance. Excellent outil.', stars: 5, avatar: 'AC', color: 'from-emerald-500 to-teal-600' },
-            ].map((t, i) => (
+              { name: 'Amélie Chen', role: 'Partner ESG · Deloitte France', text: 'Le module Supply Chain ESG avec scoring fournisseurs et questionnaires automatisés est exactement ce que nos clients attendaient pour structurer leur démarche CSDDD. Excellent outil.', stars: 5, avatar: 'AC', color: 'from-emerald-500 to-teal-600' },
+            ].map((tst, i) => (
               <div key={i} className="flex flex-col p-8 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                <div className="flex gap-1 mb-5">{Array.from({ length: t.stars }).map((_, j) => <Star key={j} className="h-4 w-4 text-yellow-400 fill-yellow-400" />)}</div>
-                <blockquote className="text-gray-700 text-sm leading-relaxed flex-1 mb-6 italic">"{t.text}"</blockquote>
+                <div className="flex gap-1 mb-5">{Array.from({ length: tst.stars }).map((_, j) => <Star key={j} className="h-4 w-4 text-yellow-400 fill-yellow-400" />)}</div>
+                <blockquote className="text-gray-700 text-sm leading-relaxed flex-1 mb-6 italic">"{t(`landing.lp.testimonials.items.${i}.text`, tst.text)}"</blockquote>
                 <div className="flex items-center gap-3 pt-5 border-t border-gray-100">
-                  <div className={`w-10 h-10 bg-gradient-to-br ${t.color} rounded-xl flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>{t.avatar}</div>
+                  <div className={`w-10 h-10 bg-gradient-to-br ${tst.color} rounded-xl flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>{tst.avatar}</div>
                   <div>
-                    <div className="text-sm font-bold text-gray-900">{t.name}</div>
-                    <div className="text-xs text-gray-500">{t.role}</div>
+                    <div className="text-sm font-bold text-gray-900">{tst.name}</div>
+                    <div className="text-xs text-gray-500">{t(`landing.lp.testimonials.items.${i}.role`, tst.role)}</div>
                   </div>
                 </div>
               </div>
@@ -2062,15 +2765,469 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Sécurité & Conformité ──────────────────────────────────────────── */}
+      <section className="py-24 bg-white relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(ellipse at 70% 50%, rgba(99,102,241,0.04) 0%, transparent 60%)' }} />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 uppercase tracking-widest mb-4">
+              <span className="w-8 h-px bg-slate-300 inline-block" />
+              {t('landing.lp.security.eyebrow', 'Sécurité & Conformité')}
+              <span className="w-8 h-px bg-slate-300 inline-block" />
+            </span>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mt-2 mb-4">{t('landing.lp.security.title', 'Vos données méritent le meilleur')}</h2>
+            <p className="text-lg text-gray-500 max-w-2xl mx-auto">{t('landing.lp.security.subtitle', "Infrastructure souveraine, chiffrement de bout en bout, audit certifiable — la confiance n'est pas une option.")}</p>
+          </div>
+
+          {/* Certifications row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-14">
+            {[
+              { icon: Shield, label: 'RGPD', sub: 'Données hébergées en France', desc: 'Aucun transfert hors UE. DPA inclus.', color: 'from-blue-500 to-indigo-600', ring: 'ring-blue-100' },
+              { icon: Lock, label: 'ISO 27001', sub: 'Datacenter certifié', desc: 'Sécurité physique & logique auditée.', color: 'from-slate-600 to-slate-800', ring: 'ring-slate-100' },
+              { icon: ShieldCheck, label: 'iXBRL/ESEF', sub: 'EFRAG 2024-12-31', desc: 'XHTML certifiable conforme ESMA.', color: 'from-violet-500 to-purple-600', ring: 'ring-violet-100' },
+              { icon: Award, label: 'CSRD / ESRS 2025', sub: 'Conforme & mis à jour', desc: '82 exigences ESRS mappées.', color: 'from-emerald-500 to-green-600', ring: 'ring-emerald-100' },
+            ].map(({ icon: Icon, label, sub, desc, color, ring }, i) => (
+              <div key={label} className={`relative group p-6 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 ring-1 ${ring}`}>
+                <div className={`w-12 h-12 bg-gradient-to-br ${color} rounded-xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-105 transition-transform`}>
+                  <Icon className="h-6 w-6 text-white" />
+                </div>
+                <div className="text-lg font-extrabold text-gray-900 mb-1">{label}</div>
+                <div className="text-sm font-semibold text-gray-600 mb-2">{t(`landing.lp.security.certs.${i}.sub`, sub)}</div>
+                <div className="text-xs text-gray-400 leading-relaxed">{t(`landing.lp.security.certs.${i}.desc`, desc)}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Security features grid */}
+          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-10 relative overflow-hidden">
+            <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0)', backgroundSize: '32px 32px' }} />
+            <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
+                  <ShieldCheck className="h-5 w-5 text-emerald-400" />
+                </div>
+                <div>
+                  <div className="text-white font-bold text-lg">{t('landing.lp.security.infraTitle', 'Infrastructure de confiance')}</div>
+                  <div className="text-slate-400 text-sm">{t('landing.lp.security.infraSubtitle', 'Chaque couche est protégée')}</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[
+                  { icon: Lock, title: 'Chiffrement AES-256', items: ['Données au repos chiffrées', 'TLS 1.3 en transit', 'Clés rotées automatiquement'] },
+                  { icon: Hash, title: 'Empreintes SHA-256', items: ['Empreinte par enregistrement', 'Horodatage UTC précis', 'Détection des modifications'] },
+                  { icon: Server, title: 'Hébergement souverain', items: ['Datacenter France tier III+', 'Backup quotidien géo-répliqué', 'Aucun cloud US / Aucun GAFAM'] },
+                  { icon: Eye, title: 'Traçabilité complète', items: ['Journal d\'audit détaillé', 'Qui, quoi, quand — traçable', 'Export auditeurs 1 clic'] },
+                  { icon: Users, title: 'Contrôle d\'accès', items: ['RBAC multi-niveaux', 'SSO SAML / OAuth2', 'Isolation tenant (RLS)'] },
+                  { icon: RefreshCw, title: 'Continuité & SLA', items: ['Disponibilité 99.9%', 'Monitoring 24/7', 'PRA & PCA documentés'] },
+                ].map(({ icon: Icon, title, items }, i) => (
+                  <div key={title} className="p-5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/8 transition-colors">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Icon className="h-5 w-5 text-emerald-400 flex-shrink-0" />
+                      <div className="text-white font-semibold text-sm">{t(`landing.lp.security.features.${i}.title`, title)}</div>
+                    </div>
+                    <div className="space-y-2">
+                      {items.map((item, j) => (
+                        <div key={item} className="flex items-center gap-2 text-sm text-slate-300">
+                          <Check className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
+                          {t(`landing.lp.security.features.${i}.items.${j}`, item)}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-white/10 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-400">
+                <span className="flex items-center gap-1.5"><div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" /> {t('landing.lp.security.strip.0', 'Multi-tenant RLS PostgreSQL')}</span>
+                <span className="flex items-center gap-1.5"><div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" /> {t('landing.lp.security.strip.1', 'E-signatures SHA-256 par entrée')}</span>
+                <span className="flex items-center gap-1.5"><div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" /> {t('landing.lp.security.strip.2', 'Conforme CSRD Art. 29a')}</span>
+                <span className="flex items-center gap-1.5"><div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" /> {t('landing.lp.security.strip.3', 'Zéro dépendance cloud US')}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Ressources & Guides ─────────────────────────────────────────────── */}
+      <section className="py-24 bg-gray-50 border-t border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
+            <div>
+              <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
+                <span className="w-8 h-px bg-emerald-400 inline-block" />
+                {t('landing.lp.resources.eyebrow', 'Ressources gratuites')}
+              </span>
+              <h2 className="text-4xl font-extrabold text-gray-900 mt-2">{t('landing.lp.resources.title', 'Guides & expertises ESG')}</h2>
+              <p className="text-gray-500 mt-2 max-w-lg">{t('landing.lp.resources.subtitle', 'Approfondissez vos connaissances avec nos guides pratiques rédigés par des experts ESG.')}</p>
+            </div>
+            <Link to="/resources" className="mt-4 md:mt-0 inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">
+              {t('landing.lp.resources.allLink', 'Toutes les ressources')} <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              {
+                category: 'Guide',
+                catColor: 'bg-blue-100 text-blue-700',
+                title: 'CSRD pour les PME',
+                desc: 'Tout ce que les PME doivent savoir sur la CSRD : calendrier, seuils, normes ESRS et plan d\'action concret.',
+                icon: GraduationCap,
+                color: 'from-blue-500 to-indigo-600',
+                href: '/guide/csrd-pme',
+                readTime: '12 min',
+              },
+              {
+                category: 'Guide',
+                catColor: 'bg-orange-100 text-orange-700',
+                title: 'Bilan Carbone entreprise',
+                desc: 'Guide complet du bilan carbone : Scopes 1/2/3, facteurs ADEME, obligations légales et méthodologie pas à pas.',
+                icon: Flame,
+                color: 'from-orange-500 to-red-600',
+                href: '/guide/bilan-carbone-entreprise',
+                readTime: '15 min',
+              },
+              {
+                category: 'Guide',
+                catColor: 'bg-violet-100 text-violet-700',
+                title: 'CSDDD & Supply Chain',
+                desc: 'Due diligence européenne : qui est concerné, obligations, calendrier d\'application et plan de mise en conformité.',
+                icon: Truck,
+                color: 'from-violet-500 to-purple-600',
+                href: '/guide/csddd-supply-chain',
+                readTime: '10 min',
+              },
+              {
+                category: 'Checklist',
+                catColor: 'bg-emerald-100 text-emerald-700',
+                title: 'Checklist CSRD 2025',
+                desc: 'Les 50 points de contrôle essentiels pour préparer votre premier reporting CSRD. Téléchargeable en PDF.',
+                icon: FileCheck,
+                color: 'from-emerald-500 to-green-600',
+                href: '/ressources/checklist-csrd',
+                readTime: '8 min',
+              },
+            ].map((resource, i) => (
+              <Link key={i} to={resource.href} className="group flex flex-col bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                {/* Top gradient bar */}
+                <div className={`h-2 bg-gradient-to-r ${resource.color}`} />
+                <div className="p-6 flex flex-col flex-1">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${resource.catColor}`}>{t(`landing.lp.resources.items.${i}.category`, resource.category)}</span>
+                    <span className="text-xs text-gray-400 flex items-center gap-1"><Clock className="h-3 w-3" />{resource.readTime}</span>
+                  </div>
+                  <div className={`w-11 h-11 bg-gradient-to-br ${resource.color} rounded-xl flex items-center justify-center mb-4 shadow-md group-hover:scale-105 transition-transform`}>
+                    <resource.icon className="h-5 w-5 text-white" />
+                  </div>
+                  <h3 className="text-base font-bold text-gray-900 mb-2 group-hover:text-emerald-600 transition-colors">{t(`landing.lp.resources.items.${i}.title`, resource.title)}</h3>
+                  <p className="text-sm text-gray-500 leading-relaxed flex-1">{t(`landing.lp.resources.items.${i}.desc`, resource.desc)}</p>
+                  <div className="mt-4 flex items-center gap-1 text-sm font-semibold text-emerald-600 group-hover:gap-2 transition-all">
+                    {t('landing.lp.resources.readGuide', 'Lire le guide')} <ArrowRight className="h-4 w-4" />
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Qui sommes-nous ──────────────────────────────────────────────────── */}
+      <section id="qui-sommes-nous" className="py-24 bg-white overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          {/* ── Header ── */}
+          <div className="text-center mb-20">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full text-emerald-700 text-sm font-semibold uppercase tracking-widest mb-5">
+              <Users className="h-4 w-4" /> {t('landing.lp.about.eyebrow', 'Notre histoire')}
+            </span>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight mb-5">
+              {t('landing.lp.about.title', 'Qui sommes-nous ?')}
+            </h2>
+            <p className="text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
+              {t('landing.lp.about.intro', "ESGFlow est né d'un constat simple : les équipes RSE européennes méritent une plateforme pensée pour elles — pas un tableur, pas un outil américain, pas 6 logiciels différents.")}
+            </p>
+          </div>
+
+          {/* ── Mission block ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-24">
+            {/* Left: texte */}
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full text-slate-600 text-xs font-semibold uppercase tracking-wide mb-6">
+                <Target className="h-3.5 w-3.5" /> {t('landing.lp.about.missionEyebrow', 'Notre mission')}
+              </div>
+              <h3 className="text-3xl font-bold text-gray-900 mb-6 leading-tight">
+                {t('landing.lp.about.missionTitle', 'Démocratiser la conformité ESG pour toutes les entreprises européennes')}
+              </h3>
+              <p className="text-gray-600 leading-relaxed mb-6 text-lg">
+                <Trans i18nKey="landing.lp.about.missionP1">
+                  Nous construisons la première plateforme ESG <strong className="text-gray-900">nativement européenne</strong> : conçue dès le départ pour la CSRD, la Taxonomie UE, SFDR, les SBTi et le devoir de vigilance — pas adaptée après coup.
+                </Trans>
+              </p>
+              <p className="text-gray-600 leading-relaxed mb-8">
+                {t('landing.lp.about.missionP2', 'Notre conviction : la transition durable ne doit pas être réservée aux grands groupes avec des équipes de 20 consultants. Une PME de 250 personnes doit pouvoir produire un rapport CSRD certifiable, en quelques semaines, sans expertise préalable.')}
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { value: '22', label: 'modules ESG', color: 'text-emerald-600' },
+                  { value: '8', label: 'réglementations couvertes', color: 'text-blue-600' },
+                  { value: '100%', label: 'hébergement France', color: 'text-violet-600' },
+                  { value: '14j', label: "d'essai gratuit", color: 'text-amber-600' },
+                ].map((s, i) => (
+                  <div key={i} className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                    <div className={`text-2xl font-extrabold ${s.color} mb-1`}>{s.value}</div>
+                    <div className="text-sm text-gray-600 font-medium">{t(`landing.lp.about.stats.${i}.label`, s.label)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: visual timeline */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl" />
+              <div className="relative p-8 space-y-6">
+                {[
+                  {
+                    year: '2022', icon: Leaf, color: 'bg-emerald-500',
+                    title: 'Naissance du projet',
+                    desc: 'Face à la complexité de la directive CSRD en cours de finalisation, une équipe de consultants RSE décide de construire l\'outil qu\'ils auraient voulu avoir.',
+                  },
+                  {
+                    year: '2023', icon: Code2, color: 'bg-blue-500',
+                    title: 'Premier prototype',
+                    desc: 'Lancement du module Bilan Carbone et du générateur de rapport CSRD. Premiers bêta-testeurs en France et en Belgique.',
+                  },
+                  {
+                    year: '2024', icon: Globe, color: 'bg-violet-500',
+                    title: 'Plateforme complète',
+                    desc: 'Ajout de la Taxonomie UE, SFDR, SBTi, Vigilance, circuit d\'approbation ISAE 3000. Certification iXBRL/ESEF pour les rapports de durabilité.',
+                  },
+                  {
+                    year: '2025+', icon: Sparkles, color: 'bg-amber-500',
+                    title: 'Intelligence augmentée',
+                    desc: 'IA générative intégrée : extraction automatique des données FEC, analyse de gap CSRD, calcul de matérialité, génération de politiques RSE.',
+                  },
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-4 items-start">
+                    <div className="flex flex-col items-center">
+                      <div className={`w-9 h-9 ${item.color} rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm`}>
+                        <item.icon className="h-4 w-4 text-white" />
+                      </div>
+                      {i < 3 && <div className="w-0.5 h-6 bg-gray-200 mt-2" />}
+                    </div>
+                    <div className="pb-2">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">{item.year}</span>
+                        <span className="text-sm font-bold text-gray-900">{t(`landing.lp.about.timeline.${i}.title`, item.title)}</span>
+                      </div>
+                      <p className="text-sm text-gray-600 leading-relaxed">{t(`landing.lp.about.timeline.${i}.desc`, item.desc)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Problèmes & Solutions ── */}
+          <div className="mb-24">
+            <div className="text-center mb-14">
+              <span className="inline-flex items-center gap-2 px-3 py-1 bg-red-50 border border-red-100 rounded-full text-red-600 text-xs font-semibold uppercase tracking-wide mb-4">
+                <AlertTriangle className="h-3.5 w-3.5" /> {t('landing.lp.about.problemsEyebrow', 'Les problèmes du marché')}
+              </span>
+              <h3 className="text-3xl font-bold text-gray-900">{t('landing.lp.about.problemsTitle', 'Ce que nous résolvons')}</h3>
+              <p className="text-gray-500 mt-3 max-w-xl mx-auto">{t('landing.lp.about.problemsSubtitle', 'Nous avons rencontré ces mêmes obstacles en tant que consultants RSE. ESGFlow est notre réponse directe.')}</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[
+                {
+                  problem: 'Données ESG fragmentées dans des tableurs',
+                  problemDesc: 'Les équipes RSE passent 60% de leur temps à consolider des fichiers Excel épars, sans traçabilité ni contrôle des versions.',
+                  solution: 'Plateforme centralisée avec 22 modules connectés',
+                  solutionDesc: 'Un seul endroit pour saisir, valider, approuver et exporter toutes vos données ESG — avec circuit d\'approbation et signature SHA-256.',
+                  problemIcon: AlertTriangle,
+                  solutionIcon: CheckCircle,
+                  problemColor: 'text-red-500',
+                  solutionColor: 'text-emerald-600',
+                  problemBg: 'bg-red-50',
+                  solutionBg: 'bg-emerald-50',
+                },
+                {
+                  problem: 'Réglementations incompréhensibles & évolutives',
+                  problemDesc: 'CSRD, Taxonomie UE, SFDR, SBTi, CSDDD : chaque directive a ses propres indicateurs, seuils et calendriers. Impossible à suivre sans expert dédié.',
+                  solution: 'Guides intégrés + mises à jour réglementaires automatiques',
+                  solutionDesc: 'Checklists ESRS interactives, assistant IA réglementaire, alertes sur les changements de texte — vous restez conformes sans veille permanente.',
+                  problemIcon: AlertTriangle,
+                  solutionIcon: CheckCircle,
+                  problemColor: 'text-orange-500',
+                  solutionColor: 'text-emerald-600',
+                  problemBg: 'bg-orange-50',
+                  solutionBg: 'bg-emerald-50',
+                },
+                {
+                  problem: 'Auditabilité impossible à garantir',
+                  problemDesc: 'Lors d\'un audit ISAE 3000, prouver la traçabilité des données ESG avec un tableur est un exercice périlleux — qui peut coûter la certification.',
+                  solution: 'Journal d\'audit horodaté + e-signature SHA-256',
+                  solutionDesc: 'Chaque saisie, validation et approbation génère une empreinte cryptographique immuable. Preuve légale recalculable lors de tout audit externe.',
+                  problemIcon: AlertTriangle,
+                  solutionIcon: CheckCircle,
+                  problemColor: 'text-red-500',
+                  solutionColor: 'text-emerald-600',
+                  problemBg: 'bg-red-50',
+                  solutionBg: 'bg-emerald-50',
+                },
+                {
+                  problem: 'Coût prohibitif des solutions enterprise',
+                  problemDesc: 'Les plateformes ESG historiques (Workiva, Enablon) commencent à 50 000 €/an. Hors de portée pour les PME et ETI qui représentent 99% du tissu économique européen.',
+                  solution: 'Pricing accessible dès 0 € — sans engagement',
+                  solutionDesc: 'Plan gratuit fonctionnel, plans PME à partir de 99 €/mois. La conformité ESG ne doit pas être réservée aux grands groupes.',
+                  problemIcon: AlertTriangle,
+                  solutionIcon: CheckCircle,
+                  problemColor: 'text-orange-500',
+                  solutionColor: 'text-emerald-600',
+                  problemBg: 'bg-orange-50',
+                  solutionBg: 'bg-emerald-50',
+                },
+              ].map((item, i) => (
+                <div key={i} className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                  {/* Problem */}
+                  <div className={`${item.problemBg} p-5 border-b border-gray-100`}>
+                    <div className="flex items-start gap-3">
+                      <item.problemIcon className={`h-5 w-5 ${item.problemColor} flex-shrink-0 mt-0.5`} />
+                      <div>
+                        <p className={`text-sm font-bold ${item.problemColor} mb-1`}>{t('landing.lp.about.problemLabel', 'Le problème')}</p>
+                        <p className="text-sm font-semibold text-gray-800 mb-1">{t(`landing.lp.about.problems.${i}.problem`, item.problem)}</p>
+                        <p className="text-xs text-gray-500 leading-relaxed">{t(`landing.lp.about.problems.${i}.problemDesc`, item.problemDesc)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Solution */}
+                  <div className="p-5">
+                    <div className="flex items-start gap-3">
+                      <item.solutionIcon className={`h-5 w-5 ${item.solutionColor} flex-shrink-0 mt-0.5`} />
+                      <div>
+                        <p className="text-sm font-bold text-emerald-600 mb-1">{t('landing.lp.about.solutionLabel', 'Notre solution')}</p>
+                        <p className="text-sm font-semibold text-gray-800 mb-1">{t(`landing.lp.about.problems.${i}.solution`, item.solution)}</p>
+                        <p className="text-xs text-gray-500 leading-relaxed">{t(`landing.lp.about.problems.${i}.solutionDesc`, item.solutionDesc)}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Ce qui nous différencie ── */}
+          <div>
+            <div className="text-center mb-14">
+              <span className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-100 rounded-full text-blue-600 text-xs font-semibold uppercase tracking-wide mb-4">
+                <Award className="h-3.5 w-3.5" /> {t('landing.lp.about.posEyebrow', 'Notre positionnement')}
+              </span>
+              <h3 className="text-3xl font-bold text-gray-900">{t('landing.lp.about.posTitle', "Pourquoi ESGFlow plutôt qu'une autre plateforme ?")}</h3>
+              <p className="text-gray-500 mt-3 max-w-xl mx-auto">{t('landing.lp.about.posSubtitle', 'Nous ne prétendons pas être les meilleurs sur tout — mais sur ce qui compte pour les équipes RSE européennes, oui.')}</p>
+            </div>
+
+            {/* Differentiator cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+              {[
+                {
+                  icon: Globe,
+                  iconBg: 'bg-blue-600',
+                  title: '100% conçu pour l\'Europe',
+                  desc: 'Greenly, Sweep et Persefoni sont des outils anglophones adaptés après coup à la réglementation européenne. ESGFlow a été conçu dès le départ pour la CSRD, la Taxonomie UE et SFDR — les textes réglementaires sont intégrés nativement, pas collés en surcouche.',
+                  badge: 'vs Greenly / Sweep / Persefoni',
+                  badgeBg: 'bg-blue-50 text-blue-700 border-blue-200',
+                },
+                {
+                  icon: Layers,
+                  iconBg: 'bg-violet-600',
+                  title: '22 modules dans une seule plateforme',
+                  desc: 'La plupart des concurrents sont mono-fonctionnels : bilan carbone uniquement (Greenly), reporting uniquement (Workiva), risques uniquement (Enablon). ESGFlow couvre le spectre complet : carbone, reporting CSRD, matérialité, SBTi, SFDR, taxonomie, vigilance, bilan d\'audit — sans jongler entre outils.',
+                  badge: 'vs Workiva / Enablon',
+                  badgeBg: 'bg-violet-50 text-violet-700 border-violet-200',
+                },
+                {
+                  icon: Calculator,
+                  iconBg: 'bg-emerald-600',
+                  title: 'Accessible aux PME dès 99 €/mois',
+                  desc: 'Workiva commence à 50 000 €/an. IBM Envizi demande une implémentation de 6 mois. ESGFlow est opérationnel en 48h, avec un plan gratuit fonctionnel et des tarifs pensés pour les PME et ETI — celles qui ont le plus besoin de se conformer et le moins de ressources pour le faire.',
+                  badge: 'vs IBM Envizi / Workiva',
+                  badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                },
+              ].map((d, i) => (
+                <div key={i} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-7 hover:shadow-md transition-shadow flex flex-col">
+                  <div className={`w-11 h-11 ${d.iconBg} rounded-2xl flex items-center justify-center mb-5 shadow-sm`}>
+                    <d.icon className="h-5 w-5 text-white" />
+                  </div>
+                  <span className={`inline-flex items-center self-start px-2.5 py-0.5 rounded-full text-[11px] font-semibold border mb-4 ${d.badgeBg}`}>
+                    {d.badge}
+                  </span>
+                  <h4 className="text-lg font-bold text-gray-900 mb-3">{t(`landing.lp.about.diffCards.${i}.title`, d.title)}</h4>
+                  <p className="text-sm text-gray-600 leading-relaxed flex-1">{t(`landing.lp.about.diffCards.${i}.desc`, d.desc)}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Quick comparison strip */}
+            <div className="bg-slate-900 rounded-3xl p-8 text-white overflow-x-auto">
+              <h4 className="text-lg font-bold text-white mb-6 text-center">{t('landing.lp.about.quickCompareTitle', 'Comparaison rapide')}</h4>
+              <table className="w-full text-sm min-w-[640px]">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    <th className="text-left text-slate-400 font-medium pb-3 pr-6">{t('landing.lp.about.criterion', 'Critère')}</th>
+                    <th className="text-center pb-3 px-4">
+                      <span className="text-emerald-400 font-bold">ESGFlow</span>
+                    </th>
+                    <th className="text-center pb-3 px-4 text-slate-400 font-medium">Greenly / Sweep</th>
+                    <th className="text-center pb-3 px-4 text-slate-400 font-medium">Workiva</th>
+                    <th className="text-center pb-3 px-4 text-slate-400 font-medium">Persefoni</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {[
+                    ['Bilan carbone complet', true, true, false, true],
+                    ['Reporting CSRD natif', true, false, true, false],
+                    ['Taxonomie UE 2020/852', true, false, false, false],
+                    ['SFDR (fonds d\'investissement)', true, false, false, false],
+                    ['SBTi pre-flight & validation', true, false, false, true],
+                    ['Devoir de vigilance (CSDDD)', true, false, false, false],
+                    ['Circuit approbation ISAE 3000', true, false, true, false],
+                    ['iXBRL / ESEF export', true, false, true, false],
+                    ['Hébergement France / RGPD', true, false, false, false],
+                    ['Plan gratuit disponible', true, false, false, false],
+                    ['Tarif PME < 500 €/mois', true, true, false, false],
+                  ].map(([label, ...values], i) => (
+                    <tr key={i} className="hover:bg-white/3 transition-colors">
+                      <td className="py-3 pr-6 text-slate-300">{t(`landing.lp.about.compareRows.${i}`, label as string)}</td>
+                      {(values as boolean[]).map((v, j) => (
+                        <td key={j} className="py-3 px-4 text-center">
+                          {v
+                            ? <span className={j === 0 ? 'text-emerald-400 font-bold' : 'text-emerald-400'}>✓</span>
+                            : <span className="text-slate-600">✗</span>
+                          }
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       {/* ── FAQ ──────────────────────────────────────────────────────────────── */}
       <section id="faq" className="py-24 bg-gray-50">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <span className="text-sm font-semibold text-green-600 uppercase tracking-widest">FAQ</span>
-            <h2 className="text-4xl font-bold text-gray-900 mt-3">Questions fréquentes</h2>
+            <span className="text-sm font-semibold text-green-600 uppercase tracking-widest">{t('landing.lp.faq.eyebrow', 'FAQ')}</span>
+            <h2 className="text-4xl font-bold text-gray-900 mt-3">{t('landing.lp.faq.title', 'Questions fréquentes')}</h2>
           </div>
           <div className="space-y-3">
-            {faqs.map((f, i) => <FaqItem key={i} q={f.q} a={f.a} />)}
+            {faqs.map((f, i) => <FaqItem key={i} q={t(`landing.lp.faq.items.${i}.q`, f.q)} a={t(`landing.lp.faq.items.${i}.a`, f.a)} />)}
           </div>
         </div>
       </section>
@@ -2085,31 +3242,31 @@ export default function LandingPage() {
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500/15 border border-emerald-500/30 rounded-full text-emerald-300 text-sm font-semibold mb-10">
             <Sparkles className="h-4 w-4" />
-            22 modules · 14 jours gratuits · Sans carte bancaire
+            {t('landing.lp.cta.badge', '22 modules · 14 jours gratuits · Sans carte bancaire')}
           </div>
 
           <h2 className="text-4xl lg:text-6xl font-extrabold text-white mb-6 leading-[1.05] tracking-tight">
-            Votre ESG, enfin
+            {t('landing.lp.cta.titleLine1', 'Votre ESG, enfin')}
             <br />
             <span className="bg-gradient-to-r from-emerald-400 via-green-300 to-teal-400 bg-clip-text text-transparent">
-              sous contrôle total
+              {t('landing.lp.cta.titleLine2', 'sous contrôle total')}
             </span>
           </h2>
 
           <p className="text-xl text-slate-300 mb-12 max-w-2xl mx-auto leading-relaxed">
-            Rejoignez les équipes RSE qui ont remplacé leurs tableurs et leurs silos par une plateforme unique, intelligente et certifiable.
+            {t('landing.lp.cta.subtitle', 'Rejoignez les équipes RSE qui ont remplacé leurs tableurs et leurs silos par une plateforme unique, intelligente et certifiable.')}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <Link to="/register">
               <button className="group flex items-center gap-2 px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-2xl transition-all shadow-2xl shadow-emerald-500/30 text-base hover:-translate-y-0.5">
-                Démarrer gratuitement
+                {t('landing.lp.cta.primaryBtn', 'Démarrer gratuitement')}
                 <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </button>
             </Link>
             <Link to="/demo">
               <button className="flex items-center gap-2 px-8 py-4 bg-white/8 hover:bg-white/15 border border-white/20 text-white font-semibold rounded-2xl transition-all text-base backdrop-blur-sm">
-                <Play className="h-4 w-4 fill-white" /> Voir la démo interactive
+                <Play className="h-4 w-4 fill-white" /> {t('landing.lp.cta.secondaryBtn', 'Voir la démo interactive')}
               </button>
             </Link>
           </div>
@@ -2119,13 +3276,13 @@ export default function LandingPage() {
             {[
               { icon: Shield, label: 'RGPD conforme', sub: 'Données souveraines' },
               { icon: Globe, label: 'Hébergé en France', sub: 'ISO 27001' },
-              { icon: Award, label: 'ISAE 3000', sub: 'Certifiable auditeurs' },
-              { icon: Lock, label: 'SHA-256', sub: 'Intégrité garantie' },
+              { icon: Award, label: 'iXBRL/ESEF', sub: 'EFRAG 2024-12-31' },
+              { icon: Lock, label: 'SHA-256', sub: 'Empreintes par entrée' },
             ].map((item, i) => (
               <div key={i} className="flex flex-col items-center gap-2 p-4 bg-white/5 border border-white/10 rounded-2xl">
                 <item.icon className="h-5 w-5 text-emerald-400" />
-                <div className="text-white text-xs font-semibold">{item.label}</div>
-                <div className="text-slate-400 text-xs">{item.sub}</div>
+                <div className="text-white text-xs font-semibold">{t(`landing.lp.cta.badges.${i}.label`, item.label)}</div>
+                <div className="text-slate-400 text-xs">{t(`landing.lp.cta.badges.${i}.sub`, item.sub)}</div>
               </div>
             ))}
           </div>
@@ -2144,55 +3301,56 @@ export default function LandingPage() {
                 <span className="text-xl font-bold">ESGFlow</span>
               </div>
               <p className="text-slate-400 text-sm leading-relaxed max-w-xs mb-6">
-                La plateforme ESG complète — 22 modules, 100+ indicateurs ESRS, IA intégrée, conformité CSRD certifiable.
+                {t('landing.lp.footer.tagline', 'La plateforme ESG complète — 22 modules, 100+ indicateurs ESRS, IA intégrée, conformité CSRD certifiable.')}
               </p>
               <div className="flex gap-2.5">
                 {[
-                  { key: 'in', href: 'https://www.linkedin.com/company/esgflow' },
-                  { key: 'tw', href: 'https://twitter.com/esgflow' },
-                  { key: 'yt', href: 'https://www.youtube.com/@esgflow' },
+                  { key: 'in', label: 'LinkedIn', href: 'https://www.linkedin.com/company/esgflow' },
+                  { key: 'tw', label: 'Twitter / X', href: 'https://twitter.com/esgflow' },
+                  { key: 'yt', label: 'YouTube', href: 'https://www.youtube.com/@esgflow' },
                 ].map(s => (
-                  <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center justify-center cursor-pointer transition-colors text-slate-400 hover:text-white text-xs font-bold uppercase">{s.key}</a>
+                  <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.label} className="w-11 h-11 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center justify-center cursor-pointer transition-colors text-slate-400 hover:text-white text-xs font-bold uppercase">{s.key}</a>
                 ))}
               </div>
             </div>
             {[
-              { title: 'Modules', links: [
-                  { label: 'Bilan Carbone Scope 3', href: '#modules', scroll: 'modules' },
-                  { label: 'Plan Décarbonation SBTi', href: '#modules', scroll: 'modules' },
-                  { label: 'Scores ESG automatiques', href: '#modules', scroll: 'modules' },
-                  { label: 'Workflow Validation', href: '#modules', scroll: 'modules' },
-                  { label: 'Analyse ESRS / Gap CSRD', href: '#modules', scroll: 'modules' },
-                  { label: 'Taxonomie UE', href: '#modules', scroll: 'modules' },
-                  { label: 'Benchmarking Sectoriel', href: '#modules', scroll: 'modules' },
-                  { label: 'Supply Chain ESG', href: '#modules', scroll: 'modules' },
-                  { label: 'Registre des Risques', href: '#modules', scroll: 'modules' },
-                  { label: 'Piste d\'Audit ISAE', href: '#modules', scroll: 'modules' },
+              { title: 'Fonctionnalités', links: [
+                  { label: 'Bilan Carbone Scope 3', href: '/features/bilan-carbone' },
+                  { label: 'Reporting CSRD / ESRS', href: '/features/csrd-reporting' },
+                  { label: 'Plan Décarbonation SBTi', href: '/features/decarbonation' },
+                  { label: 'Supply Chain ESG', href: '/features/supply-chain' },
+                  { label: 'Double Matérialité', href: '/features/double-materialite' },
+                  { label: 'Taxonomie UE', href: '/features/taxonomie-ue' },
+                  { label: 'IA & Automatisation', href: '/features/ia-automatisation' },
+                  { label: 'Piste d\'Audit', href: '/features/audit-trail' },
               ]},
               { title: 'Solutions', links: [
                   { label: 'PME & ETI', href: '/register' },
                   { label: 'Grands Groupes', href: '/register' },
                   { label: 'Cabinets Conseil', href: '/register' },
                   { label: 'Investisseurs', href: '/register' },
+                  { label: 'Voir la démo', href: '/demo' },
               ]},
               { title: 'Ressources', links: [
+                  { label: 'Guide CSRD PME', href: '/guide/csrd-pme' },
+                  { label: 'Guide Bilan Carbone', href: '/guide/bilan-carbone-entreprise' },
+                  { label: 'Guide CSDDD', href: '/guide/csddd-supply-chain' },
+                  { label: 'Checklist CSRD', href: '/ressources/checklist-csrd' },
                   { label: 'Centre d\'aide', href: '/help' },
-                  { label: 'Documentation API', href: '/app/api-docs' },
-                  { label: 'Voir la démo', href: '/demo' },
                   { label: 'Support', href: '/support' },
                   { label: 'Tarifs', href: '#tarifs', scroll: 'tarifs' },
               ]},
-            ].map(col => (
+            ].map((col, ci) => (
               <div key={col.title}>
-                <h4 className="font-semibold text-sm mb-4 text-white">{col.title}</h4>
-                <ul className="space-y-3">
-                  {col.links.map((l: any) => (
+                <h4 className="font-semibold text-sm mb-4 text-white">{t(`landing.lp.footer.cols.${ci}.title`, col.title)}</h4>
+                <ul className="space-y-3 tap-list">
+                  {col.links.map((l: any, li: number) => (
                     <li key={l.label}>
                       {l.scroll
-                        ? <button onClick={() => scrollTo(l.scroll)} className="text-slate-400 hover:text-white transition-colors text-sm">{l.label}</button>
+                        ? <button onClick={() => scrollTo(l.scroll)} className="text-slate-400 hover:text-white transition-colors text-sm">{t(`landing.lp.footer.cols.${ci}.links.${li}`, l.label as string)}</button>
                         : l.href.startsWith('/') && !l.href.startsWith('/app')
-                          ? <Link to={l.href} className="text-slate-400 hover:text-white transition-colors text-sm">{l.label}</Link>
-                          : <a href={l.href} className="text-slate-400 hover:text-white transition-colors text-sm">{l.label}</a>
+                          ? <Link to={l.href} className="text-slate-400 hover:text-white transition-colors text-sm">{t(`landing.lp.footer.cols.${ci}.links.${li}`, l.label as string)}</Link>
+                          : <a href={l.href} className="text-slate-400 hover:text-white transition-colors text-sm">{t(`landing.lp.footer.cols.${ci}.links.${li}`, l.label as string)}</a>
                       }
                     </li>
                   ))}
@@ -2201,12 +3359,12 @@ export default function LandingPage() {
             ))}
           </div>
           <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-slate-500 text-sm">© 2026 ESGFlow. Tous droits réservés.</p>
-            <div className="flex gap-6 text-sm text-slate-500">
-              <Link to="/legal-notice" className="hover:text-white transition-colors">Mentions légales</Link>
-              <Link to="/privacy-policy" className="hover:text-white transition-colors">Confidentialité</Link>
-              <Link to="/terms-of-service" className="hover:text-white transition-colors">CGU</Link>
-              <Link to="/privacy-policy" className="hover:text-white transition-colors">Cookies</Link>
+            <p className="text-slate-500 text-sm">{t('landing.lp.footer.copyright', '© 2026 ESGFlow. Tous droits réservés.')}</p>
+            <div className="flex gap-6 text-sm text-slate-500 tap-list">
+              <Link to="/legal-notice" className="hover:text-white transition-colors">{t('landing.lp.footer.legalNotice', 'Mentions légales')}</Link>
+              <Link to="/privacy-policy" className="hover:text-white transition-colors">{t('landing.lp.footer.privacy', 'Confidentialité')}</Link>
+              <Link to="/terms-of-service" className="hover:text-white transition-colors">{t('landing.lp.footer.terms', 'CGU')}</Link>
+              <Link to="/privacy-policy" className="hover:text-white transition-colors">{t('landing.lp.footer.cookies', 'Cookies')}</Link>
             </div>
           </div>
         </div>
