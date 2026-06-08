@@ -1,8 +1,10 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function NotFound() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
 
   return (
@@ -19,7 +21,7 @@ export default function NotFound() {
                 <span className="text-3xl">🌿</span>
                 <div className="text-left">
                   <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest">ESGFlow</p>
-                  <p className="text-lg font-bold text-slate-800">Page introuvable</p>
+                  <p className="text-lg font-bold text-slate-800">{t('errors.pageNotFound')}</p>
                 </div>
               </div>
             </div>
@@ -27,10 +29,10 @@ export default function NotFound() {
         </div>
 
         <h1 className="text-2xl font-bold text-slate-800 mb-3">
-          Cette page n'existe pas
+          {t('errors.notExistTitle')}
         </h1>
         <p className="text-slate-500 mb-8 leading-relaxed">
-          La page que vous recherchez a peut-être été déplacée, renommée ou n'existe tout simplement plus.
+          {t('errors.notExistDesc')}
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -38,18 +40,18 @@ export default function NotFound() {
             onClick={() => navigate(-1)}
             className="w-full sm:w-auto px-6 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-700 font-medium hover:bg-slate-50 transition-colors"
           >
-            ← Retour
+            ← {t('errors.back')}
           </button>
           <button
             onClick={() => navigate(isAuthenticated ? '/app' : '/login')}
             className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition-colors"
           >
-            {isAuthenticated ? 'Tableau de bord' : 'Se connecter'}
+            {isAuthenticated ? t('errors.dashboard') : t('errors.signIn')}
           </button>
         </div>
 
         <p className="mt-10 text-xs text-slate-400">
-          Code d'erreur : 404 · Not Found
+          {t('errors.errorCode404')}
         </p>
       </div>
     </div>
