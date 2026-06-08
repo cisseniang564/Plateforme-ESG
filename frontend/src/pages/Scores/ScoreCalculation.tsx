@@ -6,7 +6,8 @@ import {
   X, BarChart3, RefreshCw, Info, AlertTriangle, Calendar,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr, enUS } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 import Card from '@/components/common/Card';
 import Spinner from '@/components/common/Spinner';
 import RadarChart from '@/components/charts/RadarChart';
@@ -83,6 +84,7 @@ interface OrgSearchProps {
 type SearchMode = 'name' | 'siren' | 'industry' | 'all';
 
 function OrgSearchCombobox({ organizations, value, onChange, loading }: OrgSearchProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [mode, setMode] = useState<SearchMode>('all');
@@ -116,10 +118,10 @@ function OrgSearchCombobox({ organizations, value, onChange, loading }: OrgSearc
   }, [query, mode, organizations]);
 
   const modes: { id: SearchMode; label: string; icon: typeof Search }[] = [
-    { id: 'all',      label: 'Tout',     icon: Search    },
-    { id: 'name',     label: 'Nom',      icon: Building2 },
-    { id: 'siren',    label: 'SIREN',    icon: Hash      },
-    { id: 'industry', label: 'Secteur',  icon: Globe     },
+    { id: 'all',      label: t('scoreCalc.modeAll'),      icon: Search    },
+    { id: 'name',     label: t('scoreCalc.modeName'),     icon: Building2 },
+    { id: 'siren',    label: t('scoreCalc.modeSiren'),    icon: Hash      },
+    { id: 'industry', label: t('scoreCalc.modeIndustry'), icon: Globe     },
   ];
 
   const results = filtered();
@@ -133,7 +135,7 @@ function OrgSearchCombobox({ organizations, value, onChange, loading }: OrgSearc
         className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-white border border-gray-200 rounded-xl text-left hover:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-all shadow-sm"
       >
         {loading ? (
-          <span className="flex items-center gap-2 text-gray-400 text-sm"><Spinner size="sm" /> Chargement...</span>
+          <span className="flex items-center gap-2 text-gray-400 text-sm"><Spinner size="sm" /> {t('scoreCalc.loading')}</span>
         ) : selectedOrg ? (
           <span className="flex items-center gap-2 flex-1 min-w-0">
             <span className="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center flex-shrink-0">
@@ -142,14 +144,14 @@ function OrgSearchCombobox({ organizations, value, onChange, loading }: OrgSearc
             <span className="flex-1 min-w-0">
               <span className="block font-medium text-gray-900 truncate">{selectedOrg.name}</span>
               {selectedOrg.external_id && (
-                <span className="text-xs text-gray-400">SIREN : {selectedOrg.external_id}</span>
+                <span className="text-xs text-gray-400">{t('scoreCalc.siren')} : {selectedOrg.external_id}</span>
               )}
             </span>
           </span>
         ) : (
           <span className="flex items-center gap-2 text-gray-400 text-sm">
             <Search className="h-4 w-4" />
-            Rechercher une organisation…
+            {t('scoreCalc.searchOrg')}
           </span>
         )}
         <span className="flex items-center gap-1 flex-shrink-0">
@@ -179,10 +181,10 @@ function OrgSearchCombobox({ organizations, value, onChange, loading }: OrgSearc
                 autoFocus
                 type="text"
                 placeholder={
-                  mode === 'siren' ? 'Rechercher par SIREN/SIRET…' :
-                  mode === 'name' ? 'Rechercher par nom…' :
-                  mode === 'industry' ? 'Rechercher par secteur…' :
-                  'Rechercher par nom, SIREN, secteur…'
+                  mode === 'siren' ? t('scoreCalc.searchBySiren') :
+                  mode === 'name' ? t('scoreCalc.searchByName') :
+                  mode === 'industry' ? t('scoreCalc.searchByIndustry') :
+                  t('scoreCalc.searchByAll')
                 }
                 value={query}
                 onChange={e => setQuery(e.target.value)}
@@ -214,7 +216,7 @@ function OrgSearchCombobox({ organizations, value, onChange, loading }: OrgSearc
                 );
               })}
               <span className="ml-auto text-xs text-gray-400 flex items-center pr-1">
-                {results.length} résultat{results.length > 1 ? 's' : ''}
+                {t('scoreCalc.resultsCount', { count: results.length })}
               </span>
             </div>
           </div>
@@ -231,8 +233,8 @@ function OrgSearchCombobox({ organizations, value, onChange, loading }: OrgSearc
                 <Globe className="h-4 w-4 text-gray-500" />
               </span>
               <span>
-                <span className="block font-medium">Toutes les organisations</span>
-                <span className="text-xs text-gray-400">Score agrégé tenant</span>
+                <span className="block font-medium">{t('scoreCalc.allOrgs')}</span>
+                <span className="text-xs text-gray-400">{t('scoreCalc.aggregatedTenantScore')}</span>
               </span>
               {!value && <CheckCircle className="h-4 w-4 ml-auto text-violet-500" />}
             </button>
@@ -243,7 +245,7 @@ function OrgSearchCombobox({ organizations, value, onChange, loading }: OrgSearc
             {results.length === 0 ? (
               <div className="py-8 text-center text-sm text-gray-400">
                 <Search className="h-8 w-8 mx-auto mb-2 text-gray-200" />
-                Aucune organisation trouvée
+                {t('scoreCalc.noOrgFound')}
               </div>
             ) : (
               results.map(org => (
@@ -283,6 +285,8 @@ function OrgSearchCombobox({ organizations, value, onChange, loading }: OrgSearc
 /* ─── Main Component ────────────────────────────────────────────────────── */
 export default function ScoreCalculation() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+  const dateFnsLocale = i18n.language === 'fr' ? fr : enUS;
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(true);
   const [calculating, setCalculating] = useState(false);
@@ -295,12 +299,12 @@ export default function ScoreCalculation() {
   useEffect(() => {
     api.get('/organizations?limit=500')
       .then(res => setOrganizations(res.data?.items || res.data?.organizations || []))
-      .catch(() => toast.error('Impossible de charger les organisations'))
+      .catch(() => toast.error(t('scoreCalc.loadOrgsError')))
       .finally(() => setLoadingOrgs(false));
   }, []);
 
   const handleCalculate = async () => {
-    if (!scoreDate) { setError('Veuillez sélectionner une date'); return; }
+    if (!scoreDate) { setError(t('scoreCalc.selectDateError')); return; }
     setCalculating(true);
     setError('');
     setResult(null);
@@ -310,9 +314,9 @@ export default function ScoreCalculation() {
         ...(selectedOrg && { organization_id: selectedOrg }),
       });
       setResult(res.data);
-      toast.success('Score calculé avec succès');
+      toast.success(t('scoreCalc.scoreSuccess'));
     } catch (err: any) {
-      const msg = err.response?.data?.detail || 'Erreur lors du calcul';
+      const msg = err.response?.data?.detail || t('scoreCalc.calcError');
       setError(msg);
       toast.error(msg);
     } finally {
@@ -330,9 +334,9 @@ export default function ScoreCalculation() {
   ] : [];
 
   const pillars = result ? [
-    { label: 'Environnement', value: result.environmental_score, icon: Leaf, color: 'text-emerald-600', bg: 'bg-emerald-50', bar: 'bg-emerald-500', border: 'border-emerald-200' },
-    { label: 'Social',        value: result.social_score,        icon: Users, color: 'text-blue-600',    bg: 'bg-blue-50',    bar: 'bg-blue-500',    border: 'border-blue-200'    },
-    { label: 'Gouvernance',   value: result.governance_score,    icon: Scale, color: 'text-violet-600',  bg: 'bg-violet-50',  bar: 'bg-violet-500',  border: 'border-violet-200'  },
+    { label: t('scoreCalc.pillarEnv'),    value: result.environmental_score, icon: Leaf, color: 'text-emerald-600', bg: 'bg-emerald-50', bar: 'bg-emerald-500', border: 'border-emerald-200' },
+    { label: t('scoreCalc.pillarSocial'), value: result.social_score,        icon: Users, color: 'text-blue-600',    bg: 'bg-blue-50',    bar: 'bg-blue-500',    border: 'border-blue-200'    },
+    { label: t('scoreCalc.pillarGov'),    value: result.governance_score,    icon: Scale, color: 'text-violet-600',  bg: 'bg-violet-50',  bar: 'bg-violet-500',  border: 'border-violet-200'  },
   ] : [];
 
   return (
@@ -346,27 +350,27 @@ export default function ScoreCalculation() {
             onClick={() => navigate(-1)}
             className="mb-5 inline-flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors"
           >
-            <ArrowLeft className="h-4 w-4" /> Retour
+            <ArrowLeft className="h-4 w-4" /> {t('common.back')}
           </button>
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wider uppercase">
-                  Moteur de scoring
+                  {t('scoreCalc.scoringEngine')}
                 </span>
                 <span className="flex items-center gap-1 px-3 py-1 bg-violet-400/20 border border-violet-300/30 rounded-full text-xs font-semibold text-violet-200">
-                  <Sparkles className="h-3 w-3" /> IA Pondérée
+                  <Sparkles className="h-3 w-3" /> {t('scoreCalc.weightedAI')}
                 </span>
               </div>
-              <h1 className="text-3xl font-bold tracking-tight mb-1">Calcul de Score ESG</h1>
+              <h1 className="text-3xl font-bold tracking-tight mb-1">{t('scoreCalc.title')}</h1>
               <p className="text-violet-200 text-sm max-w-md">
-                Analyse multi-piliers pondérée par secteur · Normalisation 0-100 · Rating AAA→C
+                {t('scoreCalc.subtitle')}
               </p>
             </div>
             {result && (
               <div className={`flex items-center gap-4 px-6 py-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20`}>
                 <div>
-                  <p className="text-white/60 text-xs font-medium uppercase tracking-wide mb-0.5">Score global</p>
+                  <p className="text-white/60 text-xs font-medium uppercase tracking-wide mb-0.5">{t('scoreCalc.globalScore')}</p>
                   <p className={`text-4xl font-extrabold ${scoreColor(result.overall_score)} drop-shadow`}>
                     {Math.round(result.overall_score)}
                   </p>
@@ -391,8 +395,8 @@ export default function ScoreCalculation() {
                   <Calculator className="h-4 w-4 text-violet-600" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-semibold text-gray-900">Paramètres de calcul</h2>
-                  <p className="text-xs text-gray-500">{organizations.length} organisations disponibles</p>
+                  <h2 className="text-sm font-semibold text-gray-900">{t('scoreCalc.calcParams')}</h2>
+                  <p className="text-xs text-gray-500">{t('scoreCalc.orgsAvailable', { count: organizations.length })}</p>
                 </div>
               </div>
             </div>
@@ -401,8 +405,8 @@ export default function ScoreCalculation() {
               {/* Organisation search */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Organisation
-                  <span className="ml-1.5 text-xs font-normal text-gray-400">(optionnel)</span>
+                  {t('scoreCalc.organization')}
+                  <span className="ml-1.5 text-xs font-normal text-gray-400">{t('scoreCalc.optional')}</span>
                 </label>
                 <OrgSearchCombobox
                   organizations={organizations}
@@ -430,19 +434,19 @@ export default function ScoreCalculation() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <Calendar className="inline h-4 w-4 mr-1 text-gray-400" />
-                  Date de calcul
+                  {t('scoreCalc.calcDate')}
                 </label>
                 <input
                   type="date"
                   value={scoreDate}
                   onChange={e => setScoreDate(e.target.value)}
                   max={format(new Date(), 'yyyy-MM-dd')}
-                  title="Date de calcul"
+                  title={t('scoreCalc.calcDate')}
                   className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/30 focus:border-violet-400 transition-all shadow-sm"
                 />
                 {scoreDate && (
                   <p className="mt-1.5 text-xs text-gray-400">
-                    Données jusqu'au {format(new Date(scoreDate + 'T00:00:00'), 'd MMMM yyyy', { locale: fr })}
+                    {t('scoreCalc.dataUntil', { date: format(new Date(scoreDate + 'T00:00:00'), 'd MMMM yyyy', { locale: dateFnsLocale }) })}
                   </p>
                 )}
               </div>
@@ -462,9 +466,9 @@ export default function ScoreCalculation() {
                 className="w-full flex items-center justify-center gap-2.5 px-5 py-3.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-violet-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
               >
                 {calculating ? (
-                  <><RefreshCw className="h-4 w-4 animate-spin" /> Calcul en cours…</>
+                  <><RefreshCw className="h-4 w-4 animate-spin" /> {t('scoreCalc.calculating')}</>
                 ) : (
-                  <><Calculator className="h-4 w-4" /> Calculer le Score</>
+                  <><Calculator className="h-4 w-4" /> {t('scoreCalc.calculateScore')}</>
                 )}
               </button>
             </div>
@@ -474,8 +478,7 @@ export default function ScoreCalculation() {
               <div className="flex items-start gap-2">
                 <Info className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-blue-700 leading-relaxed">
-                  Score calculé sur les données disponibles jusqu'à la date choisie,
-                  pondérées par secteur d'activité et par indicateur.
+                  {t('scoreCalc.infoFooter')}
                 </p>
               </div>
             </div>
@@ -486,16 +489,16 @@ export default function ScoreCalculation() {
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/60">
               <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-gray-500" />
-                Méthodologie
+                {t('scoreCalc.methodology')}
               </h3>
             </div>
             <div className="px-6 py-4">
               <ol className="space-y-2.5">
                 {[
-                  { n: '1', label: 'Collecte', desc: 'Données indicateurs sur la période' },
-                  { n: '2', label: 'Normalisation', desc: 'Échelle 0-100 par benchmark sectoriel' },
-                  { n: '3', label: 'Pondération', desc: 'Poids E/S/G selon le secteur' },
-                  { n: '4', label: 'Agrégation', desc: 'Score global et rating AAA→C' },
+                  { n: '1', label: t('scoreCalc.step1Label'), desc: t('scoreCalc.step1Desc') },
+                  { n: '2', label: t('scoreCalc.step2Label'), desc: t('scoreCalc.step2Desc') },
+                  { n: '3', label: t('scoreCalc.step3Label'), desc: t('scoreCalc.step3Desc') },
+                  { n: '4', label: t('scoreCalc.step4Label'), desc: t('scoreCalc.step4Desc') },
                 ].map(step => (
                   <li key={step.n} className="flex items-start gap-3">
                     <span className="w-5 h-5 rounded-full bg-violet-100 text-violet-700 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -523,8 +526,8 @@ export default function ScoreCalculation() {
                   <Calculator className="absolute inset-0 m-auto h-6 w-6 text-violet-500" />
                 </div>
                 <div className="text-center">
-                  <p className="font-semibold text-gray-800">Calcul en cours…</p>
-                  <p className="text-sm text-gray-400 mt-1">Analyse des indicateurs E, S, G</p>
+                  <p className="font-semibold text-gray-800">{t('scoreCalc.calculating')}</p>
+                  <p className="text-sm text-gray-400 mt-1">{t('scoreCalc.analyzing')}</p>
                 </div>
               </div>
             </Card>
@@ -536,11 +539,11 @@ export default function ScoreCalculation() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <CheckCircle className="h-5 w-5 text-emerald-500" />
-                      <h2 className="text-sm font-semibold text-gray-900">Résultat du calcul</h2>
+                      <h2 className="text-sm font-semibold text-gray-900">{t('scoreCalc.calcResult')}</h2>
                     </div>
                     {result.calculation_date && (
                       <span className="text-xs text-gray-400">
-                        {format(new Date(result.calculation_date + 'T00:00:00'), 'd MMM yyyy', { locale: fr })}
+                        {format(new Date(result.calculation_date + 'T00:00:00'), 'd MMM yyyy', { locale: dateFnsLocale })}
                       </span>
                     )}
                   </div>
@@ -551,7 +554,7 @@ export default function ScoreCalculation() {
                   <div className="flex items-center gap-6 mb-6 pb-6 border-b border-gray-100">
                     <div className={`relative w-24 h-24 rounded-2xl ring-4 flex flex-col items-center justify-center ${gradeMeta.bg} ${gradeMeta.ring} flex-shrink-0`}>
                       <span className={`text-3xl font-black ${gradeMeta.color}`}>{gradeMeta.label}</span>
-                      <span className="text-xs text-gray-400 mt-0.5">Rating</span>
+                      <span className="text-xs text-gray-400 mt-0.5">{t('scoreCalc.rating')}</span>
                     </div>
                     <div className="flex-1">
                       <div className="flex items-baseline gap-1.5 mb-1">
@@ -568,17 +571,17 @@ export default function ScoreCalculation() {
                       </div>
                       <div className="flex items-center gap-3 text-xs text-gray-500">
                         {result.data_points_count != null && (
-                          <span>{result.data_points_count} points de données</span>
+                          <span>{t('scoreCalc.dataPoints', { count: result.data_points_count })}</span>
                         )}
                         {result.indicators_used != null && (
-                          <span>· {result.indicators_used} indicateurs</span>
+                          <span>· {t('scoreCalc.indicatorsUsed', { count: result.indicators_used })}</span>
                         )}
                         {result.confidence_level && (
                           <span className={`capitalize font-medium ${
                             result.confidence_level === 'high' ? 'text-emerald-600' :
                             result.confidence_level === 'medium' ? 'text-amber-600' : 'text-red-500'
                           }`}>
-                            · Fiabilité {result.confidence_level}
+                            · {t('scoreCalc.reliability')} {result.confidence_level}
                           </span>
                         )}
                       </div>
@@ -607,14 +610,14 @@ export default function ScoreCalculation() {
                     <div className="flex items-center gap-3 px-4 py-3 bg-emerald-50 rounded-xl border border-emerald-100">
                       <TrendingUp className="h-5 w-5 text-emerald-500 flex-shrink-0" />
                       <div>
-                        <p className="text-xs text-gray-500 mb-0.5">Meilleur pilier</p>
+                        <p className="text-xs text-gray-500 mb-0.5">{t('scoreCalc.bestPillar')}</p>
                         <p className="text-sm font-semibold text-emerald-700 capitalize">{result.best_pillar}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 px-4 py-3 bg-red-50 rounded-xl border border-red-100">
                       <TrendingDown className="h-5 w-5 text-red-400 flex-shrink-0" />
                       <div>
-                        <p className="text-xs text-gray-500 mb-0.5">À améliorer</p>
+                        <p className="text-xs text-gray-500 mb-0.5">{t('scoreCalc.toImprove')}</p>
                         <p className="text-sm font-semibold text-red-600 capitalize">{result.worst_pillar}</p>
                       </div>
                     </div>
@@ -626,7 +629,7 @@ export default function ScoreCalculation() {
                     className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-xl transition-colors text-sm"
                   >
                     <BarChart3 className="h-4 w-4" />
-                    Voir le tableau de bord complet
+                    {t('scoreCalc.viewFullDashboard')}
                   </button>
                 </div>
               </Card>
@@ -634,7 +637,7 @@ export default function ScoreCalculation() {
               {/* Radar */}
               <Card className="!p-0 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/60">
-                  <h3 className="text-sm font-semibold text-gray-900">Répartition par pilier</h3>
+                  <h3 className="text-sm font-semibold text-gray-900">{t('scoreCalc.pillarBreakdown')}</h3>
                 </div>
                 <div className="px-4 pb-4">
                   <RadarChart data={radarData} dataKey="value" height={250} />
@@ -648,15 +651,15 @@ export default function ScoreCalculation() {
                 <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-100 to-indigo-100 flex items-center justify-center mb-5">
                   <Calculator className="h-10 w-10 text-violet-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">Aucun résultat</h3>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">{t('scoreCalc.noResult')}</h3>
                 <p className="text-sm text-gray-400 max-w-xs leading-relaxed mb-6">
-                  Sélectionnez une organisation et une date, puis lancez le calcul pour obtenir votre score ESG.
+                  {t('scoreCalc.noResultDesc')}
                 </p>
                 <div className="grid grid-cols-3 gap-3 w-full max-w-xs">
                   {[
-                    { icon: Leaf,  label: 'Environnement', color: 'bg-emerald-50 text-emerald-600' },
-                    { icon: Users, label: 'Social',        color: 'bg-blue-50 text-blue-600'       },
-                    { icon: Scale, label: 'Gouvernance',   color: 'bg-violet-50 text-violet-600'   },
+                    { icon: Leaf,  label: t('scoreCalc.pillarEnv'),    color: 'bg-emerald-50 text-emerald-600' },
+                    { icon: Users, label: t('scoreCalc.pillarSocial'), color: 'bg-blue-50 text-blue-600'       },
+                    { icon: Scale, label: t('scoreCalc.pillarGov'),    color: 'bg-violet-50 text-violet-600'   },
                   ].map(p => {
                     const Icon = p.icon;
                     return (
