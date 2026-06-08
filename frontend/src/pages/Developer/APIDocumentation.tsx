@@ -14,6 +14,7 @@ import {
   Globe,
   Shield,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { api } from '@/services/api'
 
 // --- Types ---
@@ -56,9 +57,9 @@ const resp = await fetch('https://app.esgflow.io/api/v1/indicators/', {
 const data = await resp.json();`,
 }
 
-const QUICK_START_EXAMPLES: Record<string, { label: string; lang: CodeLang; code: string }> = {
+const QUICK_START_EXAMPLES: Record<string, { labelKey: string; lang: CodeLang; code: string }> = {
   list: {
-    label: 'Lister les indicateurs',
+    labelKey: 'apiDoc.qsList',
     lang: 'python',
     code: `import requests
 
@@ -72,7 +73,7 @@ for indicator in resp.json():
     print(indicator["code"], indicator["name"])`,
   },
   submit: {
-    label: 'Soumettre des données',
+    labelKey: 'apiDoc.qsSubmit',
     lang: 'python',
     code: `import requests
 
@@ -92,7 +93,7 @@ resp = requests.post(
 print(resp.json())`,
   },
   scores: {
-    label: 'Obtenir les scores ESG',
+    labelKey: 'apiDoc.qsScores',
     lang: 'python',
     code: `import requests
 
@@ -110,9 +111,9 @@ print(f"Environnemental: {scores['environmental']['score']}")`,
 
 // --- Helpers ---
 
-function formatDate(iso: string | null): string {
+function formatDate(iso: string | null, locale: string): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('fr-FR', {
+  return new Date(iso).toLocaleDateString(locale, {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -122,6 +123,7 @@ function formatDate(iso: string | null): string {
 // --- Sub-components ---
 
 function CopyButton({ text, className = '' }: { text: string; className?: string }) {
+  const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
 
   const handleCopy = () => {
@@ -133,11 +135,11 @@ function CopyButton({ text, className = '' }: { text: string; className?: string
   return (
     <button
       onClick={handleCopy}
-      title="Copier"
+      title={t('apiDoc.copy')}
       className={`flex items-center gap-1 rounded px-2 py-1 text-xs transition ${className}`}
     >
       {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-      {copied ? 'Copié !' : 'Copier'}
+      {copied ? t('apiDoc.copied') : t('apiDoc.copy')}
     </button>
   )
 }
@@ -164,6 +166,7 @@ interface CreateKeyModalProps {
 }
 
 function CreateKeyModal({ onClose, onCreated }: CreateKeyModalProps) {
+  const { t } = useTranslation()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [expiryDays, setExpiryDays] = useState<string>('never')
@@ -187,7 +190,7 @@ function CreateKeyModal({ onClose, onCreated }: CreateKeyModalProps) {
       const res = await api.post('/api-keys/', payload)
       onCreated(res.data.full_key, res.data.name)
     } catch {
-      setError("Une erreur s'est produite lors de la création de la clé.")
+      setError(t('apiDoc.creationError'))
     } finally {
       setLoading(false)
     }
@@ -201,7 +204,7 @@ function CreateKeyModal({ onClose, onCreated }: CreateKeyModalProps) {
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100">
               <Key className="h-5 w-5 text-emerald-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900">Nouvelle clé API</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t('apiDoc.newKeyTitle')}</h3>
           </div>
           <button onClick={onClose} className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
             <X className="h-5 w-5" />
@@ -218,40 +221,40 @@ function CreateKeyModal({ onClose, onCreated }: CreateKeyModalProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700">
-              Nom de la clé <span className="text-red-500">*</span>
+              {t('apiDoc.keyName')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="ex. Production, CI/CD, Dashboard interne…"
+              placeholder={t('apiDoc.keyNamePlaceholder')}
               required
               className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">Description</label>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('apiDoc.description')}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Usage prévu, équipe responsable…"
+              placeholder={t('apiDoc.descriptionPlaceholder')}
               rows={2}
               className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">Expiration</label>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('apiDoc.expiration')}</label>
             <select
               value={expiryDays}
               onChange={(e) => setExpiryDays(e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
             >
-              <option value="30">30 jours</option>
-              <option value="90">90 jours</option>
-              <option value="365">1 an</option>
-              <option value="never">Jamais</option>
+              <option value="30">{t('apiDoc.days30')}</option>
+              <option value="90">{t('apiDoc.days90')}</option>
+              <option value="365">{t('apiDoc.year1')}</option>
+              <option value="never">{t('apiDoc.never')}</option>
             </select>
           </div>
 
@@ -262,14 +265,14 @@ function CreateKeyModal({ onClose, onCreated }: CreateKeyModalProps) {
               className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              {loading ? 'Création…' : 'Générer la clé'}
+              {loading ? t('apiDoc.creating') : t('apiDoc.generateKey')}
             </button>
             <button
               type="button"
               onClick={onClose}
               className="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
             >
-              Annuler
+              {t('apiDoc.cancel')}
             </button>
           </div>
         </form>
@@ -287,6 +290,7 @@ interface RevealKeyModalProps {
 }
 
 function RevealKeyModal({ fullKey, keyName, onClose }: RevealKeyModalProps) {
+  const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
 
   const handleCopy = () => {
@@ -303,8 +307,8 @@ function RevealKeyModal({ fullKey, keyName, onClose }: RevealKeyModalProps) {
             <Key className="h-5 w-5 text-amber-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">Clé générée — {keyName}</h3>
-            <p className="text-xs text-gray-500">Votre clé API a été créée avec succès</p>
+            <h3 className="font-semibold text-gray-900">{t('apiDoc.keyGenerated', { name: keyName })}</h3>
+            <p className="text-xs text-gray-500">{t('apiDoc.keyCreatedSuccess')}</p>
           </div>
         </div>
 
@@ -312,7 +316,7 @@ function RevealKeyModal({ fullKey, keyName, onClose }: RevealKeyModalProps) {
         <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
           <p className="text-sm font-medium text-amber-800">
-            Copiez cette clé maintenant — elle ne sera plus affichée après la fermeture de cette fenêtre.
+            {t('apiDoc.copyNow')}
           </p>
         </div>
 
@@ -328,7 +332,7 @@ function RevealKeyModal({ fullKey, keyName, onClose }: RevealKeyModalProps) {
             }`}
           >
             {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-            {copied ? 'Copié !' : 'Copier'}
+            {copied ? t('apiDoc.copied') : t('apiDoc.copy')}
           </button>
         </div>
 
@@ -336,7 +340,7 @@ function RevealKeyModal({ fullKey, keyName, onClose }: RevealKeyModalProps) {
           onClick={onClose}
           className="w-full rounded-lg border border-gray-200 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
         >
-          J'ai copié ma clé, fermer
+          {t('apiDoc.copiedClose')}
         </button>
       </div>
     </div>
@@ -346,6 +350,8 @@ function RevealKeyModal({ fullKey, keyName, onClose }: RevealKeyModalProps) {
 // --- Main component ---
 
 export default function APIDocumentation() {
+  const { t, i18n } = useTranslation()
+  const dateLocale = i18n.language === 'fr' ? 'fr-FR' : 'en-US'
   const [keys, setKeys] = useState<ApiKeyItem[]>([])
   const [loadingKeys, setLoadingKeys] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -376,7 +382,7 @@ export default function APIDocumentation() {
   }
 
   const handleRevoke = async (id: string) => {
-    if (!window.confirm('Révoquer cette clé API ? Cette action est irréversible.')) return
+    if (!window.confirm(t('apiDoc.revokeConfirm'))) return
     setRevokingId(id)
     try {
       await api.delete(`/api-keys/${id}`)
@@ -399,11 +405,11 @@ export default function APIDocumentation() {
         <div>
           <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-4 py-1.5 text-sm font-medium text-emerald-300 ring-1 ring-emerald-500/30">
             <Globe className="h-4 w-4" />
-            Portail Développeur
+            {t('apiDoc.developerPortal')}
           </div>
-          <h1 className="text-3xl font-bold text-white md:text-4xl">API Publique ESGFlow</h1>
+          <h1 className="text-3xl font-bold text-white md:text-4xl">{t('apiDoc.heroTitle')}</h1>
           <p className="mt-3 max-w-2xl text-slate-300">
-            Intégrez vos données ESG directement depuis vos applications. Gérez vos indicateurs, soumettez des données et récupérez vos scores via une API REST sécurisée.
+            {t('apiDoc.heroDesc')}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <button
@@ -411,14 +417,14 @@ export default function APIDocumentation() {
               className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow transition hover:bg-emerald-700"
             >
               <Key className="h-4 w-4" />
-              Générer une nouvelle clé
+              {t('apiDoc.generateNewKey')}
             </button>
             <button
               onClick={() => window.open('/docs', '_blank', 'noopener,noreferrer')}
               className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
             >
               <ExternalLink className="h-4 w-4" />
-              Ouvrir la documentation Swagger
+              {t('apiDoc.openSwagger')}
             </button>
           </div>
         </div>
@@ -431,14 +437,14 @@ export default function APIDocumentation() {
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Key className="h-5 w-5 text-emerald-600" />
-              <h2 className="text-lg font-bold text-gray-900">Clés API</h2>
+              <h2 className="text-lg font-bold text-gray-900">{t('apiDoc.apiKeys')}</h2>
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
               className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
             >
               <Plus className="h-4 w-4" />
-              Nouvelle clé
+              {t('apiDoc.newKey')}
             </button>
           </div>
 
@@ -453,15 +459,15 @@ export default function APIDocumentation() {
                   <Key className="h-6 w-6 text-gray-400" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-600">Aucune clé API active</p>
-                  <p className="mt-0.5 text-sm text-gray-400">Créez votre première clé pour commencer à utiliser l'API.</p>
+                  <p className="font-medium text-gray-600">{t('apiDoc.noKeysTitle')}</p>
+                  <p className="mt-0.5 text-sm text-gray-400">{t('apiDoc.noKeysDesc')}</p>
                 </div>
                 <button
                   onClick={() => setShowCreateModal(true)}
                   className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
                 >
                   <Plus className="h-4 w-4" />
-                  Créer une clé
+                  {t('apiDoc.createKey')}
                 </button>
               </div>
             ) : (
@@ -469,12 +475,12 @@ export default function APIDocumentation() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 text-xs font-semibold uppercase tracking-wide text-gray-400">
-                      <th className="px-5 py-3.5 text-left">Nom</th>
-                      <th className="px-5 py-3.5 text-left">Préfixe</th>
-                      <th className="px-5 py-3.5 text-left">Créée le</th>
-                      <th className="px-5 py-3.5 text-left">Dernière utilisation</th>
-                      <th className="px-5 py-3.5 text-left">Expiration</th>
-                      <th className="px-5 py-3.5 text-right">Actions</th>
+                      <th className="px-5 py-3.5 text-left">{t('apiDoc.colName')}</th>
+                      <th className="px-5 py-3.5 text-left">{t('apiDoc.colPrefix')}</th>
+                      <th className="px-5 py-3.5 text-left">{t('apiDoc.colCreated')}</th>
+                      <th className="px-5 py-3.5 text-left">{t('apiDoc.colLastUsed')}</th>
+                      <th className="px-5 py-3.5 text-left">{t('apiDoc.colExpiration')}</th>
+                      <th className="px-5 py-3.5 text-right">{t('apiDoc.colActions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -491,14 +497,14 @@ export default function APIDocumentation() {
                             {key.key_prefix}…
                           </code>
                         </td>
-                        <td className="px-5 py-4 text-gray-500">{formatDate(key.created_at)}</td>
-                        <td className="px-5 py-4 text-gray-500">{formatDate(key.last_used_at)}</td>
+                        <td className="px-5 py-4 text-gray-500">{formatDate(key.created_at, dateLocale)}</td>
+                        <td className="px-5 py-4 text-gray-500">{formatDate(key.last_used_at, dateLocale)}</td>
                         <td className="px-5 py-4">
                           {key.expires_at ? (
-                            <span className="text-gray-500">{formatDate(key.expires_at)}</span>
+                            <span className="text-gray-500">{formatDate(key.expires_at, dateLocale)}</span>
                           ) : (
                             <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                              Jamais
+                              {t('apiDoc.never')}
                             </span>
                           )}
                         </td>
@@ -506,7 +512,7 @@ export default function APIDocumentation() {
                           <button
                             onClick={() => handleRevoke(key.id)}
                             disabled={revokingId === key.id}
-                            title="Révoquer cette clé"
+                            title={t('apiDoc.revokeTitle')}
                             className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50"
                           >
                             {revokingId === key.id ? (
@@ -514,7 +520,7 @@ export default function APIDocumentation() {
                             ) : (
                               <Trash2 className="h-3.5 w-3.5" />
                             )}
-                            Révoquer
+                            {t('apiDoc.revoke')}
                           </button>
                         </td>
                       </tr>
@@ -530,14 +536,14 @@ export default function APIDocumentation() {
         <section>
           <div className="mb-4 flex items-center gap-2">
             <Shield className="h-5 w-5 text-emerald-600" />
-            <h2 className="text-lg font-bold text-gray-900">Authentification</h2>
+            <h2 className="text-lg font-bold text-gray-900">{t('apiDoc.authentication')}</h2>
           </div>
 
           <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
             <p className="mb-5 text-sm leading-relaxed text-gray-600">
-              Toutes les requêtes API doivent inclure votre clé dans l'en-tête{' '}
-              <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-mono text-gray-800">X-API-Key</code>.
-              Les clés sont liées à votre tenant et héritent de ses permissions.
+              {t('apiDoc.authDescBefore')}{' '}
+              <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-mono text-gray-800">X-API-Key</code>{' '}
+              {t('apiDoc.authDescAfter')}
             </p>
 
             {/* Language tabs */}
@@ -560,7 +566,7 @@ export default function APIDocumentation() {
             <CodeBlock code={CODE_EXAMPLES[activeCodeLang]} lang={langLabels[activeCodeLang]} />
 
             <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
-              <strong>Sécurité :</strong> Ne partagez jamais votre clé API. Stockez-la dans des variables d'environnement, jamais dans le code source.
+              <strong>{t('apiDoc.securityLabel')}</strong> {t('apiDoc.securityText')}
             </div>
           </div>
         </section>
@@ -569,12 +575,12 @@ export default function APIDocumentation() {
         <section>
           <div className="mb-4 flex items-center gap-2">
             <Terminal className="h-5 w-5 text-emerald-600" />
-            <h2 className="text-lg font-bold text-gray-900">Démarrage rapide</h2>
+            <h2 className="text-lg font-bold text-gray-900">{t('apiDoc.quickStart')}</h2>
           </div>
 
           <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
             <p className="mb-5 text-sm text-gray-600">
-              Exemples d'utilisation des endpoints principaux de l'API ESGFlow.
+              {t('apiDoc.quickStartDesc')}
             </p>
 
             {/* Quick start tabs */}
@@ -590,7 +596,7 @@ export default function APIDocumentation() {
                   }`}
                 >
                   <Code2 className="h-3.5 w-3.5" />
-                  {ex.label}
+                  {t(ex.labelKey)}
                 </button>
               ))}
             </div>
@@ -607,9 +613,9 @@ export default function APIDocumentation() {
           <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
             <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="font-bold text-gray-900">Documentation complète</h2>
+                <h2 className="font-bold text-gray-900">{t('apiDoc.fullDocs')}</h2>
                 <p className="mt-0.5 text-sm text-gray-500">
-                  Explorez tous les endpoints disponibles, testez des requêtes en direct et consultez les schémas de réponse.
+                  {t('apiDoc.fullDocsDesc')}
                 </p>
               </div>
               <button
@@ -617,7 +623,7 @@ export default function APIDocumentation() {
                 className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-slate-800 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-900"
               >
                 <ExternalLink className="h-4 w-4" />
-                Ouvrir la documentation Swagger
+                {t('apiDoc.openSwagger')}
               </button>
             </div>
           </div>
