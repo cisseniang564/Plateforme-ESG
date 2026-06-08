@@ -29,6 +29,8 @@ import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import GoogleSheetsConfigModal from '@/components/modals/GoogleSheetsConfigModal';
 import GoogleSheetsImportModal from '@/components/modals/GoogleSheetsImportModal';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import api from '@/services/api';
 
 interface Integration {
@@ -108,20 +110,21 @@ const DEFAULT_CONFIG = {
   badge: 'bg-gray-100 text-gray-700',
 };
 
-function formatRelativeTime(dateStr: string | null): string {
-  if (!dateStr) return 'Jamais';
+function formatRelativeTime(dateStr: string | null, t: TFunction): string {
+  if (!dateStr) return t('integrations.relativeNever');
   const diff = Date.now() - new Date(dateStr).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1) return 'À l\'instant';
-  if (m < 60) return `il y a ${m} min`;
+  if (m < 1) return t('integrations.relativeNow');
+  if (m < 60) return t('integrations.relativeMin', { count: m });
   const h = Math.floor(m / 60);
-  if (h < 24) return `il y a ${h}h`;
+  if (h < 24) return t('integrations.relativeHours', { count: h });
   const d = Math.floor(h / 24);
-  return `il y a ${d}j`;
+  return t('integrations.relativeDays', { count: d });
 }
 
 export default function IntegrationManagement() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [types, setTypes] = useState<IntegrationType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -165,12 +168,12 @@ export default function IntegrationManagement() {
     try {
       const response = await api.post(`/integrations/${integration.id}/test`);
       if (response.data.status === 'success') {
-        notify('success', `Connexion réussie — ${response.data.user_email}`);
+        notify('success', t('integrations.testSuccess', { email: response.data.user_email }));
       } else {
         notify('error', response.data.message);
       }
     } catch (error: any) {
-      notify('error', `Échec du test : ${error.response?.data?.detail || 'Erreur inconnue'}`);
+      notify('error', t('integrations.testFailed', { error: error.response?.data?.detail || t('integrations.unknownError') }));
     } finally {
       setTestingIntegration(null);
     }
@@ -181,21 +184,21 @@ export default function IntegrationManagement() {
       await api.patch(`/integrations/${integration.id}`, {
         is_active: !integration.is_active,
       });
-      notify('success', integration.is_active ? 'Intégration désactivée' : 'Intégration activée');
+      notify('success', integration.is_active ? t('integrations.deactivated') : t('integrations.activated'));
       loadData(true);
     } catch (error: any) {
-      notify('error', error.response?.data?.detail || 'Échec de la mise à jour');
+      notify('error', error.response?.data?.detail || t('integrations.updateFailed'));
     }
   };
 
   const handleDelete = async (integration: Integration) => {
-    if (!confirm(`Supprimer "${integration.name}" ?`)) return;
+    if (!confirm(t('integrations.deleteConfirm', { name: integration.name }))) return;
     try {
       await api.delete(`/integrations/${integration.id}`);
-      notify('success', 'Intégration supprimée');
+      notify('success', t('integrations.deleted'));
       loadData(true);
     } catch (error: any) {
-      notify('error', error.response?.data?.detail || 'Échec de la suppression');
+      notify('error', error.response?.data?.detail || t('integrations.deleteFailed'));
     }
   };
 
@@ -203,7 +206,7 @@ export default function IntegrationManagement() {
     if (type.id === 'google_sheets') {
       setShowGoogleSheetsConfig(true);
     } else {
-      notify('error', `Configuration de ${type.name} bientôt disponible`);
+      notify('error', t('integrations.configSoon', { name: type.name }));
     }
   };
 
@@ -249,24 +252,24 @@ export default function IntegrationManagement() {
             className="flex items-center gap-1.5 text-white/70 hover:text-white text-sm mb-4 transition-colors group"
           >
             <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
-            Paramètres
+            {t('integrations.back')}
           </button>
 
           <div className="flex items-start justify-between gap-6">
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide uppercase">
-                  Connecteurs Tiers
+                  {t('integrations.badge')}
                 </span>
               </div>
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-2 bg-white/20 rounded-xl">
                   <Link2 className="h-7 w-7" />
                 </div>
-                <h1 className="text-3xl font-bold">Intégrations</h1>
+                <h1 className="text-3xl font-bold">{t('integrations.title')}</h1>
               </div>
               <p className="text-cyan-100 max-w-xl">
-                Connectez ESGFlow à vos outils préférés et synchronisez vos données ESG en temps réel
+                {t('integrations.heroSubtitle')}
               </p>
             </div>
 
@@ -276,17 +279,17 @@ export default function IntegrationManagement() {
               className="flex items-center gap-2 px-4 py-2 bg-white/15 hover:bg-white/25 rounded-xl text-sm font-medium transition-colors flex-shrink-0"
             >
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-              Actualiser
+              {t('integrations.refresh')}
             </button>
           </div>
 
           {/* Stats strip */}
           <div className="grid grid-cols-4 gap-4 mt-6 pt-6 border-t border-white/20">
             {[
-              { label: 'Types disponibles', value: types.length || '—', icon: <Globe className="h-4 w-4" /> },
-              { label: 'Mes intégrations', value: integrations.length, icon: <Link2 className="h-4 w-4" /> },
-              { label: 'Actives', value: activeCount, icon: <Zap className="h-4 w-4" /> },
-              { label: 'Erreurs', value: errorCount, icon: <AlertCircle className="h-4 w-4" /> },
+              { label: t('integrations.statTypes'), value: types.length || '—', icon: <Globe className="h-4 w-4" /> },
+              { label: t('integrations.statMine'), value: integrations.length, icon: <Link2 className="h-4 w-4" /> },
+              { label: t('integrations.statActive'), value: activeCount, icon: <Zap className="h-4 w-4" /> },
+              { label: t('integrations.statErrors'), value: errorCount, icon: <AlertCircle className="h-4 w-4" /> },
             ].map(stat => (
               <div key={stat.label} className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
                 <div className="flex items-center gap-2 text-white/70 text-xs mb-1">
@@ -304,7 +307,7 @@ export default function IntegrationManagement() {
       <div>
         <div className="flex items-center gap-2 mb-3">
           <Shield className="h-4 w-4 text-blue-600" />
-          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Données entreprises françaises</h2>
+          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">{t('integrations.inseeSection')}</h2>
         </div>
         <div
           onClick={() => navigate('/app/settings/insee')}
@@ -315,16 +318,16 @@ export default function IntegrationManagement() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold text-gray-900">API INSEE Sirene</h3>
-              <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full font-medium">Gratuit</span>
-              <span className="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded-full font-medium">Temps réel</span>
+              <h3 className="font-semibold text-gray-900">{t('integrations.inseeCardTitle')}</h3>
+              <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full font-medium">{t('integrations.inseeFree')}</span>
+              <span className="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded-full font-medium">{t('integrations.inseeRealtime')}</span>
             </div>
             <p className="text-sm text-gray-500">
-              Accédez à la base officielle SIREN/SIRET — recherchez et enrichissez vos données ESG avec les informations officielles des entreprises françaises
+              {t('integrations.inseeCardDesc')}
             </p>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
-            <span className="text-xs text-gray-400 hidden sm:block">10M+ entreprises</span>
+            <span className="text-xs text-gray-400 hidden sm:block">{t('integrations.inseeCompanies')}</span>
             <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all" />
           </div>
         </div>
@@ -334,7 +337,7 @@ export default function IntegrationManagement() {
       <div>
         <div className="flex items-center gap-2 mb-3">
           <Star className="h-4 w-4 text-amber-500" />
-          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Intégrations disponibles</h2>
+          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">{t('integrations.availableIntegrations')}</h2>
         </div>
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -356,7 +359,7 @@ export default function IntegrationManagement() {
                     <div className="absolute top-3 right-3">
                       <span className="flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
                         <CheckCircle className="h-3 w-3" />
-                        Connecté
+                        {t('integrations.connected')}
                       </span>
                     </div>
                   )}
@@ -381,14 +384,14 @@ export default function IntegrationManagement() {
                       {testingIntegration === existing.id
                         ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
                         : <Activity className="h-3.5 w-3.5" />}
-                      Tester la connexion
+                      {t('integrations.testConnection')}
                     </button>
                   ) : (
                     <button
                       onClick={() => handleConfigureIntegration(type)}
                       className="w-full py-2 text-xs font-medium rounded-lg bg-gray-900 text-white hover:bg-gray-700 transition-colors"
                     >
-                      {type.requires_oauth ? 'Connecter' : 'Configurer'}
+                      {type.requires_oauth ? t('integrations.connect') : t('integrations.configure')}
                     </button>
                   )}
                 </div>
@@ -403,10 +406,10 @@ export default function IntegrationManagement() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Link2 className="h-4 w-4 text-gray-500" />
-            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Mes intégrations</h2>
+            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">{t('integrations.myIntegrations')}</h2>
           </div>
           {integrations.length > 0 && (
-            <span className="text-xs text-gray-500">{integrations.length} intégration{integrations.length > 1 ? 's' : ''}</span>
+            <span className="text-xs text-gray-500">{t('integrations.integrationsCount', { count: integrations.length })}</span>
           )}
         </div>
 
@@ -417,9 +420,9 @@ export default function IntegrationManagement() {
             <div className="p-4 bg-gray-50 rounded-2xl mb-4">
               <Plug className="h-10 w-10 text-gray-300" />
             </div>
-            <p className="font-medium text-gray-700 mb-1">Aucune intégration configurée</p>
+            <p className="font-medium text-gray-700 mb-1">{t('integrations.noneTitle')}</p>
             <p className="text-sm text-gray-400 max-w-xs">
-              Connectez votre première intégration ci-dessus pour synchroniser vos données
+              {t('integrations.noneDesc')}
             </p>
           </div>
         ) : (
@@ -449,7 +452,7 @@ export default function IntegrationManagement() {
                       {integration.last_sync_at && (
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          Sync. {formatRelativeTime(integration.last_sync_at)}
+                          {t('integrations.syncPrefix')} {formatRelativeTime(integration.last_sync_at, t)}
                         </span>
                       )}
                     </div>
@@ -471,8 +474,8 @@ export default function IntegrationManagement() {
                     }`}
                   >
                     {integration.is_active
-                      ? <><CheckCircle className="h-3.5 w-3.5" /> Actif</>
-                      : <><XCircle className="h-3.5 w-3.5" /> Inactif</>}
+                      ? <><CheckCircle className="h-3.5 w-3.5" /> {t('integrations.active')}</>
+                      : <><XCircle className="h-3.5 w-3.5" /> {t('integrations.inactive')}</>}
                   </button>
 
                   {/* Actions */}
@@ -482,14 +485,14 @@ export default function IntegrationManagement() {
                         <button
                           onClick={() => handleImport(integration)}
                           className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Importer"
+                          title={t('integrations.import')}
                         >
                           <Upload className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => notify('error', 'Export bientôt disponible')}
+                          onClick={() => notify('error', t('integrations.exportSoon'))}
                           className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Exporter"
+                          title={t('integrations.export')}
                         >
                           <Download className="h-4 w-4" />
                         </button>
@@ -499,7 +502,7 @@ export default function IntegrationManagement() {
                       onClick={() => handleTestConnection(integration)}
                       disabled={testingIntegration === integration.id}
                       className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                      title="Tester"
+                      title={t('integrations.test')}
                     >
                       {testingIntegration === integration.id
                         ? <RefreshCw className="h-4 w-4 animate-spin" />
@@ -508,7 +511,7 @@ export default function IntegrationManagement() {
                     <button
                       onClick={() => handleDelete(integration)}
                       className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Supprimer"
+                      title={t('integrations.delete')}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -524,7 +527,7 @@ export default function IntegrationManagement() {
       <GoogleSheetsConfigModal
         isOpen={showGoogleSheetsConfig}
         onClose={() => setShowGoogleSheetsConfig(false)}
-        onSuccess={() => { loadData(true); notify('success', 'Google Sheets connecté avec succès'); }}
+        onSuccess={() => { loadData(true); notify('success', t('integrations.sheetsConnected')); }}
       />
 
       {selectedIntegration && (
