@@ -300,22 +300,64 @@
     "plans": {
       "free": {
         "description": "Pour découvrir ESGFlow",
-        "features": ["3 utilisateurs", "5 organisations", "1 000 appels API/mois", "Rapports basiques", "Matrice de matérialité", "Support email"],
-        "notIncluded": ["Rapports CSRD", "Analyses IA", "Connecteurs avancés"]
+        "features": [
+          "3 utilisateurs",
+          "5 organisations",
+          "1 000 appels API/mois",
+          "Rapports basiques",
+          "Matrice de matérialité",
+          "Support email"
+        ],
+        "notIncluded": [
+          "Rapports CSRD",
+          "Analyses IA",
+          "Connecteurs avancés"
+        ]
       },
       "starter": {
         "description": "Pour les PME ESG-actives",
-        "features": ["10 utilisateurs", "25 organisations", "10 000 appels API/mois", "Rapports CSRD & DPEF", "Bilan Carbone & SBTi", "Supply Chain ESG", "Import FEC", "Support prioritaire"],
-        "notIncluded": ["Rapports SFDR", "IA narrative", "Connecteurs avancés"]
+        "features": [
+          "10 utilisateurs",
+          "25 organisations",
+          "10 000 appels API/mois",
+          "Rapports CSRD & DPEF",
+          "Bilan Carbone & SBTi",
+          "Supply Chain ESG",
+          "Import FEC",
+          "Support prioritaire"
+        ],
+        "notIncluded": [
+          "Rapports SFDR",
+          "IA narrative",
+          "Connecteurs avancés"
+        ]
       },
       "pro": {
         "description": "Pour les entreprises en croissance",
-        "features": ["50 utilisateurs", "100 organisations", "100 000 appels API/mois", "Tous les rapports ESG", "IA prédictive & narrative", "Connecteurs avancés", "Benchmarking sectoriel", "Multi-standards (GRI, SASB…)", "Support dédié"],
+        "features": [
+          "50 utilisateurs",
+          "100 organisations",
+          "100 000 appels API/mois",
+          "Tous les rapports ESG",
+          "IA prédictive & narrative",
+          "Connecteurs avancés",
+          "Benchmarking sectoriel",
+          "Multi-standards (GRI, SASB…)",
+          "Support dédié"
+        ],
         "notIncluded": []
       },
       "enterprise": {
         "description": "Pour les grandes organisations",
-        "features": ["Utilisateurs illimités", "Organisations illimitées", "API illimitée", "SLA garanti 99.9%", "SSO / SAML", "Déploiement on-premise", "Support 24/7 dédié"],
+        "features": [
+          "Utilisateurs illimités",
+          "Organisations illimitées",
+          "API illimitée",
+          "SLA garanti 99.9%",
+          "SSO / SAML",
+          "Déploiement on-premise",
+          "Support 24/7 dédié"
+        ],
         "notIncluded": []
       }
     }
@@ -621,6 +663,55 @@
     "pillarBreakdown": "Répartition par pilier",
     "noResult": "Aucun résultat",
     "noResultDesc": "Sélectionnez une organisation et une date, puis lancez le calcul pour obtenir votre score ESG."
+  },
+  "dataExport": {
+    "backLabel": "Données",
+    "title": "Export de données",
+    "subtitle": "Téléchargez vos données ESG en Excel ou CSV pour vos analyses et rapports.",
+    "refresh": "Actualiser",
+    "totalEntries": "Entrées totales",
+    "pillarAll": "Tous les piliers",
+    "pillarEnv": "Environnement",
+    "pillarSocial": "Social",
+    "pillarGov": "Gouvernance",
+    "statusAll": "Tous les statuts",
+    "statusVerified": "Vérifié",
+    "statusPending": "En attente",
+    "statusRejected": "Rejeté",
+    "yearAll": "Toutes les années",
+    "formatXlsxDesc": "Format tabulaire avec mise en forme colorée par pilier, idéal pour analyser et partager.",
+    "badgeRecommended": "Recommandé",
+    "formatCsvDesc": "Format texte universel compatible avec tous les logiciels (R, Python, Power BI…).",
+    "badgeUniversal": "Universel",
+    "exportFilters": "Filtres d'export",
+    "pillar": "Pilier",
+    "year": "Année",
+    "verificationStatus": "Statut de vérification",
+    "activeFilters": "Filtres actifs :",
+    "clear": "Effacer",
+    "exporting": "Export en cours…",
+    "download": "Télécharger",
+    "linesCount": "~{{formattedCount}} lignes",
+    "exportSuccess": "Export {{format}} téléchargé avec succès",
+    "exportError": "Erreur lors de l'export",
+    "noDataTitle": "Aucune donnée à exporter",
+    "noDataDesc": "Commencez par saisir des données ESG pour pouvoir les exporter.",
+    "enterData": "Saisir des données",
+    "exportContent": "Contenu de l'export",
+    "fields": [
+      "ID de l'entrée",
+      "Pilier ESG",
+      "Catégorie",
+      "Indicateur",
+      "Valeur numérique",
+      "Unité",
+      "Période de référence",
+      "Source de données",
+      "Méthode de collecte",
+      "Statut de vérification",
+      "Notes",
+      "Date de création"
+    ]
   },
   "nav": {
     "dashboard": "Tableau de bord",

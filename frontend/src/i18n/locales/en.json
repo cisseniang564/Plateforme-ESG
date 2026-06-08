@@ -300,22 +300,64 @@
     "plans": {
       "free": {
         "description": "To discover ESGFlow",
-        "features": ["3 users", "5 organizations", "1,000 API calls/month", "Basic reports", "Materiality matrix", "Email support"],
-        "notIncluded": ["CSRD reports", "AI analytics", "Advanced connectors"]
+        "features": [
+          "3 users",
+          "5 organizations",
+          "1,000 API calls/month",
+          "Basic reports",
+          "Materiality matrix",
+          "Email support"
+        ],
+        "notIncluded": [
+          "CSRD reports",
+          "AI analytics",
+          "Advanced connectors"
+        ]
       },
       "starter": {
         "description": "For ESG-active SMEs",
-        "features": ["10 users", "25 organizations", "10,000 API calls/month", "CSRD & NFRD reports", "Carbon footprint & SBTi", "Supply Chain ESG", "FEC import", "Priority support"],
-        "notIncluded": ["SFDR reports", "Narrative AI", "Advanced connectors"]
+        "features": [
+          "10 users",
+          "25 organizations",
+          "10,000 API calls/month",
+          "CSRD & NFRD reports",
+          "Carbon footprint & SBTi",
+          "Supply Chain ESG",
+          "FEC import",
+          "Priority support"
+        ],
+        "notIncluded": [
+          "SFDR reports",
+          "Narrative AI",
+          "Advanced connectors"
+        ]
       },
       "pro": {
         "description": "For growing companies",
-        "features": ["50 users", "100 organizations", "100,000 API calls/month", "All ESG reports", "Predictive & narrative AI", "Advanced connectors", "Sector benchmarking", "Multi-standard (GRI, SASB…)", "Dedicated support"],
+        "features": [
+          "50 users",
+          "100 organizations",
+          "100,000 API calls/month",
+          "All ESG reports",
+          "Predictive & narrative AI",
+          "Advanced connectors",
+          "Sector benchmarking",
+          "Multi-standard (GRI, SASB…)",
+          "Dedicated support"
+        ],
         "notIncluded": []
       },
       "enterprise": {
         "description": "For large organizations",
-        "features": ["Unlimited users", "Unlimited organizations", "Unlimited API", "99.9% guaranteed SLA", "SSO / SAML", "On-premise deployment", "Dedicated 24/7 support"],
+        "features": [
+          "Unlimited users",
+          "Unlimited organizations",
+          "Unlimited API",
+          "99.9% guaranteed SLA",
+          "SSO / SAML",
+          "On-premise deployment",
+          "Dedicated 24/7 support"
+        ],
         "notIncluded": []
       }
     }
@@ -621,6 +663,55 @@
     "pillarBreakdown": "Breakdown by pillar",
     "noResult": "No result",
     "noResultDesc": "Select an organization and a date, then run the calculation to get your ESG score."
+  },
+  "dataExport": {
+    "backLabel": "Data",
+    "title": "Data export",
+    "subtitle": "Download your ESG data in Excel or CSV for your analyses and reports.",
+    "refresh": "Refresh",
+    "totalEntries": "Total entries",
+    "pillarAll": "All pillars",
+    "pillarEnv": "Environment",
+    "pillarSocial": "Social",
+    "pillarGov": "Governance",
+    "statusAll": "All statuses",
+    "statusVerified": "Verified",
+    "statusPending": "Pending",
+    "statusRejected": "Rejected",
+    "yearAll": "All years",
+    "formatXlsxDesc": "Tabular format with color formatting by pillar, ideal for analyzing and sharing.",
+    "badgeRecommended": "Recommended",
+    "formatCsvDesc": "Universal text format compatible with all software (R, Python, Power BI…).",
+    "badgeUniversal": "Universal",
+    "exportFilters": "Export filters",
+    "pillar": "Pillar",
+    "year": "Year",
+    "verificationStatus": "Verification status",
+    "activeFilters": "Active filters:",
+    "clear": "Clear",
+    "exporting": "Exporting…",
+    "download": "Download",
+    "linesCount": "~{{formattedCount}} rows",
+    "exportSuccess": "{{format}} export downloaded successfully",
+    "exportError": "Error during export",
+    "noDataTitle": "No data to export",
+    "noDataDesc": "Start by entering ESG data so you can export it.",
+    "enterData": "Enter data",
+    "exportContent": "Export content",
+    "fields": [
+      "Entry ID",
+      "ESG pillar",
+      "Category",
+      "Indicator",
+      "Numeric value",
+      "Unit",
+      "Reference period",
+      "Data source",
+      "Collection method",
+      "Verification status",
+      "Notes",
+      "Creation date"
+    ]
   },
   "nav": {
     "dashboard": "Dashboard",
