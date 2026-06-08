@@ -4,6 +4,7 @@
  */
 import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Search, Leaf, BookOpen, BarChart3, Shield, Zap, FileText,
   Settings, ChevronRight, ChevronDown, HelpCircle, Mail,
@@ -29,349 +30,36 @@ interface Category {
   articles: Article[];
 }
 
-// ─── Knowledge base ───────────────────────────────────────────────────────────
-const CATEGORIES: Category[] = [
-  {
-    id: 'getting-started',
-    icon: Play,
-    color: 'text-green-600',
-    bg: 'bg-green-50',
-    title: 'Démarrage rapide',
-    desc: 'Tout ce qu\'il faut pour être opérationnel en 30 minutes.',
-    articles: [
-      {
-        id: 'gs-1',
-        title: 'Créer votre compte et configurer votre organisation',
-        tags: ['compte', 'organisation', 'onboarding'],
-        content: `
-## Créer votre compte
-
-1. Rendez-vous sur [app.esgflow.com/register](/register) et renseignez votre e-mail professionnel.
-2. Choisissez un mot de passe (min. 8 caractères, 1 majuscule, 1 chiffre).
-3. Vérifiez votre e-mail et cliquez sur le lien de confirmation.
-
-## Configurer votre organisation
-
-Lors du premier accès, l'assistant d'onboarding vous guide en 4 étapes :
-- **Secteur d'activité** — code NAF / NACE pour le benchmarking sectoriel.
-- **Effectif** — détermine les seuils CSRD applicables.
-- **Périmètre géographique** — pour les indicateurs régionaux.
-- **Référentiels** — sélectionnez les normes cibles (CSRD, GRI, TCFD…).
-
-> **Conseil** : vous pouvez modifier ces paramètres à tout moment dans **Paramètres › Organisation**.
-        `,
-      },
-      {
-        id: 'gs-2',
-        title: 'Importer vos premières données ESG',
-        tags: ['import', 'csv', 'données', 'excel'],
-        content: `
-## Formats acceptés
-
-- **CSV / Excel** (xlsx, xls) — colonnes: indicateur, valeur, unité, période, source.
-- **API REST** — endpoint \`POST /api/v1/indicators/bulk\`.
-- **Connecteurs natifs** — SAP, Sage, Oracle (plan Business+).
-
-## Procédure d'import CSV
-
-1. Téléchargez le **modèle CSV** depuis *Données › Importer*.
-2. Remplissez vos données en respectant les colonnes.
-3. Glissez le fichier dans la zone de dépôt.
-4. Vérifiez l'aperçu et corrigez les erreurs signalées.
-5. Cliquez sur **Valider l'import**.
-
-Les erreurs courantes : mauvais séparateur décimal (utilisez le point \`.\`), dates au format ISO 8601 (AAAA-MM-JJ), unités non reconnues (consultez la bibliothèque d'unités).
-        `,
-      },
-      {
-        id: 'gs-3',
-        title: 'Comprendre votre tableau de bord ESG',
-        tags: ['dashboard', 'score', 'kpi'],
-        content: `
-## Anatomie du dashboard exécutif
-
-Le tableau de bord présente trois zones :
-
-1. **Score global /100** — agrégat pondéré des piliers E, S, G.
-2. **Tendances** — évolution sur 12 mois, comparé au secteur.
-3. **Alertes IA** — anomalies et recommandations prioritaires.
-
-## Comprendre votre score
-
-| Plage | Niveau | Signification |
-|-------|--------|---------------|
-| 80–100 | Leader | Performance ESG exemplaire |
-| 60–79 | Avancé | Bonne trajectoire, quelques axes d'amélioration |
-| 40–59 | En progression | Actions correctives à initier |
-| < 40 | Débutant | Plan de progrès recommandé |
-
-## Personnaliser les poids
-
-Allez dans **Paramètres › Méthodologie** pour ajuster la pondération des piliers E/S/G selon votre stratégie.
-        `,
-      },
-    ],
-  },
-  {
-    id: 'carbon',
-    icon: TrendingUp,
-    color: 'text-orange-600',
-    bg: 'bg-orange-50',
-    title: 'Bilan Carbone & Scope 3',
-    desc: 'Calculez vos émissions Scope 1, 2 et 3 selon le GHG Protocol.',
-    articles: [
-      {
-        id: 'c-1',
-        title: 'Différence entre Scope 1, 2 et 3',
-        tags: ['scope1', 'scope2', 'scope3', 'ghg', 'carbone'],
-        content: `
-## Les trois périmètres d'émissions
-
-**Scope 1 — Émissions directes** : combustion dans vos propres installations et véhicules.
-
-**Scope 2 — Émissions indirectes liées à l'énergie** : électricité, vapeur, chaleur achetées.
-
-**Scope 3 — Autres émissions indirectes** (15 catégories GHG Protocol) :
-- *En amont* : achats de biens & services, capital goods, déplacements professionnels…
-- *En aval* : utilisation des produits vendus, fin de vie, franchises…
-
-> **Attention CSRD** : la directive impose la déclaration des Scopes 1, 2 et des catégories Scope 3 pertinentes.
-
-## Facteurs d'émission intégrés
-
-ESGFlow embarque la base ADEME (France) et les facteurs IEA pour 80+ pays. Ils sont mis à jour automatiquement chaque trimestre.
-        `,
-      },
-      {
-        id: 'c-2',
-        title: 'Configurer votre plan de décarbonation SBTi',
-        tags: ['sbti', 'décarbonation', 'trajectoire', '1.5°C'],
-        content: `
-## Qu'est-ce que SBTi ?
-
-L'initiative *Science Based Targets* (SBTi) permet aux entreprises de définir des objectifs de réduction d'émissions alignés sur une trajectoire +1,5 °C ou +2 °C.
-
-## Dans ESGFlow
-
-1. Accédez à **Décarbonation › Plan SBTi**.
-2. Définissez votre **année de référence** et votre **horizon cible** (2030, 2050).
-3. L'outil calcule automatiquement la trajectoire annuelle requise.
-4. Ajoutez vos **actions** (efficacité énergétique, achats verts, mobilité…) avec leur impact estimé.
-5. Suivez l'avancement en temps réel sur le graphique de convergence.
-        `,
-      },
-    ],
-  },
-  {
-    id: 'csrd',
-    icon: FileText,
-    color: 'text-blue-600',
-    bg: 'bg-blue-50',
-    title: 'Conformité CSRD & Rapports',
-    desc: 'Générez vos rapports ESRS, GRI, TCFD en un clic.',
-    articles: [
-      {
-        id: 'r-1',
-        title: 'Générer votre rapport CSRD / ESRS',
-        tags: ['csrd', 'esrs', 'rapport', 'conformité'],
-        content: `
-## La CSRD en bref
-
-La Corporate Sustainability Reporting Directive (CSRD) s'applique progressivement à partir de 2024. Elle impose la publication d'informations de durabilité selon les normes ESRS.
-
-## Dans ESGFlow — CSRD Report Builder
-
-1. Allez dans **Rapports › Constructeur CSRD**.
-2. Sélectionnez vos **ESRS applicables** (auto-détectés selon votre secteur et taille).
-3. Les données déjà saisies sont **pré-remplies** automatiquement.
-4. Complétez les champs manquants (signalés en orange).
-5. Cliquez sur **Générer le rapport** — format Word, PDF ou XBRL iXBRL.
-
-## Piste d'audit certifiable
-
-Chaque donnée porte un horodatage SHA-256 et une traçabilité source → calcul → rapport, compatible ISAE 3000.
-        `,
-      },
-      {
-        id: 'r-2',
-        title: 'Programmer des rapports automatiques',
-        tags: ['rapport', 'automatique', 'planification', 'email'],
-        content: `
-## Rapports planifiés
-
-Dans **Rapports › Rapports planifiés**, configurez :
-
-- **Fréquence** : mensuel, trimestriel, annuel.
-- **Format** : PDF, Excel, Word.
-- **Destinataires** : ajoutez les e-mails des parties prenantes.
-- **Référentiel** : CSRD, GRI, TCFD, PRI ou personnalisé.
-
-Les rapports sont générés la nuit (00h00 UTC) et envoyés par e-mail avec lien de téléchargement sécurisé valable 30 jours.
-        `,
-      },
-    ],
-  },
-  {
-    id: 'supply-chain',
-    icon: Truck,
-    color: 'text-purple-600',
-    bg: 'bg-purple-50',
-    title: 'Supply Chain ESG',
-    desc: 'Évaluez et pilotez la performance ESG de vos fournisseurs.',
-    articles: [
-      {
-        id: 'sc-1',
-        title: 'Envoyer des questionnaires à vos fournisseurs',
-        tags: ['fournisseur', 'questionnaire', 'supply chain', 'due diligence'],
-        content: `
-## Module Supply Chain
-
-ESGFlow permet d'évaluer vos fournisseurs sur 6 dimensions ESG : environnement, droit du travail, éthique, diversité, gouvernance, chaîne d'approvisionnement.
-
-## Envoyer un questionnaire
-
-1. Accédez à **Supply Chain › Fournisseurs**.
-2. Ajoutez vos fournisseurs (import CSV ou saisie manuelle).
-3. Sélectionnez le **template** de questionnaire (CSRD Tier 1, Devoir de Vigilance, personnalisé).
-4. Cliquez sur **Envoyer** — le fournisseur reçoit un lien unique sécurisé.
-5. Suivez les réponses et les scores dans le tableau de bord Supply Chain.
-
-## Plan de vigilance
-
-Conformément à la loi 2017-399 (Devoir de Vigilance), le module génère automatiquement le plan de vigilance avec les actions correctives identifiées.
-        `,
-      },
-    ],
-  },
-  {
-    id: 'security',
-    icon: Shield,
-    color: 'text-slate-600',
-    bg: 'bg-slate-50',
-    title: 'Sécurité & Confidentialité',
-    desc: 'Authentification, 2FA, RGPD et gestion des accès.',
-    articles: [
-      {
-        id: 'sec-1',
-        title: 'Activer l\'authentification à deux facteurs (2FA)',
-        tags: ['2fa', 'sécurité', 'totp', 'authentification'],
-        content: `
-## Pourquoi activer la 2FA ?
-
-La 2FA ajoute une couche de sécurité en demandant, en plus de votre mot de passe, un code à 6 chiffres généré par une application sur votre smartphone.
-
-## Applications compatibles
-
-Google Authenticator, Authy, Microsoft Authenticator, 1Password, Bitwarden.
-
-## Activation
-
-1. Allez dans **Paramètres › Sécurité**.
-2. Cliquez sur **Activer la 2FA**.
-3. Scannez le QR code avec votre application.
-4. Entrez le code à 6 chiffres affiché pour confirmer.
-5. **Sauvegardez vos 8 codes de secours** dans un endroit sûr (gestionnaire de mots de passe).
-
-> En cas de perte de votre téléphone, utilisez un code de secours pour vous connecter.
-        `,
-      },
-      {
-        id: 'sec-2',
-        title: 'Gérer les rôles et permissions utilisateurs',
-        tags: ['rôles', 'permissions', 'utilisateurs', 'accès'],
-        content: `
-## Rôles disponibles
-
-| Rôle | Droits |
-|------|--------|
-| **Admin** | Accès complet, gestion des utilisateurs et facturation |
-| **Manager** | Lecture + écriture sur toutes les données, pas d'accès facturation |
-| **Contributeur** | Saisie et modification des données de son périmètre uniquement |
-| **Lecteur** | Consultation seule, export autorisé |
-
-## Inviter un utilisateur
-
-1. Accédez à **Paramètres › Utilisateurs**.
-2. Cliquez sur **Inviter**.
-3. Renseignez l'e-mail et le rôle souhaité.
-4. L'utilisateur reçoit un e-mail d'invitation valable 7 jours.
-        `,
-      },
-    ],
-  },
-  {
-    id: 'api',
-    icon: Database,
-    color: 'text-indigo-600',
-    bg: 'bg-indigo-50',
-    title: 'API & Intégrations',
-    desc: 'Connectez ESGFlow à vos outils métier via l\'API REST.',
-    articles: [
-      {
-        id: 'api-1',
-        title: 'Authentification API — Bearer Token',
-        tags: ['api', 'token', 'authentification', 'rest'],
-        content: `
-## Obtenir votre clé API
-
-1. Accédez à **Paramètres › Intégrations › API**.
-2. Cliquez sur **Générer une nouvelle clé**.
-3. Copiez la clé — elle ne sera affichée qu'une seule fois.
-
-## Utilisation
-
-\`\`\`http
-GET /api/v1/indicators
-Authorization: Bearer <votre_clé_api>
-Content-Type: application/json
-\`\`\`
-
-## Limites de débit
-
-| Plan | Appels / min | Appels / jour |
-|------|-------------|---------------|
-| Starter | 60 | 10 000 |
-| Business | 300 | 100 000 |
-| Enterprise | Illimité | Illimité |
-        `,
-      },
-      {
-        id: 'api-2',
-        title: 'Configurer un webhook',
-        tags: ['webhook', 'notification', 'intégration'],
-        content: `
-## À quoi servent les webhooks ?
-
-Les webhooks permettent à ESGFlow de notifier votre système en temps réel lors d'événements : nouveau score calculé, rapport généré, alerte déclenchée, etc.
-
-## Configuration
-
-1. Accédez à **Paramètres › Webhooks**.
-2. Cliquez sur **Ajouter un endpoint**.
-3. Renseignez votre URL HTTPS (obligatoire).
-4. Sélectionnez les événements à écouter.
-5. Sauvegardez — un secret de signature est généré.
-
-## Vérification de signature
-
-Chaque appel inclut l'en-tête \`X-ESGFlow-Signature: sha256=<hmac>\`. Vérifiez-le côté serveur pour sécuriser votre endpoint.
-        `,
-      },
-    ],
-  },
+// ─── Knowledge base (structure only — text comes from i18n) ─────────────────────
+const CATEGORY_META: { id: string; icon: React.ElementType; color: string; bg: string }[] = [
+  { id: 'getting-started', icon: Play, color: 'text-green-600', bg: 'bg-green-50' },
+  { id: 'carbon', icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50' },
+  { id: 'csrd', icon: FileText, color: 'text-blue-600', bg: 'bg-blue-50' },
+  { id: 'supply-chain', icon: Truck, color: 'text-purple-600', bg: 'bg-purple-50' },
+  { id: 'security', icon: Shield, color: 'text-slate-600', bg: 'bg-slate-50' },
+  { id: 'api', icon: Database, color: 'text-indigo-600', bg: 'bg-indigo-50' },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function HelpCenter() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeArticle, setActiveArticle] = useState<Article | null>(null);
 
+  // Build categories from structure + i18n content
+  const CATEGORIES: Category[] = useMemo(() => CATEGORY_META.map(m => ({
+    ...m,
+    title: t(`help.categories.${m.id}.title`),
+    desc: t(`help.categories.${m.id}.desc`),
+    articles: t(`help.categories.${m.id}.articles`, { returnObjects: true }) as Article[],
+  })), [t, i18n.language]);
+
   // Flatten all articles for search
   const allArticles = useMemo(() =>
     CATEGORIES.flatMap(cat => cat.articles.map(a => ({ ...a, catId: cat.id, catTitle: cat.title }))),
-    []
+    [CATEGORIES]
   );
 
   const searchResults = useMemo(() => {
@@ -379,7 +67,7 @@ export default function HelpCenter() {
     const q = query.toLowerCase();
     return allArticles.filter(a =>
       a.title.toLowerCase().includes(q) ||
-      a.tags.some(t => t.includes(q)) ||
+      a.tags.some(tag => tag.includes(q)) ||
       a.content.toLowerCase().includes(q)
     ).slice(0, 8);
   }, [query, allArticles]);
@@ -475,7 +163,7 @@ export default function HelpCenter() {
               className="inline-flex items-center gap-2 text-white/70 hover:text-white text-sm transition-colors group"
             >
               <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-              Retour
+              {t('help.back')}
             </button>
             <Link to="/app/dashboard" className="inline-flex items-center gap-2 text-white/70 hover:text-white text-sm transition-colors">
               <div className="w-7 h-7 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
@@ -484,8 +172,8 @@ export default function HelpCenter() {
               ESGFlow
             </Link>
           </div>
-          <h1 className="text-4xl font-extrabold mb-3">Centre d'aide</h1>
-          <p className="text-slate-300 mb-8">Guides, tutoriels et réponses à toutes vos questions.</p>
+          <h1 className="text-4xl font-extrabold mb-3">{t('help.title')}</h1>
+          <p className="text-slate-300 mb-8">{t('help.subtitle')}</p>
 
           {/* Search */}
           <div className="relative max-w-xl">
@@ -494,7 +182,7 @@ export default function HelpCenter() {
               type="text"
               value={query}
               onChange={e => { setQuery(e.target.value); setActiveArticle(null); setActiveCategory(null); }}
-              placeholder="Rechercher un article, une fonctionnalité…"
+              placeholder={t('help.searchPlaceholder')}
               className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:bg-white/15 focus:border-white/40 transition-all text-sm backdrop-blur-sm"
             />
           </div>
@@ -518,7 +206,7 @@ export default function HelpCenter() {
             </div>
           )}
           {query && searchResults.length === 0 && (
-            <p className="mt-3 text-sm text-slate-400">Aucun résultat pour « {query} ».</p>
+            <p className="mt-3 text-sm text-slate-400">{t('help.noResults', { query })}</p>
           )}
         </div>
       </div>
@@ -532,7 +220,7 @@ export default function HelpCenter() {
               onClick={() => setActiveArticle(null)}
               className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors"
             >
-              <ArrowLeft className="h-4 w-4" /> Retour
+              <ArrowLeft className="h-4 w-4" /> {t('help.back')}
             </button>
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <h1 className="text-2xl font-bold text-gray-900 mb-6">{activeArticle.title}</h1>
@@ -540,12 +228,12 @@ export default function HelpCenter() {
                 {renderMarkdown(activeArticle.content)}
               </div>
               <div className="mt-8 pt-6 border-t border-gray-100 flex items-center gap-3">
-                <p className="text-sm text-gray-500">Cet article vous a-t-il aidé ?</p>
+                <p className="text-sm text-gray-500">{t('help.helpful')}</p>
                 <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-sm hover:bg-green-50 hover:border-green-300 transition-colors text-gray-600">
-                  <CheckCircle className="h-3.5 w-3.5 text-green-500" /> Oui
+                  <CheckCircle className="h-3.5 w-3.5 text-green-500" /> {t('help.yes')}
                 </button>
                 <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-sm hover:bg-red-50 hover:border-red-200 transition-colors text-gray-600">
-                  Pas vraiment
+                  {t('help.notReally')}
                 </button>
               </div>
             </div>
@@ -558,7 +246,7 @@ export default function HelpCenter() {
               onClick={() => setActiveCategory(null)}
               className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-6 transition-colors"
             >
-              <ArrowLeft className="h-4 w-4" /> Toutes les catégories
+              <ArrowLeft className="h-4 w-4" /> {t('help.allCategories')}
             </button>
             <div className={`flex items-center gap-3 mb-6 p-4 rounded-2xl ${currentCategory.bg}`}>
               <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
@@ -609,7 +297,7 @@ export default function HelpCenter() {
                   <h3 className="font-bold text-gray-900 mb-1 group-hover:text-green-700 transition-colors">{cat.title}</h3>
                   <p className="text-xs text-gray-500 leading-relaxed mb-3">{cat.desc}</p>
                   <div className="flex items-center gap-1 text-xs text-green-600 font-semibold">
-                    {cat.articles.length} article{cat.articles.length > 1 ? 's' : ''} <ChevronRight className="h-3 w-3" />
+                    {t('help.articlesCount', { count: cat.articles.length })} <ChevronRight className="h-3 w-3" />
                   </div>
                 </button>
               ))}
@@ -617,7 +305,7 @@ export default function HelpCenter() {
 
             {/* Popular articles */}
             <div className="mb-12">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Articles populaires</h2>
+              <h2 className="text-lg font-bold text-gray-900 mb-4">{t('help.popularArticles')}</h2>
               <div className="space-y-2">
                 {allArticles.slice(0, 5).map(a => (
                   <button
@@ -642,8 +330,8 @@ export default function HelpCenter() {
                   <Mail className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <div className="font-semibold text-gray-900 mb-1">E-mail</div>
-                  <div className="text-xs text-gray-500">Réponse sous 4h ouvrées</div>
+                  <div className="font-semibold text-gray-900 mb-1">{t('help.contactEmail')}</div>
+                  <div className="text-xs text-gray-500">{t('help.contactEmailDesc')}</div>
                 </div>
               </a>
               <Link to="/support" className="group flex flex-col items-center gap-3 p-6 bg-white rounded-2xl border border-gray-100 hover:border-green-300 transition-all text-center">
@@ -651,8 +339,8 @@ export default function HelpCenter() {
                   <MessageSquare className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <div className="font-semibold text-gray-900 mb-1">Support en ligne</div>
-                  <div className="text-xs text-gray-500">Ticketing & live chat</div>
+                  <div className="font-semibold text-gray-900 mb-1">{t('help.contactSupport')}</div>
+                  <div className="text-xs text-gray-500">{t('help.contactSupportDesc')}</div>
                 </div>
               </Link>
               <Link to="/app/api-docs" className="group flex flex-col items-center gap-3 p-6 bg-white rounded-2xl border border-gray-100 hover:border-indigo-300 transition-all text-center">
@@ -660,8 +348,8 @@ export default function HelpCenter() {
                   <ExternalLink className="h-5 w-5 text-indigo-600" />
                 </div>
                 <div>
-                  <div className="font-semibold text-gray-900 mb-1">Documentation API</div>
-                  <div className="text-xs text-gray-500">Référence technique complète</div>
+                  <div className="font-semibold text-gray-900 mb-1">{t('help.contactApi')}</div>
+                  <div className="text-xs text-gray-500">{t('help.contactApiDesc')}</div>
                 </div>
               </Link>
             </div>

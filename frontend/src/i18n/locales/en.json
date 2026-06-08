@@ -320,6 +320,194 @@
       }
     }
   },
+  "help": {
+    "back": "Back",
+    "title": "Help Center",
+    "subtitle": "Guides, tutorials and answers to all your questions.",
+    "searchPlaceholder": "Search for an article, a feature…",
+    "noResults": "No results for « {{query}} ».",
+    "allCategories": "All categories",
+    "helpful": "Was this article helpful?",
+    "yes": "Yes",
+    "notReally": "Not really",
+    "popularArticles": "Popular articles",
+    "articlesCount_one": "{{count}} article",
+    "articlesCount_other": "{{count}} articles",
+    "contactEmail": "Email",
+    "contactEmailDesc": "Reply within 4 business hours",
+    "contactSupport": "Online support",
+    "contactSupportDesc": "Ticketing & live chat",
+    "contactApi": "API Documentation",
+    "contactApiDesc": "Complete technical reference",
+    "categories": {
+      "getting-started": {
+        "title": "Quick start",
+        "desc": "Everything you need to be up and running in 30 minutes.",
+        "articles": [
+          {
+            "id": "gs-1",
+            "title": "Create your account and set up your organization",
+            "tags": [
+              "account",
+              "organization",
+              "onboarding"
+            ],
+            "content": "\n## Create your account\n\n1. Go to [app.esgflow.com/register](/register) and enter your work email.\n2. Choose a password (min. 8 characters, 1 uppercase, 1 digit).\n3. Check your email and click the confirmation link.\n\n## Set up your organization\n\nOn first access, the onboarding wizard guides you through 4 steps:\n- **Business sector** — NAF / NACE code for sector benchmarking.\n- **Headcount** — determines the applicable CSRD thresholds.\n- **Geographic scope** — for regional indicators.\n- **Frameworks** — select your target standards (CSRD, GRI, TCFD…).\n\n> **Tip**: you can change these settings at any time in **Settings › Organization**.\n        "
+          },
+          {
+            "id": "gs-2",
+            "title": "Import your first ESG data",
+            "tags": [
+              "import",
+              "csv",
+              "data",
+              "excel"
+            ],
+            "content": "\n## Accepted formats\n\n- **CSV / Excel** (xlsx, xls) — columns: indicator, value, unit, period, source.\n- **REST API** — endpoint `POST /api/v1/indicators/bulk`.\n- **Native connectors** — SAP, Sage, Oracle (Business+ plan).\n\n## CSV import procedure\n\n1. Download the **CSV template** from *Data › Import*.\n2. Fill in your data following the columns.\n3. Drag the file into the drop zone.\n4. Review the preview and fix any flagged errors.\n5. Click **Validate import**.\n\nCommon errors: wrong decimal separator (use a dot `.`), dates in ISO 8601 format (YYYY-MM-DD), unrecognized units (check the unit library).\n        "
+          },
+          {
+            "id": "gs-3",
+            "title": "Understand your ESG dashboard",
+            "tags": [
+              "dashboard",
+              "score",
+              "kpi"
+            ],
+            "content": "\n## Anatomy of the executive dashboard\n\nThe dashboard presents three zones:\n\n1. **Overall score /100** — weighted aggregate of the E, S, G pillars.\n2. **Trends** — 12-month evolution, compared to the sector.\n3. **AI alerts** — anomalies and priority recommendations.\n\n## Understand your score\n\n| Range | Level | Meaning |\n|-------|--------|---------------|\n| 80–100 | Leader | Exemplary ESG performance |\n| 60–79 | Advanced | Good trajectory, a few areas to improve |\n| 40–59 | Progressing | Corrective actions to initiate |\n| < 40 | Beginner | Improvement plan recommended |\n\n## Customize the weights\n\nGo to **Settings › Methodology** to adjust the weighting of the E/S/G pillars according to your strategy.\n        "
+          }
+        ]
+      },
+      "carbon": {
+        "title": "Carbon Footprint & Scope 3",
+        "desc": "Calculate your Scope 1, 2 and 3 emissions according to the GHG Protocol.",
+        "articles": [
+          {
+            "id": "c-1",
+            "title": "Difference between Scope 1, 2 and 3",
+            "tags": [
+              "scope1",
+              "scope2",
+              "scope3",
+              "ghg",
+              "carbon"
+            ],
+            "content": "\n## The three emission scopes\n\n**Scope 1 — Direct emissions**: combustion in your own facilities and vehicles.\n\n**Scope 2 — Indirect energy emissions**: purchased electricity, steam, heat.\n\n**Scope 3 — Other indirect emissions** (15 GHG Protocol categories):\n- *Upstream*: purchased goods & services, capital goods, business travel…\n- *Downstream*: use of sold products, end of life, franchises…\n\n> **CSRD note**: the directive requires reporting of Scopes 1, 2 and relevant Scope 3 categories.\n\n## Built-in emission factors\n\nESGFlow embeds the ADEME database (France) and IEA factors for 80+ countries. They are updated automatically every quarter.\n        "
+          },
+          {
+            "id": "c-2",
+            "title": "Configure your SBTi decarbonization plan",
+            "tags": [
+              "sbti",
+              "decarbonization",
+              "trajectory",
+              "1.5°C"
+            ],
+            "content": "\n## What is SBTi?\n\nThe *Science Based Targets* initiative (SBTi) enables companies to set emission reduction targets aligned with a +1.5 °C or +2 °C trajectory.\n\n## In ESGFlow\n\n1. Go to **Decarbonization › SBTi Plan**.\n2. Set your **base year** and your **target horizon** (2030, 2050).\n3. The tool automatically computes the required annual trajectory.\n4. Add your **actions** (energy efficiency, green purchasing, mobility…) with their estimated impact.\n5. Track progress in real time on the convergence chart.\n        "
+          }
+        ]
+      },
+      "csrd": {
+        "title": "CSRD Compliance & Reports",
+        "desc": "Generate your ESRS, GRI, TCFD reports in one click.",
+        "articles": [
+          {
+            "id": "r-1",
+            "title": "Generate your CSRD / ESRS report",
+            "tags": [
+              "csrd",
+              "esrs",
+              "report",
+              "compliance"
+            ],
+            "content": "\n## CSRD in brief\n\nThe Corporate Sustainability Reporting Directive (CSRD) applies progressively from 2024. It requires the publication of sustainability information according to the ESRS standards.\n\n## In ESGFlow — CSRD Report Builder\n\n1. Go to **Reports › CSRD Builder**.\n2. Select your **applicable ESRS** (auto-detected based on your sector and size).\n3. Already-entered data is **pre-filled** automatically.\n4. Complete the missing fields (flagged in orange).\n5. Click **Generate report** — Word, PDF or XBRL iXBRL format.\n\n## Certifiable audit trail\n\nEach data point carries a SHA-256 timestamp and source → calculation → report traceability, ISAE 3000 compatible.\n        "
+          },
+          {
+            "id": "r-2",
+            "title": "Schedule automatic reports",
+            "tags": [
+              "report",
+              "automatic",
+              "scheduling",
+              "email"
+            ],
+            "content": "\n## Scheduled reports\n\nIn **Reports › Scheduled reports**, configure:\n\n- **Frequency**: monthly, quarterly, annual.\n- **Format**: PDF, Excel, Word.\n- **Recipients**: add stakeholders' emails.\n- **Framework**: CSRD, GRI, TCFD, PRI or custom.\n\nReports are generated overnight (00:00 UTC) and sent by email with a secure download link valid for 30 days.\n        "
+          }
+        ]
+      },
+      "supply-chain": {
+        "title": "Supply Chain ESG",
+        "desc": "Assess and manage the ESG performance of your suppliers.",
+        "articles": [
+          {
+            "id": "sc-1",
+            "title": "Send questionnaires to your suppliers",
+            "tags": [
+              "supplier",
+              "questionnaire",
+              "supply chain",
+              "due diligence"
+            ],
+            "content": "\n## Supply Chain module\n\nESGFlow lets you assess your suppliers across 6 ESG dimensions: environment, labor rights, ethics, diversity, governance, supply chain.\n\n## Send a questionnaire\n\n1. Go to **Supply Chain › Suppliers**.\n2. Add your suppliers (CSV import or manual entry).\n3. Select the questionnaire **template** (CSRD Tier 1, Duty of Vigilance, custom).\n4. Click **Send** — the supplier receives a unique secure link.\n5. Track responses and scores in the Supply Chain dashboard.\n\n## Vigilance plan\n\nIn accordance with French law 2017-399 (Duty of Vigilance), the module automatically generates the vigilance plan with the identified corrective actions.\n        "
+          }
+        ]
+      },
+      "security": {
+        "title": "Security & Privacy",
+        "desc": "Authentication, 2FA, GDPR and access management.",
+        "articles": [
+          {
+            "id": "sec-1",
+            "title": "Enable two-factor authentication (2FA)",
+            "tags": [
+              "2fa",
+              "security",
+              "totp",
+              "authentication"
+            ],
+            "content": "\n## Why enable 2FA?\n\n2FA adds a layer of security by requiring, in addition to your password, a 6-digit code generated by an app on your smartphone.\n\n## Compatible apps\n\nGoogle Authenticator, Authy, Microsoft Authenticator, 1Password, Bitwarden.\n\n## Activation\n\n1. Go to **Settings › Security**.\n2. Click **Enable 2FA**.\n3. Scan the QR code with your app.\n4. Enter the displayed 6-digit code to confirm.\n5. **Save your 8 backup codes** in a safe place (password manager).\n\n> If you lose your phone, use a backup code to log in.\n        "
+          },
+          {
+            "id": "sec-2",
+            "title": "Manage user roles and permissions",
+            "tags": [
+              "roles",
+              "permissions",
+              "users",
+              "access"
+            ],
+            "content": "\n## Available roles\n\n| Role | Rights |\n|------|--------|\n| **Admin** | Full access, user and billing management |\n| **Manager** | Read + write on all data, no billing access |\n| **Contributor** | Entry and editing of data within their scope only |\n| **Viewer** | Read-only, export allowed |\n\n## Invite a user\n\n1. Go to **Settings › Users**.\n2. Click **Invite**.\n3. Enter the email and desired role.\n4. The user receives an invitation email valid for 7 days.\n        "
+          }
+        ]
+      },
+      "api": {
+        "title": "API & Integrations",
+        "desc": "Connect ESGFlow to your business tools via the REST API.",
+        "articles": [
+          {
+            "id": "api-1",
+            "title": "API Authentication — Bearer Token",
+            "tags": [
+              "api",
+              "token",
+              "authentication",
+              "rest"
+            ],
+            "content": "\n## Get your API key\n\n1. Go to **Settings › Integrations › API**.\n2. Click **Generate a new key**.\n3. Copy the key — it will only be shown once.\n\n## Usage\n\n```http\nGET /api/v1/indicators\nAuthorization: Bearer <your_api_key>\nContent-Type: application/json\n```\n\n## Rate limits\n\n| Plan | Calls / min | Calls / day |\n|------|-------------|---------------|\n| Starter | 60 | 10,000 |\n| Business | 300 | 100,000 |\n| Enterprise | Unlimited | Unlimited |\n        "
+          },
+          {
+            "id": "api-2",
+            "title": "Configure a webhook",
+            "tags": [
+              "webhook",
+              "notification",
+              "integration"
+            ],
+            "content": "\n## What are webhooks for?\n\nWebhooks allow ESGFlow to notify your system in real time on events: new score calculated, report generated, alert triggered, etc.\n\n## Configuration\n\n1. Go to **Settings › Webhooks**.\n2. Click **Add an endpoint**.\n3. Enter your HTTPS URL (required).\n4. Select the events to listen to.\n5. Save — a signature secret is generated.\n\n## Signature verification\n\nEach call includes the `X-ESGFlow-Signature: sha256=<hmac>` header. Verify it server-side to secure your endpoint.\n        "
+          }
+        ]
+      }
+    }
+  },
   "nav": {
     "dashboard": "Dashboard",
     "executiveOverview": "Executive overview",
