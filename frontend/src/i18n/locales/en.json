@@ -1285,6 +1285,22 @@
     "importAnother": "Import another file",
     "viewData": "View data"
   },
+  "demo": {
+    "hlDashboard": "Complete ESG dashboard",
+    "hlAI": "AI & automatic analysis",
+    "hlCompliance": "CSRD / ESRS compliance",
+    "unavailableError": "The demo account is temporarily unavailable. Please try again in a few moments.",
+    "starting": "Starting the demo…",
+    "title": "ESGFlow Demo",
+    "connecting": "Connecting to the demo account, please wait.",
+    "explore": "Explore the entire platform without creating an account — pre-filled data, AI enabled.",
+    "accessDemo": "Access the demo",
+    "unavailableTitle": "Demo temporarily unavailable",
+    "retry": "Retry",
+    "createFreeAccount": "Create a free account",
+    "finePrint": "Shared read/write account — data reset every 24h.",
+    "privacy": "Privacy"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "executiveOverview": "Executive overview",
