@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft, Award, Leaf, Users, Scale,
   TrendingUp, TrendingDown, Minus, Target, Brain,
@@ -30,9 +31,9 @@ interface Indicator {
 }
 
 const PILLARS = [
-  { key: 'environmental_score', label: 'Environnemental', short: 'E', icon: Leaf,  color: '#22c55e', bg: 'bg-green-50',  text: 'text-green-700',  border: 'border-green-200'  },
-  { key: 'social_score',        label: 'Social',           short: 'S', icon: Users, color: '#3b82f6', bg: 'bg-blue-50',   text: 'text-blue-700',   border: 'border-blue-200'   },
-  { key: 'governance_score',    label: 'Gouvernance',      short: 'G', icon: Scale, color: '#a855f7', bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
+  { key: 'environmental_score', labelKey: 'scoreBreakdown.pillarEnv',    short: 'E', icon: Leaf,  color: '#22c55e', bg: 'bg-green-50',  text: 'text-green-700',  border: 'border-green-200'  },
+  { key: 'social_score',        labelKey: 'scoreBreakdown.pillarSocial', short: 'S', icon: Users, color: '#3b82f6', bg: 'bg-blue-50',   text: 'text-blue-700',   border: 'border-blue-200'   },
+  { key: 'governance_score',    labelKey: 'scoreBreakdown.pillarGov',    short: 'G', icon: Scale, color: '#a855f7', bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
 ] as const;
 
 const GRADE_COLORS: Record<string, { bg: string; text: string; ring: string }> = {
@@ -63,14 +64,15 @@ function ScoreRing({ value, color, size = 120 }: { value: number; color: string;
 }
 
 function getScoreLabel(v: number) {
-  if (v >= 80) return { label: 'Excellent', icon: TrendingUp, color: 'text-green-600' };
-  if (v >= 60) return { label: 'Bien', icon: TrendingUp, color: 'text-blue-600' };
-  if (v >= 40) return { label: 'Moyen', icon: Minus, color: 'text-amber-600' };
-  return { label: 'À améliorer', icon: TrendingDown, color: 'text-red-600' };
+  if (v >= 80) return { labelKey: 'scoreBreakdown.labelExcellent', icon: TrendingUp, color: 'text-green-600' };
+  if (v >= 60) return { labelKey: 'scoreBreakdown.labelGood', icon: TrendingUp, color: 'text-blue-600' };
+  if (v >= 40) return { labelKey: 'scoreBreakdown.labelAverage', icon: Minus, color: 'text-amber-600' };
+  return { labelKey: 'scoreBreakdown.labelToImprove', icon: TrendingDown, color: 'text-red-600' };
 }
 
 export default function ScoreBreakdown() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [score, setScore] = useState<Score | null>(null);
   const [indicators, setIndicators] = useState<Indicator[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,19 +95,19 @@ export default function ScoreBreakdown() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-96">
-      <div className="text-center"><Spinner size="lg" /><p className="mt-4 text-gray-500">Chargement du score…</p></div>
+      <div className="text-center"><Spinner size="lg" /><p className="mt-4 text-gray-500">{t('scoreBreakdown.loadingScore')}</p></div>
     </div>
   );
 
   const radarData = PILLARS.map(p => ({
     pillar: p.short,
-    fullLabel: p.label,
+    fullLabel: t(p.labelKey),
     value: score ? Math.round((score as any)[p.key]) : 0,
     fullMark: 100,
   }));
 
   const barData = PILLARS.map(p => ({
-    name: p.label,
+    name: t(p.labelKey),
     score: score ? Math.round((score as any)[p.key]) : 0,
     color: p.color,
   }));
@@ -117,7 +119,7 @@ export default function ScoreBreakdown() {
       {/* Header */}
       <div>
         <button onClick={() => navigate(-1)} className="mb-3 inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors">
-          <ArrowLeft size={16} /> Retour
+          <ArrowLeft size={16} /> {t('common.back')}
         </button>
       </div>
 
@@ -126,10 +128,10 @@ export default function ScoreBreakdown() {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15">
-              <Award className="h-3.5 w-3.5" /> Analyse détaillée
+              <Award className="h-3.5 w-3.5" /> {t('scoreBreakdown.detailedAnalysis')}
             </div>
-            <h1 className="mt-4 text-4xl font-bold tracking-tight">Décomposition du Score ESG</h1>
-            <p className="mt-2 text-sm text-white/80">Analyse pilier par pilier · Pondérations & indicateurs</p>
+            <h1 className="mt-4 text-4xl font-bold tracking-tight">{t('scoreBreakdown.title')}</h1>
+            <p className="mt-2 text-sm text-white/80">{t('scoreBreakdown.subtitle')}</p>
           </div>
           {score && (
             <div className="flex items-center gap-6">
@@ -141,7 +143,7 @@ export default function ScoreBreakdown() {
                 </div>
               </div>
               <div>
-                <p className="text-sm text-white/70 mb-2">Note globale</p>
+                <p className="text-sm text-white/70 mb-2">{t('scoreBreakdown.globalGrade')}</p>
                 <span className={`inline-block rounded-2xl px-5 py-2 text-2xl font-bold ring-2 ${gradeStyle.bg} ${gradeStyle.text} ${gradeStyle.ring}`}>
                   {score.grade}
                 </span>
@@ -157,7 +159,7 @@ export default function ScoreBreakdown() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {PILLARS.map((p) => {
               const val = Math.round((score as any)[p.key]);
-              const { label, icon: SIcon, color: sColor } = getScoreLabel(val);
+              const { labelKey, icon: SIcon, color: sColor } = getScoreLabel(val);
               const Icon = p.icon;
               return (
                 <div key={p.key} className={`rounded-2xl border ${p.border} ${p.bg} p-6`}>
@@ -166,7 +168,7 @@ export default function ScoreBreakdown() {
                       <div className="rounded-xl p-2 bg-white/60">
                         <Icon className={`h-5 w-5 ${p.text}`} />
                       </div>
-                      <p className={`font-semibold ${p.text}`}>{p.label}</p>
+                      <p className={`font-semibold ${p.text}`}>{t(p.labelKey)}</p>
                     </div>
                     <span className="text-3xl font-bold text-gray-900">{val}</span>
                   </div>
@@ -175,7 +177,7 @@ export default function ScoreBreakdown() {
                   </div>
                   <div className={`mt-3 flex items-center gap-1.5 text-xs font-medium ${sColor}`}>
                     <SIcon size={12} />
-                    {label}
+                    {t(labelKey)}
                   </div>
                 </div>
               );
@@ -185,9 +187,9 @@ export default function ScoreBreakdown() {
           {/* Tabs */}
           <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
             {([
-              { key: 'overview' as const, label: 'Barres de progression' },
-              { key: 'radar' as const,    label: 'Radar' },
-              { key: 'bars' as const,     label: 'Histogramme' },
+              { key: 'overview' as const, label: t('scoreBreakdown.tabBars') },
+              { key: 'radar' as const,    label: t('scoreBreakdown.tabRadar') },
+              { key: 'bars' as const,     label: t('scoreBreakdown.tabHistogram') },
             ]).map(tab => (
               <button
                 key={tab.key}
@@ -204,11 +206,11 @@ export default function ScoreBreakdown() {
           {activeTab === 'overview' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h3 className="font-semibold text-gray-900 mb-5">Score global & piliers</h3>
+                <h3 className="font-semibold text-gray-900 mb-5">{t('scoreBreakdown.globalAndPillars')}</h3>
                 <div className="space-y-5">
                   {[
-                    { label: 'Score global', value: score.overall_score, color: 'bg-violet-500' },
-                    ...PILLARS.map(p => ({ label: p.label, value: (score as any)[p.key], color: `bg-[${p.color}]`, style: { backgroundColor: p.color } })),
+                    { label: t('scoreBreakdown.globalScore'), value: score.overall_score, color: 'bg-violet-500' },
+                    ...PILLARS.map(p => ({ label: t(p.labelKey), value: (score as any)[p.key], color: `bg-[${p.color}]`, style: { backgroundColor: p.color } })),
                   ].map((item, i) => (
                     <div key={i}>
                       <div className="flex justify-between mb-1.5">
@@ -227,15 +229,15 @@ export default function ScoreBreakdown() {
               </div>
 
               <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h3 className="font-semibold text-gray-900 mb-5">Indicateurs par pilier</h3>
+                <h3 className="font-semibold text-gray-900 mb-5">{t('scoreBreakdown.indicatorsByPillar')}</h3>
                 {PILLARS.map(p => {
                   const pillarInds = indicators.filter(i => i.pillar === p.key.replace('_score', ''));
                   return (
                     <div key={p.key} className="mb-4 last:mb-0">
                       <div className="flex items-center gap-2 mb-2">
                         <p.icon size={14} className={p.text} />
-                        <p className={`text-xs font-semibold uppercase tracking-wide ${p.text}`}>{p.label}</p>
-                        <span className="ml-auto text-xs text-gray-400">{pillarInds.length} indicateur{pillarInds.length !== 1 ? 's' : ''}</span>
+                        <p className={`text-xs font-semibold uppercase tracking-wide ${p.text}`}>{t(p.labelKey)}</p>
+                        <span className="ml-auto text-xs text-gray-400">{t('scoreBreakdown.indicatorsCount', { count: pillarInds.length })}</span>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {pillarInds.slice(0, 5).map(ind => (
@@ -249,7 +251,7 @@ export default function ScoreBreakdown() {
                           </span>
                         )}
                         {pillarInds.length === 0 && (
-                          <span className="text-xs text-gray-400 italic">Aucun indicateur configuré</span>
+                          <span className="text-xs text-gray-400 italic">{t('scoreBreakdown.noIndicatorConfigured')}</span>
                         )}
                       </div>
                     </div>
@@ -262,14 +264,14 @@ export default function ScoreBreakdown() {
           {/* Radar tab */}
           {activeTab === 'radar' && (
             <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h3 className="font-semibold text-gray-900 mb-6">Profil ESG — vue radar</h3>
+              <h3 className="font-semibold text-gray-900 mb-6">{t('scoreBreakdown.radarProfile')}</h3>
               <ResponsiveContainer width="100%" height={360}>
                 <RadarChart data={radarData}>
                   <PolarGrid stroke="#e5e7eb" />
                   <PolarAngleAxis dataKey="pillar" tick={{ fontSize: 13, fontWeight: 600 }} />
                   <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 10 }} />
                   <Radar
-                    name="Score" dataKey="value"
+                    name={t('scoreBreakdown.scoreLabel')} dataKey="value"
                     stroke="#7c3aed" fill="#7c3aed" fillOpacity={0.25}
                     strokeWidth={2.5}
                   />
@@ -285,14 +287,14 @@ export default function ScoreBreakdown() {
           {/* Bars tab */}
           {activeTab === 'bars' && (
             <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h3 className="font-semibold text-gray-900 mb-6">Scores par pilier</h3>
+              <h3 className="font-semibold text-gray-900 mb-6">{t('scoreBreakdown.scoresByPillar')}</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={barData} barSize={48}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
                   <XAxis dataKey="name" tick={{ fontSize: 13 }} />
                   <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
                   <Tooltip
-                    formatter={(v: number) => [`${v} / 100`, 'Score']}
+                    formatter={(v: number) => [`${v} / 100`, t('scoreBreakdown.scoreLabel')]}
                     contentStyle={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12 }}
                   />
                   <ReferenceLine y={50} stroke="#e5e7eb" strokeDasharray="4 4" />
@@ -312,26 +314,26 @@ export default function ScoreBreakdown() {
               onClick={() => navigate('/app/scores/calculate')}
               className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-violet-700 transition-colors"
             >
-              <Target size={16} /> Recalculer le score
+              <Target size={16} /> {t('scoreBreakdown.recalculateScore')}
             </button>
             <button
               onClick={() => navigate('/app/ai-insights')}
               className="inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-5 py-2.5 text-sm font-medium text-violet-700 hover:bg-violet-100 transition-colors"
             >
-              <Brain size={16} /> Insights IA
+              <Brain size={16} /> {t('scoreBreakdown.aiInsights')}
             </button>
           </div>
         </>
       ) : (
         <div className="rounded-2xl border border-gray-200 bg-white p-16 text-center shadow-sm">
           <Award className="mx-auto mb-4 h-16 w-16 text-gray-200" />
-          <p className="text-xl font-semibold text-gray-900">Aucun score disponible</p>
-          <p className="mt-2 text-gray-500">Calculez votre premier score ESG pour voir l'analyse détaillée.</p>
+          <p className="text-xl font-semibold text-gray-900">{t('scoreBreakdown.noScoreAvailable')}</p>
+          <p className="mt-2 text-gray-500">{t('scoreBreakdown.noScoreDesc')}</p>
           <button
             onClick={() => navigate('/app/scores/calculate')}
             className="mt-6 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-violet-700 transition-colors"
           >
-            <Target size={16} /> Calculer maintenant
+            <Target size={16} /> {t('scoreBreakdown.calculateNow')}
           </button>
         </div>
       )}
