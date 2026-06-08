@@ -13,6 +13,7 @@ import {
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import Spinner from '@/components/common/Spinner';
+import { useTranslation } from 'react-i18next';
 import api from '@/services/api';
 import toast from 'react-hot-toast';
 
@@ -109,6 +110,7 @@ function RecoCard({ reco, expanded, onToggle }: {
   expanded: boolean;
   onToggle: () => void;
 }) {
+  const { t } = useTranslation();
   const style = PILLAR_STYLES[reco.pillar] || PILLAR_STYLES.governance;
   const Icon = style.icon;
 
@@ -128,24 +130,24 @@ function RecoCard({ reco, expanded, onToggle }: {
           <div className="flex items-center gap-2 flex-wrap mb-1">
             {reco.quick_win && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">
-                <Zap size={9} /> Quick Win
+                <Zap size={9} /> {t('aiInsights.quickWin')}
               </span>
             )}
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${style.badge}`}>
               {reco.pillar_label}
             </span>
             <span className={`text-[10px] px-1.5 py-0.5 rounded ${EFFORT_COLOR[reco.effort]}`}>
-              Effort : {reco.effort_label}
+              {t('aiInsights.effortPrefix')} {reco.effort_label}
             </span>
           </div>
           <p className="text-sm font-semibold text-gray-900 leading-snug">{reco.title}</p>
           <div className="flex items-center gap-3 mt-1.5 text-xs">
             <span className={IMPACT_COLOR[reco.impact]}>
-              Impact {reco.impact_label}
+              {t('aiInsights.impactPrefix')} {reco.impact_label}
             </span>
             <span className="text-gray-300">·</span>
             <span className="text-emerald-600 font-medium">
-              +{reco.score_gain_est} pts estimés
+              {t('aiInsights.ptsEstimated', { pts: reco.score_gain_est })}
             </span>
           </div>
         </div>
@@ -162,7 +164,7 @@ function RecoCard({ reco, expanded, onToggle }: {
         <div className={`px-4 pb-4 pt-2 border-t ${style.border} ${style.bg}`}>
           <p className="text-sm text-gray-700 mb-4 leading-relaxed">{reco.description}</p>
 
-          <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">Actions recommandées</h4>
+          <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-2">{t('aiInsights.recommendedActions')}</h4>
           <ul className="space-y-2 mb-4">
             {reco.actions.map((action, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
@@ -189,6 +191,7 @@ function RecoCard({ reco, expanded, onToggle }: {
 
 export default function AIInsights() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<InsightsData | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -202,7 +205,7 @@ export default function AIInsights() {
       const res = await api.get('/ai-insights');
       setData(res.data);
     } catch (err) {
-      toast.error('Impossible de charger les recommandations');
+      toast.error(t('aiInsights.loadError'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -230,19 +233,19 @@ export default function AIInsights() {
             className="mb-4 inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-sm font-medium text-white/80 hover:bg-white/20 hover:text-white transition-colors"
           >
             <ArrowLeft size={14} />
-            Retour
+            {t('common.back')}
           </button>
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide uppercase flex items-center gap-1.5">
                   <Brain size={12} />
-                  IA & Recommandations
+                  {t('aiInsights.badge')}
                 </span>
               </div>
-              <h1 className="text-3xl font-bold mb-1">Insights ESG Intelligents</h1>
+              <h1 className="text-3xl font-bold mb-1">{t('aiInsights.title')}</h1>
               <p className="text-violet-100">
-                Recommandations personnalisées et actions prioritaires pour améliorer votre performance ESG
+                {t('aiInsights.subtitle')}
               </p>
             </div>
             <button
@@ -251,7 +254,7 @@ export default function AIInsights() {
               className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-medium transition-colors"
             >
               <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />
-              Actualiser
+              {t('aiInsights.refresh')}
             </button>
           </div>
         </div>
@@ -260,8 +263,8 @@ export default function AIInsights() {
       {loading ? (
         <div className="flex flex-col items-center justify-center h-64">
           <Spinner size="lg" />
-          <p className="text-gray-500 mt-4 font-medium">Analyse de vos données ESG en cours…</p>
-          <p className="text-sm text-gray-400 mt-1">Génération des recommandations personnalisées</p>
+          <p className="text-gray-500 mt-4 font-medium">{t('aiInsights.analyzing')}</p>
+          <p className="text-sm text-gray-400 mt-1">{t('aiInsights.generatingRecos')}</p>
         </div>
       ) : data ? (
         <>
@@ -275,7 +278,7 @@ export default function AIInsights() {
                 </div>
                 <div>
                   <p className="text-3xl font-bold text-gray-900">{Math.round(data.scores.overall)}</p>
-                  <p className="text-xs text-gray-400">Score global / 100</p>
+                  <p className="text-xs text-gray-400">{t('aiInsights.scoreGlobal')}</p>
                   <p className="text-xs font-medium text-gray-500 mt-0.5">{data.scores.rating_label}</p>
                 </div>
               </div>
@@ -286,7 +289,7 @@ export default function AIInsights() {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Leaf size={15} className="text-emerald-600" />
-                  <span className="text-xs font-medium text-gray-500">Environnement</span>
+                  <span className="text-xs font-medium text-gray-500">{t('aiInsights.pillarEnv')}</span>
                 </div>
                 <span className="text-lg font-bold text-emerald-700">{Math.round(data.scores.environmental)}</span>
               </div>
@@ -298,7 +301,7 @@ export default function AIInsights() {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Users size={15} className="text-blue-600" />
-                  <span className="text-xs font-medium text-gray-500">Social</span>
+                  <span className="text-xs font-medium text-gray-500">{t('aiInsights.pillarSocial')}</span>
                 </div>
                 <span className="text-lg font-bold text-blue-700">{Math.round(data.scores.social)}</span>
               </div>
@@ -310,7 +313,7 @@ export default function AIInsights() {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Scale size={15} className="text-purple-600" />
-                  <span className="text-xs font-medium text-gray-500">Gouvernance</span>
+                  <span className="text-xs font-medium text-gray-500">{t('aiInsights.pillarGov')}</span>
                 </div>
                 <span className="text-lg font-bold text-purple-700">{Math.round(data.scores.governance)}</span>
               </div>
@@ -327,16 +330,16 @@ export default function AIInsights() {
                 </div>
                 <div>
                   <p className="font-semibold text-amber-900">
-                    Potentiel d'amélioration : <span className="text-2xl">+{data.total_gain_estimate} pts</span>
+                    {t('aiInsights.improvementPotential')} <span className="text-2xl">+{data.total_gain_estimate} pts</span>
                   </p>
                   <p className="text-sm text-amber-700">
-                    En appliquant les 5 recommandations prioritaires, votre score ESG pourrait atteindre{' '}
+                    {t('aiInsights.potentialDescBefore')}{' '}
                     <strong>{Math.min(Math.round(data.scores.overall) + data.total_gain_estimate, 100)}/100</strong>
                   </p>
                 </div>
               </div>
               <Button onClick={() => navigate('/app/scores/calculate')} className="flex-shrink-0 hidden sm:flex">
-                <BarChart3 size={15} className="mr-2" /> Recalculer
+                <BarChart3 size={15} className="mr-2" /> {t('aiInsights.recalculate')}
               </Button>
             </div>
           )}
@@ -347,10 +350,10 @@ export default function AIInsights() {
             <Card>
               <div className="flex items-center gap-2 mb-4">
                 <Star size={18} className="text-amber-500" />
-                <h2 className="text-base font-semibold text-gray-900">Points forts</h2>
+                <h2 className="text-base font-semibold text-gray-900">{t('aiInsights.strengths')}</h2>
               </div>
               {data.strengths.length === 0 ? (
-                <p className="text-sm text-gray-400">Calculez un score pour voir vos points forts.</p>
+                <p className="text-sm text-gray-400">{t('aiInsights.noStrengths')}</p>
               ) : (
                 <ul className="space-y-2.5">
                   {data.strengths.map((s, i) => (
@@ -367,12 +370,12 @@ export default function AIInsights() {
             <Card>
               <div className="flex items-center gap-2 mb-4">
                 <AlertTriangle size={18} className="text-red-500" />
-                <h2 className="text-base font-semibold text-gray-900">Points de vigilance</h2>
+                <h2 className="text-base font-semibold text-gray-900">{t('aiInsights.riskPoints')}</h2>
               </div>
               {data.risks.length === 0 ? (
                 <div className="flex items-center gap-2 text-sm text-emerald-600">
                   <CheckCircle size={15} />
-                  <span>Aucun risque critique détecté — continuez sur cette lancée !</span>
+                  <span>{t('aiInsights.noRisks')}</span>
                 </div>
               ) : (
                 <ul className="space-y-2.5">
@@ -392,14 +395,14 @@ export default function AIInsights() {
             <div className="flex items-center gap-2 mb-4">
               <Lightbulb size={20} className="text-violet-600" />
               <h2 className="text-lg font-semibold text-gray-900">
-                Recommandations ({data.total_recommendations})
+                {t('aiInsights.recommendationsTitle', { count: data.total_recommendations })}
               </h2>
             </div>
             <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit mb-5">
               {([
-                { key: 'quick' as const,    icon: <Zap size={13} />,    label: `Quick Wins (${data.quick_wins.length})` },
-                { key: 'strategic' as const, icon: <Target size={13} />, label: `Stratégiques (${data.strategic_actions.length})` },
-                { key: 'all' as const,       icon: <Activity size={13} />, label: `Toutes (${data.total_recommendations})` },
+                { key: 'quick' as const,    icon: <Zap size={13} />,    label: t('aiInsights.tabQuickWins', { count: data.quick_wins.length }) },
+                { key: 'strategic' as const, icon: <Target size={13} />, label: t('aiInsights.tabStrategic', { count: data.strategic_actions.length }) },
+                { key: 'all' as const,       icon: <Activity size={13} />, label: t('aiInsights.tabAll', { count: data.total_recommendations }) },
               ]).map(tab => (
                 <button
                   key={tab.key}
@@ -420,8 +423,8 @@ export default function AIInsights() {
             {currentRecos.length === 0 ? (
               <div className="text-center py-10 text-gray-400">
                 <Award size={36} className="mx-auto mb-3 opacity-30" />
-                <p className="font-medium">Excellent ! Aucune recommandation dans cette catégorie.</p>
-                <p className="text-sm mt-1">Votre performance ESG est au-dessus des seuils d'alerte.</p>
+                <p className="font-medium">{t('aiInsights.noRecosTitle')}</p>
+                <p className="text-sm mt-1">{t('aiInsights.noRecosDesc')}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -447,8 +450,8 @@ export default function AIInsights() {
                 <BarChart3 size={18} className="text-violet-600" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-900">Calculer un score</p>
-                <p className="text-xs text-gray-500">Mettre à jour vos indicateurs</p>
+                <p className="text-sm font-semibold text-gray-900">{t('aiInsights.ctaCalcTitle')}</p>
+                <p className="text-xs text-gray-500">{t('aiInsights.ctaCalcDesc')}</p>
               </div>
               <ArrowUpRight size={14} className="text-gray-400 ml-auto" />
             </button>
@@ -461,8 +464,8 @@ export default function AIInsights() {
                 <Target size={18} className="text-emerald-600" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-900">Analyse ESRS / DMA</p>
-                <p className="text-xs text-gray-500">Vérifier la couverture CSRD</p>
+                <p className="text-sm font-semibold text-gray-900">{t('aiInsights.ctaEsrsTitle')}</p>
+                <p className="text-xs text-gray-500">{t('aiInsights.ctaEsrsDesc')}</p>
               </div>
               <ArrowUpRight size={14} className="text-gray-400 ml-auto" />
             </button>
@@ -475,8 +478,8 @@ export default function AIInsights() {
                 <Activity size={18} className="text-blue-600" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-900">Saisir des données</p>
-                <p className="text-xs text-gray-500">Enrichir la base ESG</p>
+                <p className="text-sm font-semibold text-gray-900">{t('aiInsights.ctaDataTitle')}</p>
+                <p className="text-xs text-gray-500">{t('aiInsights.ctaDataDesc')}</p>
               </div>
               <ArrowUpRight size={14} className="text-gray-400 ml-auto" />
             </button>
