@@ -508,6 +508,29 @@
       }
     }
   },
+  "scoresList": {
+    "loadingScores": "Chargement des scores…",
+    "scoresEsg": "Scores ESG",
+    "scoresTable": "Tableau des Scores",
+    "scoresTableSubtitle": "Évaluations ESG par organisation · Piliers E, S, G",
+    "statOrganizations": "Organisations",
+    "statScored": "Scorées",
+    "statAvgScore": "Score moyen",
+    "searchOrgPlaceholder": "Rechercher une organisation…",
+    "calculateAScore": "Calculer un score",
+    "noOrgTitle": "Aucune organisation",
+    "noOrgDesc": "Ajoutez des organisations pour calculer leurs scores ESG.",
+    "manageOrgs": "Gérer les organisations",
+    "calculatedScores": "Scores calculés ({{count}})",
+    "siren": "SIREN",
+    "history": "Historique",
+    "detail": "Détail",
+    "notScored": "Non scorées ({{count}})",
+    "calculateScoreBtn": "Calculer le score",
+    "aiRecoTitle": "Obtenez des recommandations IA",
+    "aiRecoDesc": "Analysez vos scores et recevez des actions prioritaires pour progresser.",
+    "aiInsightsBtn": "Insights IA"
+  },
   "nav": {
     "dashboard": "Tableau de bord",
     "executiveOverview": "Vue d'ensemble exécutive",

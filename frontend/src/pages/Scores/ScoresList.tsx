@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Award, TrendingUp, Building2, Calculator, Search,
   Leaf, Users, Scale, ArrowRight, History, Sparkles,
@@ -67,6 +68,8 @@ function PillarBar({ value, color, label }: { value: number; color: string; labe
 
 export default function ScoresList() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language === 'fr' ? 'fr-FR' : 'en-US';
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [scores, setScores] = useState<Record<string, OrgScore>>({});
   const [loading, setLoading] = useState(true);
@@ -106,28 +109,28 @@ export default function ScoresList() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-96">
-      <div className="text-center"><Spinner size="lg" /><p className="mt-4 text-gray-500">Chargement des scores…</p></div>
+      <div className="text-center"><Spinner size="lg" /><p className="mt-4 text-gray-500">{t('scoresList.loadingScores')}</p></div>
     </div>
   );
 
   return (
     <div className="space-y-6">
-      <BackButton to="/app/scores" label="Scores ESG" />
+      <BackButton to="/app/scores" label={t('scoresList.scoresEsg')} />
       {/* Hero */}
       <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-violet-900 to-purple-800 p-8 text-white shadow-xl">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15">
-              <Award className="h-3.5 w-3.5" /> Scores ESG
+              <Award className="h-3.5 w-3.5" /> {t('scoresList.scoresEsg')}
             </div>
-            <h1 className="mt-4 text-4xl font-bold tracking-tight">Tableau des Scores</h1>
-            <p className="mt-2 text-sm text-white/80">Évaluations ESG par organisation · Piliers E, S, G</p>
+            <h1 className="mt-4 text-4xl font-bold tracking-tight">{t('scoresList.scoresTable')}</h1>
+            <p className="mt-2 text-sm text-white/80">{t('scoresList.scoresTableSubtitle')}</p>
           </div>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: 'Organisations', value: orgs.length },
-              { label: 'Scorées', value: scored.length },
-              { label: 'Score moyen', value: avgScore ? avgScore.toFixed(0) : '—' },
+              { label: t('scoresList.statOrganizations'), value: orgs.length },
+              { label: t('scoresList.statScored'), value: scored.length },
+              { label: t('scoresList.statAvgScore'), value: avgScore ? avgScore.toFixed(0) : '—' },
             ].map(s => (
               <div key={s.label} className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10 text-center">
                 <p className="text-xs uppercase tracking-wide text-white/70">{s.label}</p>
@@ -145,7 +148,7 @@ export default function ScoresList() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Rechercher une organisation…"
+            placeholder={t('scoresList.searchOrgPlaceholder')}
             className="w-full rounded-xl border border-gray-300 pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
           />
         </div>
@@ -153,20 +156,20 @@ export default function ScoresList() {
           onClick={() => navigate('/app/scores/calculate')}
           className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-700 transition-colors"
         >
-          <Calculator size={15} /> Calculer un score
+          <Calculator size={15} /> {t('scoresList.calculateAScore')}
         </button>
       </div>
 
       {orgs.length === 0 ? (
         <div className="rounded-2xl border border-gray-200 bg-white p-16 text-center shadow-sm">
           <Building2 className="h-16 w-16 mx-auto text-gray-200 mb-4" />
-          <p className="text-xl font-semibold text-gray-900">Aucune organisation</p>
-          <p className="mt-2 text-gray-500 mb-6">Ajoutez des organisations pour calculer leurs scores ESG.</p>
+          <p className="text-xl font-semibold text-gray-900">{t('scoresList.noOrgTitle')}</p>
+          <p className="mt-2 text-gray-500 mb-6">{t('scoresList.noOrgDesc')}</p>
           <button
             onClick={() => navigate('/app/organizations')}
             className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-violet-700 transition-colors"
           >
-            <Building2 size={15} /> Gérer les organisations
+            <Building2 size={15} /> {t('scoresList.manageOrgs')}
           </button>
         </div>
       ) : (
@@ -175,7 +178,7 @@ export default function ScoresList() {
           {scored.length > 0 && (
             <div>
               <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                Scores calculés ({scored.length})
+                {t('scoresList.calculatedScores', { count: scored.length })}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {scored.map(org => {
@@ -190,7 +193,7 @@ export default function ScoresList() {
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-gray-900 truncate">{org.name}</h3>
                           {org.industry && <p className="text-xs text-gray-500 mt-0.5 capitalize">{org.industry}</p>}
-                          {org.external_id && <p className="text-xs text-gray-400 mt-0.5">SIREN : {org.external_id}</p>}
+                          {org.external_id && <p className="text-xs text-gray-400 mt-0.5">{t('scoresList.siren')} : {org.external_id}</p>}
                         </div>
                         <ScoreBadge score={s} />
                       </div>
@@ -203,20 +206,20 @@ export default function ScoresList() {
 
                       <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                         <p className="text-xs text-gray-400">
-                          {new Date(s.calculated_at).toLocaleDateString('fr-FR')}
+                          {new Date(s.calculated_at).toLocaleDateString(dateLocale)}
                         </p>
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={e => { e.stopPropagation(); navigate('/app/scores/history'); }}
                             className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50"
                           >
-                            <History size={11} /> Historique
+                            <History size={11} /> {t('scoresList.history')}
                           </button>
                           <button
                             onClick={e => { e.stopPropagation(); navigate('/app/scores/breakdown'); }}
                             className="inline-flex items-center gap-1 rounded-lg bg-violet-50 border border-violet-200 px-2.5 py-1 text-xs text-violet-700 hover:bg-violet-100"
                           >
-                            Détail <ArrowRight size={11} />
+                            {t('scoresList.detail')} <ArrowRight size={11} />
                           </button>
                         </div>
                       </div>
@@ -231,7 +234,7 @@ export default function ScoresList() {
           {unscored.length > 0 && (
             <div>
               <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                Non scorées ({unscored.length})
+                {t('scoresList.notScored', { count: unscored.length })}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {unscored.map(org => (
@@ -249,7 +252,7 @@ export default function ScoresList() {
                       onClick={() => navigate('/app/scores/calculate')}
                       className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-violet-200 bg-white px-4 py-2 text-sm font-medium text-violet-700 hover:bg-violet-50 transition-colors"
                     >
-                      <Calculator size={14} /> Calculer le score
+                      <Calculator size={14} /> {t('scoresList.calculateScoreBtn')}
                     </button>
                   </div>
                 ))}
@@ -261,14 +264,14 @@ export default function ScoresList() {
           <div className="rounded-2xl border border-violet-100 bg-violet-50 p-5 flex items-center gap-4">
             <Sparkles className="h-6 w-6 text-violet-600 flex-shrink-0" />
             <div className="flex-1">
-              <p className="font-semibold text-violet-900">Obtenez des recommandations IA</p>
-              <p className="text-sm text-violet-700 mt-0.5">Analysez vos scores et recevez des actions prioritaires pour progresser.</p>
+              <p className="font-semibold text-violet-900">{t('scoresList.aiRecoTitle')}</p>
+              <p className="text-sm text-violet-700 mt-0.5">{t('scoresList.aiRecoDesc')}</p>
             </div>
             <button
               onClick={() => navigate('/app/ai-insights')}
               className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-700 transition-colors flex-shrink-0"
             >
-              <TrendingUp size={15} /> Insights IA
+              <TrendingUp size={15} /> {t('scoresList.aiInsightsBtn')}
             </button>
           </div>
         </>
