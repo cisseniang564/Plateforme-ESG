@@ -987,6 +987,101 @@
       }
     ]
   },
+  "reportsUnified": {
+    "loadError": "Error loading data",
+    "kpiCollected": "Collected indicators",
+    "kpiCompleteness": "Completeness rate",
+    "kpiVerified": "{{count}} verified",
+    "kpiScore": "Overall ESG score",
+    "ratingGood": "Good",
+    "ratingAverage": "Average",
+    "ratingToImprove": "Needs improvement",
+    "kpiLastUpdate": "Last update",
+    "reportGenerated": "Report generated and downloaded!",
+    "generateError": "Error generating the report",
+    "tabOverview": "Overview",
+    "tabCsrd": "CSRD Builder",
+    "tabGenerate": "Generate & Export",
+    "title": "ESG Reports",
+    "subtitle": "Generate reports compliant with CSRD, GRI and TCFD standards from your real data",
+    "refresh": "Refresh",
+    "generateReport": "Generate a report",
+    "availableTemplates": "Available templates",
+    "generate": "Generate",
+    "csrdReadiness": "CSRD readiness",
+    "csrdReadinessSub": "Overall completeness rate of your ESRS data",
+    "globalCompleteness": "overall completeness",
+    "viewDetail": "View detail",
+    "pillarEnv": "Environment (E1–E5)",
+    "pillarSoc": "Social (S1–S4)",
+    "pillarGov": "Governance (G1)",
+    "indicatorsRatio": "{{ok}}/{{total}} indicators",
+    "esrsSections": "ESRS Sections",
+    "realDataLoaded": "Real data from your entries — {{count}} entries loaded",
+    "statusValidated": "Validated",
+    "statusPartial": "Partial",
+    "statusMissing": "Missing",
+    "loadingData": "Loading data…",
+    "missingDataTitle": "Missing data?",
+    "addDataPre": "Add your data in",
+    "manualEntry": "Manual entry",
+    "orVia": "or via",
+    "importCsv": "CSV Import",
+    "reportType": "Report type",
+    "referenceYear": "Reference year",
+    "exportFormat": "Export format",
+    "generating": "Generating…",
+    "generateReportBtn": "Generate the {{type}} {{year}} report",
+    "summary": "Summary",
+    "sumType": "Type",
+    "sumYear": "Year",
+    "sumFormat": "Format",
+    "sumData": "Data",
+    "sumCompleteness": "CSRD completeness",
+    "entriesCount": "{{count}} entries",
+    "csrdConformity": "CSRD compliance",
+    "coverageBefore": "Your data covers",
+    "coverageAfter": "of the ESRS requirements.",
+    "improveHint": " Complete your entries to improve compliance.",
+    "excellentHint": " Excellent compliance level!",
+    "noDataSection": "No data available for this section.",
+    "addDataManual": "Add data in Manual entry.",
+    "sectionStats": "{{total}} indicators · {{ok}} validated",
+    "sections": {
+      "E1": "Climate change",
+      "E2": "Pollution",
+      "E3": "Marine & water resources",
+      "E4": "Biodiversity",
+      "E5": "Circular economy",
+      "S1": "Own workforce",
+      "S2": "Value chain",
+      "S3": "Communities",
+      "G1": "Business conduct"
+    },
+    "templates": {
+      "csrd": {
+        "label": "CSRD / ESRS 2024",
+        "sub": "European directive",
+        "badge": "Recommended"
+      },
+      "executive": {
+        "label": "Executive summary",
+        "sub": "Synthetic view"
+      },
+      "detailed": {
+        "label": "Detailed report",
+        "sub": "Full analysis"
+      },
+      "gri": {
+        "label": "GRI Standards 2021",
+        "sub": "Global Reporting"
+      },
+      "tcfd": {
+        "label": "TCFD",
+        "sub": "Climate risks"
+      }
+    }
+  },
   "nav": {
     "dashboard": "Dashboard",
     "executiveOverview": "Executive overview",

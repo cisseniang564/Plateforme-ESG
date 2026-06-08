@@ -12,6 +12,8 @@ import {
 } from 'lucide-react'
 import api from '@/services/api'
 import toast from 'react-hot-toast'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,7 +34,7 @@ function matchesKeywords(text: string, kws: string[]) {
   return kws.some(k => t.includes(k.toLowerCase()))
 }
 
-function mapEntriesToESRS(entries: any[]): ESRSEntry[] {
+function mapEntriesToESRS(entries: any[], t: TFunction): ESRSEntry[] {
   const env = entries.filter(e => e.pillar === 'environmental')
   const soc = entries.filter(e => e.pillar === 'social')
   const gov = entries.filter(e => e.pillar === 'governance')
@@ -50,7 +52,7 @@ function mapEntriesToESRS(entries: any[]): ESRSEntry[] {
 
   const sections: ESRSEntry[] = [
     {
-      id: 'E1', name: 'Changement climatique', icon: Zap, color: '#dc2626', bg: '#fef2f2',
+      id: 'E1', name: t('reportsUnified.sections.E1'), icon: Zap, color: '#dc2626', bg: '#fef2f2',
       items: [
         ...pick(env, ['scope 1', 'scope1', 'ghg', 'ges', 'carbone', 'co2', 'émission']),
         ...pick(env, ['énergie renouvelable', 'renewable', 'énergie']),
@@ -58,35 +60,35 @@ function mapEntriesToESRS(entries: any[]): ESRSEntry[] {
       ].slice(0, 8).map(toItem),
     },
     {
-      id: 'E2', name: 'Pollution', icon: AlertTriangle, color: '#ea580c', bg: '#fff7ed',
+      id: 'E2', name: t('reportsUnified.sections.E2'), icon: AlertTriangle, color: '#ea580c', bg: '#fff7ed',
       items: pick(env, ['pollution', 'déchets', 'rejet', 'atmosphérique', 'sol']).map(toItem),
     },
     {
-      id: 'E3', name: 'Ressources marines & aquatiques', icon: Droplets, color: '#0891b2', bg: '#ecfeff',
+      id: 'E3', name: t('reportsUnified.sections.E3'), icon: Droplets, color: '#0891b2', bg: '#ecfeff',
       items: pick(env, ['eau', 'hydrique', 'water', 'aqua']).map(toItem),
     },
     {
-      id: 'E4', name: 'Biodiversité', icon: TreePine, color: '#16a34a', bg: '#f0fdf4',
+      id: 'E4', name: t('reportsUnified.sections.E4'), icon: TreePine, color: '#16a34a', bg: '#f0fdf4',
       items: pick(env, ['biodiversité', 'écosystème', 'faune', 'site protégé']).map(toItem),
     },
     {
-      id: 'E5', name: 'Économie circulaire', icon: Recycle, color: '#7c3aed', bg: '#faf5ff',
+      id: 'E5', name: t('reportsUnified.sections.E5'), icon: Recycle, color: '#7c3aed', bg: '#faf5ff',
       items: pick(env, ['recyclage', 'circul', 'déchet', 'réemploi']).map(toItem),
     },
     {
-      id: 'S1', name: 'Effectifs propres', icon: Users, color: '#2563eb', bg: '#eff6ff',
+      id: 'S1', name: t('reportsUnified.sections.S1'), icon: Users, color: '#2563eb', bg: '#eff6ff',
       items: pick(soc, ['effectif', 'salarié', 'formation', 'accident', 'turnover', 'femme', 'parité']).map(toItem),
     },
     {
-      id: 'S2', name: 'Chaîne de valeur', icon: Globe, color: '#0284c7', bg: '#f0f9ff',
+      id: 'S2', name: t('reportsUnified.sections.S2'), icon: Globe, color: '#0284c7', bg: '#f0f9ff',
       items: pick(soc, ['fournisseur', 'chaîne', 'supply', 'sous-traitant']).map(toItem),
     },
     {
-      id: 'S3', name: 'Communautés', icon: Building2, color: '#0d9488', bg: '#f0fdfa',
+      id: 'S3', name: t('reportsUnified.sections.S3'), icon: Building2, color: '#0d9488', bg: '#f0fdfa',
       items: pick(soc, ['communauté', 'local', 'territoire', 'riverain']).map(toItem),
     },
     {
-      id: 'G1', name: 'Gouvernance des affaires', icon: Scale, color: '#6366f1', bg: '#eef2ff',
+      id: 'G1', name: t('reportsUnified.sections.G1'), icon: Scale, color: '#6366f1', bg: '#eef2ff',
       items: gov.map(toItem),
     },
   ]
@@ -97,19 +99,20 @@ function mapEntriesToESRS(entries: any[]): ESRSEntry[] {
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: 'ok' | 'partial' | 'missing' }) {
+  const { t } = useTranslation()
   if (status === 'ok') return (
     <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
-      <CheckCircle size={9} /> Validé
+      <CheckCircle size={9} /> {t('reportsUnified.statusValidated')}
     </span>
   )
   if (status === 'partial') return (
     <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 ring-1 ring-amber-200">
-      <Clock size={9} /> Partiel
+      <Clock size={9} /> {t('reportsUnified.statusPartial')}
     </span>
   )
   return (
     <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 ring-1 ring-slate-200">
-      <AlertCircle size={9} /> Manquant
+      <AlertCircle size={9} /> {t('reportsUnified.statusMissing')}
     </span>
   )
 }
@@ -135,6 +138,8 @@ function CompletionRing({ pct, color }: { pct: number; color: string }) {
 function ESRSCard({ section, expanded, onToggle }: {
   section: ESRSEntry; expanded: boolean; onToggle: () => void
 }) {
+  const { t, i18n } = useTranslation()
+  const numLocale = i18n.language === 'fr' ? 'fr-FR' : 'en-US'
   const Icon = section.icon
   const total = section.items.length
   const ok = section.items.filter(i => i.status === 'ok').length
@@ -153,7 +158,7 @@ function ESRSCard({ section, expanded, onToggle }: {
               style={{ background: section.bg, color: section.color }}>{section.id}</span>
             <span className="text-[13px] font-semibold text-slate-800 truncate">{section.name}</span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-0.5">{total} indicateur{total !== 1 ? 's' : ''} · {ok} validé{ok !== 1 ? 's' : ''}</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">{t('reportsUnified.sectionStats', { total, ok })}</p>
         </div>
         <CompletionRing pct={pct} color={section.color} />
         <ChevronRight size={14} className={`text-slate-400 transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`} />
@@ -166,7 +171,7 @@ function ESRSCard({ section, expanded, onToggle }: {
               <span className="text-[10px] font-mono text-slate-400 w-16 flex-shrink-0">{item.code}</span>
               <span className="flex-1 text-[12px] text-slate-700 truncate">{item.name}</span>
               {item.value != null
-                ? <span className="text-[12px] font-semibold text-slate-900 mr-1">{Number(item.value).toLocaleString('fr-FR')} <span className="text-slate-400 font-normal">{item.unit}</span></span>
+                ? <span className="text-[12px] font-semibold text-slate-900 mr-1">{Number(item.value).toLocaleString(numLocale)} <span className="text-slate-400 font-normal">{item.unit}</span></span>
                 : <span className="text-[11px] text-slate-400 italic mr-1">—</span>
               }
               <StatusBadge status={item.status} />
@@ -178,8 +183,8 @@ function ESRSCard({ section, expanded, onToggle }: {
       {expanded && total === 0 && (
         <div className="border-t border-slate-100 px-4 py-4 text-center">
           <Info size={16} className="mx-auto text-slate-300 mb-1" />
-          <p className="text-[12px] text-slate-400">Aucune donnée disponible pour cette section.</p>
-          <p className="text-[11px] text-slate-300 mt-0.5">Ajoutez des données dans Saisie manuelle.</p>
+          <p className="text-[12px] text-slate-400">{t('reportsUnified.noDataSection')}</p>
+          <p className="text-[11px] text-slate-300 mt-0.5">{t('reportsUnified.addDataManual')}</p>
         </div>
       )}
     </div>
@@ -189,16 +194,18 @@ function ESRSCard({ section, expanded, onToggle }: {
 // ─── Report template card ──────────────────────────────────────────────────────
 
 const TEMPLATES = [
-  { type: 'csrd' as ReportType, label: 'CSRD / ESRS 2024', sub: 'Directive européenne', icon: Shield, color: '#6366f1', bg: '#eef2ff', badge: 'Recommandé' },
-  { type: 'executive' as ReportType, label: 'Résumé exécutif', sub: 'Vision synthétique', icon: BarChart3, color: '#0284c7', bg: '#eff6ff', badge: null },
-  { type: 'detailed' as ReportType, label: 'Rapport détaillé', sub: 'Analyse complète', icon: FileText, color: '#0d9488', bg: '#f0fdfa', badge: null },
-  { type: 'gri' as ReportType, label: 'GRI Standards 2021', sub: 'Global Reporting', icon: Globe, color: '#16a34a', bg: '#f0fdf4', badge: null },
-  { type: 'tcfd' as ReportType, label: 'TCFD', sub: 'Risques climatiques', icon: Leaf, color: '#d97706', bg: '#fffbeb', badge: null },
+  { type: 'csrd' as ReportType, icon: Shield, color: '#6366f1', bg: '#eef2ff', hasBadge: true },
+  { type: 'executive' as ReportType, icon: BarChart3, color: '#0284c7', bg: '#eff6ff', hasBadge: false },
+  { type: 'detailed' as ReportType, icon: FileText, color: '#0d9488', bg: '#f0fdfa', hasBadge: false },
+  { type: 'gri' as ReportType, icon: Globe, color: '#16a34a', bg: '#f0fdf4', hasBadge: false },
+  { type: 'tcfd' as ReportType, icon: Leaf, color: '#d97706', bg: '#fffbeb', hasBadge: false },
 ]
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ReportsUnified() {
+  const { t, i18n } = useTranslation()
+  const dateLocale = i18n.language === 'fr' ? 'fr-FR' : 'en-US'
   const [tab, setTab] = useState<TabId>('overview')
   const [entries, setEntries] = useState<any[]>([])
   const [esrsData, setEsrsData] = useState<ESRSEntry[]>([])
@@ -245,24 +252,24 @@ export default function ReportsUnified() {
         dash?.data?.overall_score ??
         0
       const lastUpdate: string = rawEntries.length > 0
-        ? new Date(rawEntries[0].updated_at ?? rawEntries[0].created_at ?? Date.now()).toLocaleDateString('fr-FR')
+        ? new Date(rawEntries[0].updated_at ?? rawEntries[0].created_at ?? Date.now()).toLocaleDateString(dateLocale)
         : '—'
 
       setKpis([
-        { label: 'Indicateurs collectés', value: String(totalEntries), color: '#6366f1' },
-        { label: 'Taux de complétude', value: totalEntries ? `${Math.round((validated / totalEntries) * 100)}%` : '0%', sub: `${validated} vérifiés`, color: '#10b981' },
-        { label: 'Score ESG global', value: score ? `${Math.round(score)}/100` : '—', sub: score >= 60 ? 'Bon' : score >= 40 ? 'Moyen' : 'À améliorer', color: score >= 60 ? '#10b981' : score >= 40 ? '#f59e0b' : '#f87171' },
-        { label: 'Dernière mise à jour', value: lastUpdate, color: '#64748b' },
+        { label: t('reportsUnified.kpiCollected'), value: String(totalEntries), color: '#6366f1' },
+        { label: t('reportsUnified.kpiCompleteness'), value: totalEntries ? `${Math.round((validated / totalEntries) * 100)}%` : '0%', sub: t('reportsUnified.kpiVerified', { count: validated }), color: '#10b981' },
+        { label: t('reportsUnified.kpiScore'), value: score ? `${Math.round(score)}/100` : '—', sub: score >= 60 ? t('reportsUnified.ratingGood') : score >= 40 ? t('reportsUnified.ratingAverage') : t('reportsUnified.ratingToImprove'), color: score >= 60 ? '#10b981' : score >= 40 ? '#f59e0b' : '#f87171' },
+        { label: t('reportsUnified.kpiLastUpdate'), value: lastUpdate, color: '#64748b' },
       ])
 
       setEntries(rawEntries)
-      setEsrsData(mapEntriesToESRS(rawEntries))
+      setEsrsData(mapEntriesToESRS(rawEntries, t))
     } catch {
-      toast.error('Erreur lors du chargement des données')
+      toast.error(t('reportsUnified.loadError'))
     } finally {
       setLoading(false)
     }
-  }, [orgId])
+  }, [orgId, t, dateLocale])
 
   useEffect(() => { loadData() }, [])
 
@@ -284,9 +291,9 @@ export default function ReportsUnified() {
       a.download = `rapport-esg-${selectedTemplate}-${selectedYear}.${ext}`
       a.click()
       URL.revokeObjectURL(url)
-      toast.success('Rapport généré et téléchargé !')
+      toast.success(t('reportsUnified.reportGenerated'))
     } catch {
-      toast.error('Erreur lors de la génération du rapport')
+      toast.error(t('reportsUnified.generateError'))
     } finally {
       setGenerating(false)
     }
@@ -303,9 +310,9 @@ export default function ReportsUnified() {
     : 0
 
   const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
-    { id: 'overview', label: 'Vue d\'ensemble', icon: BarChart3 },
-    { id: 'csrd', label: 'Constructeur CSRD', icon: Shield },
-    { id: 'generate', label: 'Générer & Exporter', icon: FileDown },
+    { id: 'overview', label: t('reportsUnified.tabOverview'), icon: BarChart3 },
+    { id: 'csrd', label: t('reportsUnified.tabCsrd'), icon: Shield },
+    { id: 'generate', label: t('reportsUnified.tabGenerate'), icon: FileDown },
   ]
 
   return (
@@ -319,21 +326,21 @@ export default function ReportsUnified() {
                 <div className="h-7 w-7 rounded-lg bg-violet-100 flex items-center justify-center">
                   <FileText size={14} className="text-violet-600" />
                 </div>
-                <h1 className="text-xl font-bold text-slate-900">Rapports ESG</h1>
+                <h1 className="text-xl font-bold text-slate-900">{t('reportsUnified.title')}</h1>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">CSRD 2024</span>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">ESRS</span>
               </div>
-              <p className="text-[13px] text-slate-500">Générez des rapports conformes aux normes CSRD, GRI et TCFD depuis vos données réelles</p>
+              <p className="text-[13px] text-slate-500">{t('reportsUnified.subtitle')}</p>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={loadData} className="flex items-center gap-1.5 text-[12px] text-slate-500 hover:text-slate-700 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition-all duration-100">
-                <RefreshCw size={12} /> Actualiser
+                <RefreshCw size={12} /> {t('reportsUnified.refresh')}
               </button>
               <button
                 onClick={() => { setTab('generate'); }}
                 className="flex items-center gap-1.5 text-[12px] font-semibold text-white px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 transition-all duration-100 shadow-sm shadow-violet-200"
               >
-                <Download size={12} /> Générer un rapport
+                <Download size={12} /> {t('reportsUnified.generateReport')}
               </button>
             </div>
           </div>
@@ -379,7 +386,7 @@ export default function ReportsUnified() {
           <div className="space-y-6">
             {/* Templates */}
             <div>
-              <h2 className="text-[13px] font-semibold text-slate-500 uppercase tracking-wide mb-3">Modèles disponibles</h2>
+              <h2 className="text-[13px] font-semibold text-slate-500 uppercase tracking-wide mb-3">{t('reportsUnified.availableTemplates')}</h2>
               <div className="grid grid-cols-5 gap-3">
                 {TEMPLATES.map(tpl => {
                   const Icon = tpl.icon
@@ -393,16 +400,16 @@ export default function ReportsUnified() {
                         <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: tpl.bg }}>
                           <Icon size={16} style={{ color: tpl.color }} />
                         </div>
-                        {tpl.badge && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700">{tpl.badge}</span>
+                        {tpl.hasBadge && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700">{t('reportsUnified.templates.csrd.badge')}</span>
                         )}
                       </div>
                       <div>
-                        <p className="text-[12px] font-bold text-slate-800 leading-tight">{tpl.label}</p>
-                        <p className="text-[11px] text-slate-400 mt-0.5">{tpl.sub}</p>
+                        <p className="text-[12px] font-bold text-slate-800 leading-tight">{t(`reportsUnified.templates.${tpl.type}.label`)}</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">{t(`reportsUnified.templates.${tpl.type}.sub`)}</p>
                       </div>
                       <div className="flex items-center gap-1 text-[11px] font-medium mt-auto" style={{ color: tpl.color }}>
-                        Générer <ChevronRight size={10} className="group-hover:translate-x-0.5 transition-transform duration-100" />
+                        {t('reportsUnified.generate')} <ChevronRight size={10} className="group-hover:translate-x-0.5 transition-transform duration-100" />
                       </div>
                     </button>
                   )
@@ -414,24 +421,24 @@ export default function ReportsUnified() {
             <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                 <div>
-                  <h2 className="text-[14px] font-bold text-slate-900">Préparation CSRD</h2>
-                  <p className="text-[12px] text-slate-400 mt-0.5">Taux de complétude global de vos données ESRS</p>
+                  <h2 className="text-[14px] font-bold text-slate-900">{t('reportsUnified.csrdReadiness')}</h2>
+                  <p className="text-[12px] text-slate-400 mt-0.5">{t('reportsUnified.csrdReadinessSub')}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-right">
                     <p className="text-2xl font-black text-slate-900">{globalPct}<span className="text-base font-semibold text-slate-400">%</span></p>
-                    <p className="text-[10px] text-slate-400">complétude globale</p>
+                    <p className="text-[10px] text-slate-400">{t('reportsUnified.globalCompleteness')}</p>
                   </div>
                   <button onClick={() => setTab('csrd')} className="flex items-center gap-1.5 text-[12px] font-medium text-violet-600 hover:text-violet-700 px-3 py-1.5 rounded-lg bg-violet-50 hover:bg-violet-100 transition-all duration-100">
-                    Voir le détail <ChevronRight size={11} />
+                    {t('reportsUnified.viewDetail')} <ChevronRight size={11} />
                   </button>
                 </div>
               </div>
               <div className="grid grid-cols-3 divide-x divide-slate-100">
                 {[
-                  { label: 'Environnement (E1–E5)', items: esrsData.filter(s => s.id.startsWith('E')) },
-                  { label: 'Social (S1–S4)', items: esrsData.filter(s => s.id.startsWith('S')) },
-                  { label: 'Gouvernance (G1)', items: esrsData.filter(s => s.id.startsWith('G')) },
+                  { label: t('reportsUnified.pillarEnv'), items: esrsData.filter(s => s.id.startsWith('E')) },
+                  { label: t('reportsUnified.pillarSoc'), items: esrsData.filter(s => s.id.startsWith('S')) },
+                  { label: t('reportsUnified.pillarGov'), items: esrsData.filter(s => s.id.startsWith('G')) },
                 ].map((pillar, i) => {
                   const all = pillar.items.flatMap(s => s.items)
                   const ok = all.filter(x => x.status === 'ok').length
@@ -442,7 +449,7 @@ export default function ReportsUnified() {
                       <p className="text-[11px] font-semibold text-slate-500 mb-2">{pillar.label}</p>
                       <div className="flex items-end gap-2">
                         <span className="text-xl font-black" style={{ color: colors[i] }}>{pct}%</span>
-                        <span className="text-[11px] text-slate-400 mb-0.5">{ok}/{all.length} indicateurs</span>
+                        <span className="text-[11px] text-slate-400 mb-0.5">{t('reportsUnified.indicatorsRatio', { ok, total: all.length })}</span>
                       </div>
                       <div className="mt-2 h-1.5 rounded-full bg-slate-100 overflow-hidden">
                         <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: colors[i] }} />
@@ -460,19 +467,19 @@ export default function ReportsUnified() {
           <div className="space-y-3">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-[15px] font-bold text-slate-900">Sections ESRS</h2>
-                <p className="text-[12px] text-slate-400">Données réelles issues de vos saisies — {entries.length} entrées chargées</p>
+                <h2 className="text-[15px] font-bold text-slate-900">{t('reportsUnified.esrsSections')}</h2>
+                <p className="text-[12px] text-slate-400">{t('reportsUnified.realDataLoaded', { count: entries.length })}</p>
               </div>
               <div className="flex items-center gap-2 text-[12px] text-slate-500">
-                <Circle size={8} fill="#10b981" stroke="none" /> Validé
-                <Circle size={8} fill="#f59e0b" stroke="none" /> Partiel
-                <Circle size={8} fill="#cbd5e1" stroke="none" /> Manquant
+                <Circle size={8} fill="#10b981" stroke="none" /> {t('reportsUnified.statusValidated')}
+                <Circle size={8} fill="#f59e0b" stroke="none" /> {t('reportsUnified.statusPartial')}
+                <Circle size={8} fill="#cbd5e1" stroke="none" /> {t('reportsUnified.statusMissing')}
               </div>
             </div>
 
             {loading ? (
               <div className="flex items-center justify-center py-20 text-slate-400">
-                <RefreshCw size={20} className="animate-spin mr-2" /> Chargement des données…
+                <RefreshCw size={20} className="animate-spin mr-2" /> {t('reportsUnified.loadingData')}
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-2.5">
@@ -489,14 +496,14 @@ export default function ReportsUnified() {
 
             <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white p-5 text-center">
               <Sparkles size={20} className="mx-auto text-slate-300 mb-2" />
-              <p className="text-[13px] font-semibold text-slate-600">Données manquantes ?</p>
-              <p className="text-[12px] text-slate-400 mt-1">Ajoutez vos données dans <strong>Saisie manuelle</strong> ou via <strong>Import CSV</strong>.</p>
+              <p className="text-[13px] font-semibold text-slate-600">{t('reportsUnified.missingDataTitle')}</p>
+              <p className="text-[12px] text-slate-400 mt-1">{t('reportsUnified.addDataPre')} <strong>{t('reportsUnified.manualEntry')}</strong> {t('reportsUnified.orVia')} <strong>{t('reportsUnified.importCsv')}</strong>.</p>
               <div className="flex items-center justify-center gap-2 mt-3">
                 <a href="/app/data-entry" className="text-[12px] font-medium text-violet-600 hover:text-violet-700 px-3 py-1.5 rounded-lg bg-violet-50 hover:bg-violet-100 transition-colors duration-100">
-                  Saisie manuelle
+                  {t('reportsUnified.manualEntry')}
                 </a>
                 <a href="/app/import-csv" className="text-[12px] font-medium text-slate-600 hover:text-slate-800 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors duration-100">
-                  Import CSV
+                  {t('reportsUnified.importCsv')}
                 </a>
               </div>
             </div>
@@ -510,7 +517,7 @@ export default function ReportsUnified() {
             <div className="col-span-2 space-y-5">
               {/* Report type */}
               <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
-                <h3 className="text-[13px] font-bold text-slate-900 mb-3">Type de rapport</h3>
+                <h3 className="text-[13px] font-bold text-slate-900 mb-3">{t('reportsUnified.reportType')}</h3>
                 <div className="grid grid-cols-3 gap-2">
                   {TEMPLATES.map(tpl => {
                     const Icon = tpl.icon
@@ -529,8 +536,8 @@ export default function ReportsUnified() {
                           <Icon size={13} style={{ color: tpl.color }} />
                         </div>
                         <div>
-                          <p className={`text-[12px] font-semibold ${selected ? 'text-violet-800' : 'text-slate-700'}`}>{tpl.label}</p>
-                          <p className="text-[10px] text-slate-400">{tpl.sub}</p>
+                          <p className={`text-[12px] font-semibold ${selected ? 'text-violet-800' : 'text-slate-700'}`}>{t(`reportsUnified.templates.${tpl.type}.label`)}</p>
+                          <p className="text-[10px] text-slate-400">{t(`reportsUnified.templates.${tpl.type}.sub`)}</p>
                         </div>
                         {selected && <CheckCircle size={13} className="ml-auto text-violet-600 flex-shrink-0" />}
                       </button>
@@ -543,7 +550,7 @@ export default function ReportsUnified() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
                   <h3 className="text-[13px] font-bold text-slate-900 mb-3 flex items-center gap-1.5">
-                    <Calendar size={13} className="text-slate-400" /> Année de référence
+                    <Calendar size={13} className="text-slate-400" /> {t('reportsUnified.referenceYear')}
                   </h3>
                   <div className="flex gap-2 flex-wrap">
                     {[new Date().getFullYear(), new Date().getFullYear() - 1, new Date().getFullYear() - 2].map(y => (
@@ -564,7 +571,7 @@ export default function ReportsUnified() {
 
                 <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
                   <h3 className="text-[13px] font-bold text-slate-900 mb-3 flex items-center gap-1.5">
-                    <FileDown size={13} className="text-slate-400" /> Format d'export
+                    <FileDown size={13} className="text-slate-400" /> {t('reportsUnified.exportFormat')}
                   </h3>
                   <div className="grid grid-cols-2 gap-2">
                     {(['pdf', 'excel', 'word', 'json'] as ExportFormat[]).map(f => (
@@ -591,8 +598,8 @@ export default function ReportsUnified() {
                 className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-violet-600 hover:bg-violet-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-[14px] shadow-lg shadow-violet-200 transition-all duration-150"
               >
                 {generating
-                  ? <><RefreshCw size={15} className="animate-spin" /> Génération en cours…</>
-                  : <><Download size={15} /> Générer le rapport {selectedTemplate.toUpperCase()} {selectedYear}</>
+                  ? <><RefreshCw size={15} className="animate-spin" /> {t('reportsUnified.generating')}</>
+                  : <><Download size={15} /> {t('reportsUnified.generateReportBtn', { type: selectedTemplate.toUpperCase(), year: selectedYear })}</>
                 }
               </button>
             </div>
@@ -600,14 +607,14 @@ export default function ReportsUnified() {
             {/* Summary panel */}
             <div className="space-y-4">
               <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
-                <h3 className="text-[13px] font-bold text-slate-900 mb-4">Récapitulatif</h3>
+                <h3 className="text-[13px] font-bold text-slate-900 mb-4">{t('reportsUnified.summary')}</h3>
                 <div className="space-y-3">
                   {[
-                    { label: 'Type', value: TEMPLATES.find(t => t.type === selectedTemplate)?.label ?? '—' },
-                    { label: 'Année', value: String(selectedYear) },
-                    { label: 'Format', value: selectedFormat.toUpperCase() },
-                    { label: 'Données', value: `${entries.length} entrées` },
-                    { label: 'Complétude CSRD', value: `${globalPct}%` },
+                    { label: t('reportsUnified.sumType'), value: t(`reportsUnified.templates.${selectedTemplate}.label`) },
+                    { label: t('reportsUnified.sumYear'), value: String(selectedYear) },
+                    { label: t('reportsUnified.sumFormat'), value: selectedFormat.toUpperCase() },
+                    { label: t('reportsUnified.sumData'), value: t('reportsUnified.entriesCount', { count: entries.length }) },
+                    { label: t('reportsUnified.sumCompleteness'), value: `${globalPct}%` },
                   ].map((row, i) => (
                     <div key={i} className="flex items-center justify-between">
                       <span className="text-[12px] text-slate-500">{row.label}</span>
@@ -620,12 +627,12 @@ export default function ReportsUnified() {
               <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-violet-50 to-indigo-50 p-5">
                 <div className="flex items-center gap-2 mb-2">
                   <Sparkles size={14} className="text-violet-600" />
-                  <p className="text-[12px] font-bold text-violet-800">Conformité CSRD</p>
+                  <p className="text-[12px] font-bold text-violet-800">{t('reportsUnified.csrdConformity')}</p>
                 </div>
                 <p className="text-[11px] text-violet-600 leading-relaxed">
-                  Vos données couvrent <strong>{globalPct}%</strong> des exigences ESRS.
-                  {globalPct < 80 && ' Complétez vos saisies pour améliorer la conformité.'}
-                  {globalPct >= 80 && ' Excellent niveau de conformité !'}
+                  {t('reportsUnified.coverageBefore')} <strong>{globalPct}%</strong> {t('reportsUnified.coverageAfter')}
+                  {globalPct < 80 && t('reportsUnified.improveHint')}
+                  {globalPct >= 80 && t('reportsUnified.excellentHint')}
                 </p>
                 <div className="mt-3 h-1.5 rounded-full bg-violet-200 overflow-hidden">
                   <div className="h-full rounded-full bg-violet-500 transition-all duration-700" style={{ width: `${globalPct}%` }} />

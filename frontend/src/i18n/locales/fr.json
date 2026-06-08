@@ -987,6 +987,101 @@
       }
     ]
   },
+  "reportsUnified": {
+    "loadError": "Erreur lors du chargement des données",
+    "kpiCollected": "Indicateurs collectés",
+    "kpiCompleteness": "Taux de complétude",
+    "kpiVerified": "{{count}} vérifiés",
+    "kpiScore": "Score ESG global",
+    "ratingGood": "Bon",
+    "ratingAverage": "Moyen",
+    "ratingToImprove": "À améliorer",
+    "kpiLastUpdate": "Dernière mise à jour",
+    "reportGenerated": "Rapport généré et téléchargé !",
+    "generateError": "Erreur lors de la génération du rapport",
+    "tabOverview": "Vue d'ensemble",
+    "tabCsrd": "Constructeur CSRD",
+    "tabGenerate": "Générer & Exporter",
+    "title": "Rapports ESG",
+    "subtitle": "Générez des rapports conformes aux normes CSRD, GRI et TCFD depuis vos données réelles",
+    "refresh": "Actualiser",
+    "generateReport": "Générer un rapport",
+    "availableTemplates": "Modèles disponibles",
+    "generate": "Générer",
+    "csrdReadiness": "Préparation CSRD",
+    "csrdReadinessSub": "Taux de complétude global de vos données ESRS",
+    "globalCompleteness": "complétude globale",
+    "viewDetail": "Voir le détail",
+    "pillarEnv": "Environnement (E1–E5)",
+    "pillarSoc": "Social (S1–S4)",
+    "pillarGov": "Gouvernance (G1)",
+    "indicatorsRatio": "{{ok}}/{{total}} indicateurs",
+    "esrsSections": "Sections ESRS",
+    "realDataLoaded": "Données réelles issues de vos saisies — {{count}} entrées chargées",
+    "statusValidated": "Validé",
+    "statusPartial": "Partiel",
+    "statusMissing": "Manquant",
+    "loadingData": "Chargement des données…",
+    "missingDataTitle": "Données manquantes ?",
+    "addDataPre": "Ajoutez vos données dans",
+    "manualEntry": "Saisie manuelle",
+    "orVia": "ou via",
+    "importCsv": "Import CSV",
+    "reportType": "Type de rapport",
+    "referenceYear": "Année de référence",
+    "exportFormat": "Format d'export",
+    "generating": "Génération en cours…",
+    "generateReportBtn": "Générer le rapport {{type}} {{year}}",
+    "summary": "Récapitulatif",
+    "sumType": "Type",
+    "sumYear": "Année",
+    "sumFormat": "Format",
+    "sumData": "Données",
+    "sumCompleteness": "Complétude CSRD",
+    "entriesCount": "{{count}} entrées",
+    "csrdConformity": "Conformité CSRD",
+    "coverageBefore": "Vos données couvrent",
+    "coverageAfter": "des exigences ESRS.",
+    "improveHint": " Complétez vos saisies pour améliorer la conformité.",
+    "excellentHint": " Excellent niveau de conformité !",
+    "noDataSection": "Aucune donnée disponible pour cette section.",
+    "addDataManual": "Ajoutez des données dans Saisie manuelle.",
+    "sectionStats": "{{total}} indicateurs · {{ok}} validés",
+    "sections": {
+      "E1": "Changement climatique",
+      "E2": "Pollution",
+      "E3": "Ressources marines & aquatiques",
+      "E4": "Biodiversité",
+      "E5": "Économie circulaire",
+      "S1": "Effectifs propres",
+      "S2": "Chaîne de valeur",
+      "S3": "Communautés",
+      "G1": "Gouvernance des affaires"
+    },
+    "templates": {
+      "csrd": {
+        "label": "CSRD / ESRS 2024",
+        "sub": "Directive européenne",
+        "badge": "Recommandé"
+      },
+      "executive": {
+        "label": "Résumé exécutif",
+        "sub": "Vision synthétique"
+      },
+      "detailed": {
+        "label": "Rapport détaillé",
+        "sub": "Analyse complète"
+      },
+      "gri": {
+        "label": "GRI Standards 2021",
+        "sub": "Global Reporting"
+      },
+      "tcfd": {
+        "label": "TCFD",
+        "sub": "Risques climatiques"
+      }
+    }
+  },
   "nav": {
     "dashboard": "Tableau de bord",
     "executiveOverview": "Vue d'ensemble exécutive",
