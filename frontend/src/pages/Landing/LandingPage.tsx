@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   TrendingUp, Shield, Zap, Users, FileText, BarChart3,
   CheckCircle, ArrowRight, Sparkles, Award, ChevronDown,
@@ -84,10 +85,6 @@ const MODULES = [
     bg: 'bg-green-500',
     lightBg: 'bg-green-50',
     lightText: 'text-green-700',
-    name: 'Dashboard Exécutif',
-    tagline: 'Pilotage ESG en temps réel',
-    desc: 'Vue d\'ensemble de vos 3 piliers ESG, KPIs clés, alertes IA et tendances. Tout en un coup d\'œil pour vos comités de direction.',
-    badges: ['Score global /100', 'Tendances temps réel', 'Alertes intelligentes', 'Benchmarking secteur'],
     preview: 'dashboard',
   },
   {
@@ -97,10 +94,6 @@ const MODULES = [
     bg: 'bg-orange-500',
     lightBg: 'bg-orange-50',
     lightText: 'text-orange-700',
-    name: 'Bilan Carbone Scope 3',
-    tagline: '15 catégories GHG Protocol + ADEME',
-    desc: 'Calculez vos émissions indirectes en amont et aval selon les 15 catégories officielles du GHG Protocol avec les facteurs d\'émission ADEME intégrés.',
-    badges: ['15 catégories Scope 3', 'Facteurs ADEME', 'Calcul automatique', 'Benchmarks sectoriels'],
     preview: 'scope3',
   },
   {
@@ -110,10 +103,6 @@ const MODULES = [
     bg: 'bg-violet-500',
     lightBg: 'bg-violet-50',
     lightText: 'text-violet-700',
-    name: 'Matrice de Matérialité',
-    tagline: 'Double matérialité CSRD · Drag & drop',
-    desc: 'Outil interactif de double matérialité : questionnaire parties prenantes, matrice drag & drop, suggestions IA sectorielles et export PDF certifiable.',
-    badges: ['Drag & drop', 'Questionnaire parties prenantes', 'Suggestions IA', 'Export rapport'],
     preview: 'materiality',
   },
   {
@@ -123,10 +112,6 @@ const MODULES = [
     bg: 'bg-emerald-500',
     lightBg: 'bg-emerald-50',
     lightText: 'text-emerald-700',
-    name: 'Plan de Décarbonation',
-    tagline: 'SBTi · Net Zero 2050 · 24 actions ROI',
-    desc: 'Construisez votre trajectoire de décarbonation alignée SBTi 1.5°C. 24 actions pré-configurées avec ROI, scénarios what-if et graphique 2024–2050.',
-    badges: ['Trajectoire SBTi 1.5°C', '24 actions + ROI', 'Scénarios What-if', 'Net Zero 2050'],
     preview: 'decarb',
   },
   {
@@ -136,10 +121,6 @@ const MODULES = [
     bg: 'bg-pink-500',
     lightBg: 'bg-pink-50',
     lightText: 'text-pink-700',
-    name: 'IA & Automatisation',
-    tagline: 'Chatbot ESG · OCR · Anomalies · Prédictions',
-    desc: 'Intelligence artificielle générative pour votre ESG : chatbot expert, OCR factures fournisseurs, détection anomalies en temps réel et prédictions tendances.',
-    badges: ['Chatbot ESG expert', 'OCR factures', 'Détection anomalies', 'Prédictions IA'],
     preview: 'ia',
   },
   {
@@ -149,10 +130,6 @@ const MODULES = [
     bg: 'bg-blue-500',
     lightBg: 'bg-blue-50',
     lightText: 'text-blue-700',
-    name: 'Supply Chain ESG',
-    tagline: 'Fournisseurs · Due diligence · Vigilance',
-    desc: 'Évaluez vos fournisseurs sur 6 dimensions ESG, envoyez des questionnaires, gérez la due diligence et assurez votre conformité Loi Devoir de Vigilance.',
-    badges: ['Scoring 6 dimensions', 'Questionnaires auto', 'Due diligence', 'Loi 2017-399'],
     preview: 'supply',
   },
   {
@@ -162,10 +139,6 @@ const MODULES = [
     bg: 'bg-violet-600',
     lightBg: 'bg-violet-50',
     lightText: 'text-violet-700',
-    name: 'Multi-Réglementaire',
-    tagline: '10 référentiels · Check conformité auto',
-    desc: 'Suivi centralisé de vos obligations : CSRD, Taxonomie UE, DPEF, Loi Sapin II, Devoir de vigilance, SFDR, ISO 14001, ISO 26000, LkSG et Article 29 LEC.',
-    badges: ['CSRD & ESRS', 'Loi Sapin II', 'SFDR & ISO', 'Roadmap échéances'],
     preview: 'compliance',
   },
   {
@@ -175,10 +148,6 @@ const MODULES = [
     bg: 'bg-slate-700',
     lightBg: 'bg-slate-50',
     lightText: 'text-slate-700',
-    name: 'Piste d\'Audit',
-    tagline: 'Traçabilité · SHA-256 · Certifiable',
-    desc: 'Journal d\'audit complet et infalsifiable : qui / quand / quoi / où. Versionning avant/après, pièces justificatives, empreintes SHA-256 et export pour auditeurs.',
-    badges: ['Journal complet', 'Versionning données', 'Intégrité SHA-256', 'Export ISAE 3000'],
     preview: 'audit',
   },
   {
@@ -188,10 +157,6 @@ const MODULES = [
     bg: 'bg-cyan-500',
     lightBg: 'bg-cyan-50',
     lightText: 'text-cyan-700',
-    name: 'Connecteurs Data',
-    tagline: 'SAP · Oracle · Workday · Schneider · Climatiq',
-    desc: 'Ingestion automatisee depuis vos systemes : 11 connecteurs natifs ERP, RH, Energie et Carbone. OAuth2, API keys, certificats. Fini la saisie manuelle Excel.',
-    badges: ['11 connecteurs natifs', 'OAuth2 & API keys', 'Sync temps reel', 'Monitoring flux'],
     preview: 'connectors',
   },
   {
@@ -201,10 +166,6 @@ const MODULES = [
     bg: 'bg-blue-700',
     lightBg: 'bg-blue-50',
     lightText: 'text-blue-700',
-    name: 'Enrichissement INSEE',
-    tagline: '10M+ entreprises · SIREN · Temps réel',
-    desc: 'Enrichissez automatiquement vos données ESG avec la base officielle Sirene : recherche par SIREN/SIRET, données légales, activité NAF, effectifs et géolocalisation en temps réel.',
-    badges: ['10M+ entreprises', 'Recherche SIREN/SIRET', 'Données officielles', 'Gratuit & temps réel'],
     preview: 'insee',
   },
   {
@@ -214,10 +175,6 @@ const MODULES = [
     bg: 'bg-violet-600',
     lightBg: 'bg-violet-50',
     lightText: 'text-violet-700',
-    name: 'Webhooks & API',
-    tagline: 'Événements · Notifications · Intégrations temps réel',
-    desc: 'Connectez ESGFlow à vos outils externes via webhooks : recevez des notifications en temps réel pour chaque événement ESG (données, scores, indicateurs, seuils) avec signature HMAC.',
-    badges: ['6 types d\'événements', 'Signature HMAC-SHA256', 'Retry automatique', 'Logs & monitoring'],
     preview: 'webhooks',
   },
   {
@@ -227,10 +184,6 @@ const MODULES = [
     bg: 'bg-sky-500',
     lightBg: 'bg-sky-50',
     lightText: 'text-sky-700',
-    name: 'Scores ESG',
-    tagline: 'Scoring automatique · Historique · Breakdown piliers',
-    desc: 'Calculez automatiquement votre score ESG /100 par pilier (E/S/G) et par organisation. Suivez l\'évolution historique, comparez vos scores et obtenez un breakdown détaillé avec recommandations.',
-    badges: ['Score /100 automatique', 'Historique temporel', 'Breakdown E/S/G', 'Comparaison organisations'],
     preview: 'scores',
   },
   {
@@ -240,10 +193,6 @@ const MODULES = [
     bg: 'bg-emerald-600',
     lightBg: 'bg-emerald-50',
     lightText: 'text-emerald-700',
-    name: 'Workflow Validation',
-    tagline: 'Brouillon → Révision → Approuvé · Audit complet',
-    desc: 'Processus de validation des données ESG en 3 étapes : soumission, révision et approbation. Chaque action est tracée dans la Piste d\'Audit avec motif, date et responsable.',
-    badges: ['Flux Brouillon → Approuvé', 'Approbation / Rejet', 'Motif de rejet', 'Tracé dans l\'audit'],
     preview: 'validation',
   },
   {
@@ -253,10 +202,6 @@ const MODULES = [
     bg: 'bg-violet-600',
     lightBg: 'bg-violet-50',
     lightText: 'text-violet-700',
-    name: 'Analyse ESRS / DMA',
-    tagline: 'Gap analysis CSRD · 82 exigences · Roadmap',
-    desc: 'Analysez vos écarts de conformité face aux 82 exigences ESRS. Identifiez les points manquants, priorisez les actions et suivez votre progression vers la conformité CSRD.',
-    badges: ['82 exigences ESRS', 'Gap analysis automatique', 'Roadmap priorisée', 'Export rapport PDF'],
     preview: 'esrs',
   },
   {
@@ -266,10 +211,6 @@ const MODULES = [
     bg: 'bg-blue-700',
     lightBg: 'bg-blue-50',
     lightText: 'text-blue-700',
-    name: 'Taxonomie UE',
-    tagline: '6 objectifs environnementaux · Eligibilité · Alignement',
-    desc: 'Évaluez l\'alignement de vos activités avec la Taxonomie européenne durable : 6 objectifs environnementaux, critères DNSH, critères minimaux sociaux et pourcentage d\'alignement.',
-    badges: ['6 objectifs environnementaux', 'Critères DNSH', 'Calcul % alignement', 'Rapport investisseurs'],
     preview: 'taxonomy',
   },
   {
@@ -279,10 +220,6 @@ const MODULES = [
     bg: 'bg-amber-600',
     lightBg: 'bg-amber-50',
     lightText: 'text-amber-700',
-    name: 'Benchmarking Sectoriel',
-    tagline: 'Comparatif secteur · Percentile · Indicateurs clés',
-    desc: 'Positionnez-vous face à votre secteur d\'activité : comparez votre score ESG, vos émissions et vos indicateurs clés aux moyennes sectorielles et identifiez vos leviers d\'amélioration.',
-    badges: ['Comparaison sectorielle', 'Score percentile', 'Indicateurs clés', 'Recommandations IA'],
     preview: 'benchmarking',
   },
   {
@@ -292,10 +229,6 @@ const MODULES = [
     bg: 'bg-red-600',
     lightBg: 'bg-red-50',
     lightText: 'text-red-700',
-    name: 'Registre des Risques',
-    tagline: 'Risques ESG · Probabilité · Impact · Plan d\'action',
-    desc: 'Identifiez, qualifiez et gérez vos risques ESG dans un registre centralisé. Matrice probabilité/impact, plans de mitigation, suivi des actions et alertes dépassement de seuil.',
-    badges: ['Matrice risques P/I', 'Plans de mitigation', 'Alertes seuils', 'Liens ESRS obligatoires'],
     preview: 'risks',
   },
   {
@@ -305,10 +238,6 @@ const MODULES = [
     bg: 'bg-sky-700',
     lightBg: 'bg-sky-50',
     lightText: 'text-sky-700',
-    name: 'CSRD Report Builder',
-    tagline: 'Rapport CSRD complet · PDF/Word/Excel/JSON',
-    desc: 'Construisez votre rapport de durabilité CSRD section par section. Suivi de complétion des indicateurs ESRS, score global, et export multi-formats (PDF, Word, Excel, JSON) en 1 clic.',
-    badges: ['Sections ESRS structurées', 'Score de complétion /100', 'Export PDF/Word/Excel', 'Prêt pour auditeurs'],
     preview: 'csrdbuilder',
   },
   {
@@ -318,10 +247,6 @@ const MODULES = [
     bg: 'bg-teal-600',
     lightBg: 'bg-teal-50',
     lightText: 'text-teal-700',
-    name: 'Mapping Multi-Référentiels',
-    tagline: 'Saisir une fois · GRI · CDP · TCFD · SDG',
-    desc: 'Saisissez vos données une seule fois et mappez-les automatiquement vers CSRD/ESRS, GRI, CDP, TCFD et SDG. Identifiez les lacunes par référentiel et exportez votre reporting multi-standard.',
-    badges: ['CSRD/ESRS natif', 'GRI · CDP · TCFD', 'SDG alignment', 'Export consolidé'],
     preview: 'multistandard',
   },
   {
@@ -331,10 +256,6 @@ const MODULES = [
     bg: 'bg-orange-600',
     lightBg: 'bg-orange-50',
     lightText: 'text-orange-700',
-    name: 'Alertes Intelligentes',
-    tagline: 'Seuils · KPIs · Notifications · Temps réel',
-    desc: 'Créez des alertes personnalisées sur vos indicateurs ESG : dépassement de seuil, variation anormale, échéances réglementaires. Recevez des notifications en temps réel par email ou webhook.',
-    badges: ['Seuils personnalisables', 'Alertes KPI temps réel', 'Notifications email/webhook', 'Historique des alertes'],
     preview: 'smartalerts',
   },
   {
@@ -344,10 +265,6 @@ const MODULES = [
     bg: 'bg-indigo-600',
     lightBg: 'bg-indigo-50',
     lightText: 'text-indigo-700',
-    name: 'API & Portail Développeur',
-    tagline: 'REST API · Clés · Swagger · OAuth2',
-    desc: 'Accédez à l\'ensemble de vos données ESG via notre API REST sécurisée. Générez des clés API, explorez la documentation Swagger interactive et intégrez ESGFlow à vos outils sur mesure.',
-    badges: ['API REST complète', 'Clés API par scope', 'Documentation Swagger', 'OAuth2 & SSO'],
     preview: 'apiportal',
   },
   {
@@ -357,10 +274,6 @@ const MODULES = [
     bg: 'bg-violet-600',
     lightBg: 'bg-violet-50',
     lightText: 'text-violet-700',
-    name: 'Qualité des Données',
-    tagline: 'Score qualité · Complétude · Anomalies · ESRS',
-    desc: 'Mesurez et améliorez la qualité de vos données ESG : score de complétude par pilier, détection d\'anomalies, données manquantes par exigence ESRS et recommandations d\'amélioration.',
-    badges: ['Score complétude /100', 'Détection anomalies', 'Données manquantes ESRS', 'Recommandations IA'],
     preview: 'dataquality',
   },
 ];
@@ -1237,9 +1150,6 @@ const WHY_PILLARS = [
     lightBg: 'bg-emerald-50',
     lightText: 'text-emerald-700',
     border: 'border-emerald-100',
-    title: 'Conformité totale, zéro angle mort',
-    desc: 'CSRD/ESRS, Taxonomie UE, GRI, CDP, TCFD, SFDR, ISO 14001/26000, Loi Sapin II, Devoir de Vigilance — 10 référentiels couverts nativement. Un seul outil, aucun oubli.',
-    points: ['82 exigences ESRS mappées', 'Gap analysis automatique', 'Roadmap priorisée', 'Rapports certifiables ISAE 3000'],
   },
   {
     icon: Lock,
@@ -1247,9 +1157,6 @@ const WHY_PILLARS = [
     lightBg: 'bg-blue-50',
     lightText: 'text-blue-700',
     border: 'border-blue-100',
-    title: 'Données fiables, auditables, sécurisées',
-    desc: 'Piste d\'audit infalsifiable (SHA-256), workflow de validation en 3 étapes, hébergement 100 % en France ISO 27001. Vos données restent vos données.',
-    points: ['Empreintes SHA-256', 'Hébergement France · RGPD', 'Workflow Brouillon → Approuvé', 'Export auditeurs ISAE / Big 4'],
   },
   {
     icon: Brain,
@@ -1257,9 +1164,6 @@ const WHY_PILLARS = [
     lightBg: 'bg-violet-50',
     lightText: 'text-violet-700',
     border: 'border-violet-100',
-    title: 'Intelligence artificielle de bout en bout',
-    desc: 'Chatbot ESG expert, détection d\'anomalies en temps réel, prédictions de tendances, suggestions sectorielles et OCR factures fournisseurs — l\'IA travaille pour vous.',
-    points: ['Chatbot ESG générative', 'Anomalies temps réel', 'Prédictions ML', 'OCR & automatisation'],
   },
   {
     icon: Plug,
@@ -1267,14 +1171,12 @@ const WHY_PILLARS = [
     lightBg: 'bg-cyan-50',
     lightText: 'text-cyan-700',
     border: 'border-cyan-100',
-    title: 'Intégré à votre écosystème dès le J+1',
-    desc: '11 connecteurs natifs (SAP, Oracle, Workday, Enedis, Schneider, Climatiq…), API REST complète, webhooks temps réel et import FEC/CSV. Fini la double saisie.',
-    points: ['11 connecteurs ERP/RH/Energie', 'API REST + OAuth2', 'Webhooks HMAC-SHA256', 'Import FEC · Scope 3 comptable'],
   },
 ];
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
+  const { t } = useTranslation();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
   const [scrolled, setScrolled] = useState(false);
@@ -1293,7 +1195,20 @@ export default function LandingPage() {
     if (autoPlay) setActiveModule(m => (m + 1) % MODULES.length);
   }, autoPlay ? 3500 : null);
 
-  const mod = MODULES[activeModule];
+  const modules = MODULES.map(m => ({
+    ...m,
+    name: t(`landing.modules.${m.id}.name`),
+    tagline: t(`landing.modules.${m.id}.tagline`),
+    desc: t(`landing.modules.${m.id}.desc`),
+    badges: t(`landing.modules.${m.id}.badges`, { returnObjects: true }) as string[],
+  }));
+  const whyPillars = WHY_PILLARS.map((p, i) => ({
+    ...p,
+    title: t(`landing.why.${i}.title`),
+    desc: t(`landing.why.${i}.desc`),
+    points: t(`landing.why.${i}.points`, { returnObjects: true }) as string[],
+  }));
+  const mod = modules[activeModule];
   const PreviewComp = PREVIEWS[mod.preview];
 
   const scrollTo = (id: string) => {
@@ -1303,42 +1218,32 @@ export default function LandingPage() {
 
   const plans = [
     {
-      name: 'Starter', desc: 'PME qui débutent leur démarche ESG',
+      name: 'Starter', desc: t('landing.plans.starter.desc'),
       monthly: 199, annual: 159,
-      color: 'border-gray-200', badge: null, badgeStyle: '',
-      features: ['5 utilisateurs', '50 indicateurs ESG', 'Dashboard & rapports PDF', 'Import CSV', 'Support email 5j/7'],
-      missing: ['IA & Chatbot', 'Supply Chain', 'Piste d\'audit', 'Multi-réglementaire'],
-      cta: 'Commencer gratuitement', primary: false,
+      color: 'border-gray-200', badge: null as string | null, badgeStyle: '',
+      features: t('landing.plans.starter.features', { returnObjects: true }) as string[],
+      missing: t('landing.plans.starter.missing', { returnObjects: true }) as string[],
+      cta: t('landing.plans.starter.cta'), primary: false,
     },
     {
-      name: 'Business', desc: 'ETI et entreprises en croissance',
+      name: 'Business', desc: t('landing.plans.business.desc'),
       monthly: 499, annual: 399,
-      color: 'border-green-500', badge: 'Le plus populaire', badgeStyle: 'bg-green-500 text-white',
-      features: ['Utilisateurs illimités', '100+ indicateurs ESRS', 'Tous les 22 modules inclus', 'IA & Chatbot ESG', 'Import FEC / Scope 3 comptable', 'Scores ESG automatiques', 'Workflow validation données', 'Analyse ESRS & Gap analysis', 'Taxonomie UE & Benchmarking', 'Supply Chain ESG & due diligence', 'Piste d\'audit ISAE', 'Décarbonation + SBTi', 'Multi-réglementaire (10)', 'Support prioritaire 7j/7'],
-      missing: ['White-label', 'SLA 99.9%'],
-      cta: 'Essai gratuit 14 jours', primary: true,
+      color: 'border-green-500', badge: t('landing.plans.business.badge') as string | null, badgeStyle: 'bg-green-500 text-white',
+      features: t('landing.plans.business.features', { returnObjects: true }) as string[],
+      missing: t('landing.plans.business.missing', { returnObjects: true }) as string[],
+      cta: t('landing.plans.business.cta'), primary: true,
     },
     {
-      name: 'Enterprise', desc: 'Grands groupes, besoins sur mesure',
+      name: 'Enterprise', desc: t('landing.plans.enterprise.desc'),
       monthly: null, annual: null,
-      color: 'border-slate-700', badge: 'Sur mesure', badgeStyle: 'bg-slate-800 text-white',
-      features: ['Tout Business inclus', 'White-label & branding', 'SLA garanti 99.9%', 'Intégrations ERP/API', 'Onboarding & formation', 'Account manager dédié', 'Audit conformité annuel', 'Hébergement privé option'],
-      missing: [],
-      cta: 'Contacter les ventes', primary: false,
+      color: 'border-slate-700', badge: t('landing.plans.enterprise.badge') as string | null, badgeStyle: 'bg-slate-800 text-white',
+      features: t('landing.plans.enterprise.features', { returnObjects: true }) as string[],
+      missing: [] as string[],
+      cta: t('landing.plans.enterprise.cta'), primary: false,
     },
   ];
 
-  const faqs = [
-    { q: 'Combien de temps pour déployer la plateforme ?', a: 'La mise en service prend 2 à 3 jours ouvrés. Nos équipes assurent l\'onboarding, la configuration des indicateurs et la formation de vos équipes.' },
-    { q: 'La plateforme est-elle vraiment conforme CSRD ?', a: 'Oui. ESGFlow intègre l\'ensemble des indicateurs ESRS requis par la CSRD. Nos rapports sont audités par des cabinets spécialisés et notre piste d\'audit est certifiable ISAE 3000.' },
-    { q: 'Peut-on importer nos données depuis Excel ou ERP ?', a: 'Absolument. La plateforme accepte les imports CSV/Excel et propose des connecteurs vers les principaux ERP (SAP, Oracle, Sage). Notre API RESTful permet des intégrations sur mesure.' },
-    { q: 'Où sont hébergées les données ?', a: 'Toutes les données sont hébergées en France, dans des datacenters certifiés ISO 27001. Nous n\'utilisons aucun cloud américain. La conformité RGPD est garantie contractuellement.' },
-    { q: 'Que couvre le module Supply Chain ESG ?', a: 'Le module couvre l\'évaluation des fournisseurs sur 6 dimensions ESG, l\'envoi de questionnaires automatisés, la gestion de la due diligence et le suivi du plan de vigilance conformément à la Loi 2017-399.' },
-    { q: 'Y a-t-il un engagement de durée ?', a: 'Non. Les plans Starter et Business sont sans engagement, résiliables à tout moment. Les contrats annuels bénéficient de 20% de réduction.' },
-    { q: 'Comment fonctionne l\'import FEC pour le Scope 3 ?', a: 'Exportez votre FEC depuis Sage, Cegid ou Pennylane et importez-le directement dans ESGFlow. La plateforme analyse automatiquement vos comptes 60x/61x/62x et calcule vos émissions Scope 3 par catégorie de dépenses en appliquant les facteurs d\'émission ADEME.' },
-    { q: 'Comment fonctionne le Workflow de Validation ?', a: 'Chaque saisie ESG passe par 3 étapes : Brouillon → En révision → Approuvé. Les validateurs peuvent approuver ou rejeter avec un motif. Chaque action est automatiquement enregistrée dans la Piste d\'Audit avec date, utilisateur et contexte.' },
-    { q: 'Qu\'est-ce que l\'analyse ESRS / Gap analysis ?', a: 'Ce module compare vos données et processus existants aux 82 exigences des normes ESRS (E1 à G1). Il génère automatiquement une analyse des écarts avec une roadmap priorisée pour atteindre la conformité CSRD.' },
-  ];
+  const faqs = t('landing.faqs', { returnObjects: true }) as { q: string; a: string }[];
 
   return (
     <div className="min-h-screen bg-white antialiased font-sans">
@@ -1354,14 +1259,14 @@ export default function LandingPage() {
           </Link>
 
           <div className="hidden md:flex items-center gap-1">
-            {[{ key: 'modules', label: 'Modules' }, { key: 'solutions', label: 'Solutions' }].map(({ key, label }) => (
+            {[{ key: 'modules', label: t('landing.navModules') }, { key: 'solutions', label: t('landing.navSolutions') }].map(({ key, label }) => (
               <div key={key} className="relative" onMouseEnter={() => setOpenMenu(key)} onMouseLeave={() => setOpenMenu(null)}>
                 <button className={`px-4 py-2 font-medium transition-colors flex items-center gap-1 rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>
                   {label} <ChevronDown className="h-3.5 w-3.5" />
                 </button>
                 {openMenu === key && (
                   <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 p-3">
-                    {key === 'modules' ? MODULES.slice(0, 6).map((m, i) => (
+                    {key === 'modules' ? modules.slice(0, 6).map((m, i) => (
                       <a key={i} href="#modules" onClick={(e) => { e.preventDefault(); scrollTo('modules'); setActiveModule(i); setAutoPlay(false); }} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
                         <div className={`w-8 h-8 ${m.lightBg} rounded-lg flex items-center justify-center flex-shrink-0`}>
                           <m.icon className={`h-4 w-4 ${m.lightText}`} />
@@ -1372,9 +1277,9 @@ export default function LandingPage() {
                         </div>
                       </a>
                     )) : [
-                      { icon: Building2, title: 'PME & ETI', desc: 'Solution complète accessible' },
-                      { icon: Layers, title: 'Grands Groupes', desc: 'CAC40, SBF120, Enterprise' },
-                      { icon: Globe, title: 'Cabinets Conseil', desc: 'Multi-clients, white-label' },
+                      { icon: Building2, title: t('landing.solPme'), desc: t('landing.solPmeDesc') },
+                      { icon: Layers, title: t('landing.solGroups'), desc: t('landing.solGroupsDesc') },
+                      { icon: Globe, title: t('landing.solConsult'), desc: t('landing.solConsultDesc') },
                     ].map((s, i) => (
                       <Link key={i} to="/register" className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
                         <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
@@ -1390,18 +1295,18 @@ export default function LandingPage() {
                 )}
               </div>
             ))}
-            <button onClick={() => scrollTo('tarifs')} className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>Tarifs</button>
-            <button onClick={() => scrollTo('faq')} className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>FAQ</button>
+            <button onClick={() => scrollTo('tarifs')} className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>{t('landing.navPricing')}</button>
+            <button onClick={() => scrollTo('faq')} className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>{t('landing.navFaq')}</button>
             <div className="h-5 w-px bg-gray-300 mx-2" />
-            <Link to="/login" className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600' : 'text-white/90 hover:text-white'}`}>Connexion</Link>
+            <Link to="/login" className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600' : 'text-white/90 hover:text-white'}`}>{t('landing.navLogin')}</Link>
             <Link to="/demo">
               <button className={`ml-1 px-4 py-2 font-semibold rounded-xl transition-all text-sm border ${scrolled ? 'border-green-600 text-green-600 hover:bg-green-50' : 'border-white/40 text-white hover:bg-white/10'}`}>
-                Voir la démo
+                {t('landing.navDemo')}
               </button>
             </Link>
             <Link to="/register">
               <button className="ml-1 px-5 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-green-600/25 text-sm hover:-translate-y-0.5">
-                Essai gratuit
+                {t('landing.navTrial')}
               </button>
             </Link>
           </div>
@@ -1418,47 +1323,47 @@ export default function LandingPage() {
           <div className="space-y-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/15 border border-green-500/30 rounded-full text-green-300 text-sm font-medium">
               <Sparkles className="h-4 w-4" />
-              22 modules · CSRD · Scope 3 · IA générative
+              {t('landing.heroBadge')}
               <span className="bg-green-500/20 px-2 py-0.5 rounded-full text-xs text-green-400">2026</span>
             </div>
 
             <h1 className="text-5xl lg:text-6xl xl:text-7xl font-extrabold text-white leading-[1.05] tracking-tight">
-              Piloter votre ESG
+              {t('landing.heroTitle1')}
               <br />
               <span className="bg-gradient-to-r from-green-400 via-emerald-300 to-teal-400 bg-clip-text text-transparent">
-                n'a jamais été aussi simple
+                {t('landing.heroTitle2')}
               </span>
             </h1>
 
             <p className="text-xl text-slate-300 leading-relaxed max-w-lg">
-              De la collecte de données à la publication de votre rapport CSRD, ESGFlow couvre l'intégralité de votre démarche — avec l'IA, les connecteurs et la piste d'audit certifiable qu'il vous faut.
+              {t('landing.heroSubtitle')}
             </p>
 
             <div className="flex flex-wrap gap-3">
               <Link to="/register">
                 <button className="group flex items-center gap-2 px-7 py-4 bg-green-500 hover:bg-green-400 text-white font-bold rounded-2xl transition-all shadow-xl shadow-green-500/30 hover:-translate-y-0.5 text-base">
-                  Essai gratuit 14 jours
+                  {t('landing.heroTrial')}
                   <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </button>
               </Link>
               <Link to="/demo">
                 <button className="flex items-center gap-2 px-7 py-4 bg-white/10 hover:bg-white/20 border border-white/30 text-white font-semibold rounded-2xl transition-all text-base backdrop-blur-sm">
-                  <Play className="h-4 w-4 fill-white" /> Démo interactive
+                  <Play className="h-4 w-4 fill-white" /> {t('landing.heroDemo')}
                 </button>
               </Link>
             </div>
 
             <div className="flex items-center gap-2 text-sm text-slate-400">
               <CheckCircle className="h-4 w-4 text-green-400 flex-shrink-0" />
-              Aucune carte bancaire · Sans engagement · Hébergé en France
+              {t('landing.heroNoCard')}
             </div>
 
             {/* Stats */}
             <div ref={heroRef} className="grid grid-cols-4 gap-4 pt-8 border-t border-white/10">
-              <StatCounter value={22} suffix="" label="Modules ESG" started={heroInView} />
-              <StatCounter value={100} suffix="+" label="Indicateurs" started={heroInView} />
-              <StatCounter value={10} suffix="M+" label="Entreprises INSEE" started={heroInView} />
-              <StatCounter value={10} suffix="" label="Référentiels" started={heroInView} />
+              <StatCounter value={22} suffix="" label={t('landing.statModulesEsg')} started={heroInView} />
+              <StatCounter value={100} suffix="+" label={t('landing.statIndicators')} started={heroInView} />
+              <StatCounter value={10} suffix="M+" label={t('landing.statCompaniesInsee')} started={heroInView} />
+              <StatCounter value={10} suffix="" label={t('landing.statFrameworks')} started={heroInView} />
             </div>
           </div>
 
@@ -1467,7 +1372,7 @@ export default function LandingPage() {
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
               {/* Tabs */}
               <div className="flex overflow-x-auto gap-1 p-3 bg-white/5 border-b border-white/10">
-                {MODULES.slice(0, 5).map((m, i) => (
+                {modules.slice(0, 5).map((m, i) => (
                   <button
                     key={i}
                     onClick={() => { setActiveModule(i); setAutoPlay(false); }}
@@ -1485,7 +1390,7 @@ export default function LandingPage() {
               {/* Bottom bar */}
               <div className="flex items-center gap-2 px-4 py-2.5 bg-white/5 border-t border-white/10">
                 <div className="flex gap-1 flex-1">
-                  {MODULES.map((_, i) => (
+                  {modules.map((_, i) => (
                     <div key={i} onClick={() => { setActiveModule(i); setAutoPlay(false); }} className={`h-1 rounded-full flex-1 cursor-pointer transition-all ${i === activeModule ? 'bg-green-400' : 'bg-white/20'}`} />
                   ))}
                 </div>
@@ -1501,8 +1406,8 @@ export default function LandingPage() {
                   <CheckCircle className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-gray-900">CSRD Conforme</div>
-                  <div className="text-xs text-gray-500">ESRS 2024</div>
+                  <div className="text-xs font-bold text-gray-900">{t('landing.badgeCsrdConform')}</div>
+                  <div className="text-xs text-gray-500">{t('landing.badgeEsrs2024')}</div>
                 </div>
               </div>
             </div>
@@ -1513,7 +1418,7 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <div className="text-xs font-bold text-gray-900">SHA-256 · ISAE 3000</div>
-                  <div className="text-xs text-gray-500">Audit certifiable</div>
+                  <div className="text-xs text-gray-500">{t('landing.badgeCertAudit')}</div>
                 </div>
               </div>
             </div>
@@ -1530,7 +1435,7 @@ export default function LandingPage() {
       {/* ── Social proof ─────────────────────────────────────────────────────── */}
       <section className="py-14 bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-center text-xs font-semibold text-gray-400 uppercase tracking-widest mb-10">Plus de 500 entreprises nous font confiance</p>
+          <p className="text-center text-xs font-semibold text-gray-400 uppercase tracking-widest mb-10">{t('landing.socialProof')}</p>
           <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6 mb-12">
             {[
               { name: 'TotalEnergies', color: '#e2001a' },
@@ -1552,10 +1457,10 @@ export default function LandingPage() {
           {/* Trust badges */}
           <div className="flex flex-wrap justify-center gap-6">
             {[
-              { icon: Shield, label: 'RGPD Conforme', sub: 'Hébergé en France' },
-              { icon: Award, label: 'CSRD / ESRS 2024', sub: 'Mis à jour en continu' },
-              { icon: Lock, label: 'ISO 27001', sub: 'Sécurité certifiée' },
-              { icon: Star, label: '4,9 / 5', sub: '200+ avis clients' },
+              { icon: Shield, label: t('landing.trustGdpr'), sub: t('landing.trustGdprSub') },
+              { icon: Award, label: t('landing.trustCsrd'), sub: t('landing.trustCsrdSub') },
+              { icon: Lock, label: t('landing.trustIso'), sub: t('landing.trustIsoSub') },
+              { icon: Star, label: t('landing.trustRating'), sub: t('landing.trustRatingSub') },
             ].map(({ icon: Icon, label, sub }) => (
               <div key={label} className="flex items-center gap-3 px-5 py-3 rounded-2xl border border-gray-200 bg-gray-50">
                 <div className="w-9 h-9 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -1575,12 +1480,12 @@ export default function LandingPage() {
       <section ref={statsRef} className="py-16 bg-gradient-to-r from-green-900 to-emerald-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-6 gap-8">
-            <StatCounter value={22} suffix="" label="Modules intégrés" started={statsInView} />
-            <StatCounter value={100} suffix="+" label="Indicateurs ESRS" started={statsInView} />
-            <StatCounter value={10} suffix="M+" label="Entreprises INSEE" started={statsInView} />
-            <StatCounter value={24} suffix="" label="Actions décarbonation" started={statsInView} />
-            <StatCounter value={10} suffix="" label="Référentiels réglementaires" started={statsInView} />
-            <StatCounter value={500} suffix="+" label="Entreprises clientes" started={statsInView} />
+            <StatCounter value={22} suffix="" label={t('landing.gStatModules')} started={statsInView} />
+            <StatCounter value={100} suffix="+" label={t('landing.gStatIndicators')} started={statsInView} />
+            <StatCounter value={10} suffix="M+" label={t('landing.gStatInsee')} started={statsInView} />
+            <StatCounter value={24} suffix="" label={t('landing.gStatDecarb')} started={statsInView} />
+            <StatCounter value={10} suffix="" label={t('landing.gStatFrameworks')} started={statsInView} />
+            <StatCounter value={500} suffix="+" label={t('landing.gStatClients')} started={statsInView} />
           </div>
         </div>
       </section>
@@ -1589,15 +1494,15 @@ export default function LandingPage() {
       <section id="modules" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <span className="text-sm font-semibold text-green-600 uppercase tracking-widest">Modules</span>
-            <h2 className="text-4xl font-bold text-gray-900 mt-3 mb-4">22 modules. Une seule plateforme.</h2>
-            <p className="text-lg text-gray-500 max-w-2xl mx-auto">Chaque module est conçu pour répondre à un besoin précis — et ils fonctionnent tous ensemble.</p>
+            <span className="text-sm font-semibold text-green-600 uppercase tracking-widest">{t('landing.modulesEyebrow')}</span>
+            <h2 className="text-4xl font-bold text-gray-900 mt-3 mb-4">{t('landing.modulesTitle')}</h2>
+            <p className="text-lg text-gray-500 max-w-2xl mx-auto">{t('landing.modulesSubtitle')}</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
             {/* Module list */}
             <div className="lg:col-span-2 space-y-2">
-              {MODULES.map((m, i) => (
+              {modules.map((m, i) => (
                 <button
                   key={i}
                   onClick={() => { setActiveModule(i); setAutoPlay(false); }}
@@ -1617,26 +1522,26 @@ export default function LandingPage() {
 
             {/* Detail panel */}
             <div className="lg:col-span-3">
-              <div className={`rounded-3xl border-2 ${MODULES[activeModule].lightBg} overflow-hidden`} style={{ borderColor: MODULES[activeModule].color + '30' }}>
+              <div className={`rounded-3xl border-2 ${modules[activeModule].lightBg} overflow-hidden`} style={{ borderColor: modules[activeModule].color + '30' }}>
                 {/* Dark preview */}
                 <div className="bg-slate-900 rounded-2xl m-4 overflow-hidden">
-                  {PREVIEWS[MODULES[activeModule].preview] && (() => { const P = PREVIEWS[MODULES[activeModule].preview]; return <P />; })()}
+                  {PREVIEWS[modules[activeModule].preview] && (() => { const P = PREVIEWS[modules[activeModule].preview]; return <P />; })()}
                 </div>
 
                 {/* Info */}
                 <div className="px-6 pb-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{MODULES[activeModule].name}</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed mb-4">{MODULES[activeModule].desc}</p>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">{modules[activeModule].name}</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-4">{modules[activeModule].desc}</p>
                   <div className="flex flex-wrap gap-2 mb-5">
-                    {MODULES[activeModule].badges.map((b, i) => (
-                      <span key={i} className={`text-xs font-semibold px-3 py-1.5 rounded-full ${MODULES[activeModule].lightBg} ${MODULES[activeModule].lightText} border`} style={{ borderColor: MODULES[activeModule].color + '30' }}>
+                    {modules[activeModule].badges.map((b, i) => (
+                      <span key={i} className={`text-xs font-semibold px-3 py-1.5 rounded-full ${modules[activeModule].lightBg} ${modules[activeModule].lightText} border`} style={{ borderColor: modules[activeModule].color + '30' }}>
                         ✓ {b}
                       </span>
                     ))}
                   </div>
                   <Link to="/register">
-                    <button className={`flex items-center gap-2 px-5 py-2.5 ${MODULES[activeModule].bg} text-white font-semibold rounded-xl text-sm transition-all hover:-translate-y-0.5 hover:shadow-lg`}>
-                      Découvrir ce module <ArrowRight className="h-4 w-4" />
+                    <button className={`flex items-center gap-2 px-5 py-2.5 ${modules[activeModule].bg} text-white font-semibold rounded-xl text-sm transition-all hover:-translate-y-0.5 hover:shadow-lg`}>
+                      {t('landing.discoverModule')} <ArrowRight className="h-4 w-4" />
                     </button>
                   </Link>
                 </div>
@@ -1655,22 +1560,22 @@ export default function LandingPage() {
           <div className="text-center mb-20">
             <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
               <span className="w-8 h-px bg-emerald-400 inline-block" />
-              Pourquoi ESGFlow
+              {t('landing.whyEyebrow')}
               <span className="w-8 h-px bg-emerald-400 inline-block" />
             </span>
             <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">
-              Tout ce dont vous avez besoin,
+              {t('landing.whyTitle1')}
               <br />
-              <span className="text-emerald-600">rien de ce que vous n'utilisez pas</span>
+              <span className="text-emerald-600">{t('landing.whyTitle2')}</span>
             </h2>
             <p className="text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
-              Une plateforme pensée par des experts ESG, pour que votre équipe soit opérationnelle en 3 jours — pas en 3 mois.
+              {t('landing.whySubtitle')}
             </p>
           </div>
 
           {/* 4 piliers en grille */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {WHY_PILLARS.map((p, i) => (
+            {whyPillars.map((p, i) => (
               <div key={i} className={`group relative bg-white rounded-3xl border ${p.border} p-8 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden`}>
                 {/* Gradient accent top */}
                 <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${p.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
@@ -1699,10 +1604,10 @@ export default function LandingPage() {
           {/* Bande de réassurance */}
           <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { value: '3 jours', label: 'Mise en service', sub: 'onboarding inclus' },
-              { value: '22', label: 'Modules intégrés', sub: 'dans un seul outil' },
-              { value: '100%', label: 'Hébergement France', sub: 'ISO 27001 · RGPD' },
-              { value: 'Sans CB', label: 'Essai 14 jours', sub: 'aucun engagement' },
+              { value: t('landing.reassure3days'), label: t('landing.reassure3daysLabel'), sub: t('landing.reassure3daysSub') },
+              { value: '22', label: t('landing.reassureModules'), sub: t('landing.reassureModulesSub') },
+              { value: '100%', label: t('landing.reassureHostLabel'), sub: t('landing.reassureHostSub') },
+              { value: t('landing.reassureNoCard'), label: t('landing.reassureNoCardLabel'), sub: t('landing.reassureNoCardSub') },
             ].map((s, i) => (
               <div key={i} className="text-center p-6 bg-gray-50 rounded-2xl border border-gray-100">
                 <div className="text-3xl font-extrabold text-gray-900 mb-1">{s.value}</div>
@@ -1721,11 +1626,11 @@ export default function LandingPage() {
           <div className="text-center mb-16">
             <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
               <span className="w-8 h-px bg-emerald-400 inline-block" />
-              Comment ça marche
+              {t('landing.howEyebrow')}
               <span className="w-8 h-px bg-emerald-400 inline-block" />
             </span>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mt-2 mb-4">Opérationnel en 3 étapes</h2>
-            <p className="text-lg text-gray-500 max-w-xl mx-auto">Pas de mois de déploiement, pas de consultant externe. Votre équipe prend en main la plateforme dès le premier jour.</p>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mt-2 mb-4">{t('landing.howTitle')}</h2>
+            <p className="text-lg text-gray-500 max-w-xl mx-auto">{t('landing.howSubtitle')}</p>
           </div>
 
           <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -1734,22 +1639,22 @@ export default function LandingPage() {
 
             {[
               {
-                num: '01', title: 'Connectez vos sources',
-                desc: 'Branchez vos ERP, importez vos CSV ou FEC, ou saisissez manuellement. 100+ indicateurs ESRS pré-configurés vous guident dès le premier jour.',
+                num: '01', title: t('landing.how.0.title'),
+                desc: t('landing.how.0.desc'),
                 icon: Database, color: 'from-emerald-500 to-green-600',
-                detail: ['11 connecteurs natifs', 'Import CSV · FEC · Excel', '100+ indicateurs ESRS'],
+                detail: t('landing.how.0.detail', { returnObjects: true }) as string[],
               },
               {
-                num: '02', title: "L'IA analyse et calcule",
-                desc: "Le moteur IA détecte les anomalies, calcule vos Scopes 1/2/3, génère vos KPIs et vous alerte en temps réel avant que les problèmes deviennent critiques.",
+                num: '02', title: t('landing.how.1.title'),
+                desc: t('landing.how.1.desc'),
                 icon: Brain, color: 'from-violet-500 to-purple-600',
-                detail: ['Scopes 1/2/3 automatiques', 'Anomalies temps réel', 'Chatbot ESG expert'],
+                detail: t('landing.how.1.detail', { returnObjects: true }) as string[],
               },
               {
-                num: '03', title: 'Publiez et certifiez',
-                desc: "Générez votre rapport CSRD, GRI ou TCFD en 1 clic. La piste d'audit SHA-256 et le workflow de validation rendent chaque donnée certifiable par vos auditeurs.",
+                num: '03', title: t('landing.how.2.title'),
+                desc: t('landing.how.2.desc'),
                 icon: FileText, color: 'from-blue-500 to-indigo-600',
-                detail: ['Rapport PDF/Word/Excel/JSON', 'Piste audit ISAE 3000', 'Partage sécurisé auditeurs'],
+                detail: t('landing.how.2.detail', { returnObjects: true }) as string[],
               },
             ].map((s, i) => (
               <div key={i} className="relative flex flex-col bg-white rounded-3xl border border-gray-200 p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
@@ -1782,19 +1687,19 @@ export default function LandingPage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-green-500/20 border border-green-500/30 rounded-full text-green-400 text-sm font-semibold mb-4">
-              <Sparkles className="h-4 w-4" /> Nouvelles fonctionnalités 2026
+              <Sparkles className="h-4 w-4" /> {t('landing.newsBadge')}
             </span>
-            <h2 className="text-4xl font-bold text-white mt-2 mb-4">5 nouveaux modules ajoutés</h2>
-            <p className="text-slate-400 max-w-2xl mx-auto">ESGFlow évolue constamment pour vous offrir la couverture ESG la plus complète du marché — désormais 22 modules intégrés.</p>
+            <h2 className="text-4xl font-bold text-white mt-2 mb-4">{t('landing.newsTitle')}</h2>
+            <p className="text-slate-400 max-w-2xl mx-auto">{t('landing.newsSubtitle')}</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
-              { icon: FileText, color: 'from-sky-600 to-blue-700', title: 'CSRD Report Builder', desc: 'Construisez votre rapport CSRD section par section (E1→G1), suivez la complétion et exportez en PDF, Word, Excel ou JSON en 1 clic.', badge: 'Nouveau' },
-              { icon: GitMerge, color: 'from-teal-500 to-teal-700', title: 'Mapping Multi-Référentiels', desc: 'Saisissez une seule fois et mappez automatiquement vers GRI, CDP, TCFD et SDG. Identifiez les lacunes par référentiel.', badge: 'Nouveau' },
-              { icon: Bell, color: 'from-orange-500 to-red-600', title: 'Alertes Intelligentes', desc: 'Créez des alertes personnalisées sur seuils, KPIs et échéances réglementaires avec notifications email et webhook temps réel.', badge: 'Nouveau' },
-              { icon: Code2, color: 'from-indigo-500 to-violet-600', title: 'API & Portail Développeur', desc: 'API REST complète avec gestion des clés API, documentation Swagger interactive, OAuth2 et SSO SAML pour les intégrations sur mesure.', badge: 'Nouveau' },
-              { icon: Activity, color: 'from-violet-500 to-purple-700', title: 'Qualité des Données', desc: 'Score de complétude par pilier E/S/G, détection d\'anomalies automatique, données manquantes ESRS et recommandations IA.', badge: 'Nouveau' },
-              { icon: Upload, color: 'from-cyan-500 to-teal-600', title: 'Import FEC Scope 3', desc: 'Calculez vos émissions Scope 3 directement depuis votre fichier comptable FEC (Sage, Cegid, Pennylane).', badge: 'Populaire' },
+              { icon: FileText, color: 'from-sky-600 to-blue-700', title: t('landing.news.0.title'), desc: t('landing.news.0.desc'), badge: t('landing.badgeNew') },
+              { icon: GitMerge, color: 'from-teal-500 to-teal-700', title: t('landing.news.1.title'), desc: t('landing.news.1.desc'), badge: t('landing.badgeNew') },
+              { icon: Bell, color: 'from-orange-500 to-red-600', title: t('landing.news.2.title'), desc: t('landing.news.2.desc'), badge: t('landing.badgeNew') },
+              { icon: Code2, color: 'from-indigo-500 to-violet-600', title: t('landing.news.3.title'), desc: t('landing.news.3.desc'), badge: t('landing.badgeNew') },
+              { icon: Activity, color: 'from-violet-500 to-purple-700', title: t('landing.news.4.title'), desc: t('landing.news.4.desc'), badge: t('landing.badgeNew') },
+              { icon: Upload, color: 'from-cyan-500 to-teal-600', title: t('landing.news.5.title'), desc: t('landing.news.5.desc'), badge: t('landing.badgePopular') },
             ].map((f, i) => (
               <div key={i} className="group relative bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/8 hover:border-white/20 transition-all duration-300 hover:-translate-y-1">
                 <div className={`w-12 h-12 bg-gradient-to-br ${f.color} rounded-xl flex items-center justify-center mb-4 shadow-lg`}>
@@ -1811,7 +1716,7 @@ export default function LandingPage() {
           <div className="mt-10 text-center">
             <Link to="/register">
               <button className="inline-flex items-center gap-2 px-8 py-3.5 bg-green-500 hover:bg-green-400 text-white font-bold rounded-2xl transition-all shadow-xl shadow-green-500/25 hover:-translate-y-0.5">
-                Accéder à tous les modules <ArrowRight className="h-5 w-5" />
+                {t('landing.newsAllModules')} <ArrowRight className="h-5 w-5" />
               </button>
             </Link>
           </div>
@@ -1822,10 +1727,10 @@ export default function LandingPage() {
       <section className="py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <span className="text-sm font-semibold text-blue-600 uppercase tracking-widest">Données & Intégrations</span>
-            <h2 className="text-4xl font-bold text-gray-900 mt-3 mb-4">Un écosystème de données complet</h2>
+            <span className="text-sm font-semibold text-blue-600 uppercase tracking-widest">{t('landing.ecoEyebrow')}</span>
+            <h2 className="text-4xl font-bold text-gray-900 mt-3 mb-4">{t('landing.ecoTitle')}</h2>
             <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-              Connectez-vous à vos outils, enrichissez vos données avec les sources officielles et automatisez vos flux via webhooks.
+              {t('landing.ecoSubtitle')}
             </p>
           </div>
 
@@ -1840,14 +1745,14 @@ export default function LandingPage() {
                     <Building2 className="h-6 w-6" />
                   </div>
                   <div>
-                    <div className="font-bold text-lg">INSEE Sirene</div>
-                    <div className="text-blue-200 text-xs">Base officielle française</div>
+                    <div className="font-bold text-lg">{t('landing.ecoInseeName')}</div>
+                    <div className="text-blue-200 text-xs">{t('landing.ecoInseeSub')}</div>
                   </div>
                 </div>
                 <div className="text-3xl font-extrabold mb-1">10M+</div>
-                <div className="text-blue-200 text-sm mb-6">entreprises françaises indexées</div>
+                <div className="text-blue-200 text-sm mb-6">{t('landing.ecoInseeCompanies')}</div>
                 <div className="space-y-2.5">
-                  {['Recherche par SIREN / SIRET', 'Données légales officielles', 'Activité NAF/APE · Effectifs', 'Enrichissement ESG automatique', 'Gratuit · Temps réel'].map((f, i) => (
+                  {[t('landing.ecoInseeF1'), t('landing.ecoInseeF2'), t('landing.ecoInseeF3'), t('landing.ecoInseeF4'), t('landing.ecoInseeF5')].map((f, i) => (
                     <div key={i} className="flex items-center gap-2 text-sm text-blue-100">
                       <CheckCircle className="h-4 w-4 text-blue-300 flex-shrink-0" />
                       {f}
@@ -1857,7 +1762,7 @@ export default function LandingPage() {
                 <div className="mt-6 pt-6 border-t border-white/20">
                   <div className="flex items-center gap-2 text-xs text-blue-200">
                     <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                    API officielle · Pas de clé requise
+                    {t('landing.ecoInseeApi')}
                   </div>
                 </div>
               </div>
@@ -1870,17 +1775,17 @@ export default function LandingPage() {
               <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6">
                 <div className="flex items-center justify-between mb-5">
                   <div>
-                    <h3 className="font-bold text-gray-900">Intégrations disponibles</h3>
-                    <p className="text-sm text-gray-500 mt-0.5">Synchronisez vos données avec vos outils BI</p>
+                    <h3 className="font-bold text-gray-900">{t('landing.ecoIntegrations')}</h3>
+                    <p className="text-sm text-gray-500 mt-0.5">{t('landing.ecoIntegrationsSub')}</p>
                   </div>
-                  <span className="px-3 py-1 bg-green-50 text-green-700 text-xs font-semibold rounded-full border border-green-200">4 connecteurs</span>
+                  <span className="px-3 py-1 bg-green-50 text-green-700 text-xs font-semibold rounded-full border border-green-200">{t('landing.ecoConnectors')}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { icon: Table2, name: 'Google Sheets', features: ['import', 'export', 'sync temps réel'], color: 'text-green-600', bg: 'bg-green-50' },
-                    { icon: BarChart3, name: 'Microsoft Power BI', features: ['export', 'dashboard embedding'], color: 'text-yellow-600', bg: 'bg-yellow-50' },
-                    { icon: PieChart, name: 'Tableau', features: ['export', 'live connection'], color: 'text-blue-600', bg: 'bg-blue-50' },
-                    { icon: FileSpreadsheet, name: 'Excel Online', features: ['import', 'export'], color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                    { icon: Table2, name: 'Google Sheets', features: [t('landing.featImport'), t('landing.featExport'), t('landing.featSync')], color: 'text-green-600', bg: 'bg-green-50' },
+                    { icon: BarChart3, name: 'Microsoft Power BI', features: [t('landing.featExport'), t('landing.featDashEmbed')], color: 'text-yellow-600', bg: 'bg-yellow-50' },
+                    { icon: PieChart, name: 'Tableau', features: [t('landing.featExport'), t('landing.featLiveConn')], color: 'text-blue-600', bg: 'bg-blue-50' },
+                    { icon: FileSpreadsheet, name: 'Excel Online', features: [t('landing.featImport'), t('landing.featExport')], color: 'text-emerald-600', bg: 'bg-emerald-50' },
                   ].map((int, i) => (
                     <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all">
                       <div className={`p-2 ${int.bg} rounded-lg flex-shrink-0 ${int.color}`}>
@@ -1905,11 +1810,11 @@ export default function LandingPage() {
                   <div>
                     <h3 className="font-bold text-gray-900 flex items-center gap-2">
                       <Radio className="h-4 w-4 text-violet-500" />
-                      Webhooks & Automatisation
+                      {t('landing.ecoWebhooks')}
                     </h3>
-                    <p className="text-sm text-gray-500 mt-0.5">Notifications temps réel vers vos services</p>
+                    <p className="text-sm text-gray-500 mt-0.5">{t('landing.ecoWebhooksSub')}</p>
                   </div>
-                  <span className="px-3 py-1 bg-violet-50 text-violet-700 text-xs font-semibold rounded-full border border-violet-200">6 événements</span>
+                  <span className="px-3 py-1 bg-violet-50 text-violet-700 text-xs font-semibold rounded-full border border-violet-200">{t('landing.ecoEvents')}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {[
@@ -1927,9 +1832,9 @@ export default function LandingPage() {
                 </div>
                 <div className="grid grid-cols-3 gap-3 mt-4">
                   {[
-                    { label: 'Signature HMAC', icon: Shield, color: 'text-gray-600' },
-                    { label: 'Retry automatique', icon: Activity, color: 'text-violet-600' },
-                    { label: 'Logs complets', icon: FileText, color: 'text-blue-600' },
+                    { label: t('landing.ecoFeatHmac'), icon: Shield, color: 'text-gray-600' },
+                    { label: t('landing.ecoFeatRetry'), icon: Activity, color: 'text-violet-600' },
+                    { label: t('landing.ecoFeatLogs'), icon: FileText, color: 'text-blue-600' },
                   ].map((f, i) => (
                     <div key={i} className="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 rounded-xl p-3">
                       <f.icon className={`h-4 w-4 ${f.color} flex-shrink-0`} />
@@ -1947,13 +1852,13 @@ export default function LandingPage() {
       <section id="tarifs" className="py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <span className="text-sm font-semibold text-green-600 uppercase tracking-widest">Tarifs</span>
-            <h2 className="text-4xl font-bold text-gray-900 mt-3 mb-4">Plans adaptés à votre taille</h2>
-            <p className="text-lg text-gray-500 mb-8">Commencez gratuitement. Évoluez à votre rythme. Sans engagement.</p>
+            <span className="text-sm font-semibold text-green-600 uppercase tracking-widest">{t('landing.pricingEyebrow')}</span>
+            <h2 className="text-4xl font-bold text-gray-900 mt-3 mb-4">{t('landing.pricingTitle')}</h2>
+            <p className="text-lg text-gray-500 mb-8">{t('landing.pricingSubtitle')}</p>
             <div className="inline-flex items-center gap-2 bg-white border border-gray-200 p-1 rounded-xl shadow-sm">
-              <button onClick={() => setBilling('monthly')} className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${billing === 'monthly' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500'}`}>Mensuel</button>
+              <button onClick={() => setBilling('monthly')} className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${billing === 'monthly' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500'}`}>{t('landing.billingMonthly')}</button>
               <button onClick={() => setBilling('annual')} className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${billing === 'annual' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500'}`}>
-                Annuel <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-bold">-20%</span>
+                {t('landing.billingAnnual')} <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-bold">-20%</span>
               </button>
             </div>
           </div>
@@ -1977,9 +1882,9 @@ export default function LandingPage() {
                     {price !== null ? (
                       <div className="flex items-end gap-2">
                         <span className="text-5xl font-extrabold text-gray-900">{price}€</span>
-                        <span className="text-gray-400 mb-2 text-sm">/mois{billing === 'annual' && <span className="block text-xs text-green-600 font-semibold">facturé annuellement</span>}</span>
+                        <span className="text-gray-400 mb-2 text-sm">{t('landing.perMonth')}{billing === 'annual' && <span className="block text-xs text-green-600 font-semibold">{t('landing.billedAnnually')}</span>}</span>
                       </div>
-                    ) : <div className="text-4xl font-extrabold text-gray-900">Sur devis</div>}
+                    ) : <div className="text-4xl font-extrabold text-gray-900">{t('landing.onQuote')}</div>}
                   </div>
                   <Link to={plan.name === 'Enterprise' ? '/contact' : '/register'} className="block mb-8">
                     <button className={`w-full py-3.5 rounded-xl font-semibold text-sm transition-all ${highlight ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/30 hover:-translate-y-0.5' : 'bg-gray-900 hover:bg-gray-800 text-white'}`}>
@@ -2004,7 +1909,7 @@ export default function LandingPage() {
               );
             })}
           </div>
-          <p className="text-center text-sm text-gray-400 mt-10">Tous les prix sont HT · TVA applicable · <button onClick={() => scrollTo('faq')} className="text-green-600 hover:underline">Questions fréquentes</button></p>
+          <p className="text-center text-sm text-gray-400 mt-10">{t('landing.pricingFootnote')} <button onClick={() => scrollTo('faq')} className="text-green-600 hover:underline">{t('landing.pricingFaqLink')}</button></p>
         </div>
       </section>
 
@@ -2015,10 +1920,10 @@ export default function LandingPage() {
           <div className="text-center mb-16">
             <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
               <span className="w-8 h-px bg-emerald-400 inline-block" />
-              Témoignages
+              {t('landing.testiEyebrow')}
               <span className="w-8 h-px bg-emerald-400 inline-block" />
             </span>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mt-2">Ce que disent nos clients</h2>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mt-2">{t('landing.testiTitle')}</h2>
           </div>
 
           {/* Featured testimonial */}
@@ -2031,11 +1936,11 @@ export default function LandingPage() {
               <div className="flex-1">
                 <div className="flex gap-1 mb-4">{Array.from({ length: 5 }).map((_, j) => <Star key={j} className="h-4 w-4 text-yellow-400 fill-yellow-400" />)}</div>
                 <blockquote className="text-white text-lg md:text-xl leading-relaxed font-medium mb-6">
-                  "La piste d'audit certifiable ISAE et le module multi-réglementaire ont transformé notre préparation aux audits CSRD. Ce qui prenait plusieurs semaines se fait maintenant en quelques heures."
+                  "{t('landing.testiFeatured')}"
                 </blockquote>
                 <div>
-                  <div className="text-white font-bold">Sophie Martineau</div>
-                  <div className="text-slate-400 text-sm">Directrice RSE · Nexans</div>
+                  <div className="text-white font-bold">{t('landing.testiFeaturedName')}</div>
+                  <div className="text-slate-400 text-sm">{t('landing.testiFeaturedRole')}</div>
                 </div>
               </div>
             </div>
@@ -2043,8 +1948,8 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
-              { name: 'Thomas Durand', role: 'CFO · Biocoop', text: 'Le plan de décarbonation avec les scénarios SBTi et les 24 actions ROI nous a permis de construire notre trajectoire Net Zero en quelques jours, contre plusieurs semaines auparavant.', stars: 5, avatar: 'TD', color: 'from-blue-500 to-indigo-600' },
-              { name: 'Amélie Chen', role: 'Partner ESG · Deloitte France', text: 'Le module Supply Chain ESG avec due diligence est exactement ce que nos clients attendaient pour se mettre en conformité avec la loi Devoir de Vigilance. Excellent outil.', stars: 5, avatar: 'AC', color: 'from-emerald-500 to-teal-600' },
+              { name: t('landing.testi1Name'), role: t('landing.testi1Role'), text: t('landing.testi1'), stars: 5, avatar: 'TD', color: 'from-blue-500 to-indigo-600' },
+              { name: t('landing.testi2Name'), role: t('landing.testi2Role'), text: t('landing.testi2'), stars: 5, avatar: 'AC', color: 'from-emerald-500 to-teal-600' },
             ].map((t, i) => (
               <div key={i} className="flex flex-col p-8 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                 <div className="flex gap-1 mb-5">{Array.from({ length: t.stars }).map((_, j) => <Star key={j} className="h-4 w-4 text-yellow-400 fill-yellow-400" />)}</div>
@@ -2066,8 +1971,8 @@ export default function LandingPage() {
       <section id="faq" className="py-24 bg-gray-50">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <span className="text-sm font-semibold text-green-600 uppercase tracking-widest">FAQ</span>
-            <h2 className="text-4xl font-bold text-gray-900 mt-3">Questions fréquentes</h2>
+            <span className="text-sm font-semibold text-green-600 uppercase tracking-widest">{t('landing.faqEyebrow')}</span>
+            <h2 className="text-4xl font-bold text-gray-900 mt-3">{t('landing.faqTitle')}</h2>
           </div>
           <div className="space-y-3">
             {faqs.map((f, i) => <FaqItem key={i} q={f.q} a={f.a} />)}
@@ -2085,31 +1990,31 @@ export default function LandingPage() {
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500/15 border border-emerald-500/30 rounded-full text-emerald-300 text-sm font-semibold mb-10">
             <Sparkles className="h-4 w-4" />
-            22 modules · 14 jours gratuits · Sans carte bancaire
+            {t('landing.ctaBadge')}
           </div>
 
           <h2 className="text-4xl lg:text-6xl font-extrabold text-white mb-6 leading-[1.05] tracking-tight">
-            Votre ESG, enfin
+            {t('landing.ctaTitle1')}
             <br />
             <span className="bg-gradient-to-r from-emerald-400 via-green-300 to-teal-400 bg-clip-text text-transparent">
-              sous contrôle total
+              {t('landing.ctaTitle2')}
             </span>
           </h2>
 
           <p className="text-xl text-slate-300 mb-12 max-w-2xl mx-auto leading-relaxed">
-            Rejoignez les équipes RSE qui ont remplacé leurs tableurs et leurs silos par une plateforme unique, intelligente et certifiable.
+            {t('landing.ctaSubtitle')}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <Link to="/register">
               <button className="group flex items-center gap-2 px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-2xl transition-all shadow-2xl shadow-emerald-500/30 text-base hover:-translate-y-0.5">
-                Démarrer gratuitement
+                {t('landing.ctaStart')}
                 <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </button>
             </Link>
             <Link to="/demo">
               <button className="flex items-center gap-2 px-8 py-4 bg-white/8 hover:bg-white/15 border border-white/20 text-white font-semibold rounded-2xl transition-all text-base backdrop-blur-sm">
-                <Play className="h-4 w-4 fill-white" /> Voir la démo interactive
+                <Play className="h-4 w-4 fill-white" /> {t('landing.ctaDemo')}
               </button>
             </Link>
           </div>
@@ -2117,10 +2022,10 @@ export default function LandingPage() {
           {/* Trust badges */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mx-auto">
             {[
-              { icon: Shield, label: 'RGPD conforme', sub: 'Données souveraines' },
-              { icon: Globe, label: 'Hébergé en France', sub: 'ISO 27001' },
-              { icon: Award, label: 'ISAE 3000', sub: 'Certifiable auditeurs' },
-              { icon: Lock, label: 'SHA-256', sub: 'Intégrité garantie' },
+              { icon: Shield, label: t('landing.ctaTrustGdpr'), sub: t('landing.ctaTrustGdprSub') },
+              { icon: Globe, label: t('landing.ctaTrustHost'), sub: t('landing.ctaTrustHostSub') },
+              { icon: Award, label: t('landing.ctaTrustIsae'), sub: t('landing.ctaTrustIsaeSub') },
+              { icon: Lock, label: t('landing.ctaTrustSha'), sub: t('landing.ctaTrustShaSub') },
             ].map((item, i) => (
               <div key={i} className="flex flex-col items-center gap-2 p-4 bg-white/5 border border-white/10 rounded-2xl">
                 <item.icon className="h-5 w-5 text-emerald-400" />
@@ -2144,7 +2049,7 @@ export default function LandingPage() {
                 <span className="text-xl font-bold">ESGFlow</span>
               </div>
               <p className="text-slate-400 text-sm leading-relaxed max-w-xs mb-6">
-                La plateforme ESG complète — 22 modules, 100+ indicateurs ESRS, IA intégrée, conformité CSRD certifiable.
+                {t('landing.footerTagline')}
               </p>
               <div className="flex gap-2.5">
                 {[
@@ -2157,30 +2062,30 @@ export default function LandingPage() {
               </div>
             </div>
             {[
-              { title: 'Modules', links: [
-                  { label: 'Bilan Carbone Scope 3', href: '#modules', scroll: 'modules' },
-                  { label: 'Plan Décarbonation SBTi', href: '#modules', scroll: 'modules' },
-                  { label: 'Scores ESG automatiques', href: '#modules', scroll: 'modules' },
-                  { label: 'Workflow Validation', href: '#modules', scroll: 'modules' },
-                  { label: 'Analyse ESRS / Gap CSRD', href: '#modules', scroll: 'modules' },
-                  { label: 'Taxonomie UE', href: '#modules', scroll: 'modules' },
-                  { label: 'Benchmarking Sectoriel', href: '#modules', scroll: 'modules' },
-                  { label: 'Supply Chain ESG', href: '#modules', scroll: 'modules' },
-                  { label: 'Registre des Risques', href: '#modules', scroll: 'modules' },
-                  { label: 'Piste d\'Audit ISAE', href: '#modules', scroll: 'modules' },
+              { title: t('landing.footerColModules'), links: [
+                  { label: t('landing.fmCarbon'), href: '#modules', scroll: 'modules' },
+                  { label: t('landing.fmDecarb'), href: '#modules', scroll: 'modules' },
+                  { label: t('landing.fmScores'), href: '#modules', scroll: 'modules' },
+                  { label: t('landing.fmValidation'), href: '#modules', scroll: 'modules' },
+                  { label: t('landing.fmEsrs'), href: '#modules', scroll: 'modules' },
+                  { label: t('landing.fmTaxonomy'), href: '#modules', scroll: 'modules' },
+                  { label: t('landing.fmBenchmarking'), href: '#modules', scroll: 'modules' },
+                  { label: t('landing.fmSupply'), href: '#modules', scroll: 'modules' },
+                  { label: t('landing.fmRisks'), href: '#modules', scroll: 'modules' },
+                  { label: t('landing.fmAudit'), href: '#modules', scroll: 'modules' },
               ]},
-              { title: 'Solutions', links: [
-                  { label: 'PME & ETI', href: '/register' },
-                  { label: 'Grands Groupes', href: '/register' },
-                  { label: 'Cabinets Conseil', href: '/register' },
-                  { label: 'Investisseurs', href: '/register' },
+              { title: t('landing.footerColSolutions'), links: [
+                  { label: t('landing.footerSolPme'), href: '/register' },
+                  { label: t('landing.footerSolGroups'), href: '/register' },
+                  { label: t('landing.footerSolConsult'), href: '/register' },
+                  { label: t('landing.footerSolInvestors'), href: '/register' },
               ]},
-              { title: 'Ressources', links: [
-                  { label: 'Centre d\'aide', href: '/help' },
-                  { label: 'Documentation API', href: '/app/api-docs' },
-                  { label: 'Voir la démo', href: '/demo' },
-                  { label: 'Support', href: '/support' },
-                  { label: 'Tarifs', href: '#tarifs', scroll: 'tarifs' },
+              { title: t('landing.footerColResources'), links: [
+                  { label: t('landing.footerResHelp'), href: '/help' },
+                  { label: t('landing.footerResApi'), href: '/app/api-docs' },
+                  { label: t('landing.footerResDemo'), href: '/demo' },
+                  { label: t('landing.footerResSupport'), href: '/support' },
+                  { label: t('landing.footerResPricing'), href: '#tarifs', scroll: 'tarifs' },
               ]},
             ].map(col => (
               <div key={col.title}>
@@ -2201,12 +2106,12 @@ export default function LandingPage() {
             ))}
           </div>
           <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-slate-500 text-sm">© 2026 ESGFlow. Tous droits réservés.</p>
+            <p className="text-slate-500 text-sm">{t('landing.footerRights')}</p>
             <div className="flex gap-6 text-sm text-slate-500">
-              <Link to="/legal-notice" className="hover:text-white transition-colors">Mentions légales</Link>
-              <Link to="/privacy-policy" className="hover:text-white transition-colors">Confidentialité</Link>
-              <Link to="/terms-of-service" className="hover:text-white transition-colors">CGU</Link>
-              <Link to="/privacy-policy" className="hover:text-white transition-colors">Cookies</Link>
+              <Link to="/legal-notice" className="hover:text-white transition-colors">{t('landing.footerLegal')}</Link>
+              <Link to="/privacy-policy" className="hover:text-white transition-colors">{t('landing.footerPrivacy')}</Link>
+              <Link to="/terms-of-service" className="hover:text-white transition-colors">{t('landing.footerTerms')}</Link>
+              <Link to="/privacy-policy" className="hover:text-white transition-colors">{t('landing.footerCookies')}</Link>
             </div>
           </div>
         </div>
