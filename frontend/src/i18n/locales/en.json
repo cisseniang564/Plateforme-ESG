@@ -3221,6 +3221,15 @@
     "ghgProtocol": "GHG Protocol"
   },
   "materiality": {
+    "covSolidTitle": "Solid ESRS coverage",
+    "covSolidBody": " — your DMA covers the main topics for a first-disclosure CSRD report.",
+    "covPartialTitle": "Partial coverage",
+    "covPartialBody_one": " — complete the {{count}} missing topic before submitting your CSRD.",
+    "covPartialBody_other": " — complete the {{count}} missing topics before submitting your CSRD.",
+    "covInsuffTitle": "Insufficient coverage",
+    "covInsuffBody1": " — at least 6/10 ESRS topics must be covered. Use ",
+    "covInsuffBody2": " or the ",
+    "covInsuffBody3": " to identify your material issues.",
     "title": "Materiality Matrix",
     "subtitle": "CSRD double materiality — Financial and environmental/social impact",
     "tabs": {
@@ -3430,6 +3439,9 @@
     "csvNo": "No"
   },
   "decarbonation": {
+    "noHistHint1": "💡 No historical data found. Import your data via ",
+    "dataEntryLabel": "Data entry",
+    "noHistHint2": " to see the real evolution of your emissions.",
     "title": "Decarbonization Plan",
     "subtitle": "SBTi 1.5°C · Net Zero 2050 · 24 pre-configured actions with ROI",
     "tabs": {

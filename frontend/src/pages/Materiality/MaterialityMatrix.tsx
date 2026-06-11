@@ -1047,10 +1047,10 @@ export default function MaterialityMatrix() {
                 <span className="text-base leading-none flex-shrink-0">{coveragePct >= 80 ? '✅' : coveragePct >= 60 ? '⚠️' : '❌'}</span>
                 <div>
                   {coveragePct >= 80
-                    ? <><strong>Couverture ESRS solide</strong> — votre DMA couvre les principales thématiques pour un rapport CSRD de première divulgation.</>
+                    ? <><strong>{t('materiality.covSolidTitle')}</strong>{t('materiality.covSolidBody')}</>
                     : coveragePct >= 60
-                    ? <><strong>Couverture partielle</strong> — complétez les {ESRS_TOPICS.length - coveredCount} topic{ESRS_TOPICS.length - coveredCount > 1 ? 's' : ''} manquant{ESRS_TOPICS.length - coveredCount > 1 ? 's' : ''} avant la soumission de votre CSRD.</>
-                    : <><strong>Couverture insuffisante</strong> — au moins 6/10 topics ESRS doivent être couverts. Utilisez <strong>Suggestions IA</strong> ou le <strong>Questionnaire</strong> pour identifier vos enjeux matériels.</>
+                    ? <><strong>{t('materiality.covPartialTitle')}</strong>{t('materiality.covPartialBody', { count: ESRS_TOPICS.length - coveredCount })}</>
+                    : <><strong>{t('materiality.covInsuffTitle')}</strong>{t('materiality.covInsuffBody1')}<strong>{t('materiality.tabIaSuggestions')}</strong>{t('materiality.covInsuffBody2')}<strong>{t('materiality.tabQuestionnaire')}</strong>{t('materiality.covInsuffBody3')}</>
                   }
                 </div>
               </div>

@@ -1144,7 +1144,7 @@ export default function DecarbonationPlan() {
                 {tr('decarbonation.trajectoryInfoBox')}
                 {!historicalData.some(h => h.has_data && h.total_tco2e > 0) && (
                   <span className="block mt-1 text-xs text-blue-500">
-                    💡 Aucune donnée historique trouvée. Importez vos données via <strong>Saisie de données</strong> pour voir l'évolution réelle de vos émissions.
+                    {tr('decarbonation.noHistHint1')}<strong>{tr('decarbonation.dataEntryLabel')}</strong>{tr('decarbonation.noHistHint2')}
                   </span>
                 )}
               </div>
