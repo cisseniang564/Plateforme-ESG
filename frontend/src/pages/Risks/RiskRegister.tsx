@@ -13,6 +13,7 @@ import api from '@/services/api';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import i18n from '@/i18n/config';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,29 +40,29 @@ type TabKey = 'matrix' | 'list' | 'analysis';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const SEVERITY_CONFIG = {
-  critical: { label: 'Critique',  bg: 'bg-red-100',    text: 'text-red-700',    border: 'border-red-400',    bar: 'bg-red-500',    dot: 'bg-red-500' },
-  high:     { label: 'Élevé',     bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-400', bar: 'bg-orange-500', dot: 'bg-orange-500' },
-  medium:   { label: 'Moyen',     bg: 'bg-yellow-100', text: 'text-yellow-700', border: 'border-yellow-400', bar: 'bg-yellow-400', dot: 'bg-yellow-400' },
-  low:      { label: 'Faible',    bg: 'bg-green-100',  text: 'text-green-700',  border: 'border-green-400',  bar: 'bg-green-500',  dot: 'bg-green-500'  },
+  critical: { labelKey: 'risks.severityCritical', bg: 'bg-red-100',    text: 'text-red-700',    border: 'border-red-400',    bar: 'bg-red-500',    dot: 'bg-red-500' },
+  high:     { labelKey: 'risks.severityHigh',     bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-400', bar: 'bg-orange-500', dot: 'bg-orange-500' },
+  medium:   { labelKey: 'risks.severityMedium',   bg: 'bg-yellow-100', text: 'text-yellow-700', border: 'border-yellow-400', bar: 'bg-yellow-400', dot: 'bg-yellow-400' },
+  low:      { labelKey: 'risks.severityLow',      bg: 'bg-green-100',  text: 'text-green-700',  border: 'border-green-400',  bar: 'bg-green-500',  dot: 'bg-green-500'  },
 } as const;
 
 const STATUS_CONFIG = {
-  active:   { label: 'Actif',    bg: 'bg-red-50',   text: 'text-red-600',   dot: 'bg-red-500'   },
-  mitigated:{ label: 'Mitigé',   bg: 'bg-blue-50',  text: 'text-blue-600',  dot: 'bg-blue-500'  },
-  closed:   { label: 'Fermé',    bg: 'bg-green-50', text: 'text-green-600', dot: 'bg-green-500' },
+  active:   { labelKey: 'risks.statusActive',    bg: 'bg-red-50',   text: 'text-red-600',   dot: 'bg-red-500'   },
+  mitigated:{ labelKey: 'risks.statusMitigated', bg: 'bg-blue-50',  text: 'text-blue-600',  dot: 'bg-blue-500'  },
+  closed:   { labelKey: 'risks.statusClosed',    bg: 'bg-green-50', text: 'text-green-600', dot: 'bg-green-500' },
 } as const;
 
 const CATEGORY_CONFIG = {
-  environmental: { icon: '🌿', label: 'Environnemental', color: 'text-green-600', bg: 'bg-green-50' },
-  social:        { icon: '👥', label: 'Social',           color: 'text-blue-600',  bg: 'bg-blue-50'  },
-  governance:    { icon: '⚖️', label: 'Gouvernance',     color: 'text-purple-600',bg: 'bg-purple-50'},
+  environmental: { icon: '🌿', labelKey: 'risks.categoryEnvPlain', color: 'text-green-600', bg: 'bg-green-50' },
+  social:        { icon: '👥', labelKey: 'risks.categorySocialPlain', color: 'text-blue-600',  bg: 'bg-blue-50'  },
+  governance:    { icon: '⚖️', labelKey: 'risks.categoryGovPlain', color: 'text-purple-600',bg: 'bg-purple-50'},
 } as const;
 
 const getHeatCell = (score: number) => {
-  if (score >= 20) return { bg: 'bg-red-600',    text: 'text-white', label: 'Critique' };
-  if (score >= 12) return { bg: 'bg-orange-500', text: 'text-white', label: 'Élevé' };
-  if (score >= 6)  return { bg: 'bg-yellow-400', text: 'text-gray-900', label: 'Moyen' };
-  return              { bg: 'bg-green-400',   text: 'text-white', label: 'Faible' };
+  if (score >= 20) return { bg: 'bg-red-600',    text: 'text-white', labelKey: 'risks.heatCritical' };
+  if (score >= 12) return { bg: 'bg-orange-500', text: 'text-white', labelKey: 'risks.heatHigh' };
+  if (score >= 6)  return { bg: 'bg-yellow-400', text: 'text-gray-900', labelKey: 'risks.heatMedium' };
+  return              { bg: 'bg-green-400',   text: 'text-white', labelKey: 'risks.heatLow' };
 };
 
 const scoreColor = (score: number) => {
@@ -142,7 +143,7 @@ function HeatmapTab({ risks }: { risks: ESGRisk[] }) {
                         {cell.count > 0 ? (
                           <>
                             <span className="text-xl font-bold leading-none">{cell.count}</span>
-                            <span className="text-[10px] opacity-75 font-medium">risque{cell.count > 1 ? 's' : ''}</span>
+                            <span className="text-[10px] opacity-75 font-medium">{i18n.t('risks.riskUnit', { count: cell.count })}</span>
                           </>
                         ) : (
                           <span className="text-xs opacity-50 font-medium">{cell.score}</span>
@@ -167,9 +168,9 @@ function HeatmapTab({ risks }: { risks: ESGRisk[] }) {
           {/* Axis labels */}
           <div className="flex items-center gap-8 mt-2 ml-8">
             <div className="flex items-center gap-1 text-xs text-gray-500 font-medium">
-              <span className="inline-block transform -rotate-90 mr-6 whitespace-nowrap text-[10px]">↑ Probabilité</span>
+              <span className="inline-block transform -rotate-90 mr-6 whitespace-nowrap text-[10px]">{i18n.t('risks.probabilityAxisVert')}</span>
             </div>
-            <div className="flex-1 text-center text-xs text-gray-500 font-medium">Impact →</div>
+            <div className="flex-1 text-center text-xs text-gray-500 font-medium">{i18n.t('risks.impactAxisHoriz')}</div>
           </div>
         </div>
 
@@ -179,7 +180,7 @@ function HeatmapTab({ risks }: { risks: ESGRisk[] }) {
             <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-lg">
               <div className="flex items-center gap-2 mb-3">
                 <div className={`w-3 h-3 rounded-full ${getHeatCell(hoverData.score).bg}`} />
-                <span className="text-sm font-bold text-gray-900">{getHeatCell(hoverData.score).label}</span>
+                <span className="text-sm font-bold text-gray-900">{i18n.t(getHeatCell(hoverData.score).labelKey)}</span>
                 <span className="ml-auto text-xs font-bold text-gray-500">Score {hoverData.score}</span>
               </div>
               <p className="text-xs text-gray-500 mb-3">
@@ -201,21 +202,21 @@ function HeatmapTab({ risks }: { risks: ESGRisk[] }) {
           ) : (
             <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl p-4 flex flex-col items-center justify-center h-40 text-center">
               <Grid className="h-6 w-6 text-gray-300 mb-2" />
-              <p className="text-xs text-gray-400">Survolez une cellule pour voir les risques</p>
+              <p className="text-xs text-gray-400">{i18n.t('risks.hoverCellHint')}</p>
             </div>
           )}
 
           {/* Legend */}
           <div className="mt-4 space-y-2">
             {[
-              { bg: 'bg-green-400',   label: 'Faible',   range: '1–5'  },
-              { bg: 'bg-yellow-400',  label: 'Moyen',    range: '6–11' },
-              { bg: 'bg-orange-500',  label: 'Élevé',    range: '12–19'},
-              { bg: 'bg-red-600',     label: 'Critique', range: '20–25'},
+              { bg: 'bg-green-400',   labelKey: 'risks.heatLow',      range: '1–5'  },
+              { bg: 'bg-yellow-400',  labelKey: 'risks.heatMedium',   range: '6–11' },
+              { bg: 'bg-orange-500',  labelKey: 'risks.heatHigh',     range: '12–19'},
+              { bg: 'bg-red-600',     labelKey: 'risks.heatCritical', range: '20–25'},
             ].map(l => (
-              <div key={l.label} className="flex items-center gap-2">
+              <div key={l.labelKey} className="flex items-center gap-2">
                 <div className={`w-4 h-4 rounded ${l.bg} flex-shrink-0`} />
-                <span className="text-xs text-gray-600 flex-1">{l.label}</span>
+                <span className="text-xs text-gray-600 flex-1">{i18n.t(l.labelKey)}</span>
                 <span className="text-xs text-gray-400 font-mono">{l.range}</span>
               </div>
             ))}
@@ -258,14 +259,14 @@ function RiskCard({ risk, onEdit, onDelete }: {
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${sev.bg} ${sev.text} ${sev.border}`}>
-                  {sev.label}
+                  {i18n.t(sev.labelKey)}
                 </span>
                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${sta.bg} ${sta.text}`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${sta.dot}`} />
-                  {sta.label}
+                  {i18n.t(sta.labelKey)}
                 </span>
                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${cat.bg} ${cat.color}`}>
-                  {cat.icon} {cat.label}
+                  {cat.icon} {i18n.t(cat.labelKey)}
                 </span>
               </div>
             </div>
@@ -274,12 +275,12 @@ function RiskCard({ risk, onEdit, onDelete }: {
             <div className="flex-shrink-0 hidden sm:flex items-center gap-3 text-xs text-gray-500">
               <div className="text-center">
                 <p className="font-bold text-gray-900 text-sm">{risk.probability}/5</p>
-                <p>Probabilité</p>
+                <p>{i18n.t('risks.probability')}</p>
               </div>
               <span className="text-gray-300">×</span>
               <div className="text-center">
                 <p className="font-bold text-gray-900 text-sm">{risk.impact}/5</p>
-                <p>Impact</p>
+                <p>{i18n.t('risks.impact')}</p>
               </div>
             </div>
 
@@ -288,21 +289,21 @@ function RiskCard({ risk, onEdit, onDelete }: {
               <button
                 onClick={() => setExpanded(e => !e)}
                 className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                title={expanded ? 'Réduire' : 'Voir détails'}
+                title={expanded ? i18n.t('risks.collapse') : i18n.t('risks.expandDetails')}
               >
                 {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </button>
               <button
                 onClick={() => onEdit(risk)}
                 className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                title="Modifier"
+                title={i18n.t('risks.edit')}
               >
                 <Edit className="h-4 w-4" />
               </button>
               <button
                 onClick={() => onDelete(risk.id, risk.title)}
                 className="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors"
-                title="Supprimer"
+                title={i18n.t('risks.delete')}
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -325,7 +326,7 @@ function RiskCard({ risk, onEdit, onDelete }: {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-gray-500">Probabilité</span>
+                    <span className="text-xs font-medium text-gray-500">{i18n.t('risks.probability')}</span>
                     <span className="text-xs font-bold text-gray-900">{risk.probability}/5</span>
                   </div>
                   <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -409,17 +410,17 @@ function AnalysisTab({ risks }: { risks: ESGRisk[] }) {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* By Category */}
       <Card>
-        <h3 className="text-base font-bold text-gray-900 mb-4">Répartition par catégorie</h3>
+        <h3 className="text-base font-bold text-gray-900 mb-4">{i18n.t('risks.byCategoryTitle')}</h3>
         <div className="space-y-4">
           {byCategory.map(({ cat, cfg, count, avgScore }) => (
             <div key={cat}>
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-2">
                   <span>{cfg.icon}</span>
-                  <span className="text-sm font-medium text-gray-700">{cfg.label}</span>
+                  <span className="text-sm font-medium text-gray-700">{i18n.t(cfg.labelKey)}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-gray-400">score moy. {Math.round(avgScore)}</span>
+                  <span className="text-xs text-gray-400">{i18n.t('risks.scoreAvgShort', { value: Math.round(avgScore) })}</span>
                   <span className="text-sm font-bold text-gray-900">{count}</span>
                 </div>
               </div>
@@ -431,7 +432,7 @@ function AnalysisTab({ risks }: { risks: ESGRisk[] }) {
                   style={{ width: `${(count / total) * 100}%` }}
                 />
               </div>
-              <p className="text-xs text-gray-400 mt-0.5">{Math.round((count / total) * 100)}% du total</p>
+              <p className="text-xs text-gray-400 mt-0.5">{i18n.t('risks.ofTotalPct', { value: Math.round((count / total) * 100) })}</p>
             </div>
           ))}
         </div>
@@ -439,12 +440,12 @@ function AnalysisTab({ risks }: { risks: ESGRisk[] }) {
 
       {/* By Severity */}
       <Card>
-        <h3 className="text-base font-bold text-gray-900 mb-4">Répartition par sévérité</h3>
+        <h3 className="text-base font-bold text-gray-900 mb-4">{i18n.t('risks.bySeverityTitle')}</h3>
         <div className="space-y-4">
           {bySeverity.map(({ sev, cfg, count }) => (
             <div key={sev}>
               <div className="flex items-center justify-between mb-1.5">
-                <span className={`text-sm font-medium ${cfg.text}`}>{cfg.label}</span>
+                <span className={`text-sm font-medium ${cfg.text}`}>{i18n.t(cfg.labelKey)}</span>
                 <span className="text-sm font-bold text-gray-900">{count}</span>
               </div>
               <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
@@ -460,12 +461,12 @@ function AnalysisTab({ risks }: { risks: ESGRisk[] }) {
 
       {/* By Status */}
       <Card>
-        <h3 className="text-base font-bold text-gray-900 mb-4">Statut des risques</h3>
+        <h3 className="text-base font-bold text-gray-900 mb-4">{i18n.t('risks.byStatusTitle')}</h3>
         <div className="grid grid-cols-3 gap-3">
           {byStatus.map(({ s, cfg, count }) => (
             <div key={s} className={`rounded-2xl p-4 text-center ${cfg.bg}`}>
               <p className={`text-3xl font-bold mb-1 ${cfg.text}`}>{count}</p>
-              <p className={`text-xs font-semibold ${cfg.text}`}>{cfg.label}</p>
+              <p className={`text-xs font-semibold ${cfg.text}`}>{i18n.t(cfg.labelKey)}</p>
             </div>
           ))}
         </div>
@@ -522,7 +523,7 @@ function ScorePreview({ prob, impact }: { prob: number; impact: number }) {
     <div className={`flex items-center gap-3 p-4 rounded-xl ${cfg.bg} border ${cfg.border}`}>
       <div className={`text-3xl font-bold ${cfg.text}`}>{score}</div>
       <div>
-        <p className={`text-sm font-bold ${cfg.text}`}>{cfg.label}</p>
+        <p className={`text-sm font-bold ${cfg.text}`}>{i18n.t(cfg.labelKey)}</p>
         <p className={`text-xs ${cfg.text} opacity-70`}>{prob} × {impact} = {score}/25</p>
       </div>
     </div>
@@ -638,10 +639,10 @@ export default function RiskRegister() {
     avg_score: risks.length > 0 ? Math.round(risks.reduce((s, r) => s + r.risk_score, 0) / risks.length) : 0,
   };
 
-  const TABS: { key: TabKey; label: string; icon: React.ElementType }[] = [
-    { key: 'matrix',   label: 'Matrice des risques', icon: Grid },
-    { key: 'list',     label: 'Registre',             icon: List },
-    { key: 'analysis', label: 'Analyse',               icon: BarChart2 },
+  const TABS: { key: TabKey; labelKey: string; icon: React.ElementType }[] = [
+    { key: 'matrix',   labelKey: 'risks.tabMatrix', icon: Grid },
+    { key: 'list',     labelKey: 'risks.tabList',   icon: List },
+    { key: 'analysis', labelKey: 'risks.tabAnalysis', icon: BarChart2 },
   ];
 
   if (loading) {
@@ -713,7 +714,7 @@ export default function RiskRegister() {
                 }`}
               >
                 <Icon className="h-4 w-4" />
-                {tab.label}
+                {t(tab.labelKey)}
                 {tab.key === 'list' && (
                   <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-bold ${active ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500'}`}>
                     {risks.length}
@@ -748,10 +749,10 @@ export default function RiskRegister() {
                 <div className="flex gap-2 flex-wrap">
                   {/* Category pills */}
                   {[
-                    { value: 'all', label: 'Tout' },
-                    { value: 'environmental', label: '🌿 Env.' },
-                    { value: 'social', label: '👥 Social' },
-                    { value: 'governance', label: '⚖️ Gov.' },
+                    { value: 'all', labelKey: 'risks.catFilterAll' },
+                    { value: 'environmental', labelKey: 'risks.catFilterEnv' },
+                    { value: 'social', labelKey: 'risks.catFilterSocial' },
+                    { value: 'governance', labelKey: 'risks.catFilterGov' },
                   ].map(opt => (
                     <button
                       key={opt.value}
@@ -762,17 +763,17 @@ export default function RiskRegister() {
                           : 'bg-white text-gray-600 border-gray-200 hover:border-red-300'
                       }`}
                     >
-                      {opt.label}
+                      {t(opt.labelKey)}
                     </button>
                   ))}
                   <div className="w-px bg-gray-200 mx-1" />
                   {/* Severity pills */}
                   {[
-                    { value: 'all', label: 'Tout', color: '' },
-                    { value: 'critical', label: 'Critique', color: 'bg-red-500' },
-                    { value: 'high', label: 'Élevé', color: 'bg-orange-500' },
-                    { value: 'medium', label: 'Moyen', color: 'bg-yellow-400' },
-                    { value: 'low', label: 'Faible', color: 'bg-green-500' },
+                    { value: 'all', labelKey: 'risks.sevFilterAll', color: '' },
+                    { value: 'critical', labelKey: 'risks.heatCritical', color: 'bg-red-500' },
+                    { value: 'high', labelKey: 'risks.heatHigh', color: 'bg-orange-500' },
+                    { value: 'medium', labelKey: 'risks.heatMedium', color: 'bg-yellow-400' },
+                    { value: 'low', labelKey: 'risks.heatLow', color: 'bg-green-500' },
                   ].map(opt => (
                     <button
                       key={opt.value}
@@ -784,7 +785,7 @@ export default function RiskRegister() {
                       }`}
                     >
                       {opt.color && <span className={`w-2 h-2 rounded-full ${opt.color}`} />}
-                      {opt.label}
+                      {t(opt.labelKey)}
                     </button>
                   ))}
                 </div>
@@ -792,7 +793,7 @@ export default function RiskRegister() {
 
               {/* Count */}
               <div className="flex items-center justify-between text-sm text-gray-500">
-                <span>{filteredRisks.length} risque{filteredRisks.length > 1 ? 's' : ''} affiché{filteredRisks.length > 1 ? 's' : ''}</span>
+                <span>{t('risks.displayedCount', { count: filteredRisks.length })}</span>
                 {(search || filterCategory !== 'all' || filterSeverity !== 'all') && (
                   <button
                     onClick={() => { setSearch(''); setFilterCategory('all'); setFilterSeverity('all'); setFilterStatus('all'); }}
@@ -813,11 +814,11 @@ export default function RiskRegister() {
               ) : (
                 <div className="text-center py-16">
                   <Shield className="h-12 w-12 mx-auto text-gray-200 mb-3" />
-                  <p className="text-base font-semibold text-gray-700 mb-1">Aucun risque trouvé</p>
+                  <p className="text-base font-semibold text-gray-700 mb-1">{t('risks.noRisksFound')}</p>
                   <p className="text-sm text-gray-400">
                     {search || filterCategory !== 'all' || filterSeverity !== 'all'
-                      ? 'Essayez de modifier les filtres'
-                      : 'Créez votre premier risque ESG'}
+                      ? t('risks.tryChangeFilters')
+                      : t('risks.createFirst')}
                   </p>
                   {!search && filterCategory === 'all' && filterSeverity === 'all' && (
                     <button
@@ -905,7 +906,7 @@ export default function RiskRegister() {
                         disabled={submitting}
                       >
                         <span className="text-xl">{cfg.icon}</span>
-                        {cfg.label}
+                        {i18n.t(cfg.labelKey)}
                       </button>
                     );
                   })}
@@ -916,7 +917,7 @@ export default function RiskRegister() {
               <div className="grid grid-cols-2 gap-5">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                    Probabilité : <span className="text-red-600 font-bold">{formData.probability}/5</span>
+                    {t('risks.probability')} : <span className="text-red-600 font-bold">{formData.probability}/5</span>
                   </label>
                   <input
                     type="range" min="1" max="5"
@@ -926,12 +927,12 @@ export default function RiskRegister() {
                     disabled={submitting}
                   />
                   <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
-                    <span>Très faible</span><span>Très élevée</span>
+                    <span>{t('risks.veryLow')}</span><span>{t('risks.veryHigh')}</span>
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                    Impact : <span className="text-red-600 font-bold">{formData.impact}/5</span>
+                    {t('risks.impact')} : <span className="text-red-600 font-bold">{formData.impact}/5</span>
                   </label>
                   <input
                     type="range" min="1" max="5"
@@ -941,7 +942,7 @@ export default function RiskRegister() {
                     disabled={submitting}
                   />
                   <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
-                    <span>Très faible</span><span>Très élevé</span>
+                    <span>{t('risks.veryLow')}</span><span>{t('risks.veryHighImpact')}</span>
                   </div>
                 </div>
               </div>
