@@ -116,10 +116,10 @@ export default function OrganizationComparator() {
   const radarData = useMemo(() => {
     if (!selected.length) return [];
     return [
-      { subject: 'Global',        ...Object.fromEntries(selected.map(o => [o.name, o.scores.overall])) },
-      { subject: 'Environnement', ...Object.fromEntries(selected.map(o => [o.name, o.scores.environmental])) },
-      { subject: 'Social',        ...Object.fromEntries(selected.map(o => [o.name, o.scores.social])) },
-      { subject: 'Gouvernance',   ...Object.fromEntries(selected.map(o => [o.name, o.scores.governance])) },
+      { subject: t('orgComparator.global'),       ...Object.fromEntries(selected.map(o => [o.name, o.scores.overall])) },
+      { subject: t('orgComparator.environment'), ...Object.fromEntries(selected.map(o => [o.name, o.scores.environmental])) },
+      { subject: t('orgComparator.social'),       ...Object.fromEntries(selected.map(o => [o.name, o.scores.social])) },
+      { subject: t('orgComparator.governance'),   ...Object.fromEntries(selected.map(o => [o.name, o.scores.governance])) },
     ];
   }, [selected]);
 
@@ -144,7 +144,7 @@ export default function OrganizationComparator() {
   const exportCSV = () => {
     if (!selected.length) return;
     const rows = [
-      ['Organisation','Score Global','E','S','G','Rating'],
+      t('orgComparator.csvHeaders', { returnObjects: true }) as string[],
       ...selected.map(o => [o.name, o.scores.overall, o.scores.environmental, o.scores.social, o.scores.governance, o.scores.rating]),
     ];
     const csv = rows.map(r => r.join(',')).join('\n');
@@ -169,19 +169,19 @@ export default function OrganizationComparator() {
               onClick={() => navigate('/app/organizations')}
               className="mb-4 inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-sm font-medium text-white/80 hover:bg-white/20 transition-colors"
             >
-              <ArrowLeft size={14} /> Retour
+              <ArrowLeft size={14} /> {t('orgComparator.back')}
             </button>
             <h1 className="text-3xl font-bold mb-1 flex items-center gap-3">
               <BarChart3 className="h-8 w-8 opacity-80" />
-              Comparateur d'organisations ESG
+              {t('orgComparator.title')}
             </h1>
             <p className="text-indigo-100 text-sm">
-              Comparez jusqu'à 5 organisations côte-à-côte — scores E / S / G, radar multidimensionnel
+              {t('orgComparator.subtitle')}
             </p>
             {selected.length > 0 && (
               <div className="flex items-center gap-2 mt-3 flex-wrap">
                 <span className="px-2.5 py-1 bg-white/20 rounded-full text-xs font-semibold">
-                  {selected.length} organisation{selected.length > 1 ? 's' : ''} sélectionnée{selected.length > 1 ? 's' : ''}
+                  {t('orgComparator.selectedCount', { count: selected.length })}
                 </span>
                 {selected.map((org, i) => (
                   <span key={org.id} className="px-2.5 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: `${['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6'][i]}40`, color: 'white', border: `1px solid ${['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6'][i]}80` }}>
@@ -196,7 +196,7 @@ export default function OrganizationComparator() {
               onClick={() => navigator.clipboard.writeText(window.location.href)}
               className="flex items-center gap-1.5 px-3 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-medium transition-colors"
             >
-              <Share2 size={14} /> Partager
+              <Share2 size={14} /> {t('orgComparator.share')}
             </button>
             <button
               onClick={exportCSV}
@@ -213,7 +213,7 @@ export default function OrganizationComparator() {
       <div className="bg-white border border-gray-200 rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-gray-700">
-            Organisations sélectionnées
+            {t('orgComparator.selectedOrgs')}
             <span className="ml-2 px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full text-xs font-normal">
               {selected.length}/5
             </span>
@@ -221,7 +221,7 @@ export default function OrganizationComparator() {
           {selected.length > 0 && (
             <button onClick={() => { setSelected([]); setSearchParams({}); }}
               className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1">
-              <X className="h-3.5 w-3.5" />Tout effacer
+              <X className="h-3.5 w-3.5" />{t('orgComparator.clearAll')}
             </button>
           )}
         </div>
@@ -248,7 +248,7 @@ export default function OrganizationComparator() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Rechercher une organisation…"
+            placeholder={t('orgComparator.searchPlaceholder')}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -294,8 +294,8 @@ export default function OrganizationComparator() {
       {selected.length === 0 && (
         <div className="text-center py-20 bg-white border border-dashed border-gray-200 rounded-xl">
           <Building2 className="h-14 w-14 text-gray-200 mx-auto mb-4" />
-          <p className="font-semibold text-gray-700 mb-1">Aucune organisation sélectionnée</p>
-          <p className="text-sm text-gray-400">Choisissez au moins 2 organisations pour comparer leurs scores ESG.</p>
+          <p className="font-semibold text-gray-700 mb-1">{t('orgComparator.noneSelectedTitle')}</p>
+          <p className="text-sm text-gray-400">{t('orgComparator.noneSelectedDesc')}</p>
         </div>
       )}
 
@@ -305,10 +305,10 @@ export default function OrganizationComparator() {
           {insights && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { label: 'Meilleur score', value: insights.best.scores.overall, sub: insights.best.name, color: 'text-green-600', bg: 'bg-green-50', icon: Award },
-                { label: 'Score moyen',    value: insights.avg,                  sub: `${selected.length} organisations`,  color: 'text-blue-600',  bg: 'bg-blue-50',  icon: Activity },
-                { label: 'Écart max',      value: `${Math.round(insights.gap)} pts`, sub: 'entre min et max', color: 'text-orange-500', bg: 'bg-orange-50', icon: TrendingUp },
-                { label: 'Leader Env.',    value: insights.bestEnv.scores.environmental, sub: insights.bestEnv.name, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle },
+                { label: t('orgComparator.bestScore'), value: insights.best.scores.overall, sub: insights.best.name, color: 'text-green-600', bg: 'bg-green-50', icon: Award },
+                { label: t('orgComparator.avgScore'),    value: insights.avg,                  sub: t('orgComparator.orgsCount', { count: selected.length }),  color: 'text-blue-600',  bg: 'bg-blue-50',  icon: Activity },
+                { label: t('orgComparator.maxGap'),      value: t('orgComparator.ptsValue', { value: Math.round(insights.gap) }), sub: t('orgComparator.betweenMinMax'), color: 'text-orange-500', bg: 'bg-orange-50', icon: TrendingUp },
+                { label: t('orgComparator.envLeader'),    value: insights.bestEnv.scores.environmental, sub: insights.bestEnv.name, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle },
               ].map(({ label, value, sub, color, bg, icon: Icon }) => (
                 <div key={label} className={`${bg} rounded-xl p-4`}>
                   <div className="flex items-center justify-between mb-2">
@@ -325,13 +325,13 @@ export default function OrganizationComparator() {
           {/* ── Comparison table ── */}
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div className="px-5 py-3.5 border-b border-gray-100">
-              <h3 className="text-sm font-semibold text-gray-700">Tableau comparatif</h3>
+              <h3 className="text-sm font-semibold text-gray-700">{t('orgComparator.comparisonTable')}</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/50">
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-32">Indicateur</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-32">{t('orgComparator.indicator')}</th>
                     {selected.map((org, i) => (
                       <th key={org.id} className="text-center px-4 py-3 text-xs font-semibold text-gray-700">
                         <div className="flex items-center justify-center gap-1.5">
@@ -348,7 +348,7 @@ export default function OrganizationComparator() {
                     const maxGlobal = Math.max(...selected.map(o => o.scores.overall));
                     return (
                       <tr className="hover:bg-gray-50/50">
-                        <td className="px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Score ESG</td>
+                        <td className="px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('orgComparator.esgScore')}</td>
                         {selected.map(org => (
                           <td key={org.id} className="px-4 py-3.5 text-center">
                             <span className={`text-2xl font-bold ${scoreColor(org.scores.overall)} ${org.scores.overall === maxGlobal ? 'underline decoration-dotted underline-offset-4' : ''}`}>
@@ -365,7 +365,7 @@ export default function OrganizationComparator() {
 
                   {/* Rating */}
                   <tr className="hover:bg-gray-50/50">
-                    <td className="px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Rating</td>
+                    <td className="px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('orgComparator.rating')}</td>
                     {selected.map(org => (
                       <td key={org.id} className="px-4 py-3.5 text-center">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold border ${ratingCls(org.scores.rating)}`}>
@@ -377,9 +377,9 @@ export default function OrganizationComparator() {
 
                   {/* Pillars */}
                   {[
-                    { label: 'Environnement', key: 'environmental' as const, color: 'text-green-600' },
-                    { label: 'Social',        key: 'social' as const,        color: 'text-blue-600' },
-                    { label: 'Gouvernance',   key: 'governance' as const,     color: 'text-purple-600' },
+                    { label: t('orgComparator.environment'), key: 'environmental' as const, color: 'text-green-600' },
+                    { label: t('orgComparator.social'),        key: 'social' as const,        color: 'text-blue-600' },
+                    { label: t('orgComparator.governance'),   key: 'governance' as const,     color: 'text-purple-600' },
                   ].map(({ label, key, color }) => {
                     const maxVal = Math.max(...selected.map(o => o.scores[key]));
                     return (
@@ -407,7 +407,7 @@ export default function OrganizationComparator() {
 
                   {/* Sector */}
                   <tr className="hover:bg-gray-50/50">
-                    <td className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Secteur</td>
+                    <td className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('orgComparator.sector')}</td>
                     {selected.map(org => (
                       <td key={org.id} className="px-4 py-3 text-center text-xs text-gray-500">
                         {org.industry || <span className="text-gray-300">—</span>}
@@ -424,7 +424,7 @@ export default function OrganizationComparator() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               {/* Radar */}
               <div className="bg-white border border-gray-200 rounded-xl p-5">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Vue multidimensionnelle</h3>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">{t('orgComparator.multidimView')}</h3>
                 <ResponsiveContainer width="100%" height={320}>
                   <RadarChart data={radarData} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
                     <PolarGrid stroke="#e5e7eb" />
@@ -442,7 +442,7 @@ export default function OrganizationComparator() {
 
               {/* Bar chart */}
               <div className="bg-white border border-gray-200 rounded-xl p-5">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Comparaison E / S / G</h3>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">{t('orgComparator.esgComparison')}</h3>
                 <ResponsiveContainer width="100%" height={320}>
                   <BarChart data={barData} margin={{ left: -10, right: 8 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
@@ -450,9 +450,9 @@ export default function OrganizationComparator() {
                     <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
                     <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12 }} />
                     <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-                    <Bar dataKey="E" fill="#16a34a" name="Environnement" radius={[3, 3, 0, 0]} maxBarSize={20} />
-                    <Bar dataKey="S" fill="#2563eb" name="Social"        radius={[3, 3, 0, 0]} maxBarSize={20} />
-                    <Bar dataKey="G" fill="#7c3aed" name="Gouvernance"   radius={[3, 3, 0, 0]} maxBarSize={20} />
+                    <Bar dataKey="E" fill="#16a34a" name={t('orgComparator.environment')} radius={[3, 3, 0, 0]} maxBarSize={20} />
+                    <Bar dataKey="S" fill="#2563eb" name={t('orgComparator.social')}        radius={[3, 3, 0, 0]} maxBarSize={20} />
+                    <Bar dataKey="G" fill="#7c3aed" name={t('orgComparator.governance')}   radius={[3, 3, 0, 0]} maxBarSize={20} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
