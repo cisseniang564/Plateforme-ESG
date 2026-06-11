@@ -5669,6 +5669,198 @@
       "sectorMedian": "Sector median",
       "lowConfidence": "Low confidence level",
       "lowConfidenceDesc": "Complete your data to improve the score reliability"
+    },
+    "twoFactor": {
+      "invalidCode": "Invalid code. Check that your phone's time is synchronized.",
+      "title": "Enable 2FA",
+      "subtitle": "Two-factor authentication (TOTP)",
+      "stepQr": "Scan the QR code",
+      "stepVerify": "Confirm the code",
+      "stepBackup": "Backup codes",
+      "generating": "Generating your TOTP secret…",
+      "errorTitle": "Unable to generate the 2FA secret",
+      "retry": "Retry",
+      "qrInstructionPre": "Open",
+      "qrInstructionPost": ", or another TOTP app, then scan the QR code below.",
+      "manualKey": "Or enter this key manually:",
+      "scannedCode": "I've scanned the code →",
+      "verifyInstructionPre": "Enter the",
+      "verifyInstructionStrong": "6-digit",
+      "verifyInstructionPost": "code shown in your app to confirm the setup.",
+      "back": "Back",
+      "confirm": "Confirm",
+      "backupTitle": "Save these codes now",
+      "backupDesc": "These 8 backup codes will only be shown once. Keep them in a safe place.",
+      "copied": "Copied!",
+      "copyCodes": "Copy codes",
+      "done": "2FA enabled — Finish"
+    }
+  },
+  "tour": {
+    "chapters": {
+      "welcome": {
+        "title": "Welcome",
+        "description": "Introduction to ESGFlow"
+      },
+      "dashboard": {
+        "title": "Dashboard",
+        "description": "Overview of your ESG scores"
+      },
+      "collecte": {
+        "title": "Data collection",
+        "description": "Entry, import and connectors"
+      },
+      "pilotage": {
+        "title": "ESG Management",
+        "description": "Indicators, risks, audit"
+      },
+      "scoring": {
+        "title": "Scoring & Analytics",
+        "description": "ESG scores, benchmarks, AI"
+      },
+      "conformite": {
+        "title": "Compliance & Reporting",
+        "description": "CSRD, decarbonization, taxonomy"
+      },
+      "settings": {
+        "title": "Settings",
+        "description": "API, configuration"
+      }
+    },
+    "steps": {
+      "0": {
+        "title": "🌿 Welcome to ESGFlow",
+        "content": "This interactive tour (≈ 3 min) walks you through all the platform's features. Navigate with Next / Previous, skip a step or restart the tour at any time."
+      },
+      "1": {
+        "title": "📊 Dashboard",
+        "content": "Your real-time ESG cockpit. View your E, S, G scores, trends, priority alerts and your CSRD compliance progress at a glance."
+      },
+      "2": {
+        "title": "✍️ Manual entry",
+        "content": "Record your ESG indicators manually — Scope 1/2/3 emissions, HR social data, governance indicators — via forms structured by pillar."
+      },
+      "3": {
+        "title": "📤 Bulk import",
+        "content": "Import your data all at once from an Excel or CSV file. The engine automatically detects columns, previews the data and imports up to thousands of rows."
+      },
+      "4": {
+        "title": "📂 My data",
+        "content": "View, filter and export all your recorded ESG data. Each entry is timestamped, traceable and linked to its corresponding ESRS indicator."
+      },
+      "5": {
+        "title": "🤖 Automatic calculations",
+        "content": "Define calculation formulas to automatically derive complex KPIs (e.g. carbon intensity / revenue, adjusted parity ratio) from your raw data."
+      },
+      "6": {
+        "title": "🔌 Data connectors",
+        "content": "Connect your business systems directly: SAP, Workday, Salesforce, SFTP files. Data flows in automatically on the schedule you configure."
+      },
+      "7": {
+        "title": "📈 Performance indicators",
+        "content": "174 preloaded ESRS indicators (E1–E5, S1–S4, G1). Filter by pillar, instantly see which ones have data and which are pending."
+      },
+      "8": {
+        "title": "⚖️ Double materiality",
+        "content": "Analyze CSRD double materiality: financial impact AND societal impact of your ESG issues. The generated matrix feeds directly into your ESRS report."
+      },
+      "9": {
+        "title": "⚠️ Risk register",
+        "content": "Identify, assess and prioritize your ESG risks (physical, transition, regulatory). Each risk is linked to action plans and an owner."
+      },
+      "10": {
+        "title": "🔗 Supply Chain ESG",
+        "content": "Assess the ESG performance of each supplier, send due-diligence questionnaires and identify risks in your supply chain."
+      },
+      "11": {
+        "title": "🛡️ Data quality",
+        "content": "Detect anomalies, outliers and missing data. An overall quality score tells you the reliability of your reports before submission."
+      },
+      "12": {
+        "title": "✅ Validation workflow",
+        "content": "Multi-level validation circuit: the contributor enters, the manager validates, the auditor certifies. Each step is tracked and notified automatically."
+      },
+      "13": {
+        "title": "🔒 Audit Trail",
+        "content": "Immutable log of all actions on the platform. Upload supporting documents, export for ISAE 3000 certification and ensure full traceability."
+      },
+      "14": {
+        "title": "🏆 ESG Scores",
+        "content": "Automatically calculate your overall and per-pillar ESG scores across all your organizations. Identify strengths, weaknesses and track changes over time."
+      },
+      "15": {
+        "title": "🎯 Sector benchmarking",
+        "content": "Compare your ESG performance with your sector and peers. Position yourself in the quartiles and identify best practices to adopt."
+      },
+      "16": {
+        "title": "🏢 Organizations",
+        "content": "Manage all your entities (subsidiaries, sites, BUs) with their individual ESG score. Natively multi-tenant: each organization has its own data and access rights."
+      },
+      "17": {
+        "title": "🤖 Predictive AI",
+        "content": "Artificial intelligence analyzes your trends, predicts your future scores and offers personalized recommendations to improve your ESG performance."
+      },
+      "18": {
+        "title": "🌍 Decarbonization plan",
+        "content": "Define your reduction trajectories, create concrete actions per site or BU and track your progress toward your Net Zero targets in real time."
+      },
+      "19": {
+        "title": "🔥 Carbon Footprint",
+        "content": "Calculate your Scope 1, 2 and 3 carbon footprint with GHG Protocol emission factors. Visualize the breakdown by category and export for your regulatory declaration."
+      },
+      "20": {
+        "title": "🌱 EU Taxonomy",
+        "content": "Assess your activities' alignment with the EU taxonomy (6 environmental objectives). Automatically calculate the percentage of \"green\" revenue."
+      },
+      "21": {
+        "title": "⚖️ Multi-regulatory",
+        "content": "Track your compliance across several frameworks at once: CSRD, GRI, SASB, TCFD, CDP. A unified dashboard for all your regulatory obligations."
+      },
+      "22": {
+        "title": "📄 CSRD Reports",
+        "content": "Generate your complete CSRD reports in PDF or Word, pre-filled with your data. Schedule automatic exports and share with your auditors in one click."
+      },
+      "23": {
+        "title": "🛠️ CSRD Builder",
+        "content": "Visual CSRD report editor, section by section. Meet ESRS 1 & 2 requirements, add your policies and performance indicators, then export the finalized report."
+      },
+      "24": {
+        "title": "🔗 Public API",
+        "content": "Access the Swagger documentation of the ESGFlow REST API. Integrate your BI tools (Power BI, Tableau) or internal systems via secure webhooks."
+      },
+      "25": {
+        "title": "⚙️ Settings",
+        "content": "Configure your profile, notification preferences, user access rights and your tenant settings. You're all set — enjoy ESGFlow! 🎉"
+      }
+    },
+    "ui": {
+      "openTour": "Open guided tour",
+      "tourAria": "ESGFlow guided tour",
+      "close": "Close",
+      "stepCount_one": "{{count}} step",
+      "stepCount_other": "{{count}} steps",
+      "relaunch": "Restart full tour",
+      "start": "Start full tour",
+      "restart": "Restart from the beginning",
+      "next": "Next",
+      "prev": "Previous",
+      "skip": "Skip",
+      "finish": "Finish",
+      "stepOf": "Step {{current}} / {{total}}",
+      "globalProgress": "Global progress",
+      "tourLabel": "Guided tour",
+      "interactiveTour": "Interactive tour",
+      "discoverTitle": "Discover ESGFlow",
+      "discoverDesc": "All features, step by step, in under {{minutes}} minutes.",
+      "stepsLabel": "steps",
+      "chaptersLabel": "chapters",
+      "progress": "Progress",
+      "chaptersHint": "Chapters — click to start",
+      "completed": "✓ Completed",
+      "inProgress": "In progress",
+      "startChapter": "Start this chapter",
+      "escHintPre": "Press",
+      "escHintPost": "to close"
     }
   }
 }

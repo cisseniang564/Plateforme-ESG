@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import Joyride, {
   ACTIONS,
   EVENTS,
@@ -22,6 +24,7 @@ function CustomTooltip({
   skipProps,
   tooltipProps,
 }: TooltipRenderProps) {
+  const { t } = useTranslation();
   const chapter = getChapterForStep(index);
   const stepData = step.data as { stepInChapter?: number; totalInChapter?: number } | undefined;
   const stepInChapter = stepData?.stepInChapter ?? 1;
@@ -40,7 +43,7 @@ function CustomTooltip({
         <span className="text-xl leading-none">{chapter.emoji}</span>
         <div className="flex-1 min-w-0">
           <p className={`text-xs font-bold uppercase tracking-wider ${chapter.color}`}>
-            {chapter.title}
+            {t(`tour.chapters.${chapter.id}.title`, chapter.title)}
           </p>
           <div className="flex items-center gap-1 mt-0.5">
             {Array.from({ length: totalInChapter }).map((_, i) => (
@@ -62,7 +65,7 @@ function CustomTooltip({
         <button
           {...closeProps}
           className="p-1 rounded-lg hover:bg-black/5 transition-colors text-gray-400 hover:text-gray-600"
-          title="Fermer"
+          title={t('tour.ui.close')}
         >
           <X className="h-4 w-4" />
         </button>
@@ -83,7 +86,7 @@ function CustomTooltip({
       {/* Global progress bar */}
       <div className="px-5 pb-1">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[10px] text-gray-400">Progression globale</span>
+          <span className="text-[10px] text-gray-400">{t('tour.ui.globalProgress', 'Progression globale')}</span>
           <span className="text-[10px] font-semibold text-gray-500">{globalProgress}%</span>
         </div>
         <div className="h-1 w-full rounded-full bg-gray-100 overflow-hidden">
@@ -124,7 +127,7 @@ function CustomTooltip({
           className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors px-2 py-1 rounded-lg hover:bg-gray-100"
         >
           <SkipForward className="h-3.5 w-3.5" />
-          Ignorer le tour
+          {t('tour.ui.skip')}
         </button>
 
         <div className="flex items-center gap-1.5">
@@ -134,7 +137,7 @@ function CustomTooltip({
               className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-600 hover:bg-gray-50 transition-all active:scale-95"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
-              Préc.
+              {t('tour.ui.prev')}
             </button>
           )}
 
@@ -149,11 +152,11 @@ function CustomTooltip({
             {isLastStep ? (
               <>
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                Terminer 🎉
+                {t('tour.ui.finish')} 🎉
               </>
             ) : (
               <>
-                Suivant
+                {t('tour.ui.next')}
                 <ChevronRight className="h-3.5 w-3.5" />
               </>
             )}
@@ -167,7 +170,9 @@ function CustomTooltip({
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function GuidedTour() {
+  const { t } = useTranslation();
   const { run, stepIndex, setStep, completeTour, dismissTour } = useTourContext();
+  const localizedSteps = useMemo(() => TOUR_STEPS.map((s, i) => ({ ...s, title: t(`tour.steps.${i}.title`, s.title as string), content: t(`tour.steps.${i}.content`, s.content as string) })), [t]);
 
   function handleCallback(data: CallBackProps) {
     const { action, index, type, status } = data;
@@ -200,7 +205,7 @@ export default function GuidedTour() {
 
   return (
     <Joyride
-      steps={TOUR_STEPS}
+      steps={localizedSteps}
       run={run}
       stepIndex={stepIndex}
       continuous

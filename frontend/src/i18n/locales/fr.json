@@ -5669,6 +5669,198 @@
       "sectorMedian": "Médiane secteur",
       "lowConfidence": "Niveau de confiance faible",
       "lowConfidenceDesc": "Complétez vos données pour améliorer la fiabilité du score"
+    },
+    "twoFactor": {
+      "invalidCode": "Code invalide. Vérifiez que l'heure de votre téléphone est synchronisée.",
+      "title": "Activer la 2FA",
+      "subtitle": "Authentification à deux facteurs (TOTP)",
+      "stepQr": "Scanner le QR code",
+      "stepVerify": "Confirmer le code",
+      "stepBackup": "Codes de secours",
+      "generating": "Génération de votre secret TOTP…",
+      "errorTitle": "Impossible de générer le secret 2FA",
+      "retry": "Réessayer",
+      "qrInstructionPre": "Ouvrez",
+      "qrInstructionPost": ", ou une autre application TOTP, puis scannez le QR code ci-dessous.",
+      "manualKey": "Ou entrez manuellement cette clé :",
+      "scannedCode": "J'ai scanné le code →",
+      "verifyInstructionPre": "Entrez le code à",
+      "verifyInstructionStrong": "6 chiffres",
+      "verifyInstructionPost": "affiché dans votre application pour confirmer la configuration.",
+      "back": "Retour",
+      "confirm": "Confirmer",
+      "backupTitle": "Sauvegardez ces codes maintenant",
+      "backupDesc": "Ces 8 codes de secours ne s'afficheront qu'une seule fois. Conservez-les en lieu sûr.",
+      "copied": "Copié !",
+      "copyCodes": "Copier les codes",
+      "done": "2FA activé — Terminer"
+    }
+  },
+  "tour": {
+    "chapters": {
+      "welcome": {
+        "title": "Bienvenue",
+        "description": "Introduction à ESGFlow"
+      },
+      "dashboard": {
+        "title": "Tableau de bord",
+        "description": "Vue d'ensemble de vos scores ESG"
+      },
+      "collecte": {
+        "title": "Collecte de données",
+        "description": "Saisie, import et connecteurs"
+      },
+      "pilotage": {
+        "title": "Pilotage ESG",
+        "description": "Indicateurs, risques, audit"
+      },
+      "scoring": {
+        "title": "Scoring & Analyses",
+        "description": "Scores ESG, benchmarks, IA"
+      },
+      "conformite": {
+        "title": "Conformité & Reporting",
+        "description": "CSRD, décarbonation, taxonomie"
+      },
+      "settings": {
+        "title": "Paramètres",
+        "description": "API, configuration"
+      }
+    },
+    "steps": {
+      "0": {
+        "title": "🌿 Bienvenue sur ESGFlow",
+        "content": "Ce tour interactif (≈ 3 min) vous présente toutes les fonctionnalités de la plateforme. Naviguez avec Suivant / Précédent, sautez une étape ou relancez le tour à tout moment."
+      },
+      "1": {
+        "title": "📊 Tableau de bord",
+        "content": "Votre cockpit ESG en temps réel. Visualisez vos scores E, S, G, les tendances, les alertes prioritaires et l'avancement de votre conformité CSRD d'un seul coup d'œil."
+      },
+      "2": {
+        "title": "✍️ Saisie manuelle",
+        "content": "Enregistrez vos indicateurs ESG manuellement — émissions Scope 1/2/3, données sociales RH, indicateurs de gouvernance — via des formulaires structurés par pilier."
+      },
+      "3": {
+        "title": "📤 Import en masse",
+        "content": "Importez vos données en une fois depuis un fichier Excel ou CSV. Le moteur détecte automatiquement les colonnes, vous prévisualise les données et importe jusqu'à des milliers de lignes."
+      },
+      "4": {
+        "title": "📂 Mes données",
+        "content": "Consultez, filtrez et exportez toutes vos données ESG enregistrées. Chaque entrée est horodatée, traçable et liée à son indicateur ESRS correspondant."
+      },
+      "5": {
+        "title": "🤖 Calculs automatiques",
+        "content": "Définissez des formules de calcul pour dériver automatiquement des KPIs complexes (ex : intensité carbone / CA, ratio parité ajusté) à partir de vos données brutes."
+      },
+      "6": {
+        "title": "🔌 Connecteurs data",
+        "content": "Branchez directement vos systèmes métiers : SAP, Workday, Salesforce, fichiers SFTP. Les données remontent automatiquement selon le planning que vous configurez."
+      },
+      "7": {
+        "title": "📈 Indicateurs de performance",
+        "content": "174 indicateurs ESRS préchargés (E1–E5, S1–S4, G1). Filtrez par pilier, voyez instantanément lesquels ont des données et lesquels sont en attente."
+      },
+      "8": {
+        "title": "⚖️ Double matérialité",
+        "content": "Analysez la double matérialité CSRD : impact financier ET impact sociétal de vos enjeux ESG. La matrice générée alimente directement votre rapport ESRS."
+      },
+      "9": {
+        "title": "⚠️ Registre des risques",
+        "content": "Identifiez, évaluez et priorisez vos risques ESG (physiques, de transition, réglementaires). Chaque risque est lié à des plans d'action et à un responsable."
+      },
+      "10": {
+        "title": "🔗 Supply Chain ESG",
+        "content": "Évaluez la performance ESG de chaque fournisseur, envoyez des questionnaires de due diligence et identifiez les risques dans votre chaîne d'approvisionnement."
+      },
+      "11": {
+        "title": "🛡️ Qualité des données",
+        "content": "Détectez les anomalies, valeurs aberrantes et données manquantes. Un score de qualité global vous indique la fiabilité de vos reportings avant soumission."
+      },
+      "12": {
+        "title": "✅ Workflow de validation",
+        "content": "Circuit de validation multi-niveaux : le contributeur saisit, le manager valide, l'auditeur certifie. Chaque étape est tracée et notifiée automatiquement."
+      },
+      "13": {
+        "title": "🔒 Piste d'Audit",
+        "content": "Journal immuable de toutes les actions sur la plateforme. Téléversez les pièces justificatives, exportez pour certification ISAE 3000 et assurez la traçabilité totale."
+      },
+      "14": {
+        "title": "🏆 Scores ESG",
+        "content": "Calculez automatiquement vos scores ESG globaux et par pilier sur toutes vos organisations. Identifiez les forces, faiblesses et suivez l'évolution dans le temps."
+      },
+      "15": {
+        "title": "🎯 Benchmarking sectoriel",
+        "content": "Comparez vos performances ESG avec celles de votre secteur et de vos pairs. Positionnez-vous dans les quartiles et identifiez les meilleures pratiques à adopter."
+      },
+      "16": {
+        "title": "🏢 Organisations",
+        "content": "Gérez toutes vos entités (filiales, sites, BU) avec leur score ESG individuel. Multi-tenant natif : chaque organisation dispose de ses propres données et droits d'accès."
+      },
+      "17": {
+        "title": "🤖 IA Prédictive",
+        "content": "L'intelligence artificielle analyse vos tendances, prédit vos scores futurs et vous propose des recommandations personnalisées pour améliorer votre performance ESG."
+      },
+      "18": {
+        "title": "🌍 Plan de décarbonisation",
+        "content": "Définissez vos trajectoires de réduction, créez des actions concrètes par site ou BU et suivez votre avancement vers vos objectifs Net Zéro en temps réel."
+      },
+      "19": {
+        "title": "🔥 Bilan Carbone",
+        "content": "Calculez votre empreinte carbone Scope 1, 2 et 3 avec les facteurs d'émission GHG Protocol. Visualisez la répartition par poste et exportez pour votre déclaration réglementaire."
+      },
+      "20": {
+        "title": "🌱 Taxonomie UE",
+        "content": "Évaluez l'alignement de vos activités avec la taxonomie européenne (6 objectifs environnementaux). Calculez automatiquement le pourcentage de chiffre d'affaires « vert »."
+      },
+      "21": {
+        "title": "⚖️ Multi-réglementaire",
+        "content": "Suivez votre conformité simultanément sur plusieurs cadres : CSRD, GRI, SASB, TCFD, CDP. Un tableau de bord unifié pour tous vos obligations réglementaires."
+      },
+      "22": {
+        "title": "📄 Rapports CSRD",
+        "content": "Générez vos rapports CSRD complets en PDF ou Word, pré-remplis avec vos données. Planifiez des exports automatiques et partagez avec vos auditeurs en un clic."
+      },
+      "23": {
+        "title": "🛠️ CSRD Builder",
+        "content": "Éditeur visuel de rapports CSRD section par section. Répondez aux exigences ESRS 1 & 2, ajoutez vos politiques et indicateurs de performance, puis exportez le rapport finalisé."
+      },
+      "24": {
+        "title": "🔗 API Publique",
+        "content": "Accédez à la documentation Swagger de l'API REST ESGFlow. Intégrez vos outils BI (Power BI, Tableau) ou vos systèmes internes via des webhooks sécurisés."
+      },
+      "25": {
+        "title": "⚙️ Paramètres",
+        "content": "Configurez votre profil, les préférences de notification, les droits d'accès des utilisateurs et les paramètres de votre tenant. Vous êtes prêt — bonne navigation sur ESGFlow ! 🎉"
+      }
+    },
+    "ui": {
+      "openTour": "Ouvrir le tour guidé",
+      "tourAria": "Tour guidé ESGFlow",
+      "close": "Fermer",
+      "stepCount_one": "{{count}} étape",
+      "stepCount_other": "{{count}} étapes",
+      "relaunch": "Relancer le tour complet",
+      "start": "Démarrer le tour complet",
+      "restart": "Recommencer depuis le début",
+      "next": "Suivant",
+      "prev": "Précédent",
+      "skip": "Passer",
+      "finish": "Terminer",
+      "stepOf": "Étape {{current}} / {{total}}",
+      "globalProgress": "Progression globale",
+      "tourLabel": "Tour guidé",
+      "interactiveTour": "Tour interactif",
+      "discoverTitle": "Découvrez ESGFlow",
+      "discoverDesc": "Toutes les fonctionnalités, étape par étape, en moins de {{minutes}} minutes.",
+      "stepsLabel": "étapes",
+      "chaptersLabel": "chapitres",
+      "progress": "Progression",
+      "chaptersHint": "Chapitres — cliquez pour démarrer",
+      "completed": "✓ Complété",
+      "inProgress": "En cours",
+      "startChapter": "Démarrer ce chapitre",
+      "escHintPre": "Appuyez sur",
+      "escHintPost": "pour fermer"
     }
   }
 }
