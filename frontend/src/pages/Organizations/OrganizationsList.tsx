@@ -12,15 +12,16 @@ import Spinner from '@/components/common/Spinner';
 import api from '@/services/api';
 import { getBatchOrgScores } from '@/services/esgScoringService';
 import toast from 'react-hot-toast';
+import i18n from '@/i18n/config';
 
 // ─── Modal Création Organisation ──────────────────────────────────────────────
 
 const ORG_TYPES = [
-  { id: 'company',       label: 'Entreprise' },
-  { id: 'group',         label: 'Groupe' },
-  { id: 'business_unit', label: 'Business Unit' },
-  { id: 'site',          label: 'Site / Établissement' },
-  { id: 'department',    label: 'Département' },
+  { id: 'company',       labelKey: 'organizations.typeCompany' },
+  { id: 'group',         labelKey: 'organizations.typeGroup' },
+  { id: 'business_unit', labelKey: 'organizations.typeBusinessUnit' },
+  { id: 'site',          labelKey: 'organizations.typeSite' },
+  { id: 'department',    labelKey: 'organizations.typeDepartment' },
 ]
 
 const INDUSTRIES = [
@@ -35,6 +36,7 @@ interface CreateOrgModalProps {
 }
 
 function CreateOrgModal({ onClose, onCreated }: CreateOrgModalProps) {
+  const { t } = useTranslation()
   const [name, setName] = useState('')
   const [orgType, setOrgType] = useState('company')
   const [industry, setIndustry] = useState('')
@@ -62,11 +64,11 @@ function CreateOrgModal({ onClose, onCreated }: CreateOrgModalProps) {
         industry: industry || null,
         external_id: externalId.trim() || null,
       })
-      toast.success(`Organisation "${name.trim()}" créée avec succès`)
+      toast.success(t('organizations.createSuccess', { name: name.trim() }))
       onCreated()
       onClose()
     } catch (err: any) {
-      const msg = err?.response?.data?.detail ?? 'Erreur lors de la création'
+      const msg = err?.response?.data?.detail ?? t('organizations.createError')
       toast.error(msg)
     } finally {
       setSaving(false)
@@ -87,8 +89,8 @@ function CreateOrgModal({ onClose, onCreated }: CreateOrgModalProps) {
               <Building2 size={18} className="text-primary-600" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-gray-900">Nouvelle organisation</h2>
-              <p className="text-xs text-gray-400">Ajoutez une entité à votre portefeuille</p>
+              <h2 className="text-sm font-bold text-gray-900">{t('organizations.modalTitle')}</h2>
+              <p className="text-xs text-gray-400">{t('organizations.modalSubtitle')}</p>
             </div>
           </div>
           <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
@@ -101,14 +103,14 @@ function CreateOrgModal({ onClose, onCreated }: CreateOrgModalProps) {
           {/* Nom */}
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-              Nom de l'organisation <span className="text-red-400">*</span>
+              {t('organizations.nameLabel')} <span className="text-red-400">*</span>
             </label>
             <input
               ref={nameRef}
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="Ex : GreenCo France SAS"
+              placeholder={t('organizations.namePlaceholder')}
               required
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
@@ -117,25 +119,25 @@ function CreateOrgModal({ onClose, onCreated }: CreateOrgModalProps) {
           <div className="grid grid-cols-2 gap-3">
             {/* Type */}
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">Type</label>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">{t('organizations.typeLabel')}</label>
               <select
                 value={orgType}
                 onChange={e => setOrgType(e.target.value)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
               >
-                {ORG_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                {ORG_TYPES.map(ot => <option key={ot.id} value={ot.id}>{t(ot.labelKey)}</option>)}
               </select>
             </div>
 
             {/* Secteur */}
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">Secteur</label>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">{t('organizations.sectorLabel')}</label>
               <select
                 value={industry}
                 onChange={e => setIndustry(e.target.value)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
               >
-                <option value="">— Choisir —</option>
+                <option value="">{t('organizations.chooseOption')}</option>
                 {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
               </select>
             </div>
@@ -144,13 +146,13 @@ function CreateOrgModal({ onClose, onCreated }: CreateOrgModalProps) {
           {/* ID externe (optionnel) */}
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-              Identifiant externe <span className="text-gray-400 font-normal">(SIREN, code interne…)</span>
+              {t('organizations.externalIdLabel')} <span className="text-gray-400 font-normal">{t('organizations.externalIdHint')}</span>
             </label>
             <input
               type="text"
               value={externalId}
               onChange={e => setExternalId(e.target.value)}
-              placeholder="Optionnel"
+              placeholder={t('organizations.optional')}
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
@@ -162,7 +164,7 @@ function CreateOrgModal({ onClose, onCreated }: CreateOrgModalProps) {
               onClick={onClose}
               className="flex-1 py-2.5 px-4 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
             >
-              Annuler
+              {t('organizations.cancel')}
             </button>
             <button
               type="submit"
@@ -170,9 +172,9 @@ function CreateOrgModal({ onClose, onCreated }: CreateOrgModalProps) {
               className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? (
-                <><Loader2 size={14} className="animate-spin" />Création…</>
+                <><Loader2 size={14} className="animate-spin" />{t('organizations.creating')}</>
               ) : (
-                <><Plus size={14} />Créer</>
+                <><Plus size={14} />{t('organizations.create')}</>
               )}
             </button>
           </div>
@@ -253,7 +255,7 @@ function ScoreBadge({ score }: { score: number | null }) {
 }
 
 function RatingBadge({ rating }: { rating: string | null }) {
-  if (!rating) return <span className="text-xs text-gray-400 italic">Non scoré</span>;
+  if (!rating) return <span className="text-xs text-gray-400 italic">{i18n.t('organizations.notScored')}</span>;
   const cls = rating.startsWith('A')
     ? 'bg-green-50 text-green-700 border-green-200'
     : rating.startsWith('B')
@@ -333,9 +335,9 @@ export default function OrganizationsList() {
       console.error('OrganizationsList: load error', err);
       const status = err?.response?.status;
       if (status === 429) {
-        toast.error('Trop de requêtes — réessayez dans quelques secondes');
+        toast.error(t('organizations.tooManyRequests'));
       } else if (status !== 401) {
-        toast.error('Impossible de charger les organisations');
+        toast.error(t('organizations.loadError'));
       }
     } finally {
       setLoading(false);
@@ -407,8 +409,8 @@ export default function OrganizationsList() {
             {t('organizations.title')}
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {filtered.length} organisation{filtered.length > 1 ? 's' : ''}
-            {filtered.length !== organizations.length && ` sur ${organizations.length}`}
+            {t('organizations.orgsCount', { count: filtered.length })}
+            {filtered.length !== organizations.length && ` ${t('organizations.ofTotal', { total: organizations.length })}`}
           </p>
         </div>
         <div className="flex gap-2">
@@ -416,7 +418,7 @@ export default function OrganizationsList() {
             <BarChart3 className="h-4 w-4 mr-1.5" />{t('organizations.compare')}
           </Button>
           <Button size="sm" onClick={() => setShowCreateModal(true)}>
-            <Plus className="h-4 w-4 mr-1.5" />Nouvelle organisation
+            <Plus className="h-4 w-4 mr-1.5" />{t('organizations.newOrg')}
           </Button>
         </div>
       </div>
@@ -424,10 +426,10 @@ export default function OrganizationsList() {
       {/* KPI strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Total', value: stats.total, icon: Building2, color: 'text-slate-600', bg: 'bg-slate-50' },
-          { label: 'Score moyen', value: stats.avgScore || '—', icon: Zap, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'Leaders ≥75', value: stats.leaders, icon: Award, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Secteurs', value: stats.sectors, icon: Sparkles, color: 'text-purple-600', bg: 'bg-purple-50' },
+          { label: t('organizations.totalStat'), value: stats.total, icon: Building2, color: 'text-slate-600', bg: 'bg-slate-50' },
+          { label: t('organizations.avgScoreStat'), value: stats.avgScore || '—', icon: Zap, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: t('organizations.leadersStat'), value: stats.leaders, icon: Award, color: 'text-blue-600', bg: 'bg-blue-50' },
+          { label: t('organizations.sectorsStat'), value: stats.sectors, icon: Sparkles, color: 'text-purple-600', bg: 'bg-purple-50' },
         ].map(({ label, value, icon: Icon, color, bg }) => (
           <div key={label} className={`${bg} rounded-xl p-4 flex items-center gap-3`}>
             <div className={`${color} opacity-70`}><Icon className="h-5 w-5" /></div>
@@ -446,7 +448,7 @@ export default function OrganizationsList() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Rechercher une organisation…"
+            placeholder={t('organizations.searchPlaceholder')}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
@@ -462,7 +464,7 @@ export default function OrganizationsList() {
               onChange={e => setSelectedIndustry(e.target.value)}
               className="pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 bg-white appearance-none min-w-[150px]"
             >
-              <option value="all">Tous secteurs</option>
+              <option value="all">{t('organizations.allSectors')}</option>
               {industries.map(i => <option key={i} value={i}>{i}</option>)}
             </select>
           </div>
@@ -473,7 +475,7 @@ export default function OrganizationsList() {
             onChange={e => setSelectedRating(e.target.value)}
             className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 bg-white min-w-[120px]"
           >
-            <option value="all">Tous ratings</option>
+            <option value="all">{t('organizations.allRatings')}</option>
             {ratings.map(r => <option key={r} value={r}>{r}</option>)}
           </select>
 
@@ -488,12 +490,12 @@ export default function OrganizationsList() {
               }}
               className="pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 bg-white"
             >
-              <option value="score-desc">Score ↓</option>
-              <option value="score-asc">Score ↑</option>
-              <option value="name-asc">Nom A→Z</option>
-              <option value="name-desc">Nom Z→A</option>
-              <option value="rating-asc">Rating ↑</option>
-              <option value="rating-desc">Rating ↓</option>
+              <option value="score-desc">{t('organizations.sortScoreDownArrow')}</option>
+              <option value="score-asc">{t('organizations.sortScoreUpArrow')}</option>
+              <option value="name-asc">{t('organizations.sortNameAZArrow')}</option>
+              <option value="name-desc">{t('organizations.sortNameZAArrow')}</option>
+              <option value="rating-asc">{t('organizations.sortRatingUpArrow')}</option>
+              <option value="rating-desc">{t('organizations.sortRatingDownArrow')}</option>
             </select>
           </div>
 
@@ -501,7 +503,7 @@ export default function OrganizationsList() {
           {hasFilters && (
             <button onClick={clearFilters}
               className="flex items-center gap-1 px-2.5 py-2 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg bg-white transition-colors">
-              <X className="h-3.5 w-3.5" /> Effacer
+              <X className="h-3.5 w-3.5" /> {t('organizations.clear')}
             </button>
           )}
 
@@ -557,15 +559,15 @@ export default function OrganizationsList() {
               <div className="flex items-center justify-between mt-3">
                 <div className="text-xs text-gray-500">
                   {org.data_completeness != null
-                    ? <><span className="font-medium text-gray-700">{org.data_completeness}%</span> complété</>
-                    : <span className="text-gray-400">Données manquantes</span>
+                    ? <><span className="font-medium text-gray-700">{org.data_completeness}%</span> {t('organizations.completed')}</>
+                    : <span className="text-gray-400">{t('organizations.missingData')}</span>
                   }
                 </div>
                 <button
                   onClick={e => { e.stopPropagation(); navigate(`/app/organizations/${org.id}`); }}
                   className="flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors"
                 >
-                  <Eye className="h-3.5 w-3.5" /> Voir
+                  <Eye className="h-3.5 w-3.5" /> {t('organizations.view')}
                 </button>
               </div>
             </div>
@@ -577,12 +579,12 @@ export default function OrganizationsList() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50">
-                <th className="text-left px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Organisation</th>
-                <th className="text-center px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Score ESG</th>
-                <th className="text-center px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Rating</th>
+                <th className="text-left px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">{t('organizations.organization')}</th>
+                <th className="text-center px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">{t('organizations.esgScore')}</th>
+                <th className="text-center px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">{t('organizations.colRating')}</th>
                 <th className="text-center px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">E / S / G</th>
-                <th className="text-center px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Tendance</th>
-                <th className="text-center px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Complétude</th>
+                <th className="text-center px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">{t('organizations.trend')}</th>
+                <th className="text-center px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">{t('organizations.completeness')}</th>
                 <th className="w-20" />
               </tr>
             </thead>
@@ -652,23 +654,23 @@ export default function OrganizationsList() {
           <Building2 className="h-14 w-14 text-gray-200 mx-auto mb-4" />
           {organizations.length === 0 ? (
             <>
-              <p className="text-gray-700 font-semibold mb-1">Aucune organisation encore</p>
-              <p className="text-gray-400 text-sm mb-5">Créez votre première organisation pour commencer</p>
+              <p className="text-gray-700 font-semibold mb-1">{t('organizations.noOrgsYet')}</p>
+              <p className="text-gray-400 text-sm mb-5">{t('organizations.createFirstHint')}</p>
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-semibold rounded-lg hover:bg-primary-700 transition-colors"
               >
                 <Plus className="h-4 w-4" />
-                Créer une organisation
+                {t('organizations.createOrg')}
               </button>
             </>
           ) : (
             <>
-              <p className="text-gray-700 font-semibold mb-1">Aucune organisation trouvée</p>
-              <p className="text-gray-400 text-sm mb-5">Modifiez vos critères de recherche</p>
+              <p className="text-gray-700 font-semibold mb-1">{t('organizations.noOrgsFound')}</p>
+              <p className="text-gray-400 text-sm mb-5">{t('organizations.modifySearchHint')}</p>
               {hasFilters && (
                 <Button variant="secondary" size="sm" onClick={clearFilters}>
-                  Réinitialiser les filtres
+                  {t('organizations.resetFilters')}
                 </Button>
               )}
             </>
