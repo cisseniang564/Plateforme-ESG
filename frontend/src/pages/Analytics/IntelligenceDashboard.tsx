@@ -676,18 +676,18 @@ export default function IntelligenceDashboard() {
                 onChange={(e) => setMlHorizon(Number(e.target.value))}
                 className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
               >
-                <option value={6}>6 mois</option>
-                <option value={12}>12 mois</option>
-                <option value={24}>24 mois</option>
+                <option value={6}>{t('ia.monthsCount', { count: 6 })}</option>
+                <option value={12}>{t('ia.monthsCount', { count: 12 })}</option>
+                <option value={24}>{t('ia.monthsCount', { count: 24 })}</option>
               </select>
               <select
                 value={mlObjectivePct}
                 onChange={(e) => setMlObjectivePct(Number(e.target.value))}
                 className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
               >
-                <option value={-20}>Objectif −20 %</option>
-                <option value={-30}>Objectif −30 %</option>
-                <option value={-50}>Objectif −50 % (Net Zéro)</option>
+                <option value={-20}>{t('ia.objectiveMinus', { value: '−20' })}</option>
+                <option value={-30}>{t('ia.objectiveMinus', { value: '−30' })}</option>
+                <option value={-50}>{t('ia.objectiveNetZero')}</option>
               </select>
               <button
                 onClick={loadML}
@@ -840,7 +840,7 @@ export default function IntelligenceDashboard() {
                             <Tooltip
                               formatter={(val: number, name: string) => [
                                 `${val.toFixed(2)} ${selectedForecast.indicator_unit}`,
-                                name === 'forecast' ? 'Prévision' : name === 'upper' ? 'Borne sup. 95%' : 'Borne inf. 95%',
+                                name === 'forecast' ? t('ia.chartForecast') : name === 'upper' ? t('ia.upperBound95') : t('ia.lowerBound95'),
                               ]}
                             />
                             {/* Confidence band */}
@@ -927,7 +927,7 @@ export default function IntelligenceDashboard() {
                                 <AlertTriangle className={`h-4 w-4 flex-shrink-0 ${sevColors.icon}`} />
                                 <span className="font-medium text-gray-900 text-sm truncate">{a.metric_name}</span>
                                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${sevColors.badge}`}>
-                                  {sev === 'high' ? 'Critique' : sev === 'medium' ? 'Modéré' : 'Faible'}
+                                  {sev === 'high' ? t('ia.severityCritical') : sev === 'medium' ? t('ia.severityModerate') : t('ia.severityLow')}
                                 </span>
                                 {a.algorithms_triggered.map(al => (
                                   <span key={al} className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
@@ -1013,7 +1013,7 @@ export default function IntelligenceDashboard() {
                           {/* Header */}
                           <div className="flex items-start justify-between gap-2">
                             <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${priorityCfg.badge}`}>
-                              #{idx + 1} · {rec.priority === 'high' ? 'Priorité haute' : rec.priority === 'medium' ? 'Priorité moyenne' : 'Priorité faible'}
+                              #{idx + 1} · {rec.priority === 'high' ? t('ia.priorityFullHigh') : rec.priority === 'medium' ? t('ia.priorityFullMedium') : t('ia.priorityFullLow')}
                             </span>
                             <span className={`text-xs px-2 py-0.5 rounded-full ${pillarColors[rec.pillar]}`}>
                               {pillarLabel[rec.pillar]}
@@ -1485,7 +1485,7 @@ export default function IntelligenceDashboard() {
                     className="w-full accent-orange-500"
                   />
                   <div className="flex justify-between text-xs text-gray-400 mt-1">
-                    <span>0% (fossile)</span><span>50%</span><span>100% (zéro carbone)</span>
+                    <span>{t('ia.scaleFossil0')}</span><span>{t('ia.scaleHalf')}</span><span>{t('ia.scaleZeroCarbon100')}</span>
                   </div>
                   <p className="text-xs text-green-700 mt-2 font-medium">
                     ↑ +{Math.round((simRenewable / 100) * 12)} pts score Environnement · -45% Scope 2 estimé

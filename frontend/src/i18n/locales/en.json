@@ -3541,6 +3541,18 @@
     "vsSbti": "Vs SBTi"
   },
   "ia": {
+    "monthsCount": "{{count}} months",
+    "objectiveMinus": "Target {{value}} %",
+    "objectiveNetZero": "Target −50 % (Net Zero)",
+    "upperBound95": "Upper bound 95%",
+    "lowerBound95": "Lower bound 95%",
+    "severityLow": "Low",
+    "priorityFullHigh": "High priority",
+    "priorityFullMedium": "Medium priority",
+    "priorityFullLow": "Low priority",
+    "scaleFossil0": "0% (fossil)",
+    "scaleHalf": "50%",
+    "scaleZeroCarbon100": "100% (zero carbon)",
     "title": "AI & Automation",
     "subtitle": "ESG Chatbot · OCR · Anomaly detection · Predictions",
     "tabs": {
