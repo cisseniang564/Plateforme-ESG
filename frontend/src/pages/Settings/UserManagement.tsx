@@ -108,6 +108,7 @@ function RoleCombobox({ roles, value, displayValue, onChange, error }: {
   roles: Role[]; value: string; displayValue: string;
   onChange: (id: string, label: string) => void; error?: string;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const ref = useRef<HTMLDivElement>(null);
@@ -141,21 +142,21 @@ function RoleCombobox({ roles, value, displayValue, onChange, error }: {
         <input
           type="text"
           value={open ? query : displayLabel}
-          placeholder="Sélectionner un rôle..."
+          placeholder={t('userManagement.selectRolePlaceholder')}
           onChange={(e) => { setQuery(e.target.value); setOpen(true); onChange('', e.target.value); }}
           onFocus={() => setOpen(true)}
-          aria-label="Sélectionner un rôle"
+          aria-label={t('userManagement.selectRole')}
           aria-expanded={open}
           className="w-full pl-10 pr-10 py-2.5 bg-transparent outline-none text-sm rounded-xl text-gray-900 placeholder:text-gray-400"
         />
-        <button type="button" onClick={() => setOpen(o => !o)} aria-label="Ouvrir la liste des rôles" className="absolute right-3 p-0.5 z-10">
+        <button type="button" onClick={() => setOpen(o => !o)} aria-label={t('userManagement.openRoleList')} className="absolute right-3 p-0.5 z-10">
           <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
         </button>
       </div>
       {open && (
         <div className="absolute z-[200] mt-1.5 w-full bg-white border border-[#e8ecf0] rounded-xl shadow-dropdown overflow-hidden" role="listbox">
           {filtered.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-gray-500 italic">Aucun rôle trouvé</div>
+            <div className="px-4 py-3 text-sm text-gray-500 italic">{t('userManagement.noRoleFound')}</div>
           ) : (
             <ul className="max-h-52 overflow-y-auto py-1">
               {filtered.map(role => {
@@ -191,11 +192,12 @@ function RoleCombobox({ roles, value, displayValue, onChange, error }: {
 
 /* ─── PasswordStrength ──────────────────────────────────────────────────────── */
 function PasswordStrength({ password }: { password: string }) {
+  const { t } = useTranslation();
   if (!password) return null;
   const checks = [password.length >= 8, /[A-Z]/.test(password), /[0-9]/.test(password), /[^A-Za-z0-9]/.test(password)];
   const score = checks.filter(Boolean).length;
   const colors = ['bg-red-400', 'bg-orange-400', 'bg-yellow-400', 'bg-emerald-500'];
-  const labels = ['Très faible', 'Faible', 'Moyen', 'Fort'];
+  const labels = [t('userManagement.pwVeryWeak'), t('userManagement.pwWeak'), t('userManagement.pwMedium'), t('userManagement.pwStrong')];
   return (
     <div className="mt-2 space-y-1">
       <div className="flex gap-1">
@@ -203,7 +205,7 @@ function PasswordStrength({ password }: { password: string }) {
           <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i < score ? colors[score - 1] : 'bg-gray-200'}`} />
         ))}
       </div>
-      <p className="text-xs text-gray-500">{labels[score - 1] || 'Très faible'}</p>
+      <p className="text-xs text-gray-500">{labels[score - 1] || t('userManagement.pwVeryWeak')}</p>
     </div>
   );
 }
@@ -274,6 +276,7 @@ function SidePanel({ open, onClose, title, subtitle, children, footer }: {
 function ToggleActiveModal({ user, onClose, onConfirm }: {
   user: User; onClose: () => void; onConfirm: () => void;
 }) {
+  const { t } = useTranslation();
   const isDeactivating = user.is_active;
   return createPortal(
     <div className="fixed inset-0 z-[210] flex items-center justify-center p-4" role="dialog" aria-modal="true">
@@ -287,7 +290,7 @@ function ToggleActiveModal({ user, onClose, onConfirm }: {
           </div>
           <div className="flex-1">
             <h3 className="text-base font-bold text-gray-900">
-              {isDeactivating ? 'Désactiver cet utilisateur ?' : 'Réactiver cet utilisateur ?'}
+              {isDeactivating ? t('userManagement.deactivateUserQ') : t('userManagement.reactivateUserQ')}
             </h3>
             <p className="text-sm text-gray-500 mt-1">
               <strong>{user.first_name} {user.last_name}</strong> ({user.email})
@@ -297,14 +300,14 @@ function ToggleActiveModal({ user, onClose, onConfirm }: {
         <div className={`px-4 py-3 rounded-xl border mb-5 ${isDeactivating ? 'bg-orange-50 border-orange-100' : 'bg-emerald-50 border-emerald-100'}`}>
           <p className={`text-xs font-medium ${isDeactivating ? 'text-orange-700' : 'text-emerald-700'}`}>
             {isDeactivating
-              ? "L'utilisateur ne pourra plus se connecter. Ses données seront conservées."
-              : "L'utilisateur pourra à nouveau accéder à la plateforme."}
+              ? t('userManagement.deactivateDesc')
+              : t('userManagement.reactivateDesc')}
           </p>
         </div>
         <div className="flex gap-3">
           <Button variant="secondary" className="flex-1" onClick={onClose}>Annuler</Button>
           <Button variant="danger" className="flex-1" onClick={onConfirm} icon={isDeactivating ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}>
-            {isDeactivating ? 'Désactiver' : 'Réactiver'}
+            {isDeactivating ? t('userManagement.deactivate') : t('userManagement.reactivate')}
           </Button>
         </div>
       </div>
@@ -317,6 +320,7 @@ function ToggleActiveModal({ user, onClose, onConfirm }: {
 function DeleteConfirmModal({ user, onClose, onConfirm, loading }: {
   user: User; onClose: () => void; onConfirm: () => void; loading: boolean;
 }) {
+  const { t } = useTranslation();
   return createPortal(
     <div className="fixed inset-0 z-[210] flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
@@ -328,18 +332,18 @@ function DeleteConfirmModal({ user, onClose, onConfirm, loading }: {
           <div className="flex-1">
             <h3 className="text-base font-bold text-gray-900">Supprimer cet utilisateur ?</h3>
             <p className="text-sm text-gray-500 mt-1">
-              <strong>{user.first_name} {user.last_name}</strong> ({user.email}) sera définitivement supprimé.
+              <strong>{user.first_name} {user.last_name}</strong> ({user.email}) {t('userManagement.willBeDeleted')}
             </p>
           </div>
         </div>
         <div className="flex items-start gap-2.5 px-4 py-3 bg-red-50 border border-red-100 rounded-xl mb-5">
           <XCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-px" aria-hidden />
-          <p className="text-xs text-red-700 font-medium">Cette action est irréversible. Toutes les données associées seront perdues.</p>
+          <p className="text-xs text-red-700 font-medium">{t('userManagement.irreversibleData')}</p>
         </div>
         <div className="flex gap-3">
           <Button variant="secondary" className="flex-1" onClick={onClose} disabled={loading}>Annuler</Button>
           <Button variant="danger" className="flex-1" onClick={onConfirm} loading={loading}>
-            Supprimer définitivement
+            {t('userManagement.deletePermanently')}
           </Button>
         </div>
       </div>
@@ -352,6 +356,7 @@ function DeleteConfirmModal({ user, onClose, onConfirm, loading }: {
 function BulkDeleteModal({ count, onClose, onConfirm, loading }: {
   count: number; onClose: () => void; onConfirm: () => void; loading: boolean;
 }) {
+  const { t } = useTranslation();
   return createPortal(
     <div className="fixed inset-0 z-[210] flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
@@ -362,7 +367,7 @@ function BulkDeleteModal({ count, onClose, onConfirm, loading }: {
           </div>
           <div className="flex-1">
             <h3 className="text-base font-bold text-gray-900">Supprimer {count} utilisateur{count > 1 ? 's' : ''} ?</h3>
-            <p className="text-sm text-gray-500 mt-1">Cette suppression est définitive et irréversible.</p>
+            <p className="text-sm text-gray-500 mt-1">{t('userManagement.bulkDeleteFinal')}</p>
           </div>
         </div>
         <div className="flex gap-3">
@@ -383,6 +388,7 @@ function RowMenu({ user, onEdit, onToggle, onDelete, open, onOpenChange }: {
   onEdit: () => void; onToggle: () => void; onDelete: () => void;
   open: boolean; onOpenChange: (v: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -413,7 +419,7 @@ function RowMenu({ user, onEdit, onToggle, onDelete, open, onOpenChange }: {
           </button>
           <button type="button" onClick={() => { onToggle(); onOpenChange(false); }}
             className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm hover:bg-gray-50 transition-colors ${user.is_active ? 'text-orange-600' : 'text-emerald-600'}`}>
-            {user.is_active ? <><UserX className="h-3.5 w-3.5" />Désactiver</> : <><UserCheck className="h-3.5 w-3.5" />Réactiver</>}
+            {user.is_active ? <><UserX className="h-3.5 w-3.5" />{t('userManagement.deactivate')}</> : <><UserCheck className="h-3.5 w-3.5" />{t('userManagement.reactivate')}</>}
           </button>
           <div className="h-px bg-gray-100 mx-3" />
           <button type="button" onClick={() => { onDelete(); onOpenChange(false); }}
@@ -533,7 +539,7 @@ export default function UserManagement() {
   /* ── Per-field blur validation ── */
   const validateField = (field: string, value: string) => {
     let error = '';
-    if (field === 'first_name' && !value.trim()) error = 'Prénom requis';
+    if (field === 'first_name' && !value.trim()) error = t('userManagement.firstNameRequired');
     if (field === 'last_name'  && !value.trim()) error = 'Nom requis';
     if (field === 'email') {
       if (!value) error = 'Email requis';
@@ -541,10 +547,10 @@ export default function UserManagement() {
     }
     if (field === 'password') {
       if (!value) error = 'Mot de passe requis';
-      else if (value.length < 8) error = 'Min. 8 caractères';
+      else if (value.length < 8) error = t('userManagement.min8chars');
       else if (!/[A-Z]/.test(value)) error = 'Doit contenir une majuscule';
       else if (!/[0-9]/.test(value)) error = 'Doit contenir un chiffre';
-      else if (!/[^A-Za-z0-9]/.test(value)) error = 'Doit contenir un caractère spécial';
+      else if (!/[^A-Za-z0-9]/.test(value)) error = t('userManagement.specialCharRequired');
     }
     if (field === 'confirm_password' && value !== form.password) error = 'Les mots de passe ne correspondent pas';
     setFormErrors(prev => ({ ...prev, [field]: error || undefined }));
@@ -553,17 +559,17 @@ export default function UserManagement() {
   /* ── Validation ── */
   const validate = (isEdit = false): boolean => {
     const errors: Partial<UserForm & { role_label: string }> = {};
-    if (!form.first_name.trim()) errors.first_name = 'Prénom requis';
+    if (!form.first_name.trim()) errors.first_name = t('userManagement.firstNameRequired');
     if (!form.last_name.trim())  errors.last_name  = 'Nom requis';
     if (!form.email)             errors.email = 'Email requis';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = 'Email invalide';
-    if (!isEdit && !form.role_id && !roleLabel.trim()) errors.role_label = 'Rôle requis';
+    if (!isEdit && !form.role_id && !roleLabel.trim()) errors.role_label = t('userManagement.roleRequired');
     if (!isEdit) {
       if (!form.password)                              errors.password = 'Mot de passe requis';
-      else if (form.password.length < 8)               errors.password = 'Min. 8 caractères';
+      else if (form.password.length < 8)               errors.password = t('userManagement.min8chars');
       else if (!/[A-Z]/.test(form.password))           errors.password = 'Doit contenir une majuscule';
       else if (!/[0-9]/.test(form.password))           errors.password = 'Doit contenir un chiffre';
-      else if (!/[^A-Za-z0-9]/.test(form.password))   errors.password = 'Doit contenir un caractère spécial';
+      else if (!/[^A-Za-z0-9]/.test(form.password))   errors.password = t('userManagement.specialCharRequired');
       if (form.password && form.confirm_password !== form.password)
         errors.confirm_password = 'Les mots de passe ne correspondent pas';
     }
@@ -589,13 +595,13 @@ export default function UserManagement() {
 
   const handleResetPassword = async () => {
     if (!editingUser) return;
-    if (resetPwd.password.length < 8) { setResetPwdError('Min. 8 caractères'); return; }
+    if (resetPwd.password.length < 8) { setResetPwdError(t('userManagement.min8chars')); return; }
     if (resetPwd.password !== resetPwd.confirm) { setResetPwdError('Les mots de passe ne correspondent pas'); return; }
     setResetPwdError('');
     setResetting(true);
     try {
       await api.patch(`/users/${editingUser.id}/password`, { new_password: resetPwd.password });
-      toast.success('Mot de passe réinitialisé avec succès');
+      toast.success(t('userManagement.tPwReset'));
       setResetPwdOpen(false);
       setResetPwd({ password: '', confirm: '' });
     } catch (err: any) {
@@ -620,8 +626,8 @@ export default function UserManagement() {
   const parseApiError = (err: any): string => {
     const status = err.response?.status;
     if (status === 403) return "Vous n'avez pas les droits pour effectuer cette action";
-    if (status === 429) return 'Trop de requêtes — veuillez patienter avant de réessayer';
-    if (status === 409) return 'Conflit : cet email est peut-être déjà utilisé';
+    if (status === 429) return t('userManagement.err429');
+    if (status === 409) return t('userManagement.err409');
     const raw = err.response?.data?.detail || err.response?.data?.message;
     if (!raw) return err.message || 'Une erreur est survenue';
     if (typeof raw === 'string') return raw;
@@ -641,7 +647,7 @@ export default function UserManagement() {
         email: form.email, first_name: form.first_name, last_name: form.last_name,
         password: form.password, ...(roleId ? { role_id: roleId } : {}),
       });
-      toast.success(`${form.first_name} ${form.last_name} ajouté avec succès`);
+      toast.success(t('userManagement.tUserAdded', { name: `${form.first_name} ${form.last_name}` }));
       setCreateOpen(false);
       await loadData();
     } catch (err: any) {
@@ -661,7 +667,7 @@ export default function UserManagement() {
       const newRoleName = newRole?.name || '';
       if (ADMIN_ROLE_NAMES.has(oldRoleName) && !ADMIN_ROLE_NAMES.has(newRoleName)) {
         const confirmed = window.confirm(
-          "Vous allez vous retirer vos droits d'administrateur. Vous perdrez l'accès à certaines fonctionnalités. Continuer ?"
+          t('userManagement.confirmRemoveAdmin')
         );
         if (!confirmed) return;
       }
@@ -674,7 +680,7 @@ export default function UserManagement() {
         first_name: form.first_name, last_name: form.last_name,
         ...(roleId ? { role_id: roleId } : {}),
       });
-      toast.success('Utilisateur mis à jour');
+      toast.success(t('userManagement.tUserUpdated'));
       setEditOpen(false); setEditingUser(null);
       await loadData();
     } catch (err: any) {
@@ -692,10 +698,10 @@ export default function UserManagement() {
     setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_active: newState } : u));
     try {
       await api.patch(`/users/${user.id}`, { is_active: newState });
-      toast.success(newState ? 'Utilisateur réactivé' : 'Utilisateur désactivé');
+      toast.success(newState ? t('userManagement.tUserReactivated') : t('userManagement.tUserDeactivated'));
     } catch (err: any) {
       setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_active: !newState } : u));
-      toast.error(err.response?.data?.detail || 'Erreur lors de la mise à jour');
+      toast.error(err.response?.data?.detail || t('userManagement.tUpdateError'));
     }
   };
 
@@ -704,7 +710,7 @@ export default function UserManagement() {
     setSaving(true);
     try {
       await api.delete(`/users/${deletingUser.id}`);
-      toast.success('Utilisateur supprimé');
+      toast.success(t('userManagement.tUserDeleted'));
       setDeletingUser(null);
       setSelected(prev => { const n = new Set(prev); n.delete(deletingUser.id); return n; });
       await loadData();
@@ -721,7 +727,7 @@ export default function UserManagement() {
     setUsers(prev => prev.map(u => ids.includes(u.id) ? { ...u, is_active: false } : u));
     await Promise.allSettled(ids.map(id => api.patch(`/users/${id}`, { is_active: false })));
     setSelected(new Set());
-    toast.success(`${ids.length} utilisateur${ids.length > 1 ? 's' : ''} désactivé${ids.length > 1 ? 's' : ''}`);
+    toast.success(t('userManagement.tBulkDeactivated', { count: ids.length }));
   };
 
   const handleBulkDelete = async () => {
@@ -732,14 +738,14 @@ export default function UserManagement() {
     setBulkDeleting(false);
     setSelected(new Set());
     await loadData();
-    if (ok === ids.length) toast.success(`${ok} utilisateur${ok > 1 ? 's' : ''} supprimé${ok > 1 ? 's' : ''}`);
-    else toast.error(`${ok}/${ids.length} supprimé${ok > 1 ? 's' : ''} — certains ont échoué`);
+    if (ok === ids.length) toast.success(t('userManagement.tBulkDeleted', { count: ok }));
+    else toast.error(t('userManagement.tBulkPartial', { ok, total: ids.length }));
     setSaving(false);
   };
 
   const exportCSV = () => {
     const rows = [
-      ['Prénom', 'Nom', 'Email', 'Rôle', 'Statut', 'Dernière connexion', 'Vérifié', 'Membre depuis'],
+      [t('userManagement.colFirstName'), t('userManagement.colLastName'), t('userManagement.colEmail'), t('userManagement.colRole'), t('userManagement.colStatus'), t('userManagement.colLastLogin'), t('userManagement.colVerified'), t('userManagement.colMemberSince')],
       ...users.map(u => [
         u.first_name, u.last_name, u.email,
         u.role?.display_name || '',
@@ -772,7 +778,7 @@ export default function UserManagement() {
         {(['first_name', 'last_name'] as const).map((field, i) => (
           <div key={field}>
             <label htmlFor={`form-${field}`} className="block text-sm font-semibold text-gray-700 mb-1.5">
-              {i === 0 ? 'Prénom' : 'Nom'} <span className="text-red-500" aria-hidden>*</span>
+              {i === 0 ? t('userManagement.colFirstName') : t('userManagement.colLastName')} <span className="text-red-500" aria-hidden>*</span>
             </label>
             <input
               id={`form-${field}`}
@@ -816,7 +822,7 @@ export default function UserManagement() {
 
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-          Rôle <span className="text-red-500" aria-hidden>*</span>
+          {t('userManagement.colRole')} <span className="text-red-500" aria-hidden>*</span>
         </label>
         <RoleCombobox
           roles={roles}
@@ -851,7 +857,7 @@ export default function UserManagement() {
                 value={form.password}
                 onChange={(e) => setForm(f => ({ ...f, password: e.target.value }))}
                 onBlur={(e) => validateField('password', e.target.value)}
-                placeholder="Min. 8 caractères"
+                placeholder={t('userManagement.min8chars')}
                 className={`w-full pl-10 pr-11 py-2.5 border rounded-xl outline-none transition-all text-sm
                   focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
                   ${formErrors.password ? 'border-red-300 bg-red-50/30' : 'border-[#e2e8f0] hover:border-gray-300'}`}
@@ -878,7 +884,7 @@ export default function UserManagement() {
                 value={form.confirm_password}
                 onChange={(e) => setForm(f => ({ ...f, confirm_password: e.target.value }))}
                 onBlur={(e) => validateField('confirm_password', e.target.value)}
-                placeholder="Répéter le mot de passe"
+                placeholder={t('userManagement.repeatPassword')}
                 className={`w-full pl-10 pr-4 py-2.5 border rounded-xl outline-none transition-all text-sm
                   focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
                   ${formErrors.confirm_password ? 'border-red-300 bg-red-50/30' : 'border-[#e2e8f0] hover:border-gray-300'}`}
@@ -900,7 +906,7 @@ export default function UserManagement() {
           >
             <span className="flex items-center gap-2">
               <Lock className="h-4 w-4 text-gray-400" aria-hidden />
-              Réinitialiser le mot de passe
+              {t('userManagement.resetPassword')}
             </span>
             <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${resetPwdOpen ? 'rotate-180' : ''}`} aria-hidden />
           </button>
@@ -938,7 +944,7 @@ export default function UserManagement() {
                 disabled={!resetPwd.password || !resetPwd.confirm}
                 icon={<CheckCircle className="h-3.5 w-3.5" />}
               >
-                Confirmer la réinitialisation
+                {t('userManagement.confirmReset')}
               </Button>
             </div>
           )}
@@ -967,7 +973,7 @@ export default function UserManagement() {
               className="inline-flex items-center gap-1.5 text-sm text-white/60 hover:text-white transition-colors mb-4"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
-              Paramètres
+              {t('userManagement.pageTitle')}
             </button>
             <div className="flex items-center gap-3 mb-2">
               <div className="w-11 h-11 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center shadow-lg">
@@ -975,7 +981,7 @@ export default function UserManagement() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">Gestion des utilisateurs</h1>
-                <p className="text-sm text-white/70">Membres, rôles et permissions de votre organisation</p>
+                <p className="text-sm text-white/70">{t('userManagement.pageSubtitle')}</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2 mt-4">
@@ -986,7 +992,7 @@ export default function UserManagement() {
                 <CheckCircle className="h-3 w-3" />{stats.active} actifs
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15">
-                <Shield className="h-3 w-3" />{roles.length} rôles
+                <Shield className="h-3 w-3" />{t('userManagement.rolesCount', { count: roles.length })}
               </span>
             </div>
           </div>
@@ -1022,7 +1028,7 @@ export default function UserManagement() {
           { label: 'Utilisateurs',  value: stats.total,    icon: UsersIcon, color: 'text-primary-600', bg: 'bg-primary-50',  ring: 'ring-primary-100' },
           { label: 'Actifs',        value: stats.active,   icon: UserCheck, color: 'text-emerald-600', bg: 'bg-emerald-50', ring: 'ring-emerald-100' },
           { label: 'Inactifs',      value: stats.inactive, icon: UserX,     color: 'text-gray-500',    bg: 'bg-gray-100',   ring: 'ring-gray-200' },
-          { label: 'Rôles',         value: roles.length,   icon: Shield,    color: 'text-violet-600',  bg: 'bg-violet-50',  ring: 'ring-violet-100' },
+          { label: t('userManagement.statRoles'),         value: roles.length,   icon: Shield,    color: 'text-violet-600',  bg: 'bg-violet-50',  ring: 'ring-violet-100' },
         ].map(({ label, value, icon: Icon, color, bg, ring }) => (
           <div key={label} className="bg-white border border-[#e8ecf0] rounded-2xl p-5 shadow-card">
             <div className="flex items-center justify-between mb-3">
@@ -1041,7 +1047,7 @@ export default function UserManagement() {
         <div className="bg-white border border-[#e8ecf0] rounded-2xl px-5 py-4 shadow-card flex items-center gap-5">
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-1.5">
-              <p className="text-sm font-semibold text-gray-700">Sièges utilisés</p>
+              <p className="text-sm font-semibold text-gray-700">{t('userManagement.seatsUsed')}</p>
               <span className={`text-sm font-bold tabular-nums ${stats.total >= maxUsers ? 'text-red-600' : 'text-gray-900'}`}>
                 {stats.total} / {maxUsers}
               </span>
@@ -1057,7 +1063,7 @@ export default function UserManagement() {
                 aria-valuenow={stats.total}
                 aria-valuemin={0}
                 aria-valuemax={maxUsers}
-                aria-label={`${stats.total} sièges sur ${maxUsers} utilisés`}
+                aria-label={t('userManagement.seatsAria', { used: stats.total, max: maxUsers })}
               />
             </div>
           </div>
@@ -1072,7 +1078,7 @@ export default function UserManagement() {
       {/* ── Répartition des rôles ── */}
       {stats.byRole.some(r => r.count > 0) && (
         <div className="bg-white border border-[#e8ecf0] rounded-2xl p-5 shadow-card">
-          <p className="text-sm font-semibold text-gray-700 mb-3">Répartition des rôles</p>
+          <p className="text-sm font-semibold text-gray-700 mb-3">{t('userManagement.roleDistribution')}</p>
           <div className="flex flex-wrap gap-2.5">
             {stats.byRole.map(role => {
               const s = ROLE_STYLE[role.name] || ROLE_STYLE.viewer;
@@ -1123,10 +1129,10 @@ export default function UserManagement() {
           <select
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
-            aria-label="Filtrer par rôle"
+            aria-label={t('userManagement.filterByRole')}
             className="px-3.5 py-2.5 border border-[#e2e8f0] rounded-xl focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none text-sm bg-white hover:border-gray-300 transition-all cursor-pointer"
           >
-            <option value="">Tous les rôles</option>
+            <option value="">{t('userManagement.allRoles')}</option>
             {roles.map(r => (
               <option key={r.id || r.name} value={isValidUUID(r.id) ? r.id : r.name}>{r.display_name}</option>
             ))}
@@ -1154,7 +1160,7 @@ export default function UserManagement() {
             <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
               <UsersIcon className="h-7 w-7 text-gray-300" aria-hidden />
             </div>
-            <p className="text-base font-semibold text-gray-700 mb-1">Aucun utilisateur trouvé</p>
+            <p className="text-base font-semibold text-gray-700 mb-1">{t('userManagement.noUserFound')}</p>
             <p className="text-sm text-gray-400 mb-5 max-w-xs">
               {search || filterRole || filterStatus !== 'all'
                 ? 'Essayez de modifier vos filtres de recherche.'
@@ -1178,14 +1184,14 @@ export default function UserManagement() {
                         checked={allPageSelected}
                         ref={el => { if (el) el.indeterminate = somePageSelected; }}
                         onChange={toggleSelectAll}
-                        aria-label="Sélectionner tous les utilisateurs de la page"
+                        aria-label={t('userManagement.selectAllPage')}
                         className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
                       />
                     </th>
                     <th scope="col" className="text-left px-5 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Utilisateur</th>
-                    <th scope="col" className="text-left px-5 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Rôle</th>
+                    <th scope="col" className="text-left px-5 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t('userManagement.colRole')}</th>
                     <th scope="col" className="text-left px-5 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Statut</th>
-                    <th scope="col" className="text-left px-5 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider hidden md:table-cell">Dernière connexion</th>
+                    <th scope="col" className="text-left px-5 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider hidden md:table-cell">{t('userManagement.colLastLogin')}</th>
                     <th scope="col" className="text-left px-5 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider hidden lg:table-cell">Membre depuis</th>
                     <th scope="col" className="text-right px-5 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -1208,7 +1214,7 @@ export default function UserManagement() {
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => toggleSelect(user.id)}
-                            aria-label={`Sélectionner ${user.first_name} ${user.last_name}`}
+                            aria-label={t('userManagement.selectUser', { name: `${user.first_name} ${user.last_name}` })}
                             className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
                           />
                         </td>
@@ -1225,11 +1231,11 @@ export default function UserManagement() {
                                   {user.first_name} {user.last_name}
                                 </p>
                                 {isVerified
-                                  ? <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" aria-label="Email vérifié" />
-                                  : <ShieldAlert className="h-3.5 w-3.5 text-amber-400 flex-shrink-0" aria-label="Email non vérifié" />
+                                  ? <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" aria-label={t('userManagement.emailVerified')} />
+                                  : <ShieldAlert className="h-3.5 w-3.5 text-amber-400 flex-shrink-0" aria-label={t('userManagement.emailNotVerified')} />
                                 }
                                 {user.mfa_enabled && (
-                                  <span className="text-[9px] font-bold text-violet-600 bg-violet-50 border border-violet-200 px-1 py-0.5 rounded" title="2FA activé">2FA</span>
+                                  <span className="text-[9px] font-bold text-violet-600 bg-violet-50 border border-violet-200 px-1 py-0.5 rounded" title={t('userManagement.twoFaEnabled')}>2FA</span>
                                 )}
                               </div>
                               <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
@@ -1248,7 +1254,7 @@ export default function UserManagement() {
                               {user.role.display_name}
                             </span>
                           ) : (
-                            <span className="text-xs text-gray-400 italic">Aucun rôle</span>
+                            <span className="text-xs text-gray-400 italic">{t('userManagement.noRole')}</span>
                           )}
                         </td>
 
@@ -1302,7 +1308,7 @@ export default function UserManagement() {
                               <button
                                 type="button"
                                 onClick={() => setTogglingUser(user)}
-                                aria-label={user.is_active ? `Désactiver ${user.first_name} ${user.last_name}` : `Réactiver ${user.first_name} ${user.last_name}`}
+                                aria-label={user.is_active ? t('userManagement.deactivateUser', { name: `${user.first_name} ${user.last_name}` }) : t('userManagement.reactivateUser', { name: `${user.first_name} ${user.last_name}` })}
                                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all active:scale-[0.97] cursor-pointer ${
                                   user.is_active
                                     ? 'text-orange-600 bg-orange-50 border-orange-200 hover:bg-orange-100 hover:border-orange-300'
@@ -1310,8 +1316,8 @@ export default function UserManagement() {
                                 }`}
                               >
                                 {user.is_active
-                                  ? <><UserX className="h-3.5 w-3.5" aria-hidden />Désactiver</>
-                                  : <><UserCheck className="h-3.5 w-3.5" aria-hidden />Réactiver</>
+                                  ? <><UserX className="h-3.5 w-3.5" aria-hidden />{t('userManagement.deactivate')}</>
+                                  : <><UserCheck className="h-3.5 w-3.5" aria-hidden />{t('userManagement.reactivate')}</>
                                 }
                               </button>
                               <button
@@ -1350,7 +1356,7 @@ export default function UserManagement() {
               <p className="text-xs text-gray-500">
                 {allFiltered.length} utilisateur{allFiltered.length > 1 ? 's' : ''}
                 {users.length !== allFiltered.length && <span className="text-gray-400"> · {users.length} au total</span>}
-                {selected.size > 0 && <span className="ml-2 font-semibold text-primary-600">· {selected.size} sélectionné{selected.size > 1 ? 's' : ''}</span>}
+                {selected.size > 0 && <span className="ml-2 font-semibold text-primary-600">· {t('userManagement.selectedCount', { count: selected.size })}</span>}
               </p>
 
               {totalPages > 1 && (
@@ -1359,7 +1365,7 @@ export default function UserManagement() {
                     type="button"
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                     disabled={safePage === 1}
-                    aria-label="Page précédente"
+                    aria-label={t('userManagement.prevPage')}
                     className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     <ChevronLeft className="h-4 w-4 text-gray-600" />
@@ -1385,7 +1391,7 @@ export default function UserManagement() {
                   onClick={() => { setSearch(''); setFilterRole(''); setFilterStatus('all'); }}
                   className="text-xs text-primary-600 hover:text-primary-700 font-semibold transition-colors"
                 >
-                  Réinitialiser les filtres
+                  {t('userManagement.resetFilters')}
                 </button>
               )}
             </div>
@@ -1397,19 +1403,19 @@ export default function UserManagement() {
       {selected.size > 0 && createPortal(
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[150] flex items-center gap-3 px-4 py-3 bg-gray-900 text-white rounded-2xl shadow-xl animate-slide-in">
           <span className="text-sm font-semibold pr-2 border-r border-white/20">
-            {selected.size} sélectionné{selected.size > 1 ? 's' : ''}
+            {t('userManagement.selectedCount', { count: selected.size })}
           </span>
           <button type="button" onClick={handleBulkDeactivate}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-orange-300 hover:text-orange-200 transition-colors">
             <UserX className="h-4 w-4" aria-hidden />
-            Désactiver
+            {t('userManagement.deactivate')}
           </button>
           <button type="button" onClick={() => setBulkDeleting(true)}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-red-300 hover:text-red-200 transition-colors">
             <Trash2 className="h-4 w-4" aria-hidden />
             Supprimer
           </button>
-          <button type="button" onClick={() => setSelected(new Set())} aria-label="Annuler la sélection"
+          <button type="button" onClick={() => setSelected(new Set())} aria-label={t('userManagement.cancelSelection')}
             className="ml-2 p-1 rounded-lg hover:bg-white/10 transition-colors">
             <X className="h-4 w-4 text-gray-400" />
           </button>
@@ -1421,15 +1427,15 @@ export default function UserManagement() {
       <SidePanel
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        title="Nouvel utilisateur"
-        subtitle="Invitez un nouveau membre dans votre organisation"
+        title={t('userManagement.newUser')}
+        subtitle={t('userManagement.newUserSub')}
         footer={
           <>
             <Button variant="secondary" className="flex-1" onClick={() => setCreateOpen(false)} disabled={saving}>
               Annuler
             </Button>
             <Button className="flex-1" onClick={handleCreate} loading={saving} icon={<Plus className="h-4 w-4" />}>
-              Créer l'utilisateur
+              {t('userManagement.createUser')}
             </Button>
           </>
         }
@@ -1441,8 +1447,8 @@ export default function UserManagement() {
       <SidePanel
         open={editOpen}
         onClose={() => { setEditOpen(false); setEditingUser(null); }}
-        title={editingUser ? `Modifier — ${editingUser.first_name} ${editingUser.last_name}` : 'Modifier'}
-        subtitle="Mettez à jour les informations de ce membre"
+        title={editingUser ? t('userManagement.editTitle', { name: `${editingUser.first_name} ${editingUser.last_name}` }) : t('userManagement.editTitleShort')}
+        subtitle={t('userManagement.editSub')}
         footer={
           <>
             <Button variant="secondary" className="flex-1" onClick={() => { setEditOpen(false); setEditingUser(null); }} disabled={saving}>
