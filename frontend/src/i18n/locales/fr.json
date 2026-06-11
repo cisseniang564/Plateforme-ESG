@@ -4854,7 +4854,67 @@
     "needHelp": "Besoin d'aide ? Contactez notre support :",
     "email": "Email",
     "phone": "Téléphone",
-    "averageResponseTime": "Temps de réponse moyen : 24h"
+    "averageResponseTime": "Temps de réponse moyen : 24h",
+    "teamAvailable": "Notre équipe est disponible pour vous accompagner",
+    "responseTime": "Temps de réponse",
+    "faqTitle": "Questions fréquentes",
+    "allOperational": "Tous les services opérationnels",
+    "operational": "Opérationnel",
+    "cEmailTitle": "Email",
+    "cEmailSub": "Réponse sous 4h en jours ouvrés",
+    "cEmailAction": "Envoyer un email",
+    "cPhoneTitle": "Téléphone",
+    "cPhoneSub": "Lun–Ven, 9h–18h (CET)",
+    "cPhoneAction": "Appeler maintenant",
+    "cChatTitle": "Chat en direct",
+    "cChatSub": "Réponse instantanée en semaine",
+    "cChatAction": "Démarrer un chat",
+    "faqs": {
+      "0": {
+        "q": "Comment exporter mes rapports ESG en PDF ?",
+        "a": "Rendez-vous dans Rapports → Tableau de bord, sélectionnez votre rapport généré et cliquez sur « Télécharger ». Vous pouvez choisir le format PDF, Excel ou Word avant de générer."
+      },
+      "1": {
+        "q": "Comment configurer un connecteur de données externe ?",
+        "a": "Allez dans Données → Connecteurs, cliquez sur « Ajouter un connecteur » et sélectionnez votre source (SAP, Salesforce, Google Sheets…). Suivez le guide de configuration pas-à-pas."
+      },
+      "2": {
+        "q": "Mes données CSRD sont-elles conformes ESRS ?",
+        "a": "Oui — ESGFlow implémente les normes ESRS E1-E5, S1-S4 et G1. Consultez la page Conformité pour voir votre score de conformité par référentiel."
+      },
+      "3": {
+        "q": "Comment ajouter un nouvel utilisateur à mon espace ?",
+        "a": "Dans Paramètres → Utilisateurs, cliquez sur « Nouvel utilisateur », renseignez l'email et choisissez le rôle. L'invitation est envoyée automatiquement par email."
+      },
+      "4": {
+        "q": "Quelle est la fréquence de calcul des scores ESG ?",
+        "a": "Les scores sont recalculés en temps réel à chaque nouvelle saisie ou import de données. Vous pouvez aussi déclencher un recalcul manuel depuis Scores → Calcul."
+      }
+    },
+    "resources": {
+      "0": {
+        "title": "Documentation complète",
+        "desc": "Guides détaillés pour chaque fonctionnalité"
+      },
+      "1": {
+        "title": "Tutoriels vidéo",
+        "desc": "Vidéos pas-à-pas pour démarrer rapidement"
+      },
+      "2": {
+        "title": "Notes de version",
+        "desc": "Nouveautés et corrections de bugs"
+      },
+      "3": {
+        "title": "API & Webhooks",
+        "desc": "Documentation technique pour intégrateurs"
+      }
+    },
+    "status": {
+      "0": "API & Backend",
+      "1": "Calcul des scores",
+      "2": "Connecteurs données",
+      "3": "Génération rapports"
+    }
   },
   "legal": {
     "back": "Retour",

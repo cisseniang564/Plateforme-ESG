@@ -8,32 +8,32 @@ import {
 
 const FAQ = [
   {
-    q: 'Comment exporter mes rapports ESG en PDF ?',
-    a: "Rendez-vous dans Rapports → Tableau de bord, sélectionnez votre rapport généré et cliquez sur « Télécharger ». Vous pouvez choisir le format PDF, Excel ou Word avant de générer.",
+    q: '',
+    a: '',
   },
   {
-    q: 'Comment configurer un connecteur de données externe ?',
-    a: "Allez dans Données → Connecteurs, cliquez sur « Ajouter un connecteur » et sélectionnez votre source (SAP, Salesforce, Google Sheets…). Suivez le guide de configuration pas-à-pas.",
+    q: '',
+    a: '',
   },
   {
-    q: 'Mes données CSRD sont-elles conformes ESRS ?',
-    a: "Oui — ESGFlow implémente les normes ESRS E1-E5, S1-S4 et G1. Consultez la page Conformité pour voir votre score de conformité par référentiel.",
+    q: '',
+    a: '',
   },
   {
-    q: 'Comment ajouter un nouvel utilisateur à mon espace ?',
-    a: "Dans Paramètres → Utilisateurs, cliquez sur « Nouvel utilisateur », renseignez l'email et choisissez le rôle. L'invitation est envoyée automatiquement par email.",
+    q: '',
+    a: '',
   },
   {
-    q: 'Quelle est la fréquence de calcul des scores ESG ?',
-    a: "Les scores sont recalculés en temps réel à chaque nouvelle saisie ou import de données. Vous pouvez aussi déclencher un recalcul manuel depuis Scores → Calcul.",
+    q: '',
+    a: '',
   },
 ];
 
 const RESOURCES = [
-  { icon: BookOpen, title: 'Documentation complète', desc: 'Guides détaillés pour chaque fonctionnalité', color: 'bg-blue-50 text-blue-600', link: '#' },
-  { icon: Video, title: 'Tutoriels vidéo', desc: 'Vidéos pas-à-pas pour démarrer rapidement', color: 'bg-purple-50 text-purple-600', link: '#' },
-  { icon: FileText, title: 'Notes de version', desc: 'Nouveautés et corrections de bugs', color: 'bg-green-50 text-green-600', link: '#' },
-  { icon: Zap, title: 'API & Webhooks', desc: 'Documentation technique pour intégrateurs', color: 'bg-orange-50 text-orange-600', link: '#' },
+  { icon: BookOpen, title: '', desc: '', color: 'bg-blue-50 text-blue-600', link: '#' },
+  { icon: Video, title: '', desc: '', color: 'bg-purple-50 text-purple-600', link: '#' },
+  { icon: FileText, title: '', desc: '', color: 'bg-green-50 text-green-600', link: '#' },
+  { icon: Zap, title: '', desc: '', color: 'bg-orange-50 text-orange-600', link: '#' },
 ];
 
 export default function Support() {
@@ -54,19 +54,19 @@ export default function Support() {
               </span>
               <span className="flex items-center gap-1.5 px-3 py-1 bg-green-400/20 border border-green-300/30 rounded-full text-xs font-semibold text-green-200">
                 <CheckCircle className="h-3 w-3" />
-                Tous les services opérationnels
+                {t('support.allOperational')}
               </span>
             </div>
             <h1 className="text-3xl font-bold mb-1 flex items-center gap-3">
               <LifeBuoy className="h-8 w-8" />
               Support ESGFlow
             </h1>
-            <p className="text-emerald-100">Notre équipe est disponible pour vous accompagner</p>
+            <p className="text-emerald-100">{t('support.teamAvailable')}</p>
           </div>
           <div className="flex items-center gap-2 px-4 py-3 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20">
             <Clock className="h-5 w-5 text-emerald-200" />
             <div>
-              <p className="text-sm font-bold">Temps de réponse</p>
+              <p className="text-sm font-bold">{t('support.responseTime')}</p>
               <p className="text-xs text-emerald-200">Moyen : &lt; 4 heures</p>
             </div>
           </div>
@@ -78,10 +78,10 @@ export default function Support() {
         {[
           {
             icon: Mail,
-            title: 'Email',
+            title: t('support.cEmailTitle'),
             value: 'support@esgflow.com',
-            sub: 'Réponse sous 4h en jours ouvrés',
-            action: 'Envoyer un email',
+            sub: t('support.cEmailSub'),
+            action: t('support.cEmailAction'),
             href: 'mailto:support@esgflow.com',
             color: 'from-blue-500 to-blue-600',
             bg: 'bg-blue-50',
@@ -89,10 +89,10 @@ export default function Support() {
           },
           {
             icon: Phone,
-            title: 'Téléphone',
+            title: t('support.cPhoneTitle'),
             value: '+33 1 23 45 67 89',
-            sub: 'Lun–Ven, 9h–18h (CET)',
-            action: 'Appeler maintenant',
+            sub: t('support.cPhoneSub'),
+            action: t('support.cPhoneAction'),
             href: 'tel:+33123456789',
             color: 'from-emerald-500 to-teal-600',
             bg: 'bg-emerald-50',
@@ -100,10 +100,10 @@ export default function Support() {
           },
           {
             icon: MessageCircle,
-            title: 'Chat en direct',
+            title: t('support.cChatTitle'),
             value: 'Chat disponible',
-            sub: 'Réponse instantanée en semaine',
-            action: 'Démarrer un chat',
+            sub: t('support.cChatSub'),
+            action: t('support.cChatAction'),
             href: '#',
             color: 'from-violet-500 to-purple-600',
             bg: 'bg-violet-50',
@@ -142,16 +142,16 @@ export default function Support() {
             <div className="p-2 bg-amber-50 rounded-xl">
               <BookOpen className="h-5 w-5 text-amber-600" />
             </div>
-            <h2 className="text-base font-bold text-gray-900">Questions fréquentes</h2>
+            <h2 className="text-base font-bold text-gray-900">{t('support.faqTitle')}</h2>
           </div>
           <div className="space-y-2">
-            {FAQ.map((item, i) => (
+            {FAQ.map((_item, i) => (
               <div key={i} className="border border-gray-100 rounded-xl overflow-hidden">
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-gray-50 transition-colors"
                 >
-                  <span className="text-sm font-semibold text-gray-800">{item.q}</span>
+                  <span className="text-sm font-semibold text-gray-800">{t(`support.faqs.${i}.q`)}</span>
                   {openFaq === i
                     ? <ChevronUp className="h-4 w-4 text-gray-400 flex-shrink-0" />
                     : <ChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0" />
@@ -159,7 +159,7 @@ export default function Support() {
                 </button>
                 {openFaq === i && (
                   <div className="px-4 pb-4 pt-0">
-                    <p className="text-sm text-gray-600 leading-relaxed">{item.a}</p>
+                    <p className="text-sm text-gray-600 leading-relaxed">{t(`support.faqs.${i}.a`)}</p>
                   </div>
                 )}
               </div>
@@ -178,11 +178,11 @@ export default function Support() {
               <h2 className="text-base font-bold text-gray-900">Ressources</h2>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {RESOURCES.map(r => {
+              {RESOURCES.map((r, i) => {
                 const Icon = r.icon;
                 return (
                   <a
-                    key={r.title}
+                    key={t(`support.resources.${i}.title`)}
                     href={r.link}
                     className="flex items-start gap-3 p-3 rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all group"
                   >
@@ -190,8 +190,8 @@ export default function Support() {
                       <Icon className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-bold text-gray-800 group-hover:text-gray-900">{r.title}</p>
-                      <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">{r.desc}</p>
+                      <p className="text-xs font-bold text-gray-800 group-hover:text-gray-900">{t(`support.resources.${i}.title`)}</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">{t(`support.resources.${i}.desc`)}</p>
                     </div>
                   </a>
                 );
@@ -210,21 +210,21 @@ export default function Support() {
               </div>
               <span className="flex items-center gap-1.5 text-xs font-semibold text-green-600 bg-green-50 px-2.5 py-1 rounded-full">
                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                Opérationnel
+                {t('support.operational')}
               </span>
             </div>
             <div className="space-y-2.5">
               {[
-                { name: 'API & Backend',       status: 'ok' },
-                { name: 'Calcul des scores',   status: 'ok' },
-                { name: 'Génération rapports', status: 'ok' },
-                { name: 'Connecteurs données', status: 'ok' },
+                { name: t('support.status.0'),       status: 'ok' },
+                { name: t('support.status.1'),   status: 'ok' },
+                { name: t('support.status.3'), status: 'ok' },
+                { name: t('support.status.2'), status: 'ok' },
               ].map(s => (
                 <div key={s.name} className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">{s.name}</span>
                   <span className="flex items-center gap-1.5 text-xs font-semibold text-green-600">
                     <CheckCircle className="h-3.5 w-3.5" />
-                    Opérationnel
+                    {t('support.operational')}
                   </span>
                 </div>
               ))}

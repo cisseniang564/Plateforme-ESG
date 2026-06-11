@@ -5102,7 +5102,67 @@
     "needHelp": "Need help? Contact our support:",
     "email": "Email",
     "phone": "Phone",
-    "averageResponseTime": "Average response time: 24h"
+    "averageResponseTime": "Average response time: 24h",
+    "teamAvailable": "Our team is available to support you",
+    "responseTime": "Response time",
+    "faqTitle": "Frequently asked questions",
+    "allOperational": "All services operational",
+    "operational": "Operational",
+    "cEmailTitle": "Email",
+    "cEmailSub": "Reply within 4h on business days",
+    "cEmailAction": "Send an email",
+    "cPhoneTitle": "Phone",
+    "cPhoneSub": "Mon–Fri, 9am–6pm (CET)",
+    "cPhoneAction": "Call now",
+    "cChatTitle": "Live chat",
+    "cChatSub": "Instant reply on weekdays",
+    "cChatAction": "Start a chat",
+    "faqs": {
+      "0": {
+        "q": "How do I export my ESG reports to PDF?",
+        "a": "Go to Reports → Dashboard, select your generated report and click \"Download\". You can choose PDF, Excel or Word format before generating."
+      },
+      "1": {
+        "q": "How do I configure an external data connector?",
+        "a": "Go to Data → Connectors, click \"Add a connector\" and select your source (SAP, Salesforce, Google Sheets…). Follow the step-by-step setup guide."
+      },
+      "2": {
+        "q": "Is my CSRD data ESRS compliant?",
+        "a": "Yes — ESGFlow implements the ESRS E1-E5, S1-S4 and G1 standards. Check the Compliance page to see your compliance score per framework."
+      },
+      "3": {
+        "q": "How do I add a new user to my workspace?",
+        "a": "In Settings → Users, click \"New user\", enter the email and choose the role. The invitation is sent automatically by email."
+      },
+      "4": {
+        "q": "How often are ESG scores calculated?",
+        "a": "Scores are recalculated in real time on each new entry or data import. You can also trigger a manual recalculation from Scores → Calculation."
+      }
+    },
+    "resources": {
+      "0": {
+        "title": "Full documentation",
+        "desc": "Detailed guides for each feature"
+      },
+      "1": {
+        "title": "Video tutorials",
+        "desc": "Step-by-step videos to get started quickly"
+      },
+      "2": {
+        "title": "Release notes",
+        "desc": "New features and bug fixes"
+      },
+      "3": {
+        "title": "API & Webhooks",
+        "desc": "Technical documentation for integrators"
+      }
+    },
+    "status": {
+      "0": "API & Backend",
+      "1": "Score calculation",
+      "2": "Data connectors",
+      "3": "Report generation"
+    }
   },
   "legal": {
     "back": "Back",
