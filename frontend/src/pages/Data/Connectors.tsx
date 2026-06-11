@@ -10,6 +10,7 @@ import {
 import Card from '@/components/common/Card'
 import Button from '@/components/common/Button'
 import BackButton from '@/components/common/BackButton'
+import i18n from '@/i18n/config'
 import { api } from '@/services/api'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -206,9 +207,9 @@ const ESG_MAPPING_ROWS = [
 
 function StatusBadge({ status, backendStatus }: { status: ConnectorStatus; backendStatus?: BackendStatus }) {
   const map: Record<ConnectorStatus, { label: string; cls: string }> = {
-    connected: { label: 'Connecté', cls: 'bg-green-100 text-green-700' },
-    available: { label: 'Disponible', cls: 'bg-gray-100 text-gray-600' },
-    error: { label: 'Erreur', cls: 'bg-red-100 text-red-700' },
+    connected: { label: i18n.t('connectors.statusConnected'), cls: 'bg-green-100 text-green-700' },
+    available: { label: i18n.t('connectors.statusAvailable'), cls: 'bg-gray-100 text-gray-600' },
+    error: { label: i18n.t('connectors.statusError'), cls: 'bg-red-100 text-red-700' },
   }
   const { label, cls } = map[status]
   return (
@@ -557,7 +558,7 @@ function ConnectorCard({
       {c.backendStatus === 'demo' && (
         <div className="flex items-start gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded px-2 py-1.5">
           <Info size={11} className="flex-shrink-0 mt-0.5" />
-          <span>Intégration native en cours de développement — disponible prochainement.</span>
+          <span>{t('connectors.demoNotice')}</span>
         </div>
       )}
       {c.status === 'error' && c.errorMsg && (
@@ -651,17 +652,17 @@ function TabMonitoring({ connectors = CONNECTORS }: { connectors?: Connector[] }
           onChange={e => setFilterStatus(e.target.value)}
           className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="all">Tous les statuts</option>
-          <option value="success">Succes</option>
-          <option value="warning">Alerte</option>
-          <option value="error">Erreur</option>
+          <option value="all">{t('connectors.allStatuses')}</option>
+          <option value="success">{t('connectors.logFilterSuccess')}</option>
+          <option value="warning">{t('connectors.logFilterWarning')}</option>
+          <option value="error">{t('connectors.logFilterError')}</option>
         </select>
         <select
           value={filterConnector}
           onChange={e => setFilterConnector(e.target.value)}
           className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="all">Tous les connecteurs</option>
+          <option value="all">{t('connectors.allConnectors')}</option>
           {connectorNames.map(n => <option key={n} value={n}>{n}</option>)}
         </select>
         <div className="flex-1" />
@@ -810,8 +811,7 @@ function SchneiderEmissionsPanel() {
         <div className="flex items-start gap-2 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
           <Info size={15} className="mt-0.5 shrink-0 text-amber-500" />
           <span>
-            <strong>Données de démonstration</strong> — Ces sites et consommations sont fictifs.
-            Connectez votre compte EcoStruxure pour afficher vos données réelles.
+            <strong>{i18n.t('connectors.demoBannerTitle')}</strong> {i18n.t('connectors.demoBannerText')}
           </span>
         </div>
       )}

@@ -4369,6 +4369,13 @@
         ]
       },
       "connectors": {
+    "demoNotice": "Intégration native en cours de développement — disponible prochainement.",
+    "logFilterSuccess": "Succès",
+    "logFilterWarning": "Alerte",
+    "logFilterError": "Erreur",
+    "allConnectors": "Tous les connecteurs",
+    "demoBannerTitle": "Données de démonstration",
+    "demoBannerText": "— Ces sites et consommations sont fictifs. Connectez votre compte EcoStruxure pour afficher vos données réelles.",
         "name": "Connecteurs Data",
         "tagline": "SAP · Oracle · Workday · Schneider · Climatiq",
         "desc": "Ingestion automatisée depuis vos systèmes : 11 connecteurs natifs ERP, RH, Énergie et Carbone. OAuth2, API keys, certificats. Fini la saisie manuelle Excel.",
@@ -5667,7 +5674,7 @@
     "recentActivity": "Activite recente",
     "connected": "connecte(s)",
     "disconnected": "déconnecté",
-    "statusConnected": "Connecte",
+    "statusConnected": "Connecté",
     "statusAvailable": "Disponible",
     "statusDisconnected": "Deconnecte",
     "statusError": "Erreur",
