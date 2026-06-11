@@ -17,7 +17,9 @@ import Button from '@/components/common/Button';
 import Spinner from '@/components/common/Spinner';
 import api from '@/services/api';
 import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { getOrgScores, type OrgScore } from '@/services/esgScoringService';
+import i18n from '@/i18n/config';
 
 interface Organization {
   id: string;
@@ -87,7 +89,7 @@ function PillarCard({ label, score, icon: Icon, color }: { label: string; score:
         <div className="h-full rounded-full transition-all duration-700" style={{ width: `${score}%`, backgroundColor: color }} />
       </div>
       <p className="text-xs text-gray-500 mt-2">
-        {score >= 70 ? 'Excellent' : score >= 50 ? 'Satisfaisant' : 'À améliorer'}
+        {score >= 70 ? i18n.t('orgDetail.excellent') : score >= 50 ? i18n.t('orgDetail.satisfactory') : i18n.t('orgDetail.needsImprovement')}
       </p>
     </div>
   );
@@ -95,7 +97,7 @@ function PillarCard({ label, score, icon: Icon, color }: { label: string; score:
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function OrganizationDetail() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -117,15 +119,15 @@ export default function OrganizationDetail() {
         orgData = res.data;
       } catch (e: any) {
         if (e?.response?.status === 429) {
-          throw new Error('Trop de requêtes — réessayez dans quelques secondes');
+          throw new Error(t('orgDetail.tooManyRequests'));
         }
         try {
           const listRes = await api.get('/organizations');
           const orgs = listRes.data?.organizations || listRes.data?.items || [];
           orgData = orgs.find((o: any) => o.id === id);
-          if (!orgData) throw new Error('Organisation introuvable');
+          if (!orgData) throw new Error(t('orgDetail.orgNotFound'));
         } catch (e2: any) {
-          if (e2?.response?.status === 429) throw new Error('Trop de requêtes — réessayez dans quelques secondes');
+          if (e2?.response?.status === 429) throw new Error(t('orgDetail.tooManyRequests'));
           throw e2;
         }
       }
@@ -136,7 +138,7 @@ export default function OrganizationDetail() {
         setNoScores(true);
       } else {
         const latest = scoreHistory[0];
-        const MONTHS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+        const MONTHS = t('orgDetail.months', { returnObjects: true }) as string[];
         const evolution = [...scoreHistory].reverse().map(s => ({
           month: MONTHS[new Date(s.date).getMonth()],
           Global: s.overall_score,
@@ -145,14 +147,14 @@ export default function OrganizationDetail() {
           Gouvernance: s.governance_score,
         }));
         const radar = [
-          { subject: 'Environnement', score: latest.environmental_score, fullMark: 100 },
-          { subject: 'Social',        score: latest.social_score,        fullMark: 100 },
-          { subject: 'Gouvernance',   score: latest.governance_score,    fullMark: 100 },
-          { subject: 'Global',        score: latest.overall_score,       fullMark: 100 },
+          { subject: t('orgDetail.environment'), score: latest.environmental_score, fullMark: 100 },
+          { subject: t('orgDetail.social'),        score: latest.social_score,        fullMark: 100 },
+          { subject: t('orgDetail.governance'),   score: latest.governance_score,    fullMark: 100 },
+          { subject: t('orgDetail.global'),        score: latest.overall_score,       fullMark: 100 },
         ];
         // Sector comparison: only show real data for this org; benchmark shown as N/A until API available
         const sectorComparison = [
-          { name: 'Cette org.', score: latest.overall_score },
+          { name: t('orgDetail.thisOrg'), score: latest.overall_score },
         ];
         setScoreData({
           current: {
@@ -172,7 +174,7 @@ export default function OrganizationDetail() {
         });
       }
     } catch (e: any) {
-      setError(e.message || 'Erreur de chargement');
+      setError(e.message || t('orgDetail.loadError'));
     } finally {
       setLoading(false);
     }
@@ -185,10 +187,10 @@ export default function OrganizationDetail() {
   if (error || !organization) return (
     <div className="flex flex-col items-center justify-center h-96 gap-4">
       <AlertCircle className="h-14 w-14 text-red-400" />
-      <p className="text-lg font-semibold text-gray-800">Organisation introuvable</p>
+      <p className="text-lg font-semibold text-gray-800">{t('orgDetail.orgNotFound')}</p>
       <p className="text-sm text-gray-500">{error}</p>
       <Button size="sm" onClick={() => navigate('/app/organizations')}>
-        <ArrowLeft className="h-4 w-4 mr-2" />Retour à la liste
+        <ArrowLeft className="h-4 w-4 mr-2" />{t('orgDetail.backToList')}
       </Button>
     </div>
   );
@@ -221,14 +223,14 @@ export default function OrganizationDetail() {
               {organization.created_at && (
                 <span className="flex items-center gap-1 text-xs">
                   <Calendar className="h-3.5 w-3.5" />
-                  Suivi depuis {format(new Date(organization.created_at), 'MMM yyyy')}
+                  {t('orgDetail.trackedSince')} {format(new Date(organization.created_at), 'MMM yyyy', i18n.language === 'fr' ? { locale: fr } : undefined)}
                 </span>
               )}
             </div>
           </div>
         </div>
         <Button variant="secondary" size="sm">
-          <Download className="h-4 w-4 mr-1.5" />Exporter
+          <Download className="h-4 w-4 mr-1.5" />{t('orgDetail.export')}
         </Button>
       </div>
 
@@ -236,10 +238,10 @@ export default function OrganizationDetail() {
       {noScores && (
         <div className="text-center py-20 bg-gray-50 border border-dashed border-gray-200 rounded-2xl">
           <Award className="h-14 w-14 text-gray-200 mx-auto mb-4" />
-          <p className="font-semibold text-gray-700 mb-1">Aucun score ESG calculé</p>
-          <p className="text-sm text-gray-400 mb-6">Importez des données puis lancez le calcul du score.</p>
+          <p className="font-semibold text-gray-700 mb-1">{t('orgDetail.noScoreTitle')}</p>
+          <p className="text-sm text-gray-400 mb-6">{t('orgDetail.noScoreDesc')}</p>
           <Button size="sm" onClick={() => navigate('/app/scores/calculate')}>
-            <Zap className="h-4 w-4 mr-2" />Calculer le score ESG
+            <Zap className="h-4 w-4 mr-2" />{t('orgDetail.calculateEsgScore')}
           </Button>
         </div>
       )}
@@ -254,7 +256,7 @@ export default function OrganizationDetail() {
               {/* Arc gauge */}
               <div className="flex-shrink-0">
                 <ScoreArc score={sc.overall} />
-                <p className="text-center text-xs text-gray-400 mt-1">Score ESG Global</p>
+                <p className="text-center text-xs text-gray-400 mt-1">{t('orgDetail.globalEsgScore')}</p>
               </div>
 
               {/* Right side */}
@@ -269,15 +271,15 @@ export default function OrganizationDetail() {
                   {sc.trend != null ? (
                     sc.trend > 0 ? (
                       <span className="flex items-center gap-1 text-green-600 text-sm font-semibold bg-green-50 px-2.5 py-1 rounded-full">
-                        <TrendingUp className="h-3.5 w-3.5" />+{sc.trend.toFixed(1)} pts
+                        <TrendingUp className="h-3.5 w-3.5" />{t('orgDetail.ptsValue', { value: `+${sc.trend.toFixed(1)}` })}
                       </span>
                     ) : sc.trend < 0 ? (
                       <span className="flex items-center gap-1 text-red-500 text-sm font-semibold bg-red-50 px-2.5 py-1 rounded-full">
-                        <TrendingDown className="h-3.5 w-3.5" />{sc.trend.toFixed(1)} pts
+                        <TrendingDown className="h-3.5 w-3.5" />{t('orgDetail.ptsValue', { value: sc.trend.toFixed(1) })}
                       </span>
                     ) : (
                       <span className="flex items-center gap-1 text-gray-400 text-sm bg-gray-50 px-2.5 py-1 rounded-full">
-                        <Minus className="h-3.5 w-3.5" />Stable
+                        <Minus className="h-3.5 w-3.5" />{t('orgDetail.stable')}
                       </span>
                     )
                   ) : null}
@@ -286,9 +288,9 @@ export default function OrganizationDetail() {
                 {/* E / S / G inline bars */}
                 <div className="grid grid-cols-3 gap-4">
                   {[
-                    { label: 'Environnement', key: 'E', score: sc.environmental, color: '#16a34a' },
-                    { label: 'Social',        key: 'S', score: sc.social,        color: '#2563eb' },
-                    { label: 'Gouvernance',   key: 'G', score: sc.governance,    color: '#7c3aed' },
+                    { label: t('orgDetail.environment'), key: 'E', score: sc.environmental, color: '#16a34a' },
+                    { label: t('orgDetail.social'),        key: 'S', score: sc.social,        color: '#2563eb' },
+                    { label: t('orgDetail.governance'),   key: 'G', score: sc.governance,    color: '#7c3aed' },
                   ].map(({ label, key, score, color }) => (
                     <div key={key}>
                       <div className="flex items-center justify-between mb-1">
@@ -305,7 +307,7 @@ export default function OrganizationDetail() {
 
                 {/* Data completeness */}
                 <div className="flex items-center gap-3 pt-1">
-                  <span className="text-xs text-gray-500 whitespace-nowrap">Complétude données</span>
+                  <span className="text-xs text-gray-500 whitespace-nowrap">{t('orgDetail.dataCompleteness')}</span>
                   <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                     <div className="h-full bg-primary-500 rounded-full" style={{ width: `${sc.completeness}%` }} />
                   </div>
@@ -317,9 +319,9 @@ export default function OrganizationDetail() {
 
           {/* Pillar detail cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <PillarCard label="Environnement" score={sc.environmental} icon={Target}       color="#16a34a" />
-            <PillarCard label="Social"        score={sc.social}        icon={Users}        color="#2563eb" />
-            <PillarCard label="Gouvernance"   score={sc.governance}    icon={CheckCircle}  color="#7c3aed" />
+            <PillarCard label={t('orgDetail.environment')} score={sc.environmental} icon={Target}       color="#16a34a" />
+            <PillarCard label={t('orgDetail.social')}        score={sc.social}        icon={Users}        color="#2563eb" />
+            <PillarCard label={t('orgDetail.governance')}   score={sc.governance}    icon={CheckCircle}  color="#7c3aed" />
           </div>
 
           {/* Charts grid */}
@@ -329,7 +331,7 @@ export default function OrganizationDetail() {
             {scoreData.evolution.length >= 2 ? (
               <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-5">
                 <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-primary-500" />Évolution temporelle
+                  <Activity className="h-4 w-4 text-primary-500" />{t('orgDetail.temporalEvolution')}
                 </h3>
                 <ResponsiveContainer width="100%" height={240}>
                   <LineChart data={scoreData.evolution} margin={{ top: 4, right: 8, bottom: 0, left: -15 }}>
@@ -338,29 +340,29 @@ export default function OrganizationDetail() {
                     <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
                     <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }} />
                     <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }} />
-                    <Line type="monotone" dataKey="Global"        stroke="#6366f1" strokeWidth={2.5} dot={false} />
-                    <Line type="monotone" dataKey="Environnement" stroke="#16a34a" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
-                    <Line type="monotone" dataKey="Social"        stroke="#2563eb" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
-                    <Line type="monotone" dataKey="Gouvernance"   stroke="#7c3aed" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+                    <Line type="monotone" dataKey="Global"        name={t('orgDetail.global')}      stroke="#6366f1" strokeWidth={2.5} dot={false} />
+                    <Line type="monotone" dataKey="Environnement" name={t('orgDetail.environment')} stroke="#16a34a" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+                    <Line type="monotone" dataKey="Social"        name={t('orgDetail.social')}      stroke="#2563eb" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+                    <Line type="monotone" dataKey="Gouvernance"   name={t('orgDetail.governance')}  stroke="#7c3aed" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             ) : (
               <div className="lg:col-span-2 flex flex-col items-center justify-center py-12 bg-gray-50 border border-dashed border-gray-200 rounded-xl text-sm text-gray-400">
                 <BarChart3 className="h-8 w-8 mb-2 text-gray-200" />
-                Historique insuffisant — minimum 2 scores requis
+                {t('orgDetail.insufficientHistory')}
               </div>
             )}
 
             {/* Radar */}
             <div className="bg-white border border-gray-200 rounded-xl p-5">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Profil multidimensionnel</h3>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">{t('orgDetail.multidimProfile')}</h3>
               <ResponsiveContainer width="100%" height={260}>
                 <RadarChart data={scoreData.radar} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
                   <PolarGrid stroke="#e5e7eb" />
                   <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: '#6b7280' }} />
                   <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 9 }} tickCount={5} />
-                  <Radar name="Score" dataKey="score" stroke="#6366f1" fill="#6366f1" fillOpacity={0.2} strokeWidth={2} />
+                  <Radar name={t('orgDetail.score')} dataKey="score" stroke="#6366f1" fill="#6366f1" fillOpacity={0.2} strokeWidth={2} />
                   <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12 }} />
                 </RadarChart>
               </ResponsiveContainer>
@@ -368,7 +370,7 @@ export default function OrganizationDetail() {
 
             {/* Sector comparison */}
             <div className="bg-white border border-gray-200 rounded-xl p-5">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Comparaison sectorielle</h3>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">{t('orgDetail.sectorComparison')}</h3>
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={scoreData.sectorComparison} layout="vertical" margin={{ left: 10, right: 24 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" horizontal={false} />
@@ -388,27 +390,27 @@ export default function OrganizationDetail() {
           {/* Recommendations */}
           <div className="bg-white border border-gray-200 rounded-xl p-5">
             <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-              <Zap className="h-4 w-4 text-orange-500" />Recommandations
+              <Zap className="h-4 w-4 text-orange-500" />{t('orgDetail.recommendations')}
             </h3>
             <div className="space-y-2.5">
               {(() => {
                 const pillars = [
-                  { key: 'Environnement', score: sc.environmental },
-                  { key: 'Social', score: sc.social },
-                  { key: 'Gouvernance', score: sc.governance },
+                  { key: t('orgDetail.environment'), score: sc.environmental },
+                  { key: t('orgDetail.social'), score: sc.social },
+                  { key: t('orgDetail.governance'), score: sc.governance },
                 ].sort((a, b) => a.score - b.score);
                 const weakest = pillars[0];
                 const strongest = pillars[pillars.length - 1];
                 const items = [];
                 if (weakest.score < 50) {
-                  items.push({ icon: AlertCircle, iconCls: 'text-red-500', bg: 'bg-red-50 border-red-100', title: 'Priorité haute', desc: `Le pilier ${weakest.key} (${weakest.score}/100) est en dessous du seuil acceptable. Renforcer la collecte de données et les actions correctives.` });
+                  items.push({ icon: AlertCircle, iconCls: 'text-red-500', bg: 'bg-red-50 border-red-100', title: t('orgDetail.highPriority'), desc: t('orgDetail.highPriorityRec', { pillar: weakest.key, score: weakest.score }) });
                 } else if (weakest.score < 70) {
-                  items.push({ icon: Activity, iconCls: 'text-orange-500', bg: 'bg-orange-50 border-orange-100', title: 'Priorité moyenne', desc: `Le pilier ${weakest.key} (${weakest.score}/100) peut être amélioré. Documenter les politiques et renforcer les indicateurs manquants.` });
+                  items.push({ icon: Activity, iconCls: 'text-orange-500', bg: 'bg-orange-50 border-orange-100', title: t('orgDetail.mediumPriority'), desc: t('orgDetail.mediumPriorityRec', { pillar: weakest.key, score: weakest.score }) });
                 }
                 if (sc.completeness != null && sc.completeness < 70) {
-                  items.push({ icon: Activity, iconCls: 'text-orange-500', bg: 'bg-orange-50 border-orange-100', title: 'Complétude insuffisante', desc: `La complétude des données est de ${sc.completeness}%. Saisir davantage d'indicateurs pour améliorer la fiabilité du score.` });
+                  items.push({ icon: Activity, iconCls: 'text-orange-500', bg: 'bg-orange-50 border-orange-100', title: t('orgDetail.insufficientCompleteness'), desc: t('orgDetail.completenessRec', { value: sc.completeness }) });
                 }
-                items.push({ icon: CheckCircle, iconCls: 'text-green-500', bg: 'bg-green-50 border-green-100', title: 'Point fort', desc: `Le pilier ${strongest.key} (${strongest.score}/100) est le meilleur atout de cette organisation.` });
+                items.push({ icon: CheckCircle, iconCls: 'text-green-500', bg: 'bg-green-50 border-green-100', title: t('orgDetail.strength'), desc: t('orgDetail.strengthRec', { pillar: strongest.key, score: strongest.score }) });
                 return items.map(({ icon: Icon, iconCls, bg, title, desc }) => (
                   <div key={title} className={`flex gap-3 p-3.5 rounded-lg border ${bg}`}>
                     <Icon className={`h-4 w-4 flex-shrink-0 mt-0.5 ${iconCls}`} />
