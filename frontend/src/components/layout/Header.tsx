@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import LanguageSelector from '@/components/LanguageSelector';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import TourLauncher from '@/components/tour/TourLauncher';
@@ -32,47 +33,47 @@ function NotifIcon({ type }: { type: AppNotification['type'] }) {
 
 // ─── Breadcrumb helper ────────────────────────────────────────────────────────
 
-const ROUTE_LABELS: Record<string, string> = {
-  '/app': 'Tableau de bord',
-  '/app/data-entry': 'Saisie manuelle',
-  '/app/import-csv': 'Import CSV',
-  '/app/my-data': 'Mes données',
-  '/app/calculated-metrics': 'Calculs auto',
-  '/app/data-export': 'Export données',
-  '/app/data/connectors': 'Connecteurs',
-  '/app/data-quality': 'Qualité des données',
-  '/app/indicators': 'Indicateurs',
-  '/app/materiality': 'Matrice de matérialité',
-  '/app/risks': 'Registre des risques',
-  '/app/supply-chain': 'Supply Chain ESG',
-  '/app/validation': 'Workflow de validation',
-  '/app/audit-trail': "Piste d'audit",
-  '/app/scores': 'Scores ESG',
-  '/app/analytics': 'Analyses & IA',
-  '/app/benchmarking': 'Benchmarking',
-  '/app/carbon': 'Bilan carbone',
-  '/app/carbon-plan': 'Plan décarbonation',
-  '/app/compliance': 'Conformité',
-  '/app/esrs': 'Analyse ESRS / DMA',
-  '/app/taxonomy': 'Taxonomie UE',
-  '/app/reports': 'Rapports',
-  '/app/reports/generate': 'Générer un rapport',
-  '/app/settings': 'Paramètres',
-  '/app/settings/users': 'Gestion utilisateurs',
-  '/app/billing': 'Facturation',
-  '/app/notifications': 'Notifications',
-  '/app/profile': 'Mon profil',
-};
+const ROUTE_PATHS: string[] = [
+  '/app',
+  '/app/data-entry',
+  '/app/import-csv',
+  '/app/my-data',
+  '/app/calculated-metrics',
+  '/app/data-export',
+  '/app/data/connectors',
+  '/app/data-quality',
+  '/app/indicators',
+  '/app/materiality',
+  '/app/risks',
+  '/app/supply-chain',
+  '/app/validation',
+  '/app/audit-trail',
+  '/app/scores',
+  '/app/analytics',
+  '/app/benchmarking',
+  '/app/carbon',
+  '/app/carbon-plan',
+  '/app/compliance',
+  '/app/esrs',
+  '/app/taxonomy',
+  '/app/reports',
+  '/app/reports/generate',
+  '/app/settings',
+  '/app/settings/users',
+  '/app/billing',
+  '/app/notifications',
+  '/app/profile',
+];
 
-function usePageTitle() {
+function usePageTitle(t: TFunction) {
   const location = useLocation();
-  // exact match first, then longest prefix
-  if (ROUTE_LABELS[location.pathname]) return ROUTE_LABELS[location.pathname];
+  const labelFor = (path: string) => t(`header.routes.${path}`, 'ESGFlow');
+  if (ROUTE_PATHS.includes(location.pathname)) return labelFor(location.pathname);
   let best = '';
-  for (const key of Object.keys(ROUTE_LABELS)) {
+  for (const key of ROUTE_PATHS) {
     if (location.pathname.startsWith(key) && key.length > best.length) best = key;
   }
-  return ROUTE_LABELS[best] ?? 'ESGFlow';
+  return best ? labelFor(best) : 'ESGFlow';
 }
 
 // ─── Header ───────────────────────────────────────────────────────────────────
@@ -85,7 +86,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
   const { user, logout } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const pageTitle = usePageTitle();
+  const pageTitle = usePageTitle(t);
 
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -163,7 +164,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
           <button
             onClick={onMenuToggle}
             className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
-            aria-label="Menu"
+            aria-label={t('header.ui.menu', 'Menu')}
           >
             <Menu className="h-5 w-5 text-gray-600" />
           </button>
@@ -300,7 +301,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
           <button
             onClick={() => navigate('/app/settings')}
             className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-            title="Paramètres"
+            title={t('header.ui.settings', 'Paramètres')}
           >
             <Settings className="h-[18px] w-[18px] text-gray-600" />
           </button>
@@ -324,7 +325,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
             <button
               onClick={logout}
               className="p-2 hover:bg-red-50 rounded-xl transition-colors group"
-              title="Déconnexion"
+              title={t('header.ui.logout', 'Déconnexion')}
             >
               <LogOut className="h-[17px] w-[17px] text-gray-400 group-hover:text-red-500 transition-colors" />
             </button>

@@ -1606,7 +1606,8 @@
       "collecteData": "Data Collection",
       "pilotageEsg": "ESG Management",
       "scoringAnalyses": "Scoring & Analytics",
-      "conformite": "Compliance"
+      "conformite": "Compliance",
+      "reports": "Reports"
     },
     "nav": {
       "dashboard": "Dashboard",
@@ -1658,7 +1659,37 @@
       "connectors": "Data Connectors",
       "connectorsDesc": "Automated ingestion",
       "csrdBuilder": "CSRD Builder",
-      "csrdBuilderDesc": "Interactive CSRD/ESRS 2024 report builder"
+      "csrdBuilderDesc": "Interactive CSRD/ESRS 2024 report builder",
+      "dataExport": "Data export",
+      "historyScores": "Score history",
+      "calculateScore": "Calculate a score",
+      "aiInsights": "AI Insights",
+      "esrsAnalysis": "ESRS / DMA Analysis",
+      "myReports": "My reports",
+      "generateReport": "Generate a report",
+      "reportsList": "Report list",
+      "scheduledReports": "Scheduled reports",
+      "multiStandards": "Multi-standards",
+      "users": "Users",
+      "methodology": "Methodology",
+      "integrations": "Integrations",
+      "inseeCompanies": "INSEE Companies",
+      "esgEnrichment": "ESG Enrichment",
+      "notifications": "Notifications",
+      "billing": "Billing",
+      "helpCenter": "Help Center",
+      "myReportsTitle": "My reports"
+    },
+    "ui": {
+      "platformEsg": "ESG Platform",
+      "collapse": "Collapse",
+      "collapseMenu": "Collapse menu",
+      "expand": "Expand",
+      "expandMenu": "Expand menu",
+      "closeMenu": "Close menu",
+      "upgradePro": "Upgrade to Pro",
+      "allFeatures": "All features",
+      "myAccount": "My account"
     }
   },
   "pageHeader": {
@@ -5515,5 +5546,43 @@
     "eff_51": "2,000–4,999 employees",
     "eff_52": "5,000–9,999 employees",
     "eff_53": "10,000+ employees"
+  },
+  "header": {
+    "routes": {
+      "/app": "Dashboard",
+      "/app/data-entry": "Manual entry",
+      "/app/import-csv": "CSV Import",
+      "/app/my-data": "My data",
+      "/app/calculated-metrics": "Auto calculations",
+      "/app/data-export": "Data export",
+      "/app/data/connectors": "Connectors",
+      "/app/data-quality": "Data quality",
+      "/app/indicators": "Indicators",
+      "/app/materiality": "Materiality matrix",
+      "/app/risks": "Risk register",
+      "/app/supply-chain": "Supply Chain ESG",
+      "/app/validation": "Validation workflow",
+      "/app/audit-trail": "Audit trail",
+      "/app/scores": "ESG Scores",
+      "/app/analytics": "Analytics & AI",
+      "/app/benchmarking": "Benchmarking",
+      "/app/carbon": "Carbon footprint",
+      "/app/carbon-plan": "Decarbonization plan",
+      "/app/compliance": "Compliance",
+      "/app/esrs": "ESRS / DMA Analysis",
+      "/app/taxonomy": "EU Taxonomy",
+      "/app/reports": "Reports",
+      "/app/reports/generate": "Generate a report",
+      "/app/settings": "Settings",
+      "/app/settings/users": "User management",
+      "/app/billing": "Billing",
+      "/app/notifications": "Notifications",
+      "/app/profile": "My profile"
+    },
+    "ui": {
+      "menu": "Menu",
+      "settings": "Settings",
+      "logout": "Logout"
+    }
   }
 }

@@ -1606,7 +1606,8 @@
       "collecteData": "Collecte Données",
       "pilotageEsg": "Pilotage ESG",
       "scoringAnalyses": "Scoring & Analyses",
-      "conformite": "Conformité"
+      "conformite": "Conformité",
+      "reports": "Rapports"
     },
     "nav": {
       "dashboard": "Tableau de bord",
@@ -1658,7 +1659,37 @@
       "connectors": "Connecteurs data",
       "connectorsDesc": "Ingestion automatisée",
       "csrdBuilder": "Builder CSRD",
-      "csrdBuilderDesc": "Constructeur interactif CSRD/ESRS 2024"
+      "csrdBuilderDesc": "Constructeur interactif CSRD/ESRS 2024",
+      "dataExport": "Export données",
+      "historyScores": "Historique scores",
+      "calculateScore": "Calculer un score",
+      "aiInsights": "Insights IA",
+      "esrsAnalysis": "Analyse ESRS / DMA",
+      "myReports": "Mes rapports",
+      "generateReport": "Générer un rapport",
+      "reportsList": "Liste des rapports",
+      "scheduledReports": "Rapports planifiés",
+      "multiStandards": "Multi-standards",
+      "users": "Utilisateurs",
+      "methodology": "Méthodologie",
+      "integrations": "Intégrations",
+      "inseeCompanies": "Entreprises INSEE",
+      "esgEnrichment": "Enrichissement ESG",
+      "notifications": "Notifications",
+      "billing": "Facturation",
+      "helpCenter": "Centre d'aide",
+      "myReportsTitle": "Mes rapports"
+    },
+    "ui": {
+      "platformEsg": "Plateforme ESG",
+      "collapse": "Réduire",
+      "collapseMenu": "Réduire le menu",
+      "expand": "Développer",
+      "expandMenu": "Développer le menu",
+      "closeMenu": "Fermer le menu",
+      "upgradePro": "Passer à Pro",
+      "allFeatures": "Toutes les fonctionnalités",
+      "myAccount": "Mon compte"
     }
   },
   "pageHeader": {
@@ -5515,5 +5546,43 @@
     "periodLabel": "Periode",
     "langLabel": "Langue",
     "formatLabel": "Format d'export"
+  },
+  "header": {
+    "routes": {
+      "/app": "Tableau de bord",
+      "/app/data-entry": "Saisie manuelle",
+      "/app/import-csv": "Import CSV",
+      "/app/my-data": "Mes données",
+      "/app/calculated-metrics": "Calculs auto",
+      "/app/data-export": "Export données",
+      "/app/data/connectors": "Connecteurs",
+      "/app/data-quality": "Qualité des données",
+      "/app/indicators": "Indicateurs",
+      "/app/materiality": "Matrice de matérialité",
+      "/app/risks": "Registre des risques",
+      "/app/supply-chain": "Supply Chain ESG",
+      "/app/validation": "Workflow de validation",
+      "/app/audit-trail": "Piste d'audit",
+      "/app/scores": "Scores ESG",
+      "/app/analytics": "Analyses & IA",
+      "/app/benchmarking": "Benchmarking",
+      "/app/carbon": "Bilan carbone",
+      "/app/carbon-plan": "Plan décarbonation",
+      "/app/compliance": "Conformité",
+      "/app/esrs": "Analyse ESRS / DMA",
+      "/app/taxonomy": "Taxonomie UE",
+      "/app/reports": "Rapports",
+      "/app/reports/generate": "Générer un rapport",
+      "/app/settings": "Paramètres",
+      "/app/settings/users": "Gestion utilisateurs",
+      "/app/billing": "Facturation",
+      "/app/notifications": "Notifications",
+      "/app/profile": "Mon profil"
+    },
+    "ui": {
+      "menu": "Menu",
+      "settings": "Paramètres",
+      "logout": "Déconnexion"
+    }
   }
 }

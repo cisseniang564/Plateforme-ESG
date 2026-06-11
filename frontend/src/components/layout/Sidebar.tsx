@@ -296,9 +296,9 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
         { name: t('sidebar.nav.importCsv', 'Import CSV'),          href: '/app/import-csv',         icon: Upload,      tourId: 'sidebar-import-csv' },
         { name: t('sidebar.nav.myData', 'Mes données'),            href: '/app/my-data',            icon: FolderOpen,  tourId: 'sidebar-my-data' },
         { name: t('sidebar.nav.calcAuto', 'Calculs auto'),         href: '/app/calculated-metrics', icon: Calculator,  tourId: 'sidebar-calc-auto' },
-        { name: 'Export données',                                   href: '/app/data-export',        icon: Download,    tourId: 'sidebar-data-export' },
+        { name: t('sidebar.nav.dataExport', 'Export données'),      href: '/app/data-export',        icon: Download,    tourId: 'sidebar-data-export' },
         { name: t('sidebar.nav.connectors', 'Connecteurs'),        href: '/app/data/connectors',    icon: Plug,        tourId: 'sidebar-connectors' },
-        { name: 'Qualité des données',                              href: '/app/data-quality',       icon: Shield,      tourId: 'sidebar-data-quality' },
+        { name: t('sidebar.nav.dataQuality', 'Qualité des données'), href: '/app/data-quality',      icon: Shield,      tourId: 'sidebar-data-quality' },
       ],
     },
 
@@ -322,12 +322,12 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
       key: 'scoring',
       items: [
         { name: t('sidebar.nav.esgScores', 'Scores ESG'),           href: '/app/scores',            icon: Award,     tourId: 'sidebar-scores' },
-        { name: 'Historique scores',                                  href: '/app/scores/history',    icon: History,   tourId: 'sidebar-scores-history' },
-        { name: 'Calculer un score',                                  href: '/app/scores/calculate',  icon: RefreshCw, tourId: 'sidebar-scores-calculate' },
+        { name: t('sidebar.nav.historyScores', 'Historique scores'), href: '/app/scores/history',    icon: History,   tourId: 'sidebar-scores-history' },
+        { name: t('sidebar.nav.calculateScore', 'Calculer un score'), href: '/app/scores/calculate', icon: RefreshCw, tourId: 'sidebar-scores-calculate' },
         { name: t('sidebar.nav.benchmarking', 'Benchmarking'),       href: '/app/benchmarking',      icon: Target,    tourId: 'sidebar-benchmarking' },
         { name: t('sidebar.nav.organisations', 'Organisations'),     href: '/app/organizations',     icon: Building2, tourId: 'sidebar-organizations' },
         { name: t('sidebar.nav.iaPredictive', 'IA Prédictive'),      href: '/app/intelligence',      icon: Sparkles,  badge: 'AI', badgeVariant: 'violet', tourId: 'sidebar-intelligence' },
-        { name: 'Insights IA',                                        href: '/app/ai-insights',       icon: Brain,     badge: 'New', badgeVariant: 'violet' },
+        { name: t('sidebar.nav.aiInsights', 'Insights IA'),          href: '/app/ai-insights',       icon: Brain,     badge: 'New', badgeVariant: 'violet' },
       ],
     },
 
@@ -340,21 +340,21 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
         { name: t('sidebar.nav.decarbonation', 'Plan Décarbonation'),      href: '/app/decarbonation',        icon: TrendingDown, tourId: 'sidebar-decarbonation' },
         { name: t('sidebar.nav.taxonomieUE', 'Taxonomie UE'),              href: '/app/taxonomy',             icon: Leaf,         tourId: 'sidebar-taxonomy' },
         { name: t('sidebar.nav.multiReglementaire', 'Multi-réglementaire'), href: '/app/compliance',          icon: ShieldCheck,  tourId: 'sidebar-compliance' },
-        { name: 'Analyse ESRS / DMA',                                       href: '/app/esrs-gap',            icon: Target,       badge: 'Pro', badgeVariant: 'violet', tourId: 'sidebar-esrs-gap' },
+        { name: t('sidebar.nav.esrsAnalysis', 'Analyse ESRS / DMA'),        href: '/app/esrs-gap',            icon: Target,       badge: 'Pro', badgeVariant: 'violet', tourId: 'sidebar-esrs-gap' },
       ],
     },
 
     // ── Rapports ──
     {
-      title: 'Rapports',
+      title: t('sidebar.sections.reports', 'Rapports'),
       key: 'rapports',
       items: [
-        { name: 'Mes rapports',                href: '/app/reports',                   icon: FileText,   tourId: 'sidebar-reports' },
-        { name: 'CSRD Builder',                href: '/app/reports/csrd-builder',      icon: BookOpen,   badge: 'New', badgeVariant: 'green', tourId: 'sidebar-csrd-builder' },
-        { name: 'Générer un rapport',          href: '/app/reports/generate',          icon: RefreshCw,  tourId: 'sidebar-reports-generate' },
-        { name: 'Liste des rapports',          href: '/app/reports/list',              icon: List,       tourId: 'sidebar-reports-list' },
-        { name: 'Rapports planifiés',          href: '/app/reports/scheduled',         icon: Calendar,   tourId: 'sidebar-reports-scheduled' },
-        { name: 'Multi-standards',             href: '/app/reports/multi-standards',   icon: GitMerge,   tourId: 'sidebar-multi-standards' },
+        { name: t('sidebar.nav.myReports', 'Mes rapports'), href: '/app/reports',                   icon: FileText,   tourId: 'sidebar-reports' },
+        { name: t('sidebar.nav.csrdBuilder', 'CSRD Builder'), href: '/app/reports/csrd-builder',   icon: BookOpen,   badge: 'New', badgeVariant: 'green', tourId: 'sidebar-csrd-builder' },
+        { name: t('sidebar.nav.generateReport', 'Générer un rapport'), href: '/app/reports/generate', icon: RefreshCw,  tourId: 'sidebar-reports-generate' },
+        { name: t('sidebar.nav.reportsList', 'Liste des rapports'), href: '/app/reports/list',       icon: List,       tourId: 'sidebar-reports-list' },
+        { name: t('sidebar.nav.scheduledReports', 'Rapports planifiés'), href: '/app/reports/scheduled', icon: Calendar,   tourId: 'sidebar-reports-scheduled' },
+        { name: t('sidebar.nav.multiStandards', 'Multi-standards'), href: '/app/reports/multi-standards', icon: GitMerge,   tourId: 'sidebar-multi-standards' },
       ],
     },
 
@@ -364,25 +364,25 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
       key: 'settings',
       items: [
         { name: t('sidebar.nav.parametres', 'Paramètres généraux'),  href: '/app/settings',                 icon: Settings,    tourId: 'sidebar-settings' },
-        { name: 'Utilisateurs',                                        href: '/app/settings/users',           icon: Users,       tourId: 'sidebar-settings-users' },
-        { name: 'Méthodologie',                                        href: '/app/settings/methodology',     icon: FlaskConical, tourId: 'sidebar-settings-methodology' },
+        { name: t('sidebar.nav.users', 'Utilisateurs'),               href: '/app/settings/users',           icon: Users,       tourId: 'sidebar-settings-users' },
+        { name: t('sidebar.nav.methodology', 'Méthodologie'),         href: '/app/settings/methodology',     icon: FlaskConical, tourId: 'sidebar-settings-methodology' },
         { name: 'Webhooks',                                            href: '/app/settings/webhooks',        icon: Webhook,     tourId: 'sidebar-settings-webhooks' },
-        { name: 'Intégrations',                                        href: '/app/settings/integrations',    icon: Link2,       tourId: 'sidebar-settings-integrations' },
-        { name: 'Entreprises INSEE',                                   href: '/app/settings/insee',           icon: Building,    tourId: 'sidebar-settings-insee' },
-        { name: 'Enrichissement ESG',                                  href: '/app/settings/esg-enrichment',  icon: Globe,       tourId: 'sidebar-settings-esg' },
+        { name: t('sidebar.nav.integrations', 'Intégrations'),        href: '/app/settings/integrations',    icon: Link2,       tourId: 'sidebar-settings-integrations' },
+        { name: t('sidebar.nav.inseeCompanies', 'Entreprises INSEE'), href: '/app/settings/insee',           icon: Building,    tourId: 'sidebar-settings-insee' },
+        { name: t('sidebar.nav.esgEnrichment', 'Enrichissement ESG'), href: '/app/settings/esg-enrichment',  icon: Globe,       tourId: 'sidebar-settings-esg' },
       ],
     },
   ];
 
   const bottomNav: NavItem[] = [
-    { name: 'Notifications',                                href: '/app/notifications', icon: Bell,       tourId: 'sidebar-notifications' },
+    { name: t('sidebar.nav.notifications', 'Notifications'), href: '/app/notifications', icon: Bell,       tourId: 'sidebar-notifications' },
     { name: t('sidebar.nav.apiPublique', 'API & Docs'),    href: '/app/api-docs',      icon: Code2,      tourId: 'sidebar-api' },
-    { name: 'Facturation',                                  href: '/app/billing',       icon: CreditCard, tourId: 'sidebar-billing' },
-    { name: "Centre d'aide",                               href: '/help',              icon: HelpCircle, tourId: 'sidebar-help' },
+    { name: t('sidebar.nav.billing', 'Facturation'),       href: '/app/billing',       icon: CreditCard, tourId: 'sidebar-billing' },
+    { name: t('sidebar.nav.helpCenter', "Centre d'aide"), href: '/help',              icon: HelpCircle, tourId: 'sidebar-help' },
   ];
 
   const initials = [user?.first_name?.[0], user?.last_name?.[0]].filter(Boolean).join('').toUpperCase() || 'U';
-  const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Mon compte';
+  const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || t('sidebar.ui.myAccount', 'Mon compte');
 
   const planConfig: Record<string, { label: string; style: string }> = {
     free:       { label: 'Free',       style: 'text-slate-400 bg-white/[0.06] ring-1 ring-white/10' },
@@ -424,7 +424,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
         <button
           onClick={onMobileClose}
           className="lg:hidden absolute top-1/2 -translate-y-1/2 right-3 p-1 rounded-lg hover:bg-white/[0.08] transition-colors"
-          aria-label="Fermer le menu"
+          aria-label={t('sidebar.ui.closeMenu', 'Fermer le menu')}
         >
           <X className="h-4 w-4 text-slate-400" />
         </button>
@@ -440,13 +440,13 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
           <>
             <div className="min-w-0 flex-1">
               <p className="text-[13px] font-bold text-white leading-tight tracking-tight">ESGFlow</p>
-              <p className="text-[10px] text-slate-600 leading-tight">Plateforme ESG</p>
+              <p className="text-[10px] text-slate-600 leading-tight">{t('sidebar.ui.platformEsg', 'Plateforme ESG')}</p>
             </div>
             <button
               onClick={() => setCollapsed(true)}
               className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-slate-600 hover:text-slate-400 hover:bg-white/[0.05] transition-all duration-100"
-              title="Réduire"
-              aria-label="Réduire le menu"
+              title={t('sidebar.ui.collapse', 'Réduire')}
+              aria-label={t('sidebar.ui.collapseMenu', 'Réduire le menu')}
             >
               <PanelLeftClose size={13} />
             </button>
@@ -457,8 +457,8 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
           <button
             onClick={() => setCollapsed(false)}
             className="absolute -right-3 top-[18px] z-20 flex h-6 w-6 items-center justify-center rounded-full border border-white/[0.08] bg-[#0c0e14] text-slate-500 hover:text-slate-300 shadow-lg transition-all duration-100"
-            title="Développer"
-            aria-label="Développer le menu"
+            title={t('sidebar.ui.expand', 'Développer')}
+            aria-label={t('sidebar.ui.expandMenu', 'Développer le menu')}
           >
             <PanelLeftOpen size={11} />
           </button>
@@ -516,8 +516,8 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
               <Zap size={11} className="text-violet-400" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-semibold text-violet-300 leading-tight">Passer à Pro</p>
-              <p className="text-[10px] text-violet-500/70 leading-tight">Toutes les fonctionnalités</p>
+              <p className="text-[11px] font-semibold text-violet-300 leading-tight">{t('sidebar.ui.upgradePro', 'Passer à Pro')}</p>
+              <p className="text-[10px] text-violet-500/70 leading-tight">{t('sidebar.ui.allFeatures', 'Toutes les fonctionnalités')}</p>
             </div>
             <ChevronRight size={12} className="text-violet-500 flex-shrink-0 group-hover:translate-x-0.5 transition-transform duration-100" />
           </Link>
