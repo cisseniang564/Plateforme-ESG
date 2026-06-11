@@ -66,6 +66,8 @@ const PILLARS = [
 ];
 
 export default function MyDataDashboard() {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language === 'fr' ? fr : undefined;
   const [searchParams] = useSearchParams();
   const [data, setData] = useState<DataEntry[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -99,7 +101,7 @@ export default function MyDataDashboard() {
       setData(res.data || []);
     } catch (error: any) {
       console.error('Error loading data:', error);
-      toast.error('Erreur lors du chargement');
+      toast.error(t('myData.loadError'));
     } finally {
       setLoading(false);
     }
@@ -115,17 +117,17 @@ export default function MyDataDashboard() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Supprimer "${name}" ?`)) return;
-    
+    if (!confirm(t('myData.deleteConfirm', { name }))) return;
+
     setDeleting(id);
     try {
       await api.delete(`/data-entry/${id}`);
-      toast.success('🗑️ Donnée supprimée');
+      toast.success(t('myData.deleteSuccess'));
       await loadData();
       await loadStats();
     } catch (error: any) {
       console.error('Error deleting:', error);
-      toast.error('Erreur lors de la suppression');
+      toast.error(t('myData.deleteError'));
     } finally {
       setDeleting(null);
     }
@@ -133,11 +135,11 @@ export default function MyDataDashboard() {
 
   const exportToCSV = () => {
     if (data.length === 0) {
-      toast.error('Aucune donnée à exporter');
+      toast.error(t('myData.nothingToExport'));
       return;
     }
 
-    const headers = ['Métrique', 'Valeur', 'Unité', 'Pilier', 'Catégorie', 'Début', 'Fin', 'Source', 'Méthode'];
+    const headers = t('myData.csvHeaders', { returnObjects: true }) as string[];
     const rows = data.map(d => [
       d.metric_name,
       d.value_numeric || d.value_text,
@@ -163,7 +165,7 @@ export default function MyDataDashboard() {
     link.click();
     URL.revokeObjectURL(url);
     
-    toast.success('✅ Export réussi');
+    toast.success(t('myData.exportSuccess'));
   };
 
   const getPillarIcon = (pillar: string) => {
@@ -178,10 +180,10 @@ export default function MyDataDashboard() {
 
   const getStatusBadge = (status: string) => {
     const badges = {
-      verified: { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Vérifié' },
-      pending: { color: 'bg-yellow-100 text-yellow-800', icon: Clock, label: 'En attente' },
-      rejected: { color: 'bg-red-100 text-red-800', icon: XCircle, label: 'Rejeté' },
-      flagged: { color: 'bg-orange-100 text-orange-800', icon: Clock, label: 'Marqué' },
+      verified: { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: t('myData.verified') },
+      pending: { color: 'bg-yellow-100 text-yellow-800', icon: Clock, label: t('myData.pending') },
+      rejected: { color: 'bg-red-100 text-red-800', icon: XCircle, label: t('myData.rejected') },
+      flagged: { color: 'bg-orange-100 text-orange-800', icon: Clock, label: t('myData.flagged') },
     };
     return badges[status as keyof typeof badges] || badges.pending;
   };
@@ -196,28 +198,28 @@ export default function MyDataDashboard() {
 
   return (
     <div className="space-y-6">
-      <BackButton to="/app/data" label="Données" />
+      <BackButton to="/app/data" label={t('myData.backLabel')} />
       {/* Header */}
       <div className="bg-gradient-to-br from-cyan-600 to-blue-700 rounded-2xl p-8 text-white shadow-xl">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
               <Database className="h-10 w-10" />
-              Mes Données ESG
+              {t('myData.title')}
             </h1>
             <p className="text-cyan-100 text-lg">
-              Toutes vos données ESG en un seul endroit
+              {t('myData.subtitle')}
             </p>
           </div>
 
           <div className="flex gap-3">
             <Button variant="secondary" onClick={exportToCSV}>
               <Download className="h-4 w-4 mr-2" />
-              Export CSV
+              {t('myData.exportCsv')}
             </Button>
             <Button variant="secondary" onClick={loadData}>
               <RefreshCw className="h-4 w-4 mr-2" />
-              Actualiser
+              {t('myData.refresh')}
             </Button>
           </div>
         </div>
@@ -229,7 +231,7 @@ export default function MyDataDashboard() {
           <Card className="border-l-4 border-cyan-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Total Données</p>
+                <p className="text-sm text-gray-600 mb-1">{t('myData.totalData')}</p>
                 <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
               </div>
               <div className="p-3 bg-cyan-50 rounded-xl">
@@ -241,7 +243,7 @@ export default function MyDataDashboard() {
           <Card className="border-l-4 border-green-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Environnemental</p>
+                <p className="text-sm text-gray-600 mb-1">{t('myData.environmental')}</p>
                 <p className="text-3xl font-bold text-green-600">{stats.by_pillar.environmental || 0}</p>
               </div>
               <div className="p-3 bg-green-50 rounded-xl">
@@ -253,7 +255,7 @@ export default function MyDataDashboard() {
           <Card className="border-l-4 border-blue-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Social</p>
+                <p className="text-sm text-gray-600 mb-1">{t('myData.social')}</p>
                 <p className="text-3xl font-bold text-blue-600">{stats.by_pillar.social || 0}</p>
               </div>
               <div className="p-3 bg-blue-50 rounded-xl">
@@ -265,7 +267,7 @@ export default function MyDataDashboard() {
           <Card className="border-l-4 border-purple-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Gouvernance</p>
+                <p className="text-sm text-gray-600 mb-1">{t('myData.governance')}</p>
                 <p className="text-3xl font-bold text-purple-600">{stats.by_pillar.governance || 0}</p>
               </div>
               <div className="p-3 bg-purple-50 rounded-xl">
@@ -282,17 +284,17 @@ export default function MyDataDashboard() {
           <Zap className="h-5 w-5 text-amber-600 flex-shrink-0" />
           <div className="flex-1">
             <span className="font-semibold text-amber-900">
-              {stats.by_collection_method['fec_import']} entrée{stats.by_collection_method['fec_import'] > 1 ? 's' : ''} importée{stats.by_collection_method['fec_import'] > 1 ? 's' : ''} via FEC
+              {t('myData.fecImported', { count: stats.by_collection_method['fec_import'] })}
             </span>
             <span className="text-sm text-amber-700 ml-2">
-              — catégorisées et agrégées automatiquement depuis votre Fichier des Écritures Comptables.
+              {t('myData.fecNotice')}
             </span>
           </div>
           <button
             onClick={() => setFilters({ ...filters, collection_method: 'fec_import' })}
             className="text-xs font-semibold text-amber-700 hover:text-amber-900 underline whitespace-nowrap"
           >
-            Voir uniquement
+            {t('myData.viewOnly')}
           </button>
         </div>
       )}
@@ -304,13 +306,13 @@ export default function MyDataDashboard() {
           <Card>
             <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-cyan-600" />
-              Distribution par pilier
+              {t('myData.distributionByPillar')}
             </h3>
             <div className="space-y-3">
               {[
-                { id: 'environmental', label: 'Environnemental', color: 'bg-emerald-500', textColor: 'text-emerald-700', count: stats.by_pillar.environmental || 0 },
-                { id: 'social', label: 'Social', color: 'bg-blue-500', textColor: 'text-blue-700', count: stats.by_pillar.social || 0 },
-                { id: 'governance', label: 'Gouvernance', color: 'bg-purple-500', textColor: 'text-purple-700', count: stats.by_pillar.governance || 0 },
+                { id: 'environmental', label: t('myData.environmental'), color: 'bg-emerald-500', textColor: 'text-emerald-700', count: stats.by_pillar.environmental || 0 },
+                { id: 'social', label: t('myData.social'), color: 'bg-blue-500', textColor: 'text-blue-700', count: stats.by_pillar.social || 0 },
+                { id: 'governance', label: t('myData.governance'), color: 'bg-purple-500', textColor: 'text-purple-700', count: stats.by_pillar.governance || 0 },
               ].map(p => {
                 const pct = stats.total > 0 ? Math.round((p.count / stats.total) * 100) : 0;
                 return (
@@ -332,13 +334,13 @@ export default function MyDataDashboard() {
           <Card>
             <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-600" />
-              Statut de vérification
+              {t('myData.verificationStatus')}
             </h3>
             <div className="space-y-2">
               {[
-                { key: 'verified', label: 'Vérifiés', color: 'text-green-600', bg: 'bg-green-100', icon: CheckCircle },
-                { key: 'pending', label: 'En attente', color: 'text-yellow-600', bg: 'bg-yellow-100', icon: Clock },
-                { key: 'rejected', label: 'Rejetés', color: 'text-red-600', bg: 'bg-red-100', icon: XCircle },
+                { key: 'verified', label: t('myData.verifiedPlural'), color: 'text-green-600', bg: 'bg-green-100', icon: CheckCircle },
+                { key: 'pending', label: t('myData.pendingPlural'), color: 'text-yellow-600', bg: 'bg-yellow-100', icon: Clock },
+                { key: 'rejected', label: t('myData.rejectedPlural'), color: 'text-red-600', bg: 'bg-red-100', icon: XCircle },
               ].map(s => {
                 const count = stats.by_verification_status?.[s.key] || 0;
                 const Icon = s.icon;
@@ -363,13 +365,13 @@ export default function MyDataDashboard() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <Search className="h-4 w-4 inline mr-1" />
-              Recherche
+              {t('myData.search')}
             </label>
             <input
               type="text"
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              placeholder="Nom de métrique..."
+              placeholder={t('myData.searchPlaceholder')}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg"
             />
           </div>
@@ -377,53 +379,53 @@ export default function MyDataDashboard() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <Filter className="h-4 w-4 inline mr-1" />
-              Pilier
+              {t('myData.pillar')}
             </label>
             <select
               value={filters.pillar}
               onChange={(e) => setFilters({ ...filters, pillar: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg"
             >
-              <option value="">Tous</option>
-              <option value="environmental">Environnemental</option>
-              <option value="social">Social</option>
-              <option value="governance">Gouvernance</option>
+              <option value="">{t('myData.all_m')}</option>
+              <option value="environmental">{t('myData.environmental')}</option>
+              <option value="social">{t('myData.social')}</option>
+              <option value="governance">{t('myData.governance')}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <FileText className="h-4 w-4 inline mr-1" />
-              Source
+              {t('myData.source')}
             </label>
             <select
               value={filters.collection_method}
               onChange={(e) => setFilters({ ...filters, collection_method: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg"
             >
-              <option value="">Toutes</option>
-              <option value="manual">Saisie manuelle</option>
-              <option value="manual_scope3">Saisie Scope 3</option>
-              <option value="csv_import">Import CSV</option>
-              <option value="fec_import">Import FEC</option>
-              <option value="automatic">Automatique (IA)</option>
+              <option value="">{t('myData.all_f')}</option>
+              <option value="manual">{t('myData.manualEntry')}</option>
+              <option value="manual_scope3">{t('myData.scope3Entry')}</option>
+              <option value="csv_import">{t('myData.csvImport')}</option>
+              <option value="fec_import">{t('myData.fecImport')}</option>
+              <option value="automatic">{t('myData.automaticAi')}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <CheckCircle className="h-4 w-4 inline mr-1" />
-              Statut
+              {t('myData.status')}
             </label>
             <select
               value={filters.verification_status}
               onChange={(e) => setFilters({ ...filters, verification_status: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg"
             >
-              <option value="">Tous</option>
-              <option value="verified">Vérifié</option>
-              <option value="pending">En attente</option>
-              <option value="rejected">Rejeté</option>
+              <option value="">{t('myData.all_m')}</option>
+              <option value="verified">{t('myData.verified')}</option>
+              <option value="pending">{t('myData.pending')}</option>
+              <option value="rejected">{t('myData.rejected')}</option>
             </select>
           </div>
         </div>
@@ -433,7 +435,7 @@ export default function MyDataDashboard() {
       <Card>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900">
-            {data.length} donnée{data.length > 1 ? 's' : ''}
+            {t('myData.dataCount', { count: data.length })}
           </h2>
         </div>
 
@@ -445,17 +447,17 @@ export default function MyDataDashboard() {
           <div className="text-center py-16">
             <Database className="h-16 w-16 mx-auto text-gray-300 mb-4" />
             <p className="text-xl text-gray-900 font-semibold mb-2">
-              Aucune donnée trouvée
+              {t('myData.noDataFound')}
             </p>
             <p className="text-gray-600 mb-6">
-              Commencez par saisir ou importer des données
+              {t('myData.noDataHint')}
             </p>
             <div className="flex gap-3 justify-center">
               <Button onClick={() => window.location.href = '/data-entry'}>
-                Saisie manuelle
+                {t('myData.manualEntry')}
               </Button>
               <Button variant="secondary" onClick={() => window.location.href = '/import-csv'}>
-                Import CSV
+                {t('myData.csvImport')}
               </Button>
             </div>
           </div>
@@ -464,13 +466,13 @@ export default function MyDataDashboard() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Métrique</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Valeur</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Pilier</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Période</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Source</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">Statut</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">{t('myData.colMetric')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">{t('myData.colValue')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">{t('myData.colPillar')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">{t('myData.colPeriod')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">{t('myData.colSource')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700">{t('myData.colStatus')}</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700">{t('myData.colActions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -508,13 +510,13 @@ export default function MyDataDashboard() {
                       </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 text-xs font-medium rounded bg-${color}-100 text-${color}-800`}>
-                          {entry.pillar}
+                          {t(`myData.${entry.pillar}`, entry.pillar)}
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 text-sm text-gray-600">
                           <Calendar className="h-3 w-3" />
-                          {format(new Date(entry.period_start), 'dd/MM/yy', { locale: fr })}
+                          {format(new Date(entry.period_start), 'dd/MM/yy', { locale: dateLocale })}
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -523,31 +525,31 @@ export default function MyDataDashboard() {
                           if (cm === 'fec_import') return (
                             <div className="flex items-center gap-1">
                               <Zap className="h-3 w-3 text-amber-600" />
-                              <span className="text-xs font-medium text-amber-700">FEC</span>
+                              <span className="text-xs font-medium text-amber-700">{t('myData.srcFec')}</span>
                             </div>
                           );
                           if (cm === 'csv_import') return (
                             <div className="flex items-center gap-1">
                               <UploadIcon className="h-3 w-3 text-purple-600" />
-                              <span className="text-xs text-purple-700">CSV</span>
+                              <span className="text-xs text-purple-700">{t('myData.srcCsv')}</span>
                             </div>
                           );
                           if (cm === 'automatic') return (
                             <div className="flex items-center gap-1">
                               <Bot className="h-3 w-3 text-cyan-600" />
-                              <span className="text-xs text-cyan-700">Auto IA</span>
+                              <span className="text-xs text-cyan-700">{t('myData.srcAutoAi')}</span>
                             </div>
                           );
                           if (cm === 'manual_scope3') return (
                             <div className="flex items-center gap-1">
                               <Edit className="h-3 w-3 text-green-600" />
-                              <span className="text-xs text-green-700">Scope 3</span>
+                              <span className="text-xs text-green-700">{t('myData.srcScope3')}</span>
                             </div>
                           );
                           return (
                             <div className="flex items-center gap-1">
                               <Edit className="h-3 w-3 text-blue-600" />
-                              <span className="text-xs text-blue-700">Manuel</span>
+                              <span className="text-xs text-blue-700">{t('myData.srcManual')}</span>
                             </div>
                           );
                         })()}
@@ -563,7 +565,7 @@ export default function MyDataDashboard() {
                           onClick={() => handleDelete(entry.id, entry.metric_name)}
                           disabled={deleting === entry.id}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                          title="Supprimer"
+                          title={t('myData.delete')}
                         >
                           {deleting === entry.id ? (
                             <Spinner size="sm" />
