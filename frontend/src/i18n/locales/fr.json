@@ -151,7 +151,9 @@
     "resendVerificationEmail": "Renvoyer l'email de vérification",
     "noVerificationToken": "Aucun token de vérification trouvé dans l'URL.",
     "invalidOrExpiredLink": "Lien invalide ou expiré.",
-    "platformFooter": "ESGFlow — Plateforme de reporting ESG professionnelle"
+    "platformFooter": "ESGFlow — Plateforme de reporting ESG professionnelle",
+    "twoStepTitle": "Vérification en deux étapes",
+    "twoStepDesc": "Entrez le code à 6 chiffres de votre application."
   },
   "errors": {
     "pageNotFound": "Page introuvable",
@@ -5658,7 +5660,8 @@
       "avgSector": "Moyenne secteur:",
       "minSector": "Minimum secteur:",
       "maxSector": "Maximum secteur:",
-      "companiesCompared": "Entreprises comparées:"
+      "companiesCompared": "Entreprises comparées:",
+      "sectorMedianLabel": "Médiane secteur"
     },
     "esgScoreCard": {
       "globalScore": "Score ESG Global",

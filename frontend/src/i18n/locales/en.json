@@ -151,7 +151,9 @@
     "resendVerificationEmail": "Resend verification email",
     "noVerificationToken": "No verification token found in the URL.",
     "invalidOrExpiredLink": "Invalid or expired link.",
-    "platformFooter": "ESGFlow — Professional ESG reporting platform"
+    "platformFooter": "ESGFlow — Professional ESG reporting platform",
+    "twoStepTitle": "Two-step verification",
+    "twoStepDesc": "Enter the 6-digit code from your app."
   },
   "errors": {
     "pageNotFound": "Page not found",
@@ -5658,7 +5660,8 @@
       "avgSector": "Sector average:",
       "minSector": "Sector minimum:",
       "maxSector": "Sector maximum:",
-      "companiesCompared": "Companies compared:"
+      "companiesCompared": "Companies compared:",
+      "sectorMedianLabel": "Sector median"
     },
     "esgScoreCard": {
       "globalScore": "Overall ESG Score",

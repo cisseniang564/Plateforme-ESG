@@ -85,8 +85,8 @@ export default function Login() {
             <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
               <Shield className="w-5 h-5 text-emerald-600 flex-shrink-0" />
               <div>
-                <p className="text-sm font-semibold text-emerald-800">Vérification en deux étapes</p>
-                <p className="text-xs text-emerald-700">Entrez le code à 6 chiffres de votre application.</p>
+                <p className="text-sm font-semibold text-emerald-800">{t('auth.twoStepTitle')}</p>
+                <p className="text-xs text-emerald-700">{t('auth.twoStepDesc')}</p>
               </div>
             </div>
 

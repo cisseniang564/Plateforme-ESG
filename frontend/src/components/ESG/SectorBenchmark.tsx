@@ -75,7 +75,7 @@ export const SectorBenchmark: React.FC<Props> = ({ organizationId, sector }) => 
           <div className="text-2xl font-bold">{benchmark.percentile_rank}%</div>
         </div>
         <div className="text-center p-4 bg-gray-50 rounded">
-          <div className="text-sm text-gray-600">Médiane secteur</div>
+          <div className="text-sm text-gray-600">{t('components.sectorBenchmark.sectorMedianLabel')}</div>
           <div className="text-2xl font-bold">{benchmark.sector_median}</div>
         </div>
       </div>
