@@ -4435,6 +4435,10 @@
         ]
       },
       "taxonomy": {
+    "activityAddedToPlan": "Activité ajoutée au plan",
+    "reportGenError": "Impossible de générer le rapport",
+    "selectSector": "-- Sélectionner un secteur --",
+    "csvHeaders": ["Activité", "Secteur", "Objectif", "Contribution substantielle", "DNSH", "Garanties min.", "Statut", "Code NACE", "Seuil technique"],
         "name": "Taxonomie UE",
         "tagline": "6 objectifs environnementaux · Eligibilité · Alignement",
         "desc": "Évaluez l'alignement de vos activités avec la Taxonomie européenne durable : 6 objectifs environnementaux, critères DNSH, critères minimaux sociaux et pourcentage d'alignement.",
@@ -5141,6 +5145,7 @@
     "saveSuccess": "Paramètres sauvegardés avec succès"
   },
   "dataEntry": {
+    "sourcePlaceholder": "Ex: Rapport annuel 2024, Système RH, etc.",
     "title": "Saisie de Données ESG",
     "subtitle": "Enregistrez vos indicateurs ESG manuellement",
     "refresh": "Actualiser",
@@ -5535,6 +5540,18 @@
     "formulaMore": "Et bien plus..."
   },
   "importCsv": {
+    "fecDetected": "FEC détecté",
+    "fecTitle": "Fichier des Écritures Comptables (FEC) détecté",
+    "fecWarningBefore": "L'import générique CSV ne peut pas interpréter un FEC correctement — les lignes brutes seraient stockées comme noms de métriques. Utilisez l'",
+    "fecDedicatedLabel": "Import FEC dédié",
+    "fecWarningAfter": " ci-dessous : il analyse, catégorise et agrège automatiquement chaque écriture comptable.",
+    "orgOptional": "Organisation (optionnel)",
+    "allOrganizations": "— Toutes les organisations —",
+    "selectOrganization": "— Sélectionner une organisation —",
+    "loadOrgsError": "Impossible de charger la liste des organisations",
+    "fecSuccessNote": "Import FEC — les écritures ont été catégorisées et agrégées automatiquement",
+    "orgConcerned": "Organisation concernée",
+    "orgRecommended": "(recommandé pour le calcul des scores ESG)",
     "title": "Import CSV/Excel",
     "subtitle": "Importez vos donnees ESG en masse",
     "csvTemplate": "Template CSV",

@@ -284,7 +284,7 @@ export default function TaxonomyAlignment() {
     setActivities((prev) => [...prev, newActivity]);
     setForm(DEFAULT_FORM);
     setShowModal(false);
-    toast.success('Activité ajoutée au plan');
+    toast.success(t('taxonomy.activityAddedToPlan'));
   };
 
   const handleToggleStatus = (id: string | number) => {
@@ -308,7 +308,7 @@ export default function TaxonomyAlignment() {
       const summary = res.data?.summary;
       // Export CSV
       const rows = [
-        ['Activité', 'Secteur', 'Objectif', 'Contribution substantielle', 'DNSH', 'Garanties min.', 'Statut', 'Code NACE', 'Seuil technique'],
+        t('taxonomy.csvHeaders', { returnObjects: true }) as string[],
         ...activities.map(a => [
           a.name, a.sector, a.objective,
           a.contribution ? 'Oui' : 'Non',
@@ -329,7 +329,7 @@ export default function TaxonomyAlignment() {
         toast.success(`Rapport généré · ${summary.aligned_activities}/${summary.total_activities} activités alignées (${summary.aligned_capex_pct}% CapEx)`);
       }
     } catch {
-      toast.error('Impossible de générer le rapport');
+      toast.error(t('taxonomy.reportGenError'));
     } finally {
       setGenerating(false);
     }
@@ -678,7 +678,7 @@ export default function TaxonomyAlignment() {
                     onChange={(e) => setForm((f) => ({ ...f, sector: e.target.value }))}
                     className="input"
                   >
-                    <option value="">-- Sélectionner un secteur --</option>
+                    <option value="">{t('taxonomy.selectSector')}</option>
                     {sectors.map(s => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}

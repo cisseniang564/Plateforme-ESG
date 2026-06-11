@@ -4349,6 +4349,10 @@
         ]
       },
       "taxonomy": {
+    "activityAddedToPlan": "Activity added to the plan",
+    "reportGenError": "Unable to generate the report",
+    "selectSector": "-- Select a sector --",
+    "csvHeaders": ["Activity", "Sector", "Objective", "Substantial contribution", "DNSH", "Min. safeguards", "Status", "NACE code", "Technical threshold"],
         "name": "EU Taxonomy",
         "tagline": "6 environmental objectives · Eligibility · Alignment",
         "desc": "Assess your activities' alignment with the EU sustainable Taxonomy: 6 environmental objectives, DNSH criteria, minimum social safeguards and alignment percentage.",
@@ -4820,6 +4824,7 @@
     "saveSuccess": "Settings saved successfully"
   },
   "dataEntry": {
+    "sourcePlaceholder": "e.g. Annual report 2024, HR system, etc.",
     "title": "ESG Data Entry",
     "subtitle": "Record your ESG indicators manually",
     "refresh": "Refresh",
@@ -5567,6 +5572,18 @@
     "formulaMore": "And much more..."
   },
   "importCsv": {
+    "fecDetected": "FEC detected",
+    "fecTitle": "Accounting entries file (FEC) detected",
+    "fecWarningBefore": "The generic CSV import cannot interpret an FEC correctly — the raw lines would be stored as metric names. Use the ",
+    "fecDedicatedLabel": "dedicated FEC import",
+    "fecWarningAfter": " below: it analyzes, categorizes and automatically aggregates each accounting entry.",
+    "orgOptional": "Organization (optional)",
+    "allOrganizations": "— All organizations —",
+    "selectOrganization": "— Select an organization —",
+    "loadOrgsError": "Unable to load the list of organizations",
+    "fecSuccessNote": "FEC import — the entries have been automatically categorized and aggregated",
+    "orgConcerned": "Organization concerned",
+    "orgRecommended": "(recommended for ESG score calculation)",
     "title": "CSV/Excel Import",
     "subtitle": "Import your ESG data in bulk",
     "csvTemplate": "CSV Template",

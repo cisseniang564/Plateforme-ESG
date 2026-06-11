@@ -108,7 +108,7 @@ export default function ImportCSV() {
       setOrganizations(Array.isArray(orgs) ? orgs : []);
     }).catch((err) => {
       console.error('ImportCSV: failed to load organizations', err);
-      toast.error('Impossible de charger la liste des organisations');
+      toast.error(t('importCsv.loadOrgsError'));
     });
   }, []);
 
@@ -410,7 +410,7 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
                         {(file.size / 1024 / 1024).toFixed(2)} MB
                         {isFecFile && (
                           <span className="ml-2 px-2 py-0.5 bg-amber-200 text-amber-800 text-xs font-semibold rounded-full">
-                            FEC détecté
+                            {t('importCsv.fecDetected')}
                           </span>
                         )}
                       </p>
@@ -432,13 +432,10 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
                     <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="font-bold text-amber-900">
-                        Fichier des Écritures Comptables (FEC) détecté
+                        {t('importCsv.fecTitle')}
                       </p>
                       <p className="text-sm text-amber-800 mt-1">
-                        L'import générique CSV ne peut pas interpréter un FEC correctement — les
-                        lignes brutes seraient stockées comme noms de métriques.
-                        Utilisez l'<strong>Import FEC dédié</strong> ci-dessous : il analyse,
-                        catégorise et agrège automatiquement chaque écriture comptable.
+                        {t('importCsv.fecWarningBefore')}<strong>{t('importCsv.fecDedicatedLabel')}</strong>{t('importCsv.fecWarningAfter')}
                       </p>
                     </div>
                   </div>
@@ -448,14 +445,14 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
                     <Building2 className="h-5 w-5 text-amber-700 mt-2 flex-shrink-0" />
                     <div className="flex-1">
                       <label className="block text-sm font-semibold text-amber-900 mb-1">
-                        Organisation (optionnel)
+                        {t('importCsv.orgOptional')}
                       </label>
                       <select
                         value={selectedOrgId}
                         onChange={(e) => setSelectedOrgId(e.target.value)}
                         className="w-full px-3 py-2 border-2 border-amber-300 rounded-lg bg-white focus:border-amber-500 text-sm"
                       >
-                        <option value="">— Toutes les organisations —</option>
+                        <option value="">{t('importCsv.allOrganizations')}</option>
                         {organizations.map((org) => (
                           <option key={org.id} value={org.id}>
                             {org.name}
@@ -540,9 +537,9 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
                 <Building2 className="h-5 w-5 text-blue-600 mt-1 flex-shrink-0" />
                 <div className="flex-1">
                   <label className="block text-sm font-semibold text-blue-900 mb-2">
-                    Organisation concernée
+                    {t('importCsv.orgConcerned')}
                     <span className="ml-2 text-xs font-normal text-blue-600">
-                      (recommandé pour le calcul des scores ESG)
+                      {t('importCsv.orgRecommended')}
                     </span>
                   </label>
                   <select
@@ -550,7 +547,7 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
                     onChange={(e) => setSelectedOrgId(e.target.value)}
                     className="w-full px-4 py-2 border-2 border-blue-300 rounded-lg focus:border-blue-500 bg-white"
                   >
-                    <option value="">— Sélectionner une organisation —</option>
+                    <option value="">{t('importCsv.selectOrganization')}</option>
                     {organizations.map((org) => (
                       <option key={org.id} value={org.id}>
                         {org.name}
@@ -765,7 +762,7 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
             {importResult.fec && (
               <p className="text-sm text-amber-700 font-medium mb-6 flex items-center justify-center gap-2">
                 <Zap className="h-4 w-4" />
-                Import FEC — les écritures ont été catégorisées et agrégées automatiquement
+                {t('importCsv.fecSuccessNote')}
               </p>
             )}
 

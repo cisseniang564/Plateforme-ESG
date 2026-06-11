@@ -629,7 +629,7 @@ export default function DataEntryForm() {
                       value={formData.data_source}
                       onChange={(e) => setFormData({ ...formData, data_source: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
-                      placeholder="Ex: Rapport annuel 2024, Système RH, etc."
+                      placeholder={t('dataEntry.sourcePlaceholder')}
                       disabled={submitting}
                     />
                   </div>
