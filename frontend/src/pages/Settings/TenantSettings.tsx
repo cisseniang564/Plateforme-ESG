@@ -40,40 +40,40 @@ interface NavItem {
 
 const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
   {
-    title: 'Espace de travail',
+    title: 'tenantSettings.tabWorkspace',
     items: [
-      { id: 'workspace',      label: 'Général',         icon: Building2 },
-      { id: 'members',        label: 'Membres',         icon: Users },
-      { id: 'notifications',  label: 'Notifications',   icon: Bell },
-      { id: 'integrations',   label: 'Intégrations',    icon: Plug },
+      { id: 'workspace',      label: 'tenantSettings.tabGeneral',         icon: Building2 },
+      { id: 'members',        label: 'tenantSettings.tabMembers',         icon: Users },
+      { id: 'notifications',  label: 'tenantSettings.tabNotifications',   icon: Bell },
+      { id: 'integrations',   label: 'tenantSettings.tabIntegrations',    icon: Plug },
     ],
   },
   {
-    title: 'Compte',
+    title: 'tenantSettings.tabAccount',
     items: [
-      { id: 'billing',   label: 'Facturation',  icon: CreditCard },
-      { id: 'security',  label: 'Sécurité',     icon: Shield },
+      { id: 'billing',   label: 'tenantSettings.tabBilling',  icon: CreditCard },
+      { id: 'security',  label: 'tenantSettings.tabSecurity',     icon: Shield },
       { id: 'sso',       label: 'SSO',          icon: ShieldCheck, badge: 'OIDC', badgeColor: 'bg-blue-100 text-blue-600' },
-      { id: 'api-keys',  label: 'Clés API',     icon: Key },
-      { id: 'sessions',  label: 'Sessions',     icon: Activity },
+      { id: 'api-keys',  label: 'tenantSettings.tabApiKeys',     icon: Key },
+      { id: 'sessions',  label: 'tenantSettings.tabSessions',     icon: Activity },
     ],
   },
   {
-    title: 'Avancé',
+    title: 'tenantSettings.tabAdvanced',
     items: [
-      { id: 'danger', label: 'Zone de danger', icon: AlertTriangle, badge: '!', badgeColor: 'bg-red-100 text-red-600' },
+      { id: 'danger', label: 'tenantSettings.tabDanger', icon: AlertTriangle, badge: '!', badgeColor: 'bg-red-100 text-red-600' },
     ],
   },
 ];
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 const SETTINGS_MODULES = [
-  { id: 'webhooks',    title: 'Webhooks',            desc: 'Notifications temps réel',           icon: Webhook,    gradient: 'from-green-500 to-emerald-600',  badge: '3 actifs',       path: '/app/settings/webhooks' },
-  { id: 'insee',       title: 'API INSEE Sirene',    desc: 'Données entreprises françaises',     icon: Building2,  gradient: 'from-indigo-500 to-indigo-600',  badge: 'Gov API',        path: '/app/settings/insee' },
-  { id: 'enrichment',  title: 'Enrichissement ESG',  desc: 'Génération données IA',              icon: Database,   gradient: 'from-purple-500 to-purple-600',  badge: 'AI',             path: '/app/settings/esg-enrichment' },
-  { id: 'integrations',title: 'Connecteurs',         desc: 'Google Sheets, Power BI, SAP…',     icon: Plug,       gradient: 'from-orange-500 to-orange-600',  badge: '5 connectés',    path: '/app/settings/integrations' },
-  { id: 'methodology', title: 'Méthodologies',       desc: 'GRI, SASB, TCFD, ESRS',             icon: BarChart3,  gradient: 'from-teal-500 to-teal-600',      badge: '3 actives',      path: '/app/settings/methodology' },
-  { id: 'api-docs',    title: 'API Docs',            desc: 'Documentation Swagger',              icon: FileText,   gradient: 'from-pink-500 to-pink-600',      badge: 'Swagger',        path: '/docs', external: true },
+  { id: 'webhooks',    title: 'tenantSettings.intWebhooksTitle',            desc: 'tenantSettings.intWebhooksDesc',           icon: Webhook,    gradient: 'from-green-500 to-emerald-600',  badge: '3 actifs',       path: '/app/settings/webhooks' },
+  { id: 'insee',       title: 'tenantSettings.intInseeTitle',    desc: 'tenantSettings.intInseeDesc',     icon: Building2,  gradient: 'from-indigo-500 to-indigo-600',  badge: 'Gov API',        path: '/app/settings/insee' },
+  { id: 'enrichment',  title: 'tenantSettings.intEsgTitle',  desc: 'tenantSettings.intEsgDesc',              icon: Database,   gradient: 'from-purple-500 to-purple-600',  badge: 'AI',             path: '/app/settings/esg-enrichment' },
+  { id: 'integrations',title: 'tenantSettings.intConnectorsTitle',         desc: 'tenantSettings.intConnectorsDesc',     icon: Plug,       gradient: 'from-orange-500 to-orange-600',  badge: '5 connectés',    path: '/app/settings/integrations' },
+  { id: 'methodology', title: 'tenantSettings.intMethodologiesTitle',       desc: 'GRI, SASB, TCFD, ESRS',             icon: BarChart3,  gradient: 'from-teal-500 to-teal-600',      badge: '3 actives',      path: '/app/settings/methodology' },
+  { id: 'api-docs',    title: 'tenantSettings.intApiDocsTitle',            desc: 'tenantSettings.intApiDocsDesc',              icon: FileText,   gradient: 'from-pink-500 to-pink-600',      badge: 'Swagger',        path: '/docs', external: true },
 ];
 
 const API_KEYS = [
@@ -125,6 +125,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 
 // ─── SSO Tab ──────────────────────────────────────────────────────────────────
 function SSOTab() {
+  const { t } = useTranslation();
   const [config, setConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -160,7 +161,7 @@ function SSOTab() {
     try {
       const res = await api.post('/sso/config', form);
       setConfig(res.data);
-      toast.success('Configuration SSO sauvegardée');
+      toast.success(t('tenantSettings.tSsoSaved'));
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Erreur');
     } finally {
@@ -172,19 +173,19 @@ function SSOTab() {
     setTesting(true);
     try {
       const res = await api.get('/sso/test-config');
-      toast.success(`Connexion OK — Provider: ${res.data.issuer}`);
+      toast.success(t('tenantSettings.tSsoTestOk') + res.data.issuer);
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || 'Échec du test');
+      toast.error(err.response?.data?.detail || t('tenantSettings.tSsoTestFail'));
     } finally {
       setTesting(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm('Désactiver le SSO ?')) return;
+    if (!confirm(t('tenantSettings.confirmDisableSso'))) return;
     await api.delete('/sso/config');
     setConfig(null);
-    toast.success('SSO désactivé');
+    toast.success(t('tenantSettings.tSsoDisabled'));
   };
 
   if (loading) return (
@@ -197,9 +198,9 @@ function SSOTab() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-base font-semibold text-gray-900">Authentification unique (SSO)</h3>
+          <h3 className="text-base font-semibold text-gray-900">{t('tenantSettings.ssoTitle')}</h3>
           <p className="text-sm text-gray-500 mt-1">
-            Connectez votre fournisseur d'identité OIDC (Okta, Microsoft Entra, Google Workspace, Keycloak...)
+            {t('tenantSettings.ssoIntro')}
           </p>
         </div>
         {config && (
@@ -211,7 +212,7 @@ function SSOTab() {
 
       {/* OIDC preset buttons */}
       <div>
-        <p className="text-xs font-medium text-gray-700 mb-2">Pré-remplir pour :</p>
+        <p className="text-xs font-medium text-gray-700 mb-2">{t('tenantSettings.prefillFor')}</p>
         <div className="flex flex-wrap gap-2">
           {[
             { name: 'Microsoft Entra', issuer: 'https://login.microsoftonline.com/{tenant}/v2.0', icon: '🏢' },
@@ -233,7 +234,7 @@ function SSOTab() {
       {/* Form */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Nom du provider *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('tenantSettings.providerName')}</label>
           <input
             value={form.provider_name}
             onChange={e => setForm(f => ({ ...f, provider_name: e.target.value }))}
@@ -251,7 +252,7 @@ function SSOTab() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Client ID *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('tenantSettings.clientId')}</label>
           <input
             value={form.client_id}
             onChange={e => setForm(f => ({ ...f, client_id: e.target.value }))}
@@ -280,25 +281,25 @@ function SSOTab() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Domaines autorisés (optionnel)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('tenantSettings.allowedDomains')}</label>
           <input
             value={form.allowed_domains}
             onChange={e => setForm(f => ({ ...f, allowed_domains: e.target.value }))}
             placeholder="monentreprise.com, filiale.com"
             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
           />
-          <p className="text-xs text-gray-400 mt-1">Séparez les domaines par des virgules</p>
+          <p className="text-xs text-gray-400 mt-1">{t('tenantSettings.separateDomains')}</p>
         </div>
       </div>
 
       {/* Attribute mapping */}
       <div>
-        <p className="text-sm font-medium text-gray-700 mb-2">Mapping des attributs</p>
+        <p className="text-sm font-medium text-gray-700 mb-2">{t('tenantSettings.attributeMapping')}</p>
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'Email',  key: 'email_attribute' },
-            { label: 'Prénom', key: 'first_name_attribute' },
-            { label: 'Nom',    key: 'last_name_attribute' },
+            { label: t('tenantSettings.fieldEmail'),  key: 'email_attribute' },
+            { label: t('tenantSettings.fieldFirstName'), key: 'first_name_attribute' },
+            { label: t('tenantSettings.fieldName'),    key: 'last_name_attribute' },
           ].map(attr => (
             <div key={attr.key}>
               <label className="block text-xs font-medium text-gray-600 mb-1">{attr.label}</label>
@@ -320,7 +321,7 @@ function SSOTab() {
         >
           <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${form.is_enabled ? 'translate-x-5' : ''}`} />
         </div>
-        <span className="text-sm text-gray-700">Activer le SSO pour ce tenant</span>
+        <span className="text-sm text-gray-700">{t('tenantSettings.enableSso')}</span>
       </label>
 
       {/* Actions */}
@@ -349,7 +350,7 @@ function SSOTab() {
             onClick={handleDelete}
             className="px-4 py-2 border border-red-200 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors ml-auto"
           >
-            Désactiver
+            {t('tenantSettings.disable')}
           </button>
         )}
       </div>
@@ -409,7 +410,7 @@ export default function TenantSettings() {
     const s = p.get('tab') as SectionId | null;
     if (s) setActive(s);
     if (p.get('checkout') === 'success') {
-      toast.success('Abonnement activé avec succès !');
+      toast.success(t('tenantSettings.tSubActivated'));
       setActive('billing');
       window.history.replaceState({}, '', window.location.pathname + '?tab=billing');
     }
@@ -425,13 +426,13 @@ export default function TenantSettings() {
     setSaving(true);
     await new Promise(r => setTimeout(r, 900));
     setSaving(false);
-    toast.success('Paramètres sauvegardés');
+    toast.success(t('tenantSettings.tSettingsSaved'));
   };
 
   const handle2FAEnabled = () => {
     setMfaEnabled(true);
     if (currentUser) dispatch(setUser({ ...currentUser, mfa_enabled: true }));
-    toast.success('2FA activée — compte protégé');
+    toast.success(t('tenantSettings.t2faEnabled'));
   };
 
   const handleDisable2FA = async (e: React.FormEvent) => {
@@ -444,7 +445,7 @@ export default function TenantSettings() {
       if (currentUser) dispatch(setUser({ ...currentUser, mfa_enabled: false }));
       setShowDisable2FA(false);
       setDisablePass('');
-      toast.success('2FA désactivée');
+      toast.success(t('tenantSettings.t2faDisabled'));
     } catch (err: any) {
       setDisable2FAErr(err?.response?.data?.detail || 'Mot de passe incorrect');
     } finally {
@@ -453,8 +454,8 @@ export default function TenantSettings() {
   };
 
   const handleGenerateKey = () => {
-    if (!newKeyName.trim()) { toast.error('Nom requis'); return; }
-    toast.success(`Clé "${newKeyName}" créée — copiez-la maintenant, elle ne sera plus visible.`);
+    if (!newKeyName.trim()) { toast.error(t('tenantSettings.tNameRequired')); return; }
+    toast.success(t('tenantSettings.tKeyCreated', { name: newKeyName }));
     setShowNewKey(false);
     setNewKeyName('');
   };
@@ -463,7 +464,7 @@ export default function TenantSettings() {
     try {
       const url = await billingService.createPortal();
       window.open(url, '_blank', 'noopener,noreferrer');
-    } catch { toast.error('Portail de facturation indisponible'); }
+    } catch { toast.error(t('tenantSettings.tBillingUnavailable')); }
   };
 
   // ── Sidebar ──────────────────────────────────────────────────────────────────
@@ -472,7 +473,7 @@ export default function TenantSettings() {
       <nav className="space-y-6">
         {NAV_GROUPS.map(group => (
           <div key={group.title}>
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1 px-3">{group.title}</p>
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1 px-3">{t(group.title)}</p>
             <div className="space-y-0.5">
               {group.items.map(item => {
                 const Icon = item.icon;
@@ -489,7 +490,7 @@ export default function TenantSettings() {
                     }`}
                   >
                     <Icon size={15} className={isActive ? 'text-violet-600' : 'text-gray-400'} />
-                    <span className="pointer-events-none flex-1 text-left">{item.label}</span>
+                    <span className="pointer-events-none flex-1 text-left">{t(item.label)}</span>
                     {item.badge && (
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full pointer-events-none ${item.badgeColor || 'bg-gray-100 text-gray-500'}`}>
                         {item.badge}
@@ -509,7 +510,7 @@ export default function TenantSettings() {
 
   const WorkspaceSection = (
     <div>
-      <SectionHeader title="Général" desc="Informations de votre organisation affichées dans les rapports et factures." />
+      <SectionHeader title={t('tenantSettings.secGeneral')} desc={t('tenantSettings.secGeneralDesc')} />
 
       <Field label="Nom de l'organisation">
         <input
@@ -519,7 +520,7 @@ export default function TenantSettings() {
         />
       </Field>
 
-      <Field label="Email de facturation" hint="Reçoit les factures et alertes d'usage.">
+      <Field label={t('tenantSettings.billingEmail')} hint={t('tenantSettings.billingEmailHint')}>
         <div className="relative max-w-sm">
           <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
@@ -543,19 +544,19 @@ export default function TenantSettings() {
         </div>
       </Field>
 
-      <Field label="Secteur d'activité">
+      <Field label={t('tenantSettings.sectorField')}>
         <select
           value={form.sector}
           onChange={e => setForm({ ...form, sector: e.target.value })}
           className="max-w-sm w-full px-3.5 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 appearance-none"
         >
-          <option value="finance">Finance & Services</option>
-          <option value="industry">Industrie</option>
-          <option value="energy">Énergie</option>
-          <option value="tech">Technologie</option>
-          <option value="commerce">Commerce</option>
-          <option value="agriculture">Agriculture</option>
-          <option value="immobilier">Immobilier</option>
+          <option value="finance">{t('tenantSettings.sectorFinance')}</option>
+          <option value="industry">{t('tenantSettings.sectorIndustry')}</option>
+          <option value="energy">{t('tenantSettings.sectorEnergy')}</option>
+          <option value="tech">{t('tenantSettings.sectorTech')}</option>
+          <option value="commerce">{t('tenantSettings.sectorCommerce')}</option>
+          <option value="agriculture">{t('tenantSettings.sectorAgri')}</option>
+          <option value="immobilier">{t('tenantSettings.sectorRealEstate')}</option>
         </select>
       </Field>
 
@@ -578,7 +579,7 @@ export default function TenantSettings() {
           onChange={e => setForm({ ...form, language: e.target.value })}
           className="max-w-sm w-full px-3.5 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 appearance-none"
         >
-          <option value="fr">Français</option>
+          <option value="fr">{t('tenantSettings.langFr')}</option>
           <option value="en">English</option>
         </select>
       </Field>
@@ -600,7 +601,7 @@ export default function TenantSettings() {
 
   const MembersSection = (
     <div>
-      <SectionHeader title="Membres" desc="Gérez les utilisateurs, rôles et permissions de votre espace de travail." />
+      <SectionHeader title={t('tenantSettings.secMembers')} desc={t('tenantSettings.secMembersDesc')} />
       <div className="rounded-xl border border-gray-200 overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50/50">
           <p className="text-sm font-medium text-gray-700">3 membres actifs</p>
@@ -608,7 +609,7 @@ export default function TenantSettings() {
             onClick={() => navigate('/app/settings/users')}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-600 hover:text-violet-700"
           >
-            Gérer <ArrowUpRight size={13} />
+            {t('tenantSettings.manage')} <ArrowUpRight size={13} />
           </button>
         </div>
         {[
@@ -647,15 +648,15 @@ export default function TenantSettings() {
 
   const NotificationsSection = (
     <div>
-      <SectionHeader title="Notifications" desc="Choisissez les événements pour lesquels vous souhaitez être alerté." />
+      <SectionHeader title={t('tenantSettings.secNotifications')} desc={t('tenantSettings.secNotificationsDesc')} />
 
       {[
-        { key: 'weeklyReport' as const,    label: 'Rapport hebdomadaire',   desc: 'Résumé ESG chaque lundi matin' },
-        { key: 'thresholdAlerts' as const, label: 'Alertes de seuils',      desc: 'Quand un KPI dépasse les limites définies' },
-        { key: 'securityAlerts' as const,  label: 'Alertes de sécurité',    desc: 'Connexions suspectes, nouvelles sessions' },
-        { key: 'invoiceEmails' as const,   label: 'Emails de facturation',  desc: 'Factures, renouvellements, échecs de paiement' },
-        { key: 'apiUsageAlerts' as const,  label: "Alertes d'usage API",    desc: 'Quand vous approchez de votre limite mensuelle' },
-        { key: 'productUpdates' as const,  label: 'Nouveautés produit',     desc: 'Nouvelles fonctionnalités et mises à jour' },
+        { key: 'weeklyReport' as const,    label: t('tenantSettings.notifWeeklyReport'),   desc: t('tenantSettings.notifWeeklyReportDesc') },
+        { key: 'thresholdAlerts' as const, label: t('tenantSettings.notifThreshold'),      desc: t('tenantSettings.notifThresholdDesc') },
+        { key: 'securityAlerts' as const,  label: t('tenantSettings.notifSecurity'),    desc: t('tenantSettings.notifSecurityDesc') },
+        { key: 'invoiceEmails' as const,   label: t('tenantSettings.notifBillingEmails'),  desc: t('tenantSettings.notifBillingEmailsDesc') },
+        { key: 'apiUsageAlerts' as const,  label: "Alertes d'usage API",    desc: t('tenantSettings.notifApiCallsDesc') },
+        { key: 'productUpdates' as const,  label: t('tenantSettings.notifProductNews'),     desc: t('tenantSettings.notifProductNewsDesc') },
       ].map(item => (
         <div key={item.key} className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0">
           <div>
@@ -671,7 +672,7 @@ export default function TenantSettings() {
 
       <div className="pt-5">
         <button
-          onClick={() => { toast.success('Préférences de notification sauvegardées'); }}
+          onClick={() => { toast.success(t('tenantSettings.tNotifPrefsSaved')); }}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition-colors"
         >
           <Save size={14} /> Sauvegarder
@@ -682,7 +683,7 @@ export default function TenantSettings() {
 
   const IntegrationsSection = (
     <div>
-      <SectionHeader title="Intégrations & Modules" desc="Configurez les connecteurs et modules actifs de votre plateforme." />
+      <SectionHeader title={t('tenantSettings.secIntegrations')} desc={t('tenantSettings.secIntegrationsDesc')} />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {SETTINGS_MODULES.map(mod => {
           const Icon = mod.icon;
@@ -701,10 +702,10 @@ export default function TenantSettings() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-                  {mod.title}
+                  {t(mod.title)}
                   {(mod as any).external && <ExternalLink size={11} className="text-gray-400" />}
                 </p>
-                <p className="text-xs text-gray-400 truncate">{mod.desc}</p>
+                <p className="text-xs text-gray-400 truncate">{t(mod.desc)}</p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{mod.badge}</span>
@@ -718,7 +719,7 @@ export default function TenantSettings() {
       {/* Methodologies */}
       <div className="mt-6">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold text-gray-700">Référentiels actifs</p>
+          <p className="text-sm font-semibold text-gray-700">{t('tenantSettings.activeFrameworks')}</p>
           <button onClick={() => navigate('/app/settings/methodology')} className="text-xs text-violet-600 hover:text-violet-700 font-medium flex items-center gap-1">
             Configurer <ChevronRight size={12} />
           </button>
@@ -745,7 +746,7 @@ export default function TenantSettings() {
 
   const BillingSection = (
     <div>
-      <SectionHeader title="Facturation" desc="Plan actuel, usage et historique de vos factures." />
+      <SectionHeader title={t('tenantSettings.secBilling')} desc={t('tenantSettings.secBillingDesc')} />
 
       {billingLoading ? (
         <div className="flex items-center gap-2 text-sm text-gray-400 py-8 justify-center">
@@ -791,7 +792,7 @@ export default function TenantSettings() {
               <button
                 onClick={() => navigate('/app/billing')}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 rounded-lg text-xs font-medium text-white hover:bg-violet-700 transition-colors">
-                Gérer <ArrowUpRight size={12} />
+                {t('tenantSettings.manage')} <ArrowUpRight size={12} />
               </button>
             </div>
           </div>
@@ -799,9 +800,9 @@ export default function TenantSettings() {
           {/* Usage bars */}
           {subscription && (
             <div className="rounded-xl border border-gray-200 p-5 space-y-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Usage du mois</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('tenantSettings.usageThisMonth')}</p>
               {[
-                { label: 'Appels API',     used: 8432, max: subscription.max_monthly_api_calls || 10000, color: 'bg-violet-500' },
+                { label: t('tenantSettings.notifApiCalls'),     used: 8432, max: subscription.max_monthly_api_calls || 10000, color: 'bg-violet-500' },
                 { label: 'Utilisateurs',   used: 12,   max: subscription.max_users || 50,                color: 'bg-blue-500' },
                 { label: 'Organisations',  used: 29,   max: subscription.max_orgs || 100,               color: 'bg-emerald-500' },
               ].map(item => {
@@ -828,7 +829,7 @@ export default function TenantSettings() {
 
           <p className="text-xs text-gray-400 flex items-center gap-1">
             <Zap size={11} />
-            Pour gérer les plans, les factures et les moyens de paiement, rendez-vous sur la{' '}
+            {t('tenantSettings.billingPortalHint')}{' '}
             <button onClick={() => navigate('/app/billing')} className="text-violet-600 hover:underline font-medium">page Facturation</button>.
           </p>
         </div>
@@ -838,21 +839,21 @@ export default function TenantSettings() {
 
   const SecuritySection = (
     <div>
-      <SectionHeader title="Sécurité" desc="Authentification à deux facteurs et paramètres de sécurité du compte." />
+      <SectionHeader title={t('tenantSettings.secSecurity')} desc={t('tenantSettings.secSecurityDesc')} />
 
       {/* Security score */}
       <div className="rounded-xl bg-gradient-to-r from-slate-800 to-slate-700 p-5 text-white mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-white/60 uppercase tracking-wide">Score de sécurité</p>
+            <p className="text-xs font-medium text-white/60 uppercase tracking-wide">{t('tenantSettings.securityScore')}</p>
             <p className="text-3xl font-black mt-1">{mfaEnabled ? 'A+' : 'B'}</p>
-            <p className="text-xs text-white/70 mt-0.5">{mfaEnabled ? 'Excellent — tous les contrôles actifs' : 'Activez la 2FA pour atteindre A+'}</p>
+            <p className="text-xs text-white/70 mt-0.5">{mfaEnabled ? t('tenantSettings.allControlsActive') : t('tenantSettings.enable2faHint')}</p>
           </div>
           <div className="grid grid-cols-3 gap-2">
             {[
               { label: '2FA',            ok: mfaEnabled },
               { label: 'TLS',            ok: true },
-              { label: 'Audit logs',     ok: true },
+              { label: t('tenantSettings.tabAuditLogs'),     ok: true },
             ].map(c => (
               <div key={c.label} className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg ${c.ok ? 'bg-white/10' : 'bg-amber-400/20'}`}>
                 {c.ok
@@ -874,12 +875,12 @@ export default function TenantSettings() {
               <Lock size={15} className={mfaEnabled ? 'text-emerald-600' : 'text-amber-500'} />
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-900">Authentification à deux facteurs</p>
+              <p className="text-sm font-semibold text-gray-900">{t('tenantSettings.twoFactorAuth')}</p>
               <p className="text-xs text-gray-400 mt-0.5">Application TOTP (Google Authenticator, Authy, 1Password…)</p>
             </div>
           </div>
           <span className={`text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0 ${mfaEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-            {mfaEnabled ? 'Activée' : 'Désactivée'}
+            {mfaEnabled ? t('tenantSettings.enabled') : t('tenantSettings.disabled')}
           </span>
         </div>
 
@@ -887,15 +888,15 @@ export default function TenantSettings() {
           {mfaEnabled ? (
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2">
-                <CheckCircle size={13} /> Votre compte est protégé par la 2FA.
+                <CheckCircle size={13} /> {t('tenantSettings.accountProtected')}
               </div>
               {!showDisable2FA ? (
                 <button type="button" onClick={() => setShowDisable2FA(true)} className="text-xs text-gray-400 hover:text-red-500 transition-colors">
-                  Désactiver la 2FA…
+                  {t('tenantSettings.disable2fa')}
                 </button>
               ) : (
                 <form onSubmit={handleDisable2FA} className="space-y-2 max-w-xs">
-                  <p className="text-xs text-gray-600">Confirmez votre mot de passe :</p>
+                  <p className="text-xs text-gray-600">{t('tenantSettings.confirmPassword')}</p>
                   {disable2FAError && <p className="text-xs text-red-500">{disable2FAError}</p>}
                   <div className="flex gap-2">
                     <input type="password" value={disablePassword} onChange={e => setDisablePass(e.target.value)}
@@ -932,8 +933,8 @@ export default function TenantSettings() {
             <Key size={15} className="text-gray-500" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-900">Changer le mot de passe</p>
-            <p className="text-xs text-gray-400 mt-0.5">Utilisez un mot de passe fort de 12+ caractères.</p>
+            <p className="text-sm font-semibold text-gray-900">{t('tenantSettings.changePassword')}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{t('tenantSettings.strongPasswordHint')}</p>
           </div>
         </div>
         <div className="space-y-3 max-w-xs pl-10">
@@ -942,7 +943,7 @@ export default function TenantSettings() {
               className="w-full px-3.5 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent" />
           ))}
           <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-            <Save size={13} /> Mettre à jour
+            <Save size={13} /> {t('tenantSettings.update')}
           </button>
         </div>
       </div>
@@ -955,20 +956,20 @@ export default function TenantSettings() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-base font-semibold text-gray-900">Clés API</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Accès programmatique à l'API ESGFlow.</p>
+          <h2 className="text-base font-semibold text-gray-900">{t('tenantSettings.apiKeysTitle')}</h2>
+          <p className="text-sm text-gray-500 mt-0.5">{t('tenantSettings.apiAccessDesc')}</p>
         </div>
         <button
           onClick={() => setShowNewKey(true)}
           className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-700 transition-colors"
         >
-          <Plus size={14} /> Nouvelle clé
+          <Plus size={14} /> {t('tenantSettings.newKey')}
         </button>
       </div>
 
       <div className="rounded-xl border border-gray-200 overflow-hidden mb-4">
         <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-0 text-xs font-semibold text-gray-400 uppercase tracking-wide px-5 py-3 bg-gray-50 border-b border-gray-100">
-          <span>Nom</span><span>Clé</span><span>Dernière utilisation</span><span />
+          <span>{t('tenantSettings.fieldName')}</span><span>{t('tenantSettings.colKey')}</span><span>{t('tenantSettings.colLastUsed')}</span><span />
         </div>
         {API_KEYS.map(k => (
           <div key={k.id} className="grid grid-cols-[1fr_1fr_auto_auto] items-center gap-4 px-5 py-4 border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
@@ -984,15 +985,15 @@ export default function TenantSettings() {
                 className="text-gray-400 hover:text-gray-600 p-1">
                 {revealedKey === k.id ? <EyeOff size={12} /> : <Eye size={12} />}
               </button>
-              <button type="button" onClick={() => { navigator.clipboard.writeText(`${k.prefix}${'x'.repeat(12)}${k.suffix}`); toast.success('Clé copiée'); }}
+              <button type="button" onClick={() => { navigator.clipboard.writeText(`${k.prefix}${'x'.repeat(12)}${k.suffix}`); toast.success(t('tenantSettings.tKeyCopied')); }}
                 className="text-gray-400 hover:text-gray-600 p-1">
                 <Copy size={12} />
               </button>
             </div>
             <span className="text-xs text-gray-400 whitespace-nowrap">{k.lastUsed}</span>
-            <button type="button" onClick={() => toast.success(`Clé "${k.name}" révoquée`)}
+            <button type="button" onClick={() => toast.success(t('tenantSettings.tKeyRevoked', { name: k.name }))}
               className="text-xs text-red-400 hover:text-red-600 font-medium whitespace-nowrap">
-              Révoquer
+              {t('tenantSettings.revoke')}
             </button>
           </div>
         ))}
@@ -1000,7 +1001,7 @@ export default function TenantSettings() {
 
       <div className="rounded-xl bg-amber-50 border border-amber-100 p-4 flex gap-3 text-sm text-amber-800">
         <AlertCircle size={16} className="flex-shrink-0 mt-0.5 text-amber-500" />
-        <p>Ne partagez jamais vos clés API. En cas de compromission, révoquez immédiatement et régénérez.</p>
+        <p>{t('tenantSettings.neverShareKeys')}</p>
       </div>
 
       {/* New key modal */}
@@ -1008,14 +1009,14 @@ export default function TenantSettings() {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-semibold text-gray-900">Nouvelle clé API</h3>
+              <h3 className="text-base font-semibold text-gray-900">{t('tenantSettings.newApiKey')}</h3>
               <button type="button" onClick={() => setShowNewKey(false)} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400">
                 <X size={16} />
               </button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Nom de la clé</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('tenantSettings.apiKeyName')}</label>
                 <input
                   type="text" value={newKeyName} onChange={e => setNewKeyName(e.target.value)}
                   placeholder="ex. Mobile App, CI/CD Pipeline…"
@@ -1025,7 +1026,7 @@ export default function TenantSettings() {
               </div>
               <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-lg p-3 text-xs text-amber-700">
                 <AlertCircle size={13} className="flex-shrink-0 mt-0.5 text-amber-500" />
-                La clé sera affichée une seule fois. Copiez-la immédiatement.
+                {t('tenantSettings.keyShownOnce')}
               </div>
               <div className="flex gap-2 pt-1">
                 <button onClick={() => setShowNewKey(false)}
@@ -1034,7 +1035,7 @@ export default function TenantSettings() {
                 </button>
                 <button onClick={handleGenerateKey}
                   className="flex-1 px-4 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 transition-colors">
-                  Générer la clé
+                  {t('tenantSettings.generateKey')}
                 </button>
               </div>
             </div>
@@ -1048,12 +1049,12 @@ export default function TenantSettings() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-base font-semibold text-gray-900">Sessions actives</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Appareils connectés à votre compte.</p>
+          <h2 className="text-base font-semibold text-gray-900">{t('tenantSettings.activeSessions')}</h2>
+          <p className="text-sm text-gray-500 mt-0.5">{t('tenantSettings.devicesConnected')}</p>
         </div>
-        <button type="button" onClick={() => toast.success('Toutes les autres sessions ont été déconnectées')}
+        <button type="button" onClick={() => toast.success(t('tenantSettings.tAllSessionsOut'))}
           className="text-sm text-red-500 hover:text-red-700 font-medium">
-          Déconnecter tout
+          {t('tenantSettings.signOutAll')}
         </button>
       </div>
 
@@ -1067,13 +1068,13 @@ export default function TenantSettings() {
               <div>
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-medium text-gray-900">{s.device}</p>
-                  {s.current && <span className="text-[10px] font-bold bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">Session actuelle</span>}
+                  {s.current && <span className="text-[10px] font-bold bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">{t('tenantSettings.currentSession')}</span>}
                 </div>
                 <p className="text-xs text-gray-400 mt-0.5">{s.location} · {s.ip} · {s.time}</p>
               </div>
             </div>
             {!s.current && (
-              <button type="button" onClick={() => toast.success('Session déconnectée')}
+              <button type="button" onClick={() => toast.success(t('tenantSettings.tSessionOut'))}
                 className="text-gray-300 hover:text-red-500 transition-colors p-1.5 hover:bg-red-50 rounded-lg">
                 <X size={14} />
               </button>
@@ -1085,7 +1086,7 @@ export default function TenantSettings() {
       {/* Audit log preview */}
       <div className="mt-6">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold text-gray-700">Journal d'audit récent</p>
+          <p className="text-sm font-semibold text-gray-700">{t('tenantSettings.recentAuditLog')}</p>
           <button onClick={() => navigate('/app/audit-trail')} className="text-xs text-violet-600 hover:text-violet-700 font-medium flex items-center gap-1">
             Tout voir <ArrowUpRight size={12} />
           </button>
@@ -1110,13 +1111,13 @@ export default function TenantSettings() {
 
   const DangerSection = (
     <div>
-      <SectionHeader title="Zone de danger" desc="Actions irréversibles. Lisez attentivement avant de procéder." />
+      <SectionHeader title={t('tenantSettings.secDanger')} desc={t('tenantSettings.secDangerDesc')} />
 
       <div className="space-y-3">
         {[
           {
-            title:   'Exporter toutes les données',
-            desc:    'Téléchargez une archive ZIP de l\'ensemble de vos données ESG, rapports et configurations.',
+            title:   t('tenantSettings.dangerExportTitle'),
+            desc:    t('tenantSettings.dangerExportDesc'),
             action:  'Exporter',
             style:   'border-gray-200 hover:border-gray-300',
             btn:     'border border-gray-300 text-gray-700 hover:bg-gray-50',
@@ -1124,9 +1125,9 @@ export default function TenantSettings() {
             danger:  false,
           },
           {
-            title:   'Réinitialiser les données ESG',
-            desc:    'Supprime toutes les saisies de données ESG. Les organisations et paramètres sont conservés.',
-            action:  'Réinitialiser les données',
+            title:   t('tenantSettings.dangerResetTitle'),
+            desc:    t('tenantSettings.dangerResetDesc'),
+            action:  t('tenantSettings.dangerResetAction'),
             style:   'border-orange-200 bg-orange-50/30',
             btn:     'border border-orange-300 text-orange-700 hover:bg-orange-50',
             icon:    RefreshCw,
@@ -1134,7 +1135,7 @@ export default function TenantSettings() {
           },
           {
             title:   'Supprimer l\'espace de travail',
-            desc:    'Suppression définitive de l\'ensemble du compte, données, organisations et abonnement Stripe.',
+            desc:    t('tenantSettings.dangerDeleteDesc'),
             action:  'Supprimer le compte',
             style:   'border-red-200 bg-red-50/30',
             btn:     'border border-red-300 text-red-700 hover:bg-red-50',
@@ -1156,10 +1157,10 @@ export default function TenantSettings() {
                 type="button"
                 onClick={() => {
                   if (item.danger) {
-                    if (!confirm(`Confirmez-vous : "${item.title}" ? Cette action est irréversible.`)) return;
-                    toast.error('Action annulée — contactez le support pour procéder.');
+                    if (!confirm(t('tenantSettings.confirmIrreversible', { title: item.title }))) return;
+                    toast.error(t('tenantSettings.tActionCancelled'));
                   } else {
-                    toast.success('Export en cours de préparation…');
+                    toast.success(t('tenantSettings.tExportPreparing'));
                   }
                 }}
                 className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${item.btn}`}
@@ -1195,12 +1196,12 @@ export default function TenantSettings() {
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15 mb-4">
               <Building2 size={12} /> Administration
             </div>
-            <h1 className="text-4xl font-bold tracking-tight">Paramètres</h1>
-            <p className="mt-2 text-sm text-white/70">Gérez votre espace de travail, la sécurité et les intégrations.</p>
+            <h1 className="text-4xl font-bold tracking-tight">{t('tenantSettings.pageTitle')}</h1>
+            <p className="mt-2 text-sm text-white/70">{t('tenantSettings.pageSubtitle')}</p>
           </div>
           <div className="flex items-center gap-2 bg-white/10 rounded-2xl px-4 py-2 ring-1 ring-white/10">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs font-medium text-white/80">Tous les services opérationnels</span>
+            <span className="text-xs font-medium text-white/80">{t('tenantSettings.allServicesOk')}</span>
           </div>
         </div>
       </div>
