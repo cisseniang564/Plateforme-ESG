@@ -160,7 +160,13 @@
     "back": "Back",
     "dashboard": "Dashboard",
     "signIn": "Sign in",
-    "errorCode404": "Error code: 404 · Not Found"
+    "errorCode404": "Error code: 404 · Not Found",
+    "unexpectedTitle": "Unexpected error",
+    "somethingWrong": "Something went wrong",
+    "unexpectedDesc": "An unexpected error occurred. Our team has been notified. You can retry or return to the dashboard.",
+    "technicalDetails": "Technical details",
+    "refresh": "Refresh",
+    "errorCode500": "Error code: 500 · Internal Error"
   },
   "profile": {
     "title": "My profile",
@@ -2988,7 +2994,9 @@
     "allRightsReserved": "ESGFlow. All rights reserved.",
     "privacy": "Privacy",
     "terms": "Terms",
-    "support": "Support"
+    "support": "Support",
+    "cgv": "T&Cs of Sale",
+    "legalNotice": "Legal notice"
   },
   "scope3": {
     "title": "Carbon Balance — Scope 3",
@@ -5583,6 +5591,84 @@
       "menu": "Menu",
       "settings": "Settings",
       "logout": "Logout"
+    }
+  },
+  "demoBanner": {
+    "title": "Demonstration data",
+    "desc": "This feature displays simulated data. Connection to real data will be available soon."
+  },
+  "components": {
+    "planGate": {
+      "features": {
+        "csrd_report": "CSRD Reports",
+        "sfdr_report": "SFDR Reports",
+        "dpef_report": "NFRD Reports",
+        "carbon_report": "ADEME Carbon Footprint",
+        "ai_narrative": "ESRS AI Generation",
+        "fec_import": "FEC accounting import",
+        "advanced_connectors": "Advanced connectors",
+        "esrs_gap_analysis": "ESRS / DMA Analysis",
+        "supply_chain_esg": "Supply chain",
+        "benchmark": "Sector benchmarking",
+        "api_access": "API access",
+        "data_export": "Data export",
+        "multi_standard": "Multi-framework"
+      },
+      "availableWith": "Available with the plan",
+      "upgrade": "Upgrade",
+      "planRequired": "{{plan}} plan required",
+      "availableFromPre": "This feature is available from the",
+      "availableFromPost": " plan. Upgrade to access it.",
+      "upgradeTo": "Upgrade to {{plan}} plan",
+      "cancelAnytime": "Cancel anytime · No commitment"
+    },
+    "cookieBanner": {
+      "aria": "Cookie management",
+      "title": "We use cookies",
+      "subtitle": "Some are essential for the platform to work, others help us improve it.",
+      "essential": "Essential cookies",
+      "alwaysOn": "Always on",
+      "essentialDesc": "Authentication, security, session preferences. Necessary for the platform to work.",
+      "analytics": "Analytics cookies",
+      "analyticsDesc": "Audience measurement (Google Analytics), user experience improvement. No ESG data is shared.",
+      "hideDetails": "Hide details",
+      "showDetails": "View details",
+      "acceptSelection": "Accept my selection",
+      "acceptAll": "Accept all",
+      "essentialOnly": "Essential only",
+      "footerPre": "By continuing to browse, you accept essential cookies. See our",
+      "privacyLink": "privacy policy"
+    },
+    "quickActions": {
+      "enterData": "Enter data",
+      "newOrg": "New organization",
+      "importCsv": "Import CSV",
+      "generateReport": "Generate a report",
+      "calcScores": "Calculate scores",
+      "close": "Close (Esc)",
+      "open": "Quick actions (Alt+A)"
+    },
+    "sectorBenchmark": {
+      "noData": "No benchmark data available",
+      "rankTop25": "Top 25%",
+      "rankAbove": "Above average",
+      "rankBelow": "Below average",
+      "rankBottom25": "Bottom 25%",
+      "rankUnranked": "Unranked",
+      "avgSector": "Sector average:",
+      "minSector": "Sector minimum:",
+      "maxSector": "Sector maximum:",
+      "companiesCompared": "Companies compared:"
+    },
+    "esgScoreCard": {
+      "globalScore": "Overall ESG Score",
+      "pts": "pts",
+      "completeness": "Data completeness",
+      "confidence": "Confidence level",
+      "percentile": "Sector percentile",
+      "sectorMedian": "Sector median",
+      "lowConfidence": "Low confidence level",
+      "lowConfidenceDesc": "Complete your data to improve the score reliability"
     }
   }
 }

@@ -128,11 +128,11 @@ export default function Layout() {
             <div className="flex items-center justify-between text-xs text-gray-400 max-w-[1600px] mx-auto">
               <p>© 2026 GreenConnect — {t('footer.allRightsReserved')}</p>
               <div className="hidden sm:flex gap-5">
-                <Link to="/privacy-policy"   className="hover:text-gray-600 transition-colors">Confidentialité</Link>
-                <Link to="/terms-of-service" className="hover:text-gray-600 transition-colors">CGU</Link>
-                <Link to="/cgv"              className="hover:text-gray-600 transition-colors">CGV</Link>
-                <Link to="/legal-notice"     className="hover:text-gray-600 transition-colors">Mentions légales</Link>
-                <a href="mailto:support@greenconnect.cloud" className="hover:text-gray-600 transition-colors">Support</a>
+                <Link to="/privacy-policy"   className="hover:text-gray-600 transition-colors">{t('footer.privacy')}</Link>
+                <Link to="/terms-of-service" className="hover:text-gray-600 transition-colors">{t('footer.terms')}</Link>
+                <Link to="/cgv"              className="hover:text-gray-600 transition-colors">{t('footer.cgv')}</Link>
+                <Link to="/legal-notice"     className="hover:text-gray-600 transition-colors">{t('footer.legalNotice')}</Link>
+                <a href="mailto:support@greenconnect.cloud" className="hover:text-gray-600 transition-colors">{t('footer.support')}</a>
               </div>
               <p className="text-primary-500 font-semibold">{t('common.version')} 0.1.0</p>
             </div>

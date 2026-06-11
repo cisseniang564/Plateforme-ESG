@@ -160,7 +160,13 @@
     "back": "Retour",
     "dashboard": "Tableau de bord",
     "signIn": "Se connecter",
-    "errorCode404": "Code d'erreur : 404 · Not Found"
+    "errorCode404": "Code d'erreur : 404 · Not Found",
+    "unexpectedTitle": "Erreur inattendue",
+    "somethingWrong": "Quelque chose s'est mal passé",
+    "unexpectedDesc": "Une erreur inattendue s'est produite. Notre équipe a été notifiée. Vous pouvez réessayer ou revenir au tableau de bord.",
+    "technicalDetails": "Détails techniques",
+    "refresh": "Rafraîchir",
+    "errorCode500": "Code d'erreur : 500 · Internal Error"
   },
   "profile": {
     "title": "Mon profil",
@@ -2987,8 +2993,10 @@
   "footer": {
     "allRightsReserved": "ESGFlow. Tous droits réservés.",
     "privacy": "Confidentialité",
-    "terms": "Conditions",
-    "support": "Support"
+    "terms": "CGU",
+    "support": "Support",
+    "cgv": "CGV",
+    "legalNotice": "Mentions légales"
   },
   "insee": {
     "title": "Entreprises Françaises",
@@ -5583,6 +5591,84 @@
       "menu": "Menu",
       "settings": "Paramètres",
       "logout": "Déconnexion"
+    }
+  },
+  "demoBanner": {
+    "title": "Données de démonstration",
+    "desc": "Cette fonctionnalité affiche des données simulées. La connexion aux données réelles sera disponible prochainement."
+  },
+  "components": {
+    "planGate": {
+      "features": {
+        "csrd_report": "Rapports CSRD",
+        "sfdr_report": "Rapports SFDR",
+        "dpef_report": "Rapports DPEF",
+        "carbon_report": "Bilan Carbone ADEME",
+        "ai_narrative": "Génération IA ESRS",
+        "fec_import": "Import FEC comptable",
+        "advanced_connectors": "Connecteurs avancés",
+        "esrs_gap_analysis": "Analyse ESRS / DMA",
+        "supply_chain_esg": "Chaîne d'approvisionnement",
+        "benchmark": "Benchmarking sectoriel",
+        "api_access": "Accès API",
+        "data_export": "Export de données",
+        "multi_standard": "Multi-référentiels"
+      },
+      "availableWith": "Disponible avec le plan",
+      "upgrade": "Mettre à niveau",
+      "planRequired": "Plan {{plan}} requis",
+      "availableFromPre": "Cette fonctionnalité est disponible à partir du plan",
+      "availableFromPost": ". Mettez à niveau pour y accéder.",
+      "upgradeTo": "Passer au plan {{plan}}",
+      "cancelAnytime": "Annulation à tout moment · Sans engagement"
+    },
+    "cookieBanner": {
+      "aria": "Gestion des cookies",
+      "title": "Nous utilisons des cookies",
+      "subtitle": "Certains sont essentiels au fonctionnement de la plateforme, d'autres nous aident à l'améliorer.",
+      "essential": "Cookies essentiels",
+      "alwaysOn": "Toujours actifs",
+      "essentialDesc": "Authentification, sécurité, préférences de session. Nécessaires au fonctionnement de la plateforme.",
+      "analytics": "Cookies analytiques",
+      "analyticsDesc": "Mesure d'audience (Google Analytics), amélioration de l'expérience utilisateur. Aucune donnée ESG n'est partagée.",
+      "hideDetails": "Masquer les détails",
+      "showDetails": "Voir les détails",
+      "acceptSelection": "Accepter ma sélection",
+      "acceptAll": "Tout accepter",
+      "essentialOnly": "Essentiels uniquement",
+      "footerPre": "En continuant à naviguer, vous acceptez les cookies essentiels. Voir notre",
+      "privacyLink": "politique de confidentialité"
+    },
+    "quickActions": {
+      "enterData": "Saisir une donnée",
+      "newOrg": "Nouvelle organisation",
+      "importCsv": "Importer CSV",
+      "generateReport": "Générer un rapport",
+      "calcScores": "Calculer les scores",
+      "close": "Fermer (Échap)",
+      "open": "Actions rapides (Alt+A)"
+    },
+    "sectorBenchmark": {
+      "noData": "Aucune donnée benchmark disponible",
+      "rankTop25": "Top 25%",
+      "rankAbove": "Au-dessus de la moyenne",
+      "rankBelow": "En dessous de la moyenne",
+      "rankBottom25": "Bottom 25%",
+      "rankUnranked": "Non classé",
+      "avgSector": "Moyenne secteur:",
+      "minSector": "Minimum secteur:",
+      "maxSector": "Maximum secteur:",
+      "companiesCompared": "Entreprises comparées:"
+    },
+    "esgScoreCard": {
+      "globalScore": "Score ESG Global",
+      "pts": "pts",
+      "completeness": "Complétude des données",
+      "confidence": "Niveau de confiance",
+      "percentile": "Percentile sectoriel",
+      "sectorMedian": "Médiane secteur",
+      "lowConfidence": "Niveau de confiance faible",
+      "lowConfidenceDesc": "Complétez vos données pour améliorer la fiabilité du score"
     }
   }
 }

@@ -1,4 +1,5 @@
 import { Component, type ComponentType, type ErrorInfo, type ReactNode } from 'react';
+import i18n from '@/i18n/config';
 
 interface Props {
   children: ReactNode;
@@ -58,7 +59,7 @@ export class ErrorBoundary extends Component<Props, State> {
                     <span className="text-3xl">⚠️</span>
                     <div className="text-left">
                       <p className="text-sm font-semibold text-red-400 uppercase tracking-widest">ESGFlow</p>
-                      <p className="text-lg font-bold text-slate-800">Erreur inattendue</p>
+                      <p className="text-lg font-bold text-slate-800">{i18n.t('errors.unexpectedTitle')}</p>
                     </div>
                   </div>
                 </div>
@@ -66,18 +67,17 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
 
             <h1 className="text-2xl font-bold text-slate-800 mb-3">
-              Quelque chose s'est mal passé
+              {i18n.t('errors.somethingWrong')}
             </h1>
             <p className="text-slate-500 mb-6 leading-relaxed">
-              Une erreur inattendue s'est produite. Notre équipe a été notifiée.
-              Vous pouvez réessayer ou revenir au tableau de bord.
+              {i18n.t('errors.unexpectedDesc')}
             </p>
 
             {/* Error detail (collapsed in prod) */}
             {this.state.error && (
               <details className="mb-6 text-left bg-red-50 border border-red-100 rounded-lg px-4 py-3">
                 <summary className="text-sm text-red-600 font-medium cursor-pointer select-none">
-                  Détails techniques
+                  {i18n.t('errors.technicalDetails')}
                 </summary>
                 <pre className="mt-2 text-xs text-red-700 overflow-auto whitespace-pre-wrap break-all">
                   {this.state.error.toString()}
@@ -91,18 +91,18 @@ export class ErrorBoundary extends Component<Props, State> {
                 onClick={() => window.location.reload()}
                 className="w-full sm:w-auto px-6 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-700 font-medium hover:bg-slate-50 transition-colors"
               >
-                Rafraîchir
+                {i18n.t('errors.refresh')}
               </button>
               <button
                 onClick={this.handleReset}
                 className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition-colors"
               >
-                Tableau de bord
+                {i18n.t('errors.dashboard')}
               </button>
             </div>
 
             <p className="mt-10 text-xs text-slate-400">
-              Code d'erreur : 500 · Internal Error
+              {i18n.t('errors.errorCode500')}
             </p>
           </div>
         </div>

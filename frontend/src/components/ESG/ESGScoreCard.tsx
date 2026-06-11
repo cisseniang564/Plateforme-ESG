@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { TrendingUp, TrendingDown, Minus, Award, AlertCircle } from 'lucide-react';
 
 interface ESGScoreCardProps {
@@ -18,6 +19,7 @@ interface ESGScoreCardProps {
 }
 
 export default function ESGScoreCard({ score, previousScore }: ESGScoreCardProps) {
+  const { t } = useTranslation();
   const getRatingColor = (rating: string) => {
     const colors: Record<string, string> = {
       'AAA': 'text-green-600 bg-green-50 border-green-200',
@@ -56,7 +58,7 @@ export default function ESGScoreCard({ score, previousScore }: ESGScoreCardProps
     <div className="bg-white rounded-lg border border-gray-200 p-6">
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h3 className="text-sm font-medium text-gray-500 mb-1">Score ESG Global</h3>
+          <h3 className="text-sm font-medium text-gray-500 mb-1">{t('components.esgScoreCard.globalScore')}</h3>
           <div className="flex items-baseline gap-3">
             <span className={`text-5xl font-bold ${getScoreColor(score.overall_score)}`}>
               {Math.round(score.overall_score)}
@@ -66,7 +68,7 @@ export default function ESGScoreCard({ score, previousScore }: ESGScoreCardProps
           {trend && (
             <div className={`flex items-center gap-1 mt-2 ${trend.color}`}>
               <trend.icon className="h-4 w-4" />
-              <span className="text-sm font-medium">{trend.text} pts</span>
+              <span className="text-sm font-medium">{trend.text} {t('components.esgScoreCard.pts')}</span>
             </div>
           )}
         </div>
@@ -130,22 +132,22 @@ export default function ESGScoreCard({ score, previousScore }: ESGScoreCardProps
       {/* Métriques de qualité */}
       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200">
         <div>
-          <p className="text-xs text-gray-500 mb-1">Complétude des données</p>
+          <p className="text-xs text-gray-500 mb-1">{t('components.esgScoreCard.completeness')}</p>
           <p className="text-lg font-semibold text-gray-900">{Math.round(score.data_completeness ?? 0)}%</p>
         </div>
         <div>
-          <p className="text-xs text-gray-500 mb-1">Niveau de confiance</p>
+          <p className="text-xs text-gray-500 mb-1">{t('components.esgScoreCard.confidence')}</p>
           <p className="text-lg font-semibold text-gray-900 capitalize">{score.confidence_level}</p>
         </div>
         {score.percentile_rank !== undefined && (
           <div>
-            <p className="text-xs text-gray-500 mb-1">Percentile sectoriel</p>
+            <p className="text-xs text-gray-500 mb-1">{t('components.esgScoreCard.percentile')}</p>
             <p className="text-lg font-semibold text-gray-900">{Math.round(score.percentile_rank ?? 0)}%</p>
           </div>
         )}
         {score.sector_median !== undefined && (
           <div>
-            <p className="text-xs text-gray-500 mb-1">Médiane secteur</p>
+            <p className="text-xs text-gray-500 mb-1">{t('components.esgScoreCard.sectorMedian')}</p>
             <p className="text-lg font-semibold text-gray-900">{Math.round(score.sector_median ?? 0)}</p>
           </div>
         )}
@@ -156,9 +158,9 @@ export default function ESGScoreCard({ score, previousScore }: ESGScoreCardProps
         <div className="mt-4 flex items-start gap-2 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
           <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-yellow-900">Niveau de confiance faible</p>
+            <p className="text-sm font-medium text-yellow-900">{t('components.esgScoreCard.lowConfidence')}</p>
             <p className="text-xs text-yellow-700 mt-1">
-              Complétez vos données pour améliorer la fiabilité du score
+              {t('components.esgScoreCard.lowConfidenceDesc')}
             </p>
           </div>
         </div>

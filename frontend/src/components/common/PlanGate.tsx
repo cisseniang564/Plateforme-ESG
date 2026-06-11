@@ -16,6 +16,7 @@
  */
 import { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Lock, Zap, ArrowRight, Star } from 'lucide-react'
 import { usePlan, FeatureKey } from '@/hooks/usePlan'
 
@@ -74,6 +75,7 @@ const FEATURE_LABELS: Partial<Record<FeatureKey, string>> = {
 }
 
 export default function PlanGate({ feature, minPlan: minPlanOverride, children, inline = false, className = '' }: PlanGateProps) {
+  const { t } = useTranslation()
   const { can, minPlan, loading } = usePlan()
   const navigate = useNavigate()
 
@@ -85,7 +87,7 @@ export default function PlanGate({ feature, minPlan: minPlanOverride, children, 
 
   const requiredPlan = minPlanOverride ?? minPlan(feature)
   const colors = PLAN_COLORS[requiredPlan] ?? PLAN_COLORS['Starter']
-  const featureLabel = FEATURE_LABELS[feature] ?? feature
+  const featureLabel = t(`components.planGate.features.${feature}`, FEATURE_LABELS[feature] ?? feature)
 
   const handleUpgrade = () => navigate('/app/billing')
 
@@ -99,7 +101,7 @@ export default function PlanGate({ feature, minPlan: minPlanOverride, children, 
             {featureLabel}
           </span>
           <span className="text-xs text-gray-500 ml-2">
-            Disponible avec le plan
+            {t('components.planGate.availableWith')}
           </span>
           <span className={`ml-1.5 text-xs font-semibold px-1.5 py-0.5 rounded ${colors.badge}`}>
             {requiredPlan}
@@ -110,7 +112,7 @@ export default function PlanGate({ feature, minPlan: minPlanOverride, children, 
           className={`flex items-center gap-1.5 px-3 py-1.5 ${colors.btn} text-white text-xs font-semibold rounded-lg transition-colors flex-shrink-0`}
         >
           <Zap size={12} />
-          Mettre à niveau
+          {t('components.planGate.upgrade')}
         </button>
       </div>
     )
@@ -137,14 +139,13 @@ export default function PlanGate({ feature, minPlan: minPlanOverride, children, 
           {/* Badge */}
           <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${colors.badge} mb-3`}>
             <Zap size={11} />
-            Plan {requiredPlan} requis
+            {t('components.planGate.planRequired', { plan: requiredPlan })}
           </span>
 
           <h3 className="text-lg font-bold text-gray-800 mb-2">{featureLabel}</h3>
           <p className="text-sm text-gray-500 mb-6">
-            Cette fonctionnalité est disponible à partir du plan{' '}
-            <span className={`font-semibold ${colors.text}`}>{requiredPlan}</span>.
-            Mettez à niveau pour y accéder.
+            {t('components.planGate.availableFromPre')}{' '}
+            <span className={`font-semibold ${colors.text}`}>{requiredPlan}</span>{t('components.planGate.availableFromPost')}
           </p>
 
           <button
@@ -152,12 +153,12 @@ export default function PlanGate({ feature, minPlan: minPlanOverride, children, 
             className={`w-full flex items-center justify-center gap-2 px-5 py-3 ${colors.btn} text-white font-semibold rounded-xl transition-colors`}
           >
             <Zap size={15} />
-            Passer au plan {requiredPlan}
+            {t('components.planGate.upgradeTo', { plan: requiredPlan })}
             <ArrowRight size={15} />
           </button>
 
           <p className="text-xs text-gray-400 mt-3">
-            Annulation à tout moment · Sans engagement
+            {t('components.planGate.cancelAnytime')}
           </p>
         </div>
       </div>

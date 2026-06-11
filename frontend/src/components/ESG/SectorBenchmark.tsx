@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useEffect, useState } from 'react';
 import { api } from '../../services/api';
 
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export const SectorBenchmark: React.FC<Props> = ({ organizationId, sector }) => {
+  const { t } = useTranslation();
   const [benchmark, setBenchmark] = useState<BenchmarkData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -41,7 +43,7 @@ export const SectorBenchmark: React.FC<Props> = ({ organizationId, sector }) => 
   };
 
   if (loading) return <div className="animate-pulse bg-gray-200 h-32 rounded"></div>;
-  if (!benchmark) return <div>Aucune donnée benchmark disponible</div>;
+  if (!benchmark) return <div>{t('components.sectorBenchmark.noData')}</div>;
 
   const getQuartileColor = (quartile: number) => {
     switch(quartile) {
@@ -55,11 +57,11 @@ export const SectorBenchmark: React.FC<Props> = ({ organizationId, sector }) => 
 
   const getQuartileLabel = (quartile: number) => {
     switch(quartile) {
-      case 1: return 'Top 25%';
-      case 2: return 'Au-dessus de la moyenne';
-      case 3: return 'En dessous de la moyenne';
-      case 4: return 'Bottom 25%';
-      default: return 'Non classé';
+      case 1: return t('components.sectorBenchmark.rankTop25');
+      case 2: return t('components.sectorBenchmark.rankAbove');
+      case 3: return t('components.sectorBenchmark.rankBelow');
+      case 4: return t('components.sectorBenchmark.rankBottom25');
+      default: return t('components.sectorBenchmark.rankUnranked');
     }
   };
 
@@ -85,19 +87,19 @@ export const SectorBenchmark: React.FC<Props> = ({ organizationId, sector }) => 
 
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
-          <span>Moyenne secteur:</span>
+          <span>{t('components.sectorBenchmark.avgSector')}</span>
           <span className="font-medium">{benchmark.sector_average}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span>Minimum secteur:</span>
+          <span>{t('components.sectorBenchmark.minSector')}</span>
           <span className="font-medium">{benchmark.sector_min}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span>Maximum secteur:</span>
+          <span>{t('components.sectorBenchmark.maxSector')}</span>
           <span className="font-medium">{benchmark.sector_max}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span>Entreprises comparées:</span>
+          <span>{t('components.sectorBenchmark.companiesCompared')}</span>
           <span className="font-medium">{benchmark.companies_count}</span>
         </div>
       </div>

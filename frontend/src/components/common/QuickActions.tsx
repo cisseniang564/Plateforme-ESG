@@ -7,6 +7,7 @@
  * - Générer un rapport
  * - Calculer les scores
  */
+import { useTranslation } from 'react-i18next';
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -15,7 +16,7 @@ import {
 } from 'lucide-react'
 
 interface QuickAction {
-  label: string
+  labelKey: string
   icon: React.ElementType
   href: string
   color: string
@@ -25,7 +26,7 @@ interface QuickAction {
 
 const ACTIONS: QuickAction[] = [
   {
-    label: 'Saisir une donnée',
+    labelKey: 'components.quickActions.enterData',
     icon: Database,
     href: '/app/data-entry',
     color: 'text-emerald-600',
@@ -33,7 +34,7 @@ const ACTIONS: QuickAction[] = [
     shortcut: 'D',
   },
   {
-    label: 'Nouvelle organisation',
+    labelKey: 'components.quickActions.newOrg',
     icon: Building2,
     href: '/app/organizations',
     color: 'text-blue-600',
@@ -41,7 +42,7 @@ const ACTIONS: QuickAction[] = [
     shortcut: 'O',
   },
   {
-    label: 'Importer CSV',
+    labelKey: 'components.quickActions.importCsv',
     icon: Upload,
     href: '/app/import-csv',
     color: 'text-purple-600',
@@ -49,7 +50,7 @@ const ACTIONS: QuickAction[] = [
     shortcut: 'I',
   },
   {
-    label: 'Générer un rapport',
+    labelKey: 'components.quickActions.generateReport',
     icon: FileText,
     href: '/app/reports',
     color: 'text-orange-600',
@@ -57,7 +58,7 @@ const ACTIONS: QuickAction[] = [
     shortcut: 'R',
   },
   {
-    label: 'Calculer les scores',
+    labelKey: 'components.quickActions.calcScores',
     icon: BarChart3,
     href: '/app/scores/calculate',
     color: 'text-indigo-600',
@@ -67,6 +68,7 @@ const ACTIONS: QuickAction[] = [
 ]
 
 export default function QuickActions() {
+  const { t } = useTranslation();
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -133,7 +135,7 @@ export default function QuickActions() {
             >
               {/* Label */}
               <div className="flex items-center gap-1.5 bg-white rounded-lg shadow-md border border-gray-200 px-3 py-1.5">
-                <span className="text-sm font-medium text-gray-700 whitespace-nowrap">{action.label}</span>
+                <span className="text-sm font-medium text-gray-700 whitespace-nowrap">{t(action.labelKey)}</span>
                 {action.shortcut && (
                   <kbd className="text-[10px] font-mono font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">
                     {action.shortcut}
@@ -145,7 +147,7 @@ export default function QuickActions() {
               <button
                 onClick={() => handleAction(action.href)}
                 className={`w-10 h-10 rounded-full border shadow-md flex items-center justify-center transition-all duration-150 active:scale-95 ${action.bgColor}`}
-                title={action.label}
+                title={t(action.labelKey)}
               >
                 <Icon size={17} className={action.color} />
               </button>
@@ -157,7 +159,7 @@ export default function QuickActions() {
       {/* FAB principal */}
       <button
         onClick={() => setOpen(v => !v)}
-        title={open ? 'Fermer (Échap)' : 'Actions rapides (Alt+A)'}
+        title={open ? t('components.quickActions.close') : t('components.quickActions.open')}
         className={`
           w-14 h-14 rounded-full shadow-xl flex items-center justify-center
           transition-all duration-200 active:scale-95

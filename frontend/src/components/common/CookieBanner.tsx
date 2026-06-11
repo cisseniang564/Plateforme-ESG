@@ -4,6 +4,7 @@
  * - Three levels: "all" | "essential" | null (not decided yet)
  * - Supports inline customization drawer
  */
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import { X, Cookie, ChevronDown, ChevronUp, Shield, BarChart2 } from 'lucide-react';
 
@@ -33,6 +34,7 @@ export function useCookieConsent() {
 }
 
 export default function CookieBanner() {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [analytics, setAnalytics] = useState(true);
@@ -51,7 +53,7 @@ export default function CookieBanner() {
   return (
     <div
       role="dialog"
-      aria-label="Gestion des cookies"
+      aria-label={t('components.cookieBanner.aria')}
       className="fixed bottom-0 left-0 right-0 z-[9999] p-4 pointer-events-none"
     >
       <div className="max-w-4xl mx-auto pointer-events-auto">
@@ -63,10 +65,10 @@ export default function CookieBanner() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-slate-800 text-sm">
-                Nous utilisons des cookies
+                {t('components.cookieBanner.title')}
               </p>
               <p className="text-xs text-slate-500 leading-tight mt-0.5">
-                Certains sont essentiels au fonctionnement de la plateforme, d'autres nous aident à l'améliorer.
+                {t('components.cookieBanner.subtitle')}
               </p>
             </div>
             <button onClick={() => accept('essential')} className="flex-shrink-0 text-slate-400 hover:text-slate-600 transition-colors">
@@ -83,12 +85,12 @@ export default function CookieBanner() {
                 <Shield className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-slate-800">Cookies essentiels</p>
-                    <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Toujours actifs</span>
+                    <p className="text-sm font-medium text-slate-800">{t('components.cookieBanner.essential')}</p>
+                    <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">{t('components.cookieBanner.alwaysOn')}</span>
                   </div>
                   {expanded && (
                     <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                      Authentification, sécurité, préférences de session. Nécessaires au fonctionnement de la plateforme.
+                      {t('components.cookieBanner.essentialDesc')}
                     </p>
                   )}
                 </div>
@@ -99,7 +101,7 @@ export default function CookieBanner() {
                 <BarChart2 className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-slate-800">Cookies analytiques</p>
+                    <p className="text-sm font-medium text-slate-800">{t('components.cookieBanner.analytics')}</p>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
@@ -112,7 +114,7 @@ export default function CookieBanner() {
                   </div>
                   {expanded && (
                     <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                      Mesure d'audience (Google Analytics), amélioration de l'expérience utilisateur. Aucune donnée ESG n'est partagée.
+                      {t('components.cookieBanner.analyticsDesc')}
                     </p>
                   )}
                 </div>
@@ -125,7 +127,7 @@ export default function CookieBanner() {
               className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 mb-4 transition-colors"
             >
               {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-              {expanded ? 'Masquer les détails' : 'Voir les détails'}
+              {expanded ? t('components.cookieBanner.hideDetails') : t('components.cookieBanner.showDetails')}
             </button>
 
             {/* Action buttons */}
@@ -134,25 +136,25 @@ export default function CookieBanner() {
                 onClick={() => accept(analytics ? 'all' : 'essential')}
                 className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors"
               >
-                Accepter ma sélection
+                {t('components.cookieBanner.acceptSelection')}
               </button>
               <button
                 onClick={() => accept('all')}
                 className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-medium transition-colors"
               >
-                Tout accepter
+                {t('components.cookieBanner.acceptAll')}
               </button>
               <button
                 onClick={() => accept('essential')}
                 className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-500 text-sm font-medium transition-colors"
               >
-                Essentiels uniquement
+                {t('components.cookieBanner.essentialOnly')}
               </button>
             </div>
 
             <p className="mt-3 text-xs text-slate-400 text-center">
-              En continuant à naviguer, vous acceptez les cookies essentiels. Voir notre{' '}
-              <a href="/privacy-policy" className="underline hover:text-emerald-600">politique de confidentialité</a>.
+              {t('components.cookieBanner.footerPre')}{' '}
+              <a href="/privacy-policy" className="underline hover:text-emerald-600">{t('components.cookieBanner.privacyLink')}</a>.
             </p>
           </div>
         </div>
