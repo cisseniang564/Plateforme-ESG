@@ -1,0 +1,16 @@
+name;country;sector;annual_spend_eur;risk_level;e_score;s_score;g_score;global_score;audit_status;audit_date
+AMAZON WEB SERVICES;US;Cloud / IT;52000;medium;78;70;85;77.7;self-declared;2025-06-30
+MICROSOFT FRANCE;FR;Software;45000;low;82;76;92;83.3;ecovadis-gold;2025-06-30
+PENNYLANE SAS;FR;SaaS comptable;1320;low;72;80;88;80.0;self-declared;2025-06-30
+EDF ENTREPRISES;FR;Énergie;29000;medium;65;70;75;70.0;rapport-public;2025-06-30
+ENGIE;FR;Énergie;21500;medium;68;72;78;72.7;rapport-public;2025-06-30
+TOTALENERGIES;FR;Carburants;10400;high;45;60;65;56.7;rapport-public;2025-06-30
+WEWORK FRANCE;FR;Immobilier bureaux;91500;low;70;75;70;71.7;self-declared;2025-06-30
+MANPOWER;FR;Intérim RH;224000;medium;60;78;82;73.3;ecovadis-silver;2025-06-30
+KPMG AVOCATS;FR;Conseil juridique;35000;low;72;80;88;80.0;self-declared;2025-06-30
+ORANGE BUSINESS;FR;Télécoms;11400;low;74;76;85;78.3;ecovadis-gold;2025-06-30
+AIR FRANCE;FR;Transport aérien;29500;high;50;68;72;63.3;rapport-public;2025-06-30
+SNCF VOYAGEURS;FR;Transport ferro;14800;low;85;78;80;81.0;rapport-public;2025-06-30
+UBER FRANCE;FR;Transport VTC;4200;high;58;55;60;57.7;non-évalué;2025-06-30
+LINKEDIN FRANCE;FR;Recrutement;18000;low;65;72;78;71.7;self-declared;2025-06-30
+GOOGLE FRANCE;FR;Marketing digital;33600;medium;70;65;80;71.7;rapport-public;2025-06-30

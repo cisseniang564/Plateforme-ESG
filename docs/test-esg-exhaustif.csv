@@ -1,0 +1,178 @@
+pilier,categorie,indicateur,valeur,unite,date_debut,date_fin,source,notes
+environmental,Climat,ENV-001,1250.4,tCO2e,2024-01-01,2024-03-31,Compteur gaz interne,Scope 1 Q1 2024 — combustion chaudières siège
+environmental,Climat,ENV-001,980.7,tCO2e,2024-04-01,2024-06-30,Compteur gaz interne,Scope 1 Q2 2024 — baisse liée à l'arrêt chauffage
+environmental,Climat,ENV-001,870.2,tCO2e,2024-07-01,2024-09-30,Compteur gaz interne,Scope 1 Q3 2024 — été
+environmental,Climat,ENV-001,1380.6,tCO2e,2024-10-01,2024-12-31,Compteur gaz interne,Scope 1 Q4 2024 — reprise chauffage
+environmental,Climat,ENV-001,4481.9,tCO2e,2023-01-01,2023-12-31,Audit environnemental 2023,Scope 1 annuel 2023 — année de référence
+environmental,Climat,ENV-001,1190.0,tCO2e,2025-01-01,2025-03-31,Compteur gaz interne,Scope 1 Q1 2025 — objectif -5% vs Q1 2024
+environmental,Climat,ENV-002,620.3,tCO2e,2024-01-01,2024-03-31,Factures Enedis,Scope 2 location-based Q1 2024
+environmental,Climat,ENV-002,598.1,tCO2e,2024-04-01,2024-06-30,Factures Enedis,Scope 2 location-based Q2 2024
+environmental,Climat,ENV-002,571.4,tCO2e,2024-07-01,2024-09-30,Factures Enedis,Scope 2 location-based Q3 2024
+environmental,Climat,ENV-002,635.9,tCO2e,2024-10-01,2024-12-31,Factures Enedis,Scope 2 location-based Q4 2024
+environmental,Climat,ENV-002,2638.0,tCO2e,2023-01-01,2023-12-31,Audit environnemental 2023,Scope 2 annuel 2023
+environmental,Énergie,ENV-003,8540.0,MWh,2024-01-01,2024-03-31,Factures EDF Entreprises,Consommation totale Q1 siège + agences
+environmental,Énergie,ENV-003,7210.5,MWh,2024-04-01,2024-06-30,Factures EDF Entreprises,Consommation totale Q2
+environmental,Énergie,ENV-003,6980.0,MWh,2024-07-01,2024-09-30,Factures EDF Entreprises,Consommation totale Q3 — pic climatisation
+environmental,Énergie,ENV-003,9120.0,MWh,2024-10-01,2024-12-31,Factures EDF Entreprises,Consommation totale Q4
+environmental,Énergie,ENV-003,33200.0,MWh,2023-01-01,2023-12-31,Audit environnemental 2023,Consommation énergie annuelle 2023
+environmental,Énergie,ENV-003,8100.0,MWh,2025-01-01,2025-03-31,Factures EDF Entreprises,Q1 2025 — premier trimestre après optimisation HVAC
+environmental,Énergie,ENV-004,28.5,%,2024-01-01,2024-12-31,Contrats d'achat d'énergie,Part ENR — PPA solaire site de Lyon
+environmental,Énergie,ENV-004,22.0,%,2023-01-01,2023-12-31,Audit environnemental 2023,Part ENR 2023 — référence
+environmental,Énergie,ENV-004,35.0,%,2025-01-01,2025-12-31,Plan énergie 2025,Objectif ENR 2025 après nouveau contrat PPA
+environmental,Eau,ENV-005,12400.0,m³,2024-01-01,2024-03-31,Compteurs eau municipaux,Consommation eau Q1 — incluant process industriel
+environmental,Eau,ENV-005,10800.0,m³,2024-04-01,2024-06-30,Compteurs eau municipaux,Q2 — maintenance circuit de refroidissement
+environmental,Eau,ENV-005,13200.0,m³,2024-07-01,2024-09-30,Compteurs eau municipaux,Q3 — pic été / climatisation
+environmental,Eau,ENV-005,11600.0,m³,2024-10-01,2024-12-31,Compteurs eau municipaux,Q4 2024
+environmental,Eau,ENV-005,49800.0,m³,2023-01-01,2023-12-31,Audit environnemental 2023,Consommation eau annuelle 2023
+environmental,Déchets,IND-001,72.4,%,2024-01-01,2024-06-30,Prestataire déchets Veolia,Taux valorisation S1 2024 — recyclage + compostage
+environmental,Déchets,IND-001,78.9,%,2024-07-01,2024-12-31,Prestataire déchets Veolia,Taux valorisation S2 2024 — amélioration tri
+environmental,Déchets,IND-001,65.0,%,2023-01-01,2023-12-31,Audit environnemental 2023,Taux valorisation 2023 — référence
+environmental,Déchets,Déchets totaux générés,842.0,tonnes,2024-01-01,2024-12-31,Prestataire déchets Veolia,Dont 610 t valorisés et 232 t enfouis
+environmental,Déchets,Déchets dangereux,18.5,tonnes,2024-01-01,2024-12-31,Registre déchets dangereux,DTQD — huiles usagées + solvants
+environmental,Numérique,TEC-001,3.2,tonnes,2024-01-01,2024-12-31,Prestataire DEEE Ecologic,E-waste collecté et traité filière agréée
+environmental,Numérique,TEC-001,2.7,tonnes,2023-01-01,2023-12-31,Prestataire DEEE Ecologic,E-waste 2023
+environmental,Numérique,TEC-002,1.45,ratio,2024-01-01,2024-12-31,DSI — monitoring datacenter,PUE datacenter principal Paris — objectif <1.4 en 2025
+environmental,Numérique,TEC-002,1.58,ratio,2023-01-01,2023-12-31,DSI — audit datacenter 2023,PUE 2023 avant travaux refroidissement
+environmental,Scope 3,IND-002,8420.0,tCO2e,2024-01-01,2024-12-31,Climatiq API,Scope 3 total toutes catégories 2024
+environmental,Scope 3,IND-002,9100.0,tCO2e,2023-01-01,2023-12-31,Carbon Interface,Scope 3 total 2023 — référence
+environmental,Scope 3,S3-001,320.5,tCO2e,2024-01-01,2024-12-31,Factures achats,Biens et services achetés — fournitures bureau + consommables IT
+environmental,Scope 3,S3-002,1840.0,tCO2e,2024-01-01,2024-12-31,Inventaire immobilisations,Biens d'équipement — 3 nouvelles lignes production
+environmental,Scope 3,S3-003,290.0,tCO2e,2024-01-01,2024-12-31,Bilan carbone fournisseurs,Activités liées à l'énergie non incluses scope 1&2
+environmental,Scope 3,S3-004,680.0,tCO2e,2024-01-01,2024-12-31,Transport logistique,Transport amont — fournisseurs matières premières
+environmental,Scope 3,S3-005,145.0,tCO2e,2024-01-01,2024-12-31,Prestataire déchets Veolia,Déchets générés dans les opérations
+environmental,Scope 3,S3-006,520.0,tCO2e,2024-01-01,2024-12-31,Carbon Interface,Déplacements professionnels — avion + train + voiture
+environmental,Scope 3,S3-007,1980.0,tCO2e,2024-01-01,2024-12-31,Enquête mobilité domicile-travail,Déplacements domicile-travail — 847 salariés enquêtés
+environmental,Scope 3,S3-008,410.0,tCO2e,2024-01-01,2024-12-31,Audit actifs loués,Actifs en amont loués — entrepôts sous-loués
+environmental,Scope 3,S3-009,750.0,tCO2e,2024-01-01,2024-12-31,Transport logistique,Transport aval — livraison clients France + Europe
+environmental,Scope 3,S3-010,180.0,tCO2e,2024-01-01,2024-12-31,Analyse cycle de vie,Traitement des produits vendus en fin de vie
+environmental,Scope 3,S3-011,220.0,tCO2e,2024-01-01,2024-12-31,Analyse cycle de vie,Utilisation des produits vendus — énergie client
+environmental,Scope 3,S3-012,85.0,tCO2e,2024-01-01,2024-12-31,Analyse cycle de vie,Fin de vie des produits vendus
+environmental,Scope 3,S3-013,0.0,tCO2e,2024-01-01,2024-12-31,DSI,Actifs en aval loués — non applicable (pas de sous-location)
+environmental,Scope 3,S3-014,0.0,tCO2e,2024-01-01,2024-12-31,Finance,Franchises — non applicable
+environmental,Scope 3,S3-015,0.0,tCO2e,2024-01-01,2024-12-31,Finance,Investissements — non applicable (hors scope)
+environmental,Empreinte carbone,SRV-001,5.28,tCO2e/ETP,2024-01-01,2024-12-31,Climatiq API,Empreinte carbone par ETP 2024 — scope 1+2+3
+environmental,Empreinte carbone,SRV-001,5.91,tCO2e/ETP,2023-01-01,2023-12-31,Carbon Interface,Empreinte par ETP 2023 — référence
+environmental,Biodiversité,Surface espaces verts gérés,3200.0,m²,2024-01-01,2024-12-31,Facility Management,Espaces verts sites siège + Bordeaux
+environmental,Biodiversité,Sites en zone Natura 2000,0.0,nombre,2024-01-01,2024-12-31,DSI Géographie,Aucun site en zone protégée
+environmental,Pollution,Émissions NOx,4.2,tonnes,2024-01-01,2024-12-31,Rapport DREAL,Émissions oxydes d'azote process industriel
+environmental,Pollution,Émissions SOx,0.8,tonnes,2024-01-01,2024-12-31,Rapport DREAL,Émissions dioxyde de soufre — en dessous seuil réglementaire
+environmental,Transport,Flotte véhicules électriques,12.0,véhicules,2024-01-01,2024-12-31,DRH — registre flotte,12 VE sur 45 véhicules de fonction — taux 26.7%
+environmental,Transport,Véhicules de société total,45.0,véhicules,2024-01-01,2024-12-31,DRH — registre flotte,Dont 12 électriques 8 hybrides 25 thermiques
+social,Effectifs,Effectif total,1247.0,ETP,2024-01-01,2024-12-31,SIRH Workday,Effectif moyen annuel ETP — CDI + CDD
+social,Effectifs,Effectif total,1189.0,ETP,2023-01-01,2023-12-31,SIRH Workday,Effectif 2023 — référence
+social,Effectifs,Effectif CDI,1098.0,personnes,2024-12-31,2024-12-31,SIRH Workday,Effectif CDI au 31/12/2024
+social,Effectifs,Effectif CDD,149.0,personnes,2024-12-31,2024-12-31,SIRH Workday,Effectif CDD au 31/12/2024 — pics activité
+social,Effectifs,Effectif intérimaires,87.0,ETP,2024-01-01,2024-12-31,SIRH Workday,Intérimaires — moyenne annuelle
+social,Effectifs,Effectif femmes,538.0,personnes,2024-12-31,2024-12-31,SIRH Workday,43.1% de l'effectif total
+social,Effectifs,Effectif hommes,709.0,personnes,2024-12-31,2024-12-31,SIRH Workday,56.9% de l'effectif total
+social,Effectifs,Taux de féminisation,43.1,%,2024-01-01,2024-12-31,SIRH Workday,Tous postes confondus
+social,Effectifs,Taux de féminisation,40.2,%,2023-01-01,2023-12-31,SIRH Workday,Référence 2023 — progression +2.9 pts
+social,Effectifs,Effectif cadres,412.0,personnes,2024-12-31,2024-12-31,SIRH Workday,Dont 38% de femmes
+social,Effectifs,Effectif non-cadres,835.0,personnes,2024-12-31,2024-12-31,SIRH Workday,Dont 45% de femmes
+social,Effectifs,Recrutements CDI,134.0,personnes,2024-01-01,2024-12-31,SIRH Workday,Dont 52 femmes (39%)
+social,Effectifs,Départs volontaires (démissions),89.0,personnes,2024-01-01,2024-12-31,SIRH Workday,Turnover volontaire
+social,Effectifs,Départs total,118.0,personnes,2024-01-01,2024-12-31,SIRH Workday,Inclut démissions + ruptures conventionnelles + retraites
+social,Effectifs,Taux de turnover,9.5,%,2024-01-01,2024-12-31,SIRH Workday,Départs / effectif moyen
+social,Effectifs,Taux de turnover,11.2,%,2023-01-01,2023-12-31,SIRH Workday,Référence 2023
+social,Effectifs,Travailleurs en situation de handicap,42.0,personnes,2024-12-31,2024-12-31,SIRH Workday / DOETH,RQTH reconnus — taux emploi 3.4%
+social,Effectifs,Taux emploi RQTH,3.4,%,2024-01-01,2024-12-31,DOETH,Objectif légal 6% — plan d'action en cours
+social,Formation,Heures de formation totales,18640.0,heures,2024-01-01,2024-12-31,LMS interne,Formations présentiel + e-learning + MOOC
+social,Formation,Heures de formation totales,15200.0,heures,2023-01-01,2023-12-31,LMS interne,Référence 2023
+social,Formation,Heures de formation par salarié,14.95,heures/ETP,2024-01-01,2024-12-31,LMS interne,Calculé sur effectif moyen 1247 ETP
+social,Formation,Salariés ayant suivi une formation,1089.0,personnes,2024-01-01,2024-12-31,LMS interne,87.3% de l'effectif — objectif 90% en 2025
+social,Formation,Formations sécurité,2840.0,heures,2024-01-01,2024-12-31,LMS interne,Sécurité incendie + risques chimiques + habilitations élec
+social,Formation,Formations développement durable,320.0,heures,2024-01-01,2024-12-31,LMS interne,Sensibilisation RSE + fresque du climat
+social,Santé-Sécurité,Accidents du travail avec arrêt,7.0,accidents,2024-01-01,2024-12-31,SIRH — registre AT,7 AT avec arrêt — en baisse vs 11 en 2023
+social,Santé-Sécurité,Accidents du travail avec arrêt,11.0,accidents,2023-01-01,2023-12-31,SIRH — registre AT,Référence 2023
+social,Santé-Sécurité,Jours d'arrêt suite AT,143.0,jours,2024-01-01,2024-12-31,SIRH — registre AT,Dont 1 accident grave (78 jours)
+social,Santé-Sécurité,Taux de fréquence AT,5.62,TF,2024-01-01,2024-12-31,SIRH — registre AT,AT x 1 000 000 / heures travaillées
+social,Santé-Sécurité,Taux de fréquence AT,8.84,TF,2023-01-01,2023-12-31,SIRH — registre AT,Référence 2023
+social,Santé-Sécurité,Taux de gravité AT,0.115,TG,2024-01-01,2024-12-31,SIRH — registre AT,Jours perdus x 1000 / heures travaillées
+social,Santé-Sécurité,Maladies professionnelles,2.0,cas,2024-01-01,2024-12-31,SIRH — registre MP,2 MP reconnues — TMS membres supérieurs
+social,Santé-Sécurité,Taux d'absentéisme,4.2,%,2024-01-01,2024-12-31,SIRH Workday,Toutes causes — hors AT et maternité
+social,Santé-Sécurité,Taux d'absentéisme,4.8,%,2023-01-01,2023-12-31,SIRH Workday,Référence 2023
+social,Rémunération,Salaire moyen annuel brut,48200.0,EUR/an,2024-01-01,2024-12-31,SIRH — paie,Équivalent temps plein — tous statuts
+social,Rémunération,Salaire médian annuel brut,42800.0,EUR/an,2024-01-01,2024-12-31,SIRH — paie,
+social,Rémunération,Écart salarial H/F,8.4,%,2024-01-01,2024-12-31,Index égalité H/F,Écart à poste comparable — objectif <5% en 2026
+social,Rémunération,Écart salarial H/F,10.1,%,2023-01-01,2023-12-31,Index égalité H/F,Référence 2023
+social,Rémunération,Index égalité professionnelle H/F,78.0,/100,2024-01-01,2024-12-31,DARES — Index,Seuil légal 75/100 — en progrès vs 74 en 2023
+social,Rémunération,Masse salariale totale,60107400.0,EUR,2024-01-01,2024-12-31,Comptabilité,Charges sociales incluses — source Pennylane
+social,Rémunération,Participation + intéressement,1820000.0,EUR,2024-01-01,2024-12-31,Finance,Accord d'intéressement + participation légale
+social,Bien-être,Score engagement salariés,71.0,%,2024-06-01,2024-06-30,Enquête annuelle Workday,Enquête juin 2024 — taux réponse 83%
+social,Bien-être,Score engagement salariés,68.0,%,2023-06-01,2023-06-30,Enquête annuelle Workday,Référence 2023
+social,Bien-être,Net Promoter Score employés (eNPS),+32.0,score,2024-06-01,2024-06-30,Enquête annuelle Workday,Score eNPS 2024
+social,Diversité,Part femmes postes direction,32.0,%,2024-12-31,2024-12-31,SIRH Workday,Directeurs + DGA — 8 femmes sur 25
+social,Diversité,Part femmes postes direction,28.0,%,2023-12-31,2023-12-31,SIRH Workday,Référence 2023
+social,Diversité,Part femmes COMEX,25.0,%,2024-12-31,2024-12-31,SIRH Workday,3 femmes sur 12 membres COMEX
+social,Diversité,Nationalités représentées,18.0,nationalités,2024-12-31,2024-12-31,SIRH Workday,18 nationalités parmi les effectifs
+social,Diversité,Salariés de moins de 30 ans,198.0,personnes,2024-12-31,2024-12-31,SIRH Workday,15.9% de l'effectif
+social,Diversité,Salariés de 50 ans et plus,312.0,personnes,2024-12-31,2024-12-31,SIRH Workday,25.0% de l'effectif
+social,Dialogue social,Réunions CSE,12.0,réunions,2024-01-01,2024-12-31,Relations sociales,CSE mensuel — 12 séances ordinaires
+social,Dialogue social,Accords collectifs signés,4.0,accords,2024-01-01,2024-12-31,Relations sociales,Télétravail / NAO / QVCT / Handicap
+social,Impact local,Montant mécénat et dons,145000.0,EUR,2024-01-01,2024-12-31,Finance / Fondation,Via fondation d'entreprise et dons directs
+social,Impact local,Jours de bénévolat salarié,380.0,jours,2024-01-01,2024-12-31,DRH,Programme 3 jours/an/salarié volontaire
+social,Impact local,Associations partenaires,12.0,associations,2024-01-01,2024-12-31,Communication RSE,Partenariats actifs — insertion + éducation + environnement
+social,Achats responsables,Part fournisseurs évalués RSE,54.0,%,2024-01-01,2024-12-31,Achats,Évaluation EcoVadis ou questionnaire interne — top 200 fournisseurs
+social,Achats responsables,Part fournisseurs évalués RSE,38.0,%,2023-01-01,2023-12-31,Achats,Référence 2023
+social,Achats responsables,Fournisseurs locaux (< 100 km),31.0,%,2024-01-01,2024-12-31,Achats,En valeur d'achat — filière agro et maintenance
+governance,Gouvernance,GOV-003,10.0,réunions,2024-01-01,2024-12-31,Secrétariat CA,Dont 2 séances extraordinaires — hors réunions de comités
+governance,Gouvernance,GOV-003,8.0,réunions,2023-01-01,2023-12-31,Secrétariat CA,Référence 2023
+governance,Gouvernance,Membres du conseil d'administration,12.0,membres,2024-12-31,2024-12-31,Secrétariat CA,
+governance,Gouvernance,Membres indépendants du CA,7.0,membres,2024-12-31,2024-12-31,Secrétariat CA,58.3% — au-dessus seuil AFEP-MEDEF 50%
+governance,Gouvernance,Femmes au conseil d'administration,4.0,membres,2024-12-31,2024-12-31,Secrétariat CA,33.3% — objectif 40% en 2026
+governance,Gouvernance,Femmes au conseil d'administration,3.0,membres,2023-12-31,2023-12-31,Secrétariat CA,Référence 2023 — 25%
+governance,Gouvernance,Taux de présence aux réunions CA,91.5,%,2024-01-01,2024-12-31,Secrétariat CA,Taux de participation effectif
+governance,Gouvernance,Administrateurs avec expérience ESG,5.0,membres,2024-12-31,2024-12-31,Secrétariat CA,Dont 2 experts climat et 1 expert social
+governance,Comités,Réunions comité audit,8.0,réunions,2024-01-01,2024-12-31,Secrétariat CA,Comité audit — trimestriel + extraordinaires
+governance,Comités,Réunions comité risques,6.0,réunions,2024-01-01,2024-12-31,Secrétariat CA,Comité risques et conformité
+governance,Comités,Réunions comité rémunérations,4.0,réunions,2024-01-01,2024-12-31,Secrétariat CA,Comité nominations et rémunérations
+governance,Comités,Réunions comité RSE,4.0,réunions,2024-01-01,2024-12-31,Secrétariat CA,Comité RSE créé en 2023 — trimestriel
+governance,Éthique,Signalements via canal alerte,8.0,signalements,2024-01-01,2024-12-31,Compliance / Juridique,8 signalements traités — 6 clôturés 2 en cours
+governance,Éthique,Signalements via canal alerte,5.0,signalements,2023-01-01,2023-12-31,Compliance / Juridique,Référence 2023
+governance,Éthique,Cas de corruption avérés,0.0,cas,2024-01-01,2024-12-31,Compliance / Juridique,Aucun cas avéré — 0 en 2023 aussi
+governance,Éthique,Formations anti-corruption,342.0,personnes,2024-01-01,2024-12-31,LMS interne,Fonctions exposées + managers — plan Sapin II
+governance,Éthique,Taux couverture formation éthique,87.0,%,2024-01-01,2024-12-31,LMS interne,% fonctions cibles ayant suivi la formation
+governance,Éthique,Litiges juridiques significatifs,1.0,litiges,2024-01-01,2024-12-31,Juridique,1 contentieux prud'homal en cours — provisionnement effectué
+governance,Conformité,Amendes réglementaires ESG,0.0,EUR,2024-01-01,2024-12-31,Juridique / Finance,Aucune amende ou sanction réglementaire
+governance,Conformité,Audits internes réalisés,6.0,audits,2024-01-01,2024-12-31,Audit interne,Dont 2 audits qualité 2 sécurité 2 conformité RGPD
+governance,Conformité,Incidents de sécurité des données,1.0,incidents,2024-01-01,2024-12-31,DSI / DPO,1 incident mineur notifié CNIL — résolu en 72h
+governance,Conformité,Incidents de sécurité des données,0.0,incidents,2023-01-01,2023-12-31,DSI / DPO,Référence 2023
+governance,Conformité,Salariés formés RGPD,680.0,personnes,2024-01-01,2024-12-31,LMS interne,Formation obligatoire tous accédants données personnelles
+governance,Stratégie RSE,Objectifs climatiques validés SBTi,1.0,booléen,2024-01-01,2024-12-31,Direction RSE,Engagement SBTi soumis en S2 2024 — en cours de validation
+governance,Stratégie RSE,Rapport RSE / DPEF publié,1.0,booléen,2024-01-01,2024-12-31,Direction RSE,DPEF 2024 publiée avec les comptes annuels
+governance,Stratégie RSE,Notation ESG externe,52.0,/100,2024-01-01,2024-12-31,EcoVadis,Score EcoVadis 2024 — médaille argent
+governance,Stratégie RSE,Notation ESG externe,44.0,/100,2023-01-01,2023-12-31,EcoVadis,Score EcoVadis 2023 — médaille bronze
+governance,Stratégie RSE,Questionnaires clients RSE répondus,28.0,questionnaires,2024-01-01,2024-12-31,Direction RSE / Commercial,Dont 3 demandes de notation Ecovadis client
+governance,Chaîne d'approvisionnement,Fournisseurs ayant signé la charte RSE,156.0,fournisseurs,2024-12-31,2024-12-31,Achats,156 sur 200 fournisseurs stratégiques — 78%
+governance,Chaîne d'approvisionnement,Audits fournisseurs réalisés,12.0,audits,2024-01-01,2024-12-31,Achats,Dont 3 audits terrain et 9 questionnaires avancés
+governance,Chaîne d'approvisionnement,Fournisseurs disqualifiés suite audit RSE,1.0,fournisseurs,2024-01-01,2024-12-31,Achats,1 fournisseur textile Asie — non-conformité travail
+governance,Risques,Risques climatiques physiques identifiés,8.0,risques,2024-01-01,2024-12-31,Risk Management,Analyse TCFD — risques inondation sécheresse et chaleur
+governance,Risques,Risques climatiques de transition identifiés,12.0,risques,2024-01-01,2024-12-31,Risk Management,Analyse TCFD — risques réglementaires et marché carbone
+governance,Risques,Tests de résistance climatique réalisés,1.0,scénarios,2024-01-01,2024-12-31,Finance / Risk Management,Scénario +2°C et +4°C — impact financier chiffré
+governance,Fiscalité,Taux d'imposition effectif,26.8,%,2024-01-01,2024-12-31,Finance / Pennylane,IS effectif — proche taux légal 25%
+governance,Fiscalité,Pays où l'entreprise est implantée,4.0,pays,2024-12-31,2024-12-31,Finance,France Belgique Allemagne Espagne
+governance,Fiscalité,Contribution pays par pays (GRI 207),1.0,booléen,2024-01-01,2024-12-31,Finance,Reporting pays par pays disponible sur demande
+environmental,Énergie,Consommation gaz naturel,4820.0,MWh,2024-01-01,2024-03-31,Factures GDF Suez,Chauffage et process Q1 — conversion 1 MWh PCS gaz
+environmental,Énergie,Consommation gaz naturel,3980.0,MWh,2024-04-01,2024-06-30,Factures GDF Suez,Q2 — baisse saisonnière
+environmental,Énergie,Consommation gaz naturel,3620.0,MWh,2024-07-01,2024-09-30,Factures GDF Suez,Q3 — minimum annuel
+environmental,Énergie,Consommation gaz naturel,5100.0,MWh,2024-10-01,2024-12-31,Factures GDF Suez,Q4 — reprise chauffage
+environmental,Énergie,Consommation fioul domestique,280.0,MWh,2024-01-01,2024-12-31,Factures fuel,Groupe électrogène site secondaire Bordeaux
+environmental,Eau,Eau recyclée / réutilisée,1840.0,m³,2024-01-01,2024-12-31,Compteurs process,Circuit fermé refroidissement — réduction prélèvement
+environmental,Eau,Intensité eau par M€ CA,82.4,m³/M€,2024-01-01,2024-12-31,Contrôle de gestion,CA 2024 = 148 M€
+social,Effectifs,Effectif Q1,1212.0,ETP,2024-01-01,2024-03-31,SIRH Workday,Effectif moyen Q1 2024
+social,Effectifs,Effectif Q2,1238.0,ETP,2024-04-01,2024-06-30,SIRH Workday,Effectif moyen Q2 2024
+social,Effectifs,Effectif Q3,1258.0,ETP,2024-07-01,2024-09-30,SIRH Workday,Pic saisonnier — recrutements CDD été
+social,Effectifs,Effectif Q4,1247.0,ETP,2024-10-01,2024-12-31,SIRH Workday,Effectif moyen Q4 2024
+social,Formation,Budget formation,892000.0,EUR,2024-01-01,2024-12-31,Finance,2.8% masse salariale — au-dessus obligation légale 1%
+social,Formation,CPF abondements employeur,48000.0,EUR,2024-01-01,2024-12-31,Finance,Co-financement CPF pour 32 salariés
+social,Mobilité,Part salariés en télétravail,68.0,%,2024-01-01,2024-12-31,DRH — accord télétravail,Accord 2j/semaine — 68% éligibles en pratique régulière
+social,Mobilité,Forfait mobilités durables,89000.0,EUR,2024-01-01,2024-12-31,Finance / DRH,Versement FMD vélo + transports en commun 312 bénéficiaires
+social,Santé-Sécurité,Actions de prévention réalisées,24.0,actions,2024-01-01,2024-12-31,HSE,Exercices évacuation + campagnes ergonomie + audits poste
+social,Santé-Sécurité,Contrôles réglementaires réalisés,18.0,contrôles,2024-01-01,2024-12-31,HSE / ICPE,Vérifications périodiques équipements sous pression + élec
+governance,Innovation,Budget R&D,7400000.0,EUR,2024-01-01,2024-12-31,Finance,Dont 1.2 M€ sur R&D produits bas-carbone
+governance,Innovation,Brevets déposés,3.0,brevets,2024-01-01,2024-12-31,Propriété industrielle,3 brevets déposés — procédé économie d'énergie
+governance,Numérique responsable,Politique numérique responsable,1.0,booléen,2024-01-01,2024-12-31,DSI / RSE,Politique adoptée en CA septembre 2024
+governance,Numérique responsable,Équipements reconditionnés achetés,35.0,%,2024-01-01,2024-12-31,DSI,35% des postes de travail achetés reconditionnés
+environmental,Climat,Intensité carbone scope 1+2,3.82,tCO2e/M€ CA,2024-01-01,2024-12-31,Contrôle de gestion,CA 2024 = 148 M€ — intensité en baisse vs 4.25 en 2023
+environmental,Climat,Intensité carbone scope 1+2,4.25,tCO2e/M€ CA,2023-01-01,2023-12-31,Contrôle de gestion,Référence 2023 — CA 2023 = 148 M€ pro forma
+environmental,Énergie,Intensité énergétique,0.213,MWh/M€ CA,2024-01-01,2024-12-31,Contrôle de gestion,31 850 MWh / 148 M€ CA

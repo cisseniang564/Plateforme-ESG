@@ -1,0 +1,11 @@
+name;category;financial_impact;esg_impact;is_material;priority;stakeholders
+Émissions GES et empreinte carbone;E1 Climat;78;92;oui;high;salariés, clients, investisseurs
+Mix énergétique et énergies renouvelables;E1 Climat;65;80;oui;high;salariés, clients, investisseurs
+Gestion responsable des déchets IT;E5 Économie circ.;35;58;oui;medium;salariés, clients, investisseurs
+Attraction et rétention des talents;S1 Effectifs;88;75;oui;high;salariés, clients, investisseurs
+Diversité et inclusion;S1 Effectifs;45;82;oui;high;salariés, clients, investisseurs
+Formation et développement compétences;S1 Effectifs;70;78;oui;high;salariés, clients, investisseurs
+Audits sociaux fournisseurs;S2 Chaîne valeur;55;72;oui;medium;salariés, clients, investisseurs
+Protection des données clients (RGPD);S4 Consommateurs;92;88;oui;high;salariés, clients, investisseurs
+Éthique et anti-corruption;G1 Gouvernance;75;80;oui;high;salariés, clients, investisseurs
+Délais de paiement fournisseurs;G1 Gouvernance;48;35;non;low;salariés, clients, investisseurs

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>ESG Flow — Outreach Cheat Sheet</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="cheat_style.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">ESG Flow — Outreach Cheat Sheet</h1>
+</header>
+<div class="cheat-sheet">
+<div class="header-band">
+<h1>
+ESG Flow — Outreach Cheat Sheet
+</h1>
+<p>
+1 page · 1 process · 4 semaines · 15-20 entretiens
+</p>
+</div>
+<div class="grid-2col">
+<div class="box box-emerald">
+<h2>
+🚀 SETUP — 1 seule fois (15 min)
+</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> scripts/linkedin_outreach</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> venv .venv</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> .venv/bin/activate</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">-r</span> requirements.txt</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> outreach.py init</span></code></pre></div>
+<p>Puis éditer <code>.env</code> : - <code>SENDER_FIRST_NAME</code> /
+<code>_LAST_NAME</code> - <code>CALENDLY_LINK</code></p>
+<p>Optionnel : ajouter <code>SNOV_USER_ID</code> /
+<code>SNOV_API_SECRET</code> pour l’enrichissement email.</p>
+<p>Installer <strong>Tampermonkey</strong> Chrome + activer le script
+<code>bonus/linkedin_to_csv.user.js</code>.</p>
+</div>
+<div class="box box-blue">
+<h2>
+📅 RYTHME HEBDO
+</h2>
+<p><strong>Lundi (1 h)</strong> — Sourcing LinkedIn boolean →
+Tampermonkey “📋 CSV” → <code>data/prospects.csv</code></p>
+<p><strong>Lundi 17h (15 min)</strong> — Génération
+<code>python outreach.py drafts</code></p>
+<p><strong>Mardi-Jeudi 9-11h (3 × 1 h)</strong> — Envoi Copier-coller
+depuis <code>data/drafts/*.md</code> → LinkedIn</p>
+<p><strong>Chaque matin (5 min)</strong> — Pilotage
+<code>python outreach.py pipeline</code></p>
+<p><strong>Vendredi 17h (15 min)</strong> — Bilan
+<code>python outreach.py stats</code></p>
+</div>
+</div>
+<div class="box box-violet">
+<h2>
+⌨️ 5 COMMANDES — UN SEUL ENDROIT À MÉMORISER
+</h2>
+<table>
+<colgroup>
+<col style="width: 41%" />
+<col style="width: 29%" />
+<col style="width: 29%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Commande</th>
+<th>Quand</th>
+<th>Effet</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>python outreach.py init</code></td>
+<td>1× au setup</td>
+<td>Crée <code>.env</code> + <code>data/prospects.csv</code></td>
+</tr>
+<tr class="even">
+<td><code>python outreach.py enrich</code></td>
+<td>Hebdo (optionnel)</td>
+<td>Recherche emails via Snov.io</td>
+</tr>
+<tr class="odd">
+<td><code>python outreach.py drafts</code></td>
+<td>Après chaque batch de sourcing</td>
+<td>Génère 4 messages par prospect (<code>data/drafts/*.md</code>)</td>
+</tr>
+<tr class="even">
+<td><code>python outreach.py pipeline</code></td>
+<td><strong>Chaque matin</strong></td>
+<td>Liste ce qu’il faut envoyer aujourd’hui</td>
+</tr>
+<tr class="odd">
+<td><code>python outreach.py stats</code></td>
+<td>Hebdo</td>
+<td>Funnel acceptation / booking / entretiens</td>
+</tr>
+</tbody>
+</table>
+<p>⚠️ Avant chaque session : <code>source .venv/bin/activate</code></p>
+</div>
+<div class="grid-3col">
+<div class="box box-amber">
+<h2>
+🎯 STATUTS CSV
+</h2>
+<p>Dans <code>data/prospects.csv</code>, colonne <code>status</code>
+:</p>
+<ul>
+<li><code>Liste</code> (défaut)</li>
+<li><code>Connexion envoyée</code></li>
+<li><code>Connecté</code></li>
+<li><code>DM envoyé</code></li>
+<li><code>Relance 1</code></li>
+<li><code>Relance 2</code></li>
+<li><code>Réponse positive</code></li>
+<li><code>Booké</code></li>
+<li><code>Entretien fait</code></li>
+<li><code>Cold</code> (ghosté)</li>
+<li><code>NoFit</code></li>
+</ul>
+</div>
+<div class="box box-cyan">
+<h2>
+🔍 BOOLEAN LINKEDIN
+</h2>
+<p>Copier-coller dans la recherche :</p>
+<p><strong>RSE</strong> :</p>
+<pre><code>(&quot;responsable RSE&quot; OR
+&quot;directeur RSE&quot; OR
+&quot;CSO&quot;) AND France</code></pre>
+<p><strong>DAF</strong> :</p>
+<pre><code>(&quot;DAF&quot; OR &quot;directeur
+financier&quot; OR &quot;CFO&quot;)
+AND France -comptable</code></pre>
+<p><strong>Risk</strong> :</p>
+<pre><code>(&quot;risk manager&quot; OR
+&quot;responsable conformité&quot;)
+AND France</code></pre>
+<p>Filtres : Lieu = France, Niveau ≥ Cadre supérieur</p>
+</div>
+<div class="box box-rose">
+<h2>
+📚 DOCS
+</h2>
+<p><strong>Quand lire quoi ?</strong></p>
+<ul>
+<li><p><strong>INTERNAL_GAPS_AUDIT.pdf</strong> → Stratégie produit
+(1×)</p></li>
+<li><p><strong>USER_RESEARCH_PLAYBOOK.pdf</strong> → Avant chaque
+entretien (script de questions)</p></li>
+<li><p><strong>LINKEDIN_OUTREACH_BATCH1.pdf</strong> → Référence
+templates (1×)</p></li>
+<li><p><strong>README.md</strong> du script → Si bug ou question
+CLI</p></li>
+<li><p><strong>CHEAT_SHEET.pdf</strong> (ce doc) → À côté de
+l’écran</p></li>
+</ul>
+</div>
+</div>
+<div class="box box-dark">
+<h2>
+🎬 LE FLOW EN UNE LIGNE
+</h2>
+<p>LinkedIn → Tampermonkey → <code>prospects.csv</code> →
+<code>drafts</code> → copier-coller LinkedIn → mise à jour CSV →
+<code>pipeline</code> lendemain</p>
+</div>
+<div class="footer">
+<p>ESG Flow — greenconnect.cloud · Cheat sheet v1 — 27/05/2026</p>
+</div>
+</div>
+</body>
+</html>

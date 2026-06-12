@@ -1,0 +1,9 @@
+title;category;probability;impact;risk_score;severity;mitigation_status;owner
+Hausse prix énergie (Scope 1+2);Transition risk;4;3;12;high;in_progress;Direction
+Pénurie talents tech (turnover);Operational;4;4;16;critical;in_progress;Direction
+Cyberattaque / fuite données clients;Operational;3;5;15;critical;implemented;Direction
+Non-conformité CSRD vague 2;Regulatory;3;4;12;high;in_progress;Direction
+Sanction CNIL incident RGPD;Regulatory;2;4;8;high;implemented;Direction
+Aléas climat physique (canicule, datacenter);Physical risk;2;3;6;medium;planned;Direction
+Dépendance fournisseur cloud unique (AWS);Operational;3;3;9;medium;planned;Direction
+Atteinte réputation greenwashing;Reputational;2;4;8;high;in_progress;Direction

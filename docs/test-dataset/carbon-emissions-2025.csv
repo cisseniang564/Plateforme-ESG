@@ -1,0 +1,22 @@
+scope;category;source;tco2e;calculation_method;period
+scope1;1.1;Combustion gaz chauffage bureaux;26.5;average-data;2025
+scope1;1.2;Carburant flotte (5 véhicules diesel);21.0;average-data;2025
+scope1;1.3;Fuites fluides clim (R-410A 5 kg);10.5;average-data;2025
+scope1;1.4;Émissions process (n/a IT services);0.5;estimated;2025
+scope2;2.1;Électricité location-based France;64.0;location-based;2025
+scope2;2.2;Électricité market-based (CPPA 100%);0.0;market-based;2025
+scope3;3.1;Achats biens & services (FEC spend);1650.0;spend-based;2025
+scope3;3.2;Biens d'équipement (IT, mobilier);85.0;spend-based;2025
+scope3;3.3;Énergie hors S1/S2;12.0;average-data;2025
+scope3;3.4;Transport amont (livraisons);8.0;spend-based;2025
+scope3;3.5;Déchets bureautiques;4.2;average-data;2025
+scope3;3.6;Déplacements pro (avion + train);115.0;average-data;2025
+scope3;3.7;Domicile-travail (87 sal);290.0;average-data;2025
+scope3;3.8;Actifs en leasing amont;14.0;spend-based;2025
+scope3;3.9;Transport aval (n/a);0.0;n/a;2025
+scope3;3.10;Transformation produits (n/a);0.0;n/a;2025
+scope3;3.11;Usage produits vendus (n/a services);0.0;n/a;2025
+scope3;3.12;Fin de vie produits (n/a);0.0;n/a;2025
+scope3;3.13;Actifs en leasing aval (n/a);0.0;n/a;2025
+scope3;3.14;Franchises (n/a);0.0;n/a;2025
+scope3;3.15;Investissements (n/a);0.0;n/a;2025

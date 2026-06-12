@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Audit technique — Pré-lancement" />
+  <title>Audit Réglementaire Interne — ESG Flow</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="audit_style.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Audit Réglementaire Interne — ESG Flow</h1>
+<p class="subtitle">État réel de couverture vs promesses marketing</p>
+<p class="author">Audit technique — Pré-lancement</p>
+<p class="date">27 mai 2026</p>
+</header>
+<nav id="TOC" role="doc-toc">
+
+</nav>
+<h1 id="préambule">Préambule</h1>
+<p><strong>Document interne — NE PAS DIFFUSER.</strong></p>
+<p>Ce document recense l’écart entre les promesses marketing de la
+plateforme ESG Flow et la réalité du code source au 27 mai 2026. Il sert
+de référence stratégique pour :</p>
+<ul>
+<li>Identifier les risques juridiques (publicité comparative trompeuse,
+Art. L121-1 Code conso)</li>
+<li>Prioriser la roadmap produit aligné avec la nouvelle grille
+tarifaire (249–1 199 €/mois)</li>
+<li>Préparer les entretiens utilisateurs ciblés</li>
+<li>Mesurer l’avancement futur des chantiers correctifs</li>
+</ul>
+<p><strong>Méthode</strong> : audit du code source
+<code>/Users/cisseniang/Downloads/esgplatform</code> (backend
+Python/FastAPI + frontend React/TypeScript), confrontation avec les
+exigences officielles de chaque réglementation. Aucune confiance
+accordée à la documentation marketing.</p>
+<h1 id="résumé-exécutif">1. Résumé exécutif</h1>
+<h2 id="verdict-global">Verdict global</h2>
+<p>La plateforme repose sur des fondations techniques
+<strong>supérieures à la moyenne du marché</strong> sur certains modules
+clés (iXBRL/ESEF, SBTi, FEC import). En revanche, <strong>3 promesses
+marketing ne sont pas tenues dans le code</strong> et créent un risque
+juridique et commercial significatif. De plus, <strong>3 fonctionnalités
+stratégiques</strong> sont implémentées mais sous-vendues.</p>
+<h2 id="couverture-par-réglementation">Couverture par
+réglementation</h2>
+<table>
+<colgroup>
+<col style="width: 3%" />
+<col style="width: 28%" />
+<col style="width: 16%" />
+<col style="width: 7%" />
+<col style="width: 42%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Réglementation</th>
+<th>Couverture réelle</th>
+<th>Marketé</th>
+<th>Gap critique</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>CSRD / ESRS</td>
+<td>60 %</td>
+<td>100 %</td>
+<td>55 / 280 datapoints encodés</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>CSDDD</td>
+<td>35 %</td>
+<td>100 %</td>
+<td>JSON opaque, pas de workflow d’alerte</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>BEGES (L229-25)</td>
+<td>40 %</td>
+<td>100 %</td>
+<td>Aucun format de soumission ADEME</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>DPEF</td>
+<td>65 %</td>
+<td>100 %</td>
+<td>Narratif templaté, pas data-bound</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>Taxonomie UE</td>
+<td>55 %</td>
+<td>100 %</td>
+<td>30 / 150 activités, persistance Redis volatile</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td>Sapin 2 / Vigilance 2017-399</td>
+<td>10 %</td>
+<td>50 %</td>
+<td>Quasi-inexistant</td>
+</tr>
+<tr class="odd">
+<td>7</td>
+<td>SBTi</td>
+<td>75 %</td>
+<td>100 %</td>
+<td>Meilleur module</td>
+</tr>
+<tr class="even">
+<td>8</td>
+<td>SFDR</td>
+<td>45 %</td>
+<td>100 %</td>
+<td>localStorage uniquement</td>
+</tr>
+<tr class="odd">
+<td>9</td>
+<td>Audit trail / ISAE 3000</td>
+<td>40 %</td>
+<td>100 %</td>
+<td>Pas de hash chain SHA-256</td>
+</tr>
+<tr class="even">
+<td>10</td>
+<td>Multi-entité / Consolidation</td>
+<td>15 %</td>
+<td>100 %</td>
+<td>Schéma DB inadapté</td>
+</tr>
+</tbody>
+</table>
+<h1 id="les-3-mensonges-marketing-à-corriger">2. Les 3 mensonges
+marketing à corriger</h1>
+<p>Ces promesses présentes sur la landing page ou dans les CTAs ne
+correspondent pas au code. <strong>Risque juridique</strong> (publicité
+trompeuse) + <strong>risque commercial</strong> (démonstration ratée en
+démo, perte de confiance).</p>
+<h2 id="audit-trail-sha-256-blockchain-grade">2.1 « Audit trail SHA-256
+/ blockchain-grade »</h2>
+<ul>
+<li><strong>Réalité</strong> : Le modèle <code>audit_log</code> stocke
+<code>old_values</code>, <code>new_values</code>, <code>user_id</code>,
+<code>ip_address</code>. Aucun champ <code>previous_hash</code>, aucun
+service ne calcule de hash chaîné.</li>
+<li><strong>Conséquence</strong> : Les enregistrements peuvent être
+modifiés individuellement sans détection. <strong>Ne satisfait pas la
+norme ISAE 3000</strong> que le Commissaire aux Comptes du client va
+appliquer.</li>
+<li><strong>Risque</strong> : Vente impossible aux ETI/Groupes
+audit-sensibles, premier point de blocage en démo technique.</li>
+<li><strong>Reformulation immédiate suggérée</strong> : « Journal
+d’audit détaillé » (vrai) ou retirer la mention « immutable / blockchain
+» jusqu’à l’implémentation effective.</li>
+</ul>
+<h2 id="multi-entité-consolidation-groupe">2.2 « Multi-entité /
+Consolidation groupe »</h2>
+<ul>
+<li><strong>Réalité</strong> : Le modèle <code>Organization</code> n’a
+aucun <code>parent_id</code>, aucune <code>consolidation_method</code>,
+aucun <code>ownership_pct</code>. L’enum contient
+<code>SUBSIDIARY</code> mais aucune FK n’existe.</li>
+<li><strong>Conséquence</strong> : <strong>Aucune consolidation
+possible</strong>. Aucune élimination inter-co. Le plan Groupe à 1 199
+€/mois est techniquement invendable.</li>
+<li><strong>Risque</strong> : Promesse non tenue dès la 1ère démo d’un
+groupe avec filiales.</li>
+<li><strong>Action</strong> : soit retirer la promesse, soit implémenter
+le minimum (parent_id + roll-up simple sur indicateurs).</li>
+</ul>
+<h2 id="plan-de-vigilance-sapin-2-loi-2017-399">2.3 « Plan de vigilance
+Sapin 2 / Loi 2017-399 »</h2>
+<ul>
+<li><strong>Réalité</strong> : Couverture <strong>10 %</strong>.
+Mentions textuelles uniquement dans <code>reports.py:677-689</code> et
+<code>materiality.py:559</code>. Aucun module, aucune table dédiée,
+aucun mécanisme d’alerte.</li>
+<li><strong>Conséquence</strong> : Sociétés mères &gt; 5 000 salariés en
+France (obligation légale) ne peuvent pas couvrir leur obligation via
+ESG Flow.</li>
+<li><strong>Risque</strong> : Client refusera dès la lecture du cahier
+des charges.</li>
+<li><strong>Action</strong> : retirer la promesse ou créer un module
+minimal (table <code>vigilance_plans</code> + cartographie risques +
+plan d’action + mécanisme d’alerte).</li>
+</ul>
+<h1 id="les-3-pépites-cachées-à-amplifier">3. Les 3 pépites cachées à
+amplifier</h1>
+<p>Ces fonctionnalités existent dans le code, fonctionnent, et
+constituent un avantage compétitif réel face à Greenly, Sweep,
+Persefoni. Elles méritent d’être mises en avant sur la landing.</p>
+<h2 id="générateur-ixbrl-esef-réel">3.1 Générateur iXBRL / ESEF
+réel</h2>
+<ul>
+<li><strong>Fichier</strong> :
+<code>backend/app/services/ixbrl_service.py</code> (580 lignes)</li>
+<li><strong>Caractéristiques</strong> : Génération XHTML balisée avec le
+namespace EFRAG <code>2024-12-31</code>, 35 concepts ESRS encodés.</li>
+<li><strong>Différenciation</strong> : 90 % des concurrents (Greenly,
+Sweep) produisent du PDF déguisé. ESG Flow produit le XHTML certifiable
+réel.</li>
+<li><strong>Argument commercial</strong> : « ESG Flow est l’une des
+rares solutions à produire un XHTML iXBRL conforme au format EFRAG,
+exigé par l’ESMA à partir de 2026 pour les sociétés cotées. »</li>
+</ul>
+<h2 id="import-fec-calcul-scope-3-automatique">3.2 Import FEC → Calcul
+Scope 3 automatique</h2>
+<ul>
+<li><strong>Fichiers</strong> :
+<code>backend/app/services/fec_parser.py</code>,
+<code>backend/app/services/pcg_emission_mapper.py</code></li>
+<li><strong>Caractéristiques</strong> : Parser FEC 18 colonnes (Sage,
+Cegid, Pennylane), mapping automatique des comptes PCG (classe 60, 61,
+62) vers les facteurs d’émission ADEME (47 facteurs encodés).</li>
+<li><strong>Différenciation</strong> : Vrai workflow d’import, pas de
+simple template. Évite 200 à 400 heures de saisie manuelle par
+exercice.</li>
+<li><strong>Argument DAF</strong> : « Importe ton FEC, on calcule ton
+Scope 3 en 5 minutes au lieu de 3 mois. »</li>
+</ul>
+<h2 id="préflight-sbti-avant-paiement-du-fee-9-500-usd">3.3 Préflight
+SBTi avant paiement du fee 9 500 USD</h2>
+<ul>
+<li><strong>Fichier</strong> :
+<code>backend/app/services/sbti_service.py</code></li>
+<li><strong>Caractéristiques</strong> : Validation des critères v5.2
+(réduction minimale 4.2 %/an pour la trajectoire 1.5 °C, scope 3 ≥ 40 %
+du total, net-zero ≤ 2050).</li>
+<li><strong>Différenciation</strong> : Aucun concurrent ne propose ce
+préflight. Le SBTi rejette ~30 % des soumissions à la 1ère revue.</li>
+<li><strong>Argument</strong> : « Validation préalable avant de payer
+les 9 500 USD au SBTi. »</li>
+</ul>
+<h1 id="détail-de-couverture-par-réglementation">4. Détail de couverture
+par réglementation</h1>
+<h2 id="csrd-esrs-60">4.1 CSRD / ESRS — 60 %</h2>
+<p><strong>Code existant</strong> :</p>
+<ul>
+<li>Backend : <code>endpoints/esrs.py</code> (398L, 11 standards
+E1-E5/S1-S4/G1/ESRS2)</li>
+<li>Service taxonomie : <code>services/esrs_taxonomy.py</code> (548L) —
+<strong>55 ESRSConcepts</strong> sur ~1 000 publiés par EFRAG</li>
+<li>Service iXBRL : <code>services/ixbrl_service.py</code> (580L,
+namespace EFRAG 2024-12-31)</li>
+<li>Frontend : <code>Compliance/ESRSEnvironmental.tsx</code>,
+<code>ESRSSocial.tsx</code>, <code>ESRSGovernance.tsx</code>,
+<code>ESRSWaterWaste.tsx</code>, <code>ESRSGapAnalysis.tsx</code>,
+<code>IXBRLTagging.tsx</code> (950L),
+<code>Reports/CSRDBuilder.tsx</code></li>
+</ul>
+<p><strong>Gaps critiques</strong> :</p>
+<ul>
+<li>Seulement <strong>55 / 280 datapoints obligatoires</strong> encodés
+(~20 %)</li>
+<li>L’analyse de gap est <strong>heuristique</strong> :
+<code>covered = round(matching * 0.5)</code> (<code>esrs.py:306</code>)
+— n’est PAS un suivi disclosure-par-disclosure</li>
+<li>Pas d’intégration Arelle pour la validation XSD</li>
+<li>Pas de support des standards sectoriels (ESRS sectoriels en cours de
+publication)</li>
+</ul>
+<p><strong>Sévérité</strong> : HAUTE — un client soumis à la CSRD vague
+2026 verra le manque dès le 1er audit interne.</p>
+<h2 id="csddd-35">4.2 CSDDD — 35 %</h2>
+<p><strong>Code existant</strong> :</p>
+<ul>
+<li>Backend : <code>endpoints/csddd.py</code> (199L) — un seul GET/POST
+persistant un JSON opaque dans <code>framework_assessments</code></li>
+<li>Catalogue de 18 risques (UNGP / OECD / ILO / REACH)</li>
+<li>Frontend : <code>Compliance/CSDDD.tsx</code> (794L)</li>
+</ul>
+<p><strong>Gaps critiques</strong> :</p>
+<ul>
+<li>Pas de table dédiée pour les griefs (juste un array JSON)</li>
+<li>Pas de workflow de plainte anonyme</li>
+<li>Pas de suivi de plan d’action</li>
+<li>Pas de cartographie de chaîne de valeur au-delà de la liste
+fournisseurs</li>
+<li>Pas d’export annuel pour reporting CSDDD</li>
+</ul>
+<p><strong>Sévérité</strong> : HAUTE — CSDDD entre en vigueur 2027 pour
+~15 000 entreprises EU.</p>
+<h2 id="beges-l229-25-40">4.3 BEGES (L229-25) — 40 %</h2>
+<p><strong>Code existant</strong> :</p>
+<ul>
+<li>Backend : <code>endpoints/carbon.py</code> (351L) — split Scope
+1/2/3</li>
+<li>Service Scope 3 : <code>services/scope3_calculator.py</code> — 47
+facteurs ADEME, 15 catégories GHG Protocol</li>
+<li>Parsers : <code>services/fec_parser.py</code>,
+<code>services/pcg_emission_mapper.py</code></li>
+</ul>
+<p><strong>Gaps critiques</strong> :</p>
+<ul>
+<li>Pas d’export <code>BEGES.xlsx</code> (template officiel ADEME)</li>
+<li>Pas de format de soumission <code>bilans-ges.ademe.fr</code></li>
+<li>Pas de gestion de l’incertitude (%)</li>
+<li>Pas de politique de recalcul (baseline reset)</li>
+<li>Pas d’attestation ISO 14064 audit</li>
+</ul>
+<p><strong>Sévérité</strong> : HAUTE — argument commercial DAF si
+corrigé.</p>
+<h2 id="dpef-65">4.4 DPEF — 65 %</h2>
+<p><strong>Code existant</strong> :</p>
+<ul>
+<li><code>services/report_service.py:1281</code>
+<code>_generate_dpef_pdf</code> — vrai générateur ReportLab</li>
+<li>Frontend : <code>DPEFReport.tsx</code> (1 035 lignes)</li>
+</ul>
+<p><strong>Gaps critiques</strong> :</p>
+<ul>
+<li>Business model, cartographie risques, KPIs sont des narratifs
+templatés, non dérivés de champs DB structurés</li>
+</ul>
+<p><strong>Sévérité</strong> : MOYENNE — DPEF est en cours de
+remplacement par CSRD.</p>
+<h2 id="taxonomie-ue-55">4.5 Taxonomie UE — 55 %</h2>
+<p><strong>Code existant</strong> :</p>
+<ul>
+<li>Backend : <code>endpoints/taxonomy.py</code> (414L) — 6 objectifs,
+<strong>30 activités de référence</strong> hardcodées</li>
+<li>Endpoint <code>/assess</code> : calcule turnover/capex alignment
+%</li>
+<li>Endpoint <code>/activities/{id}/dnsh</code> : retourne les critères
+DNSH</li>
+<li>Frontend : <code>Compliance/TaxonomyAlignment.tsx</code> (1 104
+lignes)</li>
+</ul>
+<p><strong>Gaps critiques</strong> :</p>
+<ul>
+<li>30 / ~150 activités (Annexes I &amp; II) hardcodées</li>
+<li>Minimum safeguards = booléen seulement</li>
+<li>Pas de calcul KPI OpEx</li>
+<li><strong>Persistance en Redis</strong> — volatile, non auditable</li>
+</ul>
+<p><strong>Sévérité</strong> : HAUTE — Taxonomie UE obligatoire pour les
+sociétés sous CSRD.</p>
+<h2 id="sapin-2-vigilance-2017-399-10">4.6 Sapin 2 / Vigilance 2017-399
+— 10 %</h2>
+<p><strong>Code existant</strong> :</p>
+<ul>
+<li>Mentions textuelles uniquement dans <code>reports.py:677-689</code>
+et <code>materiality.py:559</code></li>
+</ul>
+<p><strong>Gaps critiques</strong> :</p>
+<ul>
+<li>Aucun module dédié</li>
+<li>Aucune table dédiée</li>
+<li>Aucun plan de vigilance structuré</li>
+<li>Aucun mécanisme d’alerte</li>
+</ul>
+<p><strong>Sévérité</strong> : HAUTE — obligation légale pour groupes
+français &gt; 5 000 salariés.</p>
+<h2 id="sbti-75">4.7 SBTi — 75 %</h2>
+<p><strong>Code existant</strong> :</p>
+<ul>
+<li>Backend : <code>endpoints/sbti.py</code> (292L) — CRUD complet +
+validate + submit</li>
+<li>Service : <code>services/sbti_service.py</code> — validation
+critères v5.2</li>
+<li>Modèle : <code>SBTiCommitment</code> avec lifecycle states (draft →
+validated → submitted → approved)</li>
+</ul>
+<p><strong>Gaps critiques</strong> :</p>
+<ul>
+<li>Pas de pathway sectoriel SDA (Sectoral Decarbonization
+Approach)</li>
+<li>Trajectoire de décarbonation pas visualisée en DB</li>
+</ul>
+<p><strong>Sévérité</strong> : BASSE — meilleur module de la
+plateforme.</p>
+<h2 id="sfdr-45">4.8 SFDR — 45 %</h2>
+<p><strong>Code existant</strong> :</p>
+<ul>
+<li>Frontend : <code>Compliance/SFDRDisclosure.tsx</code> (730L) — 21
+indicateurs PAI (couvre les 14+4 obligatoires)</li>
+<li>Templates Article 6/8/9</li>
+<li>Export PDF côté client</li>
+</ul>
+<p><strong>Gaps critiques</strong> :</p>
+<ul>
+<li><strong>Persisté en localStorage</strong> uniquement (perdu au
+reload)</li>
+<li>Pas de planification des reportings périodiques</li>
+<li>Pas de modèle entité fund-level</li>
+</ul>
+<p><strong>Sévérité</strong> : MOYENNE — cible niche (asset
+managers).</p>
+<h2 id="audit-trail-isae-3000-40">4.9 Audit Trail / ISAE 3000 — 40
+%</h2>
+<p><strong>Code existant</strong> :</p>
+<ul>
+<li><code>models/audit_log.py</code> : old_values, new_values, user, IP,
+user_agent</li>
+</ul>
+<p><strong>Gap critique</strong> :</p>
+<ul>
+<li><strong>Pas de hash chain SHA-256</strong> (pas de champ
+<code>previous_hash</code>)</li>
+<li>L’<code>integrity_hash</code> référencé dans
+<code>audit_trail.py:124</code> lit depuis <code>entry_metadata</code>
+mais aucun service ne le calcule ni ne le chaîne</li>
+<li>Les enregistrements sont <strong>individuellement
+modifiables</strong></li>
+<li><strong>Ne satisfait PAS la norme ISAE 3000</strong></li>
+</ul>
+<p><strong>Sévérité</strong> : CRITIQUE — chantier P0 absolu.</p>
+<h2 id="multi-entité-consolidation-15">4.10 Multi-entité / Consolidation
+— 15 %</h2>
+<p><strong>Code existant</strong> :</p>
+<ul>
+<li>Modèle <code>Organization</code> avec enum
+<code>SUBSIDIARY</code></li>
+</ul>
+<p><strong>Gaps critiques</strong> :</p>
+<ul>
+<li>Pas de <code>parent_id</code> (FK)</li>
+<li>Pas de <code>consolidation_method</code></li>
+<li>Pas d’<code>ownership_pct</code></li>
+<li>Pas d’élimination inter-co</li>
+<li>Pas d’endpoint de rapport consolidé</li>
+</ul>
+<p><strong>Sévérité</strong> : HAUTE — bloque le plan Groupe 1 199
+€/mois.</p>
+<h1 id="limites-architecturales">5. Limites architecturales</h1>
+<ul>
+<li><strong>Persistance Redis volatile</strong> :
+<code>taxonomy.py:17</code>, certains plans carbon — perdu au
+redémarrage, non multi-tenant safe, non auditable</li>
+<li><strong>localStorage frontend</strong> : SFDR — perdu au reload, non
+synchronisable multi-device</li>
+<li><strong>6+ fichiers <code>.backup</code> /
+<code>.bak</code></strong> dans <code>models/</code> et
+<code>services/</code> (esrs_taxonomy, materiality, role, user) —
+hygiène production</li>
+<li><strong>Scripts seed_<em>.py et fix_</em>.sh à la racine</strong> —
+opérations manuelles, pas de discipline migrations</li>
+<li><strong>Pas de worker pour exports lourds</strong> : un iXBRL de 1
+000+ facts bloquerait le thread requête FastAPI</li>
+<li><strong><code>materiality.py</code></strong> : champs
+<code>financial_impact</code> / <code>esg_impact</code> sont des floats,
+mais pas de colonne <code>iro_type</code> en DB (seulement inféré côté
+frontend)</li>
+</ul>
+<h1 id="roadmap-recommandée-90-jours">6. Roadmap recommandée 90
+jours</h1>
+<p>Priorisation ROI / coût de développement :</p>
+<table>
+<colgroup>
+<col style="width: 9%" />
+<col style="width: 44%" />
+<col style="width: 9%" />
+<col style="width: 37%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Priorité</th>
+<th>Chantier</th>
+<th>Coût dev</th>
+<th>Impact vente</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>P0</td>
+<td>Hash chain SHA-256 audit trail (ISAE 3000)</td>
+<td>3–5 j</td>
+<td>Débloque ventes ETI/Groupe</td>
+</tr>
+<tr class="even">
+<td>P1</td>
+<td>Multi-entité minimal (parent_id, roll-up)</td>
+<td>7–10 j</td>
+<td>Débloque plan Groupe 1 199 €</td>
+</tr>
+<tr class="odd">
+<td>P2</td>
+<td>ESRS datapoints étendus (55 → 150)</td>
+<td>10–15 j</td>
+<td>CSRD défendable</td>
+</tr>
+<tr class="even">
+<td>P3</td>
+<td>Module vigilance Sapin 2 réel</td>
+<td>7–10 j</td>
+<td>Élimine risque légal + débloque marché</td>
+</tr>
+<tr class="odd">
+<td>P4</td>
+<td>Format BEGES.xlsx ADEME</td>
+<td>5 j</td>
+<td>Killer feature DAF</td>
+</tr>
+<tr class="even">
+<td>P5</td>
+<td>Persistance SFDR + Taxonomie (sortir de Redis)</td>
+<td>3–5 j</td>
+<td>Hygiène + multi-tenant safe</td>
+</tr>
+<tr class="odd">
+<td>P6</td>
+<td>Étendre Taxonomie UE (30 → 150 activités)</td>
+<td>10 j</td>
+<td>Sociétés CSRD obligées</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total estimé</strong> : 45–60 jours dev, soit 9–12 semaines à
+1 dev.</p>
+<h1 id="hypothèses-à-valider-en-entretien-utilisateur">7. Hypothèses à
+valider en entretien utilisateur</h1>
+<p>Chaque gap critique doit être traité comme une
+<strong>hypothèse</strong> plutôt qu’une certitude. Avant de coder,
+valider via 15-20 entretiens prospects :</p>
+<table>
+<colgroup>
+<col style="width: 55%" />
+<col style="width: 44%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Hypothèse à valider</th>
+<th>Question d’entretien</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Le hash chain SHA-256 est exigé par les CAC</td>
+<td>« Que demande ton commissaire aux comptes en matière de traçabilité
+ESG ? »</td>
+</tr>
+<tr class="even">
+<td>Le multi-entité est un besoin réel (vs simple regroupement)</td>
+<td>« Combien de filiales reportes-tu ? Comment fais-tu aujourd’hui ?
+»</td>
+</tr>
+<tr class="odd">
+<td>Le format BEGES.xlsx est obligatoire pour soumission ADEME</td>
+<td>« Comment soumets-tu ton bilan GES à l’ADEME ? »</td>
+</tr>
+<tr class="even">
+<td>Les 280 datapoints ESRS sont vraiment nécessaires (vs 55 bien
+choisis)</td>
+<td>« Lesquels parmi les ESRS te causent le plus de difficulté ? »</td>
+</tr>
+<tr class="odd">
+<td>Sapin 2 / vigilance est un sujet pour le buyer persona</td>
+<td>« Es-tu soumis à la loi 2017-399 ? Comment gères-tu ton plan ?
+»</td>
+</tr>
+<tr class="even">
+<td>iXBRL est compris et valorisé par les prospects</td>
+<td>« Connais-tu le format ESEF iXBRL ? Comment le génères-tu ? »</td>
+</tr>
+</tbody>
+</table>
+<h1 id="annexes">8. Annexes</h1>
+<h2 id="fichiers-clés-à-connaître">8.1 Fichiers clés à connaître</h2>
+<pre><code>backend/app/services/ixbrl_service.py       (580L) - Générateur iXBRL/ESEF
+backend/app/services/esrs_taxonomy.py       (548L) - 55 ESRSConcepts
+backend/app/services/fec_parser.py                 - Parser FEC 18 colonnes
+backend/app/services/pcg_emission_mapper.py        - Mapping PCG → ADEME
+backend/app/services/scope3_calculator.py          - 47 facteurs ADEME
+backend/app/services/sbti_service.py               - Validation v5.2
+backend/app/services/report_service.py    (~3500L) - Génération PDF
+backend/app/api/v1/endpoints/esrs.py        (398L) - API ESRS
+backend/app/api/v1/endpoints/csddd.py       (199L) - API CSDDD
+backend/app/api/v1/endpoints/taxonomy.py    (414L) - API Taxonomie UE
+backend/app/api/v1/endpoints/sbti.py        (292L) - API SBTi
+backend/app/models/audit_log.py                    - Audit trail (sans hash chain)</code></pre>
+<h2 id="légende-couverture">8.2 Légende couverture</h2>
+<ul>
+<li><strong>0 %</strong> : Inexistant</li>
+<li><strong>25 %</strong> : Placeholder / texte uniquement</li>
+<li><strong>50 %</strong> : Implémentation basique fonctionnelle</li>
+<li><strong>75 %</strong> : Fonctionnel avec workflow complet</li>
+<li><strong>100 %</strong> : Production-ready avec audit trail
+conforme</li>
+</ul>
+<h2 id="document-de-référence">8.3 Document de référence</h2>
+<ul>
+<li>EFRAG : ESRS Set 1 (Final Draft, novembre 2022) — 12 standards</li>
+<li>Commission Européenne : Règlement délégué 2023/2772 (juillet
+2023)</li>
+<li>AMF : Position-recommandation DOC-2024-04 (Mai 2024)</li>
+<li>ADEME : Guide BEGES version 5 (2022)</li>
+<li>Loi française 2017-399 (Devoir de vigilance, 27 mars 2017)</li>
+</ul>
+<hr />
+<p><strong>Document confidentiel — Diffusion interne
+uniquement.</strong></p>
+<p><em>Audit réalisé le 27 mai 2026.</em></p>
+</body>
+</html>

@@ -1,0 +1,59 @@
+organization;period_start;period_end;esrs_code;pillar;category;metric_name;value;unit;verification_status
+Aurora Solutions SAS;2025-01-01;2025-12-31;ESRS2-1;governance;governance;Présence comité ESG au CA;1;bool;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;ESRS2-2;governance;governance;Périmètre reporting consolidé;1;bool;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;E1-1;environmental;climate_strategy;Engagement net-zéro 2050;1;bool;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;E1-4;environmental;climate_target;Objectif réduction GES 2030 vs 2019;42;%;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;E1-5;environmental;energy;Consommation énergie totale;1120000;kWh;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;E1-5b;environmental;energy;Part énergie renouvelable;68;%;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;E1-6a;environmental;ghg_scope1;Scope 1 émissions directes;58.5;tCO2e;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;E1-6b;environmental;ghg_scope2;Scope 2 location-based;64.0;tCO2e;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;E1-6b2;environmental;ghg_scope2;Scope 2 market-based;0.0;tCO2e;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;E1-6c;environmental;ghg_scope3;Scope 3 total;2178.0;tCO2e;pending
+Aurora Solutions SAS;2025-01-01;2025-12-31;E1-6c1;environmental;ghg_scope3_cat1;Scope 3 cat 1 - Achats biens et services;1650.0;tCO2e;pending
+Aurora Solutions SAS;2025-01-01;2025-12-31;E1-6c6;environmental;ghg_scope3_cat6;Scope 3 cat 6 - Déplacements pro;115.0;tCO2e;pending
+Aurora Solutions SAS;2025-01-01;2025-12-31;E1-6c7;environmental;ghg_scope3_cat7;Scope 3 cat 7 - Domicile-travail;290.0;tCO2e;pending
+Aurora Solutions SAS;2025-01-01;2025-12-31;E1-8;environmental;carbon_pricing;Prix interne du carbone;45;EUR/tCO2e;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;E1-9;environmental;climate_risk;Effets financiers risques climatiques;1800000;EUR;pending
+Aurora Solutions SAS;2025-01-01;2025-12-31;E2-4;environmental;air_pollution;Émissions NOx;0.4;tonnes;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;E2-5;environmental;chemicals;Substances préoccupantes utilisées;0;tonnes;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;E3-4;environmental;water_withdrawal;Prélèvements d'eau totaux;4350;m3;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;E3-4b;environmental;water_stress;Prélèvements en zones stress hydrique;0;m3;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;E3-5;environmental;water_consumption;Consommation d'eau;4200;m3;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;E4-2;environmental;biodiversity;Sites proches zones Natura 2000;0;nb;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;E5-4;environmental;circular;Matières recyclées;12;tonnes;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;E5-4b;environmental;circular;Part matières recyclées;35;%;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;E5-5;environmental;waste;Déchets totaux générés;8.4;tonnes;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;E5-5b;environmental;waste;Taux de valorisation déchets;72;%;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S1-6;social;headcount;Nombre total salariés (ETP);87;ETP;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S1-6a;social;headcount_cdi;Salariés CDI;81;ETP;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S1-6b;social;headcount_cdd;Salariés CDD;4;ETP;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S1-6c;social;headcount_temp;Intérimaires (moyenne annuelle);12;ETP;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S1-9;social;gender_diversity;Part de femmes total;38;%;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S1-9a;social;gender_diversity;Part de femmes en management;32;%;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S1-9b;social;gender_diversity;Part de femmes au CODIR;25;%;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S1-10;social;pay_equity;Écart de rémunération H/F (gender pay gap);5.8;%;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S1-10b;social;pay_equity;Ratio rémunération CEO / médiane;8.4;ratio;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S1-13;social;training;Heures de formation par salarié (moyenne);22;heures;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S1-13b;social;training;Salariés formés au moins 1 fois;91;%;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S1-14;social;safety;Accidents du travail avec arrêt;1;nb;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S1-14b;social;safety;Taux de fréquence accidents;2.1;ratio;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S1-14c;social;safety;Maladies professionnelles déclarées;0;nb;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S1-15;social;work_life;Salariés en télétravail régulier;78;%;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S1-16;social;turnover;Taux de turnover volontaire;9.4;%;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S1-17;social;minimum_wage;Salaires sous minimum sectoriel;0;%;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S2-1;social;supply_chain;Politique droits humains supply chain publiée;1;bool;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S2-4;social;supplier_audit;% fournisseurs (valeur achat) évalués droits humains;62;%;pending
+Aurora Solutions SAS;2025-01-01;2025-12-31;S3-1;social;community;Montant mécénat / partenariats locaux;24000;EUR;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S4-1;social;data_privacy;Politique protection données personnelles;1;bool;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S4-3;social;customer_complaint;Réclamations clients reçues;18;nb;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S4-3b;social;customer_complaint;Réclamations résolues sous 30j;17;nb;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;S4-4;social;data_privacy;Incidents données personnelles déclarés CNIL;0;nb;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;G1-1;governance;ethics;Code de conduite publié;1;bool;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;G1-2;governance;payment_terms;Délai moyen de paiement fournisseurs;38;jours;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;G1-2b;governance;payment_terms;Conformité légale délais (LME 60j);96;%;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;G1-3;governance;anti_corruption;Salariés formés anti-corruption;87;%;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;G1-3b;governance;anti_corruption;Cartographie risques corruption à jour;1;bool;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;G1-4;governance;anti_corruption;Cas confirmés de corruption;0;nb;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;G1-5;governance;lobbying;Dépenses lobbying;0;EUR;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;G1-5b;governance;lobbying;Inscription registre transparence UE;0;bool;verified
+Aurora Solutions SAS;2025-01-01;2025-12-31;G1-6;governance;whistleblowing;Signalements lanceurs d'alerte reçus;2;nb;verified
