@@ -1,0 +1,31 @@
+JournalCode|JournalLib|EcritureNum|EcritureDate|CompteNum|CompteLib|CompAuxNum|CompAuxLib|PieceRef|PieceDate|EcritureLib|Debit|Credit|EcritureLet|DateLet|ValidDate|Montantdevise|Idevise
+AC|Achats|1|20250131|601100|Achats matières premières - acier||STEELCO SAS|FA-2025-001|20250128|Achat acier laminé Q1|48250,00|0,00|||20250215|48250,00|EUR
+AC|Achats|2|20250131|601200|Achats matières premières - plastiques||POLYM FRANCE|FA-2025-002|20250130|Polyéthylène HD livraison jan|12840,50|0,00|||20250215|12840,50|EUR
+AC|Achats|3|20250228|601100|Achats matières premières - acier||STEELCO SAS|FA-2025-021|20250226|Achat acier laminé Q1 lot2|51200,00|0,00|||20250315|51200,00|EUR
+AC|Achats|4|20250228|602000|Achats autres approvisionnements||EMBAL PRO|FA-2025-018|20250227|Emballages carton T1|8420,00|0,00|||20250315|8420,00|EUR
+AC|Achats|5|20250331|601100|Achats matières premières - acier||STEELCO SAS|FA-2025-042|20250329|Achat acier laminé Q1 lot3|47890,00|0,00|||20250415|47890,00|EUR
+AC|Achats|6|20250331|606100|Achats électricité||EDF ENTREPRISES|FA-2025-031|20250331|Facture électricité mars 2025|18420,00|0,00|||20250415|18420,00|EUR
+AC|Achats|7|20250430|606200|Achats combustibles - gaz naturel||GRDF PRO|FA-2025-045|20250430|Gaz naturel avril 2025|9840,00|0,00|||20250515|9840,00|EUR
+AC|Achats|8|20250430|601100|Achats matières premières||STEELCO SAS|FA-2025-058|20250428|Commande Q2 lot1|53100,00|0,00|||20250515|53100,00|EUR
+AC|Achats|9|20250531|606100|Achats électricité||EDF ENTREPRISES|FA-2025-062|20250531|Facture électricité mai 2025|17850,00|0,00|||20250615|17850,00|EUR
+AC|Achats|10|20250531|607000|Achats marchandises - composants||COMPO TECH|FA-2025-065|20250529|Composants electroniques Q2|34280,00|0,00|||20250615|34280,00|EUR
+AC|Achats|11|20250630|6241|Transport de marchandises||GEODIS|FA-2025-078|20250628|Transport livraisons clients juin|14230,00|0,00|||20250715|14230,00|EUR
+AC|Achats|12|20250630|606100|Achats électricité||EDF ENTREPRISES|FA-2025-081|20250630|Facture électricité juin 2025|16940,00|0,00|||20250715|16940,00|EUR
+AC|Achats|13|20250731|601100|Achats matières premières||STEELCO SAS|FA-2025-095|20250729|Achat acier Q3 lot1|49840,00|0,00|||20250815|49840,00|EUR
+AC|Achats|14|20250731|606200|Achats combustibles||GRDF PRO|FA-2025-098|20250731|Gaz naturel juillet 2025|7420,00|0,00|||20250815|7420,00|EUR
+AC|Achats|15|20250831|625000|Déplacements et missions||AMERICAN EXPRESS|NF-2025-082|20250831|Notes de frais déplacements août|8924,00|0,00|||20250915|8924,00|EUR
+AC|Achats|16|20250831|6244|Transports de personnes - avion||AIRFRANCE|FA-2025-104|20250829|Billets avion équipe commerciale|12480,00|0,00|||20250915|12480,00|EUR
+AC|Achats|17|20250930|606100|Achats électricité||EDF ENTREPRISES|FA-2025-118|20250930|Facture électricité septembre|19240,00|0,00|||20251015|19240,00|EUR
+AC|Achats|18|20250930|6241|Transport de marchandises||KUEHNE NAGEL|FA-2025-121|20250928|Fret international Q3|28470,00|0,00|||20251015|28470,00|EUR
+AC|Achats|19|20251031|613000|Loyers et charges locatives||SCI PARC INDUS|FA-2025-134|20251001|Loyer octobre - site production|24800,00|0,00|||20251115|24800,00|EUR
+AC|Achats|20|20251031|601100|Achats matières premières||STEELCO SAS|FA-2025-138|20251029|Achat acier Q4 lot1|52380,00|0,00|||20251115|52380,00|EUR
+AC|Achats|21|20251130|606100|Achats électricité||EDF ENTREPRISES|FA-2025-152|20251130|Facture électricité novembre|21840,00|0,00|||20251215|21840,00|EUR
+AC|Achats|22|20251130|615000|Entretien et réparations||THYSSENKRUPP ELEV|FA-2025-156|20251128|Maintenance préventive machines|18420,00|0,00|||20251215|18420,00|EUR
+AC|Achats|23|20251231|601100|Achats matières premières||STEELCO SAS|FA-2025-172|20251229|Clôture année - régularisation stock|38240,00|0,00|||20260115|38240,00|EUR
+AC|Achats|24|20251231|606200|Achats gaz naturel||GRDF PRO|FA-2025-178|20251231|Gaz naturel décembre 2025|12480,00|0,00|||20260115|12480,00|EUR
+AC|Achats|25|20251231|625000|Déplacements et missions||AMEX CORPORATE|NF-2025-DEC|20251231|Frais déplacements décembre - régularisation|6840,00|0,00|||20260115|6840,00|EUR
+AC|Achats|26|20250228|641100|Salaires bruts - ouvriers||PAIE INTERNE|PAI-2025-02|20250228|Masse salariale février 2025|184200,00|0,00|||20250305|184200,00|EUR
+AC|Achats|27|20250228|645100|Cotisations sécurité sociale||URSSAF|CH-2025-02|20250228|Charges patronales T1-2025|84320,00|0,00|||20250305|84320,00|EUR
+AC|Achats|28|20250131|6063|Achats carburants flotte||TOTAL LUBRIFIANTS|FA-2025-008|20250130|Carburants flotte janvier 2025|14280,00|0,00|||20250215|14280,00|EUR
+AC|Achats|29|20250228|6063|Achats carburants flotte||TOTAL LUBRIFIANTS|FA-2025-024|20250226|Carburants flotte février 2025|13840,00|0,00|||20250315|13840,00|EUR
+AC|Achats|30|20250331|6063|Achats carburants flotte||TOTAL LUBRIFIANTS|FA-2025-043|20250329|Carburants flotte mars 2025|14920,00|0,00|||20250415|14920,00|EUR

@@ -1,0 +1,73 @@
+metric_name,value_numeric,unit,period_start,period_end,pillar,category,data_source,notes
+Émissions GES Scope 1,2341.8,tCO2e,2023-01-01,2023-12-31,environmental,climate,Bilan Carbone,Année de référence baseline SBTi
+Émissions GES Scope 1,2187.4,tCO2e,2024-01-01,2024-12-31,environmental,climate,Bilan Carbone,Réduction 6.6% vs 2023 — remplacement chaudière fioul
+Émissions GES Scope 1,2072.6,tCO2e,2025-01-01,2025-12-31,environmental,climate,Bilan Carbone,Réduction 5.3% vs 2024 — flotte électrifiée (4 VE)
+Émissions GES Scope 2 location-based,1487.3,tCO2e,2023-01-01,2023-12-31,environmental,climate,Factures énergie,Avant contrat HPE
+Émissions GES Scope 2 location-based,1298.6,tCO2e,2024-01-01,2024-12-31,environmental,climate,Factures énergie,
+Émissions GES Scope 2 location-based,1124.6,tCO2e,2025-01-01,2025-12-31,environmental,climate,Factures énergie,Réduction 24.4% vs 2023 — efficacité + panneaux PV
+Émissions GES Scope 2 market-based,1487.3,tCO2e,2023-01-01,2023-12-31,environmental,climate,Certificats GO,Pas de contrat vert en 2023
+Émissions GES Scope 2 market-based,842.1,tCO2e,2024-01-01,2024-12-31,environmental,climate,Certificats GO,Contrat EDF HPE partiel (12000 MWh/an)
+Émissions GES Scope 2 market-based,312.4,tCO2e,2025-01-01,2025-12-31,environmental,climate,Certificats GO,Extension contrat + PV autoconsommation
+Émissions GES Scope 3 total,24982.3,tCO2e,2023-01-01,2023-12-31,environmental,climate,Bilan Carbone Scope 3,Premier périmètre Scope 3 — 11 catégories
+Émissions GES Scope 3 total,24147.8,tCO2e,2024-01-01,2024-12-31,environmental,climate,Bilan Carbone Scope 3,
+Émissions GES Scope 3 total,23149.2,tCO2e,2025-01-01,2025-12-31,environmental,climate,Bilan Carbone Scope 3,Réduction 7.3% vs 2023 — optimisation achats + logistique
+Empreinte carbone totale (S1+S2+S3),28811.4,tCO2e,2023-01-01,2023-12-31,environmental,climate,Bilan Carbone,
+Empreinte carbone totale (S1+S2+S3),27475.9,tCO2e,2024-01-01,2024-12-31,environmental,climate,Bilan Carbone,
+Empreinte carbone totale (S1+S2+S3),25534.4,tCO2e,2025-01-01,2025-12-31,environmental,climate,Bilan Carbone,Réduction 11.4% vs 2023 — trajectoire SBTi 1.5°C : -50% d'ici 2033
+Consommation électricité,22847.0,MWh,2023-01-01,2023-12-31,environmental,energy,Enedis,
+Consommation électricité,21634.0,MWh,2024-01-01,2024-12-31,environmental,energy,Enedis,
+Consommation électricité,20410.0,MWh,2025-01-01,2025-12-31,environmental,energy,Enedis,Réduction 10.7% vs 2023 — LED + BMS + optimisation horaires
+Consommation gaz naturel,9782.0,MWh PCI,2023-01-01,2023-12-31,environmental,energy,GRDF,
+Consommation gaz naturel,8987.0,MWh PCI,2024-01-01,2024-12-31,environmental,energy,GRDF,
+Consommation gaz naturel,8234.0,MWh PCI,2025-01-01,2025-12-31,environmental,energy,GRDF,Réduction 15.8% vs 2023 — remplacement chaudière + isolation
+Part énergie renouvelable,12.4,pourcentage,2023-01-01,2023-12-31,environmental,energy,Fournisseur énergie,
+Part énergie renouvelable,23.8,pourcentage,2024-01-01,2024-12-31,environmental,energy,Fournisseur énergie,
+Part énergie renouvelable,34.2,pourcentage,2025-01-01,2025-12-31,environmental,energy,Fournisseur énergie,Objectif 2027 : 50%
+Consommation eau,31248.0,m3,2023-01-01,2023-12-31,environmental,water,Véolia,
+Consommation eau,29743.0,m3,2024-01-01,2024-12-31,environmental,water,Véolia,
+Consommation eau,28450.0,m3,2025-01-01,2025-12-31,environmental,water,Véolia,Réduction 9.0% vs 2023 — récupération eaux pluviales
+Déchets totaux,1482.3,tonnes,2023-01-01,2023-12-31,environmental,waste,Prestataires traitement,
+Déchets totaux,1358.4,tonnes,2024-01-01,2024-12-31,environmental,waste,Prestataires traitement,
+Déchets totaux,1243.8,tonnes,2025-01-01,2025-12-31,environmental,waste,Prestataires traitement,Réduction 16.1% vs 2023 — plan zero gaspillage
+Taux valorisation déchets,74.2,pourcentage,2023-01-01,2023-12-31,environmental,waste,Calcul interne,
+Taux valorisation déchets,83.7,pourcentage,2024-01-01,2024-12-31,environmental,waste,Calcul interne,
+Taux valorisation déchets,89.3,pourcentage,2025-01-01,2025-12-31,environmental,waste,Calcul interne,Objectif 2027 : 95%
+Effectif total,247,personnes,2023-01-01,2023-12-31,social,workforce,SIRH,
+Effectif total,261,personnes,2024-01-01,2024-12-31,social,workforce,SIRH,
+Effectif total,273,personnes,2025-01-01,2025-12-31,social,workforce,SIRH,Croissance 10.5% sur 3 ans
+Taux de féminisation global,36.4,pourcentage,2023-01-01,2023-12-31,social,diversity,SIRH,
+Taux de féminisation global,38.1,pourcentage,2024-01-01,2024-12-31,social,diversity,SIRH,
+Taux de féminisation global,39.6,pourcentage,2025-01-01,2025-12-31,social,diversity,SIRH,Objectif 2027 : 45%
+Indice égalité professionnelle F/H,76,/100,2023-01-01,2023-12-31,social,diversity,DRH,
+Indice égalité professionnelle F/H,79,/100,2024-01-01,2024-12-31,social,diversity,DRH,
+Indice égalité professionnelle F/H,82,/100,2025-01-01,2025-12-31,social,diversity,DRH,Objectif 2027 : 88/100
+Taux de fréquence accidents (TF),18.2,accidents/Mh,2023-01-01,2023-12-31,social,health_safety,SIRH,
+Taux de fréquence accidents (TF),14.8,accidents/Mh,2024-01-01,2024-12-31,social,health_safety,SIRH,
+Taux de fréquence accidents (TF),11.5,accidents/Mh,2025-01-01,2025-12-31,social,health_safety,SIRH,Réduction 36.8% vs 2023 — programme Sécurité Priorité 1
+Heures de formation par salarié,18.4,heures/salarié,2023-01-01,2023-12-31,social,training,LMS,
+Heures de formation par salarié,22.1,heures/salarié,2024-01-01,2024-12-31,social,training,LMS,
+Heures de formation par salarié,26.7,heures/salarié,2025-01-01,2025-12-31,social,training,LMS,Objectif 2027 : 30h/salarié
+Taux de turnover volontaire,12.8,pourcentage,2023-01-01,2023-12-31,social,workforce,SIRH,Pic post-COVID — marché du travail tendu
+Taux de turnover volontaire,9.4,pourcentage,2024-01-01,2024-12-31,social,workforce,SIRH,
+Taux de turnover volontaire,7.2,pourcentage,2025-01-01,2025-12-31,social,workforce,SIRH,Amélioration conditions de travail + politique rémunération
+Score engagement salariés,64,/100,2023-01-01,2023-12-31,social,wellbeing,Great Place To Work,
+Score engagement salariés,70,/100,2024-01-01,2024-12-31,social,wellbeing,Great Place To Work,
+Score engagement salariés,74,/100,2025-01-01,2025-12-31,social,wellbeing,Great Place To Work,Objectif 2027 : 80/100
+Taux administrateurs indépendants,50.0,pourcentage,2023-01-01,2023-12-31,governance,board,PV AG,
+Taux administrateurs indépendants,55.0,pourcentage,2024-01-01,2024-12-31,governance,board,PV AG,
+Taux administrateurs indépendants,60.0,pourcentage,2025-01-01,2025-12-31,governance,board,PV AG,Objectif 2027 : 66%
+Taux de féminisation CA,30.0,pourcentage,2023-01-01,2023-12-31,governance,board,PV AG,En dessous seuil légal 40%
+Taux de féminisation CA,40.0,pourcentage,2024-01-01,2024-12-31,governance,board,PV AG,Mise en conformité Copé-Zimmermann
+Taux de féminisation CA,40.0,pourcentage,2025-01-01,2025-12-31,governance,board,PV AG,Maintenu conforme
+Incidents corruption ou fraude,2,nombre,2023-01-01,2023-12-31,governance,ethics,Direction Conformité,2 incidents mineurs — procédures disciplinaires
+Incidents corruption ou fraude,0,nombre,2024-01-01,2024-12-31,governance,ethics,Direction Conformité,Programme formation renforcé
+Incidents corruption ou fraude,0,nombre,2025-01-01,2025-12-31,governance,ethics,Direction Conformité,
+Chiffre d'affaires,58400000.0,€,2023-01-01,2023-12-31,governance,financial,Comptabilité,
+Chiffre d'affaires,61200000.0,€,2024-01-01,2024-12-31,governance,financial,Comptabilité,
+Chiffre d'affaires,64800000.0,€,2025-01-01,2025-12-31,governance,financial,Comptabilité,Croissance organique 10.9%
+EBITDA,8234000.0,€,2023-01-01,2023-12-31,governance,financial,Comptabilité,Marge 14.1%
+EBITDA,9182000.0,€,2024-01-01,2024-12-31,governance,financial,Comptabilité,Marge 15.0%
+EBITDA,10368000.0,€,2025-01-01,2025-12-31,governance,financial,Comptabilité,Marge 16.0%
+Investissements ESG,284000.0,€,2023-01-01,2023-12-31,governance,esg_management,Direction RSE,
+Investissements ESG,412000.0,€,2024-01-01,2024-12-31,governance,esg_management,Direction RSE,
+Investissements ESG,587000.0,€,2025-01-01,2025-12-31,governance,esg_management,Direction RSE,0.91% du CA — objectif 1% en 2026

@@ -1,0 +1,21 @@
+metric_name,value_numeric,unit,period_start,period_end,pillar,category,data_source,notes
+Émissions GES Scope 1,1847,tCO2e,2025-01-01,2025-12-31,environmental,climate,Bilan Carbone,Valeur entière sans décimale — doit être accepté
+Consommation eau totale,"28 450,5",m3,2025-01-01,2025-12-31,environmental,water,Véolia,Nombre avec espace et virgule décimale française — test parsing
+Taux féminisation,39.6%,pourcentage,2025-01-01,2025-12-31,social,diversity,SIRH,Valeur avec symbole % — doit extraire 39.6
+Effectif total,273.0,ETP,2025-01-01,2025-12-31,social,workforce,SIRH,Float pour valeur entière — doit être accepté
+Score engagement,,/100,2025-01-01,2025-12-31,social,wellbeing,,Valeur numérique vide — doit passer en valeur_text ou être ignoré
+Indicateur sans pilier,1250.0,tCO2e,2025-01-01,2025-12-31,,,Source inconnue,Pilier absent — auto-classification ou environmental par défaut
+Indicateur sans dates,842.4,MWh,,,environmental,energy,EDF,Dates absentes — doit prendre date du jour ou rejeter proprement
+Longueur nom indicateur extremement long avec beaucoup de caracteres pour tester la troncature du champ metric_name dans la base de donnees,1234.5,€,2025-01-01,2025-12-31,governance,financial,Comptabilité,Test truncation > 200 chars
+Émissions Scope 1 — accents àéêîôùç,1847.3,tCO2e,2025-01-01,2025-12-31,environmental,climate,Test,Caractères spéciaux et accents dans le nom
+"Indicateur, avec virgule dans le nom",450.0,personnes,2025-01-01,2025-12-31,social,workforce,SIRH,Nom entre guillemets avec virgule interne — test parsing CSV
+Émissions Scope 1 duplicata test,1847.3,tCO2e,2025-01-01,2025-12-31,environmental,climate,Source A,Première occurrence
+Émissions Scope 1 duplicata test,1923.7,tCO2e,2025-01-01,2025-12-31,environmental,climate,Source B,Deuxième occurrence avec valeur différente — tester gestion duplicats
+Valeur négative test,-5.2,tCO2e,2025-01-01,2025-12-31,environmental,climate,Test,Valeur négative — possible pour ajustements/crédits
+Valeur zéro,0.0,nombre,2025-01-01,2025-12-31,governance,legal,Juridique,Zéro — doit être stocké (différent de null)
+Valeur très grande,9876543210.12,kWh,2025-01-01,2025-12-31,environmental,energy,Test,Très grand nombre — test overflow/precision
+Valeur très petite,0.000142,tCO2e,2025-01-01,2025-12-31,environmental,climate,Test,Petite valeur décimale — test precision float
+Indicateur 2024,1523.8,tCO2e,2024-01-01,2024-12-31,environmental,climate,Historique,Date dans le passé — import données historiques
+Indicateur futur,450.0,tCO2e,2027-01-01,2027-12-31,environmental,climate,Prévision,Date future — objectif/projection
+Indicateur pillar majuscule,1250.0,MWh,2025-01-01,2025-12-31,ENVIRONMENTAL,energy,Test,Pilier en majuscules — doit être normalisé
+Indicateur pillar accent,1250.0,MWh,2025-01-01,2025-12-31,environnemental,energy,Test,Pilier en français — doit être reconnu ou mappé

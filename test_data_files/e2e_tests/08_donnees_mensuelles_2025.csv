@@ -1,0 +1,61 @@
+metric_name,value_numeric,unit,period_start,period_end,pillar,category,data_source,notes
+Consommation électricité,1842.0,MWh,2025-01-01,2025-01-31,environmental,energy,Enedis,Pic hivernal — chauffage + éclairage
+Consommation électricité,1687.0,MWh,2025-02-01,2025-02-28,environmental,energy,Enedis,Février court
+Consommation électricité,1724.0,MWh,2025-03-01,2025-03-31,environmental,energy,Enedis,
+Consommation électricité,1598.0,MWh,2025-04-01,2025-04-30,environmental,energy,Enedis,
+Consommation électricité,1534.0,MWh,2025-05-01,2025-05-31,environmental,energy,Enedis,Production solaire en hausse
+Consommation électricité,1487.0,MWh,2025-06-01,2025-06-30,environmental,energy,Enedis,
+Consommation électricité,1612.0,MWh,2025-07-01,2025-07-31,environmental,energy,Enedis,Pic estival — climatisation
+Consommation électricité,1643.0,MWh,2025-08-01,2025-08-31,environmental,energy,Enedis,Canicule août — pic clim
+Consommation électricité,1578.0,MWh,2025-09-01,2025-09-30,environmental,energy,Enedis,
+Consommation électricité,1689.0,MWh,2025-10-01,2025-10-31,environmental,energy,Enedis,Reprise chauffage
+Consommation électricité,1784.0,MWh,2025-11-01,2025-11-30,environmental,energy,Enedis,
+Consommation électricité,1832.0,MWh,2025-12-01,2025-12-31,environmental,energy,Enedis,Pic hivernal décembre
+Consommation gaz naturel,1124.0,MWh PCI,2025-01-01,2025-01-31,environmental,energy,GRDF,
+Consommation gaz naturel,984.0,MWh PCI,2025-02-01,2025-02-28,environmental,energy,GRDF,
+Consommation gaz naturel,842.0,MWh PCI,2025-03-01,2025-03-31,environmental,energy,GRDF,
+Consommation gaz naturel,312.0,MWh PCI,2025-04-01,2025-04-30,environmental,energy,GRDF,Fin chauffe
+Consommation gaz naturel,124.0,MWh PCI,2025-05-01,2025-05-31,environmental,energy,GRDF,ECS seulement
+Consommation gaz naturel,98.0,MWh PCI,2025-06-01,2025-06-30,environmental,energy,GRDF,
+Consommation gaz naturel,87.0,MWh PCI,2025-07-01,2025-07-31,environmental,energy,GRDF,
+Consommation gaz naturel,92.0,MWh PCI,2025-08-01,2025-08-31,environmental,energy,GRDF,
+Consommation gaz naturel,184.0,MWh PCI,2025-09-01,2025-09-30,environmental,energy,GRDF,
+Consommation gaz naturel,687.0,MWh PCI,2025-10-01,2025-10-31,environmental,energy,GRDF,Reprise chauffage
+Consommation gaz naturel,924.0,MWh PCI,2025-11-01,2025-11-30,environmental,energy,GRDF,
+Consommation gaz naturel,1076.0,MWh PCI,2025-12-01,2025-12-31,environmental,energy,GRDF,
+Émissions CO2 Scope 1+2,372.4,tCO2e,2025-01-01,2025-01-31,environmental,climate,Calcul interne,Gaz + fuites + elec LB
+Émissions CO2 Scope 1+2,332.1,tCO2e,2025-02-01,2025-02-28,environmental,climate,Calcul interne,
+Émissions CO2 Scope 1+2,318.7,tCO2e,2025-03-01,2025-03-31,environmental,climate,Calcul interne,
+Émissions CO2 Scope 1+2,248.3,tCO2e,2025-04-01,2025-04-30,environmental,climate,Calcul interne,
+Émissions CO2 Scope 1+2,234.8,tCO2e,2025-05-01,2025-05-31,environmental,climate,Calcul interne,
+Émissions CO2 Scope 1+2,218.4,tCO2e,2025-06-01,2025-06-30,environmental,climate,Calcul interne,
+Émissions CO2 Scope 1+2,267.3,tCO2e,2025-07-01,2025-07-31,environmental,climate,Calcul interne,Clim — pic estival
+Émissions CO2 Scope 1+2,274.8,tCO2e,2025-08-01,2025-08-31,environmental,climate,Calcul interne,
+Émissions CO2 Scope 1+2,243.7,tCO2e,2025-09-01,2025-09-30,environmental,climate,Calcul interne,
+Émissions CO2 Scope 1+2,287.4,tCO2e,2025-10-01,2025-10-31,environmental,climate,Calcul interne,
+Émissions CO2 Scope 1+2,318.2,tCO2e,2025-11-01,2025-11-30,environmental,climate,Calcul interne,
+Émissions CO2 Scope 1+2,381.1,tCO2e,2025-12-01,2025-12-31,environmental,climate,Calcul interne,
+Accidents de travail avec arrêt,1,nombre,2025-01-01,2025-01-31,social,health_safety,SIRH,AT entorse cheville magasin
+Accidents de travail avec arrêt,0,nombre,2025-02-01,2025-02-28,social,health_safety,SIRH,
+Accidents de travail avec arrêt,0,nombre,2025-03-01,2025-03-31,social,health_safety,SIRH,
+Accidents de travail avec arrêt,1,nombre,2025-04-01,2025-04-30,social,health_safety,SIRH,Chute de plain-pied atelier
+Accidents de travail avec arrêt,0,nombre,2025-05-01,2025-05-31,social,health_safety,SIRH,
+Accidents de travail avec arrêt,0,nombre,2025-06-01,2025-06-30,social,health_safety,SIRH,
+Accidents de travail avec arrêt,0,nombre,2025-07-01,2025-07-31,social,health_safety,SIRH,
+Accidents de travail avec arrêt,0,nombre,2025-08-01,2025-08-31,social,health_safety,SIRH,
+Accidents de travail avec arrêt,0,nombre,2025-09-01,2025-09-30,social,health_safety,SIRH,
+Accidents de travail avec arrêt,1,nombre,2025-10-01,2025-10-31,social,health_safety,SIRH,Coupure main opérateur presse
+Accidents de travail avec arrêt,0,nombre,2025-11-01,2025-11-30,social,health_safety,SIRH,
+Accidents de travail avec arrêt,0,nombre,2025-12-01,2025-12-31,social,health_safety,SIRH,
+Embauches CDI,4,personnes,2025-01-01,2025-01-31,social,workforce,SIRH,
+Embauches CDI,2,personnes,2025-02-01,2025-02-28,social,workforce,SIRH,
+Embauches CDI,5,personnes,2025-03-01,2025-03-31,social,workforce,SIRH,
+Embauches CDI,3,personnes,2025-04-01,2025-04-30,social,workforce,SIRH,
+Embauches CDI,4,personnes,2025-05-01,2025-05-31,social,workforce,SIRH,
+Embauches CDI,2,personnes,2025-06-01,2025-06-30,social,workforce,SIRH,
+Embauches CDI,1,personnes,2025-07-01,2025-07-31,social,workforce,SIRH,Période estivale
+Embauches CDI,3,personnes,2025-08-01,2025-08-31,social,workforce,SIRH,
+Embauches CDI,4,personnes,2025-09-01,2025-09-30,social,workforce,SIRH,
+Embauches CDI,2,personnes,2025-10-01,2025-10-31,social,workforce,SIRH,
+Embauches CDI,1,personnes,2025-11-01,2025-11-30,social,workforce,SIRH,
+Embauches CDI,1,personnes,2025-12-01,2025-12-31,social,workforce,SIRH,

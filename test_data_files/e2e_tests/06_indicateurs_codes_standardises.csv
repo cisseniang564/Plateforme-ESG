@@ -1,0 +1,75 @@
+indicator_code,value,date,notes
+GHG_SCOPE1_TOTAL,2072.6,2025-12-31,tCO2e — combustion stationnaire + mobile + fuites
+GHG_SCOPE1_STATIONARY,1847.3,2025-12-31,tCO2e — chaudières + groupe électrogène
+GHG_SCOPE1_MOBILE,412.8,2025-12-31,tCO2e — flotte 22 véhicules
+GHG_SCOPE1_FUGITIVE,28.5,2025-12-31,tCO2e — R410A fluide frigorigène
+GHG_SCOPE2_LB,1124.6,2025-12-31,tCO2e — location-based ADEME 2024
+GHG_SCOPE2_MB,312.4,2025-12-31,tCO2e — market-based contrat EDF HPE
+GHG_SCOPE3_TOTAL,23149.2,2025-12-31,tCO2e — 11 catégories GHG Protocol
+GHG_SCOPE3_CAT1,12847.3,2025-12-31,tCO2e — achats biens et services
+GHG_SCOPE3_CAT4,1842.6,2025-12-31,tCO2e — transport amont fournisseurs
+GHG_SCOPE3_CAT6,387.9,2025-12-31,tCO2e — déplacements professionnels
+GHG_SCOPE3_CAT7,623.4,2025-12-31,tCO2e — trajets domicile-travail
+GHG_SCOPE3_CAT11,4287.3,2025-12-31,tCO2e — utilisation produits vendus
+GHG_INTENSITY_REVENUE,42.8,2025-12-31,tCO2e/M€ CA — Scopes 1+2 market-based
+GHG_INTENSITY_EMPLOYEE,8.4,2025-12-31,tCO2e/ETP — Scopes 1+2
+ENERGY_CONSUMPTION_TOTAL,29496.0,2025-12-31,MWh — électricité + gaz + fioul
+ENERGY_ELECTRICITY,20410.0,2025-12-31,MWh — Enedis PDL
+ENERGY_GAS,8234.0,2025-12-31,MWh PCI — GRDF
+ENERGY_RENEWABLE_PCT,34.2,2025-12-31,% — contrat HPE + PV on-site
+ENERGY_SOLAR_PRODUCTION,312.0,2025-12-31,MWh — installation 280 kWc
+ENERGY_INTENSITY_REVENUE,473.0,2025-12-31,MWh/M€ CA
+WATER_CONSUMPTION,28450.0,2025-12-31,m3 — eau de réseau total
+WATER_RECYCLED,4230.0,2025-12-31,m3 — circuit fermé process
+WATER_RECYCLING_PCT,14.9,2025-12-31,% — eau recyclée / consommée
+WASTE_TOTAL,1243.8,2025-12-31,tonnes — déchets totaux générés
+WASTE_HAZARDOUS,38.4,2025-12-31,tonnes — DD registre ICPE
+WASTE_NON_HAZARDOUS,1205.4,2025-12-31,tonnes — DND
+WASTE_VALORIZATION_PCT,89.3,2025-12-31,% — recyclage + valorisation énergétique
+WASTE_LANDFILL,132.6,2025-12-31,tonnes — enfouissement
+ENV_INCIDENTS,1,2025-12-31,nombre — incidents significatifs déclarés DREAL
+ENV_FINES,0.0,2025-12-31,€ — amendes environnementales
+ENV_ISO14001,1,2025-12-31,1=certifié — audit surveillance juillet 2025
+HEADCOUNT_TOTAL,273,2025-12-31,personnes — effectif total au 31/12
+HEADCOUNT_FTE,261.4,2025-12-31,ETP — moyenne annuelle
+HEADCOUNT_CDI,248,2025-12-31,personnes — contrats durée indéterminée
+HEADCOUNT_WOMEN,108,2025-12-31,personnes — femmes effectif total
+GENDER_WOMEN_PCT,39.6,2025-12-31,% — taux féminisation global
+GENDER_WOMEN_MGMT_PCT,34.1,2025-12-31,% — femmes dans l'encadrement
+GENDER_PAY_GAP,7.3,2025-12-31,% — écart salarial F/H à poste comparable
+GENDER_EQUALITY_INDEX,82,2025-12-31,/100 — index légal DARES 2025
+TURNOVER_VOLUNTARY,7.2,2025-12-31,% — taux de démission
+TURNOVER_RETENTION,92.8,2025-12-31,% — taux de rétention
+ABSENTEEISM_RATE,3.8,2025-12-31,% — taux absentéisme hors AT+CP
+SAFETY_LTIR,11.5,2025-12-31,accidents/Mh — taux fréquence AT
+SAFETY_SEVERITY,0.18,2025-12-31,jours/1000h — taux gravité
+SAFETY_FATALITIES,0,2025-12-31,nombre — décès liés travail
+SAFETY_OCCUPATIONAL_DISEASE,0,2025-12-31,nombre — MP reconnues nouvelles
+TRAINING_HOURS_TOTAL,7284.0,2025-12-31,heures — total formation
+TRAINING_HOURS_PER_EMPLOYEE,26.7,2025-12-31,h/salarié
+TRAINING_COVERAGE_PCT,88.3,2025-12-31,% — salariés ayant suivi formation
+TRAINING_COST,248400.0,2025-12-31,€ — plan formation total
+DISABILITY_EMPLOYMENT_PCT,4.0,2025-12-31,% — RQTH / effectif
+ENGAGEMENT_SCORE,74,2025-12-31,/100 — Great Place To Work 2025
+HARASSMENT_REPORTS,2,2025-12-31,nombre — signalements harcèlement
+BOARD_MEMBERS_TOTAL,10,2025-12-31,personnes — membres conseil
+BOARD_INDEPENDENT_PCT,60.0,2025-12-31,% — administrateurs indépendants
+BOARD_WOMEN_PCT,40.0,2025-12-31,% — féminisation CA
+BOARD_ATTENDANCE_PCT,91.4,2025-12-31,% — taux présence réunions
+EXEC_COMP_CEO,492000.0,2025-12-31,€ — rémunération totale CEO
+EXEC_COMP_VARIABLE_PCT,27.6,2025-12-31,% — part variable CEO
+EXEC_ESG_CRITERIA_PCT,30.0,2025-12-31,% — part critères ESG dans variable CEO
+SAY_ON_PAY,87.3,2025-12-31,% — vote favorable AG rémunérations
+ETHICS_TRAINING_PCT,78.4,2025-12-31,% — salariés formés anticorruption
+ETHICS_INCIDENTS,0,2025-12-31,nombre — incidents corruption/fraude
+WHISTLEBLOWING_REPORTS,3,2025-12-31,nombre — signalements lanceursdale
+SUPPLIER_CODE_SIGNED_PCT,78.6,2025-12-31,% — fournisseurs ayant signé charte éthique
+SUPPLIER_ESG_ASSESSMENTS,42,2025-12-31,nombre — évaluations ESG fournisseurs
+SUPPLIER_ECOVADIS_SCORE,52.4,2025-12-31,/100 — score EcoVadis moyen
+CYBER_INCIDENTS,1,2025-12-31,nombre — incidents cybersécurité significatifs
+DATA_BREACH_NOTIFICATIONS,0,2025-12-31,nombre — notifications CNIL
+GDPR_REQUESTS,24,2025-12-31,nombre — demandes exercice droits
+ESG_REPORT_PUBLISHED,1,2025-12-31,1=publié — rapport CSRD exercice 2025
+ESG_THIRD_PARTY_VERIFICATION,1,2025-12-31,1=vérifié — assurance limitée BDO ISAE 3000
+ESG_OBJECTIVES_COUNT,12,2025-12-31,nombre — KPI ESG chiffrés et publics
+ESG_INVESTMENT,587000.0,2025-12-31,€ — investissements projets RSE

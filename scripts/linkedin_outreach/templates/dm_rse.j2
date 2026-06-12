@@ -1,0 +1,31 @@
+Bonjour {{ first_name }},
+
+Merci d'avoir accepté la connexion.
+
+{% if sector == 'agro' -%}
+L'agroalimentaire est particulièrement scruté côté CSRD (ESRS E4 biodiversité, S2 chaîne de valeur), d'où mon intérêt à comprendre ce qui se passe chez {{ company }}.
+{%- elif sector == 'industrie' -%}
+L'industrie manufacturière est en première ligne sur les ESRS E1 (climat) et E5 (économie circulaire), d'où mon intérêt pour {{ company }}.
+{%- elif sector == 'distribution' -%}
+La distribution est très exposée côté CSDDD (chaînes de valeur étendues) et ESRS S2 (travailleurs en aval), d'où mon intérêt pour {{ company }}.
+{%- elif sector == 'pharma' -%}
+La pharma est sous double contrainte ESRS S4 (utilisateurs finaux) et G1 (conduite des affaires), d'où mon intérêt pour {{ company }}.
+{%- else -%}
+Avant de figer ce que nous construisons, je prends le temps d'écouter des responsables RSE qui vivent le quotidien du reporting CSRD.
+{%- endif %}
+
+Trois questions qui m'intéressent :
+— Comment cartographiez-vous vos données de durabilité aujourd'hui ?
+— Combien d'heures par an consacrez-vous au Scope 3 et au mapping ESRS ?
+— Avec quel cabinet conseil travaillez-vous, et sur quel périmètre ?
+
+30 minutes en visio, je ne vous vendrai rien — c'est de la recherche.
+
+En retour, je m'engage à vous envoyer la synthèse anonymisée des 15-20 entretiens (un vrai benchmark sectoriel utile pour vos arbitrages internes).
+
+Voici mon Calendly : {{ calendly_link }}
+
+Au plaisir d'échanger.
+
+{{ sender_first_name }} {{ sender_last_name }}
+{{ sender_title }}

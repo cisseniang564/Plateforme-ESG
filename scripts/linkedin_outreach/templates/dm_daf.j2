@@ -1,0 +1,23 @@
+Bonjour {{ first_name }},
+
+Merci pour la connexion.
+
+{% if 'filiale' in trigger|lower or 'groupe' in trigger|lower -%}
+{{ company }} étant filiale d'un groupe, vous avez probablement la double contrainte : remonter des données pour la consolidation groupe ET piloter votre propre démarche. C'est exactement ce que j'essaie de comprendre côté DAF d'ETI.
+{%- else -%}
+Je creuse un sujet précis avec les DAF d'ETI : comment vous absorbez la charge ESG/CSRD côté finance. Sur le terrain, j'entends 3 douleurs revenir : le Scope 3 qui prend 2 à 3 mois, le coût des cabinets (50-150 k€), et la pression du CAC qui demande de la traçabilité.
+{%- endif %}
+
+J'aimerais comprendre comment ça se passe chez {{ company }} :
+— Combien d'heures internes votre équipe finance consacre au reporting ESG par an ?
+— Quel est votre budget cabinet conseil ESG actuel ?
+— Qu'est-ce qui vous coince le plus aujourd'hui ?
+
+30 minutes en visio, zéro pitch — uniquement de l'écoute. Je vous envoie en retour la synthèse anonymisée des 15 DAF interviewés.
+
+Calendly : {{ calendly_link }}
+
+Au plaisir,
+
+{{ sender_first_name }} {{ sender_last_name }}
+{{ sender_title }}

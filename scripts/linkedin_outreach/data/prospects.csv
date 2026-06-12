@@ -1,0 +1,9 @@
+first_name,last_name,company,linkedin_url,role,size,sector,csrd_wave,trigger,notes
+Marie,Lefèvre,Acme Food SAS,https://linkedin.com/in/marie-lefevre-example,RSE,800,agro,2026,post sur ESRS E1 du 12/05,
+Thomas,Durand,Acme Industries,https://linkedin.com/in/thomas-durand-example,DAF,1500,industrie,2026,filiale du groupe X (CAC 40),
+Sophie,Martineau,Acme Retail,https://linkedin.com/in/sophie-martineau-example,Risk,2000,distribution,2026,,
+Pierre,Bernard,Acme Tech,https://linkedin.com/in/pierre-bernard-example,DG,600,tech,2027,,
+Camille,Roux,Acme Pharma,https://linkedin.com/in/camille-roux-example,RSE,1200,pharma,2026,DPEF 2025 publié,
+Élodie,Garcia,Acme Group,https://linkedin.com/in/elodie-garcia-example,CSO,3000,industrie,2025,nommée CSO en mars 2026,
+Julien,Petit,Acme Services,https://linkedin.com/in/julien-petit-example,DAF,900,services,2026,warm intro: Romain Dupont,
+Aurélie,Moreau,Acme Energy,https://linkedin.com/in/aurelie-moreau-example,RSE,1800,energie,2026,,

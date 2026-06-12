@@ -1,0 +1,54 @@
+metric_name,value_numeric,unit,period_start,period_end,pillar,category,data_source,notes
+Effectif total au 31 décembre,273,personnes,2025-01-01,2025-12-31,social,workforce,SIRH Lucca,Hors intérimaires et stagiaires
+Effectif en équivalent temps plein (ETP),261.4,ETP,2025-01-01,2025-12-31,social,workforce,SIRH Lucca,Moyenne annuelle pondérée
+Effectif CDI,248,personnes,2025-01-01,2025-12-31,social,workforce,SIRH Lucca,Taux CDI : 90,8%
+Effectif CDD,18,personnes,2025-01-01,2025-12-31,social,workforce,SIRH Lucca,Dont 9 remplacements congé maternité/maladie
+Effectif intérimaires (ETP moyen),12.4,ETP,2025-01-01,2025-12-31,social,workforce,Agence Adecco + Manpower,Pics activité T2 et T3
+Effectif stagiaires,7,personnes,2025-01-01,2025-12-31,social,workforce,Conventions de stage,Durée moyenne 4,2 mois
+Effectif alternants,14,personnes,2025-01-01,2025-12-31,social,workforce,SIRH Lucca,BTS (8) + Licence Pro (4) + Master (2)
+Embauches CDI,32,personnes,2025-01-01,2025-12-31,social,workforce,SIRH Lucca,Dont 18 créations de poste + 14 remplacements
+Départs volontaires (démissions),19,personnes,2025-01-01,2025-12-31,social,workforce,SIRH Lucca,
+Licenciements,4,personnes,2025-01-01,2025-12-31,social,workforce,SIRH Lucca,Dont 2 économiques (accord mobilité)
+Taux de turnover volontaire,7.2,pourcentage,2025-01-01,2025-12-31,social,workforce,Calcul interne,19 démissions / (273+260) × 2 × 100
+Taux de rétention,92.8,pourcentage,2025-01-01,2025-12-31,social,workforce,Calcul interne,
+Ancienneté moyenne,6.8,années,2025-01-01,2025-12-31,social,workforce,SIRH Lucca,
+Femmes dans l'effectif total,108,personnes,2025-01-01,2025-12-31,social,diversity,SIRH Lucca,39,6% de l'effectif
+Taux de féminisation global,39.6,pourcentage,2025-01-01,2025-12-31,social,diversity,SIRH Lucca,Objectif 2027 : 45%
+Femmes dans l'encadrement,14,personnes,2025-01-01,2025-12-31,social,diversity,SIRH Lucca,34,1% des 41 managers
+Taux de féminisation encadrement,34.1,pourcentage,2025-01-01,2025-12-31,social,diversity,SIRH Lucca,
+Femmes dans les instances dirigeantes,2,personnes,2025-01-01,2025-12-31,social,diversity,PV CODIR,2/8 membres CODIR (25%) — objectif 40% en 2027
+Indice égalité professionnelle F/H,82,/100,2025-01-01,2025-12-31,social,diversity,DRH — calcul légal,Publication DARES mars 2026 — Indicateurs : rémunération 37/40 + augmentations 20/20 + maternité 15/15 + hauts salaires 0/10
+Écart de rémunération F/H,7.3,pourcentage,2025-01-01,2025-12-31,social,diversity,DRH,Écart à poste/niveau comparable — objectif <5% en 2027
+Nationalités représentées,18,nombre,2025-01-01,2025-12-31,social,diversity,SIRH Lucca,Dont français (74%) EU hors France (12%) hors EU (14%)
+Employés en situation de handicap (RQTH),11,personnes,2025-01-01,2025-12-31,social,diversity,SIRH Lucca,Taux emploi 4,0% — obligation légale 6%
+Taux emploi travailleurs handicapés,4.0,pourcentage,2025-01-01,2025-12-31,social,diversity,SIRH Lucca,Contribution AGEFIPH : 12 400 € (gap sur 6%)
+Accidents de travail avec arrêt,3,nombre,2025-01-01,2025-12-31,social,health_safety,SIRH Lucca + registre AT,Déclarés CPAM — aucun accident grave ou mortel
+Accidents de trajet avec arrêt,1,nombre,2025-01-01,2025-12-31,social,health_safety,SIRH Lucca,
+Jours d'arrêt accidents de travail,47,jours,2025-01-01,2025-12-31,social,health_safety,SIRH Lucca,
+Taux de fréquence accidents (TF),11.5,accidents/million d'heures,2025-01-01,2025-12-31,social,health_safety,Calcul interne,3 AT × 10^6 / 261 382 heures travaillées
+Taux de gravité accidents (TG),0.18,jours/1000 heures,2025-01-01,2025-12-31,social,health_safety,Calcul interne,47 jours / 261 382 × 1000
+Maladies professionnelles reconnues,0,nombre,2025-01-01,2025-12-31,social,health_safety,CPAM,Aucune nouvelle MP reconnue en 2025
+Heures travaillées total,522764.0,heures,2025-01-01,2025-12-31,social,health_safety,Pointage SIRH,261,4 ETP × 1 999 h/an (SYNTEC)
+Taux d'absentéisme global,3.8,pourcentage,2025-01-01,2025-12-31,social,health_safety,SIRH Lucca,Hors AT + congés payés — benchmark secteur 4,2%
+Jours d'absence maladie,3842,jours,2025-01-01,2025-12-31,social,health_safety,SIRH Lucca,
+Visites médicales réalisées,273,nombre,2025-01-01,2025-12-31,social,health_safety,Service santé au travail SSTI,100% visites périodiques réalisées (obligation légale)
+Heures de formation totales,7284.0,heures,2025-01-01,2025-12-31,social,training,SIRH Lucca — LMS Talentsoft,
+Heures de formation par salarié,26.7,heures/salarié,2025-01-01,2025-12-31,social,training,Calcul interne,7 284 h / 273 salariés
+Salariés ayant suivi au moins une formation,241,personnes,2025-01-01,2025-12-31,social,training,LMS Talentsoft,88,3% de l'effectif
+Coût total formation,248400.0,€,2025-01-01,2025-12-31,social,training,Service formation,CPF co-financé : 18 200€ — plan formation propre : 230 200€
+Taux d'utilisation CPF,34.4,pourcentage,2025-01-01,2025-12-31,social,training,Service formation,94 salariés ont utilisé leur CPF
+Formations sécurité réalisées,486,sessions,2025-01-01,2025-12-31,social,training,Registre sécurité,Habilitations électriques + CACES + SST + incendie
+Taux de couverture convention collective,100.0,pourcentage,2025-01-01,2025-12-31,social,social_dialogue,DRH,SYNTEC (idcc 1486) — 100% salariés couverts
+Représentants du personnel élus,12,personnes,2025-01-01,2025-12-31,social,social_dialogue,Procès-verbaux élections CSE,CSE : 6 titulaires + 6 suppléants — élections mars 2024
+Réunions CSE organisées,12,nombre,2025-01-01,2025-12-31,social,social_dialogue,PV CSE,1 réunion mensuelle — taux assiduité 94%
+Accords collectifs signés,3,nombre,2025-01-01,2025-12-31,social,social_dialogue,DRH,Accord télétravail (renouvellement) + accord intéressement + accord QVT
+Taux de syndicalisation,18.3,pourcentage,2025-01-01,2025-12-31,social,social_dialogue,CSE,50 membres syndicaux sur 273 salariés
+Salaire minimum mensuel brut,2284.0,€,2025-01-01,2025-12-31,social,compensation,DRH,Supérieur SMIC (2025 : 1 802€) — grille SYNTEC N1E1
+Ratio salaire médian / SMIC,1.53,ratio,2025-01-01,2025-12-31,social,compensation,Calcul interne,Salaire médian 2 764€ / SMIC 1 802€
+Ratio rémunération PDG / médiane,8.2,ratio,2025-01-01,2025-12-31,social,compensation,DRH — données BDESE,Rémunération totale CEO / salaire médian employés
+Intéressement versé,342000.0,€,2025-01-01,2025-12-31,social,compensation,Service paie,Accord intéressement 3 ans — résultat 2025 : prime moyenne 1 253€
+Participation versée,187000.0,€,2025-01-01,2025-12-31,social,compensation,Service paie,RSP légal — 100% vers PEE
+Dépenses RSE / QVT,124000.0,€,2025-01-01,2025-12-31,social,wellbeing,Comptabilité,Conciergerie + salle sport + crèche partenaire + événements sociaux
+Enquête engagement salariés — score,74,/100,2025-01-01,2025-12-31,social,wellbeing,Great Place To Work 2025,Taux réponse 82% — benchmark secteur 71/100
+Signalements harcèlement,2,nombre,2025-01-01,2025-12-31,social,wellbeing,Référent harcèlement,2 signalements traités — 1 classé sans suite + 1 médiation réussie
+Licenciements pour faute grave,1,nombre,2025-01-01,2025-12-31,social,wellbeing,DRH — données confidentielles,Non lié au harcèlement

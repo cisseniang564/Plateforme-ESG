@@ -1,0 +1,16 @@
+metric_name,value_numeric,unit,period_start,period_end,pillar,category,data_source,notes
+IRO — Changement climatique transition — Score matérialité,4.35,/5,2025-01-01,2025-12-31,environmental,climate,Double matérialité 2025,Risque · Court terme · Impact financier 4.2 · Parties prenantes 4.5
+IRO — Changement climatique physique — Score matérialité,3.84,/5,2025-01-01,2025-12-31,environmental,climate,Double matérialité 2025,Risque · Long terme · Impact financier 3.8 · Parties prenantes 3.2
+IRO — Réduction émissions GES — Score matérialité,4.26,/5,2025-01-01,2025-12-31,environmental,climate,Double matérialité 2025,Impact · Moyen terme · Impact financier 3.4 · Parties prenantes 4.8
+IRO — Biodiversité et écosystèmes — Score matérialité,3.03,/5,2025-01-01,2025-12-31,environmental,biodiversity,Double matérialité 2025,Impact · Long terme · Impact financier 2.1 · Parties prenantes 3.8
+IRO — Ressources en eau — Score matérialité,2.97,/5,2025-01-01,2025-12-31,environmental,water,Double matérialité 2025,Impact · Moyen terme · Impact financier 2.8 · Parties prenantes 3.1
+IRO — Pollution et déchets — Score matérialité,3.24,/5,2025-01-01,2025-12-31,environmental,waste,Double matérialité 2025,Impact · Court terme · Impact financier 2.4 · Parties prenantes 3.6
+IRO — Économie circulaire — Score matérialité,3.10,/5,2025-01-01,2025-12-31,environmental,circular_economy,Double matérialité 2025,Opportunité · Moyen terme · Impact financier 3.2 · Parties prenantes 2.8
+IRO — Effectifs propres conditions de travail — Score matérialité,4.02,/5,2025-01-01,2025-12-31,social,workforce,Double matérialité 2025,Impact · Court terme · Impact financier 3.0 · Parties prenantes 4.8
+IRO — Diversité et inclusion — Score matérialité,3.68,/5,2025-01-01,2025-12-31,social,diversity,Double matérialité 2025,Impact · Moyen terme · Impact financier 2.8 · Parties prenantes 4.2
+IRO — Chaîne de valeur conditions travail — Score matérialité,4.04,/5,2025-01-01,2025-12-31,social,supply_chain,Double matérialité 2025,Impact · Moyen terme · Impact financier 3.6 · Parties prenantes 4.4
+IRO — Communautés locales — Score matérialité,2.58,/5,2025-01-01,2025-12-31,social,community,Double matérialité 2025,Impact · Long terme · Impact financier 1.8 · Parties prenantes 3.2
+IRO — Gouvernance éthique anticorruption — Score matérialité,3.74,/5,2025-01-01,2025-12-31,governance,ethics,Double matérialité 2025,Risque · Court terme · Impact financier 4.4 · Parties prenantes 3.8
+IRO — Gouvernance lobbying politique publique — Score matérialité,2.52,/5,2025-01-01,2025-12-31,governance,ethics,Double matérialité 2025,Impact · Long terme · Impact financier 2.2 · Parties prenantes 2.8
+IRO — Opportunité marché ESG — Score matérialité,4.36,/5,2025-01-01,2025-12-31,governance,esg_management,Double matérialité 2025,Opportunité · Moyen terme · Impact financier 4.8 · Parties prenantes 3.4
+IRO — Risque réputation ESG — Score matérialité,3.78,/5,2025-01-01,2025-12-31,governance,esg_management,Double matérialité 2025,Risque · Court terme · Impact financier 3.8 · Parties prenantes 4.4

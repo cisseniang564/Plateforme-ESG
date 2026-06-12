@@ -1,0 +1,20 @@
+nom_fournisseur,pays,secteur,chiffre_affaires_annuel_eur,scope1_tco2e,scope2_tco2e,energie_renouvelable_pct,eau_m3,recyclage_dechets_pct,effectif,femmes_pct,taux_accident,heures_formation,turnover_pct,anticorruption_politique,code_fournisseur,iso14001,iso45001,score_conformite_pct,incidents_signales,commentaires
+STEELCO SAS,France,Métallurgie,48000000,12400,4200,18,284000,62,842,22,18.4,32,11.2,true,true,true,false,84.2,0,Fournisseur stratégique acier — audit site 2025 prévu mars
+POLYM FRANCE,France,Chimie plastiques,18500000,3240,1820,12,148000,71,384,34,12.1,28,8.4,true,true,false,false,78.4,0,Composants polymères — certifié REACH
+EMBAL PRO,France,Emballage,9200000,1840,920,24,82000,84,248,48,8.2,18,6.2,true,true,true,true,91.2,0,Emballages recyclés — objectif 100% matériaux recyclés 2026
+COMPO TECH,Allemagne,Electronique,34800000,4820,2840,42,124000,78,684,38,6.4,42,5.8,true,true,true,true,88.4,0,Composants électroniques — EMAS certifié
+GEODIS,France,Transport logistique,284000000,48200,12400,8,0,0,82000,28,24.2,12,28.4,true,true,false,false,72.4,1,Transitaire principal — plan décarbonation flotte en cours
+KUEHNE NAGEL,Suisse,Transport international,18400000000,284000,84000,12,0,0,284000,24,18.4,24,22.4,true,true,false,false,74.2,2,Fret international — score EcoVadis 58/100
+AIRFRANCE KLM,France,Aviation,18200000000,8420000,148000,4,0,0,84000,42,8.4,82,18.4,true,true,false,false,68.4,0,Transport passagers — engagement SAF 10% en 2030
+SCI PARC INDUS,France,Immobilier,4800000,248,1840,8,42000,0,24,8,0,4,42.4,false,false,false,false,42.4,0,Bailleur site production — bail 3/6/9 en cours renégociation
+THYSSENKRUPP ELEV,Allemagne,Maintenance industrielle,48000000000,124000,48200,22,284000,82,190000,32,12.4,84,12.4,true,true,true,true,92.4,0,Maintenance équipements — certifié ISO 9001 + 14001 + 45001
+EDF ENTREPRISES,France,Énergie,84000000000,0,0,82,0,0,124000,34,4.2,84,8.4,true,true,true,true,96.2,0,Fournisseur électricité contrat HPE — conforme critères durabilité
+GRDF PRO,France,Gaz naturel,18400000000,124000,8400,4,0,0,14000,38,8.4,84,12.4,true,true,true,false,84.2,0,Fournisseur gaz — plan hydrogène 2030
+VEOLIA EAU,France,Eau assainissement,42000000000,284000,124000,18,0,0,184000,42,8.4,82,12.4,true,true,true,true,94.2,0,Traitement eau potable + assainissement — ISO 50001
+TOTAL LUBRIFIANTS,France,Carburants,184000000000,8420000,1840000,12,0,0,98000,22,12.4,48,18.4,true,true,false,false,72.4,1,Carburants flotte + lubrifiants industriels — programme TCO2 interne
+AMERICAN EXPRESS,USA,Services financiers,62000000000,84000,42000,84,0,0,64000,48,2.4,124,8.4,true,true,false,false,82.4,0,Cartes corporate + frais professionnels — SLA paiement respecté
+ACIER BREST SAS,France,Négoce métallurgie,8400000,2840,1240,8,48000,42,84,18,28.4,12,24.4,false,false,false,false,38.4,2,Fournisseur secondaire acier — risque élevé — plan amélioration exigé
+TEXTIL MAROC,Maroc,Textile,2400000,840,420,4,184000,12,2400,82,48.4,4,84.4,false,false,false,false,24.8,3 ou plus,RISQUE CRITIQUE — travail posté sans accord + déchets non traités — audit urgente requise
+CHINE ELECTRO CO,Chine,Electronique,12400000,4820,8420,12,284000,42,18000,24,42.4,8,84.4,true,false,false,false,48.4,1,Composants secondaires — audit fournisseurs tier-2 non disponible
+GREEN PACK ECO,France,Emballage bio-sourcé,1840000,124,248,92,8400,98,42,62,4.2,28,4.2,true,true,true,true,98.4,0,Nouveau fournisseur emballages compostables — éco-conception
+LOGISTIQUE VERTE,France,Transport bas carbone,4800000,248,840,84,0,0,124,48,4.2,48,8.4,true,true,false,true,88.4,0,Véhicules électriques + vélos cargo — déploiement livraisons locales
