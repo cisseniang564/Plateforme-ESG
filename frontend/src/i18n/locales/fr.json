@@ -2807,6 +2807,32 @@
       "supply": "Supply Chain ESG",
       "compliance": "Multi-Réglementaire",
       "audit": "Piste d'Audit"
+    },
+    "lp": {
+      "differentiators": {
+        "eyebrow": "Ce qui nous différencie",
+        "title": "Des fonctionnalités que peu d'outils ESG proposent",
+        "subtitle": "Au-delà du calcul de score, ESGFlow embarque nativement des modules avancés, déjà disponibles dans votre espace.",
+        "cta": "Découvrir",
+        "items": {
+          "0": {
+            "title": "Piste d'audit SHA-256",
+            "desc": "Chaque donnée et chaque modification est chaînée cryptographiquement (SHA-256), pour une assurance ISAE 3000 facilitée."
+          },
+          "1": {
+            "title": "Plan de vigilance & alerte éthique",
+            "desc": "Cartographie des risques, plan d'actions et canal de signalement public conforme à la directive lanceurs d'alerte."
+          },
+          "2": {
+            "title": "Mode Cabinet multi-clients",
+            "desc": "Pilotez tous vos clients depuis un espace unique, avec isolation stricte des données et comparateur intégré."
+          },
+          "3": {
+            "title": "Reporting iXBRL & validation Arelle",
+            "desc": "Générez et validez votre rapport CSRD au format numérique ESEF, prêt pour le dépôt réglementaire."
+          }
+        }
+      }
     }
   },
   "carbon": {
@@ -3998,6 +4024,35 @@
         "tags": "webhook,notification,intégration",
         "content": "## À quoi servent les webhooks ?\n\nLes webhooks permettent à ESG Flow de notifier votre système en temps réel lors d'événements : nouveau score calculé, rapport généré, alerte déclenchée, etc.\n\n## Configuration\n\n1. Accédez à **Paramètres › Webhooks**.\n2. Cliquez sur **Ajouter un endpoint**.\n3. Renseignez votre URL HTTPS (obligatoire).\n4. Sélectionnez les événements à écouter.\n5. Sauvegardez — un secret de signature est généré.\n\n## Vérification de signature\n\nChaque appel inclut l'en-tête `X-ESGFlow-Signature: sha256=<hmac>`. Vérifiez-le côté serveur pour sécuriser votre endpoint."
       }
+    }
+  },
+  "escard": {
+    "confVeryLow": "● Très faible",
+    "confNone": "● Aucune donnée"
+  },
+  "confidence": {
+    "high": {
+      "label": "Confiance élevée",
+      "desc": "Les données disponibles couvrent une large part des indicateurs requis."
+    },
+    "medium": {
+      "label": "Confiance moyenne",
+      "desc": "Une partie des indicateurs reste à compléter pour fiabiliser pleinement le score."
+    },
+    "low": {
+      "label": "Confiance faible",
+      "desc": "Peu d'indicateurs sont encore renseignés : complétez vos données pour fiabiliser le score."
+    },
+    "veryLow": {
+      "label": "Confiance très faible",
+      "desc": "Très peu de données ont été saisies à ce stade : ce score est indicatif et se précisera au fur et à mesure de la complétion de vos indicateurs."
+    },
+    "none": {
+      "label": "Pas encore de données",
+      "desc": "Aucune donnée n'a encore été saisie pour cette organisation."
+    },
+    "unknown": {
+      "label": "Non renseigné"
     }
   }
 }
