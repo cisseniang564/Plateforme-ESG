@@ -43,19 +43,26 @@ _ENTITY_MODULE_MAP: Dict[str, str] = {
 }
 
 _ACTION_MAP: Dict[str, str] = {
-    "create":   "CREATE",
-    "update":   "UPDATE",
-    "delete":   "DELETE",
-    "validate": "APPROVE",
-    "reject":   "REJECT",
-    "submit":   "SUBMIT",
-    "import":   "IMPORT",
-    "export":   "EXPORT",
-    "login":    "LOGIN",
-    "comment":  "COMMENT",
-    "attach":   "ATTACH",
-    "calculate":"CALCULATE",
-    "publish":  "PUBLISH",
+    "create":           "CREATE",
+    "update":           "UPDATE",
+    "delete":           "DELETE",
+    "validate":         "APPROVE",
+    "approve":          "APPROVE",
+    "reject":           "REJECT",
+    "submit":           "SUBMIT",
+    "import":           "IMPORT",
+    "bulk_import":      "IMPORT",
+    "csv_import":       "IMPORT",
+    "reset_esg_data":   "DELETE",
+    "delete_tenant":    "DELETE",
+    "export":           "EXPORT",
+    "login":            "LOGIN",
+    "logout":           "LOGIN",
+    "comment":          "COMMENT",
+    "attach":           "ATTACH",
+    "calculate":        "CALCULATE",
+    "recalculate":      "CALCULATE",
+    "publish":          "PUBLISH",
 }
 
 
@@ -92,6 +99,13 @@ def _serialize_event(log: AuditLog) -> Dict[str, Any]:
 
     meta = log.entry_metadata or {}
 
+    # ── Signature hash (SHA-256 e-signature from approve/verify actions) ──
+    # We persist signatures in new_values["signature_hash"]; surface them on
+    # the audit event so the UI can render a "signed" badge with the proof.
+    sig_hash = None
+    if isinstance(log.new_values, dict):
+        sig_hash = log.new_values.get("signature_hash")
+
     return {
         "id": str(log.id),
         "timestamp": log.created_at.isoformat() if log.created_at else None,
@@ -106,7 +120,12 @@ def _serialize_event(log: AuditLog) -> Dict[str, Any]:
         "newValue": new_val,
         "ipAddress": log.ip_address,
         "sessionId": meta.get("session_id"),
-        "hash": meta.get("integrity_hash"),
+        # Integrity hash (if computed) OR the e-signature hash (preferred).
+        # `entryHash` is the SHA-256 chain hash sealed at write time.
+        "hash": log.entry_hash or sig_hash or meta.get("integrity_hash"),
+        "entryHash": log.entry_hash,
+        "previousHash": log.previous_hash,
+        "signatureHash": sig_hash,  # Explicit field for "signed" badge logic.
         "attachments": meta.get("attachments", []),
         "comment": log.change_reason if action == "COMMENT" else None,
     }
@@ -210,4 +229,74 @@ async def audit_stats(
         "recent_7_days": recent,
         "by_action": by_action,
         "period_days": days,
+    }
+
+
+# ─── Hash chain verification ─────────────────────────────────────────────────
+
+
+@router.get("/verify", summary="Vérifier l'intégrité de la chaîne d'audit (SHA-256)")
+async def verify_audit_chain(
+    limit: Optional[int] = Query(
+        None,
+        ge=1,
+        le=10000,
+        description=(
+            "Vérifier uniquement les N entrées les plus récentes. "
+            "Si non renseigné, vérifie toute la chaîne du tenant."
+        ),
+    ),
+    _: None = Depends(require_role(*Roles.ADMIN_OR_ABOVE)),
+    tenant_id: UUID = Depends(get_current_tenant_id),
+    db: AsyncSession = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Vérifie l'intégrité de la chaîne d'audit SHA-256 du tenant.
+
+    Pour chaque entrée :
+      1. Recalcule SHA-256(contenu canonique + previous_hash) ;
+      2. Compare au `entry_hash` stocké ;
+      3. Vérifie que `previous_hash` correspond au hash de l'entrée précédente.
+
+    Toute incohérence indique une modification ou une insertion non-autorisée
+    d'une entrée passée. Le rapport indique la première rupture détectée.
+
+    Réservé aux rôles `esg_admin` et `tenant_admin`.
+    """
+    from app.services.audit_chain_service import verify_chain
+
+    report = await verify_chain(db, tenant_id, limit=limit)
+    return report
+
+
+@router.post(
+    "/backfill",
+    summary="Calculer rétroactivement les hashs manquants (one-shot)",
+)
+async def backfill_audit_chain(
+    _: None = Depends(require_role(*Roles.ADMIN_OR_ABOVE)),
+    tenant_id: UUID = Depends(get_current_tenant_id),
+    db: AsyncSession = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Calcule et persiste `entry_hash` + `previous_hash` pour toutes les entrées
+    historiques du tenant qui n'en ont pas encore (legacy avant le rollout).
+
+    Idempotent — les entrées déjà scellées sont préservées et utilisées comme
+    ancres pour la suite de la chaîne. Réservé aux administrateurs tenant.
+    """
+    from app.services.audit_chain_service import backfill_chain
+
+    processed, skipped = await backfill_chain(db, tenant_id)
+    await db.commit()
+
+    return {
+        "tenant_id": str(tenant_id),
+        "processed": processed,
+        "skipped": skipped,
+        "message": (
+            f"{processed} entrée(s) scellée(s), {skipped} déjà à jour."
+            if processed
+            else "Toutes les entrées sont déjà scellées."
+        ),
     }

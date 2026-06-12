@@ -2,7 +2,7 @@
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 from datetime import date
-from sqlalchemy import String, Float, Date, Text, JSON, Index, ForeignKey
+from sqlalchemy import String, Float, Date, Text, JSON, Index, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from app.db.base import Base, TenantMixin, UUIDMixin, TimestampMixin
@@ -25,6 +25,9 @@ class ESGScore(Base, UUIDMixin, TenantMixin, TimestampMixin):
     overall_score: Mapped[float] = mapped_column(Float, nullable=False, index=True)
     rating: Mapped[str] = mapped_column(String(10), nullable=False)
     calculation_method: Mapped[str] = mapped_column(String(50), nullable=False, default="weighted_average")
+    # Sliding window (in months) used to filter indicator data for this score.
+    # Allows the report to label the score with its data window (6m / 1y / 3y / 5y).
+    period_months: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, default=12)
     sector_code: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     weights_applied: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     indicator_contributions: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)

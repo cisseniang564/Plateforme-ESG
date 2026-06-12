@@ -56,18 +56,39 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # ── Content Security Policy ───────────────────────────────────────
         # Dev : permissif pour le hot-reload Vite
         # Prod : strict, uniquement notre domaine
+        #
+        # Exception docs : /docs et /redoc chargent leurs assets JS/CSS
+        # depuis cdn.jsdelivr.net (FastAPI Swagger UI default CDN).
+        # On élargit script-src et style-src uniquement sur ces paths.
+        is_docs_path = request.url.path in ("/docs", "/redoc", "/openapi.json")
         if self.is_production:
-            csp = (
-                "default-src 'self'; "
-                "script-src 'self'; "
-                "style-src 'self' 'unsafe-inline'; "
-                "img-src 'self' data: https:; "
-                "font-src 'self'; "
-                "connect-src 'self'; "
-                "frame-ancestors 'none'; "
-                "form-action 'self'; "
-                "base-uri 'self';"
-            )
+            if is_docs_path:
+                # FastAPI Swagger UI injecte un <script> inline pour initialiser
+                # SwaggerUIBundle → 'unsafe-inline' requis pour script-src.
+                # Limité aux seuls paths /docs /redoc /openapi.json.
+                csp = (
+                    "default-src 'self'; "
+                    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                    "img-src 'self' data: https:; "
+                    "font-src 'self' https://cdn.jsdelivr.net; "
+                    "connect-src 'self'; "
+                    "frame-ancestors 'none'; "
+                    "form-action 'self'; "
+                    "base-uri 'self';"
+                )
+            else:
+                csp = (
+                    "default-src 'self'; "
+                    "script-src 'self'; "
+                    "style-src 'self' 'unsafe-inline'; "
+                    "img-src 'self' data: https:; "
+                    "font-src 'self'; "
+                    "connect-src 'self'; "
+                    "frame-ancestors 'none'; "
+                    "form-action 'self'; "
+                    "base-uri 'self';"
+                )
         else:
             # Dev : autorise localhost et webpack/vite HMR
             csp = (

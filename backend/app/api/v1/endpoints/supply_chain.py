@@ -333,8 +333,52 @@ async def submit_portal(
 
 # ─── Private helpers ──────────────────────────────────────────────────────────
 
+def _level_to_risk_label(level: str | None, fallback_score: float | None = None) -> str:
+    """Convert DB risk_level (low/medium/high/critical) to the French label
+    the frontend ``RiskLevel`` enum expects. Falls back to score-derived
+    bucketing if level is missing."""
+    if level:
+        mapping = {
+            "low": "Faible",
+            "medium": "Moyen",
+            "high": "Élevé",
+            "critical": "Critique",
+        }
+        normalised = mapping.get(level.lower().strip())
+        if normalised:
+            return normalised
+    # Fallback from global_score
+    if fallback_score is not None:
+        s = float(fallback_score)
+        if s >= 75: return "Faible"
+        if s >= 55: return "Moyen"
+        if s >= 35: return "Élevé"
+        return "Critique"
+    return "Moyen"
+
+
+def _status_to_eval_label(status: str | None, last_scored_at, global_score) -> str:
+    """Convert DB status to the French ``EvalStatus`` the UI expects.
+
+    A supplier is ``Évalué`` if it has a global_score or a last_scored_at
+    timestamp; ``En cours`` if a questionnaire was sent but not finalised;
+    ``Refus`` if explicitly rejected; ``Non évalué`` otherwise.
+    """
+    if status:
+        s = status.lower().strip()
+        if s in ("refused", "rejected", "refus"):
+            return "Refus"
+        if s in ("pending", "in_progress", "en_cours", "questionnaire_sent"):
+            return "En cours"
+    if last_scored_at is not None or (global_score is not None and float(global_score) > 0):
+        return "Évalué"
+    return "Non évalué"
+
+
 def _supplier_to_dict(s) -> Dict[str, Any]:
     """Serialize a Supplier ORM instance to a plain dict for API responses."""
+    risk_fr   = _level_to_risk_label(s.risk_level, s.global_score)
+    status_fr = _status_to_eval_label(s.status, s.last_scored_at, s.global_score)
     return {
         "id": str(s.id),
         "tenant_id": str(s.tenant_id),
@@ -346,13 +390,18 @@ def _supplier_to_dict(s) -> Dict[str, Any]:
         "employees": s.employees,
         "annual_revenue_k_eur": float(s.annual_revenue_k_eur) if s.annual_revenue_k_eur is not None else None,
         "spend_k_eur": float(s.spend_k_eur) if s.spend_k_eur is not None else None,
+        # Raw DB values
         "risk_level": s.risk_level,
-        "status": s.status,
-        "global_score": s.global_score,
-        "env_score": s.env_score,
-        "social_score": s.social_score,
-        "gov_score": s.gov_score,
-        "flags": s.flags,
+        # French labels the frontend RiskLevel/EvalStatus enums expect
+        "risk":   risk_fr,
+        "status": status_fr,
+        # Convenience aliases consumed by the SupplyChainESG.tsx mapper
+        "spend":         float(s.spend_k_eur) if s.spend_k_eur is not None else 0,
+        "global_score":  s.global_score,
+        "env_score":     s.env_score,
+        "social_score":  s.social_score,
+        "gov_score":     s.gov_score,
+        "flags":         s.flags or [],
         "questionnaire_data": s.questionnaire_data,
         "portal_token": s.portal_token,
         "portal_token_expires_at": s.portal_token_expires_at.isoformat() if s.portal_token_expires_at else None,

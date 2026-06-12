@@ -84,3 +84,6 @@ pyotp>=2.9.0
 
 # Word documents
 python-docx>=1.1.0
+
+# iXBRL / ESEF validation (Couche 3 — XSD EFRAG)
+arelle-release>=2.41.0

@@ -48,29 +48,65 @@ class ESGScoringEngine:
     # Ranges de référence par indicateur
     BENCHMARK_RANGES = {
         "ENV-001": {"min": 0, "max": 2000, "unit": "tCO2e", "name": "Émissions carbone"},
-        "ENV-002": {"min": 0, "max": 3000, "unit": "m³", "name": "Consommation eau"},
+        # ✅ FIX: ENV-002 correspond à 'Émissions Scope 2 (tCO2e)' / 'Émissions GES Scope 2'
+        # dans _METRIC_NAME_TO_CODE — c'était (par erreur) calibré comme une
+        # consommation d'eau en m³. Recalibré en tCO2e (cohérent avec
+        # INDICATOR_DIRECTION["ENV-002"]=False, plus faible = meilleur).
+        "ENV-002": {"min": 0, "max": 1000, "unit": "tCO2e", "name": "Émissions Scope 2"},
         "ENV-003": {"min": 0, "max": 1000, "unit": "MWh", "name": "Consommation énergie"},
         "ENV-004": {"min": 0, "max": 100, "unit": "%", "name": "Énergie renouvelable"},
+        # ✅ FIX: ENV-005 ('Consommation eau (m3)' / "Consommation d'eau") n'avait
+        # ni benchmark ni direction définis — chaque collecte tombait sur le
+        # défaut générique {0-100, higher_is_better=True}, ce qui inversait
+        # le sens de l'indicateur (plus d'eau consommée = meilleur score).
+        "ENV-005": {"min": 0, "max": 5000, "unit": "m³", "name": "Consommation eau"},
         "SOC-001": {"min": 0, "max": 100, "unit": "%", "name": "Satisfaction employés"},
         "SOC-002": {"min": 0, "max": 80, "unit": "heures", "name": "Formation annuelle"},
         "SOC-003": {"min": 0, "max": 30, "unit": "%", "name": "Turnover"},
         "GOV-001": {"min": 0, "max": 100, "unit": "%", "name": "Diversité conseil"},
         "GOV-002": {"min": 0, "max": 100, "unit": "%", "name": "Formation éthique"},
         "GOV-003": {"min": 0, "max": 50, "unit": "%", "name": "Indépendance CA"},
+        # ── Indicateurs ESRS S1 (import RH : Silae/Lucca/PayFit/Swile/CSV…) ───
+        "s1_turnover_rate": {"min": 0, "max": 30, "unit": "%", "name": "Taux de turnover"},
+        "s1_absenteeism_rate": {"min": 0, "max": 10, "unit": "%", "name": "Taux d'absentéisme"},
+        "s1_accident_frequency": {"min": 0, "max": 50, "unit": "indice", "name": "Indice de fréquence des accidents"},
+        "s1_pay_gap": {"min": 0, "max": 25, "unit": "%", "name": "Écart de rémunération F/H"},
+        "s1_training_hours_per_employee": {"min": 0, "max": 40, "unit": "heures", "name": "Heures de formation par salarié"},
+        "s1_women_ratio": {"min": 0, "max": 100, "unit": "%", "name": "Part de femmes dans l'effectif"},
+        "s1_women_management": {"min": 0, "max": 100, "unit": "%", "name": "Part de femmes dans l'encadrement"},
+        "s1_permanent_contracts": {"min": 0, "max": 100, "unit": "%", "name": "Part de contrats CDI"},
     }
 
     # Sens des indicateurs (higher_is_better)
     INDICATOR_DIRECTION = {
         "ENV-001": False,  # émissions carbone : lower is better
-        "ENV-002": False,
+        "ENV-002": False,  # émissions Scope 2 (tCO2e) : lower is better
         "ENV-003": False,
         "ENV-004": True,
+        "ENV-005": False,  # consommation d'eau (m³) : lower is better
         "SOC-001": True,
         "SOC-002": True,
         "SOC-003": False,
         "GOV-001": True,
         "GOV-002": True,
         "GOV-003": True,
+        # ── Indicateurs ESRS S1 (import RH) ───────────────────────────────────
+        "s1_turnover_rate": False,             # un turnover plus faible est meilleur
+        "s1_absenteeism_rate": False,          # un absentéisme plus faible est meilleur
+        "s1_accident_frequency": False,        # moins d'accidents = meilleur
+        "s1_pay_gap": False,                   # un écart de rémunération plus faible est meilleur
+        "s1_training_hours_per_employee": True,
+        "s1_women_ratio": True,
+        "s1_women_management": True,
+        "s1_permanent_contracts": True,        # plus de CDI = stabilité de l'emploi
+    }
+
+    # Métriques "contextuelles" (effectifs, embauches…) : pas de benchmark 0-100
+    # pertinent → exclues du calcul du score (mais restent visibles dans les
+    # statistiques de la page Import / Mes données).
+    _NON_SCORABLE_METRICS = {
+        "s1_workforce_total",
+        "s1_new_hires",
     }
 
     def __init__(self, db: AsyncSession):
@@ -107,7 +143,9 @@ class ESGScoringEngine:
         # 3) Pondérations sectorielles
         sector_weights = await self._get_sector_weights(tenant_id, sector_code)
 
-        # 4) Données indicateurs (IndicatorData en priorité, DataEntry en fallback)
+        # 4) Données indicateurs — FUSION IndicatorData + DataEntry
+        # Les deux sources sont toujours interrogées et fusionnées afin que
+        # chaque import CSV contribue immédiatement au calcul du score.
         indicator_data = await self._collect_indicator_data(
             tenant_id=tenant_id,
             organization_id=organization_id,
@@ -115,17 +153,40 @@ class ESGScoringEngine:
             period_months=period_months,
             use_rolling_avg=use_rolling_avg,
         )
-        # Fallback si aucune donnée ou données insuffisantes pour scorer
-        # (< 5 métriques = impossible de calculer les 3 piliers E/S/G correctement)
-        if not indicator_data or len(indicator_data) < 5:
-            data_entries_data = await self._collect_from_data_entries(
-                tenant_id=tenant_id,
-                organization_id=organization_id,
-                calculation_date=calculation_date,
-                period_months=period_months,
-            )
-            if data_entries_data and len(data_entries_data) >= len(indicator_data or {}):
-                indicator_data = data_entries_data
+        data_entries_data = await self._collect_from_data_entries(
+            tenant_id=tenant_id,
+            organization_id=organization_id,
+            calculation_date=calculation_date,
+            period_months=period_months,
+        )
+        # Fusionner : DataEntry enrichit IndicatorData
+        #  - Code absent d'IndicatorData  → ajout direct
+        #  - Code présent dans les deux   → fusion des séries de valeurs
+        for code, de_entry in (data_entries_data or {}).items():
+            if code not in indicator_data:
+                indicator_data[code] = de_entry
+            else:
+                # Combiner les valeurs brutes pour un rolling-average enrichi
+                existing = indicator_data[code]
+                merged_values = list(existing["values"]) + list(de_entry["values"])
+                if merged_values:
+                    clean = self._remove_outliers(merged_values)
+                    robust_avg = (sum(clean) / len(clean)) if clean else (sum(merged_values) / len(merged_values))
+                    higher_is_better = self.INDICATOR_DIRECTION.get(code, True)
+                    normalized_score = self._normalize_value(robust_avg, code, higher_is_better)
+                    trend = self._calculate_indicator_trend(merged_values, indicator_code=code)
+                    indicator_data[code] = {
+                        **existing,
+                        "values": merged_values[:6],
+                        "count": len(merged_values),
+                        "avg_value": round(robust_avg, 2),
+                        "normalized_score": round(normalized_score, 2),
+                        "trend": trend,
+                        "min_value": round(min(merged_values), 2),
+                        "max_value": round(max(merged_values), 2),
+                        "std_dev": round(float(np.std(merged_values)), 2) if len(merged_values) > 1 else 0.0,
+                    }
+
         if not indicator_data:
             raise ValueError("No indicator data found for scoring")
 
@@ -178,6 +239,7 @@ class ESGScoringEngine:
             sector_median=benchmarks.get("sector_median"),
             data_completeness=data_quality["completeness"],
             confidence_level=data_quality["confidence_level"],
+            period_months=period_months,
         )
 
         return {
@@ -289,9 +351,92 @@ class ESGScoringEngine:
         period_months: int,
         use_rolling_avg: bool = True,
     ) -> Dict[str, Dict[str, Any]]:
-        """Collecter et agréger les données des indicateurs."""
+        """Collecter et agréger les données des indicateurs.
+
+        ✅ FIX (repli cumulatif par pilier + tri déterministe) :
+        Auparavant, dès qu'une tentative de repli renvoyait ne serait-ce
+        qu'une seule ligne, les tentatives suivantes étaient ignorées —
+        même si ces lignes ne couvraient PAS les 3 piliers (Environnemental
+        / Social / Gouvernance). Une organisation disposant de données
+        propres classées (à tort ou par nature) uniquement en
+        Environnemental voyait alors Social et Gouvernance retomber à 0.0,
+        alors que des données pertinentes existaient via une tentative plus
+        large (tenant entier). Désormais, les tentatives sont CUMULATIVES :
+        tant que les 3 piliers ne sont pas couverts, la tentative suivante
+        est exécutée pour COMPLÉTER (sans écraser) les indicateurs déjà
+        trouvés. Un tri secondaire déterministe (.id) est aussi ajouté pour
+        stabiliser les résultats des requêtes .limit(...) d'un calcul à
+        l'autre.
+        """
         start_date = calculation_date - timedelta(days=period_months * 30)
 
+        ALL_PILLARS = {"environmental", "social", "governance"}
+        pillar_map = {
+            'e': 'environmental', 'environmental': 'environmental', 'environnement': 'environmental',
+            's': 'social', 'social': 'social',
+            'g': 'governance', 'governance': 'governance', 'gouvernance': 'governance',
+        }
+
+        indicator_results: Dict[str, Dict[str, Any]] = {}
+        covered_pillars: set = set()
+
+        def _ingest(rows: List[Tuple["IndicatorData", "Indicator"]]) -> None:
+            indicator_groups: Dict[str, List[Tuple[IndicatorData, Indicator]]] = {}
+            for data, indicator in rows:
+                indicator_groups.setdefault(indicator.code, []).append((data, indicator))
+
+            for code, data_list in indicator_groups.items():
+                indicator = data_list[0][1]
+                raw_pillar = indicator.pillar.value if hasattr(indicator.pillar, "value") else str(indicator.pillar)
+                pillar_key = pillar_map.get(str(raw_pillar).lower(), "environmental")
+
+                # Pilier déjà couvert par une tentative précédente, ou
+                # indicateur déjà trouvé : on ne complète QUE ce qui manque.
+                if pillar_key in covered_pillars or code in indicator_results:
+                    continue
+
+                values = [float(d.value) for d, _ in data_list]
+
+                if use_rolling_avg and len(values) >= 3:
+                    avg_value = sum(values[:3]) / 3
+                else:
+                    avg_value = sum(values) / len(values)
+
+                clean_values = self._remove_outliers(values)
+                robust_avg = (sum(clean_values) / len(clean_values)) if clean_values else avg_value
+
+                normalized_score = self._normalize_value(
+                    value=robust_avg,
+                    indicator_code=code,
+                    higher_is_better=self.INDICATOR_DIRECTION.get(code, True),
+                )
+
+                # ✅ FIX: trend dépend du sens de l’indicateur
+                trend = self._calculate_indicator_trend(values, indicator_code=code)
+
+                weight = 1.0  # poids par défaut (peut être surchargé par sector_weights.indicator_weights)
+
+                indicator_results[code] = {
+                    "pillar": raw_pillar,
+                    "name": indicator.name,
+                    "unit": indicator.unit,
+                    "values": values[:6],
+                    "count": len(values),
+                    "avg_value": round(robust_avg, 2),
+                    "normalized_score": round(normalized_score, 2),
+                    "weight": weight,
+                    "trend": trend,
+                    "min_value": round(min(values), 2),
+                    "max_value": round(max(values), 2),
+                    "std_dev": round(float(np.std(values)), 2) if len(values) > 1 else 0.0,
+                }
+
+            covered_pillars.update(
+                pillar_map.get(str(d.get("pillar", "")).lower(), "environmental")
+                for d in indicator_results.values()
+            )
+
+        # ── Tentative 1 : données liées à l'organisation ────────────────────
         query = (
             select(IndicatorData, Indicator)
             .join(Indicator, IndicatorData.indicator_id == Indicator.id)
@@ -304,57 +449,50 @@ class ESGScoringEngine:
                     Indicator.is_active == True,  # noqa: E712
                 )
             )
-            .order_by(IndicatorData.date.desc())
+            .order_by(IndicatorData.date.desc(), IndicatorData.id)
         )
+        rows = (await self.db.execute(query)).all()
+        if rows:
+            _ingest(rows)
 
-        result = await self.db.execute(query)
-        rows = result.all()
-        if not rows:
-            return {}
-
-        indicator_groups: Dict[str, List[Tuple[IndicatorData, Indicator]]] = {}
-        for data, indicator in rows:
-            indicator_groups.setdefault(indicator.code, []).append((data, indicator))
-
-        indicator_results: Dict[str, Dict[str, Any]] = {}
-
-        for code, data_list in indicator_groups.items():
-            values = [float(d.value) for d, _ in data_list]
-            indicator = data_list[0][1]
-
-            if use_rolling_avg and len(values) >= 3:
-                avg_value = sum(values[:3]) / 3
-            else:
-                avg_value = sum(values) / len(values)
-
-            clean_values = self._remove_outliers(values)
-            robust_avg = (sum(clean_values) / len(clean_values)) if clean_values else avg_value
-
-            normalized_score = self._normalize_value(
-                value=robust_avg,
-                indicator_code=code,
-                higher_is_better=self.INDICATOR_DIRECTION.get(code, True),
+        # ── Tentative 2 : données sans organisation assignée ─────────────────
+        if covered_pillars != ALL_PILLARS:
+            query2 = (
+                select(IndicatorData, Indicator)
+                .join(Indicator, IndicatorData.indicator_id == Indicator.id)
+                .where(
+                    and_(
+                        IndicatorData.tenant_id == tenant_id,
+                        IndicatorData.organization_id.is_(None),
+                        IndicatorData.date >= start_date,
+                        IndicatorData.date <= calculation_date,
+                        Indicator.is_active == True,  # noqa: E712
+                    )
+                )
+                .order_by(IndicatorData.date.desc(), IndicatorData.id)
             )
+            rows2 = (await self.db.execute(query2)).all()
+            if rows2:
+                _ingest(rows2)
 
-            # ✅ FIX: trend dépend du sens de l’indicateur
-            trend = self._calculate_indicator_trend(values, indicator_code=code)
-
-            weight = 1.0  # poids par défaut (peut être surchargé par sector_weights.indicator_weights)
-
-            indicator_results[code] = {
-                "pillar": indicator.pillar.value if hasattr(indicator.pillar, "value") else str(indicator.pillar),
-                "name": indicator.name,
-                "unit": indicator.unit,
-                "values": values[:6],
-                "count": len(values),
-                "avg_value": round(robust_avg, 2),
-                "normalized_score": round(normalized_score, 2),
-                "weight": weight,
-                "trend": trend,
-                "min_value": round(min(values), 2),
-                "max_value": round(max(values), 2),
-                "std_dev": round(float(np.std(values)), 2) if len(values) > 1 else 0.0,
-            }
+        # ── Tentative 3 : toutes données du tenant SANS filtre date ──────────
+        # (couvre les données historiques importées hors fenêtre glissante)
+        if covered_pillars != ALL_PILLARS:
+            query3 = (
+                select(IndicatorData, Indicator)
+                .join(Indicator, IndicatorData.indicator_id == Indicator.id)
+                .where(
+                    and_(
+                        IndicatorData.tenant_id == tenant_id,
+                        Indicator.is_active == True,  # noqa: E712
+                    )
+                )
+                .order_by(IndicatorData.date.desc(), IndicatorData.id)
+                .limit(200)
+            )
+            rows3 = (await self.db.execute(query3)).all()
+            if rows3:
+                _ingest(rows3)
 
         return indicator_results
 
@@ -413,9 +551,97 @@ class ESGScoringEngine:
         """
         Fallback: collecte les données depuis data_entries (avant migration IndicatorData).
         Retourne le même format que _collect_indicator_data.
+
+        Stratégie de recherche (cumulative par pilier, par ordre de priorité) :
+        1. Données liées à l'organisation spécifique
+        2. Données du tenant sans organisation assignée (imports sans sélection d'org)
+        3. Toutes les données du tenant sur la période (dernier recours)
+        4. TOUTES les données du tenant, sans aucun filtre
+
+        ✅ FIX (repli cumulatif par pilier + tri déterministe) :
+        Auparavant, dès qu'une tentative renvoyait ne serait-ce qu'une seule
+        ligne, les tentatives suivantes étaient ignorées — même si ces
+        lignes ne couvraient pas les 3 piliers (E/S/G). Une organisation
+        disposant de données propres classées (à tort ou par nature)
+        uniquement en Environnemental voyait alors Social et Gouvernance
+        retomber à 0.0, alors que des données pertinentes existaient via une
+        tentative plus large (tenant entier). Désormais, les tentatives sont
+        CUMULATIVES : tant que les 3 piliers ne sont pas couverts, la
+        tentative suivante est exécutée pour COMPLÉTER (sans écraser) les
+        indicateurs déjà trouvés. Un tri secondaire déterministe (.id) est
+        aussi ajouté pour stabiliser les résultats des requêtes .limit(500)
+        d'un calcul à l'autre.
         """
         start_date = calculation_date - timedelta(days=period_months * 30)
 
+        ALL_PILLARS = {"environmental", "social", "governance"}
+        pillar_map = {
+            'e': 'environmental', 'environmental': 'environmental', 'environnement': 'environmental',
+            's': 'social', 'social': 'social',
+            'g': 'governance', 'governance': 'governance', 'gouvernance': 'governance',
+        }
+
+        indicator_results: Dict[str, Dict[str, Any]] = {}
+        covered_pillars: set = set()
+
+        def _ingest(rows: List[DataEntry]) -> None:
+            # Regrouper par métrique (en excluant les métriques purement
+            # contextuelles, sans benchmark 0-100 pertinent — ex: effectifs bruts)
+            groups: Dict[str, List[DataEntry]] = {}
+            for entry in rows:
+                if entry.metric_name in self._NON_SCORABLE_METRICS:
+                    continue
+                groups.setdefault(entry.metric_name, []).append(entry)
+
+            for metric_name, entries in groups.items():
+                # ✅ FIX: ne plus tronquer à 10 caractères — la troncature cassait
+                # la correspondance avec BENCHMARK_RANGES / INDICATOR_DIRECTION
+                # pour les codes ESRS (ex: "s1_turnover_rate" → "s1_turnove").
+                code = self._METRIC_NAME_TO_CODE.get(metric_name, metric_name)
+                pillar = pillar_map.get(str(entries[0].pillar or 'environmental').lower(), 'environmental')
+
+                # Pilier déjà couvert par une tentative précédente, ou
+                # indicateur déjà trouvé : on ne complète QUE ce qui manque.
+                if pillar in covered_pillars or code in indicator_results:
+                    continue
+
+                values = [float(e.value_numeric) for e in entries if e.value_numeric is not None]
+                if not values:
+                    continue
+
+                avg_value = sum(values) / len(values)
+                clean_values = self._remove_outliers(values)
+                robust_avg = (sum(clean_values) / len(clean_values)) if clean_values else avg_value
+
+                higher_is_better = self.INDICATOR_DIRECTION.get(code, True)
+                normalized_score = self._normalize_value(
+                    value=robust_avg,
+                    indicator_code=code,
+                    higher_is_better=higher_is_better,
+                )
+                trend = self._calculate_indicator_trend(values, indicator_code=code)
+
+                indicator_results[code] = {
+                    "pillar": pillar,
+                    "name": metric_name,
+                    "unit": entries[0].unit or '',
+                    "values": values[:6],
+                    "count": len(values),
+                    "avg_value": round(robust_avg, 2),
+                    "normalized_score": round(normalized_score, 2),
+                    "weight": 1.0,
+                    "trend": trend,
+                    "min_value": round(min(values), 2),
+                    "max_value": round(max(values), 2),
+                    "std_dev": round(float(np.std(values)), 2) if len(values) > 1 else 0.0,
+                }
+
+            covered_pillars.update(
+                pillar_map.get(str(d.get("pillar", "")).lower(), "environmental")
+                for d in indicator_results.values()
+            )
+
+        # ── Tentative 1 : données de l'organisation spécifique ───────────────
         query = (
             select(DataEntry)
             .where(
@@ -426,61 +652,59 @@ class ESGScoringEngine:
                     DataEntry.period_start <= calculation_date,
                 )
             )
-            .order_by(DataEntry.period_start.desc())
+            .order_by(DataEntry.period_start.desc(), DataEntry.id)
         )
-        result = await self.db.execute(query)
-        rows = result.scalars().all()
-        if not rows:
-            return {}
+        rows = (await self.db.execute(query)).scalars().all()
+        if rows:
+            _ingest(rows)
 
-        # Regrouper par métrique
-        groups: Dict[str, List[DataEntry]] = {}
-        for entry in rows:
-            groups.setdefault(entry.metric_name, []).append(entry)
-
-        indicator_results: Dict[str, Dict[str, Any]] = {}
-
-        for metric_name, entries in groups.items():
-            code = self._METRIC_NAME_TO_CODE.get(metric_name, metric_name[:10])
-            values = [float(e.value_numeric) for e in entries if e.value_numeric is not None]
-            if not values:
-                continue
-
-            avg_value = sum(values) / len(values)
-            clean_values = self._remove_outliers(values)
-            robust_avg = (sum(clean_values) / len(clean_values)) if clean_values else avg_value
-
-            higher_is_better = self.INDICATOR_DIRECTION.get(code, True)
-            normalized_score = self._normalize_value(
-                value=robust_avg,
-                indicator_code=code,
-                higher_is_better=higher_is_better,
+        # ── Tentative 2 : données sans organisation (imports sans sélection) ─
+        if covered_pillars != ALL_PILLARS:
+            query2 = (
+                select(DataEntry)
+                .where(
+                    and_(
+                        DataEntry.tenant_id == tenant_id,
+                        DataEntry.organization_id.is_(None),
+                        DataEntry.period_start >= start_date,
+                        DataEntry.period_start <= calculation_date,
+                    )
+                )
+                .order_by(DataEntry.period_start.desc(), DataEntry.id)
             )
-            trend = self._calculate_indicator_trend(values, indicator_code=code)
+            rows2 = (await self.db.execute(query2)).scalars().all()
+            if rows2:
+                _ingest(rows2)
 
-            pillar = str(entries[0].pillar or 'environmental').lower()
-            # Normaliser le nom du pilier
-            pillar_map = {
-                'e': 'environmental', 'environmental': 'environmental', 'environnement': 'environmental',
-                's': 'social', 'social': 'social',
-                'g': 'governance', 'governance': 'governance', 'gouvernance': 'governance',
-            }
-            pillar = pillar_map.get(pillar, 'environmental')
+        # ── Tentative 3 : données du tenant (sans org) sans filtre date ────────
+        # Couvre les imports historiques hors fenêtre glissante
+        if covered_pillars != ALL_PILLARS:
+            query3 = (
+                select(DataEntry)
+                .where(
+                    and_(
+                        DataEntry.tenant_id == tenant_id,
+                        DataEntry.organization_id.is_(None),
+                    )
+                )
+                .order_by(DataEntry.period_start.desc(), DataEntry.id)
+                .limit(500)
+            )
+            rows3 = (await self.db.execute(query3)).scalars().all()
+            if rows3:
+                _ingest(rows3)
 
-            indicator_results[code] = {
-                "pillar": pillar,
-                "name": metric_name,
-                "unit": entries[0].unit or '',
-                "values": values[:6],
-                "count": len(values),
-                "avg_value": round(robust_avg, 2),
-                "normalized_score": round(normalized_score, 2),
-                "weight": 1.0,
-                "trend": trend,
-                "min_value": round(min(values), 2),
-                "max_value": round(max(values), 2),
-                "std_dev": round(float(np.std(values)), 2) if len(values) > 1 else 0.0,
-            }
+        # ── Tentative 4 : TOUTES les données du tenant, sans aucun filtre ─────
+        if covered_pillars != ALL_PILLARS:
+            query4 = (
+                select(DataEntry)
+                .where(DataEntry.tenant_id == tenant_id)
+                .order_by(DataEntry.period_start.desc(), DataEntry.id)
+                .limit(500)
+            )
+            rows4 = (await self.db.execute(query4)).scalars().all()
+            if rows4:
+                _ingest(rows4)
 
         return indicator_results
 
@@ -819,6 +1043,7 @@ class ESGScoringEngine:
         sector_median: Optional[float],
         data_completeness: float,
         confidence_level: str,
+        period_months: int = 12,
     ) -> ESGScore:
         """Sauvegarder le score en base."""
         existing_query = select(ESGScore).where(
@@ -844,6 +1069,7 @@ class ESGScoringEngine:
             "sector_median": sector_median,
             "data_completeness": data_completeness,
             "confidence_level": confidence_level,
+            "period_months": period_months,
         }
 
         if existing_score:
@@ -862,7 +1088,11 @@ class ESGScoringEngine:
             self.db.add(esg_score)
 
         await self.db.commit()
-        await self.db.refresh(esg_score)
+        # NOTE: do NOT ``await self.db.refresh(esg_score)`` — refresh first
+        # *expires* attributes then SELECTs them back; if the SELECT fails
+        # (RLS, …), the instance is left in an "expired" state and any later
+        # attribute access raises MissingGreenlet ("Could not refresh
+        # instance"). All scoring attributes are set Python-side above.
         return esg_score
 
     async def calculate_historical_scores(

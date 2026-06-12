@@ -1,13 +1,13 @@
 """
-Billing Middleware — Post-trial & subscription enforcement.
+Billing Middleware — Trial-status awareness (freemium model).
 
-Intercepts every authenticated request and returns 402 Payment Required
-when the tenant's trial has expired AND no active Stripe subscription exists.
+Intercepts every authenticated request to track billing status.
+Requests are NEVER blocked — users can always navigate the platform.
+The middleware adds an `X-Trial-Expired: true` response header when the
+tenant's trial has ended and no active subscription exists, so the
+frontend can display a non-intrusive upgrade banner.
 
-Exempt:
-  - Public paths (auth, health, webhooks)
-  - Billing / settings endpoints (so users can upgrade)
-  - Read-only profile / notifications (so users are not locked out entirely)
+Exempt paths receive no extra processing.
 """
 from __future__ import annotations
 
@@ -47,6 +47,7 @@ _BILLING_EXEMPT_EXACT: frozenset[str] = frozenset([
     "/api/v1/billing/features",
     "/api/v1/billing/invoices",
     "/api/v1/billing/reactivate",
+    "/api/v1/billing/downgrade-free",
     # Onboarding
     "/api/v1/onboarding/status",
     "/api/v1/onboarding/sectors",
@@ -55,13 +56,22 @@ _BILLING_EXEMPT_EXACT: frozenset[str] = frozenset([
     "/api/v1/notifications/preferences",
     # Stripe webhook — verified by signature, must always go through
     "/api/v1/webhooks/stripe",
+    # Unsubscribe — must work without auth/billing context (RFC 8058)
+    "/api/v1/unsubscribe",
+    # Public status — must always answer (used by DSI / monitoring)
+    "/api/v1/status",
+    # Lead capture — public marketing endpoints
+    "/api/v1/leads/checklist-csrd",
+    "/api/v1/leads/newsletter",
 ])
 
+# Public path prefixes also exempted from billing checks
 _BILLING_EXEMPT_PREFIXES: tuple[str, ...] = (
     "/api/v1/auth/",
     "/api/v1/billing/",
     "/api/v1/supply-chain/portal/",
     "/api/v1/sso/",
+    "/api/v1/og/",  # OG images for social previews — must be cacheable & public
 )
 
 # Simple in-memory cache: tenant_id -> (is_blocked, expires_at)
@@ -103,24 +113,30 @@ async def _tenant_is_blocked(tenant_id: str) -> bool:
         if row:
             plan_tier, sub_status, trial_ends_at = row
 
+            utc_now = datetime.now(timezone.utc)
+            if trial_ends_at is not None and hasattr(trial_ends_at, "tzinfo") and trial_ends_at.tzinfo is None:
+                trial_ends_at = trial_ends_at.replace(tzinfo=timezone.utc)
+            in_trial = trial_ends_at is not None and utc_now < trial_ends_at
+
             # Enterprise tenants are never blocked
             if plan_tier == "enterprise":
                 blocked = False
 
-            # Active or trialing Stripe subscription → OK
-            elif sub_status in ("active", "trialing", "past_due"):
+            # Active paid Stripe subscription (past_due has a grace period)
+            elif sub_status in ("active", "past_due"):
                 blocked = False
 
-            # No subscription — check trial window
+            # "trialing" Stripe status — blocked once the trial window closes
+            elif sub_status == "trialing":
+                blocked = not in_trial
+
+            # No Stripe subscription — check trial window
             else:
                 if trial_ends_at is None:
-                    # Never set a trial → treat as grace period (first 14 days)
+                    # No trial ever set → grant a grace period (not blocked)
                     blocked = False
                 else:
-                    utc_now = datetime.now(timezone.utc)
-                    if hasattr(trial_ends_at, "tzinfo") and trial_ends_at.tzinfo is None:
-                        trial_ends_at = trial_ends_at.replace(tzinfo=timezone.utc)
-                    blocked = utc_now > trial_ends_at
+                    blocked = not in_trial
 
     except Exception as exc:
         logger.warning("BillingMiddleware: DB check failed (%s) — allowing request", exc)
@@ -131,7 +147,7 @@ async def _tenant_is_blocked(tenant_id: str) -> bool:
 
 
 class BillingMiddleware(BaseHTTPMiddleware):
-    """Block access when trial expired and no active subscription."""
+    """Freemium model — never blocks, signals trial expiry via response header."""
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
@@ -140,23 +156,12 @@ class BillingMiddleware(BaseHTTPMiddleware):
         if not path.startswith("/api/") or _is_exempt(path):
             return await call_next(request)
 
-        # Only enforce for authenticated tenants
+        # For authenticated tenants, check billing status and propagate via header
         tenant_id = getattr(request.state, "tenant_id", None)
-        if not tenant_id:
-            return await call_next(request)
-
-        if await _tenant_is_blocked(str(tenant_id)):
-            return JSONResponse(
-                status_code=status.HTTP_402_PAYMENT_REQUIRED,
-                content={
-                    "error": "Abonnement expiré",
-                    "detail": (
-                        "Votre période d'essai est terminée. "
-                        "Choisissez un plan pour continuer à utiliser ESGFlow."
-                    ),
-                    "upgrade_url": "/app/settings?tab=billing",
-                    "code": "TRIAL_EXPIRED",
-                },
-            )
+        if tenant_id and await _tenant_is_blocked(str(tenant_id)):
+            response = await call_next(request)
+            # Non-intrusive signal: frontend reads this to show the upgrade banner
+            response.headers["X-Trial-Expired"] = "true"
+            return response
 
         return await call_next(request)

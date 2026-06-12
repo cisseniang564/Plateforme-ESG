@@ -35,8 +35,12 @@ class TenantMiddleware:
             "/api/v1/auth/login",
             "/api/v1/auth/refresh",
             "/api/v1/auth/onboard",
+            "/api/v1/unsubscribe",
+            "/api/v1/status",
+            "/api/v1/leads/checklist-csrd",
+            "/api/v1/leads/newsletter",
         ]
-        
+
         if request.url.path in public_paths:
             return await call_next(request)
         
@@ -51,27 +55,21 @@ class TenantMiddleware:
                 detail="Missing tenant or user context",
             )
         
-        # Set PostgreSQL session variables for RLS
-        async with AsyncSessionLocal() as session:
-            try:
-                # Use parameterized queries to prevent any injection risk
-                await session.execute(
-                    text("SELECT set_config('app.current_tenant_id', :tid, false)"),
-                    {"tid": str(tenant_id)},
-                )
-                await session.execute(
-                    text("SELECT set_config('app.current_user_id', :uid, false)"),
-                    {"uid": str(user_id)},
-                )
-                await session.commit()
+        # NOTE: We no longer set PostgreSQL session GUCs here. Doing so on a
+        # throw-away session inside this middleware would race with the
+        # endpoint's request-scoped session: the middleware's connection
+        # gets returned to the pool, and the endpoint might pick up a
+        # different pooled connection that has no RLS context, which then
+        # causes "new row violates row-level security policy" on INSERTs.
+        #
+        # ``app.db.session.get_db`` now owns the RLS context exclusively —
+        # it sets ``app.current_tenant_id`` / ``app.current_user_id`` on the
+        # SAME connection that the endpoint will use, with is_local=false so
+        # the setting persists across commits within the request, and clears
+        # them in its ``finally`` block before returning the connection to
+        # the pool. This middleware now just guards that the request has
+        # authentication context.
 
-            except Exception:
-                await session.rollback()
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Internal server error",
-                )
-        
         # Continue to next middleware/endpoint
         response = await call_next(request)
         return response

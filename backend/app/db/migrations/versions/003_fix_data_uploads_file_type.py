@@ -12,7 +12,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision = "003_fix_data_uploads_file_type"
-down_revision = "002_billing_subscription"
+down_revision = "002"
 branch_labels = None
 depends_on = None
 

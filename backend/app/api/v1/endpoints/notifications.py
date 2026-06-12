@@ -137,23 +137,91 @@ def _format(log: AuditLog) -> dict:
 
 # ── routes ────────────────────────────────────────────────────────────────────
 
+def _format_notification(n) -> dict:
+    """Format a Notification model row to the API contract."""
+    now = datetime.now(timezone.utc)
+    created = n.created_at
+    if created.tzinfo is None:
+        created = created.replace(tzinfo=timezone.utc)
+    diff = now - created
+    if diff.total_seconds() < 60:
+        time_str = "à l'instant"
+    elif diff.total_seconds() < 3600:
+        time_str = f"il y a {int(diff.total_seconds() // 60)} min"
+    elif diff.total_seconds() < 86400:
+        time_str = f"il y a {int(diff.total_seconds() // 3600)}h"
+    else:
+        time_str = f"il y a {diff.days}j"
+
+    # Map priority/type to UI-friendly type
+    type_map = {
+        "urgent": "error",
+        "high": "warning",
+        "medium": "info",
+        "low": "info",
+    }
+    ui_type = type_map.get(n.priority, "info")
+
+    return {
+        "id": str(n.id),
+        "type": ui_type,
+        "title": n.title,
+        "body": n.body or "",
+        "time": time_str,
+        "read": n.read_at is not None,
+        "link": n.link or "/app",
+        "created_at": n.created_at.isoformat(),
+        "category": n.type,  # extra field for proactive notifications
+        "priority": n.priority,
+    }
+
+
 @router.get("", summary="List recent notifications")
 async def list_notifications(
     limit: int = Query(default=20, le=50),
     tenant_id: UUID = Depends(get_current_tenant_id),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """Return the 20 most recent audit events as notifications for this tenant."""
-    since = datetime.now(timezone.utc) - timedelta(days=30)
-    stmt = (
-        select(AuditLog)
-        .where(AuditLog.tenant_id == tenant_id, AuditLog.created_at >= since)
-        .order_by(AuditLog.created_at.desc())
+    """
+    Return both proactive notifications (deadlines, missing data) and the
+    most recent audit-log derived activity feed.
+
+    Proactive items come first (sorted by priority + recency).
+    """
+    from app.models.notification import Notification as NotifModel
+
+    items: list[dict] = []
+
+    # 1. Proactive notifications (highest priority)
+    notif_stmt = (
+        select(NotifModel)
+        .where(NotifModel.tenant_id == tenant_id)
+        .where(NotifModel.dismissed_at.is_(None))
+        .where(
+            (NotifModel.expires_at.is_(None))
+            | (NotifModel.expires_at > datetime.now(timezone.utc))
+        )
+        .order_by(NotifModel.created_at.desc())
         .limit(limit)
     )
-    result = await db.execute(stmt)
-    logs = result.scalars().all()
-    items = [_format(log) for log in logs]
+    notif_result = await db.execute(notif_stmt)
+    proactive = list(notif_result.scalars().all())
+    items.extend(_format_notification(n) for n in proactive)
+
+    # 2. Activity feed from audit_log (fills remaining slots)
+    remaining = max(0, limit - len(items))
+    if remaining > 0:
+        since = datetime.now(timezone.utc) - timedelta(days=30)
+        stmt = (
+            select(AuditLog)
+            .where(AuditLog.tenant_id == tenant_id, AuditLog.created_at >= since)
+            .order_by(AuditLog.created_at.desc())
+            .limit(remaining)
+        )
+        result = await db.execute(stmt)
+        logs = result.scalars().all()
+        items.extend(_format(log) for log in logs)
+
     unread = sum(1 for n in items if not n["read"])
     return {"items": items, "unread_count": unread, "total": len(items)}
 
@@ -163,8 +231,21 @@ async def mark_all_read(
     tenant_id: UUID = Depends(get_current_tenant_id),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """Mark all audit log entries as read for this tenant (stores flag in entry_metadata)."""
-    since = datetime.now(timezone.utc) - timedelta(days=30)
+    """Mark every notification (proactive + audit-log activity) as read."""
+    from app.models.notification import Notification as NotifModel
+
+    now = datetime.now(timezone.utc)
+
+    # 1. Proactive notifications
+    await db.execute(
+        update(NotifModel)
+        .where(NotifModel.tenant_id == tenant_id)
+        .where(NotifModel.read_at.is_(None))
+        .values(read_at=now)
+    )
+
+    # 2. Audit-log activity
+    since = now - timedelta(days=30)
     stmt = (
         select(AuditLog)
         .where(AuditLog.tenant_id == tenant_id, AuditLog.created_at >= since)
@@ -175,6 +256,7 @@ async def mark_all_read(
         meta = dict(log.entry_metadata or {})
         meta["read"] = True
         log.entry_metadata = meta
+
     await db.commit()
     return {"message": "Toutes les notifications marquées comme lues."}
 
@@ -185,6 +267,17 @@ async def mark_one_read(
     tenant_id: UUID = Depends(get_current_tenant_id),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
+    """Mark either a proactive notification or an audit-log activity as read."""
+    from app.models.notification import Notification as NotifModel
+
+    # Try proactive notifications first.
+    notif = await db.get(NotifModel, notification_id)
+    if notif and notif.tenant_id == tenant_id:
+        notif.read_at = datetime.now(timezone.utc)
+        await db.commit()
+        return {"message": "Notification marquée comme lue."}
+
+    # Fall back to audit_log
     log = await db.get(AuditLog, notification_id)
     if log and log.tenant_id == tenant_id:
         meta = dict(log.entry_metadata or {})

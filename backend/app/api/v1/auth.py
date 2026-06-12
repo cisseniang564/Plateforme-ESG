@@ -91,18 +91,18 @@ async def onboard_tenant(
 
 
 @router.post(
-    "/register",
+    "/invite-user",
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Register new user",
+    summary="Invite user to tenant",
     description="""
-    Register a new user for an existing tenant.
-    
+    Add a new user to the authenticated tenant.
+
     This endpoint is used by tenant admins to invite new users.
     Requires authentication.
     """,
 )
-async def register_user(
+async def invite_user(
     request_data: UserRegisterRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -181,6 +181,23 @@ async def refresh_token(
             detail="Refresh token is required",
         )
     auth_service = AuthService(db)
+    # Reject refresh tokens that have been blacklisted (e.g. logout)
+    try:
+        from app.utils.jwt import decode_token
+        from app.utils.token_blacklist import is_token_blacklisted
+        rt_payload = decode_token(token)
+        rt_jti = rt_payload.get("jti")
+        if rt_jti and await is_token_blacklisted(rt_jti):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Refresh token has been revoked",
+            )
+    except HTTPException:
+        raise
+    except Exception:
+        # Decoding errors are surfaced by the service below
+        pass
+
     result = await auth_service.refresh_access_token(token)
     # Refresh the access_token cookie
     is_secure = settings.is_production
@@ -282,108 +299,90 @@ async def verify_2fa(
 
 
 @router.post(
-    "/demo-login",
-    summary="Auto-login as shared read-only demo account",
-    description="""
-    Issues short-lived tokens (8 h) for the shared demo account.
-    Looks up or creates the demo user on first call.
-    No credentials required — intended for the public demo page.
-    """,
+    "/demo-session",
+    summary="Démarrer une session démo (sandbox isolée, viewer-only, JWT 1h)",
 )
-async def demo_login(db: AsyncSession = Depends(get_db)):
+async def demo_session(
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+):
+    """Issue a short-lived JWT for the sandboxed demo tenant.
+
+    Safe by design:
+      - The demo tenant is **isolated** from any real customer data.
+      - The demo user has the **viewer** role: read-only, can't mutate anything.
+      - JWT expires after 1 hour; refresh tokens not issued.
+      - The tenant carries `settings.is_demo = True` so the UI can show a banner.
     """
-    Auto-login as the shared read-only demo account.
-    Creates the demo user on first call (piggybacks on the admin tenant
-    so the demo sees real pre-populated ESG data).
-    """
-    from datetime import datetime, timezone, timedelta
-    from uuid import uuid4 as _uuid4
-    from sqlalchemy.orm import selectinload
-    from app.models.user import User
+    from app.services.demo_tenant import seed_demo_data, DEMO_USER_EMAIL
+    from datetime import timedelta as _td
     from app.utils.jwt import create_access_token
-    from app.utils.security import get_password_hash
 
-    DEMO_EMAIL = "demo@greenconnect.cloud"
+    # Idempotent — seeds on first call, cheap no-op on subsequent calls
+    info = await seed_demo_data(db)
 
-    # 1. Lookup or create demo user
-    result = await db.execute(
-        select(User)
-        .options(selectinload(User.role))
-        .where(User.email == DEMO_EMAIL)
+    # Fetch the freshly-seeded user to issue a JWT
+    from sqlalchemy import select as _select
+    from app.models.user import User as _User
+    res = await db.execute(_select(_User).where(_User.email == DEMO_USER_EMAIL))
+    user = res.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=500, detail="Demo seed failed: user missing")
+
+    token = create_access_token(
+        subject=user.email,
+        tenant_id=user.tenant_id,
+        user_id=user.id,
+        expires_delta=_td(hours=1),
+        additional_claims={"is_demo": True, "plan_tier": "pro", "max_monthly_api_calls": 10000},
     )
-    demo_user = result.scalar_one_or_none()
 
-    if not demo_user:
-        # Reuse admin tenant so demo shows real data; fallback to own tenant
-        admin_res = await db.execute(
-            select(User).where(User.email == "admin@greenconnect.cloud")
-        )
-        admin = admin_res.scalar_one_or_none()
-
-        if admin:
-            tenant_id = admin.tenant_id
-        else:
-            # No admin — create a standalone demo tenant
-            from app.models.tenant import Tenant as _Tenant
-            _slug = f"greenconnect-demo-{str(_uuid4())[:8]}"
-            fallback_tenant = _Tenant(
-                id=_uuid4(),
-                name="GreenConnect — Démo",
-                slug=_slug,
-            )
-            db.add(fallback_tenant)
-            await db.flush()
-            tenant_id = fallback_tenant.id
-
-        demo_user = User(
-            id=_uuid4(),
-            tenant_id=tenant_id,
-            email=DEMO_EMAIL,
-            # Random hash — demo account is never logged-in with a password
-            password_hash=get_password_hash(str(_uuid4())),
-            first_name="Compte",
-            last_name="Démo",
-            is_active=True,
-            email_verified_at=datetime.now(timezone.utc),
-            mfa_enabled=False,
-        )
-        db.add(demo_user)
-        await db.commit()
-        await db.refresh(demo_user)
-
-    # 2. Issue short-lived tokens (8 h — demo sessions expire same day)
-    access_token = create_access_token(
-        subject=demo_user.email,
-        tenant_id=demo_user.tenant_id,
-        user_id=demo_user.id,
-        expires_delta=timedelta(hours=8),
-    )
-    refresh_token = create_access_token(
-        subject=demo_user.email,
-        tenant_id=demo_user.tenant_id,
-        user_id=demo_user.id,
-        expires_delta=timedelta(hours=8),
-        additional_claims={"type": "refresh"},
+    # Set httpOnly cookie so reloads stay authenticated for the 1h window
+    is_secure = settings.is_production
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        secure=is_secure,
+        samesite=_COOKIE_SAMESITE,
+        max_age=3600,
     )
 
     return {
-        "tokens": {
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "token_type": "bearer",
-        },
+        "access_token": token,
+        "token_type": "bearer",
+        "expires_in": 3600,
+        "is_demo": True,
         "user": {
-            "id": str(demo_user.id),
-            "email": demo_user.email,
-            "first_name": demo_user.first_name,
-            "last_name": demo_user.last_name,
-            "role": demo_user.role.name if demo_user.role else "viewer",
-            "tenant_id": str(demo_user.tenant_id),
-            "email_verified_at": demo_user.email_verified_at.isoformat() if demo_user.email_verified_at else None,
-            "mfa_enabled": demo_user.mfa_enabled,
-            "needs_onboarding": False,
+            "id": str(user.id),
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "tenant_id": str(user.tenant_id),
         },
+        "seed_counts": info.get("counts", {}),
     }
+
+
+@router.post(
+    "/demo-login",
+    summary="[DÉSACTIVÉ] Ancien demo login — remplacé par /demo-session",
+    include_in_schema=False,
+)
+async def demo_login():
+    """
+    Endpoint de démo désactivé en production.
+    Le compte démo partageait le tenant admin et exposait les données réelles.
+    Utiliser /auth/login avec des credentials valides.
+    """
+    from fastapi import HTTPException as _HTTPException
+    raise _HTTPException(
+        status_code=403,
+        detail=(
+            "Le mode démo est désactivé sur cette instance. "
+            "Contactez l'administrateur pour obtenir un compte d'accès."
+        ),
+    )
 
 
 @router.post(
@@ -532,9 +531,33 @@ async def change_password(
     """,
 )
 async def logout(
+    request: Request,
     response: Response,
     user_id: UUID = Depends(get_current_user_id),
 ) -> MessageResponse:
-    """Logout user and clear auth cookies."""
+    """Logout user, revoke current access/refresh tokens, and clear cookies."""
+    from datetime import datetime, timezone
+    from app.utils.token_blacklist import blacklist_token
+    from app.utils.jwt import decode_token
+
+    payload = getattr(request.state, "token_payload", None) or {}
+    jti = payload.get("jti")
+    exp = payload.get("exp")
+    if jti:
+        ttl = max(int(exp - datetime.now(timezone.utc).timestamp()), 60) if exp else 1800
+        await blacklist_token(jti, ttl)
+
+    refresh_cookie = request.cookies.get("refresh_token")
+    if refresh_cookie:
+        try:
+            r_payload = decode_token(refresh_cookie)
+            r_jti = r_payload.get("jti")
+            r_exp = r_payload.get("exp")
+            if r_jti:
+                r_ttl = max(int(r_exp - datetime.now(timezone.utc).timestamp()), 60) if r_exp else 7 * 86400
+                await blacklist_token(r_jti, r_ttl)
+        except Exception:
+            pass
+
     _clear_auth_cookies(response)
     return MessageResponse(message="Logged out successfully")

@@ -21,7 +21,9 @@ router = APIRouter(prefix="/api/usage", tags=["api-usage"])
 
 def _redis():
     import redis as _redis
-    return _redis.from_url(settings.REDIS_URL, decode_responses=True)
+    # settings.REDIS_URL is a Pydantic v2 Url object — must cast to str first
+    redis_url = str(settings.REDIS_URL) if settings.REDIS_URL else "redis://redis:6379/0"
+    return _redis.from_url(redis_url, decode_responses=True)
 
 
 @router.get("/daily", summary="Daily API call counts (last N days)")

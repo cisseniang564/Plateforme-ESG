@@ -132,7 +132,57 @@ REFERENCE_ACTIVITIES = [
         "dnsh_summary": "Réfrigérants à faible GWP, plan de gestion déchets électroniques",
         "eligible": True,
     },
+    # ÉNERGIE
+    {"id": "act-011", "nace": "D35.11", "name": "Production d'électricité hydraulique", "sector": "energie", "objective": "mitigation", "threshold": "Émissions cycle de vie < 100 gCO2e/kWh, sans impact significatif sur le débit écologique", "dnsh_summary": "Évaluation état des masses d'eau selon DCE obligatoire", "eligible": True},
+    {"id": "act-012", "nace": "D35.11", "name": "Production d'électricité géothermique", "sector": "energie", "objective": "mitigation", "threshold": "Émissions cycle de vie < 100 gCO2e/kWh", "dnsh_summary": "Pas d'utilisation de fluides géothermaux contaminants", "eligible": True},
+    {"id": "act-013", "nace": "D35.30", "name": "Distribution de chaleur et de froid (réseaux efficaces)", "sector": "energie", "objective": "mitigation", "threshold": "Part d'EnR ou chaleur fatale ≥ 50 % dans le réseau", "dnsh_summary": "Pas d'utilisation de combustibles fossiles solides", "eligible": True},
+    {"id": "act-014", "nace": "D35.14", "name": "Commerce d'électricité renouvelable (PPAs)", "sector": "energie", "objective": "mitigation", "threshold": "100 % électricité d'origine renouvelable certifiée (GO/EAC)", "dnsh_summary": "Traçabilité garanties d'origine obligatoire", "eligible": True},
+    {"id": "act-015", "nace": "H49.20", "name": "Transport ferroviaire de marchandises", "sector": "transport", "objective": "mitigation", "threshold": "Émissions directes < 50 gCO2e/tkm (électrique ou H2)", "dnsh_summary": "Infrastructure conforme réglementation bruit UE", "eligible": True},
+    {"id": "act-016", "nace": "H50.10", "name": "Transport maritime bas carbone", "sector": "transport", "objective": "mitigation", "threshold": "Réduction 50 % intensité carbone vs référence IMO 2008", "dnsh_summary": "Pas de rejet polluants en mer, conformité MARPOL", "eligible": True},
+    {"id": "act-017", "nace": "H49.31", "name": "Transport urbain zéro émission (bus électrique/H2)", "sector": "transport", "objective": "mitigation", "threshold": "Zéro émission directe (électrique ou pile à combustible)", "dnsh_summary": "Gestion fin de vie batteries obligatoire", "eligible": True},
+    {"id": "act-018", "nace": "H52.21", "name": "Infrastructure de recharge véhicules électriques", "sector": "transport", "objective": "mitigation", "threshold": "Électricité fournie ≥ 70 % renouvelable d'ici 2025", "dnsh_summary": "Pas d'impact significatif sur biodiversité locale", "eligible": True},
+    {"id": "act-019", "nace": "L68.20", "name": "Location de bâtiments à haute performance énergétique", "sector": "construction", "objective": "mitigation", "threshold": "Classe énergie A ou dans les 15 % les plus performants du parc national", "dnsh_summary": "Pas d'amiante, conformité substances dangereuses", "eligible": True},
+    {"id": "act-020", "nace": "F42.21", "name": "Construction réseaux d'eau et assainissement", "sector": "construction", "objective": "water", "threshold": "Réduction pertes réseau ≥ 20 % ou conformité BREF eau", "dnsh_summary": "Pas de rejet non traité dans le milieu", "eligible": True},
+    {"id": "act-021", "nace": "C20.11", "name": "Production d'hydrogène vert (électrolyse EnR)", "sector": "industrie", "objective": "mitigation", "threshold": "Électrolyse alimentée ≥ 100 % EnR ou émissions < 3 tCO2e/tH2", "dnsh_summary": "Pas d'utilisation PFAS, gestion eaux de procédé", "eligible": True},
+    {"id": "act-022", "nace": "C23.11", "name": "Production de verre recyclé", "sector": "industrie", "objective": "circular", "threshold": "Taux de calcin ≥ 60 % en masse dans le mélange verrier", "dnsh_summary": "Pas d'émissions métaux lourds supérieures aux VLE BREF", "eligible": True},
+    {"id": "act-023", "nace": "C22.29", "name": "Fabrication de produits en plastique recyclé", "sector": "industrie", "objective": "circular", "threshold": "Contenu recyclé ≥ 50 % en masse, pas de plastiques à usage unique", "dnsh_summary": "Pas d'additifs CMR ou perturbateurs endocriniens", "eligible": True},
+    {"id": "act-024", "nace": "C28.11", "name": "Fabrication de turbines et équipements EnR", "sector": "industrie", "objective": "mitigation", "threshold": "Émissions fabrication ≤ 1 200 kgCO2e/kW installé", "dnsh_summary": "Plan de recyclabilité fin de vie ≥ 85 % en masse", "eligible": True},
+    {"id": "act-025", "nace": "C25.11", "name": "Production de structures métalliques légères durables", "sector": "industrie", "objective": "mitigation", "threshold": "Contenu acier recyclé ≥ 70 %, émissions process < 1,5 tCO2e/t", "dnsh_summary": "Gestion stricte déchets de peinture et solvants", "eligible": True},
+    {"id": "act-026", "nace": "A02.10", "name": "Sylviculture et gestion forestière durable (PEFC/FSC)", "sector": "agriculture", "objective": "mitigation", "threshold": "Certification PEFC ou FSC, plan de gestion forestière agréé", "dnsh_summary": "Pas de conversion forêts primaires, maintien biodiversité", "eligible": True},
+    {"id": "act-027", "nace": "A01.13", "name": "Cultures légumineuses fixatrices d'azote", "sector": "agriculture", "objective": "mitigation", "threshold": "Réduction engrais azotés ≥ 20 % vs référence sectorielle", "dnsh_summary": "Pas d'utilisation pesticides inscrits sur liste prioritaire UE", "eligible": True},
+    {"id": "act-028", "nace": "J61.10", "name": "Réseaux télécom très haut débit (fibre optique)", "sector": "tic", "objective": "mitigation", "threshold": "Déploiement FTTH remplaçant infrastructure cuivre énergivore", "dnsh_summary": "Plan de collecte et recyclage équipements anciens", "eligible": True},
+    {"id": "act-029", "nace": "E37.00", "name": "Collecte et traitement des eaux usées", "sector": "eau", "objective": "water", "threshold": "Traitement tertiaire ≥ 95 % des flux, réutilisation eaux traitées", "dnsh_summary": "Pas de rejet micropolluants > NQE DCE dans milieu récepteur", "eligible": True},
+    {"id": "act-030", "nace": "E38.21", "name": "Traitement et valorisation des déchets dangereux", "sector": "eau", "objective": "pollution", "threshold": "Valorisation matière ou énergie ≥ 70 %, zéro mise en décharge brute", "dnsh_summary": "Conformité directive 2008/98/CE et BREF déchets dangereux", "eligible": True},
+    {"id": "act-031", "nace": "K64.91", "name": "Financement de projets d'énergies renouvelables", "sector": "finance", "objective": "mitigation", "threshold": "Portefeuille ≥ 90 % projets taxonomy-alignés ou en transition", "dnsh_summary": "Due diligence E&S conforme Principes Équateur", "eligible": True},
+    {"id": "act-032", "nace": "K65.11", "name": "Assurance des risques climatiques physiques", "sector": "finance", "objective": "adaptation", "threshold": "Produits couvrant risques climatiques NGFS : inondation, sécheresse, tempête", "dnsh_summary": "Pas d'exclusion discriminatoire des zones à risque élevé", "eligible": True},
+    {"id": "act-033", "nace": "K64.20", "name": "Gestion de fonds durables Article 9 SFDR", "sector": "finance", "objective": "mitigation", "threshold": "Portefeuille 100 % investissements durables SFDR Art. 9", "dnsh_summary": "Reporting PAI obligatoire", "eligible": True},
+    {"id": "act-034", "nace": "M71.20", "name": "Conseil et ingénierie en efficacité énergétique", "sector": "industrie", "objective": "mitigation", "threshold": "Économies d'énergie réalisées ≥ 30 % vs situation initiale", "dnsh_summary": "Pas de recommandations vers équipements à combustibles fossiles", "eligible": True},
+    {"id": "act-035", "nace": "M72.19", "name": "R&D en technologies bas carbone (cleantech)", "sector": "tic", "objective": "mitigation", "threshold": "Projets contribuant directement aux 6 objectifs EU Taxonomy", "dnsh_summary": "Gestion éthique des données, pas d'expériences nuisibles", "eligible": True},
 ]
+
+DNSH_CRITERIA: dict = {
+    "act-001": {
+        "adaptation": {"criterion": "Évaluation des risques climatiques physiques sur l'installation (inondation, chaleur extrême)", "required": True},
+        "water": {"criterion": "Pas d'utilisation excessive d'eau pour refroidissement (refroidissement sec ou à air privilégié)", "required": True},
+        "circular": {"criterion": "Plan de recyclage des panneaux photovoltaïques en fin de vie (≥ 95 % en masse)", "required": True},
+        "pollution": {"criterion": "Pas de substances SVHC dans les panneaux (plomb et cadmium limités par directive RoHS)", "required": True},
+        "biodiversity": {"criterion": "Étude d'impact faune/flore, installation hors zones Natura 2000 sensibles", "required": True},
+    },
+    "act-002": {
+        "adaptation": {"criterion": "Turbines conçues pour scénarios climatiques futurs (vitesse vent P90, risque givre)", "required": True},
+        "water": {"criterion": "Pas d'imperméabilisation excessive des sols — surfaces perméables autour des fondations", "required": True},
+        "circular": {"criterion": "Plan de recyclage des pales (objectif ≥ 80 % en masse d'ici 2030)", "required": True},
+        "pollution": {"criterion": "Niveaux sonores conformes à la directive 2002/49/CE — cartes de bruit disponibles", "required": True},
+        "biodiversity": {"criterion": "Évaluation impacts avifaune et chiroptères, mesures compensatoires documentées", "required": True},
+    },
+    "_default": {
+        "adaptation": {"criterion": "Évaluation et gestion des risques climatiques physiques (court, moyen, long terme selon TCFD)", "required": True},
+        "water": {"criterion": "Pas de détérioration de l'état des masses d'eau — conformité à la directive-cadre sur l'eau (DCE)", "required": True},
+        "circular": {"criterion": "Prévention des déchets, réutilisation et recyclage prioritaires selon la hiérarchie des déchets", "required": True},
+        "pollution": {"criterion": "Pas d'émissions polluantes significatives dans l'air, l'eau et les sols au-delà des meilleures techniques disponibles (MTD)", "required": True},
+        "biodiversity": {"criterion": "Pas de dégradation significative des habitats naturels sensibles ou des espèces protégées (directive Habitats)", "required": True},
+    },
+}
 
 
 # ─── Schemas ─────────────────────────────────────────────────────────────────
@@ -191,7 +241,30 @@ async def get_activity(
     activity = next((a for a in REFERENCE_ACTIVITIES if a["id"] == activity_id), None)
     if not activity:
         raise HTTPException(status_code=404, detail="Activité non trouvée")
-    return activity
+    dnsh_details = DNSH_CRITERIA.get(activity_id, DNSH_CRITERIA["_default"])
+    return {**activity, "dnsh_details": dnsh_details}
+
+
+@router.get("/activities/{activity_id}/dnsh")
+async def get_dnsh_criteria(
+    activity_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    """Get detailed DNSH criteria for a specific activity."""
+    activity = next((a for a in REFERENCE_ACTIVITIES if a["id"] == activity_id), None)
+    if not activity:
+        raise HTTPException(status_code=404, detail="Activité non trouvée")
+    objective_names = {o["id"]: o["name"] for o in OBJECTIVES}
+    raw = DNSH_CRITERIA.get(activity_id, DNSH_CRITERIA["_default"])
+    result = {
+        obj_id: {
+            "objective_name": objective_names.get(obj_id, obj_id),
+            "criterion": crit["criterion"],
+            "required": crit["required"],
+        }
+        for obj_id, crit in raw.items()
+    }
+    return {"activity_id": activity_id, "main_objective": activity["objective"], "dnsh_criteria": result}
 
 
 @router.post("/assess")

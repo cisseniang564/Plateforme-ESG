@@ -124,6 +124,83 @@ CONNECTOR_CATALOG: List[Dict[str, Any]] = [
      "lastSync": None, "records": 0, "errorMsg": None,
      "coverage": {"emissions": True, "energy": True, "hr": True, "finance": True, "waste": False, "water": False},
      "version": "FEC standard / Sage API v2", "endpoint": "https://api.sage.com/accounting/v3"},
+    # ── Banking ───────────────────────────────────────────────────────────────
+    {"id": "qonto", "name": "Qonto", "category": "Banking",
+     "description": "Néobanque pro — transactions, dépenses énergie, achats fournisseurs pour Scope 3",
+     "status": "available", "color": "#6d28d9", "authType": "oauth2",
+     "lastSync": None, "records": 0, "errorMsg": None,
+     "coverage": {"emissions": True, "energy": False, "hr": False, "finance": True, "waste": False, "water": False},
+     "version": "API v2", "endpoint": "https://thirdparty.qonto.com/v2"},
+    # ── CRM & Collaboration ───────────────────────────────────────────────────
+    {"id": "salesforce", "name": "Salesforce", "category": "CRM",
+     "description": "Net Zero Cloud — empreinte carbone, ESG metrics, reporting automatisé",
+     "status": "available", "color": "#0ea5e9", "authType": "oauth2",
+     "lastSync": None, "records": 0, "errorMsg": None,
+     "coverage": {"emissions": True, "energy": True, "hr": False, "finance": True, "waste": True, "water": True},
+     "version": "Net Zero Cloud v2", "endpoint": "https://login.salesforce.com/services/oauth2"},
+    {"id": "microsoft-365", "name": "Microsoft 365", "category": "Collaboration",
+     "description": "Microsoft Graph — données bâtiments, déplacements Teams, empreinte cloud Azure",
+     "status": "available", "color": "#2563eb", "authType": "oauth2",
+     "lastSync": None, "records": 0, "errorMsg": None,
+     "coverage": {"emissions": True, "energy": True, "hr": True, "finance": False, "waste": False, "water": False},
+     "version": "Graph API v1.0", "endpoint": "https://graph.microsoft.com/v1.0"},
+    {"id": "google-workspace", "name": "Google Workspace", "category": "Collaboration",
+     "description": "Google Sheets, Drive — import données ESG depuis tableurs collaboratifs",
+     "status": "available", "color": "#ea4335", "authType": "oauth2",
+     "lastSync": None, "records": 0, "errorMsg": None,
+     "coverage": {"emissions": False, "energy": False, "hr": False, "finance": True, "waste": False, "water": False},
+     "version": "Sheets API v4", "endpoint": "https://sheets.googleapis.com/v4/spreadsheets"},
+    {"id": "hubspot", "name": "HubSpot", "category": "CRM",
+     "description": "CRM — données fournisseurs, contacts ESG, pipeline partenaires développement durable",
+     "status": "available", "color": "#f97316", "authType": "oauth2",
+     "lastSync": None, "records": 0, "errorMsg": None,
+     "coverage": {"emissions": False, "energy": False, "hr": False, "finance": False, "waste": False, "water": False},
+     "version": "API v3", "endpoint": "https://api.hubapi.com/crm/v3"},
+    # ── Comptabilité internationale ───────────────────────────────────────────
+    {"id": "quickbooks", "name": "QuickBooks Online", "category": "Comptabilité",
+     "description": "Comptabilité cloud Intuit — factures, dépenses, fournisseurs pour Scope 3",
+     "status": "available", "color": "#2ca01c", "authType": "oauth2",
+     "lastSync": None, "records": 0, "errorMsg": None,
+     "coverage": {"emissions": True, "energy": False, "hr": False, "finance": True, "waste": False, "water": False},
+     "version": "API v3", "endpoint": "https://quickbooks.api.intuit.com/v3"},
+    {"id": "xero", "name": "Xero", "category": "Comptabilité",
+     "description": "Comptabilité cloud — achats, charges, données financières pour calcul Scope 3",
+     "status": "available", "color": "#13b5ea", "authType": "oauth2",
+     "lastSync": None, "records": 0, "errorMsg": None,
+     "coverage": {"emissions": True, "energy": False, "hr": False, "finance": True, "waste": False, "water": False},
+     "version": "API 2.0", "endpoint": "https://api.xero.com/api.xro/2.0"},
+    # ── Project & Operations ──────────────────────────────────────────────────
+    {"id": "jira", "name": "Jira / Atlassian", "category": "Operations",
+     "description": "Suivi projets ESG — tâches décarbonation, audit compliance, roadmap sustainability",
+     "status": "available", "color": "#0052cc", "authType": "oauth2",
+     "lastSync": None, "records": 0, "errorMsg": None,
+     "coverage": {"emissions": False, "energy": False, "hr": False, "finance": False, "waste": False, "water": False},
+     "version": "REST API v3", "endpoint": "https://api.atlassian.com/ex/jira"},
+    {"id": "notion", "name": "Notion", "category": "Collaboration",
+     "description": "Base de données Notion — centraliser documentation RSE, politiques, procédures",
+     "status": "available", "color": "#000000", "authType": "apikey",
+     "lastSync": None, "records": 0, "errorMsg": None,
+     "coverage": {"emissions": False, "energy": False, "hr": False, "finance": False, "waste": False, "water": False},
+     "version": "API v1", "endpoint": "https://api.notion.com/v1"},
+    {"id": "slack", "name": "Slack", "category": "Collaboration",
+     "description": "Notifications ESG — alertes scores, rappels reporting, résumés IA dans vos canaux",
+     "status": "available", "color": "#4a154b", "authType": "oauth2",
+     "lastSync": None, "records": 0, "errorMsg": None,
+     "coverage": {"emissions": False, "energy": False, "hr": False, "finance": False, "waste": False, "water": False},
+     "version": "Web API v2", "endpoint": "https://slack.com/api"},
+    # ── Supply Chain & Logistics ──────────────────────────────────────────────
+    {"id": "ecovadis", "name": "EcoVadis", "category": "Supply Chain",
+     "description": "Import des scores fournisseurs EcoVadis — enrichissement supply chain ESG",
+     "status": "available", "color": "#1e3a5f", "authType": "apikey",
+     "lastSync": None, "records": 0, "errorMsg": None,
+     "coverage": {"emissions": True, "energy": True, "hr": True, "finance": False, "waste": True, "water": True},
+     "version": "API v3", "endpoint": "https://api.ecovadis.com/v3"},
+    {"id": "dhl-gogreen", "name": "DHL GoGreen", "category": "Logistique",
+     "description": "Émissions transport & expéditions DHL — Scope 3 catégorie 4 & 9",
+     "status": "available", "color": "#ffcc00", "authType": "apikey",
+     "lastSync": None, "records": 0, "errorMsg": None,
+     "coverage": {"emissions": True, "energy": False, "hr": False, "finance": False, "waste": False, "water": False},
+     "version": "GoGreen Plus API", "endpoint": "https://api.dhl.com/gogreen/v1"},
 ]
 
 
@@ -146,6 +223,8 @@ async def get_connector_catalog(
     Retourne le catalogue des connecteurs fusionné avec le statut per-tenant depuis Redis.
     Si Redis est indisponible, renvoie le catalogue avec les statuts par défaut.
     """
+    from app.services import connector_sync_service
+
     r = _get_redis()
     tenant_overrides: Dict[str, Dict] = {}
     if r:
@@ -160,6 +239,13 @@ async def get_connector_catalog(
     result = []
     for item in CONNECTOR_CATALOG:
         merged = dict(item)
+        # "live" = ce connecteur dispose d'un adaptateur de synchronisation réel
+        # (cf. connector_sync_service.ADAPTERS) ou d'une intégration historique
+        # (Schneider). Ajouter un connecteur à ADAPTERS le fait basculer en "live"
+        # automatiquement, sans aucune autre modification de l'API ou du frontend.
+        merged["backendStatus"] = "live" if (item["id"] in connector_sync_service.ADAPTERS or item["id"] == "schneider") else "demo"
+        merged["credentialsConfigured"] = bool(connector_sync_service.get_credentials(current_user.tenant_id, item["id"]).get("api_key"))
+        merged["platformKeyAvailable"] = connector_sync_service.has_platform_key(item["id"])
         if item["id"] in tenant_overrides:
             merged.update(tenant_overrides[item["id"]])
         result.append(merged)
@@ -204,34 +290,164 @@ async def update_connector_status(
 @router.post("/{connector_id}/sync")
 async def trigger_connector_sync(
     connector_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Déclenche une synchronisation pour un connecteur (Schneider uniquement en temps réel, autres simulés)."""
+    """
+    Déclenche une synchronisation pour un connecteur.
+
+    - Connecteurs avec adaptateur réel (cf. connector_sync_service.ADAPTERS,
+      ex: Climatiq) : récupère les données, les normalise et les écrit dans
+      `data_entries` — alimentant immédiatement le calcul du score ESG.
+    - Schneider : appel temps réel historique (legacy, non encore migré vers
+      data_entries).
+    - Autres connecteurs : simulation (aucune écriture), en attendant que
+      l'entreprise fournisse de vrais identifiants API — à ce moment-là, il
+      suffira d'enregistrer un nouvel adaptateur dans ADAPTERS, sans toucher
+      à cet endpoint.
+    """
+    from datetime import datetime
+    from app.services import connector_sync_service
+
     catalog_ids = {c["id"] for c in CONNECTOR_CATALOG}
     if connector_id not in catalog_ids:
         raise HTTPException(status_code=404, detail=f"Connecteur inconnu: {connector_id}")
 
-    from datetime import datetime
-    last_sync = datetime.utcnow().strftime("%d/%m/%Y %H:%M")
-
-    # Pour Schneider, on peut appeler le vrai endpoint
+    # Pour Schneider, on appelle le connecteur temps réel historique
     if connector_id == "schneider":
+        last_sync = datetime.utcnow().strftime("%d/%m/%Y %H:%M")
         try:
             from app.api.v1.endpoints.schneider import get_schneider_emissions
             data = await get_schneider_emissions()
             records = data.get("summary", {}).get("n_sites", 0) * 100
         except Exception:
             records = 0
-    else:
-        records = 0  # Simulation — à implémenter par connecteur
+        return {
+            "ok": True,
+            "connector_id": connector_id,
+            "status": "ok",
+            "last_sync": last_sync,
+            "records_synced": records,
+            "message": f"Synchronisation déclenchée pour {connector_id}",
+            "details": {},
+        }
+
+    result = await connector_sync_service.sync_connector(
+        db=db, tenant_id=current_user.tenant_id, connector_id=connector_id,
+    )
+
+    # Si la synchro a réellement écrit des données, on met à jour le statut
+    # affiché dans le catalogue (Redis) pour ce tenant.
+    if result.status == "ok":
+        r = _get_redis()
+        if r:
+            try:
+                key = f"connectors:status:{current_user.tenant_id}"
+                raw = r.get(key)
+                overrides: Dict[str, Dict] = json.loads(raw) if raw else {}
+                overrides[connector_id] = {
+                    "status": "connected",
+                    "lastSync": result.last_sync,
+                    "records": result.records_written,
+                    "errorMsg": None,
+                }
+                r.setex(key, 365 * 24 * 3600, json.dumps(overrides))
+            except Exception as e:
+                logger.warning("Connectors sync: status update failed — %s", e)
 
     return {
-        "ok": True,
+        "ok": result.status in ("ok", "simulated"),
         "connector_id": connector_id,
-        "last_sync": last_sync,
-        "records_synced": records,
-        "message": f"Synchronisation déclenchée pour {connector_id}",
+        "status": result.status,
+        "last_sync": result.last_sync,
+        "records_synced": result.records_written,
+        "message": result.message,
+        "details": result.details,
     }
+
+
+# ─── Identifiants API par tenant (connecteurs Hub) ───────────────────────────
+
+class ConnectorCredentialsPayload(BaseModel):
+    api_key: Optional[str] = None
+    api_secret: Optional[str] = None
+
+
+def _mask_key(value: str) -> str:
+    if not value:
+        return ""
+    if len(value) <= 4:
+        return "•" * len(value)
+    return "•" * (len(value) - 4) + value[-4:]
+
+
+@router.put("/{connector_id}/credentials")
+async def set_connector_credentials(
+    connector_id: str,
+    payload: ConnectorCredentialsPayload,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Enregistre les identifiants API du tenant pour un connecteur (stockés dans Redis,
+    jamais renvoyés en clair). Une fois enregistrés, `POST /{id}/sync` les utilisera
+    automatiquement si un adaptateur existe pour ce connecteur.
+    """
+    from app.services import connector_sync_service
+
+    catalog_ids = {c["id"] for c in CONNECTOR_CATALOG}
+    if connector_id not in catalog_ids:
+        raise HTTPException(status_code=404, detail=f"Connecteur inconnu: {connector_id}")
+
+    creds = {k: v for k, v in payload.model_dump().items() if v}
+    try:
+        connector_sync_service.set_credentials(current_user.tenant_id, connector_id, creds)
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+    return {"ok": True, "connector_id": connector_id, "configured": bool(creds)}
+
+
+@router.get("/{connector_id}/credentials")
+async def get_connector_credentials(
+    connector_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    """Retourne l'état de configuration des identifiants (jamais la valeur en clair)."""
+    from app.services import connector_sync_service
+
+    catalog_ids = {c["id"] for c in CONNECTOR_CATALOG}
+    if connector_id not in catalog_ids:
+        raise HTTPException(status_code=404, detail=f"Connecteur inconnu: {connector_id}")
+
+    creds = connector_sync_service.get_credentials(current_user.tenant_id, connector_id)
+    api_key = creds.get("api_key", "")
+    return {
+        "connector_id": connector_id,
+        "configured": bool(api_key),
+        "api_key_masked": _mask_key(api_key) if api_key else None,
+        "platform_key_available": connector_sync_service.has_platform_key(connector_id),
+        "has_adapter": connector_id in connector_sync_service.ADAPTERS,
+    }
+
+
+@router.delete("/{connector_id}/credentials")
+async def delete_connector_credentials(
+    connector_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    """Supprime les identifiants enregistrés par le tenant pour ce connecteur."""
+    from app.services import connector_sync_service
+
+    catalog_ids = {c["id"] for c in CONNECTOR_CATALOG}
+    if connector_id not in catalog_ids:
+        raise HTTPException(status_code=404, detail=f"Connecteur inconnu: {connector_id}")
+
+    try:
+        connector_sync_service.delete_credentials(current_user.tenant_id, connector_id)
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+    return {"ok": True, "connector_id": connector_id}
 
 
 def _read_env_key(key: str) -> str:

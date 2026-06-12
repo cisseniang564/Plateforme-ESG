@@ -6,7 +6,7 @@ from typing import Optional
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from sqlalchemy import select, func, or_, text
+from sqlalchemy import select, func, or_, text, update as sql_update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from pydantic import BaseModel, EmailStr
@@ -288,23 +288,22 @@ async def update_user(
     if not target_row:
         raise HTTPException(status_code=404, detail="Target user not found")
 
-    # Construire la mise à jour dynamiquement
-    updates = {}
+    # Construire la mise à jour via ORM (sécurisé — pas de SQL dynamique)
+    updates: dict = {}
     if data.first_name is not None:
-        updates["first_name"] = data.first_name
+        updates[User.first_name] = data.first_name
     if data.last_name is not None:
-        updates["last_name"] = data.last_name
+        updates[User.last_name] = data.last_name
     if data.role_id is not None:
-        updates["role_id"] = str(data.role_id)
+        updates[User.role_id] = str(data.role_id)
     if data.is_active is not None:
-        updates["is_active"] = data.is_active
+        updates[User.is_active] = data.is_active
 
     if updates:
-        set_clause = ", ".join(f"{k} = :{k}" for k in updates)
-        updates["tid"] = str(target_user_id)
         await db.execute(
-            text(f"UPDATE users SET {set_clause} WHERE id = :tid"),
-            updates,
+            sql_update(User)
+            .where(User.id == target_user_id, User.tenant_id == tenant_id)
+            .values(updates)
         )
         await db.commit()
 

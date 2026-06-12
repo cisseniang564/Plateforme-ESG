@@ -224,12 +224,13 @@ async def get_organization_scores(
             'governance_score': s.governance_score,
             'confidence_level': s.confidence_level,
             'data_completeness': s.data_completeness,
+            'period_months': getattr(s, 'period_months', None),
         } for s in scores],
         'count': len(scores)
     }
 @router.post("/recalculate-all")
 async def recalculate_all_scores(
-    period_months: int = Query(12, ge=1, le=24),
+    period_months: int = Query(36, ge=1, le=60),
     _: None = Depends(require_role(*Roles.MANAGER_OR_ABOVE)),
     user_id: UUID = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
@@ -585,13 +586,13 @@ async def get_all_org_scores(
         "scores": [
             {
                 "organization_id": str(r[0]),
-                "overall_score":       round(r[1] or 0, 2),
-                "environmental_score": round(r[2] or 0, 2),
-                "social_score":        round(r[3] or 0, 2),
-                "governance_score":    round(r[4] or 0, 2),
+                "overall_score":       round(float(r[1] or 0), 2),
+                "environmental_score": round(float(r[2] or 0), 2),
+                "social_score":        round(float(r[3] or 0), 2),
+                "governance_score":    round(float(r[4] or 0), 2),
                 "rating":              r[5] or "—",
-                "data_completeness":   round(r[6] or 0, 2),
-                "confidence_level":    round(r[7] or 0, 2),
+                "data_completeness":   round(float(r[6] or 0), 2),
+                "confidence_level":    r[7] or "unknown",
                 "date":                r[8].isoformat() if r[8] else None,
             }
             for r in rows

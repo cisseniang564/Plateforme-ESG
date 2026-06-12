@@ -134,8 +134,10 @@ class ScoreCalculationService:
             self.db.add(score)
         
         await self.db.commit()
-        await self.db.refresh(score)
-        
+        # NOTE: do NOT ``await self.db.refresh(score)`` — refresh expires
+        # attributes then re-SELECTs them; on RLS / async failure the instance
+        # is left expired and the caller raises MissingGreenlet on attribute
+        # access. All score fields are already set Python-side above.
         return score
     
     def _normalize_value(self, value: float, target: Optional[float]) -> float:

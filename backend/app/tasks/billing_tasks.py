@@ -33,49 +33,58 @@ def _run_async(coro):
 
 
 @shared_task(
-    name="billing.send_trial_reminders",
+    name="billing.send_trial_nurture_sequence",
     max_retries=2,
     default_retry_delay=300,
 )
-def send_trial_reminders() -> dict:
+def send_trial_nurture_sequence() -> dict:
     """
-    For each tenant whose trial ends in exactly 7, 3, or 1 day,
-    send a reminder email to the tenant admin.
+    Onboarding nurture sequence for trialing tenants.
+
+    Pour chaque tenant en essai actif, calcule l'âge du trial (en jours depuis
+    la création du tenant) et envoie l'email correspondant si on tombe pile
+    sur J+3, J+7, J+11, J+13, ou J+15. Idempotent via tenant.settings.nurture_sent
+    pour éviter les doublons en cas de double exécution du cron.
     """
     from app.db.session import AsyncSessionLocal
     from app.models.tenant import Tenant
     from app.models.user import User
-    from app.tasks.email_tasks import send_trial_ending_soon_email
+    from app.services.email_service import EmailService
     from sqlalchemy import select
 
     utc_now = datetime.now(timezone.utc)
     sent = 0
     errors = 0
+    NURTURE_DAYS = {3, 7, 11, 13, 15}
 
     async def _run():
         nonlocal sent, errors
         async with AsyncSessionLocal() as db:
-            # Load all trialing tenants
             result = await db.execute(
                 select(Tenant).where(
-                    Tenant.trial_ends_at.isnot(None),
-                    Tenant.stripe_subscription_status.in_(["trialing", None, ""]),
+                    Tenant.created_at.isnot(None),
+                    Tenant.stripe_subscription_status.in_(["trialing", None, "", "expired"]),
                 )
             )
             tenants = result.scalars().all()
 
             for tenant in tenants:
-                if not tenant.trial_ends_at:
+                created = tenant.created_at
+                if not created:
                     continue
-                ends_at = tenant.trial_ends_at
-                if ends_at.tzinfo is None:
-                    ends_at = ends_at.replace(tzinfo=timezone.utc)
+                if created.tzinfo is None:
+                    created = created.replace(tzinfo=timezone.utc)
+                age_days = (utc_now.date() - created.date()).days
+                if age_days not in NURTURE_DAYS:
+                    continue
 
-                delta_days = (ends_at.date() - utc_now.date()).days
-                if delta_days not in (7, 3, 1):
-                    continue  # Only send on specific days
+                # Idempotence — skip if we already sent this stage
+                settings = dict(tenant.settings or {})
+                nurture_log = dict(settings.get("nurture_sent", {}))
+                stage_key = f"d{age_days}"
+                if nurture_log.get(stage_key):
+                    continue
 
-                # Find admin user for this tenant
                 admin_result = await db.execute(
                     select(User).where(
                         User.tenant_id == tenant.id,
@@ -87,23 +96,45 @@ def send_trial_reminders() -> dict:
                     continue
 
                 try:
-                    send_trial_ending_soon_email.delay(
-                        email=admin.email,
-                        first_name=admin.first_name or "",
-                        days_left=delta_days,
-                    )
-                    sent += 1
-                    logger.info(
-                        "Trial reminder queued for tenant %s (%s), %d days left",
-                        tenant.id, admin.email, delta_days,
-                    )
+                    ok = False
+                    if age_days == 3:
+                        ok = EmailService.send_trial_day3(admin.email, admin.first_name or "")
+                    elif age_days == 7:
+                        ok = EmailService.send_trial_day7(admin.email, admin.first_name or "")
+                    elif age_days == 11:
+                        ok = EmailService.send_trial_day11(admin.email, admin.first_name or "")
+                    elif age_days == 13:
+                        ok = EmailService.send_trial_day13(admin.email, admin.first_name or "")
+                    elif age_days == 15:
+                        ok = EmailService.send_trial_expired(admin.email, admin.first_name or "")
+
+                    if ok:
+                        nurture_log[stage_key] = utc_now.isoformat()
+                        settings["nurture_sent"] = nurture_log
+                        tenant.settings = settings
+                        sent += 1
+                        logger.info("Nurture J+%d sent to %s (tenant=%s)", age_days, admin.email, tenant.id)
                 except Exception as exc:
-                    logger.warning("Failed to queue reminder for tenant %s: %s", tenant.id, exc)
+                    logger.warning("Nurture J+%d failed for tenant %s: %s", age_days, tenant.id, exc)
                     errors += 1
 
+            if sent:
+                await db.commit()
+
     _run_async(_run())
-    logger.info("Trial reminders: %d queued, %d errors", sent, errors)
+    logger.info("Nurture sequence: %d sent, %d errors", sent, errors)
     return {"sent": sent, "errors": errors}
+
+
+# Kept for backwards-compat with the celery beat schedule that may still
+# reference billing.send_trial_reminders. Delegates to the new nurture task.
+@shared_task(
+    name="billing.send_trial_reminders",
+    max_retries=2,
+    default_retry_delay=300,
+)
+def send_trial_reminders() -> dict:
+    return send_trial_nurture_sequence()
 
 
 @shared_task(
@@ -143,13 +174,10 @@ def downgrade_expired_trials() -> dict:
                     continue  # Already downgraded
 
                 logger.info("Auto-downgrading tenant %s (trial ended %s)", tenant.id, tenant.trial_ends_at)
-                tenant.plan_tier = "free"
+
+                # Use apply_plan_limits() — canonical source of truth in core.plan_limits
                 tenant.stripe_subscription_status = "expired"
-                # Reset to free-tier limits
-                tenant.max_users = 3
-                tenant.max_orgs = 1
-                tenant.max_monthly_api_calls = 100
-                tenant.data_retention_months = 6
+                tenant.apply_plan_limits("free")
                 downgraded += 1
 
             if downgraded:

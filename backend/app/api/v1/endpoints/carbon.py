@@ -349,3 +349,48 @@ async def save_decarb_plan(
         except Exception as e:
             logger.warning("save_decarb_plan Redis error: %s", e)
     return {"saved": False}
+
+
+@router.get("/beges-export.xlsx", summary="Export BEGES.xlsx au format ADEME (Art. L229-25)")
+async def export_beges_xlsx(
+    year: Optional[int] = Query(None, description="Année de reporting (défaut: N-1)"),
+    organization_id: Optional[str] = Query(None, description="UUID de l'organisation (défaut: première du tenant)"),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Génère et télécharge un fichier .xlsx prêt à soumettre sur bilans-ges.ademe.fr.
+
+    Le fichier contient 6 feuilles :
+      1. Identité     — raison sociale, SIREN, NACE, périmètre
+      2. Synthèse     — totaux par scope avec %
+      3. Scope 1      — émissions directes
+      4. Scope 2      — émissions indirectes énergie
+      5. Scope 3      — 15 catégories GHG Protocol
+      6. Plan d'actions — réduction visée (à compléter)
+
+    Aligné avec l'Article L229-25 du Code de l'environnement, le Décret
+    2022-982 et la méthode réglementaire ADEME v5.
+    """
+    from fastapi.responses import StreamingResponse
+    from uuid import UUID as UUIDType
+    from app.services.beges_export_service import BEGESExportService
+
+    org_uuid: Optional[UUIDType] = None
+    if organization_id:
+        try:
+            org_uuid = UUIDType(organization_id)
+        except ValueError:
+            org_uuid = None
+
+    service = BEGESExportService(db, current_user.tenant_id)
+    xlsx_bytes = await service.generate(organization_id=org_uuid, year=year)
+
+    year_label = year or (datetime.utcnow().year - 1)
+    filename = f"BEGES_{year_label}.xlsx"
+
+    return StreamingResponse(
+        iter([xlsx_bytes]),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

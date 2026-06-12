@@ -16,30 +16,8 @@ from app.models.tenant import Tenant
 
 logger = logging.getLogger(__name__)
 
-# ─── Plan limits map (keyed by price ID env var name for readability) ──────────
-PLAN_CONFIGS: Dict[str, Dict[str, Any]] = {
-    "starter": {
-        "plan_tier": "starter",
-        "max_users": 10,
-        "max_orgs": 20,
-        "max_monthly_api_calls": 1_000,
-        "data_retention_months": 12,
-    },
-    "pro": {
-        "plan_tier": "pro",
-        "max_users": 50,
-        "max_orgs": 100,
-        "max_monthly_api_calls": 10_000,
-        "data_retention_months": 36,
-    },
-    "enterprise": {
-        "plan_tier": "enterprise",
-        "max_users": -1,
-        "max_orgs": -1,
-        "max_monthly_api_calls": -1,
-        "data_retention_months": 84,
-    },
-}
+# ─── Single source of truth: imported from core.plan_limits ──────────────────
+from app.core.plan_limits import PLAN_LIMITS as _PLAN_LIMITS
 
 
 def _get_stripe():
@@ -52,14 +30,38 @@ def _get_stripe():
 
 
 def _plan_config_for_price(price_id: str) -> Dict[str, Any]:
-    """Return plan config based on Stripe price ID."""
-    mapping = {
-        getattr(settings, "STRIPE_PRICE_STARTER_MONTHLY", ""): PLAN_CONFIGS["starter"],
-        getattr(settings, "STRIPE_PRICE_STARTER_YEARLY", ""): PLAN_CONFIGS["starter"],
-        getattr(settings, "STRIPE_PRICE_PRO_MONTHLY", ""): PLAN_CONFIGS["pro"],
-        getattr(settings, "STRIPE_PRICE_PRO_YEARLY", ""): PLAN_CONFIGS["pro"],
+    """
+    Return the canonical plan limits dict for a given Stripe price ID.
+    Logs a warning if the price_id is unrecognised (returns pme as safe default).
+    """
+    mapping: Dict[str, str] = {
+        # New commercial tiers
+        getattr(settings, "STRIPE_PRICE_PME_MONTHLY",    ""): "pme",
+        getattr(settings, "STRIPE_PRICE_PME_YEARLY",     ""): "pme",
+        getattr(settings, "STRIPE_PRICE_ETI_MONTHLY",    ""): "eti",
+        getattr(settings, "STRIPE_PRICE_ETI_YEARLY",     ""): "eti",
+        getattr(settings, "STRIPE_PRICE_GROUPE_MONTHLY", ""): "groupe",
+        getattr(settings, "STRIPE_PRICE_GROUPE_YEARLY",  ""): "groupe",
+        # Legacy tiers (existing subscribers)
+        getattr(settings, "STRIPE_PRICE_STARTER_MONTHLY", ""): "starter",
+        getattr(settings, "STRIPE_PRICE_STARTER_YEARLY",  ""): "starter",
+        getattr(settings, "STRIPE_PRICE_PRO_MONTHLY",     ""): "pro",
+        getattr(settings, "STRIPE_PRICE_PRO_YEARLY",      ""): "pro",
     }
-    return mapping.get(price_id, PLAN_CONFIGS["starter"])
+    # Remove empty-string key that maps if env vars are unset
+    mapping.pop("", None)
+    tier = mapping.get(price_id)
+    if not tier:
+        logger.warning("Unknown Stripe price_id '%s' — defaulting to pme", price_id)
+        tier = "pme"
+    limits = _PLAN_LIMITS[tier]
+    return {
+        "plan_tier": tier,
+        "max_users":             limits["max_users"],
+        "max_orgs":              limits["max_orgs"],
+        "max_monthly_api_calls": limits["max_monthly_api_calls"],
+        "data_retention_months": limits["data_retention_months"],
+    }
 
 
 class StripeService:

@@ -1,15 +1,15 @@
-"""Admin endpoints to manage users."""
-from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
-from typing import List
+"""Admin endpoints to manage users — scoped to the caller's tenant."""
 from datetime import datetime
+from uuid import UUID
 
+from fastapi import APIRouter, Depends, Request
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.permissions import Roles, get_current_user, require_role
 from app.db.session import get_db
-from app.models.user import User
 from app.models.tenant import Tenant
-from app.middleware.auth_middleware import get_current_user_id
-from app.core.permissions import require_role, Roles
+from app.models.user import User
 
 router = APIRouter()
 
@@ -17,74 +17,76 @@ router = APIRouter()
 @router.get("/registrations/recent")
 async def get_recent_registrations(
     limit: int = 10,
+    current_user: User = Depends(get_current_user),
     _: None = Depends(require_role(Roles.TENANT_ADMIN)),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
-    """Obtenir les inscriptions récentes (tenant_admin uniquement)."""
-    
-    # Query users with their tenant info
-    query = select(User, Tenant).join(
-        Tenant, User.tenant_id == Tenant.id
-    ).order_by(User.created_at.desc()).limit(limit)
-    
+    """Inscriptions récentes — limité au tenant de l'administrateur courant."""
+
+    query = (
+        select(User, Tenant)
+        .join(Tenant, User.tenant_id == Tenant.id)
+        .where(User.tenant_id == current_user.tenant_id)  # ← tenant scope
+        .order_by(User.created_at.desc())
+        .limit(max(1, min(limit, 100)))  # cap at 100
+    )
+
     result = await db.execute(query)
     rows = result.all()
-    
-    registrations = []
-    for user, tenant in rows:
-        registrations.append({
-            'user_id': str(user.id),
-            'email': user.email,
-            'full_name': f"{user.first_name} {user.last_name}",
-            'company': tenant.name,
-            'tenant_id': str(tenant.id),
-            'role': user.role,
-            'created_at': user.created_at.isoformat() if user.created_at else None,
-            'email_verified': user.email_verified,
-            'is_active': user.is_active,
-            'subscription_status': tenant.subscription_status
-        })
-    
-    return {
-        'total': len(registrations),
-        'registrations': registrations
-    }
+
+    registrations = [
+        {
+            "user_id": str(user.id),
+            "email": user.email,
+            "full_name": f"{user.first_name} {user.last_name}",
+            "company": tenant.name,
+            "tenant_id": str(tenant.id),
+            "role": user.role,
+            "created_at": user.created_at.isoformat() if user.created_at else None,
+            "email_verified": user.email_verified_at is not None,
+            "is_active": user.is_active,
+            "subscription_status": tenant.subscription_status,
+        }
+        for user, tenant in rows
+    ]
+
+    return {"total": len(registrations), "registrations": registrations}
 
 
 @router.get("/stats")
 async def get_registration_stats(
+    current_user: User = Depends(get_current_user),
     _: None = Depends(require_role(Roles.TENANT_ADMIN)),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
-    """Statistiques des inscriptions (tenant_admin uniquement)."""
-    
-    # Total users
-    total_users_query = select(func.count(User.id))
-    total_result = await db.execute(total_users_query)
-    total_users = total_result.scalar()
-    
-    # Total tenants
-    total_tenants_query = select(func.count(Tenant.id))
-    tenants_result = await db.execute(total_tenants_query)
-    total_tenants = tenants_result.scalar()
-    
-    # Active users
-    active_users_query = select(func.count(User.id)).where(User.is_active == True)
-    active_result = await db.execute(active_users_query)
-    active_users = active_result.scalar()
-    
-    # Users today
-    today = datetime.utcnow().date()
-    today_users_query = select(func.count(User.id)).where(
-        func.date(User.created_at) == today
+    """Statistiques des inscriptions — limité au tenant de l'administrateur courant."""
+    tid = current_user.tenant_id
+
+    total_users = await db.scalar(
+        select(func.count(User.id)).where(User.tenant_id == tid)
     )
-    today_result = await db.execute(today_users_query)
-    today_users = today_result.scalar()
-    
+    active_users = await db.scalar(
+        select(func.count(User.id)).where(
+            User.tenant_id == tid, User.is_active == True
+        )
+    )
+    verified_users = await db.scalar(
+        select(func.count(User.id)).where(
+            User.tenant_id == tid, User.email_verified_at.isnot(None)
+        )
+    )
+    today = datetime.utcnow().date()
+    today_users = await db.scalar(
+        select(func.count(User.id)).where(
+            User.tenant_id == tid,
+            func.date(User.created_at) == today,
+        )
+    )
+
     return {
-        'total_users': total_users,
-        'total_tenants': total_tenants,
-        'active_users': active_users,
-        'registrations_today': today_users,
-        'verified_emails': 0  # À implémenter
+        "tenant_id": str(tid),
+        "total_users": total_users or 0,
+        "active_users": active_users or 0,
+        "verified_emails": verified_users or 0,
+        "registrations_today": today_users or 0,
     }

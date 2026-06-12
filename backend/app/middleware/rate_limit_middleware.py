@@ -1,11 +1,15 @@
 """
 Rate Limiting Middleware — Redis sliding window per tenant/IP.
 
-Limits:
-    - free:       60  req/min
-    - starter:   100  req/min
-    - pro:      1000  req/min
+Limits (sized for a modern SPA where each page load fires 10-30 parallel
+fetches: dashboard widgets, score, indicators, materiality, audit log, …):
+
+    - free:       300  req/min   (≈ 5 req/s sustained — single-user browsing)
+    - pme:        600  req/min   (≈ 10 req/s — small team)
+    - eti:       2000  req/min   (≈ 33 req/s — larger team + connectors)
+    - groupe:    5000  req/min   (≈ 83 req/s — group-level traffic)
     - enterprise: unlimited
+    - Legacy starter / pro kept for backwards-compat with existing subscribers.
 
 Falls back to IP-based limiting when no tenant JWT is present (public routes).
 Fails open if Redis is unavailable (logs warning, allows request).
@@ -24,14 +28,23 @@ logger = logging.getLogger(__name__)
 
 # Requests per minute per plan
 PLAN_LIMITS: dict[str, int] = {
-    "free":       60,
-    "starter":   100,
-    "pro":      1000,
-    "enterprise": -1,   # unlimited
+    "free":       300,
+    "pme":        600,
+    "eti":       2000,
+    "groupe":    5000,
+    "enterprise": -1,    # unlimited
+    # Legacy plans (kept for existing subscribers)
+    "starter":    600,   # same generosity as PME
+    "pro":       2000,   # same as ETI
 }
 
-# Public paths exempt from rate limiting
-_EXEMPT = {"/health", "/", "/docs", "/redoc", "/openapi.json"}
+# Read-only endpoints called on every page load — these should never trip the
+# bucket alone. We still count them but exempt path matching is enforced for
+# public/static-like routes.
+_EXEMPT = {
+    "/health", "/health/live", "/health/ready",
+    "/", "/docs", "/redoc", "/openapi.json", "/metrics",
+}
 
 # Simple in-memory cache: tenant_id -> (plan_tier, expires_at)
 _plan_cache: dict[str, tuple[str, float]] = {}
@@ -109,6 +122,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if limit == -1:  # unlimited
             return await call_next(request)
 
+        # Step 1 — check Redis counter only. Failures here are non-fatal:
+        # we log and let the downstream handler run without rate limiting.
         try:
             window = 60  # 1-minute sliding window
             now = int(time.time())
@@ -121,31 +136,36 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
             remaining = max(limit - count, 0)
             reset_at = (bucket + 1) * window
+        except Exception as e:
+            logger.warning("Rate limit Redis check failed: %s — allowing request", e)
+            return await call_next(request)
 
-            if count > limit:
-                return JSONResponse(
-                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    content={
-                        "error": "Trop de requêtes",
-                        "detail": f"Limite de {limit} req/min atteinte. Réessayez après {reset_at - now}s.",
-                    },
-                    headers={
-                        "X-RateLimit-Limit": str(limit),
-                        "X-RateLimit-Remaining": "0",
-                        "X-RateLimit-Reset": str(reset_at),
-                        "Retry-After": str(reset_at - now),
-                    },
-                )
+        if count > limit:
+            return JSONResponse(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                content={
+                    "error": "Trop de requêtes",
+                    "detail": f"Limite de {limit} req/min atteinte. Réessayez après {reset_at - now}s.",
+                },
+                headers={
+                    "X-RateLimit-Limit": str(limit),
+                    "X-RateLimit-Remaining": "0",
+                    "X-RateLimit-Reset": str(reset_at),
+                    "Retry-After": str(reset_at - now),
+                },
+            )
 
-            response = await call_next(request)
+        # Step 2 — run the downstream handler. Exceptions here must propagate
+        # to be handled by the global exception handler — re-invoking call_next
+        # on the same ASGI scope is illegal and was causing request hangs.
+        response = await call_next(request)
+        try:
             response.headers["X-RateLimit-Limit"] = str(limit)
             response.headers["X-RateLimit-Remaining"] = str(remaining)
             response.headers["X-RateLimit-Reset"] = str(reset_at)
-            return response
-
-        except Exception as e:
-            logger.warning("Rate limit check failed: %s — allowing request", e)
-            return await call_next(request)
+        except Exception:
+            pass
+        return response
 
     async def _check_brute_force(self, request: Request) -> bool:
         """Return True if this IP should be blocked (brute-force protection).
@@ -169,17 +189,16 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     async def _resolve_limit_and_key(self, request: Request) -> tuple[int, str]:
         """Return (requests_per_minute, redis_key_prefix).
 
-        Authenticated requests (any valid Bearer token) are unlimited (-1).
-        Only unauthenticated requests are rate-limited (brute force protection).
+        Authenticated requests are limited per plan tier; unauthenticated
+        requests fall back to per-IP rate limiting at the free-plan level.
         """
-        # Any request with a Bearer token = authenticated user → unlimited
-        auth = request.headers.get("Authorization", "")
-        if auth.lower().startswith("bearer "):
-            return -1, "authenticated"
-
-        # Also check request.state set by AuthMiddleware
-        if getattr(request.state, "tenant_id", None):
-            return -1, "authenticated"
+        tenant_id = getattr(request.state, "tenant_id", None)
+        if tenant_id:
+            plan_tier = getattr(request.state, "plan_tier", None)
+            if not plan_tier:
+                plan_tier = await _get_tenant_plan(str(tenant_id))
+            limit = PLAN_LIMITS.get(plan_tier, PLAN_LIMITS["free"])
+            return limit, f"tenant:{tenant_id}"
 
         # Unauthenticated: IP-based rate limit (brute force protection)
         ip = request.client.host if request.client else "unknown"

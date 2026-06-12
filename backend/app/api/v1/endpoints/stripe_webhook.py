@@ -11,7 +11,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy import select
 
-from app.db.session import get_db
+from app.db.session import AsyncSessionLocal
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +23,10 @@ async def stripe_webhook(request: Request):
     """
     Receive and process Stripe webhook events.
     Stripe sends POST with raw body + Stripe-Signature header.
+
+    The DB session is managed via a clean ``async with`` block so the
+    connection is always returned to the pool even on exceptions, and a
+    rollback fires on failure to avoid poisoning subsequent requests.
     """
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature", "")
@@ -43,43 +47,41 @@ async def stripe_webhook(request: Request):
 
     logger.info("Stripe webhook received: %s (id=%s)", event_type, event["id"])
 
-    # Get DB session — must pass request so RLS context variables are set
-    db_gen = get_db(request)
-    db = await db_gen.__anext__()
-
-    try:
-        if event_type == "checkout.session.completed":
-            await _handle_checkout_completed(db, data, EmailService)
-
-        elif event_type == "customer.subscription.updated":
-            await StripeService.sync_subscription_to_tenant(db, data["customer"], data)
-
-        elif event_type == "customer.subscription.deleted":
-            await _handle_subscription_canceled(db, data, EmailService)
-
-        elif event_type == "customer.subscription.paused":
-            await _handle_subscription_paused(db, data, EmailService)
-
-        elif event_type == "customer.subscription.resumed":
-            await _handle_subscription_resumed(db, data, EmailService)
-
-        elif event_type == "customer.subscription.trial_will_end":
-            await _handle_trial_ending(db, data, EmailService)
-
-        elif event_type == "invoice.payment_succeeded":
-            await _handle_invoice_paid(db, data, EmailService)
-
-        elif event_type == "invoice.payment_failed":
-            await _handle_payment_failed(db, data, EmailService)
-
-    except Exception:
-        logger.exception("Error processing Stripe event %s", event_type)
-        # Still return 200 so Stripe doesn't retry indefinitely
-    finally:
+    # Webhook payloads are tenant-agnostic at the routing layer (Stripe doesn't
+    # know our tenant_id). RLS is enforced by the handlers themselves once the
+    # tenant is resolved via stripe_customer_id, so a context-manager-managed
+    # session is sufficient and clean.
+    async with AsyncSessionLocal() as db:
         try:
-            await db_gen.aclose()
+            if event_type == "checkout.session.completed":
+                await _handle_checkout_completed(db, data, EmailService)
+
+            elif event_type == "customer.subscription.updated":
+                await StripeService.sync_subscription_to_tenant(db, data["customer"], data)
+
+            elif event_type == "customer.subscription.deleted":
+                await _handle_subscription_canceled(db, data, EmailService)
+
+            elif event_type == "customer.subscription.paused":
+                await _handle_subscription_paused(db, data, EmailService)
+
+            elif event_type == "customer.subscription.resumed":
+                await _handle_subscription_resumed(db, data, EmailService)
+
+            elif event_type == "customer.subscription.trial_will_end":
+                await _handle_trial_ending(db, data, EmailService)
+
+            elif event_type == "invoice.payment_succeeded":
+                await _handle_invoice_paid(db, data, EmailService)
+
+            elif event_type == "invoice.payment_failed":
+                await _handle_payment_failed(db, data, EmailService)
+
+            await db.commit()
         except Exception:
-            pass
+            await db.rollback()
+            logger.exception("Error processing Stripe event %s", event_type)
+            # Still return 200 so Stripe doesn't retry indefinitely
 
     return {"received": True}
 
@@ -128,7 +130,7 @@ async def _handle_checkout_completed(db, session, EmailService):
 
     tenant, user = await _get_tenant_user(db, customer_id)
     if user and tenant:
-        from app.services.stripe_service import _plan_config_for_price, PLAN_CONFIGS
+        from app.services.stripe_service import _plan_config_for_price
         price_id = ""
         try:
             price_id = sub["items"]["data"][0]["price"]["id"]
@@ -151,19 +153,16 @@ async def _handle_checkout_completed(db, session, EmailService):
 
 
 async def _handle_subscription_canceled(db, subscription, EmailService):
-    """Mark tenant subscription as canceled."""
-    from app.models.tenant import Tenant
-
+    """Mark tenant subscription as canceled and reset to canonical free limits."""
     customer_id = subscription.get("customer")
     tenant, user = await _get_tenant_user(db, customer_id)
     if not tenant:
         return
 
     tenant.stripe_subscription_status = "canceled"
-    tenant.plan_tier = "free"
-    tenant.max_users = 5
-    tenant.max_orgs = 5
-    tenant.max_monthly_api_calls = 500
+    tenant.stripe_subscription_id = None
+    # Use canonical free limits — never hardcode values here
+    tenant.apply_plan_limits("free")
     await db.commit()
 
     if user:

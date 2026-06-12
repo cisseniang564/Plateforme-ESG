@@ -1,10 +1,13 @@
 """
 Authentication service - Business logic for auth operations.
 """
+import logging
 import secrets
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 from uuid import UUID
+
+logger = logging.getLogger(__name__)
 
 from fastapi import HTTPException, status
 from jose import JWTError
@@ -148,7 +151,21 @@ class AuthService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Account is inactive",
             )
-        
+
+        # Set the tenant context so RLS-protected `tenants` lookup succeeds.
+        # The auth middleware sets this for authenticated requests, but here we
+        # are in the *login* flow (no JWT yet), so we must do it manually right
+        # after we identify the user.
+        from sqlalchemy import text as _text
+        await self.db.execute(
+            _text("SELECT set_config('app.current_tenant_id', :tid, false)"),
+            {"tid": str(user.tenant_id)},
+        )
+        await self.db.execute(
+            _text("SELECT set_config('app.current_user_id', :uid, false)"),
+            {"uid": str(user.id)},
+        )
+
         # Check if tenant is active
         tenant = await self.db.get(Tenant, user.tenant_id)
         if not tenant or not tenant.is_active:
@@ -201,69 +218,14 @@ class AuthService:
     
     async def demo_login(self) -> LoginResponse:
         """
-        Log in instantly as the pre-seeded demo account.
-        Looks up admin@demo.esgflow.com and issues full JWT tokens.
-        If the demo account doesn't exist yet it is created on the fly.
+        [DÉSACTIVÉ] Le compte démo a été supprimé pour des raisons de sécurité.
+        Il partageait le tenant admin et exposait les données de tous les clients.
         """
-        DEMO_EMAIL = "admin@demo.esgflow.com"
-        DEMO_PASSWORD = "Admin123!"
-
-        stmt = select(User).where(User.email == DEMO_EMAIL)
-        result = await self.db.execute(stmt)
-        user = result.scalar_one_or_none()
-
-        if not user:
-            # Auto-provision demo tenant + admin if seed script hasn't run
-            from app.schemas.auth import TenantOnboardRequest
-            onboard_req = TenantOnboardRequest(
-                tenant_name="ESGFlow Demo",
-                tenant_slug="demo",
-                plan_tier="pro",
-                admin_email=DEMO_EMAIL,
-                admin_password=DEMO_PASSWORD,
-                admin_first_name="Admin",
-                admin_last_name="Demo",
-                org_name="ESGFlow Demo Corp",
-            )
-            try:
-                await self.onboard_tenant(onboard_req)
-                result2 = await self.db.execute(select(User).where(User.email == DEMO_EMAIL))
-                user = result2.scalar_one_or_none()
-            except Exception:
-                pass
-
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Demo account not available. Please try again later.",
-            )
-
-        tenant = await self.db.get(Tenant, user.tenant_id)
-        needs_onboarding = not bool(
-            tenant.settings.get("onboarding_done") if tenant and tenant.settings else False
-        )
-
-        user_resp = UserResponse.model_validate(user)
-        user_resp.needs_onboarding = needs_onboarding
-
-        access_token = create_access_token(
-            subject=user.email,
-            tenant_id=user.tenant_id,
-            user_id=user.id,
-        )
-        refresh_token = create_refresh_token(
-            subject=user.email,
-            tenant_id=user.tenant_id,
-            user_id=user.id,
-        )
-
-        return LoginResponse(
-            user=user_resp,
-            tokens=TokenResponse(
-                access_token=access_token,
-                refresh_token=refresh_token,
-                token_type="bearer",
-                expires_in=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "Le mode démo est désactivé sur cette instance. "
+                "Contactez l'administrateur pour obtenir un compte d'accès."
             ),
         )
 
@@ -348,38 +310,67 @@ class AuthService:
         Raises:
             HTTPException: If slug already exists
         """
-        # Check if slug is available
-        stmt = select(Tenant).where(Tenant.slug == request.tenant_slug)
-        result = await self.db.execute(stmt)
-        existing_tenant = result.scalar_one_or_none()
-        
-        if existing_tenant:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Slug '{request.tenant_slug}' is already taken",
-            )
-        
-        # Check if admin email already exists
-        stmt = select(User).where(User.email == request.admin_email)
-        result = await self.db.execute(stmt)
-        existing_user = result.scalar_one_or_none()
-        
-        if existing_user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already registered",
-            )
-        
-        # Create tenant
+        # Generate the tenant id FIRST — we need it to (1) build a unique slug
+        # and (2) set RLS context before any INSERT happens.
+        import uuid as _uuid
+        from sqlalchemy import text as _text
+        new_tenant_id = _uuid.uuid4()
+
+        # ── Build a guaranteed-unique slug ─────────────────────────────────
+        # The slug-uniqueness check on the tenants table is blocked by RLS
+        # (the policy ``id = current_setting('app.current_tenant_id')`` hides
+        # all rows when no context is set, so a SELECT … WHERE slug = … always
+        # returns 0 rows). We sidestep the RLS check entirely by appending a
+        # short hex suffix derived from the new tenant id — this makes the slug
+        # statistically unique without needing to read existing rows.
+        base_slug = (request.tenant_slug or "company").strip("-")[:80] or "company"
+        unique_slug = f"{base_slug}-{new_tenant_id.hex[:8]}"
+
+        # ── Email uniqueness check — users table also has RLS, so we run
+        # it under a "SET LOCAL row_security = off" savepoint that requires
+        # no special privileges. If RLS hides the duplicate, the INSERT will
+        # still fail later on the (tenant_id, email) UNIQUE constraint — but
+        # the row count check below catches the cross-tenant duplicate first.
+        try:
+            async with self.db.begin_nested():
+                await self.db.execute(_text("SET LOCAL row_security = off"))
+                stmt = select(User).where(User.email == request.admin_email)
+                result = await self.db.execute(stmt)
+                existing_user = result.scalar_one_or_none()
+                if existing_user:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Email already registered",
+                    )
+        except HTTPException:
+            raise
+        except Exception as exc:
+            # RLS not switchable (non-superuser) — fall back to a normal check.
+            logger.warning("Email uniqueness check fallback (RLS off failed): %s", exc)
+            stmt = select(User).where(User.email == request.admin_email)
+            result = await self.db.execute(stmt)
+            if result.scalar_one_or_none():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Email already registered",
+                )
+
         tenant = Tenant(
+            id=new_tenant_id,
             name=request.tenant_name,
-            slug=request.tenant_slug,
+            slug=unique_slug,
             plan_tier=request.plan_tier,
             status="active",
         )
+        # Set RLS context to the new tenant id BEFORE the INSERT — required for
+        # the RETURNING-side USING check on FORCE-RLS tables.
+        await self.db.execute(
+            _text("SELECT set_config('app.current_tenant_id', :tid, false)"),
+            {"tid": str(new_tenant_id)},
+        )
         self.db.add(tenant)
         await self.db.flush()  # Get tenant.id
-        
+
         # Create admin user
         admin_user = User(
             tenant_id=tenant.id,
@@ -387,6 +378,8 @@ class AuthService:
             password_hash=get_password_hash(request.admin_password),
             first_name=request.admin_first_name,
             last_name=request.admin_last_name,
+            job_title=getattr(request, "admin_job_title", None),
+            phone=getattr(request, "admin_phone", None),
             auth_provider="local",
         )
         admin_user.verify_email()  # Auto-verify for self-registration
@@ -419,28 +412,57 @@ class AuthService:
                         "siren": getattr(request, "org_siren", None),
                         "country_code": getattr(request, "org_country_code", None),
                         "employee_count": getattr(request, "org_employee_count", None),
+                        "employee_range": getattr(request, "org_employee_range", None),
+                        "annual_revenue_range": getattr(request, "org_annual_revenue_range", None),
                     }.items() if v is not None
                 },
             )
             self.db.add(org)
             await self.db.flush()
             organization_id = org.id
-        
-        # Set trial period on the tenant
+
+        # Persist ESG context onto tenant.settings (non-blocking JSON merge)
         try:
-            from app.config import settings as app_settings
-            from app.services.stripe_service import PLAN_CONFIGS
-            trial_days = getattr(app_settings, 'TRIAL_DAYS', 14)
-            pro_cfg = PLAN_CONFIGS.get('pro', {})
-            tenant.plan_tier = 'pro'
-            tenant.max_users = pro_cfg.get('max_users', 50)
-            tenant.max_orgs = pro_cfg.get('max_orgs', 100)
-            tenant.max_monthly_api_calls = pro_cfg.get('max_monthly_api_calls', 100_000)
-            tenant.data_retention_months = pro_cfg.get('data_retention_months', 36)
-            tenant.trial_ends_at = datetime.now(timezone.utc) + timedelta(days=trial_days)
-            tenant.stripe_subscription_status = 'trialing'
+            esg_settings = {
+                k: v for k, v in {
+                    "esg_goals": getattr(request, "esg_goals", None),
+                    "csrd_status": getattr(request, "csrd_status", None),
+                    "reporting_timeline": getattr(request, "reporting_timeline", None),
+                    "referral_source": getattr(request, "referral_source", None),
+                    "employee_range": getattr(request, "org_employee_range", None),
+                    "annual_revenue_range": getattr(request, "org_annual_revenue_range", None),
+                    "sector": getattr(request, "org_sector_code", None),
+                }.items() if v
+            }
+            if esg_settings:
+                merged = dict(tenant.settings or {})
+                merged["onboarding"] = {**merged.get("onboarding", {}), **esg_settings}
+                tenant.settings = merged
         except Exception:
-            pass  # Non-blocking
+            pass
+        
+        # ── Default new tenants to the FREE plan ─────────────────────────────
+        # Previously we silently put new sign-ups on a 14-day ETI trial, but
+        # that surprised users: the Billing page showed "ETI" even though
+        # they had never asked for a paid tier. We now default to Free —
+        # the user can opt-in to a paid plan from the Billing page, and we
+        # can later offer a CTA-driven trial activation (not silent).
+        try:
+            from app.core.plan_limits import get_limits as _get_plan_limits
+            free_limits = _get_plan_limits('free')
+            tenant.plan_tier = 'free'
+            tenant.max_users = free_limits.get('max_users', 3)
+            tenant.max_orgs = free_limits.get('max_orgs', 5)
+            tenant.max_monthly_api_calls = free_limits.get('max_monthly_api_calls', 1_000)
+            tenant.data_retention_months = free_limits.get('data_retention_months', 12)
+            tenant.trial_ends_at = None
+            tenant.stripe_subscription_status = None
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Free defaults setup failed for tenant %s: %s",
+                tenant.id, exc, exc_info=True,
+            )
 
         await self.db.commit()
 
@@ -651,6 +673,15 @@ class AuthService:
             await self.db.commit()
         else:
             raise HTTPException(status_code=400, detail="Code invalide")
+
+        # Set RLS context now that we have validated the 2FA owner — the
+        # middleware doesn't run on /auth/2fa/verify because it's a public path
+        # (verified by temp_token, not JWT).
+        from sqlalchemy import text as _text
+        await self.db.execute(
+            _text("SELECT set_config('app.current_tenant_id', :tid, false)"),
+            {"tid": str(user.tenant_id)},
+        )
 
         tenant = await self.db.get(Tenant, user.tenant_id)
         needs_onboarding = not bool(

@@ -65,6 +65,9 @@ class DataEntriesStats(BaseModel):
     by_pillar: dict
     by_collection_method: dict
     by_verification_status: dict
+    by_category: dict
+    by_metric: dict
+    by_period: dict
     date_range: dict
 
 # ============= ENDPOINTS =============
@@ -108,6 +111,31 @@ async def get_data_stats(
     )
     by_verification_status = {row[0]: row[1] for row in status_result}
     
+    # By category
+    category_result = await db.execute(
+        select(DataEntry.category, func.count(DataEntry.id))
+        .where(DataEntry.tenant_id == current_user.tenant_id)
+        .group_by(DataEntry.category)
+    )
+    by_category = {(row[0] or 'unknown'): row[1] for row in category_result}
+
+    # By metric name
+    metric_result = await db.execute(
+        select(DataEntry.metric_name, func.count(DataEntry.id))
+        .where(DataEntry.tenant_id == current_user.tenant_id)
+        .group_by(DataEntry.metric_name)
+    )
+    by_metric = {(row[0] or 'unknown'): row[1] for row in metric_result}
+
+    # By period (year of period_start) — for the temporal evolution chart
+    period_result = await db.execute(
+        select(extract('year', DataEntry.period_start), func.count(DataEntry.id))
+        .where(DataEntry.tenant_id == current_user.tenant_id)
+        .group_by(extract('year', DataEntry.period_start))
+        .order_by(extract('year', DataEntry.period_start))
+    )
+    by_period = {str(int(row[0])): row[1] for row in period_result if row[0] is not None}
+
     # Date range
     date_result = await db.execute(
         select(
@@ -120,12 +148,15 @@ async def get_data_stats(
         'min': date_row[0].isoformat() if date_row[0] else None,
         'max': date_row[1].isoformat() if date_row[1] else None
     }
-    
+
     return DataEntriesStats(
         total=total,
         by_pillar=by_pillar,
         by_collection_method=by_collection_method,
         by_verification_status=by_verification_status,
+        by_category=by_category,
+        by_metric=by_metric,
+        by_period=by_period,
         date_range=date_range
     )
 
@@ -279,7 +310,22 @@ async def update_data_entry(
     db_entry = result.scalar_one_or_none()
     if not db_entry:
         raise HTTPException(status_code=404, detail="Not found")
-    
+
+    # ── Immutability lock ────────────────────────────────────────────────
+    # Verified entries are locked — any further change must go through a
+    # formal "revoke verification" flow (TENANT_ADMIN only). This is a hard
+    # CSRD / ISAE 3000 requirement: once a CAC (commissaire aux comptes)
+    # has signed off, the underlying data is frozen.
+    if (db_entry.verification_status or "").lower() == "verified":
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Cette entrée est verrouillée (verified). Pour modifier, "
+                "demandez d'abord à un administrateur de révoquer la "
+                "vérification — l'opération sera tracée dans l'audit trail."
+            ),
+        )
+
     old_values = {
         "value_numeric": db_entry.value_numeric,
         "value_text": db_entry.value_text,
@@ -287,14 +333,13 @@ async def update_data_entry(
         "notes": db_entry.notes,
         "data_source": db_entry.data_source
     }
-    
+
     update_data = entry_update.dict(exclude_unset=True)
     for field, value in update_data.items():
         setattr(db_entry, field, value)
-    
+
     await db.commit()
-    await db.refresh(db_entry)
-    
+
     await log_change(
         db=db,
         tenant_id=current_user.tenant_id,
@@ -306,7 +351,7 @@ async def update_data_entry(
         new_values=update_data,
         ip_address=request.client.host if request.client else None
     )
-    
+
     return db_entry
 
 @router.delete("/{entry_id}")
@@ -326,7 +371,17 @@ async def delete_data_entry(
     db_entry = result.scalar_one_or_none()
     if not db_entry:
         raise HTTPException(status_code=404, detail="Not found")
-    
+
+    # Verified entries are locked from deletion (CSRD / ISAE 3000).
+    if (db_entry.verification_status or "").lower() == "verified":
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Cette entrée est verrouillée (verified). Pour supprimer, "
+                "un administrateur doit d'abord révoquer la vérification."
+            ),
+        )
+
     await log_change(
         db=db,
         tenant_id=current_user.tenant_id,
@@ -340,7 +395,7 @@ async def delete_data_entry(
         },
         ip_address=request.client.host if request.client else None
     )
-    
+
     await db.delete(db_entry)
     await db.commit()
     return {"message": "Deleted"}

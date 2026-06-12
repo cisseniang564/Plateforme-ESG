@@ -42,6 +42,7 @@ celery_app = Celery(
         "app.tasks.report_tasks",
         "app.tasks.scoring_tasks",
         "app.tasks.billing_tasks",
+        "app.tasks.notification_tasks",
     ],
 )
 
@@ -100,6 +101,18 @@ celery_app.conf.update(
         "daily-trial-downgrade": {
             "task": "billing.downgrade_expired_trials",
             "schedule": crontab(hour=8, minute=30),
+            "options": {"queue": "default"},
+        },
+        # Scan compliance deadlines daily at 07:00 UTC
+        "daily-deadline-scan": {
+            "task": "notifications.scan_deadlines",
+            "schedule": crontab(hour=7, minute=0),
+            "options": {"queue": "default"},
+        },
+        # Scan CSRD missing required datapoints every Monday at 08:00 UTC
+        "weekly-missing-data-scan": {
+            "task": "notifications.scan_missing_data",
+            "schedule": crontab(hour=8, minute=0, day_of_week=1),
             "options": {"queue": "default"},
         },
     },

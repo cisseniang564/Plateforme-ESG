@@ -3,14 +3,18 @@ Data Import Service - Parse and validate CSV/Excel files.
 """
 import io
 import csv
+import logging
 from typing import Any, Optional
 from uuid import UUID
 from datetime import datetime
 
 import pandas as pd
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.data_upload import DataUpload
+
+logger = logging.getLogger(__name__)
 
 
 class DataImportService:
@@ -27,8 +31,25 @@ class DataImportService:
         user_id: UUID,
     ) -> DataUpload:
         """Parse CSV or Excel file and create upload record."""
-        
-        # Créer l'enregistrement upload
+
+        # ── Set RLS tenant context on THIS session ──────────────────────────
+        # The data_uploads table has RLS enabled with a USING policy of
+        # ``tenant_id = current_setting('app.current_tenant_id')::uuid``.
+        # The TenantMiddleware sets that setting on a different session, so we
+        # must set it again here — otherwise the post-commit refresh SELECT
+        # will be filtered out and raise "Could not refresh instance".
+        try:
+            await self.db.execute(
+                text("SELECT set_config('app.current_tenant_id', :tid, false)"),
+                {"tid": str(tenant_id)},
+            )
+        except Exception as exc:
+            logger.warning("Could not set tenant RLS context: %s", exc)
+
+        # Créer l'enregistrement upload — set created_at/updated_at Python-side
+        # so we don't need a refresh-after-INSERT round-trip that can fail with
+        # greenlet_spawn during the response serialisation.
+        _now = datetime.utcnow()
         upload = DataUpload(
             tenant_id=tenant_id,
             uploaded_by=user_id,
@@ -36,7 +57,9 @@ class DataImportService:
             file_size=len(file_content),
             file_type=self._detect_file_type(filename),
             status="processing",
-            processing_started_at=datetime.utcnow(),
+            processing_started_at=_now,
+            created_at=_now,
+            updated_at=_now,
         )
         self.db.add(upload)
         await self.db.flush()
@@ -75,8 +98,11 @@ class DataImportService:
             upload.processing_completed_at = datetime.utcnow()
         
         await self.db.commit()
-        await self.db.refresh(upload)
-        
+        # NOTE: we deliberately do NOT call ``await self.db.refresh(upload)``.
+        # Refresh first expires attributes then SELECTs them back. If that
+        # SELECT fails (RLS, network, …), the instance is left expired and any
+        # subsequent attribute read raises MissingGreenlet (sync lazy-load in
+        # async context). All values we care about are set Python-side above.
         return upload
     
     def _detect_file_type(self, filename: str) -> str:

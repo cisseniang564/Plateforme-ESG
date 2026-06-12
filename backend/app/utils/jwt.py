@@ -3,7 +3,7 @@ JWT token creation and validation utilities.
 """
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from jose import JWTError, jwt
 
@@ -41,6 +41,7 @@ def create_access_token(
         "exp": expire,
         "iat": now,
         "type": "access",
+        "jti": uuid4().hex,
     }
 
     if additional_claims:
@@ -78,6 +79,7 @@ def create_refresh_token(
         "exp": expire,
         "iat": now,
         "type": "refresh",
+        "jti": uuid4().hex,
     }
 
     return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)

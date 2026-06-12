@@ -173,7 +173,14 @@ class Settings(BaseSettings):
     STRIPE_SECRET_KEY: str = "sk_test_REPLACE_ME"
     STRIPE_PUBLISHABLE_KEY: str = "pk_test_REPLACE_ME"
     STRIPE_WEBHOOK_SECRET: str = "whsec_REPLACE_ME"
-    # Price IDs from Stripe Dashboard
+    # Price IDs from Stripe Dashboard — new commercial tiers
+    STRIPE_PRICE_PME_MONTHLY: str = ""
+    STRIPE_PRICE_PME_YEARLY: str = ""
+    STRIPE_PRICE_ETI_MONTHLY: str = ""
+    STRIPE_PRICE_ETI_YEARLY: str = ""
+    STRIPE_PRICE_GROUPE_MONTHLY: str = ""
+    STRIPE_PRICE_GROUPE_YEARLY: str = ""
+    # Legacy price IDs (kept for existing subscribers)
     STRIPE_PRICE_STARTER_MONTHLY: str = ""
     STRIPE_PRICE_STARTER_YEARLY: str = ""
     STRIPE_PRICE_PRO_MONTHLY: str = ""

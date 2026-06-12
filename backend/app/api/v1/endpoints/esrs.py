@@ -233,6 +233,27 @@ def _section_matches_entry(section: Dict, pillar: str, category: str, metric: st
     return any(_normalize(kw) in entry_text for kw in section["keywords"])
 
 
+@router.get("/progress")
+async def get_csrd_progress(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Dict[str, Any]:
+    """
+    CSRD readiness dashboard — datapoint-level completion per ESRS standard.
+
+    Returns:
+      * overall_completion_pct / required_completion_pct
+      * standards[]: one entry per ESRS standard (E1, S1, G1, …) with %
+      * priority_next[]: top 5 missing required data points to fill next
+      * publication_deadline + days_to_deadline (from tenant's CSRD wave)
+
+    Use this to drive the "Where am I on CSRD?" page.
+    """
+    from app.services.csrd_progress_service import CSRDProgressService
+    service = CSRDProgressService(db, current_user.tenant_id)
+    return await service.build_dashboard()
+
+
 @router.get("/standards")
 async def list_esrs_standards(
     current_user: User = Depends(get_current_user),

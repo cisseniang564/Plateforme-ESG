@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.dependencies import get_current_tenant_id
 from app.schemas.organization import (
+    ConsolidatedReportResponse,
     OrganizationCreateRequest,
     OrganizationDetailResponse,
     OrganizationListResponse,
@@ -22,6 +23,7 @@ from app.schemas.organization import (
     OrganizationTreeNode,
     OrganizationUpdateRequest,
 )
+from app.services.consolidation_service import ConsolidationService
 from app.services.organization_service import OrganizationService
 
 router = APIRouter(prefix="/organizations", tags=["Organizations"])
@@ -300,3 +302,41 @@ async def delete_organization(
     service = OrganizationService(db, tenant_id)
     await service.delete_organization(org_id)
     return None
+
+
+@router.get(
+    "/{org_id}/consolidated",
+    response_model=ConsolidatedReportResponse,
+    summary="Get consolidated ESG indicators",
+    description=(
+        "Roll up ESG indicators across the organization subtree. Applies each "
+        "subsidiary's consolidation_method (full, proportional, equity, none) "
+        "and ownership_percentage."
+    ),
+)
+async def get_consolidated_indicators(
+    org_id: UUID,
+    period: Optional[str] = Query(
+        None,
+        description="Filter by ISO period prefix (e.g. '2025' or '2025-Q3')",
+    ),
+    tenant_id: UUID = Depends(get_current_tenant_id),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Compute consolidated ESG metrics for *org_id* (treated as parent).
+
+    Aligned with IFRS 10 / Code de commerce art. L233-16:
+      - full (intégration globale) → 100 % of subsidiary value contributes
+      - proportional (intégration proportionnelle) → value × ownership %
+      - equity (mise en équivalence) → excluded from rollup
+      - none → excluded
+
+    Returns one row per (indicator_code, period) with the aggregated value
+    and the number of contributing subsidiaries.
+
+    Requires the Group or Enterprise plan to use in production.
+    """
+    service = ConsolidationService(db, tenant_id)
+    report = await service.consolidate(parent_org_id=org_id, period=period)
+    return ConsolidatedReportResponse(**report)

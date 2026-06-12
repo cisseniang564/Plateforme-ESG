@@ -116,20 +116,32 @@ async def login(
             detail="Inactive user"
         )
 
+    # Load tenant quota for embedding in token (avoids DB hit per request)
+    from app.models.tenant import Tenant as _Tenant
+    _tenant_result = await db.execute(
+        select(_Tenant).where(_Tenant.id == user.tenant_id)
+    )
+    _tenant = _tenant_result.scalar_one_or_none()
+    _quota_claims = {
+        "max_monthly_api_calls": _tenant.max_monthly_api_calls if _tenant else 0,
+        "plan_tier": _tenant.plan_tier if _tenant else "free",
+    }
+
     # Créer les tokens (format compatible avec auth_middleware extract_user_id)
     access_token = create_access_token(
         subject=user.email,
         tenant_id=user.tenant_id,
         user_id=user.id,
+        additional_claims=_quota_claims,
     )
     refresh_token = create_access_token(
         subject=user.email,
         tenant_id=user.tenant_id,
         user_id=user.id,
         expires_delta=timedelta(days=7),
-        additional_claims={"type": "refresh"},
+        additional_claims={"type": "refresh", **_quota_claims},
     )
-    
+
     # Successful login — clear any brute-force counter
     await _clear_failed_logins(request)
 
@@ -261,93 +273,17 @@ async def forgot_password(
     }
 
 
-@router.post("/demo-login")
-async def demo_login(db: AsyncSession = Depends(get_db)):
+@router.post("/demo-login", include_in_schema=False)
+async def demo_login():
     """
-    Auto-login as the shared read-only demo account.
-    Creates the demo user on first call (piggybacks on the admin tenant
-    so the demo sees real pre-populated ESG data).
+    Endpoint de démo désactivé en production.
+    Le compte démo partageait le tenant admin et exposait les données réelles.
     """
-    from datetime import datetime, timezone
-
-    DEMO_EMAIL = "demo@greenconnect.cloud"
-
-    # 1. Lookup or create demo user
-    result = await db.execute(
-        select(User)
-        .options(selectinload(User.role))
-        .where(User.email == DEMO_EMAIL)
+    from fastapi import HTTPException as _HTTPException
+    raise _HTTPException(
+        status_code=403,
+        detail=(
+            "Le mode démo est désactivé sur cette instance. "
+            "Contactez l'administrateur pour obtenir un compte d'accès."
+        ),
     )
-    demo_user = result.scalar_one_or_none()
-
-    if not demo_user:
-        # Reuse admin tenant so demo shows real data; fallback to own org
-        admin_res = await db.execute(
-            select(User).where(User.email == "admin@greenconnect.cloud")
-        )
-        admin = admin_res.scalar_one_or_none()
-
-        if admin:
-            tenant_id = admin.tenant_id
-        else:
-            # No admin — create a standalone demo tenant
-            from uuid import uuid4 as _uuid4
-            from app.models.tenant import Tenant as _Tenant
-            _slug = f"greenconnect-demo-{str(_uuid4())[:8]}"
-            fallback_tenant = _Tenant(
-                id=_uuid4(),
-                name="GreenConnect — Démo",
-                slug=_slug,
-            )
-            db.add(fallback_tenant)
-            await db.flush()
-            tenant_id = fallback_tenant.id
-
-        demo_user = User(
-            id=uuid4(),
-            tenant_id=tenant_id,
-            email=DEMO_EMAIL,
-            # Random hash — demo account is never logged-in with a password
-            password_hash=get_password_hash(str(uuid4())),
-            first_name="Compte",
-            last_name="Démo",
-            is_active=True,
-            email_verified_at=datetime.now(timezone.utc),
-            mfa_enabled=False,
-        )
-        db.add(demo_user)
-        await db.commit()
-        await db.refresh(demo_user)
-
-    # 2. Issue short-lived tokens (8 h — demo sessions expire same day)
-    access_token = create_access_token(
-        subject=demo_user.email,
-        tenant_id=demo_user.tenant_id,
-        user_id=demo_user.id,
-    )
-    refresh_token = create_access_token(
-        subject=demo_user.email,
-        tenant_id=demo_user.tenant_id,
-        user_id=demo_user.id,
-        expires_delta=timedelta(hours=8),
-        additional_claims={"type": "refresh"},
-    )
-
-    return {
-        "tokens": {
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "token_type": "bearer",
-        },
-        "user": {
-            "id": str(demo_user.id),
-            "email": demo_user.email,
-            "first_name": demo_user.first_name,
-            "last_name": demo_user.last_name,
-            "role": demo_user.role.name if demo_user.role else "viewer",
-            "tenant_id": str(demo_user.tenant_id),
-            "email_verified_at": demo_user.email_verified_at.isoformat() if demo_user.email_verified_at else None,
-            "mfa_enabled": demo_user.mfa_enabled,
-            "needs_onboarding": False,
-        },
-    }

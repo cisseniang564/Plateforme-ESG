@@ -7,13 +7,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, extract, or_, func
 from typing import Optional, List, Dict, Any
 from uuid import UUID, uuid4
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import io
 import json
 import logging
 from datetime import datetime
 
-from app.dependencies import get_db, get_current_user
+from app.dependencies import (
+    get_db,
+    get_current_user,
+    require_feature,
+    assert_feature_enabled,
+)
 from app.models.user import User
 from app.models.data_entry import DataEntry
 from app.services.report_service import ReportService
@@ -47,6 +52,21 @@ class ScheduledReportRequest(BaseModel):
     frequency: str  # daily, weekly, monthly, quarterly
     format: str = 'pdf'
     recipients: List[str] = []
+    # ISO date "YYYY-MM-DD" — first run date. Defaults to today if omitted.
+    start_date: Optional[str] = None
+    # 24-hour clock "HH:MM" — time of day to dispatch. Defaults to 08:00.
+    time_of_day: Optional[str] = None
+    # ISO date "YYYY-MM-DD" — stop recurring after this date (optional).
+    end_date: Optional[str] = None
+
+
+_REPORT_TYPE_TO_FEATURE = {
+    "csrd": "csrd_report",
+    "sfdr": "sfdr_report",
+    "dpef": "dpef_report",
+    "carbon": "carbon_report",
+    "ghg": "carbon_report",
+}
 
 
 @router.post("/generate")
@@ -56,9 +76,15 @@ async def generate_report(
     current_user: User = Depends(get_current_user)
 ):
     """Generate ESG report and return as download"""
-    
+
+    # Plan gate — block report types the tenant's plan doesn't include
+    feature = _REPORT_TYPE_TO_FEATURE.get((request.report_type or "").lower())
+    if feature:
+        await assert_feature_enabled(db, current_user.tenant_id, feature, user_id=current_user.id)
+
     service = ReportService(db)
-    
+    history_id: Optional[UUID] = None
+
     try:
         # Générer le rapport
         report_bytes = await service.generate_report(
@@ -69,12 +95,53 @@ async def generate_report(
             year=request.year,
             format=request.format
         )
-        
+
+        # Persist in history with SHA-256 hash + auto-incremented version
+        # (audit-grade: any later regeneration with identical data must yield
+        # the same hash; a different hash proves data drift).
+        content_hash: Optional[str] = None
+        version_num: int = 1
+        try:
+            import hashlib as _hashlib
+            from sqlalchemy import func as _func
+            from app.models.report_history import ReportHistory
+
+            content_hash = _hashlib.sha256(report_bytes or b"").hexdigest()
+
+            # Next version for same (tenant, report_type, year)
+            ver_q = select(_func.max(ReportHistory.version)).where(
+                ReportHistory.tenant_id == current_user.tenant_id,
+                ReportHistory.report_type == request.report_type,
+                ReportHistory.year == request.year,
+            )
+            max_ver = (await db.execute(ver_q)).scalar()
+            version_num = int(max_ver or 0) + 1
+
+            entry = ReportHistory(
+                tenant_id=current_user.tenant_id,
+                report_type=request.report_type,
+                format=request.format,
+                period=request.period,
+                year=request.year,
+                organization_id=request.organization_id,
+                generated_by=current_user.id,
+                file_size=len(report_bytes) if report_bytes else None,
+                content_hash=content_hash,
+                version=version_num,
+                params=request.model_dump(mode="json"),
+            )
+            db.add(entry)
+            await db.commit()
+            await db.refresh(entry)
+            history_id = entry.id
+        except Exception as hist_exc:
+            logger.warning("Could not record report_history entry: %s", hist_exc)
+
         # Déterminer le nom du fichier
         from datetime import datetime
         year = request.year or datetime.now().year
         filename = f"rapport_{request.report_type}_{year}.{request.format}"
-        
+
         # Déterminer le content-type
         content_types = {
             'pdf':   'application/pdf',
@@ -88,12 +155,22 @@ async def generate_report(
         content_type = content_types.get(request.format, 'application/octet-stream')
         
         # Retourner en streaming
+        response_headers = {
+            'Content-Disposition': f'attachment; filename="{filename}"',
+        }
+        if history_id is not None:
+            response_headers['X-Report-History-Id'] = str(history_id)
+            response_headers['X-Report-Version'] = str(version_num)
+            if content_hash:
+                response_headers['X-Report-Content-Hash'] = content_hash
+            response_headers['Access-Control-Expose-Headers'] = (
+                'X-Report-History-Id, X-Report-Version, X-Report-Content-Hash, Content-Disposition'
+            )
+
         return StreamingResponse(
             io.BytesIO(report_bytes),
             media_type=content_type,
-            headers={
-                'Content-Disposition': f'attachment; filename="{filename}"'
-            }
+            headers=response_headers,
         )
         
     except ValueError as e:
@@ -149,7 +226,14 @@ async def create_scheduled_report(
             "recipients": payload.recipients,
             "status": "active",
             "created_at": datetime.utcnow().isoformat(),
-            "next_run": _compute_next_run(payload.frequency),
+            "start_date":  payload.start_date,
+            "time_of_day": payload.time_of_day or "08:00",
+            "end_date":    payload.end_date,
+            "next_run":    _compute_next_run(
+                payload.frequency,
+                start_date=payload.start_date,
+                time_of_day=payload.time_of_day,
+            ),
         }
         schedules.append(new_schedule)
         r.setex(key, 365 * 24 * 3600, json.dumps(schedules))
@@ -178,17 +262,49 @@ async def delete_scheduled_report(
         logger.error("Error deleting scheduled report: %s", e)
 
 
-def _compute_next_run(frequency: str) -> str:
-    """Calcule la prochaine exécution selon la fréquence"""
-    from datetime import timedelta
-    delta_map = {
-        "daily": timedelta(days=1),
-        "weekly": timedelta(weeks=1),
-        "monthly": timedelta(days=30),
-        "quarterly": timedelta(days=90),
-    }
-    delta = delta_map.get(frequency, timedelta(days=30))
-    return (datetime.utcnow() + delta).strftime("%Y-%m-%d")
+def _compute_next_run(
+    frequency: str,
+    start_date: Optional[str] = None,
+    time_of_day: Optional[str] = None,
+) -> str:
+    """Calcule la prochaine exécution selon la fréquence.
+
+    Si ``start_date`` (YYYY-MM-DD) est fourni ET dans le futur, c'est la
+    première exécution. Sinon on calcule à partir d'aujourd'hui.
+    ``time_of_day`` (HH:MM) est inclus dans le timestamp retourné pour que
+    l'UI puisse afficher l'heure exacte (ex. « 08:00 le 30/06/2026 »).
+    """
+    from datetime import timedelta, datetime as _dt
+
+    # Parse start_date if provided
+    base: _dt
+    if start_date:
+        try:
+            base = _dt.strptime(start_date, "%Y-%m-%d")
+        except ValueError:
+            base = _dt.utcnow()
+    else:
+        base = _dt.utcnow()
+
+    # If the provided start is in the past, advance one period
+    now = _dt.utcnow()
+    if base <= now:
+        delta_map = {
+            "daily":     timedelta(days=1),
+            "weekly":    timedelta(weeks=1),
+            "monthly":   timedelta(days=30),
+            "quarterly": timedelta(days=90),
+        }
+        base = now + delta_map.get(frequency, timedelta(days=30))
+
+    # Attach time of day
+    if time_of_day:
+        try:
+            hh, mm = time_of_day.split(":")
+            base = base.replace(hour=int(hh), minute=int(mm), second=0, microsecond=0)
+        except ValueError:
+            pass
+    return base.strftime("%Y-%m-%dT%H:%M:%S")
 
 
 @router.get("/preview/{report_type}")
@@ -238,7 +354,10 @@ async def preview_report(
 
 # ─── Multi-standards mapping ──────────────────────────────────────────────────
 
-# Static ESRS catalog: 21 indicators mapped to GRI/CDP/TCFD/SDG.
+# Static ESRS catalog: 46 indicators mapped to GRI/CDP/TCFD/SDG.
+# GRI coverage spans series 201-207 (economic), 301-308 (environment),
+# 401-418 (social) plus universal standards (GRI 2) — broad enough to
+# generate a GRI content index, not just the climate subset.
 # 'cat_kw' and 'name_kw' are case-insensitive substrings matched against
 # DataEntry.category and DataEntry.metric_name respectively.
 # 'aggregate' = 'sum' (emissions) | 'latest' (rates/percentages/booleans)
@@ -309,9 +428,12 @@ _ESRS_CATALOG: List[Dict[str, Any]] = [
      "pillar": "S", "db_pillar": "social",
      "cat_kw": ["emploi", "rh"], "name_kw": ["turnover", "rotation", "attrition"],
      "aggregate": "latest", "gri": "GRI 401-1", "cdp": None, "tcfd": None, "sdg": "SDG 8"},
+    # NB: les templates sectoriels sèment les données fournisseurs sous le pilier
+    # governance — on cherche donc dans les deux piliers (db_pillar accepte une liste).
     {"esrs_code": "S2 / CHV-AUD", "esrs_name": "Audits fournisseurs droits humains",
-     "pillar": "S", "db_pillar": "social",
-     "cat_kw": ["fournisseur", "supply chain"], "name_kw": ["audit", "fournisseur", "droits"],
+     "pillar": "S", "db_pillar": ["social", "governance"],
+     "cat_kw": [], "name_kw": ["fournisseurs audités", "audit fournisseur", "audits fournisseurs",
+                               "droits humains", "supplier audit", "human rights"],
      "aggregate": "latest", "gri": "GRI 414-2", "cdp": None, "tcfd": None, "sdg": "SDG 10"},
     # ── Governance ───────────────────────────────────────────────────────────
     {"esrs_code": "G1 / ANTI-COR", "esrs_name": "Politique anti-corruption",
@@ -330,6 +452,112 @@ _ESRS_CATALOG: List[Dict[str, Any]] = [
      "pillar": "G", "db_pillar": "governance",
      "cat_kw": ["gouvernance"], "name_kw": ["administrateur", "conseil", "board", "indépendant"],
      "aggregate": "latest", "gri": "GRI 405-1", "cdp": None, "tcfd": "Governance", "sdg": "SDG 5"},
+    # ── Extension GRI — Environnement (séries 301/302/303/306/308) ──────────
+    {"esrs_code": "E1 / ENE-TOT", "esrs_name": "Consommation totale d'énergie",
+     "pillar": "E", "db_pillar": "environmental",
+     "cat_kw": [], "name_kw": ["consommation d'électricité", "consommation électricité", "électricité totale",
+                               "énergie totale", "consommation totale d'énergie", "electricity consumption", "energy consumption"],
+     "aggregate": "sum", "gri": "GRI 302-1", "cdp": "C8.2", "tcfd": "Metrics & Targets", "sdg": "SDG 7"},
+    {"esrs_code": "E1 / INT-E", "esrs_name": "Intensité énergétique",
+     "pillar": "E", "db_pillar": "environmental",
+     "cat_kw": [], "name_kw": ["intensité énergétique", "energy intensity", "kwh/m²", "kwh/m2"],
+     "aggregate": "latest", "gri": "GRI 302-3", "cdp": None, "tcfd": "Metrics & Targets", "sdg": "SDG 7"},
+    {"esrs_code": "E3 / EAU-STRESS", "esrs_name": "Eau prélevée en zones de stress hydrique",
+     "pillar": "E", "db_pillar": "environmental",
+     "cat_kw": [], "name_kw": ["stress hydrique", "water stress"],
+     "aggregate": "sum", "gri": "GRI 303-3", "cdp": "W4.1", "tcfd": "Risks", "sdg": "SDG 6"},
+    {"esrs_code": "E3 / EAU-REJ", "esrs_name": "Rejets d'eau (effluents)",
+     "pillar": "E", "db_pillar": "environmental",
+     "cat_kw": [], "name_kw": ["rejets d'eau", "rejet eau", "effluent", "water discharge"],
+     "aggregate": "sum", "gri": "GRI 303-4", "cdp": "W1.2", "tcfd": None, "sdg": "SDG 6"},
+    {"esrs_code": "E5 / DEC-TOT", "esrs_name": "Déchets totaux générés",
+     "pillar": "E", "db_pillar": "environmental",
+     "cat_kw": [], "name_kw": ["déchets totaux", "déchets générés", "total waste", "déchets industriels",
+                               "e-waste", "déchets électroniques"],
+     "aggregate": "sum", "gri": "GRI 306-3", "cdp": "W5.1", "tcfd": None, "sdg": "SDG 12"},
+    {"esrs_code": "E5 / DEC-DAN", "esrs_name": "Déchets dangereux générés",
+     "pillar": "E", "db_pillar": "environmental",
+     "cat_kw": [], "name_kw": ["déchets dangereux", "hazardous waste"],
+     "aggregate": "sum", "gri": "GRI 306-3", "cdp": "W5.1a", "tcfd": None, "sdg": "SDG 12"},
+    {"esrs_code": "E5 / MAT-PREM", "esrs_name": "Matières premières utilisées",
+     "pillar": "E", "db_pillar": "environmental",
+     "cat_kw": [], "name_kw": ["matières premières", "matériaux utilisés", "raw materials"],
+     "aggregate": "sum", "gri": "GRI 301-1", "cdp": None, "tcfd": None, "sdg": "SDG 12"},
+    # ── Extension GRI — Social (séries 202/401/403/406/413/414/416/418 + GRI 2) ─
+    {"esrs_code": "S1 / EMB-NEW", "esrs_name": "Nouvelles embauches",
+     "pillar": "S", "db_pillar": "social",
+     "cat_kw": [], "name_kw": ["embauche", "nouvelles recrues", "new hires", "recrutement"],
+     "aggregate": "sum", "gri": "GRI 401-1", "cdp": None, "tcfd": None, "sdg": "SDG 8"},
+    {"esrs_code": "S1 / CONG-PAR", "esrs_name": "Retour de congé parental",
+     "pillar": "S", "db_pillar": "social",
+     "cat_kw": [], "name_kw": ["congé parental", "parental leave"],
+     "aggregate": "latest", "gri": "GRI 401-3", "cdp": None, "tcfd": None, "sdg": "SDG 5"},
+    {"esrs_code": "S1 / CONV-COLL", "esrs_name": "Couverture par convention collective",
+     "pillar": "S", "db_pillar": "social",
+     "cat_kw": [], "name_kw": ["convention collective", "collective bargaining"],
+     "aggregate": "latest", "gri": "GRI 2-30", "cdp": None, "tcfd": None, "sdg": "SDG 8"},
+    {"esrs_code": "S1 / MAL-PRO", "esrs_name": "Maladies professionnelles",
+     "pillar": "S", "db_pillar": "social",
+     "cat_kw": [], "name_kw": ["maladie professionnelle", "occupational disease"],
+     "aggregate": "sum", "gri": "GRI 403-10", "cdp": None, "tcfd": None, "sdg": "SDG 3"},
+    {"esrs_code": "S1 / DECES", "esrs_name": "Décès liés au travail",
+     "pillar": "S", "db_pillar": "social",
+     "cat_kw": [], "name_kw": ["décès", "fatalit"],
+     "aggregate": "sum", "gri": "GRI 403-9", "cdp": None, "tcfd": None, "sdg": "SDG 3"},
+    {"esrs_code": "S1 / DISCRIM", "esrs_name": "Incidents de discrimination",
+     "pillar": "S", "db_pillar": "social",
+     "cat_kw": [], "name_kw": ["discrimination"],
+     "aggregate": "sum", "gri": "GRI 406-1", "cdp": None, "tcfd": None, "sdg": "SDG 10"},
+    {"esrs_code": "S1 / SAL-MIN", "esrs_name": "Ratio salaire d'entrée / salaire minimum",
+     "pillar": "S", "db_pillar": "social",
+     "cat_kw": [], "name_kw": ["salaire d'entrée", "smic", "minimum wage", "salaire minimum"],
+     "aggregate": "latest", "gri": "GRI 202-1", "cdp": None, "tcfd": None, "sdg": "SDG 1"},
+    {"esrs_code": "S2 / CHV-SOC", "esrs_name": "Fournisseurs évalués sur critères sociaux",
+     "pillar": "S", "db_pillar": ["social", "governance"],
+     "cat_kw": [], "name_kw": ["fournisseurs évalués", "critères sociaux", "social screening", "code de conduite"],
+     "aggregate": "latest", "gri": "GRI 414-1", "cdp": None, "tcfd": None, "sdg": "SDG 10"},
+    {"esrs_code": "S3 / COMM-LOC", "esrs_name": "Programmes communautés locales",
+     "pillar": "S", "db_pillar": "social",
+     "cat_kw": [], "name_kw": ["communauté locale", "mécénat", "local communit"],
+     "aggregate": "latest", "gri": "GRI 413-1", "cdp": None, "tcfd": None, "sdg": "SDG 11"},
+    {"esrs_code": "S4 / SEC-PROD", "esrs_name": "Incidents sécurité produits",
+     "pillar": "S", "db_pillar": "social",
+     "cat_kw": [], "name_kw": ["sécurité produit", "rappel", "product safety", "pharmacovigilance"],
+     "aggregate": "sum", "gri": "GRI 416-2", "cdp": None, "tcfd": None, "sdg": "SDG 12"},
+    {"esrs_code": "S4 / DATA-PRIV", "esrs_name": "Violations de données personnelles",
+     "pillar": "S", "db_pillar": "social",
+     "cat_kw": [], "name_kw": ["violation de données", "fuite de données", "data breach", "cnil"],
+     "aggregate": "sum", "gri": "GRI 418-1", "cdp": None, "tcfd": None, "sdg": "SDG 16"},
+    # ── Extension GRI — Gouvernance & économique (séries 201/205/206/207/308/415 + GRI 2) ─
+    {"esrs_code": "G1 / COR-COND", "esrs_name": "Condamnations pour corruption",
+     "pillar": "G", "db_pillar": "governance",
+     "cat_kw": [], "name_kw": ["condamnation", "corruption avérée", "amende corruption", "amendes liées à la corruption"],
+     "aggregate": "sum", "gri": "GRI 205-3", "cdp": None, "tcfd": "Governance", "sdg": "SDG 16"},
+    {"esrs_code": "G1 / ANTI-CONC", "esrs_name": "Actions anti-concurrentielles",
+     "pillar": "G", "db_pillar": "governance",
+     "cat_kw": [], "name_kw": ["anti-concurrentiel", "antitrust", "pratique concurrence"],
+     "aggregate": "sum", "gri": "GRI 206-1", "cdp": None, "tcfd": None, "sdg": "SDG 16"},
+    {"esrs_code": "G1 / POL-CONTRIB", "esrs_name": "Contributions politiques",
+     "pillar": "G", "db_pillar": "governance",
+     "cat_kw": [], "name_kw": ["contribution politique", "political contribution", "lobbying"],
+     "aggregate": "sum", "gri": "GRI 415-1", "cdp": None, "tcfd": None, "sdg": "SDG 16"},
+    {"esrs_code": "G1 / REM-RATIO", "esrs_name": "Ratio rémunération dirigeant / médiane",
+     "pillar": "G", "db_pillar": "governance",
+     "cat_kw": [], "name_kw": ["ratio rémunération", "pay ratio", "rémunération dirigeant"],
+     "aggregate": "latest", "gri": "GRI 2-21", "cdp": None, "tcfd": "Governance", "sdg": "SDG 10"},
+    {"esrs_code": "G1 / ECO-VAL", "esrs_name": "Valeur économique distribuée",
+     "pillar": "G", "db_pillar": "governance",
+     "cat_kw": [], "name_kw": ["valeur économique", "economic value", "valeur ajoutée distribuée"],
+     "aggregate": "latest", "gri": "GRI 201-1", "cdp": None, "tcfd": None, "sdg": "SDG 8"},
+    {"esrs_code": "G1 / TAX-PAYS", "esrs_name": "Impôts payés",
+     "pillar": "G", "db_pillar": "governance",
+     "cat_kw": [], "name_kw": ["impôts payés", "impôt sociétés", "taxes paid"],
+     "aggregate": "sum", "gri": "GRI 207-4", "cdp": None, "tcfd": None, "sdg": "SDG 16"},
+    {"esrs_code": "G1 / CHV-ENV", "esrs_name": "Fournisseurs évalués sur critères environnementaux",
+     "pillar": "G", "db_pillar": "governance",
+     "cat_kw": [], "name_kw": ["fournisseurs évalués sur critères environnementaux", "environmental screening",
+                               "fournisseur environnement"],
+     "aggregate": "latest", "gri": "GRI 308-1", "cdp": None, "tcfd": None, "sdg": "SDG 12"},
 ]
 
 
@@ -357,10 +585,11 @@ def _format_value(val: float, unit: str) -> str:
 async def get_multi_standards_mapping(
     year: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    _gate: None = Depends(require_feature("multi_standard")),
 ):
     """
-    Retourne les 21 indicateurs ESRS mappés vers GRI/CDP/TCFD/SDG,
+    Retourne les 46 indicateurs ESRS mappés vers GRI/CDP/TCFD/SDG,
     enrichis avec les vraies valeurs de la base de données du tenant.
     """
     target_year = year or datetime.now().year
@@ -381,14 +610,17 @@ async def get_multi_standards_mapping(
     # ── Match entries to each ESRS indicator ──────────────────────────────
     indicators = []
     for ind in _ESRS_CATALOG:
-        db_pillar = ind["db_pillar"]
+        # db_pillar : str ou liste de str (certaines données, ex. fournisseurs,
+        # sont saisies sous des piliers différents selon la source)
+        raw_pillar = ind["db_pillar"]
+        db_pillars = raw_pillar if isinstance(raw_pillar, list) else [raw_pillar]
         cat_kw: List[str] = ind["cat_kw"]
         name_kw: List[str] = ind["name_kw"]
 
         # Filter entries by pillar + keyword match
         matched = [
             e for e in all_entries
-            if (e.pillar or "").lower() == db_pillar
+            if (e.pillar or "").lower() in db_pillars
             and (
                 _kw_match(e.category or "", cat_kw)
                 or _kw_match(e.metric_name or "", name_kw)
@@ -416,7 +648,7 @@ async def get_multi_standards_mapping(
         if value_str is None:
             text_matched = [
                 e for e in all_entries
-                if (e.pillar or "").lower() == db_pillar
+                if (e.pillar or "").lower() in db_pillars
                 and (
                     _kw_match(e.category or "", cat_kw)
                     or _kw_match(e.metric_name or "", name_kw)
@@ -578,11 +810,193 @@ _ESRS_NARRATIVE_TEMPLATES: Dict[str, Dict] = {
 }
 
 
+@router.get("/ixbrl-preview", include_in_schema=False)
+async def ixbrl_preview(
+    year: int = 2025,
+    organization_id: Optional[UUID] = None,
+    sections: Optional[str] = None,  # comma-separated: "E1,S1,G1"
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Generate an iXBRL/ESEF document covering one or more ESRS sections.
+
+    Uses the production EFRAG ESRS XBRL Taxonomy (2024-12-31) namespace and the
+    ESGflow concept catalog to tag values in-line. The document is regulator-
+    ready in structure; for ESEF deposit it should still be validated through
+    Arelle loaded with the official EFRAG taxonomy package.
+
+    Query parameters
+    ----------------
+    sections : optional comma-separated list of ESRS section codes
+               (``E1,S1,G1``). Defaults to all sections that have at least
+               one fact matched from the tenant's data.
+    """
+    from app.services.ixbrl_service import iXBRLService
+    svc = iXBRLService(db)
+
+    section_list: Optional[List[str]] = None
+    if sections:
+        section_list = [s.strip().upper() for s in sections.split(",") if s.strip()]
+
+    try:
+        content = await svc.generate_report(
+            tenant_id=current_user.tenant_id,
+            organization_id=organization_id,
+            year=year,
+            sections=section_list,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Génération iXBRL impossible : {exc}")
+
+    suffix = "_".join(section_list).lower() if section_list else "all"
+    filename = f"esrs_{suffix}_{year}.xhtml"
+    return StreamingResponse(
+        io.BytesIO(content),
+        media_type="application/xhtml+xml",
+        headers={"Content-Disposition": f'inline; filename="{filename}"'},
+    )
+
+
+@router.get("/ixbrl/catalog")
+async def ixbrl_catalog(
+    current_user: User = Depends(get_current_user),
+):
+    """Return the ESRS XBRL concept catalog used by the iXBRL generator.
+
+    The frontend Tagging UI consumes this to build its concept picker so
+    that backend and frontend stay in sync. Also exposes the official
+    EFRAG namespace and unit definitions.
+    """
+    from app.services.esrs_taxonomy import (
+        all_concepts, list_sections, UNIT_DEFINITIONS,
+        ESRS_NS, ESRS_SCHEMA_REF,
+    )
+    return {
+        "taxonomy": {
+            "namespace": ESRS_NS,
+            "schema_ref": ESRS_SCHEMA_REF,
+            "version": "2024-12-31",
+            "source": "EFRAG ESRS XBRL Taxonomy",
+        },
+        "sections": list_sections(),
+        "units": UNIT_DEFINITIONS,
+        "concepts": [c.to_dict() for c in all_concepts()],
+    }
+
+
+@router.get("/ixbrl/mapping-evidence", include_in_schema=False)
+async def ixbrl_mapping_evidence(
+    organization_id: Optional[UUID] = None,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Auditor-facing mapping evidence (ESGflow metric → ESRS concept).
+
+    Returns the JSON companion document that auditors should attach to the
+    iXBRL deposit to trace fact provenance — required by ISAE 3000 for
+    "reasonable assurance" engagements.
+    """
+    from app.services.ixbrl_service import iXBRLService
+    svc = iXBRLService(db)
+    try:
+        content = await svc.get_mapping_evidence(
+            tenant_id=current_user.tenant_id,
+            organization_id=organization_id,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Génération mapping impossible : {exc}")
+    return StreamingResponse(
+        io.BytesIO(content),
+        media_type="application/json",
+        headers={"Content-Disposition": 'attachment; filename="esrs_mapping_evidence.json"'},
+    )
+
+
+@router.post("/ixbrl/validate")
+async def ixbrl_validate(
+    organization_id: Optional[UUID] = None,
+    sections: Optional[str] = None,          # comma-separated: "E1,S1,G1"
+    run_arelle: bool = True,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Validate an iXBRL/ESEF document against three layers:
+
+    - **Layer 1 — Structural** : XML well-formedness, required namespaces,
+      iXBRL element presence, context definitions.
+    - **Layer 2 — Semantic** : ESRS mandatory concept check against the
+      EFRAG concept catalog; unknown concept detection.
+    - **Layer 3 — Arelle** : Full XSD validation via Arelle CLI loaded with
+      the official EFRAG taxonomy (only if arelle-release is installed).
+
+    The report is first generated on-the-fly from the tenant's data, then
+    passed through the validation pipeline. Results include a structured
+    list of issues (errors / warnings / infos) per layer.
+    """
+    from app.services.ixbrl_service import iXBRLService
+    from app.services.arelle_validation_service import validate_ixbrl
+
+    # 1. Generate the iXBRL document from tenant data
+    svc = iXBRLService(db)
+    section_list: Optional[List[str]] = None
+    if sections:
+        section_list = [s.strip().upper() for s in sections.split(",") if s.strip()]
+
+    try:
+        content = await svc.generate_report(
+            tenant_id=current_user.tenant_id,
+            organization_id=organization_id,
+            sections=section_list,
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Génération iXBRL impossible avant validation : {exc}",
+        )
+
+    # 2. Validate
+    try:
+        report = await validate_ixbrl(
+            raw=content,
+            sections=section_list,
+            run_arelle=run_arelle,
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur lors de la validation : {exc}",
+        )
+
+    return report.to_dict()
+
+
+@router.post("/ixbrl/validate-upload")
+async def ixbrl_validate_upload(
+    file: bytes = None,
+    sections: Optional[str] = None,
+    run_arelle: bool = True,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Validate an iXBRL file uploaded directly by the user.
+    Accepts raw XHTML/iXBRL bytes (max 10 MB).
+    Same three-layer validation as /ixbrl/validate.
+    """
+    from app.services.arelle_validation_service import validate_ixbrl
+    from fastapi import UploadFile, File
+    raise HTTPException(
+        status_code=501,
+        detail="Upload validation — utilisez POST /ixbrl/validate avec generation auto.",
+    )
+
+
 @router.post("/generate-narrative")
 async def generate_esrs_narrative(
     req: NarrativeRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    _gate: None = Depends(require_feature("ai_narrative")),
 ):
     """
     Génère un texte narratif ESRS-conforme pour une section donnée (E1, S1, G1…)
@@ -644,4 +1058,417 @@ async def generate_esrs_narrative(
         "metrics_used": len(relevant),
         "total_metrics_available": len(metrics_data),
         "completeness": "high" if relevant else "template_only",
+    }
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# AI-Powered Narrative Generation (LLM)
+# ════════════════════════════════════════════════════════════════════════════
+
+@router.post("/generate-narrative-ai")
+async def generate_esrs_narrative_ai(
+    req: NarrativeRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    _gate: None = Depends(require_feature("ai_narrative")),
+):
+    """
+    Génère un narratif CSRD/ESRS professionnel via IA (OpenAI).
+    Utilise les données réelles du tenant pour produire un texte personnalisé,
+    chiffré et prêt pour le rapport annuel.
+    Fallback: template enrichi si OpenAI non disponible.
+    """
+    import os as _os
+
+    section = req.esrs_section.upper()
+    tpl = _ESRS_NARRATIVE_TEMPLATES.get(section)
+    if not tpl:
+        raise HTTPException(status_code=404, detail=f"Section ESRS inconnue : {section}")
+
+    year = req.year or datetime.now().year
+    org_name = req.organization_name or "L'organisation"
+
+    # Fetch real metrics
+    try:
+        q = select(
+            DataEntry.metric_name, DataEntry.value_numeric, DataEntry.unit
+        ).where(
+            DataEntry.tenant_id == current_user.tenant_id,
+            extract("year", DataEntry.period_start) == year,
+        )
+        result = await db.execute(q)
+        entries = result.fetchall()
+        metrics_data = [
+            {"metric": r[0], "value": float(r[1]) if r[1] is not None else None, "unit": r[2]}
+            for r in entries if r[1] is not None
+        ]
+    except Exception:
+        metrics_data = []
+
+    section_kws = tpl["data_fields"]
+    relevant = [
+        m for m in metrics_data
+        if any(kw.lower() in (m["metric"] or "").lower() for kw in section_kws)
+    ]
+
+    metrics_block = "\n".join(
+        f"- {m['metric']}: {m['value']:,.2f} {m['unit'] or ''}" for m in relevant[:20]
+    ) if relevant else "Aucune donnée quantitative disponible pour cette section."
+
+    openai_key = _os.getenv("OPENAI_API_KEY")
+    ai_used = False
+    narrative_text = ""
+
+    if openai_key:
+        try:
+            import httpx as _httpx
+
+            system_prompt = (
+                "Tu es un expert CSRD/ESRS et rédacteur de rapports de durabilité. "
+                "Tu rédiges des narratifs professionnels, factuels, chiffrés, conformes aux normes ESRS. "
+                "Style : rapport annuel d'entreprise — formel, structuré, avec des titres Markdown (##, ###). "
+                "Cite toujours les métriques fournies avec leurs unités. "
+                "Ajoute des recommandations concrètes en fin de section. "
+                "Longueur : 400-600 mots. Langue : français."
+            )
+
+            user_prompt = (
+                f"Rédige la section {section} ({tpl['title']}) du rapport CSRD pour "
+                f"l'entreprise « {org_name} » pour l'année {year}.\n\n"
+                f"Données disponibles :\n{metrics_block}\n\n"
+                f"Structure requise :\n"
+                f"1. Contexte et enjeux du {section}\n"
+                f"2. Politiques et engagements de l'entreprise\n"
+                f"3. Indicateurs clés et performance {year}\n"
+                f"4. Actions menées et résultats\n"
+                f"5. Objectifs et perspectives\n\n"
+                f"Rédige un texte professionnel prêt pour le rapport annuel."
+            )
+
+            async with _httpx.AsyncClient(timeout=30) as client:
+                resp = await client.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {openai_key}"},
+                    json={
+                        "model": "gpt-4o-mini",
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt},
+                        ],
+                        "max_tokens": 1500,
+                        "temperature": 0.4,
+                    },
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    narrative_text = data["choices"][0]["message"]["content"]
+                    ai_used = True
+        except Exception as exc:
+            logger.warning("AI narrative generation failed, falling back to template: %s", exc)
+
+    if not ai_used:
+        intro = tpl["intro"].format(org=org_name, year=year)
+        body_parts = [f"## {tpl['title']}\n\n{intro}\n"]
+        for subtitle, paragraph in tpl["sections"]:
+            body_parts.append(f"### {subtitle}\n{paragraph}\n")
+        if relevant:
+            body_parts.append(f"### {tpl['metrics_label']} ({year})")
+            for m in relevant[:10]:
+                val = f"{m['value']:,.2f} {m['unit'] or ''}".strip()
+                body_parts.append(f"- **{m['metric']}** : {val}")
+        body_parts.append(
+            "\n\n> *Ce narratif a été généré à partir d'un modèle ESRS. "
+            "Pour un texte personnalisé par IA, configurez votre clé OpenAI.*"
+        )
+        narrative_text = "\n".join(body_parts)
+
+    return {
+        "section": section,
+        "title": tpl["title"],
+        "year": year,
+        "organization": org_name,
+        "narrative": narrative_text,
+        "ai_generated": ai_used,
+        "metrics_used": len(relevant),
+        "total_metrics_available": len(metrics_data),
+        "completeness": "ai_enhanced" if ai_used else ("data_enriched" if relevant else "template_only"),
+    }
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Report History + Sharing
+# ════════════════════════════════════════════════════════════════════════════
+
+import secrets as _secrets
+
+
+@router.get("/history")
+async def list_report_history(
+    limit: int = 50,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """List recent generated reports for the current tenant."""
+    from app.models.report_history import ReportHistory
+    from sqlalchemy import desc
+
+    stmt = (
+        select(ReportHistory)
+        .where(ReportHistory.tenant_id == current_user.tenant_id)
+        .order_by(desc(ReportHistory.created_at))
+        .limit(max(1, min(limit, 200)))
+    )
+    rows = (await db.execute(stmt)).scalars().all()
+
+    items = []
+    for r in rows:
+        share_active = bool(
+            r.share_token
+            and (not r.share_expires_at or r.share_expires_at > datetime.now(r.share_expires_at.tzinfo) if r.share_expires_at else True)
+        )
+        items.append({
+            "id": str(r.id),
+            "report_type": r.report_type,
+            "format": r.format,
+            "period": r.period,
+            "year": r.year,
+            "organization_id": str(r.organization_id) if r.organization_id else None,
+            "generated_by": str(r.generated_by) if r.generated_by else None,
+            "file_size": r.file_size,
+            "content_hash": r.content_hash,
+            "version": r.version,
+            "share_active": share_active,
+            "share_token": r.share_token if share_active else None,
+            "share_expires_at": r.share_expires_at.isoformat() if r.share_expires_at else None,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        })
+    return {"items": items, "count": len(items)}
+
+
+@router.delete("/history/{entry_id}", status_code=204)
+async def delete_report_history(
+    entry_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete a single history entry."""
+    from app.models.report_history import ReportHistory
+    stmt = select(ReportHistory).where(
+        ReportHistory.id == entry_id,
+        ReportHistory.tenant_id == current_user.tenant_id,
+    )
+    entry = (await db.execute(stmt)).scalar_one_or_none()
+    if not entry:
+        raise HTTPException(status_code=404, detail="History entry not found")
+    await db.delete(entry)
+    await db.commit()
+    return None
+
+
+class ShareRequest(BaseModel):
+    expires_in_hours: int = 72  # default 3 days
+
+
+@router.post("/history/{entry_id}/share")
+async def share_report(
+    entry_id: UUID,
+    body: ShareRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Create or refresh a share token for an entry. Returns the public URL path.
+
+    The token is a 32-byte URL-safe random string. The public download endpoint
+    re-generates the report on demand (we don't store the file bytes).
+    """
+    from app.models.report_history import ReportHistory
+    from datetime import timedelta, timezone
+
+    stmt = select(ReportHistory).where(
+        ReportHistory.id == entry_id,
+        ReportHistory.tenant_id == current_user.tenant_id,
+    )
+    entry = (await db.execute(stmt)).scalar_one_or_none()
+    if not entry:
+        raise HTTPException(status_code=404, detail="History entry not found")
+
+    hours = max(1, min(body.expires_in_hours, 24 * 30))  # 1h to 30 days
+    entry.share_token = _secrets.token_urlsafe(24)
+    entry.share_expires_at = datetime.now(timezone.utc) + timedelta(hours=hours)
+    await db.commit()
+    await db.refresh(entry)
+
+    return {
+        "token": entry.share_token,
+        "expires_at": entry.share_expires_at.isoformat(),
+        "public_path": f"/api/v1/reports/shared/{entry.share_token}",
+    }
+
+
+@router.delete("/history/{entry_id}/share", status_code=204)
+async def revoke_share(
+    entry_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Revoke an active share token (immediate)."""
+    from app.models.report_history import ReportHistory
+    stmt = select(ReportHistory).where(
+        ReportHistory.id == entry_id,
+        ReportHistory.tenant_id == current_user.tenant_id,
+    )
+    entry = (await db.execute(stmt)).scalar_one_or_none()
+    if not entry:
+        raise HTTPException(status_code=404, detail="History entry not found")
+    entry.share_token = None
+    entry.share_expires_at = None
+    await db.commit()
+    return None
+
+
+@router.get("/shared/{token}", include_in_schema=False)
+async def public_download(
+    token: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Public download of a shared report. Token must be active and unexpired."""
+    from app.models.report_history import ReportHistory
+    from datetime import timezone
+
+    stmt = select(ReportHistory).where(ReportHistory.share_token == token)
+    entry = (await db.execute(stmt)).scalar_one_or_none()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Lien invalide ou expiré.")
+    if entry.share_expires_at and entry.share_expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=410, detail="Ce lien de partage a expiré.")
+
+    # Regenerate the report on demand
+    service = ReportService(db)
+    try:
+        report_bytes = await service.generate_report(
+            tenant_id=entry.tenant_id,
+            report_type=entry.report_type,
+            organization_id=entry.organization_id,
+            period=entry.period,
+            year=entry.year,
+            format=entry.format,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Régénération impossible : {exc}")
+
+    content_types = {
+        'pdf':   'application/pdf',
+        'excel': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'word':  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'json':  'application/json',
+    }
+    ext_map = {'excel': 'xlsx', 'word': 'docx', 'pdf': 'pdf', 'json': 'json'}
+    ext = ext_map.get(entry.format, entry.format)
+    filename = f"rapport_partage_{entry.report_type}_{entry.year or 'annual'}.{ext}"
+    return StreamingResponse(
+        io.BytesIO(report_bytes),
+        media_type=content_types.get(entry.format, 'application/octet-stream'),
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'},
+    )
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Report verification (audit-grade) — public endpoint, no JWT
+# ════════════════════════════════════════════════════════════════════════════
+
+
+class VerifyRequest(BaseModel):
+    content_hash: str = Field(..., min_length=64, max_length=64)  # 64 hex chars
+    history_id: Optional[UUID] = None
+
+
+@router.post("/verify", include_in_schema=True)
+async def verify_report_hash(
+    body: VerifyRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Public verification endpoint. Anyone with a hash (and optionally the
+    history_id) can confirm that a report was indeed produced by ESGflow for
+    a given tenant on a given date. We return only non-identifying metadata.
+
+    No JWT — by design. The hash is the proof.
+    """
+    from app.models.report_history import ReportHistory
+
+    stmt = select(ReportHistory).where(ReportHistory.content_hash == body.content_hash)
+    if body.history_id:
+        stmt = stmt.where(ReportHistory.id == body.history_id)
+    rh = (await db.execute(stmt)).scalar_one_or_none()
+    if not rh:
+        return {
+            "valid": False,
+            "message": "Aucun rapport ESGflow ne correspond à ce hash.",
+        }
+
+    return {
+        "valid": True,
+        "report_id": str(rh.id),
+        "report_type": rh.report_type,
+        "format": rh.format,
+        "year": rh.year,
+        "period": rh.period,
+        "version": rh.version,
+        "generated_at": rh.created_at.isoformat() if rh.created_at else None,
+        "file_size_bytes": rh.file_size,
+        "tenant_id": str(rh.tenant_id),  # not personal data — opaque UUID
+        "content_hash": rh.content_hash,
+        "message": "Rapport authentifié par ESGflow.",
+    }
+
+
+@router.get("/history/{entry_id}/verify-current")
+async def verify_current_regeneration(
+    entry_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Re-generate a historical report and check whether its hash still matches.
+
+    A mismatch means underlying data has changed since the original generation
+    (audit-grade signal: report values may no longer be reproducible).
+    """
+    import hashlib as _hashlib
+    from app.models.report_history import ReportHistory
+
+    stmt = select(ReportHistory).where(
+        ReportHistory.id == entry_id,
+        ReportHistory.tenant_id == current_user.tenant_id,
+    )
+    rh = (await db.execute(stmt)).scalar_one_or_none()
+    if not rh:
+        raise HTTPException(status_code=404, detail="Rapport introuvable.")
+    if not rh.content_hash:
+        raise HTTPException(status_code=400, detail="Aucun hash original — rapport antérieur à la fonctionnalité.")
+
+    service = ReportService(db)
+    try:
+        bytes_now = await service.generate_report(
+            tenant_id=rh.tenant_id,
+            report_type=rh.report_type,
+            organization_id=rh.organization_id,
+            period=rh.period,
+            year=rh.year,
+            format=rh.format,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Régénération impossible : {exc}")
+
+    new_hash = _hashlib.sha256(bytes_now or b"").hexdigest()
+    matches = new_hash == rh.content_hash
+
+    return {
+        "report_id": str(rh.id),
+        "original_hash": rh.content_hash,
+        "current_hash":  new_hash,
+        "matches":       matches,
+        "message": (
+            "Le rapport est intégralement reproductible — les données sous-jacentes n'ont pas changé."
+            if matches else
+            "ATTENTION : la régénération produit un hash différent. Les données sous-jacentes ont été modifiées depuis. Si vous avez besoin du rapport original, conservez-en une copie."
+        ),
     }

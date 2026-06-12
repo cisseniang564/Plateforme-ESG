@@ -14,6 +14,7 @@ from sqlalchemy import select, func, desc
 
 from app.db.session import get_db
 from app.middleware.auth_middleware import get_current_user_id
+from app.dependencies import get_current_user, require_feature
 from app.models.user import User
 from app.models.esg_score import ESGScore
 from app.models.data_entry import DataEntry
@@ -495,7 +496,9 @@ def _build_risks(env: float, soc: float, gov: float) -> List[Dict[str, Any]]:
 async def get_ai_insights(
     organization_id: Optional[str] = Query(None),
     user_id: UUID = Depends(get_current_user_id),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    _gate: None = Depends(require_feature("ai_narrative")),
 ):
     """
     Generate AI-powered ESG recommendations based on the latest score.
@@ -505,7 +508,7 @@ async def get_ai_insights(
         # ── 1. Fetch latest ESG score ──────────────────────────────────────────
         score_query = (
             select(ESGScore)
-            .where(ESGScore.tenant_id == user_id)
+            .where(ESGScore.tenant_id == current_user.tenant_id)
             .order_by(desc(ESGScore.calculation_date))
             .limit(1)
         )
@@ -532,7 +535,7 @@ async def get_ai_insights(
 
         # ── 2. Count available data entries ───────────────────────────────────
         count_q = select(func.count()).select_from(DataEntry).where(
-            DataEntry.tenant_id == user_id
+            DataEntry.tenant_id == current_user.tenant_id
         )
         data_count_res = await db.execute(count_q)
         data_count = data_count_res.scalar() or 0
@@ -602,7 +605,9 @@ Si des données ESG de l'organisation sont fournies dans le contexte, utilise-le
 async def ai_chat(
     req: ChatRequest,
     user_id: UUID = Depends(get_current_user_id),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    _gate: None = Depends(require_feature("ai_narrative")),
 ) -> Dict[str, Any]:
     """
     Chat with the ESG AI assistant (OpenAI GPT when available, rule-based fallback).
@@ -616,7 +621,7 @@ async def ai_chat(
         try:
             score_q = (
                 select(ESGScore)
-                .where(ESGScore.tenant_id == user_id)
+                .where(ESGScore.tenant_id == current_user.tenant_id)
                 .order_by(desc(ESGScore.calculation_date))
                 .limit(1)
             )
@@ -713,7 +718,9 @@ async def ai_chat(
 async def ai_analyze(
     req: AnalyzeRequest,
     user_id: UUID = Depends(get_current_user_id),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    _gate: None = Depends(require_feature("ai_narrative")),
 ) -> Dict[str, Any]:
     """
     Generate an OpenAI-powered deep analysis for a specific pillar or all pillars.
@@ -722,7 +729,7 @@ async def ai_analyze(
     # Fetch scores
     score_q = (
         select(ESGScore)
-        .where(ESGScore.tenant_id == user_id)
+        .where(ESGScore.tenant_id == current_user.tenant_id)
         .order_by(desc(ESGScore.calculation_date))
         .limit(1)
     )
@@ -739,7 +746,7 @@ async def ai_analyze(
     rating  = score.rating or "N/A"
 
     # Fetch data entry count
-    count_q = select(func.count()).select_from(DataEntry).where(DataEntry.tenant_id == user_id)
+    count_q = select(func.count()).select_from(DataEntry).where(DataEntry.tenant_id == current_user.tenant_id)
     count_res = await db.execute(count_q)
     data_count = count_res.scalar() or 0
 
@@ -792,4 +799,215 @@ async def ai_analyze(
         "source": "rule_based",
         "pillar": req.pillar,
         "scores": {"overall": overall, "environmental": env, "social": soc, "governance": gov, "rating": rating},
+    }
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Risk Mitigation — IA "lis mes risques et génère mitigation"
+# ════════════════════════════════════════════════════════════════════════════
+
+
+class RiskMitigationRequest(BaseModel):
+    risk_id: Optional[str] = None      # generate for a specific risk
+    all_risks: bool = False            # OR generate a plan covering all open risks
+
+
+_SYSTEM_PROMPT_RISK = (
+    "Tu es un consultant ESG/GRC expérimenté (15 ans, Big 4). Tu analyses un risque ESG "
+    "concret pour une entreprise française soumise à la CSRD et tu rédiges un plan d'action "
+    "structuré, opérationnel et chiffré. Style : direct, professionnel, concret. "
+    "Pas de phrases creuses, pas de slogans. Format Markdown."
+)
+
+
+def _build_user_prompt_risk(risk: dict, materiality: Optional[dict] = None) -> str:
+    parts = [
+        f"## Risque à mitiger",
+        f"- **Titre** : {risk.get('title')}",
+        f"- **Catégorie** : {risk.get('category')}",
+        f"- **Probabilité** : {risk.get('probability')}/5",
+        f"- **Impact** : {risk.get('impact')}/5",
+        f"- **Score** : {risk.get('risk_score') or (int(risk.get('probability', 0)) * int(risk.get('impact', 0)))}/25",
+        f"- **Sévérité** : {risk.get('severity', '—')}",
+        f"- **Description** : {risk.get('description') or '—'}",
+        f"- **Plan actuel** : {risk.get('mitigation_plan') or 'Aucun'}",
+        f"- **Statut mitigation** : {risk.get('mitigation_status', '—')}",
+        f"- **Responsable** : {risk.get('responsible', '—')}",
+    ]
+    if materiality:
+        parts.append(f"\n## Enjeu de matérialité lié")
+        parts.append(f"- **Nom** : {materiality.get('name')}")
+        parts.append(f"- **Impact financier** : {materiality.get('financial_impact')}/100")
+        parts.append(f"- **Impact ESG** : {materiality.get('esg_impact')}/100")
+    parts.append(
+        "\n## Format attendu de ta réponse\n"
+        "Génère un plan structuré en quatre sections **Markdown** :\n\n"
+        "### 1. Analyse synthétique du risque (5-7 lignes)\n"
+        "Diagnostic court et concret. Cite les régulations applicables (ESRS, CSRD, DPEF, "
+        "Sapin II, Loi de vigilance, etc.) si pertinent.\n\n"
+        "### 2. Actions à court terme (0-6 mois) — 3 à 5 actions\n"
+        "Pour chaque action : nom, livrable mesurable, KPI de suivi, coût ordre de grandeur.\n\n"
+        "### 3. Actions à moyen terme (6-18 mois) — 3 à 5 actions\n"
+        "Idem, avec dimension structurelle (process, gouvernance, outils).\n\n"
+        "### 4. KPIs de pilotage (4-6 indicateurs)\n"
+        "Pour chaque KPI : nom, formule, fréquence, valeur cible année 1.\n\n"
+        "**Contraintes** : pas plus de 800 mots au total. Pas de chapeau introductif. "
+        "Commence directement par '### 1. Analyse synthétique'."
+    )
+    return "\n".join(parts)
+
+
+def _rule_based_fallback(risk: dict) -> str:
+    """Generate a template-based mitigation plan when OpenAI isn't available."""
+    cat = (risk.get('category') or '').lower()
+    score = risk.get('risk_score') or (int(risk.get('probability', 0)) * int(risk.get('impact', 0)))
+    urgency = "🔴 Critique" if score >= 16 else "🟠 Élevée" if score >= 9 else "🟡 Modérée"
+    return f"""### 1. Analyse synthétique du risque
+
+Le risque **{risk.get('title')}** est classé **{urgency}** (score {score}/25). Il relève de
+la catégorie *{risk.get('category')}* et nécessite une action structurée alignée sur les
+exigences CSRD/ESRS et la doctrine GHG Protocol applicable.
+
+### 2. Actions à court terme (0-6 mois)
+
+- **Cartographier précisément le risque** — livrable : registre détaillé avec
+  fréquence d'évaluation. KPI : 100% des sources identifiées. Coût : 5-10 k€.
+- **Désigner un responsable opérationnel** — livrable : RACI signé par le COMEX.
+  KPI : 1 point hebdomadaire. Coût : 0 €.
+- **Identifier les outils de suivi** — livrable : grille des indicateurs.
+  KPI : 100% des KPIs renseignés à T+3 mois. Coût : 5-15 k€.
+- **Mettre en place un reporting trimestriel** — livrable : tableau de bord
+  exécutif. KPI : reporting envoyé J+5 fin trimestre. Coût : 2-5 k€.
+
+### 3. Actions à moyen terme (6-18 mois)
+
+- **Auditer le plan de mitigation actuel** par un tiers indépendant.
+  Livrable : rapport d'audit avec recommandations. KPI : 80% des actions
+  validées. Coût : 15-30 k€.
+- **Intégrer le risque au plan de continuité d'activité (PCA)**.
+  Livrable : PCA mis à jour, exercice annuel. KPI : 1 exercice/an. Coût : 10-20 k€.
+- **Formation des équipes opérationnelles** sur la prévention spécifique.
+  Livrable : 100% des collaborateurs concernés formés. KPI : score d'évaluation
+  post-formation > 75%. Coût : 5-15 k€.
+- **Souscrire/réviser la couverture assurantielle** liée à ce risque.
+  Livrable : police d'assurance à jour. KPI : couverture vs. exposition max
+  calculée. Coût : variable selon prime.
+
+### 4. KPIs de pilotage
+
+- **Score de risque résiduel** (recalculé annuellement) — cible : -30% à T+12 mois.
+- **Nombre d'incidents matérialisés** — cible : 0 incident significatif sur 12 mois glissants.
+- **Taux de couverture des actions de mitigation** — formule : (actions menées / actions
+  planifiées) × 100. Fréquence : trimestrielle. Cible : 90%.
+- **Coût total de mitigation** (CAPEX + OPEX) — fréquence : annuelle. Cible : <0.5% CA.
+- **Score d'audit interne** — fréquence : annuelle. Cible : ≥ 4/5.
+
+> *Plan généré sur base de templates ESG sectoriels — connectez OPENAI_API_KEY pour
+> obtenir une analyse personnalisée par IA.*
+"""
+
+
+@router.post("/risk-mitigation")
+async def generate_risk_mitigation(
+    body: RiskMitigationRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    _gate: None = Depends(require_feature("ai_narrative")),
+):
+    """Generate an IA-powered mitigation plan for one or all ESG risks.
+
+    If OPENAI_API_KEY is configured: uses GPT to analyze the risk and produce a
+    structured Markdown plan (short-term / mid-term / KPIs).
+    Otherwise: falls back to a rule-based template that's still actionable.
+    """
+    from sqlalchemy import select as _select
+    from sqlalchemy.orm import selectinload
+    from app.models.materiality import ESGRisk, MaterialityIssue
+
+    # ── 1. Load risk(s) for this tenant ──────────────────────────────────
+    if body.risk_id:
+        try:
+            from uuid import UUID as _UUID
+            rid = _UUID(body.risk_id)
+        except Exception:
+            raise HTTPException(status_code=400, detail="risk_id invalide.")
+        stmt = (
+            _select(ESGRisk)
+            .where(ESGRisk.id == rid, ESGRisk.tenant_id == current_user.tenant_id)
+            .options(selectinload(ESGRisk.materiality_issue))
+        )
+        risk = (await db.execute(stmt)).scalar_one_or_none()
+        if not risk:
+            raise HTTPException(status_code=404, detail="Risque introuvable.")
+        risks = [risk]
+    elif body.all_risks:
+        stmt = (
+            _select(ESGRisk)
+            .where(ESGRisk.tenant_id == current_user.tenant_id, ESGRisk.status == "active")
+            .order_by(ESGRisk.risk_score.desc().nullslast())
+            .limit(20)
+            .options(selectinload(ESGRisk.materiality_issue))
+        )
+        risks = list((await db.execute(stmt)).scalars().all())
+        if not risks:
+            raise HTTPException(status_code=404, detail="Aucun risque actif à analyser.")
+    else:
+        raise HTTPException(status_code=400, detail="Spécifiez 'risk_id' ou 'all_risks=true'.")
+
+    # ── 2. Serialize for prompt ──────────────────────────────────────────
+    def _ser_risk(r: ESGRisk) -> dict:
+        return {
+            "id": str(r.id),
+            "title": r.title,
+            "category": r.category,
+            "description": r.description,
+            "probability": r.probability,
+            "impact": r.impact,
+            "risk_score": r.risk_score,
+            "severity": r.severity,
+            "mitigation_plan": r.mitigation_plan,
+            "mitigation_status": r.mitigation_status,
+            "responsible": r.responsible_person,
+        }
+
+    def _ser_mat(m: Optional[MaterialityIssue]) -> Optional[dict]:
+        if not m:
+            return None
+        return {
+            "name": m.name,
+            "financial_impact": float(m.financial_impact or 0),
+            "esg_impact":       float(m.esg_impact or 0),
+        }
+
+    # ── 3. Call OpenAI per risk (with fallback) ───────────────────────────
+    client = _get_openai_client()
+    results: List[Dict[str, Any]] = []
+
+    for r in risks:
+        r_dict = _ser_risk(r)
+        m_dict = _ser_mat(r.materiality_issue) if r.materiality_issue_id else None
+
+        plan: Optional[str] = None
+        source = "rule_based"
+        if client:
+            user_prompt = _build_user_prompt_risk(r_dict, m_dict)
+            plan = await _call_openai(client, _SYSTEM_PROMPT_RISK, user_prompt)
+            if plan:
+                source = "openai"
+        if not plan:
+            plan = _rule_based_fallback(r_dict)
+
+        results.append({
+            "risk_id":   r_dict["id"],
+            "title":     r_dict["title"],
+            "score":     r_dict["risk_score"] or (r_dict["probability"] * r_dict["impact"]),
+            "severity":  r_dict["severity"],
+            "plan_markdown": plan,
+            "source":    source,
+        })
+
+    return {
+        "results": results,
+        "count":   len(results),
+        "global":  body.all_risks,
     }

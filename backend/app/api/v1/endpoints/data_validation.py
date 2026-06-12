@@ -5,6 +5,7 @@ from typing import List, Optional
 from datetime import date, datetime, timedelta
 from uuid import UUID
 from pydantic import BaseModel
+import hashlib
 
 from app.dependencies import get_db, get_current_user
 from app.models.data_entry import DataEntry
@@ -40,6 +41,78 @@ class QualityIssue(BaseModel):
     details: str
     created_at: datetime
 
+class BatchValidateResult(BaseModel):
+    validated: int
+    skipped_self: int
+    solo_mode: bool
+    total_pending: int
+
+# ============= HELPERS =============
+
+async def _has_other_active_reviewer(db: AsyncSession, tenant_id, user_id) -> bool:
+    """True if at least one OTHER active user exists in this tenant.
+
+    Used to determine whether the strict 4-eyes / separation-of-duties rule
+    can realistically be enforced. In single-user accounts (most TPE/PME
+    tenants today), enforcing it would make the validation pipeline a
+    permanent dead-end: nobody could ever verify or reject any entry.
+    """
+    result = await db.execute(
+        select(func.count(User.id)).where(
+            User.tenant_id == tenant_id,
+            User.id != user_id,
+            User.is_active.is_(True),
+        )
+    )
+    return (result.scalar() or 0) > 0
+
+
+def _sign_and_verify_entry(
+    entry: DataEntry,
+    current_user: User,
+    now: datetime,
+    client_ip: Optional[str],
+    solo_mode: bool,
+) -> str:
+    """Mark an entry as verified and attach its CSRD e-signature.
+
+    Returns the SHA-256 signature hash. Mutates ``entry`` in place
+    (caller is responsible for committing).
+    """
+    sig_payload = (
+        f"{entry.tenant_id}|{entry.id}|{entry.metric_name}|"
+        f"{entry.value_numeric or entry.value_text}|{entry.unit}|"
+        f"{current_user.id}|{now.isoformat()}"
+    )
+    signature = hashlib.sha256(sig_payload.encode("utf-8")).hexdigest()
+
+    entry.verification_status = "verified"
+    entry.verified_by = current_user.id
+    entry.verified_at = now
+
+    flags = dict(entry.quality_flags or {})
+    e_signature = {
+        "hash":      signature,
+        "signed_by": str(current_user.id),
+        "signer_email": current_user.email,
+        "signed_at": now.isoformat(),
+        "ip":        client_ip,
+        "standard":  "ISAE 3000 · CSRD Art. 29a",
+        "solo_mode": solo_mode,
+    }
+    if solo_mode:
+        e_signature["note"] = (
+            "Validation effectuée en mode mono-utilisateur (TPE) : aucun "
+            "second collaborateur actif n'était disponible sur ce compte. "
+            "Conformément aux modalités allégées prévues pour les petites "
+            "entités, l'auteur de la saisie a procédé lui-même à la "
+            "vérification."
+        )
+    flags["e_signature"] = e_signature
+    entry.quality_flags = flags
+
+    return signature
+
 # ============= VALIDATION ENDPOINTS =============
 
 @router.post("/entries/{entry_id}/validate")
@@ -60,38 +133,81 @@ async def validate_entry(
         )
     )
     entry = result.scalar_one_or_none()
-    
+
     if not entry:
         raise HTTPException(status_code=404, detail="Entry not found")
-    
+
+    # ── Separation of duties ────────────────────────────────────────────
+    # The user who created an entry should not self-verify or self-reject it
+    # (4-eyes principle, CSRD / ISAE 3000). Flagging is allowed though —
+    # raising a concern about your own entry is encouraged.
+    #
+    # Exception — "mode solo" (TPE) : si AUCUN autre utilisateur actif
+    # n'existe dans le compte, bloquer la validation rendrait le pipeline
+    # totalement inutilisable (impossible de jamais sortir de "en attente").
+    # Dans ce cas, on autorise l'auto-validation et on le trace explicitement
+    # dans la signature électronique (voir _sign_and_verify_entry).
+    is_own_entry = entry.created_by is not None and entry.created_by == current_user.id
+    solo_mode = False
+    if validation.action in ("verify", "reject") and is_own_entry:
+        has_other_reviewer = await _has_other_active_reviewer(
+            db, current_user.tenant_id, current_user.id
+        )
+        if has_other_reviewer:
+            raise HTTPException(
+                status_code=403,
+                detail=(
+                    "Séparation des pouvoirs : vous ne pouvez pas "
+                    f"{'vérifier' if validation.action == 'verify' else 'rejeter'} "
+                    "une saisie que vous avez créée. Un autre utilisateur de votre "
+                    "organisation doit la valider."
+                ),
+            )
+        solo_mode = True
+
+    # ── Block re-verification of locked entries ─────────────────────────
+    if (entry.verification_status or "").lower() == "verified" and validation.action != "flag":
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Cette entrée est déjà vérifiée et verrouillée. "
+                "Pour la modifier, un administrateur doit révoquer la vérification."
+            ),
+        )
+
     # Store old values for audit
     old_status = entry.verification_status
-    
+    now = datetime.utcnow()
+    client_ip = request.client.host if request.client else None
+    signature = None
+
     # Update status
     if validation.action == "verify":
-        entry.verification_status = "verified"
-        entry.verified_by = current_user.id
-        entry.verified_at = datetime.utcnow()
+        # ── E-signature: SHA-256 cryptographic proof of verification ──
+        # Binds the approver, the entry's data, and the timestamp.
+        # Re-computable later for legal proof (CSRD Art. 29a, ISAE 3000).
+        signature = _sign_and_verify_entry(entry, current_user, now, client_ip, solo_mode)
     elif validation.action == "reject":
         entry.verification_status = "rejected"
         entry.verified_by = current_user.id
-        entry.verified_at = datetime.utcnow()
+        entry.verified_at = now
     elif validation.action == "flag":
         entry.verification_status = "flagged"
         if not entry.quality_flags:
             entry.quality_flags = {}
-        entry.quality_flags["manual_flag"] = {
+        flags = dict(entry.quality_flags or {})
+        flags["manual_flag"] = {
             "flagged_by": str(current_user.id),
             "reason": validation.reason,
-            "flagged_at": datetime.utcnow().isoformat()
+            "flagged_at": now.isoformat()
         }
+        entry.quality_flags = flags
     else:
         raise HTTPException(status_code=400, detail="Invalid action")
-    
+
     await db.commit()
-    await db.refresh(entry)
-    
-    # Log the validation action
+
+    # Log the validation action — includes signature for auditability
     await log_change(
         db=db,
         tenant_id=current_user.tenant_id,
@@ -100,16 +216,95 @@ async def validate_entry(
         action=validation.action,
         user=current_user,
         old_values={"verification_status": old_status},
-        new_values={"verification_status": entry.verification_status},
+        new_values={
+            "verification_status": entry.verification_status,
+            **({"signature_hash": signature} if signature else {}),
+        },
         change_reason=validation.reason,
-        ip_address=request.client.host if request.client else None
+        ip_address=client_ip,
     )
-    
+
     return {
         "message": f"Entry {validation.action}d successfully",
         "entry_id": entry.id,
-        "new_status": entry.verification_status
+        "new_status": entry.verification_status,
+        "signature_hash": signature,  # null if not verify
+        "solo_mode": solo_mode,
     }
+
+@router.post("/batch-validate", response_model=BatchValidateResult)
+async def batch_validate(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Vérifie en un clic toutes les entrées « en attente » du tenant.
+
+    Respecte la séparation des pouvoirs (4-yeux, CSRD Art. 29a) :
+    - les entrées créées par UN AUTRE utilisateur sont validées immédiatement ;
+    - les entrées créées par l'utilisateur courant ne sont validées QUE si
+      aucun autre utilisateur actif n'existe dans le compte (mode solo / TPE).
+      Sinon elles sont laissées « en attente » — un collègue doit les valider.
+
+    Les entrées déjà vérifiées, rejetées ou marquées sont ignorées : seules
+    les entrées « pending » sont concernées.
+    """
+    result = await db.execute(
+        select(DataEntry).where(
+            DataEntry.tenant_id == current_user.tenant_id,
+            DataEntry.verification_status == "pending",
+        )
+    )
+    entries = result.scalars().all()
+    total_pending = len(entries)
+
+    has_other_reviewer = await _has_other_active_reviewer(
+        db, current_user.tenant_id, current_user.id
+    )
+    solo_mode = not has_other_reviewer
+
+    now = datetime.utcnow()
+    client_ip = request.client.host if request.client else None
+
+    validated = 0
+    skipped_self = 0
+
+    for entry in entries:
+        is_own_entry = entry.created_by is not None and entry.created_by == current_user.id
+        if is_own_entry and not solo_mode:
+            skipped_self += 1
+            continue
+
+        old_status = entry.verification_status
+        entry_solo_mode = is_own_entry and solo_mode
+        signature = _sign_and_verify_entry(entry, current_user, now, client_ip, entry_solo_mode)
+        validated += 1
+
+        await log_change(
+            db=db,
+            tenant_id=current_user.tenant_id,
+            entity_type="data_entries",
+            entity_id=entry.id,
+            action="verify",
+            user=current_user,
+            old_values={"verification_status": old_status},
+            new_values={
+                "verification_status": entry.verification_status,
+                "signature_hash": signature,
+            },
+            change_reason="Validation en lot",
+            ip_address=client_ip,
+        )
+
+    if validated:
+        await db.commit()
+
+    return BatchValidateResult(
+        validated=validated,
+        skipped_self=skipped_self,
+        solo_mode=solo_mode,
+        total_pending=total_pending,
+    )
 
 @router.get("/quality/stats", response_model=DataQualityStats)
 async def get_quality_stats(
@@ -206,14 +401,75 @@ async def get_quality_stats(
         stale_entries=stale
     )
 
+@router.get("/quality/anomalies")
+async def get_quality_anomalies(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    min_confidence: float = 0.4,
+    refresh: bool = False,
+):
+    """ML-detected anomalies on recent data entries.
+
+    Combines z-score, IQR, isolation forest, magnitude shifts (unit confusion),
+    sign flips, and year-over-year deltas. Each finding has a confidence
+    score and a human-readable French explanation. Use the ``min_confidence``
+    query param to filter low-signal findings.
+
+    Results are cached for 5 minutes per (tenant, params). Pass
+    ``refresh=true`` to force a fresh computation.
+    """
+    from app.services.anomaly_detection_service import detect_anomalies
+    anomalies = await detect_anomalies(
+        db=db,
+        tenant_id=current_user.tenant_id,
+        min_confidence=min_confidence,
+        use_cache=not refresh,
+    )
+    sev_counts: dict = {}
+    for a in anomalies:
+        sev_counts[a.severity] = sev_counts.get(a.severity, 0) + 1
+    return {
+        "total": len(anomalies),
+        "by_severity": sev_counts,
+        "anomalies": [a.to_dict() for a in anomalies],
+    }
+
+
 @router.get("/quality/issues", response_model=List[QualityIssue])
 async def get_quality_issues(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get list of data quality issues requiring attention"""
-    
+    """Get list of data quality issues requiring attention (static rules + ML)."""
+
     issues = []
+
+    # ── ML-detected anomalies (high & critical only — UI also has dedicated tab) ──
+    try:
+        from app.services.anomaly_detection_service import detect_anomalies
+        anomalies = await detect_anomalies(
+            db=db,
+            tenant_id=current_user.tenant_id,
+            min_confidence=0.5,
+        )
+        for a in anomalies:
+            if a.severity not in ("high", "critical"):
+                continue
+            try:
+                anomaly_entry_id = UUID(a.entry_id)
+            except (ValueError, TypeError):
+                continue
+            issues.append(QualityIssue(
+                id=anomaly_entry_id,
+                metric_name=a.metric_name,
+                issue_type=f"anomaly_{a.anomaly_type}",
+                severity=a.severity,
+                details=a.reason_fr,
+                created_at=datetime.utcnow(),
+            ))
+    except Exception:
+        # Don't let ML failure block the rules-based issues
+        pass
     
     # Missing sources
     missing_source = await db.execute(

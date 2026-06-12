@@ -77,7 +77,21 @@ class AuditLog(Base, UUIDMixin, TenantMixin, TimestampMixin):
         JSON, nullable=True,
         comment="Additional context (API endpoint, etc.)"
     )
-    
+
+    # ── Hash chain (SHA-256) ──────────────────────────────────────────────────
+    # Each entry's hash is computed from its canonical content + the previous
+    # entry's hash (per tenant). This creates an append-only chain where any
+    # modification of a past entry breaks the chain downstream and is
+    # detectable via the /audit-trail/verify endpoint.
+    entry_hash: Mapped[Optional[str]] = mapped_column(
+        String(64), nullable=True, index=True,
+        comment="SHA-256 hex of (canonical content + previous_hash). 64 chars."
+    )
+    previous_hash: Mapped[Optional[str]] = mapped_column(
+        String(64), nullable=True,
+        comment="Previous entry_hash in the per-tenant chain. NULL for genesis."
+    )
+
     # Relationships
     tenant: Mapped["Tenant"] = relationship("Tenant", foreign_keys="AuditLog.tenant_id", viewonly=True)
     user: Mapped[Optional["User"]] = relationship("User", foreign_keys=[user_id])
@@ -85,4 +99,6 @@ class AuditLog(Base, UUIDMixin, TenantMixin, TimestampMixin):
     __table_args__ = (
         Index('idx_audit_entity', 'entity_type', 'entity_id'),
         Index('idx_audit_created', 'created_at'),
+        Index('idx_audit_tenant_created', 'tenant_id', 'created_at'),
+        Index('idx_audit_entry_hash', 'entry_hash'),
     )

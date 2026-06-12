@@ -57,12 +57,24 @@ class TenantOnboardRequest(BaseModel):
     admin_first_name: str = Field(..., max_length=100, description="Admin first name")
     admin_last_name: str = Field(..., max_length=100, description="Admin last name")
     
+    # Admin profile (optional)
+    admin_job_title: Optional[str] = Field(None, max_length=150, description="Admin job title")
+    admin_phone: Optional[str] = Field(None, max_length=30, description="Admin phone")
+
     # Organization (optional)
     org_name: Optional[str] = Field(None, max_length=255, description="Initial organization name")
     org_siren: Optional[str] = Field(None, max_length=20, description="SIREN number")
     org_sector_code: Optional[str] = Field(None, max_length=20, description="NACE sector code")
     org_country_code: Optional[str] = Field(None, max_length=3, description="ISO country code")
     org_employee_count: Optional[int] = Field(None, ge=0, description="Number of employees")
+    org_employee_range: Optional[str] = Field(None, max_length=20, description="Employee size band, e.g. '50-249'")
+    org_annual_revenue_range: Optional[str] = Field(None, max_length=20, description="Annual revenue band, e.g. '10M-50M'")
+
+    # ESG context (optional, stored in tenant.settings)
+    esg_goals: Optional[list[str]] = Field(None, description="Primary ESG goals (multi-select)")
+    csrd_status: Optional[str] = Field(None, max_length=30, description="CSRD obligation status")
+    reporting_timeline: Optional[str] = Field(None, max_length=30, description="When tenant needs to report")
+    referral_source: Optional[str] = Field(None, max_length=50, description="How tenant heard about us")
     
     @field_validator("admin_password")
     @classmethod

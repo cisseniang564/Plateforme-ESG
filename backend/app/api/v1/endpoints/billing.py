@@ -78,11 +78,55 @@ def _app_url() -> str:
 
 @router.get("/subscription", summary="Infos abonnement courant")
 async def get_subscription(
+    request: Request,
     tenant_id: UUID = Depends(get_current_tenant_id),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
-    """Return current subscription info for the authenticated tenant."""
+    """Return current subscription info for the authenticated tenant.
+
+    Operator emails in ``PLAN_BYPASS_EMAILS`` always see Enterprise plan info
+    (testing-phase override).
+    """
+    from sqlalchemy import func
+    from app.models.user import User
+    from app.models.organization import Organization
+    from app.dependencies import _user_bypasses_plan_gate as _bypass
+
+    user_id = getattr(request.state, "user_id", None)
+    if await _bypass(db, user_id):
+        ent = PLAN_LIMITS["enterprise"]
+        return {
+            "plan_tier": "enterprise",
+            "status": "active",
+            "is_active": True,
+            "is_trial": False,
+            "stripe_subscription_id": None,
+            "stripe_customer_id": None,
+            "current_period_end": None,
+            "trial_ends_at": None,
+            "max_users": ent["max_users"],
+            "max_orgs": ent["max_orgs"],
+            "max_organizations": ent["max_orgs"],
+            "max_monthly_api_calls": ent["max_monthly_api_calls"],
+            "max_api_calls": ent["max_monthly_api_calls"],
+            "current_users": 0,
+            "current_orgs": 0,
+        }
+
     tenant = await _get_tenant(db, tenant_id)
+
+    # Count current users and orgs for quota display (single query each)
+    user_count: int = (
+        await db.execute(
+            select(func.count(User.id)).where(User.tenant_id == tenant_id)
+        )
+    ).scalar_one() or 0
+    org_count: int = (
+        await db.execute(
+            select(func.count(Organization.id)).where(Organization.tenant_id == tenant_id)
+        )
+    ).scalar_one() or 0
+
     return {
         "plan_tier": tenant.plan_tier,
         "status": getattr(tenant, "stripe_subscription_status", None) or "active",
@@ -92,11 +136,15 @@ async def get_subscription(
         "stripe_customer_id": tenant.stripe_customer_id,
         "current_period_end": getattr(tenant, "stripe_current_period_end", None),
         "trial_ends_at": getattr(tenant, "trial_ends_at", None),
+        # Limits
         "max_users": tenant.max_users,
         "max_orgs": tenant.max_orgs,
-        "max_organizations": tenant.max_orgs,       # alias for frontend compat
+        "max_organizations": tenant.max_orgs,
         "max_monthly_api_calls": tenant.max_monthly_api_calls,
-        "max_api_calls": tenant.max_monthly_api_calls,  # alias for frontend compat
+        "max_api_calls": tenant.max_monthly_api_calls,
+        # Current usage (for quota bars)
+        "current_users": user_count,
+        "current_orgs": org_count,
     }
 
 
@@ -116,6 +164,14 @@ async def create_checkout(
     from app.config import settings as _cfg
     cycle = body.billing_cycle.lower()
     PLAN_TO_PRICE: dict = {
+        # New commercial tiers
+        ("pme",    "monthly"): getattr(_cfg, "STRIPE_PRICE_PME_MONTHLY",    ""),
+        ("pme",    "yearly"):  getattr(_cfg, "STRIPE_PRICE_PME_YEARLY",     ""),
+        ("eti",    "monthly"): getattr(_cfg, "STRIPE_PRICE_ETI_MONTHLY",    ""),
+        ("eti",    "yearly"):  getattr(_cfg, "STRIPE_PRICE_ETI_YEARLY",     ""),
+        ("groupe", "monthly"): getattr(_cfg, "STRIPE_PRICE_GROUPE_MONTHLY", ""),
+        ("groupe", "yearly"):  getattr(_cfg, "STRIPE_PRICE_GROUPE_YEARLY",  ""),
+        # Legacy tiers (existing subscribers)
         ("starter", "monthly"): getattr(_cfg, "STRIPE_PRICE_STARTER_MONTHLY", ""),
         ("starter", "yearly"):  getattr(_cfg, "STRIPE_PRICE_STARTER_YEARLY",  ""),
         ("pro",     "monthly"): getattr(_cfg, "STRIPE_PRICE_PRO_MONTHLY",     ""),
@@ -248,6 +304,14 @@ async def change_plan(
     from app.config import settings as _cfg
     cycle = body.billing_cycle.lower()
     PLAN_TO_PRICE: dict = {
+        # New commercial tiers
+        ("pme",    "monthly"): getattr(_cfg, "STRIPE_PRICE_PME_MONTHLY",    ""),
+        ("pme",    "yearly"):  getattr(_cfg, "STRIPE_PRICE_PME_YEARLY",     ""),
+        ("eti",    "monthly"): getattr(_cfg, "STRIPE_PRICE_ETI_MONTHLY",    ""),
+        ("eti",    "yearly"):  getattr(_cfg, "STRIPE_PRICE_ETI_YEARLY",     ""),
+        ("groupe", "monthly"): getattr(_cfg, "STRIPE_PRICE_GROUPE_MONTHLY", ""),
+        ("groupe", "yearly"):  getattr(_cfg, "STRIPE_PRICE_GROUPE_YEARLY",  ""),
+        # Legacy tiers (existing subscribers)
         ("starter", "monthly"): getattr(_cfg, "STRIPE_PRICE_STARTER_MONTHLY", ""),
         ("starter", "yearly"):  getattr(_cfg, "STRIPE_PRICE_STARTER_YEARLY",  ""),
         ("pro",     "monthly"): getattr(_cfg, "STRIPE_PRICE_PRO_MONTHLY",     ""),
@@ -316,125 +380,162 @@ async def retry_payment(
 # ─── Plan feature gates ───────────────────────────────────────────────────────
 
 # Canonical list of features and the minimum plan tier that unlocks them.
-# Tiers in ascending order: free < starter < pro < enterprise
-_TIER_ORDER = {"free": 0, "starter": 1, "pro": 2, "enterprise": 3}
-
-PLAN_LIMITS: Dict[str, Dict] = {
-    "free": {
-        "max_users": 3,
-        "max_orgs": 5,
-        "max_monthly_api_calls": 1_000,
-        "features": {
-            "basic_reports": True,
-            "csrd_report": False,
-            "sfdr_report": False,
-            "dpef_report": False,
-            "carbon_report": False,
-            "ai_narrative": False,
-            "fec_import": False,
-            "advanced_connectors": False,
-            "materiality_matrix": True,
-            "esrs_gap_analysis": False,
-            "supply_chain_esg": False,
-            "benchmark": False,
-            "api_access": False,
-            "data_export": False,
-            "multi_standard": False,
-        },
-    },
-    "starter": {
-        "max_users": 10,
-        "max_orgs": 25,
-        "max_monthly_api_calls": 10_000,
-        "features": {
-            "basic_reports": True,
-            "csrd_report": True,
-            "sfdr_report": False,
-            "dpef_report": True,
-            "carbon_report": True,
-            "ai_narrative": False,
-            "fec_import": True,
-            "advanced_connectors": False,
-            "materiality_matrix": True,
-            "esrs_gap_analysis": True,
-            "supply_chain_esg": True,
-            "benchmark": False,
-            "api_access": True,
-            "data_export": True,
-            "multi_standard": False,
-        },
-    },
-    "pro": {
-        "max_users": 50,
-        "max_orgs": 100,
-        "max_monthly_api_calls": 100_000,
-        "features": {
-            "basic_reports": True,
-            "csrd_report": True,
-            "sfdr_report": True,
-            "dpef_report": True,
-            "carbon_report": True,
-            "ai_narrative": True,
-            "fec_import": True,
-            "advanced_connectors": True,
-            "materiality_matrix": True,
-            "esrs_gap_analysis": True,
-            "supply_chain_esg": True,
-            "benchmark": True,
-            "api_access": True,
-            "data_export": True,
-            "multi_standard": True,
-        },
-    },
-    "enterprise": {
-        "max_users": 9999,
-        "max_orgs": 9999,
-        "max_monthly_api_calls": 9_999_999,
-        "features": {k: True for k in [
-            "basic_reports", "csrd_report", "sfdr_report", "dpef_report", "carbon_report",
-            "ai_narrative", "fec_import", "advanced_connectors", "materiality_matrix",
-            "esrs_gap_analysis", "supply_chain_esg", "benchmark", "api_access",
-            "data_export", "multi_standard",
-        ]},
-    },
+# Tiers in ascending order: free < pme < eti < groupe < enterprise
+_TIER_ORDER = {
+    "free": 0,
+    "pme": 1, "eti": 2, "groupe": 3, "enterprise": 4,
+    # Legacy — map to equivalent new-tier rank for upgrade comparisons
+    "starter": 1, "pro": 2,
 }
 
-# Minimum plan labels per feature (for upgrade prompts)
+# ─── API Feature Map ──────────────────────────────────────────────────────────
+# NOTE: This dict exists solely to serialize feature flags as {key: bool} in the
+# /billing/features response. The *quota limits* (max_users, max_orgs,
+# max_monthly_api_calls) are defined in app/core/plan_limits.py — that file is
+# the single source of truth for enforcement. If you add/change quota values,
+# update core/plan_limits.py FIRST. If feature keys here drift, update billing.py
+# separately (the two dicts serve different purposes: enforcement vs. API shape).
+_FREE_FEATURES = {
+    "basic_reports": True, "csrd_report": False, "sfdr_report": False,
+    "dpef_report": False, "carbon_report": False, "ai_narrative": False,
+    "fec_import": False, "advanced_connectors": False, "materiality_matrix": True,
+    "esrs_gap_analysis": False, "supply_chain_esg": False, "benchmark": False,
+    "api_access": False, "data_export": False, "multi_standard": False,
+    "taxonomy_alignment": False, "risk_register": False, "sso_saml": False,
+}
+_PME_FEATURES = {
+    **_FREE_FEATURES,
+    "csrd_report": True, "dpef_report": True, "carbon_report": True,
+    "fec_import": True, "esrs_gap_analysis": True, "supply_chain_esg": True,
+    "api_access": True, "data_export": True, "taxonomy_alignment": True,
+    "risk_register": True,
+}
+_ETI_FEATURES = {
+    **_PME_FEATURES,
+    "sfdr_report": True, "ai_narrative": True, "advanced_connectors": True,
+    "benchmark": True, "multi_standard": True,
+}
+_ALL_FEATURES = {k: True for k in _FREE_FEATURES}
+
+PLAN_LIMITS: Dict[str, Dict] = {
+    "free":     {"max_users": 3,   "max_orgs": 5,    "max_monthly_api_calls": 1_000,     "features": _FREE_FEATURES},
+    "pme":      {"max_users": 15,  "max_orgs": 30,   "max_monthly_api_calls": 50_000,    "features": _PME_FEATURES},
+    "eti":      {"max_users": 75,  "max_orgs": 150,  "max_monthly_api_calls": 500_000,   "features": _ETI_FEATURES},
+    "groupe":   {"max_users": 300, "max_orgs": 9999, "max_monthly_api_calls": 2_000_000, "features": {**_ETI_FEATURES, "sso_saml": True}},
+    "enterprise": {"max_users": 9999, "max_orgs": 9999, "max_monthly_api_calls": 9_999_999, "features": _ALL_FEATURES},
+    # Legacy tiers (existing subscribers — same feature shape as new equivalents)
+    "starter":  {"max_users": 10,  "max_orgs": 25,  "max_monthly_api_calls": 10_000,    "features": _PME_FEATURES},
+    "pro":      {"max_users": 50,  "max_orgs": 100, "max_monthly_api_calls": 100_000,   "features": _ETI_FEATURES},
+}
+
+# Minimum plan labels per feature (for upgrade prompts in the UI)
 FEATURE_MIN_PLAN: Dict[str, str] = {
-    "csrd_report": "Starter",
-    "sfdr_report": "Pro",
-    "dpef_report": "Starter",
-    "carbon_report": "Starter",
-    "ai_narrative": "Pro",
-    "fec_import": "Starter",
-    "advanced_connectors": "Pro",
-    "esrs_gap_analysis": "Starter",
-    "supply_chain_esg": "Starter",
-    "benchmark": "Pro",
-    "api_access": "Starter",
-    "data_export": "Starter",
-    "multi_standard": "Pro",
+    "csrd_report": "PME", "dpef_report": "PME", "carbon_report": "PME",
+    "fec_import": "PME", "esrs_gap_analysis": "PME", "supply_chain_esg": "PME",
+    "api_access": "PME", "data_export": "PME", "taxonomy_alignment": "PME",
+    "risk_register": "PME",
+    "sfdr_report": "ETI", "ai_narrative": "ETI", "advanced_connectors": "ETI",
+    "benchmark": "ETI", "multi_standard": "ETI",
+    "sso_saml": "Groupe",
 }
 
 
 @router.get("/features", summary="Feature gates du plan courant")
 async def get_plan_features(
+    request: Request,
     tenant_id: UUID = Depends(get_current_tenant_id),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
-    """Return the feature flags and limits for the current tenant's plan."""
+    """Return the feature flags and limits for the current tenant's plan.
+
+    When the trial has expired and there is no active subscription, the tenant
+    is treated as 'free' regardless of the stored plan_tier (which may still
+    say 'pro' from the trial period).
+
+    Operator emails listed in ``dependencies.PLAN_BYPASS_EMAILS`` always see
+    the Enterprise feature set (testing-phase override).
+    """
+    from app.dependencies import _user_bypasses_plan_gate as _bypass
+
+    user_id = getattr(request.state, "user_id", None)
+    if await _bypass(db, user_id):
+        ent = PLAN_LIMITS["enterprise"]
+        return {
+            "plan_tier": "enterprise",
+            "max_users": ent["max_users"],
+            "max_orgs": ent["max_orgs"],
+            "max_monthly_api_calls": ent["max_monthly_api_calls"],
+            "features": ent["features"],
+            "feature_min_plan": FEATURE_MIN_PLAN,
+            "is_free": False,
+            "is_trial": False,
+        }
+
     tenant = await _get_tenant(db, tenant_id)
     tier = (tenant.plan_tier or "free").lower()
-    limits = PLAN_LIMITS.get(tier, PLAN_LIMITS["free"])
+
+    # Enforce free-tier features when billing is not active (trial expired,
+    # no paid subscription).  Enterprise is never downgraded automatically.
+    effective_tier = tier
+    if tier != "enterprise" and not tenant.billing_is_active:
+        effective_tier = "free"
+
+    limits = PLAN_LIMITS.get(effective_tier, PLAN_LIMITS["free"])
     return {
-        "plan_tier": tier,
-        "max_users": tenant.max_users or limits["max_users"],
-        "max_orgs": tenant.max_orgs or limits["max_orgs"],
-        "max_monthly_api_calls": tenant.max_monthly_api_calls or limits["max_monthly_api_calls"],
+        "plan_tier": effective_tier,
+        "max_users": limits["max_users"],
+        "max_orgs": limits["max_orgs"],
+        "max_monthly_api_calls": limits["max_monthly_api_calls"],
         "features": limits["features"],
         "feature_min_plan": FEATURE_MIN_PLAN,
-        "is_free": tier == "free",
+        "is_free": effective_tier == "free",
         "is_trial": tenant.is_in_trial,
+    }
+
+
+@router.post("/downgrade-free", summary="Passer au plan gratuit")
+async def downgrade_to_free(
+    tenant_id: UUID = Depends(get_current_tenant_id),
+    db: AsyncSession = Depends(get_db),
+) -> Dict[str, Any]:
+    """Downgrade tenant to the Free plan immediately.
+
+    - Cancels any active Stripe subscription (non-blocking).
+    - Resets plan_tier, limits, and trial fields to Free defaults.
+    - Safe to call even if there is no Stripe subscription.
+    """
+    from app.core.plan_limits import get_limits as _get_limits
+    tenant = await _get_tenant(db, tenant_id)
+
+    # Try to cancel the Stripe subscription (non-blocking)
+    sub_id = getattr(tenant, "stripe_subscription_id", None)
+    if sub_id:
+        try:
+            import stripe as _stripe_lib
+            from app.config import settings as _cfg
+            _stripe_lib.api_key = getattr(_cfg, "STRIPE_SECRET_KEY", "")
+            if _stripe_lib.api_key:
+                _stripe_lib.Subscription.delete(sub_id)
+        except Exception as exc:
+            logger.warning("Could not cancel Stripe subscription during downgrade-free: %s", exc)
+
+    # Apply Free plan limits via canonical method (single source of truth)
+    tenant.stripe_subscription_id = None
+    tenant.stripe_subscription_status = None
+    tenant.stripe_current_period_end = None
+    tenant.trial_ends_at = None  # Clear trial so banner won't show
+    tenant.apply_plan_limits("free")  # sets plan_tier, max_users, max_orgs, max_monthly_api_calls, data_retention_months
+
+    await db.commit()
+
+    free = _get_limits("free")
+    logger.info("Tenant %s downgraded to free plan.", tenant_id)
+    return {
+        "message": "Plan mis à jour vers Free.",
+        "plan_tier": "free",
+        "max_users": free["max_users"],
+        "max_orgs": free["max_orgs"],
+        "max_monthly_api_calls": free["max_monthly_api_calls"],
     }
 
 

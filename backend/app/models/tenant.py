@@ -70,9 +70,19 @@ class Tenant(Base, UUIDMixin, TimestampMixin):
 
     @property
     def billing_is_active(self) -> bool:
-        """True if subscription is active or trialing."""
+        """True if subscription is genuinely active (paid or within trial window)."""
         s = self.stripe_subscription_status or ""
-        return s in ("active", "trialing") or (not s and self.plan_tier != "free")
+        if s in ("active", "past_due"):
+            # Paid Stripe subscription — always active (past_due has a grace period)
+            return True
+        if s == "trialing":
+            # Trial counts as active ONLY while the trial window is still open
+            return self.is_in_trial
+        if not s:
+            # No Stripe status yet (e.g. fresh account) — active if still in trial
+            return self.is_in_trial
+        # canceled, incomplete, unpaid, etc.
+        return False
 
     @property
     def is_in_trial(self) -> bool:
@@ -81,3 +91,37 @@ class Tenant(Base, UUIDMixin, TimestampMixin):
             return False
         from datetime import timezone
         return datetime.now(timezone.utc) < self.trial_ends_at
+
+    # ── Quota enforcement ─────────────────────────────────────────────────────
+
+    def can_create_user(self, current_count: int) -> bool:
+        """
+        True if adding one more user is within the plan quota.
+        max_users < 0 means unlimited (enterprise).
+        """
+        if self.max_users < 0:
+            return True
+        return current_count < self.max_users
+
+    def can_create_org(self, current_count: int) -> bool:
+        """
+        True if adding one more organization is within the plan quota.
+        max_orgs < 0 means unlimited (enterprise).
+        """
+        if self.max_orgs < 0:
+            return True
+        return current_count < self.max_orgs
+
+    def apply_plan_limits(self, tier: str | None = None) -> None:
+        """
+        Reset quota fields to the canonical PLAN_LIMITS for a given tier.
+        If no tier is given, re-applies limits for self.plan_tier.
+        """
+        from app.core.plan_limits import get_limits
+        target = tier or self.plan_tier
+        limits = get_limits(target)
+        self.plan_tier = target
+        self.max_users = limits["max_users"]
+        self.max_orgs = limits["max_orgs"]
+        self.max_monthly_api_calls = limits["max_monthly_api_calls"]
+        self.data_retention_months = limits["data_retention_months"]

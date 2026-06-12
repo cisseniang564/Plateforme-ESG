@@ -388,3 +388,115 @@ require_esg_admin = require_any_role("tenant_admin", "esg_admin")
 
 #: Shorthand — require any operational role (esg_manager+)
 require_esg_operator = require_any_role("tenant_admin", "esg_admin", "esg_manager")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Plan / billing gates — enforce feature availability per subscription tier
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Test override — these emails are granted full Enterprise access regardless
+# of their tenant plan_tier. Used during the platform's testing phase so the
+# operator can exercise every premium feature without altering pricing data.
+# Remove once all paying customers are onboarded.
+PLAN_BYPASS_EMAILS: FrozenSet[str] = frozenset({
+    "admin@greenconnect.cloud",
+})
+
+
+async def _user_bypasses_plan_gate(db: AsyncSession, user_id: Optional[UUID]) -> bool:
+    """Return True if *user_id* is in the operator allowlist."""
+    if not user_id or not PLAN_BYPASS_EMAILS:
+        return False
+    try:
+        result = await db.execute(select(User.email).where(User.id == user_id))
+        email = result.scalar_one_or_none()
+    except Exception:
+        return False
+    return bool(email and email.lower() in PLAN_BYPASS_EMAILS)
+
+
+async def assert_feature_enabled(
+    db: AsyncSession,
+    tenant_id: UUID,
+    feature: str,
+    user_id: Optional[UUID] = None,
+) -> None:
+    """Raise 402 if the tenant's plan doesn't include *feature*.
+
+    Use directly inside endpoint bodies when you need to gate based on a
+    request field (e.g. report_type). Otherwise prefer ``require_feature``
+    as a FastAPI dependency.
+
+    When *user_id* is supplied and the user is in ``PLAN_BYPASS_EMAILS``, the
+    check is skipped (testing-phase override).
+    """
+    from app.api.v1.endpoints.billing import (
+        PLAN_LIMITS as _PLAN_LIMITS,
+        FEATURE_MIN_PLAN as _FEATURE_MIN_PLAN,
+    )
+    from app.models.tenant import Tenant as _Tenant
+
+    if await _user_bypasses_plan_gate(db, user_id):
+        return
+
+    tenant = await db.get(_Tenant, tenant_id)
+    if not tenant:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Tenant introuvable",
+        )
+
+    tier = (tenant.plan_tier or "free").lower()
+    if tier != "enterprise" and not tenant.billing_is_active:
+        tier = "free"
+
+    plan = _PLAN_LIMITS.get(tier, _PLAN_LIMITS["free"])
+    if not bool(plan.get("features", {}).get(feature, False)):
+        min_plan = _FEATURE_MIN_PLAN.get(feature, "Starter")
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail={
+                "error": "plan_upgrade_required",
+                "feature": feature,
+                "current_plan": tier,
+                "min_plan": min_plan,
+                "message": (
+                    f"La fonctionnalité « {feature} » nécessite le plan "
+                    f"{min_plan} ou supérieur."
+                ),
+            },
+        )
+
+
+def require_feature(feature: str):
+    """Dependency factory — block requests when the tenant's plan lacks *feature*.
+
+    Mirrors the canonical plan→feature map in
+    ``app.api.v1.endpoints.billing.PLAN_LIMITS``. When the tenant's billing is
+    inactive (trial expired, no paid sub) the effective plan is downgraded to
+    ``free`` for the purposes of this check, matching the /billing/features
+    endpoint behavior.
+
+    Usage::
+
+        @router.post("/reports/sfdr")
+        async def generate_sfdr(
+            tenant_id: UUID = Depends(get_current_tenant_id),
+            _gate=Depends(require_feature("sfdr_report")),
+        ):
+            ...
+    """
+    async def _checker(
+        request: Request,
+        db: AsyncSession = Depends(get_db),
+    ) -> None:
+        tenant_id = getattr(request.state, "tenant_id", None)
+        if not tenant_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Tenant context not found",
+            )
+        user_id = getattr(request.state, "user_id", None)
+        await assert_feature_enabled(db, tenant_id, feature, user_id=user_id)
+
+    return _checker
