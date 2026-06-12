@@ -9,6 +9,9 @@ from sentry_sdk.integrations.asyncio import AsyncioIntegration
 
 from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from fastapi.responses import JSONResponse, Response
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,7 +25,6 @@ from app.api.v1.endpoints import calculations
 from app.api.v1.endpoints import analytics
 from app.api.v1.endpoints import data_upload
 from app.api.v1.endpoints import indicator_data
-from app.api.v1.endpoints import users
 from app.api.v1.endpoints import user_management
 from app.api.v1.endpoints import webhooks
 from app.api.v1.endpoints import integrations
@@ -39,6 +41,7 @@ from app.middleware.auth_middleware import AuthMiddleware
 from app.middleware.billing_middleware import BillingMiddleware
 from app.middleware.rate_limit_middleware import RateLimitMiddleware
 from app.middleware.prometheus_middleware import PrometheusMiddleware
+from app.middleware.csrf_middleware import CSRFMiddleware
 from app.core.logging_config import configure_logging
 from app.api.v1.endpoints import admin_users
 from app.api.v1.endpoints import register
@@ -56,6 +59,13 @@ from app.api.v1.endpoints import stripe_webhook
 from app.api.v1.endpoints import gdpr
 from app.api.v1.endpoints import company_indicators
 from app.api.v1.endpoints import notifications
+from app.api.v1.endpoints import auditor_reviews
+from app.api.v1.endpoints import stakeholder_surveys
+from app.api.v1.endpoints import sbti
+from app.api.v1.endpoints import lca
+from app.api.v1.endpoints import commute_emissions
+from app.api.v1.endpoints import connector_catalog
+from app.api.v1.endpoints import scope3
 from app.api.v1.endpoints import email_verification
 from app.api.v1.endpoints import audit_trail
 from app.api.v1.endpoints import api_usage
@@ -66,6 +76,12 @@ from app.api.v1.endpoints import ai_insights
 from app.api.v1.endpoints import smart_alerts
 from app.api.v1.endpoints import api_keys
 from app.api.v1.endpoints import sso
+from app.api.v1.endpoints import hr_import
+from app.api.v1.endpoints import cabinet
+from app.api.v1.endpoints import sector_templates
+from app.api.v1.endpoints import import_templates
+from app.api.v1.endpoints import pennylane
+from app.api.v1.endpoints import qonto
 from app.middleware.api_usage_middleware import ApiUsageMiddleware
 
 logger = logging.getLogger(__name__)
@@ -92,6 +108,7 @@ async def _ensure_system_roles_and_assignments() -> None:
     1. Seed the 5 system roles if they don't yet exist.
     2. Assign tenant_admin to every user that still has role_id = NULL.
     3. Upgrade trialing tenants from 'starter' to 'pro' plan_tier.
+    4. Backfill trial_ends_at (14 days from created_at) for tenants missing it.
     """
     from sqlalchemy import text
     try:
@@ -105,16 +122,21 @@ async def _ensure_system_roles_and_assignments() -> None:
                 ("viewer",        "Lecteur"),
             ]
             for role_name, role_desc in system_roles:
-                await db.execute(
-                    text("""
-                        INSERT INTO roles (id, name, description, is_system_role, created_at, updated_at)
-                        SELECT gen_random_uuid(), :name, :desc, true, now(), now()
-                        WHERE NOT EXISTS (
-                            SELECT 1 FROM roles WHERE name = :name AND (tenant_id IS NULL OR is_system_role = true)
-                        )
-                    """),
-                    {"name": role_name, "desc": role_desc},
+                # SELECT first, then INSERT — avoids asyncpg AmbiguousParameterError
+                # that occurs when the same :name param is used in both INSERT target
+                # and WHERE NOT EXISTS subquery (PostgreSQL can't infer the type).
+                existing = await db.execute(
+                    text("SELECT 1 FROM roles WHERE name = :name AND is_system_role = true LIMIT 1"),
+                    {"name": role_name},
                 )
+                if existing.fetchone() is None:
+                    await db.execute(
+                        text("""
+                            INSERT INTO roles (id, name, description, is_system_role, created_at, updated_at)
+                            VALUES (gen_random_uuid(), :name, :desc, true, now(), now())
+                        """),
+                        {"name": role_name, "desc": role_desc},
+                    )
 
             # 2. Assign tenant_admin to users with NULL role_id
             result = await db.execute(
@@ -151,6 +173,48 @@ async def _ensure_system_roles_and_assignments() -> None:
                     result2.rowcount,
                 )
 
+            # 4. Backfill trial_ends_at for tenants that have none (14 days from created_at)
+            #    This covers accounts created before the trial system was introduced.
+            result3 = await db.execute(
+                text("""
+                    UPDATE tenants
+                    SET trial_ends_at = created_at + INTERVAL '14 days',
+                        stripe_subscription_status = COALESCE(stripe_subscription_status, 'trialing')
+                    WHERE trial_ends_at IS NULL
+                      AND plan_tier NOT IN ('enterprise')
+                """)
+            )
+            if result3.rowcount:
+                logger.info(
+                    "Startup migration: backfilled trial_ends_at (14 days) for %d tenant(s).",
+                    result3.rowcount,
+                )
+
+            # 5. Auto-downgrade tenants whose trial expired >24h ago and have no
+            #    active paid subscription. Sets status='expired' and resets limits
+            #    to the free plan. Idempotent: re-running has no effect.
+            result4 = await db.execute(
+                text("""
+                    UPDATE tenants
+                    SET plan_tier = 'free',
+                        stripe_subscription_status = 'expired',
+                        max_users = 3,
+                        max_orgs = 5,
+                        max_monthly_api_calls = 1000,
+                        data_retention_months = 12
+                    WHERE trial_ends_at IS NOT NULL
+                      AND trial_ends_at < NOW() - INTERVAL '24 hours'
+                      AND (stripe_subscription_status IS NULL
+                           OR stripe_subscription_status NOT IN ('active', 'past_due', 'expired'))
+                      AND plan_tier != 'enterprise'
+                """)
+            )
+            if result4.rowcount:
+                logger.info(
+                    "Startup migration: downgraded %d tenant(s) with expired trials to free plan.",
+                    result4.rowcount,
+                )
+
             await db.commit()
     except Exception as exc:
         logger.warning("Startup role migration failed (non-blocking): %s", exc)
@@ -159,8 +223,9 @@ async def _ensure_system_roles_and_assignments() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
-    if settings.is_development:
-        await init_db()
+    # init_db runs idempotent incremental DDL (CREATE TABLE IF NOT EXISTS, etc.)
+    # in ALL environments. create_all() is still dev/test-only inside init_db.
+    await init_db()
 
     # Seed roles + assign tenant_admin + fix trialing plan_tier (idempotent)
     await _ensure_system_roles_and_assignments()
@@ -205,10 +270,26 @@ app.add_middleware(RateLimitMiddleware, redis_url=str(settings.REDIS_URL) if set
 app.add_middleware(ApiUsageMiddleware, redis_url=str(settings.REDIS_URL) if settings.REDIS_URL else "redis://redis:6379/0")
 app.add_middleware(BillingMiddleware)   # must run AFTER AuthMiddleware sets request.state.tenant_id
 app.add_middleware(AuthMiddleware)
+# CSRF: reject mutating cookie-auth requests whose Origin isn't in CORS_ORIGINS.
+# Bearer-token requests and webhook signatures are exempted inside the middleware.
+app.add_middleware(CSRFMiddleware, allowed_origins=list(settings.CORS_ORIGINS))
 # Security headers en dernier → s'exécute en premier (LIFO)
 app.add_middleware(SecurityHeadersMiddleware, environment=settings.APP_ENV)
 # Prometheus metrics — outermost so it captures all requests
 app.add_middleware(PrometheusMiddleware)
+
+# ── HTTPS / proxy hardening (production only) ────────────────────────────────
+# Order matters: ProxyHeaders must run BEFORE HTTPSRedirect so that
+# request.url.scheme reflects X-Forwarded-Proto from the reverse proxy
+# (nginx/Cloudflare), otherwise the redirect would loop forever.
+if settings.is_production:
+    app.add_middleware(HTTPSRedirectMiddleware)
+    # Restrict Host header to known domains to prevent Host-header injection
+    _allowed_hosts = getattr(settings, "ALLOWED_HOSTS", None) or ["*"]
+    if _allowed_hosts != ["*"]:
+        app.add_middleware(TrustedHostMiddleware, allowed_hosts=_allowed_hosts)
+    # Trust X-Forwarded-* headers from the reverse proxy
+    app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 # ── EXCEPTION HANDLERS ───────────────────────────────────────────────────────
 register_exception_handlers(app, cors_origins=list(settings.CORS_ORIGINS))
@@ -305,6 +386,12 @@ app.include_router(register.router, prefix="/api/v1/auth", tags=["Authentication
 app.include_router(onboarding.router, prefix="/api/v1")
 app.include_router(validation_workflow.router, prefix="/api/v1", tags=["Validation Workflow"])
 app.include_router(taxonomy.router, prefix="/api/v1", tags=["Taxonomy"])
+from app.api.v1.endpoints import cdp
+app.include_router(cdp.router, prefix="/api/v1", tags=["CDP"])
+from app.api.v1.endpoints import csddd
+app.include_router(csddd.router, prefix="/api/v1", tags=["CSDDD"])
+from app.api.v1.endpoints import framework_data
+app.include_router(framework_data.router, prefix="/api/v1", tags=["Framework Data"])
 app.include_router(benchmarks.router, prefix="/api/v1", tags=["Benchmarking"])
 app.include_router(audit_trail.router, prefix="/api/v1", tags=["Audit Trail"])
 app.include_router(schneider.router, prefix="/api/v1/connectors/schneider", tags=["Schneider-Climatiq"])
@@ -317,6 +404,33 @@ app.include_router(stripe_webhook.router, prefix="/api/v1/webhooks", tags=["Stri
 app.include_router(gdpr.router, prefix="/api/v1/users", tags=["GDPR"])
 app.include_router(company_indicators.router, prefix="/api/v1", tags=["Company Indicators"])
 app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["Notifications"])
+
+# Vigilance module (Loi 2017-399 + Sapin 2)
+from app.api.v1.endpoints import vigilance as _vigilance
+app.include_router(_vigilance.router, prefix="/api/v1")
+app.include_router(_vigilance.public_router, prefix="/api/v1")
+
+# Sectoral templates (1-click data pre-fill per sector)
+from app.api.v1.endpoints import templates as _templates
+app.include_router(_templates.router, prefix="/api/v1")
+
+# FEC Wizard (3-click Scope 3 from accounting file)
+from app.api.v1.endpoints import fec_wizard as _fec_wizard
+app.include_router(_fec_wizard.router, prefix="/api/v1")
+
+# P5 Persistance — SFDR (localStorage → DB) + Taxonomy (Redis → DB)
+from app.api.v1.endpoints import sfdr as _sfdr
+app.include_router(_sfdr.router, prefix="/api/v1")
+
+from app.api.v1.endpoints import taxonomy_assessment as _taxonomy_assess
+app.include_router(_taxonomy_assess.router, prefix="/api/v1")
+app.include_router(auditor_reviews.router, prefix="/api/v1/auditor-reviews", tags=["Auditor Reviews"])
+app.include_router(stakeholder_surveys.router, prefix="/api/v1/stakeholder-surveys", tags=["Stakeholder Surveys"])
+app.include_router(sbti.router, prefix="/api/v1/sbti", tags=["SBTi"])
+app.include_router(lca.router, prefix="/api/v1/lca", tags=["LCA"])
+app.include_router(commute_emissions.router, prefix="/api/v1/commute-emissions", tags=["Commute Emissions"])
+app.include_router(connector_catalog.router, prefix="/api/v1/connector-marketplace", tags=["Connector Marketplace"])
+app.include_router(scope3.router, prefix="/api/v1/scope3", tags=["Scope 3 Calculator"])
 app.include_router(email_verification.router, prefix="/api/v1", tags=["Authentication"])
 app.include_router(api_usage.router, prefix="/api/v1", tags=["API Usage"])
 app.include_router(carbon.router, prefix="/api/v1/carbon", tags=["Carbon"])
@@ -326,6 +440,12 @@ app.include_router(ai_insights.router, prefix="/api/v1/ai-insights", tags=["AI I
 app.include_router(smart_alerts.router, prefix="/api/v1/smart-alerts", tags=["Smart Alerts"])
 app.include_router(api_keys.router, prefix="/api/v1")
 app.include_router(sso.router, prefix="/api/v1")
+app.include_router(hr_import.router,         prefix="/api/v1/hr-import",         tags=["HR Import"])
+app.include_router(cabinet.router,           prefix="/api/v1/cabinet",           tags=["Cabinet"])
+app.include_router(sector_templates.router,  prefix="/api/v1",                   tags=["Sector Templates"])
+app.include_router(import_templates.router,  prefix="/api/v1",                   tags=["Import Templates"])
+app.include_router(pennylane.router,         prefix="/api/v1/connectors/pennylane", tags=["Connectors"])
+app.include_router(qonto.router,             prefix="/api/v1/connectors/qonto",     tags=["Connectors"])
 
 
 if __name__ == "__main__":
