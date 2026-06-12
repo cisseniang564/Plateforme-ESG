@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Sitemap index — root entry point declared in robots.txt.
+  Google bots will fetch each <sitemap> below and follow its URLs.
+  Convention: 1 sub-sitemap per content category, easier to monitor
+  individual sections in Search Console (indexation per group).
+-->
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>https://greenconnect.cloud/sitemap-pages.xml</loc>
+    <lastmod>2026-06-09</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://greenconnect.cloud/sitemap-guides.xml</loc>
+    <lastmod>2026-06-09</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://greenconnect.cloud/sitemap-compare.xml</loc>
+    <lastmod>2026-06-09</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://greenconnect.cloud/sitemap-trust.xml</loc>
+    <lastmod>2026-06-09</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://greenconnect.cloud/sitemap-legal.xml</loc>
+    <lastmod>2026-06-09</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://greenconnect.cloud/sitemap-features.xml</loc>
+    <lastmod>2026-06-09</lastmod>
+  </sitemap>
+</sitemapindex>

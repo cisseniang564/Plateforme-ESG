@@ -1,0 +1,42 @@
+# ESG Flow — greenconnect.cloud
+# Search engines crawl the marketing surface; everything behind /app/ requires auth.
+
+User-agent: *
+Allow: /
+Allow: /pricing
+Allow: /demo
+Allow: /register
+Allow: /resources
+Allow: /partenaires
+Allow: /roadmap
+Allow: /security
+Allow: /status
+Allow: /terms-of-service
+Allow: /cgv
+Allow: /privacy-policy
+Allow: /legal-notice
+Allow: /guide/
+Allow: /ressources/
+Allow: /compare/
+Allow: /features/
+Allow: /contact
+Allow: /omnibus-csrd
+
+# Allow OG image generator (1200x630 PNGs for social previews)
+Allow: /api/v1/og/
+
+# Disallow authenticated app & API surface
+Disallow: /app/
+Disallow: /api/
+Disallow: /login
+Disallow: /reset-password
+Disallow: /forgot-password
+Disallow: /2fa/
+Disallow: /onboarding
+Disallow: /unsubscribe
+
+# Brand assets — render in social previews and Google cards
+Allow: /brand/
+
+# Sitemap index — Google fetches the per-category sub-sitemaps automatically
+Sitemap: https://greenconnect.cloud/sitemap.xml
