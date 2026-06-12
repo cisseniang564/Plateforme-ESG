@@ -1,230 +1,378 @@
-import { NavLink, useLocation, Link } from 'react-router-dom';
+/**
+ * Sidebar — Rail 68px + Contextual Panel 216px
+ * Pattern: Linear / Figma / Vercel
+ * Colors: Rail #0f1117 · Panel #141720 · Accent emerald
+ */
+import { NavLink, useLocation, Link, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, Database, Upload, TrendingUp, Activity, Plug, Grid,
-  Shield, ShieldCheck, AlertTriangle, BarChart3, Building2, FileText,
-  Settings, HelpCircle, Award, Leaf, CheckSquare, Target, Code2, Flame,
-  TrendingDown, PackageSearch, ClipboardList, PanelLeftClose, PanelLeftOpen,
-  Sparkles, Brain, CreditCard, ChevronRight, Zap, LogOut, GitMerge, Users, Download, X,
-  Bell, Calendar, RefreshCw, History, Calculator, List, FolderOpen, Webhook,
-  Link2, Building, Globe, FlaskConical, BookOpen, UserCog,
+  LayoutDashboard, Database, BarChart3, ShieldCheck, FileText,
+  Globe, Settings, Bell, HelpCircle, Building2,
+  Upload, FolderOpen, Calculator, Download, Plug, Shield,
+  TrendingUp, Grid, AlertTriangle, Target, Award, Brain, Sparkles,
+  Flame, Droplets, Leaf, BookOpen, ShieldAlert, Scale,
+  Globe2, MessageSquare, Waves, Webhook, Link2, Building,
+  CreditCard, Briefcase, FileCode2, ClipboardList, CheckSquare,
+  PackageSearch, History, RefreshCw, List, Calendar, GitMerge,
+  TrendingDown, Users, Code2, X, PanelRightClose, LogOut,
+  Package, Sliders, UserCog, FlaskConical, Zap, User, ChevronUp,
   type LucideIcon,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
+import { usePlan, type FeatureKey } from '@/hooks/usePlan';
+import { LogoMark } from '@/components/common/Logo';
 import api from '@/services/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface NavItem {
+interface PanelItem {
   name: string;
   href: string;
-  icon: LucideIcon;
+  icon?: LucideIcon;
   badge?: string;
   badgeVariant?: 'green' | 'violet' | 'amber' | 'blue';
-  tourId?: string;
+  feature?: FeatureKey;
 }
 
-interface NavSection {
-  title: string;
-  key: string;
-  items: NavItem[];
+interface PanelGroup {
+  title?: string;
+  items: PanelItem[];
 }
 
-type NavEntry = NavItem | NavSection;
+interface RailSection {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  href?: string;          // direct link — no panel
+  groups?: PanelGroup[];
+}
 
-// ─── Score Card ───────────────────────────────────────────────────────────────
+// ─── Navigation Data ──────────────────────────────────────────────────────────
+//
+// Information Architecture: rail + panel pattern (Notion/Linear style).
+//   - 6 rail sections + 3 bottom rail = 9 top-level entries (was 7+3)
+//   - Each panel: max 15 items, no more than 3 groups
+//   - Settings / admin moved to the user dropdown in the Header
+//     (Stripe/Linear pattern — rarely accessed daily)
+//   - "New" badges removed (Linear rule: max 30 days; we ship daily, all stale)
+//   - Doublons merged: IA Prédictive + Insights IA → single "Insights & IA"
+//   - ESRS detail pages folded behind a single "ESRS Builder" entry
+//   - Standards rarely used (B Corp, ODD, GRI) folded behind "Plus de standards"
 
-function ScoreCard({ score }: { score: number }) {
+// buildRail — returns the full navigation tree with translated labels.
+// Called inside the component via useMemo so `t()` picks up language changes.
+type TFn = (key: string) => string;
+
+function buildRail(t: TFn): RailSection[] {
+  return [
+    {
+      id: 'home',
+      label: t('sidebar.rail.home'),
+      icon: LayoutDashboard,
+      href: '/app',
+    },
+    {
+      id: 'donnees',
+      label: t('sidebar.rail.data'),
+      icon: Database,
+      groups: [
+        {
+          title: t('sidebar.groups.collect'),
+          items: [
+            { name: t('sidebar.nav.manualEntry'),   href: '/app/data-entry',         icon: Database },
+            { name: t('sidebar.nav.importCsv'),      href: '/app/import-csv',         icon: Upload },
+            { name: t('sidebar.nav.myData'),          href: '/app/my-data',            icon: FolderOpen },
+            { name: t('sidebar.nav.exportData'),      href: '/app/data-export',        icon: Download, feature: 'data_export' },
+          ],
+        },
+        {
+          title: t('sidebar.groups.integrations'),
+          items: [
+            { name: t('sidebar.nav.connectors'),      href: '/app/connectors',         icon: Plug },
+            { name: t('sidebar.nav.connectorsHub'),    href: '/app/data/connectors',    icon: Link2 },
+            { name: t('sidebar.nav.dataQuality'),      href: '/app/data-quality',       icon: Shield },
+            { name: t('sidebar.nav.calcAuto'),         href: '/app/calculated-metrics', icon: Calculator },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'analyses',
+      label: t('sidebar.rail.analyses'),
+      icon: BarChart3,
+      groups: [
+        {
+          title: t('sidebar.groups.performance'),
+          items: [
+            { name: t('sidebar.nav.indicators'),       href: '/app/indicators',         icon: BarChart3 },
+            { name: t('sidebar.nav.esgScores'),         href: '/app/scores',             icon: Award },
+            { name: t('sidebar.nav.scoresCalculate'),   href: '/app/scores/calculate',   icon: Calculator },
+            { name: t('sidebar.nav.scoresHistory'),     href: '/app/scores/history',     icon: History },
+            { name: t('sidebar.nav.benchmarking'),      href: '/app/benchmarking',       icon: Target, feature: 'benchmark' },
+          ],
+        },
+        {
+          title: t('sidebar.groups.steering'),
+          items: [
+            { name: t('sidebar.nav.materiality'),       href: '/app/materiality',        icon: Grid },
+            { name: t('sidebar.nav.risks'),              href: '/app/risks',              icon: AlertTriangle },
+            { name: t('sidebar.nav.organisations'),      href: '/app/organizations',      icon: Building2 },
+            { name: t('sidebar.nav.aiInsights'),         href: '/app/intelligence',       icon: Sparkles, feature: 'ai_narrative' },
+            { name: t('sidebar.nav.iaPredictive'),       href: '/app/ai-insights',        icon: Brain, feature: 'ai_narrative' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'carbone',
+      label: t('sidebar.rail.carbon'),
+      icon: Flame,
+      groups: [
+        {
+          title: t('sidebar.groups.emissions'),
+          items: [
+            { name: t('sidebar.nav.bilanCarbone'),      href: '/app/carbon',             icon: Flame,        feature: 'carbon_report' },
+            { name: t('sidebar.nav.scope3'),             href: '/app/scope3',             icon: Calculator,   feature: 'carbon_report' },
+            { name: t('sidebar.nav.lca'),                href: '/app/lca',                icon: Package,      feature: 'carbon_report' },
+          ],
+        },
+        {
+          title: t('sidebar.groups.trajectory'),
+          items: [
+            { name: t('sidebar.nav.decarbonation'),     href: '/app/decarbonation',      icon: TrendingDown, feature: 'carbon_report' },
+            { name: t('sidebar.nav.sbti'),               href: '/app/compliance/sbti',    icon: Target },
+            { name: t('sidebar.nav.climateScenarios'),   href: '/app/climate-scenarios',  icon: TrendingUp },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'conformite',
+      label: t('sidebar.rail.compliance'),
+      icon: ShieldCheck,
+      groups: [
+        {
+          title: t('sidebar.groups.euMandatory'),
+          items: [
+            { name: 'Progression CSRD',           href: '/app/csrd-progress',                 icon: TrendingUp,  feature: 'csrd_report' },
+            { name: t('sidebar.nav.esrsGap'),     href: '/app/esrs-gap',                      icon: Target,      feature: 'esrs_gap_analysis' },
+            { name: t('sidebar.nav.taxonomieUE'), href: '/app/taxonomy',                      icon: Leaf },
+            { name: t('sidebar.nav.csddd'),       href: '/app/compliance/csddd',              icon: ShieldAlert },
+            { name: t('sidebar.nav.sfdr'),        href: '/app/compliance/sfdr',               icon: Globe,       feature: 'sfdr_report' },
+            { name: t('sidebar.nav.ixbrl'),       href: '/app/compliance/ixbrl',              icon: FileCode2 },
+            { name: 'Plan de vigilance',          href: '/app/vigilance',                     icon: Shield,      feature: 'risk_register' },
+          ],
+        },
+        {
+          title: t('sidebar.groups.intlVoluntary'),
+          items: [
+            { name: t('sidebar.nav.tcfdBuilder'), href: '/app/tcfd',               icon: ShieldCheck },
+            { name: t('sidebar.nav.cdp'),         href: '/app/compliance/cdp',     icon: BarChart3 },
+            { name: t('sidebar.nav.gri'),         href: '/app/compliance/gri',     icon: BookOpen },
+            { name: t('sidebar.nav.moreStandards'), href: '/app/compliance',       icon: GitMerge },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'rapports',
+      label: t('sidebar.rail.reports'),
+      icon: FileText,
+      groups: [
+        {
+          title: t('sidebar.groups.production'),
+          items: [
+            { name: t('sidebar.nav.mesRapports'),         href: '/app/reports',              icon: FileText },
+            { name: t('sidebar.nav.reportList'),          href: '/app/reports/list',         icon: List },
+            { name: t('sidebar.nav.csrdBuilder'),         href: '/app/reports/csrd-builder', icon: BookOpen,     feature: 'csrd_report' },
+            { name: t('sidebar.nav.dpef'),                href: '/app/reports/dpef',         icon: ClipboardList, feature: 'dpef_report' },
+            { name: t('sidebar.nav.generateReport'),      href: '/app/reports/generate',     icon: RefreshCw },
+          ],
+        },
+        {
+          title: t('sidebar.groups.automation'),
+          items: [
+            { name: t('sidebar.nav.scheduledReports'),    href: '/app/reports/scheduled',    icon: Calendar },
+            { name: t('sidebar.nav.multiStandards'),      href: '/app/reports/multi-standards', icon: GitMerge, feature: 'multi_standard' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'engagement',
+      label: t('sidebar.rail.engagement'),
+      icon: Users,
+      groups: [
+        {
+          title: t('sidebar.groups.stakeholders'),
+          items: [
+            { name: t('sidebar.nav.stakeholders'),        href: '/app/stakeholders',           icon: MessageSquare },
+            { name: t('sidebar.nav.supplyChain'),          href: '/app/supply-chain',           icon: PackageSearch, feature: 'supply_chain_esg' },
+            { name: t('sidebar.nav.investorRelations'),    href: '/app/investor-relations',     icon: Briefcase },
+          ],
+        },
+        {
+          title: t('sidebar.groups.audit'),
+          items: [
+            { name: t('sidebar.nav.workflowValidation'),  href: '/app/validation',             icon: CheckSquare },
+            { name: t('sidebar.nav.auditTrail'),           href: '/app/audit-trail',            icon: List },
+            { name: t('sidebar.nav.auditPrep'),            href: '/app/audit/preparation',      icon: ClipboardList },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'settings',
+      label: t('sidebar.rail.settings'),
+      icon: Settings,
+      groups: [
+        {
+          title: t('sidebar.groups.administration'),
+          items: [
+            { name: t('sidebar.nav.parametres'),           href: '/app/settings',               icon: Settings },
+            { name: t('sidebar.nav.users'),                href: '/app/settings/users',         icon: UserCog },
+            { name: t('sidebar.nav.billing'),              href: '/app/billing',                icon: CreditCard },
+          ],
+        },
+        {
+          title: t('sidebar.groups.configuration'),
+          items: [
+            { name: t('sidebar.nav.methodology'),          href: '/app/settings/methodology',   icon: FlaskConical },
+            { name: t('sidebar.nav.esgEnrichment'),        href: '/app/settings/esg-enrichment', icon: Zap },
+            { name: t('sidebar.nav.integrations'),         href: '/app/settings/integrations',  icon: Link2 },
+            { name: t('sidebar.nav.webhooks'),             href: '/app/settings/webhooks',      icon: Webhook },
+            { name: t('sidebar.nav.apiPublique'),          href: '/app/api-docs',               icon: Code2 },
+            { name: t('sidebar.nav.inseeCompanies'),       href: '/app/settings/insee',         icon: Building },
+          ],
+        },
+      ],
+    },
+  ];
+}
+
+function buildBottomRail(t: TFn) {
+  return [
+    { id: 'cabinet',       label: t('sidebar.bottom.cabinet'),       icon: Building2,  href: '/app/cabinet' },
+    { id: 'notifications', label: t('sidebar.bottom.notifications'), icon: Bell,       href: '/app/notifications' },
+    { id: 'help',          label: t('sidebar.bottom.help'),          icon: HelpCircle, href: '/help' },
+  ];
+}
+
+// ─── Badge styles ──────────────────────────────────────────────────────────────
+
+const BADGE: Record<string, string> = {
+  green:  'bg-emerald-500/15 text-emerald-400',
+  violet: 'bg-violet-500/15 text-violet-400',
+  amber:  'bg-amber-500/15  text-amber-400',
+  blue:   'bg-blue-500/15   text-blue-400',
+};
+
+// ─── Score Card (compact) ──────────────────────────────────────────────────────
+
+function ScoreRing({ score }: { score: number }) {
   const pct = Math.min(Math.max(score, 0), 100);
-  const rating =
-    pct >= 80 ? 'AAA' : pct >= 70 ? 'AA' : pct >= 60 ? 'A' :
-    pct >= 50 ? 'BBB' : pct >= 40 ? 'BB' : pct >= 30 ? 'B' : 'C';
-  const [hue, gradient, glow] =
-    pct >= 60
-      ? ['#10b981', 'from-emerald-500 to-teal-400', 'shadow-emerald-900/40']
-      : pct >= 35
-      ? ['#f59e0b', 'from-amber-500 to-yellow-400', 'shadow-amber-900/40']
-      : ['#f87171', 'from-red-500 to-rose-400', 'shadow-red-900/40'];
-
-  const r = 22;
-  const circ = 2 * Math.PI * r;
+  const r = 14, circ = 2 * Math.PI * r;
   const offset = circ - (pct / 100) * circ;
-
+  const color = pct >= 60 ? '#10b981' : pct >= 35 ? '#f59e0b' : '#f87171';
   return (
-    <div className="mx-2 mb-2 overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3.5">
-      <div className="flex items-center gap-3">
-        {/* Ring */}
-        <div className="relative flex-shrink-0">
-          <svg width="52" height="52" viewBox="0 0 52 52">
-            <circle cx="26" cy="26" r={r} fill="none" strokeWidth="3" stroke="rgba(255,255,255,0.06)" />
-            <circle
-              cx="26" cy="26" r={r} fill="none" strokeWidth="3"
-              stroke={hue} strokeLinecap="round"
-              strokeDasharray={circ} strokeDashoffset={offset}
-              transform="rotate(-90 26 26)"
-              style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(.4,0,.2,1)' }}
-            />
-          </svg>
-          <span className="absolute inset-0 flex items-center justify-center text-[13px] font-black text-white">
-            {Math.round(pct)}
-          </span>
-        </div>
-        {/* Text */}
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1">Score ESG</p>
-          <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-black tabular-nums leading-none" style={{ color: hue }}>
-              {Math.round(pct)}
-            </span>
-            <span className="text-xs text-slate-600 leading-none">/100</span>
-          </div>
-        </div>
-        {/* Rating badge */}
-        <div
-          className={`flex-shrink-0 text-[11px] font-black px-2 py-1 rounded-lg shadow-lg ${glow}`}
-          style={{ background: `${hue}18`, color: hue, border: `1px solid ${hue}30` }}
-        >
-          {rating}
-        </div>
-      </div>
-      {/* Progress bar */}
-      <div className="mt-3 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-        <div
-          className={`h-full rounded-full bg-gradient-to-r ${gradient} transition-all duration-700 ease-out`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <div className="mt-1.5 flex justify-between text-[9px] font-medium text-slate-600">
-        <span>0</span>
-        <span>50</span>
-        <span>100</span>
-      </div>
-    </div>
+    <svg width="34" height="34" viewBox="0 0 34 34" className="flex-shrink-0">
+      <circle cx="17" cy="17" r={r} fill="none" strokeWidth="2.5" stroke="rgba(255,255,255,0.06)" />
+      <circle cx="17" cy="17" r={r} fill="none" strokeWidth="2.5" stroke={color}
+        strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset}
+        transform="rotate(-90 17 17)" style={{ transition: 'stroke-dashoffset 0.8s ease' }} />
+      <text x="17" y="21" textAnchor="middle" fontSize="9" fontWeight="800" fill={color}>{Math.round(pct)}</text>
+    </svg>
   );
 }
 
-// ─── Tooltip ──────────────────────────────────────────────────────────────────
+// ─── Rail Item ────────────────────────────────────────────────────────────────
 
-function Tooltip({ label }: { label: string }) {
-  return (
-    <div className="pointer-events-none absolute left-full top-1/2 z-[999] ml-4 -translate-y-1/2 whitespace-nowrap rounded-xl bg-slate-900 px-3 py-2 text-xs font-medium text-slate-100 shadow-2xl ring-1 ring-white/10 opacity-0 translate-x-1 group-hover/tip:opacity-100 group-hover/tip:translate-x-0 transition-all duration-150">
-      {label}
-      <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
-    </div>
-  );
-}
-
-// ─── Nav Item ─────────────────────────────────────────────────────────────────
-
-function NavItemLink({ item, collapsed, isActive }: {
-  item: NavItem; collapsed: boolean; isActive: boolean;
+function RailItem({ section, isActive, isOpen, onClick }: {
+  section: RailSection;
+  isActive: boolean;
+  isOpen: boolean;
+  onClick: () => void;
 }) {
-  const Icon = item.icon;
-  const badgeStyles: Record<string, string> = {
-    green:  'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20',
-    violet: 'bg-violet-500/15 text-violet-400 ring-1 ring-violet-500/20',
-    amber:  'bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/20',
-    blue:   'bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/20',
-  };
+  const Icon = section.icon;
+  const active = isActive || isOpen;
 
-  return (
-    <div className="group/tip relative">
+  if (section.href) {
+    return (
       <NavLink
-        to={item.href}
-        data-tour={item.tourId}
-        className={`
-          relative flex items-center rounded-lg text-[13px] font-medium
-          transition-all duration-100 select-none outline-none
-          ${collapsed ? 'justify-center h-9 w-9 mx-auto' : 'gap-2.5 px-2.5 py-2 mx-1'}
-          ${isActive
-            ? 'bg-white/[0.07] text-white'
-            : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'
-          }
-        `}
+        to={section.href}
+        end={section.href === '/app'}
+        className="group relative flex flex-col items-center justify-center w-full py-2.5 rounded-xl mx-auto transition-all duration-100 select-none outline-none"
+        style={({ isActive: na }) => ({
+          background: na ? 'rgba(16,185,129,0.08)' : undefined,
+        })}
       >
-        {isActive && (
-          <span className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-[2.5px] rounded-r-full bg-emerald-400" />
-        )}
-        <Icon
-          size={15}
-          className={`flex-shrink-0 transition-colors duration-100 ${
-            isActive ? 'text-emerald-400' : 'text-slate-500 group-hover/tip:text-slate-400'
-          }`}
-        />
-        {!collapsed && (
+        {({ isActive: na }) => (
           <>
-            <span className="flex-1 truncate">{item.name}</span>
-            {item.badge && (
-              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md leading-none tracking-wide ${badgeStyles[item.badgeVariant ?? 'green']}`}>
-                {item.badge}
-              </span>
-            )}
+            {na && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[2px] rounded-r-full bg-emerald-400" />}
+            <Icon size={17} className={na ? 'text-emerald-400' : 'text-slate-500 group-hover:text-slate-300'} />
+            <span className={`mt-1.5 text-[10px] font-semibold leading-none ${na ? 'text-emerald-400' : 'text-slate-600 group-hover:text-slate-400'}`}>
+              {section.label}
+            </span>
           </>
         )}
       </NavLink>
-      {collapsed && <Tooltip label={item.name} />}
-    </div>
-  );
-}
-
-// ─── Section Block ────────────────────────────────────────────────────────────
-
-function SectionBlock({ section, collapsed, isActiveInSection, open, onToggle }: {
-  section: NavSection;
-  collapsed: boolean;
-  isActiveInSection: (href: string) => boolean;
-  open: boolean;
-  onToggle: () => void;
-}) {
-  const effectiveOpen = collapsed ? true : open;
-  const hasActive = section.items.some(i => isActiveInSection(i.href));
+    );
+  }
 
   return (
-    <div>
-      {!collapsed ? (
-        <button
-          onClick={onToggle}
-          className={`flex w-full items-center gap-1.5 px-3 py-1 mb-0.5 rounded-md transition-colors duration-100 group/sec ${
-            hasActive ? 'text-slate-400' : 'text-slate-600 hover:text-slate-500'
-          }`}
-        >
-          <ChevronRight
-            size={10}
-            className={`transition-transform duration-200 flex-shrink-0 ${effectiveOpen ? 'rotate-90' : ''}`}
-          />
-          <span className="flex-1 text-left text-[10px] font-semibold uppercase tracking-[0.1em]">
-            {section.title}
-          </span>
-        </button>
-      ) : (
-        <div className="my-2 flex justify-center">
-          <div className="h-px w-4 rounded-full bg-white/10" />
-        </div>
-      )}
-
-      <div
-        className="grid transition-all duration-200 ease-in-out"
-        style={{ gridTemplateRows: effectiveOpen ? '1fr' : '0fr' }}
-      >
-        <div className="overflow-hidden">
-          <div className="space-y-0.5 pb-1.5">
-            {section.items.map((item) => (
-              <NavItemLink
-                key={item.href}
-                item={item}
-                collapsed={collapsed}
-                isActive={isActiveInSection(item.href)}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
+    <button
+      onClick={onClick}
+      className="group relative flex flex-col items-center justify-center w-full py-2.5 rounded-xl transition-all duration-100 select-none outline-none"
+      style={{ background: active ? 'rgba(16,185,129,0.08)' : undefined }}
+    >
+      {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[2px] rounded-r-full bg-emerald-400" />}
+      <Icon size={17} className={active ? 'text-emerald-400' : 'text-slate-500 group-hover:text-slate-300'} />
+      <span className={`mt-1.5 text-[10px] font-semibold leading-none ${active ? 'text-emerald-400' : 'text-slate-600 group-hover:text-slate-400'}`}>
+        {section.label}
+      </span>
+    </button>
   );
 }
 
-// ─── Main Sidebar ─────────────────────────────────────────────────────────────
+// ─── Panel Item ───────────────────────────────────────────────────────────────
+
+function PanelNavItem({ item, locked, lockLabel }: { item: PanelItem; locked: boolean; lockLabel?: string }) {
+  const Icon = item.icon;
+  return (
+    <NavLink
+      to={item.href}
+      className={({ isActive }) => `
+        group relative flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[12.5px] font-medium
+        transition-all duration-100 select-none outline-none
+        ${isActive
+          ? 'bg-white/[0.05] text-white'
+          : locked
+            ? 'text-slate-600 hover:text-slate-400'
+            : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'
+        }
+      `}
+    >
+      {({ isActive }) => (
+        <>
+          {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-3.5 w-[2px] rounded-r-full bg-emerald-400" />}
+          {Icon && (
+            <Icon size={13} className={`flex-shrink-0 ${isActive ? 'text-emerald-400' : 'text-slate-600 group-hover:text-slate-400'}`} />
+          )}
+          <span className="flex-1 truncate">{item.name}</span>
+          {item.badge && !locked && (
+            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md leading-none ${BADGE[item.badgeVariant ?? 'green']}`}>
+              {item.badge}
+            </span>
+          )}
+          {locked && <span className="text-[9px] text-amber-500/70">{lockLabel ?? 'Pro'}</span>}
+        </>
+      )}
+    </NavLink>
+  );
+}
+
+// ─── Main Sidebar ──────────────────────────────────────────────────────────────
 
 interface SidebarProps {
   mobileOpen?: boolean;
@@ -232,345 +380,342 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
-  const location = useLocation();
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const { can: canFeature, minPlan: minPlanFor, loading: planLoading } = usePlan();
+  const [openSection, setOpenSection] = useState<string | null>(null);
   const [avgScore, setAvgScore] = useState<number | null>(null);
   const [planTier, setPlanTier] = useState<string>('free');
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
-  const [collapsed, setCollapsed] = useState(() => {
-    try { return localStorage.getItem('sidebar_collapsed') === 'true'; } catch { return false; }
-  });
+  const RAIL = useMemo(() => buildRail(t), [t]);
+  const BOTTOM_RAIL = useMemo(() => buildBottomRail(t), [t]);
 
-  const [sectionState, setSectionState] = useState<Record<string, boolean>>(() => {
-    try {
-      const raw = localStorage.getItem('sidebar_sections');
-      return raw ? JSON.parse(raw) : {};
-    } catch { return {}; }
-  });
+  const isLocked = (item: PanelItem) => {
+    if (!item.feature) return false;
+    if (planLoading) return false;
+    return !canFeature(item.feature);
+  };
 
+  // Auto-open relevant section on route change
   useEffect(() => {
-    localStorage.setItem('sidebar_collapsed', String(collapsed));
-  }, [collapsed]);
+    const detected = RAIL.find(s =>
+      s.groups?.some(g => g.items.some(i => location.pathname.startsWith(i.href) && i.href !== '/app'))
+    );
+    if (detected) setOpenSection(detected.id);
+    else if (location.pathname === '/app') setOpenSection(null);
+  }, [location.pathname]);
 
+  // Close panel on outside click (desktop)
   useEffect(() => {
-    localStorage.setItem('sidebar_sections', JSON.stringify(sectionState));
-  }, [sectionState]);
+    function onDown(e: MouseEvent) {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        // only close if click is in the main content area (not the rail itself)
+        const target = e.target as Element;
+        if (!target.closest('[data-rail]')) setOpenSection(null);
+      }
+    }
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, []);
+
+  // Close user menu on outside click
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, []);
 
   useEffect(() => {
     api.get('/esg-scoring/dashboard')
-      .then((r) => {
-        const s = r.data?.statistics?.average_score;
-        if (s != null) setAvgScore(Number(s));
-      })
+      .then(r => { const s = r.data?.statistics?.average_score; if (s != null) setAvgScore(Number(s)); })
       .catch(() => {});
     api.get('/billing/subscription')
-      .then((r) => { if (r.data?.plan_tier) setPlanTier(r.data.plan_tier); })
+      .then(r => { if (r.data?.plan_tier) setPlanTier(r.data.plan_tier); })
       .catch(() => {});
   }, []);
 
-  const isSectionOpen = (key: string) => sectionState[key] !== false;
-  const toggleSection = (key: string) =>
-    setSectionState(prev => ({ ...prev, [key]: !isSectionOpen(key) }));
+  const isSectionActive = (s: RailSection) =>
+    s.groups?.some(g => g.items.some(i => location.pathname.startsWith(i.href) && i.href !== '/app')) ?? false;
 
-  const isActive = (path: string) =>
-    path === '/app' ? location.pathname === '/app' : location.pathname.startsWith(path);
+  const toggleSection = useCallback((id: string) =>
+    setOpenSection(prev => prev === id ? null : id), []);
 
-  // ── Navigation ──────────────────────────────────────────────────────────────
-
-  const navigation: NavEntry[] = [
-    // ── Tableau de bord ──
-    {
-      name: t('sidebar.nav.dashboard', 'Tableau de bord'),
-      href: '/app',
-      icon: LayoutDashboard,
-      tourId: 'sidebar-dashboard',
-    },
-
-    // ── Collecte de données ──
-    {
-      title: t('sidebar.sections.collecteData', 'Collecte données'),
-      key: 'collecte',
-      items: [
-        { name: t('sidebar.nav.manualEntry', 'Saisie manuelle'),   href: '/app/data-entry',         icon: Database,    tourId: 'sidebar-data-entry' },
-        { name: t('sidebar.nav.importCsv', 'Import CSV'),          href: '/app/import-csv',         icon: Upload,      tourId: 'sidebar-import-csv' },
-        { name: t('sidebar.nav.myData', 'Mes données'),            href: '/app/my-data',            icon: FolderOpen,  tourId: 'sidebar-my-data' },
-        { name: t('sidebar.nav.calcAuto', 'Calculs auto'),         href: '/app/calculated-metrics', icon: Calculator,  tourId: 'sidebar-calc-auto' },
-        { name: 'Export données',                                   href: '/app/data-export',        icon: Download,    tourId: 'sidebar-data-export' },
-        { name: t('sidebar.nav.connectors', 'Connecteurs'),        href: '/app/data/connectors',    icon: Plug,        tourId: 'sidebar-connectors' },
-        { name: 'Qualité des données',                              href: '/app/data-quality',       icon: Shield,      tourId: 'sidebar-data-quality' },
-      ],
-    },
-
-    // ── Pilotage ESG ──
-    {
-      title: t('sidebar.sections.pilotageEsg', 'Pilotage ESG'),
-      key: 'pilotage',
-      items: [
-        { name: t('sidebar.nav.indicators', 'Indicateurs'),              href: '/app/indicators',   icon: BarChart3,      tourId: 'sidebar-indicators' },
-        { name: t('sidebar.nav.materiality', 'Matérialité'),             href: '/app/materiality',  icon: Grid,           tourId: 'sidebar-materiality' },
-        { name: t('sidebar.nav.risks', 'Registre des risques'),          href: '/app/risks',        icon: AlertTriangle,  tourId: 'sidebar-risks' },
-        { name: t('sidebar.nav.supplyChain', 'Supply Chain ESG'),        href: '/app/supply-chain', icon: PackageSearch,  tourId: 'sidebar-supply-chain' },
-        { name: t('sidebar.nav.workflowValidation', 'Validation'),       href: '/app/validation',   icon: CheckSquare,    tourId: 'sidebar-validation' },
-        { name: t('sidebar.nav.auditTrail', "Piste d'audit"),            href: '/app/audit-trail',  icon: ClipboardList,  tourId: 'sidebar-audit' },
-      ],
-    },
-
-    // ── Scoring & Analyses ──
-    {
-      title: t('sidebar.sections.scoringAnalyses', 'Scoring & Analyses'),
-      key: 'scoring',
-      items: [
-        { name: t('sidebar.nav.esgScores', 'Scores ESG'),           href: '/app/scores',            icon: Award,     tourId: 'sidebar-scores' },
-        { name: 'Historique scores',                                  href: '/app/scores/history',    icon: History,   tourId: 'sidebar-scores-history' },
-        { name: 'Calculer un score',                                  href: '/app/scores/calculate',  icon: RefreshCw, tourId: 'sidebar-scores-calculate' },
-        { name: t('sidebar.nav.benchmarking', 'Benchmarking'),       href: '/app/benchmarking',      icon: Target,    tourId: 'sidebar-benchmarking' },
-        { name: t('sidebar.nav.organisations', 'Organisations'),     href: '/app/organizations',     icon: Building2, tourId: 'sidebar-organizations' },
-        { name: t('sidebar.nav.iaPredictive', 'IA Prédictive'),      href: '/app/intelligence',      icon: Sparkles,  badge: 'AI', badgeVariant: 'violet', tourId: 'sidebar-intelligence' },
-        { name: 'Insights IA',                                        href: '/app/ai-insights',       icon: Brain,     badge: 'New', badgeVariant: 'violet' },
-      ],
-    },
-
-    // ── Conformité & Rapports ──
-    {
-      title: t('sidebar.sections.conformite', 'Conformité & Rapports'),
-      key: 'conformite',
-      items: [
-        { name: t('sidebar.nav.bilanCarbone', 'Bilan Carbone'),            href: '/app/carbon',               icon: Flame,        tourId: 'sidebar-carbon' },
-        { name: t('sidebar.nav.decarbonation', 'Plan Décarbonation'),      href: '/app/decarbonation',        icon: TrendingDown, tourId: 'sidebar-decarbonation' },
-        { name: t('sidebar.nav.taxonomieUE', 'Taxonomie UE'),              href: '/app/taxonomy',             icon: Leaf,         tourId: 'sidebar-taxonomy' },
-        { name: t('sidebar.nav.multiReglementaire', 'Multi-réglementaire'), href: '/app/compliance',          icon: ShieldCheck,  tourId: 'sidebar-compliance' },
-        { name: 'Analyse ESRS / DMA',                                       href: '/app/esrs-gap',            icon: Target,       badge: 'Pro', badgeVariant: 'violet', tourId: 'sidebar-esrs-gap' },
-      ],
-    },
-
-    // ── Rapports ──
-    {
-      title: 'Rapports',
-      key: 'rapports',
-      items: [
-        { name: 'Mes rapports',                href: '/app/reports',                   icon: FileText,   tourId: 'sidebar-reports' },
-        { name: 'CSRD Builder',                href: '/app/reports/csrd-builder',      icon: BookOpen,   badge: 'New', badgeVariant: 'green', tourId: 'sidebar-csrd-builder' },
-        { name: 'Générer un rapport',          href: '/app/reports/generate',          icon: RefreshCw,  tourId: 'sidebar-reports-generate' },
-        { name: 'Liste des rapports',          href: '/app/reports/list',              icon: List,       tourId: 'sidebar-reports-list' },
-        { name: 'Rapports planifiés',          href: '/app/reports/scheduled',         icon: Calendar,   tourId: 'sidebar-reports-scheduled' },
-        { name: 'Multi-standards',             href: '/app/reports/multi-standards',   icon: GitMerge,   tourId: 'sidebar-multi-standards' },
-      ],
-    },
-
-    // ── Paramètres ──
-    {
-      title: t('sidebar.sections.settings', 'Paramètres'),
-      key: 'settings',
-      items: [
-        { name: t('sidebar.nav.parametres', 'Paramètres généraux'),  href: '/app/settings',                 icon: Settings,    tourId: 'sidebar-settings' },
-        { name: 'Utilisateurs',                                        href: '/app/settings/users',           icon: Users,       tourId: 'sidebar-settings-users' },
-        { name: 'Méthodologie',                                        href: '/app/settings/methodology',     icon: FlaskConical, tourId: 'sidebar-settings-methodology' },
-        { name: 'Webhooks',                                            href: '/app/settings/webhooks',        icon: Webhook,     tourId: 'sidebar-settings-webhooks' },
-        { name: 'Intégrations',                                        href: '/app/settings/integrations',    icon: Link2,       tourId: 'sidebar-settings-integrations' },
-        { name: 'Entreprises INSEE',                                   href: '/app/settings/insee',           icon: Building,    tourId: 'sidebar-settings-insee' },
-        { name: 'Enrichissement ESG',                                  href: '/app/settings/esg-enrichment',  icon: Globe,       tourId: 'sidebar-settings-esg' },
-      ],
-    },
-  ];
-
-  const bottomNav: NavItem[] = [
-    { name: 'Notifications',                                href: '/app/notifications', icon: Bell,       tourId: 'sidebar-notifications' },
-    { name: t('sidebar.nav.apiPublique', 'API & Docs'),    href: '/app/api-docs',      icon: Code2,      tourId: 'sidebar-api' },
-    { name: 'Facturation',                                  href: '/app/billing',       icon: CreditCard, tourId: 'sidebar-billing' },
-    { name: "Centre d'aide",                               href: '/help',              icon: HelpCircle, tourId: 'sidebar-help' },
-  ];
-
+  const panelSection = RAIL.find(s => s.id === openSection && s.groups);
   const initials = [user?.first_name?.[0], user?.last_name?.[0]].filter(Boolean).join('').toUpperCase() || 'U';
-  const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Mon compte';
+  const scoreColor = avgScore !== null ? (avgScore >= 60 ? '#10b981' : avgScore >= 35 ? '#f59e0b' : '#f87171') : '#6b7280';
 
-  const planConfig: Record<string, { label: string; style: string }> = {
-    free:       { label: 'Free',       style: 'text-slate-400 bg-white/[0.06] ring-1 ring-white/10' },
-    starter:    { label: 'Starter',    style: 'text-blue-400 bg-blue-500/10 ring-1 ring-blue-500/20' },
-    pro:        { label: 'Pro',        style: 'text-emerald-400 bg-emerald-500/10 ring-1 ring-emerald-500/20' },
-    enterprise: { label: 'Enterprise', style: 'text-violet-400 bg-violet-500/10 ring-1 ring-violet-500/20' },
+  const planBadge: Record<string, { label: string; color: string }> = {
+    free:       { label: 'Free',       color: '#6b7280' },
+    pme:        { label: 'PME',        color: '#3b82f6' },
+    eti:        { label: 'ETI',        color: '#10b981' },
+    groupe:     { label: 'Groupe',     color: '#8b5cf6' },
+    enterprise: { label: 'Enterprise', color: '#f59e0b' },
+    starter:    { label: 'Starter',    color: '#3b82f6' },
+    pro:        { label: 'Pro',        color: '#10b981' },
   };
-  const plan = planConfig[planTier] ?? planConfig.free;
+  const plan = planBadge[planTier] ?? planBadge.free;
 
   return (
     <>
       {/* Mobile backdrop */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
           onClick={onMobileClose}
         />
       )}
 
+      {/* Sidebar shell */}
       <aside
+        aria-label={t('sidebar.a11y.platformNav')}
         className={`
           fixed lg:static inset-y-0 left-0 z-50
-          flex h-screen flex-col
-          border-r border-white/[0.06]
-          bg-[#0c0e14]
-          transition-[width,transform] duration-200 ease-in-out
+          flex h-screen flex-row
+          transition-transform duration-200 ease-in-out
           lg:translate-x-0
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          ${collapsed ? 'w-[56px]' : 'w-[228px]'}
         `}
       >
-      {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <div className={`
-        relative flex h-[56px] flex-shrink-0 items-center
-        border-b border-white/[0.06]
-        ${collapsed ? 'justify-center' : 'px-3.5 gap-2.5'}
-      `}>
-        {/* X close button — mobile only */}
-        <button
-          onClick={onMobileClose}
-          className="lg:hidden absolute top-1/2 -translate-y-1/2 right-3 p-1 rounded-lg hover:bg-white/[0.08] transition-colors"
-          aria-label="Fermer le menu"
+        {/* ── Rail ──────────────────────────────────────────────────────────── */}
+        <div
+          data-rail
+          className="flex flex-col h-full w-[68px] flex-shrink-0 bg-[#0f1117] border-r border-white/[0.05]"
         >
-          <X className="h-4 w-4 text-slate-400" />
-        </button>
-        <Link to="/app" className="flex-shrink-0">
-          <div className="h-7 w-7 rounded-[8px] bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-900/30 ring-1 ring-white/10">
-            <svg className="h-3.5 w-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-        </Link>
-
-        {!collapsed && (
-          <>
-            <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-bold text-white leading-tight tracking-tight">ESGFlow</p>
-              <p className="text-[10px] text-slate-600 leading-tight">Plateforme ESG</p>
-            </div>
-            <button
-              onClick={() => setCollapsed(true)}
-              className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-slate-600 hover:text-slate-400 hover:bg-white/[0.05] transition-all duration-100"
-              title="Réduire"
-              aria-label="Réduire le menu"
-            >
-              <PanelLeftClose size={13} />
-            </button>
-          </>
-        )}
-
-        {collapsed && (
-          <button
-            onClick={() => setCollapsed(false)}
-            className="absolute -right-3 top-[18px] z-20 flex h-6 w-6 items-center justify-center rounded-full border border-white/[0.08] bg-[#0c0e14] text-slate-500 hover:text-slate-300 shadow-lg transition-all duration-100"
-            title="Développer"
-            aria-label="Développer le menu"
-          >
-            <PanelLeftOpen size={11} />
-          </button>
-        )}
-      </div>
-
-      {/* ── Nav ─────────────────────────────────────────────────────────────── */}
-      <nav
-        className={`
-          flex-1 overflow-y-auto overflow-x-hidden py-2
-          ${collapsed ? 'px-0' : 'px-1'}
-          [&::-webkit-scrollbar]:w-[2px]
-          [&::-webkit-scrollbar-track]:bg-transparent
-          [&::-webkit-scrollbar-thumb]:bg-white/10
-          [&::-webkit-scrollbar-thumb]:rounded-full
-        `}
-      >
-        {navigation.map((entry) => {
-          if ('title' in entry) {
-            return (
-              <SectionBlock
-                key={entry.key}
-                section={entry}
-                collapsed={collapsed}
-                isActiveInSection={isActive}
-                open={isSectionOpen(entry.key)}
-                onToggle={() => toggleSection(entry.key)}
-              />
-            );
-          }
-          return (
-            <NavItemLink
-              key={entry.href}
-              item={entry}
-              collapsed={collapsed}
-              isActive={isActive(entry.href)}
-            />
-          );
-        })}
-      </nav>
-
-      {/* ── Score Card ──────────────────────────────────────────────────────── */}
-      {avgScore !== null && !collapsed && (
-        <ScoreCard score={avgScore} />
-      )}
-
-      {/* ── Upgrade CTA ─────────────────────────────────────────────────────── */}
-      {planTier === 'free' && !collapsed && (
-        <div className="mx-2 mb-2">
-          <Link
-            to="/app/billing"
-            className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 bg-gradient-to-r from-violet-600/10 to-indigo-600/10 border border-violet-500/15 hover:border-violet-500/30 hover:from-violet-600/15 hover:to-indigo-600/15 transition-all duration-150 group"
-          >
-            <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-violet-500/20">
-              <Zap size={11} className="text-violet-400" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-semibold text-violet-300 leading-tight">Passer à Pro</p>
-              <p className="text-[10px] text-violet-500/70 leading-tight">Toutes les fonctionnalités</p>
-            </div>
-            <ChevronRight size={12} className="text-violet-500 flex-shrink-0 group-hover:translate-x-0.5 transition-transform duration-100" />
-          </Link>
-        </div>
-      )}
-
-      {/* ── Bottom Nav ──────────────────────────────────────────────────────── */}
-      <div className={`border-t border-white/[0.06] pt-1 pb-1 space-y-0.5 ${collapsed ? '' : 'px-1'}`}>
-        {bottomNav.map((item) => (
-          <NavItemLink
-            key={item.href}
-            item={item}
-            collapsed={collapsed}
-            isActive={isActive(item.href)}
-          />
-        ))}
-      </div>
-
-      {/* ── User Profile ────────────────────────────────────────────────────── */}
-      <div className={`border-t border-white/[0.06] ${collapsed ? 'px-0 py-2' : 'px-2 py-2'}`}>
-        {collapsed ? (
-          <div className="group/tip relative flex justify-center">
-            <Link to="/app/profile">
-              <div className="h-7 w-7 rounded-[8px] bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center ring-1 ring-white/10 hover:ring-emerald-500/40 transition-all duration-100 cursor-pointer">
-                <span className="text-[11px] font-bold text-white leading-none">{initials}</span>
-              </div>
+          {/* Logo */}
+          <div className="flex items-center justify-center h-[52px] flex-shrink-0 border-b border-white/[0.05]">
+            <Link to="/app" aria-label={t('sidebar.a11y.logoHome')}>
+              <LogoMark size={26} />
             </Link>
-            <Tooltip label={fullName} />
           </div>
-        ) : (
-          <Link
-            to="/app/profile"
-            className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 hover:bg-white/[0.04] transition-colors duration-100 group"
+
+          {/* Main rail items */}
+          <nav
+            aria-label={t('sidebar.a11y.mainNav')}
+            className="flex-1 overflow-y-auto overflow-x-hidden py-2 px-2 space-y-0.5
+            [&::-webkit-scrollbar]:w-0"
           >
-            <div className="relative flex-shrink-0">
-              <div className="h-7 w-7 rounded-[8px] bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center ring-1 ring-white/10 group-hover:ring-emerald-500/30 transition-all duration-100">
-                <span className="text-[11px] font-bold text-white leading-none">{initials}</span>
+            {RAIL.map(section => (
+              <RailItem
+                key={section.id}
+                section={section}
+                isActive={isSectionActive(section)}
+                isOpen={openSection === section.id}
+                onClick={() => toggleSection(section.id)}
+              />
+            ))}
+          </nav>
+
+          {/* Bottom rail */}
+          <div className="flex-shrink-0 border-t border-white/[0.05] py-2 px-2 space-y-0.5">
+            {BOTTOM_RAIL.map(item => {
+              const Icon = item.icon;
+              const active = location.pathname.startsWith(item.href);
+              return (
+                <NavLink
+                  key={item.id}
+                  to={item.href}
+                  className="group flex flex-col items-center justify-center w-full py-2.5 rounded-xl transition-all duration-100"
+                  style={{ background: active ? 'rgba(16,185,129,0.08)' : undefined }}
+                >
+                  <Icon size={16} className={active ? 'text-emerald-400' : 'text-slate-600 group-hover:text-slate-400'} />
+                  <span className={`mt-1.5 text-[9.5px] font-semibold ${active ? 'text-emerald-400' : 'text-slate-700 group-hover:text-slate-500'}`}>
+                    {item.label}
+                  </span>
+                </NavLink>
+              );
+            })}
+          </div>
+
+          {/* User menu */}
+          <div ref={userMenuRef} className="flex-shrink-0 border-t border-white/[0.05] py-3 flex flex-col items-center relative">
+            <button
+              type="button"
+              onClick={() => setUserMenuOpen(o => !o)}
+              className="relative group"
+              aria-label="Menu utilisateur"
+            >
+              {/* Score badge */}
+              {avgScore !== null && (
+                <span
+                  className="absolute -top-1 -right-1 z-10 w-[18px] h-[18px] rounded-full flex items-center justify-center text-[8px] font-black border border-[#0f1117]"
+                  style={{ background: scoreColor + '22', color: scoreColor, borderColor: '#0f1117' }}
+                >
+                  {Math.round(avgScore)}
+                </span>
+              )}
+              <div className="w-8 h-8 rounded-[10px] bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center ring-1 ring-white/10 group-hover:ring-emerald-500/50 group-hover:scale-105 transition-all">
+                <span className="text-[11px] font-bold text-white">{initials}</span>
               </div>
-              <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 ring-[1.5px] ring-[#0c0e14]" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[12px] font-semibold text-slate-200 leading-tight group-hover:text-white transition-colors duration-100">
-                {fullName}
-              </p>
-              <p className="truncate text-[10px] text-slate-600 leading-tight mt-0.5">{user?.email}</p>
-            </div>
-            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md leading-none flex-shrink-0 ${plan.style}`}>
-              {plan.label}
-            </span>
-          </Link>
-        )}
-      </div>
-    </aside>
+            </button>
+
+            {/* Dropdown — s'ouvre à droite du rail */}
+            {userMenuOpen && (
+              <div className="absolute bottom-0 left-[calc(100%+10px)] w-[210px] bg-[#1c2133] rounded-2xl border border-white/[0.08] shadow-2xl overflow-hidden z-[60]">
+                {/* User info header */}
+                <div className="px-3 pt-3 pb-2.5 border-b border-white/[0.06]">
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <div className="w-8 h-8 rounded-[10px] bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0">
+                      <span className="text-[10px] font-bold text-white">{initials}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-semibold text-white leading-tight truncate">
+                        {user?.first_name} {user?.last_name}
+                      </p>
+                      <span className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded-md mt-0.5" style={{ background: plan.color + '22', color: plan.color }}>
+                        {plan.label}
+                      </span>
+                    </div>
+                  </div>
+                  {/* Score bar */}
+                  {avgScore !== null && (
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[9px] text-slate-500 font-medium">Score ESG</span>
+                        <span className="text-[10px] font-bold" style={{ color: scoreColor }}>{Math.round(avgScore)}/100</span>
+                      </div>
+                      <div className="h-1 bg-white/[0.06] rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${avgScore}%`, background: scoreColor }} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Links */}
+                <div className="py-1">
+                  {[
+                    { icon: User,       label: 'Mon profil',    href: '/app/profile' },
+                    { icon: CreditCard, label: 'Facturation',   href: '/app/billing' },
+                    { icon: Settings,   label: 'Paramètres',    href: '/app/settings' },
+                  ].map(item => (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 hover:bg-white/[0.05] transition-colors group"
+                    >
+                      <item.icon size={13} className="text-slate-600 group-hover:text-slate-300 flex-shrink-0" />
+                      <span className="text-[12px] text-slate-400 group-hover:text-slate-200 font-medium">{item.label}</span>
+                    </Link>
+                  ))}
+                </div>
+
+                <div className="border-t border-white/[0.06] py-1">
+                  <button
+                    type="button"
+                    onClick={() => { setUserMenuOpen(false); logout(); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-red-500/[0.07] transition-colors group"
+                  >
+                    <LogOut size={13} className="text-slate-600 group-hover:text-red-400 flex-shrink-0" />
+                    <span className="text-[12px] text-slate-400 group-hover:text-red-400 font-medium">Se déconnecter</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Context Panel ─────────────────────────────────────────────────── */}
+        <div
+          ref={panelRef}
+          className={`
+            flex flex-col h-full bg-[#141720] border-r border-white/[0.05]
+            transition-[width,opacity] duration-200 ease-in-out overflow-hidden
+            ${panelSection ? 'w-[216px] opacity-100' : 'w-0 opacity-0'}
+          `}
+        >
+          {panelSection && (
+            <>
+              {/* Panel header */}
+              <div className="flex items-center justify-between px-4 h-[52px] flex-shrink-0 border-b border-white/[0.05]">
+                <span className="text-[11px] font-bold text-slate-300 tracking-wide">
+                  {panelSection.label}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setOpenSection(null)}
+                  className="p-1 rounded-md hover:bg-white/[0.06] text-slate-600 hover:text-slate-400 transition-colors"
+                  aria-label={t('sidebar.a11y.closePanel')}
+                >
+                  <PanelRightClose size={13} aria-hidden="true" />
+                </button>
+              </div>
+
+              {/* Panel nav */}
+              <nav className="flex-1 overflow-y-auto px-2 py-2
+                [&::-webkit-scrollbar]:w-[2px]
+                [&::-webkit-scrollbar-thumb]:bg-white/10
+                [&::-webkit-scrollbar-thumb]:rounded-full">
+                <div className="space-y-4">
+                  {panelSection.groups?.map((group, gi) => (
+                    <div key={gi}>
+                      {group.title && (
+                        <p className="px-2.5 mb-1 text-[9.5px] font-bold uppercase tracking-[0.12em] text-slate-600">
+                          {group.title}
+                        </p>
+                      )}
+                      <div className="space-y-0.5">
+                        {group.items.map(item => (
+                          <PanelNavItem
+                            key={item.href}
+                            item={item}
+                            locked={isLocked(item)}
+                            lockLabel={item.feature ? minPlanFor(item.feature) : undefined}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </nav>
+
+              {/* Plan CTA */}
+              {planTier === 'free' && (
+                <div className="flex-shrink-0 p-3 border-t border-white/[0.05]">
+                  <Link
+                    to="/app/billing"
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl
+                      bg-gradient-to-r from-violet-600/10 to-indigo-600/10
+                      border border-violet-500/15 hover:border-violet-500/25
+                      transition-all duration-150 group"
+                  >
+                    <div className="w-5 h-5 rounded-md bg-violet-500/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-[10px]">⚡</span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-bold text-violet-300 leading-tight">{t('sidebar.cta.upgradePro')}</p>
+                      <p className="text-[9px] text-violet-500/70 leading-tight">{t('sidebar.cta.unlockAll')}</p>
+                    </div>
+                  </Link>
+                </div>
+              )}
+
+              {/* User info strip */}
+              <div className="flex-shrink-0 px-3 py-2.5 border-t border-white/[0.05] flex items-center gap-2.5">
+                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0">
+                  <span className="text-[9px] font-bold text-white">{initials}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-semibold text-slate-300 truncate leading-tight">
+                    {user?.first_name} {user?.last_name}
+                  </p>
+                  <p className="text-[9px] truncate leading-tight" style={{ color: plan.color }}>
+                    {plan.label}
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </aside>
     </>
   );
 }

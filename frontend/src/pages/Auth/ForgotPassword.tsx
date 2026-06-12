@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Leaf, ArrowLeft, Mail, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import api from '@/services/api';
 
 export default function ForgotPassword() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
@@ -18,7 +20,7 @@ export default function ForgotPassword() {
     } catch (err: any) {
       setErrorMsg(
         err?.response?.data?.detail ||
-        'Une erreur est survenue. Veuillez réessayer.'
+        t('auth.genericError')
       );
       setStatus('error');
     }
@@ -38,7 +40,7 @@ export default function ForgotPassword() {
             <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/30">
               <Leaf className="h-5 w-5 text-white" />
             </div>
-            <span className="text-2xl font-bold text-white">ESGFlow</span>
+            <span className="text-2xl font-bold text-white">ESG Flow</span>
           </Link>
         </div>
 
@@ -50,17 +52,16 @@ export default function ForgotPassword() {
               <div className="w-16 h-16 bg-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
                 <CheckCircle className="h-8 w-8 text-green-400" />
               </div>
-              <h1 className="text-xl font-bold text-white mb-2">E-mail envoyé !</h1>
+              <h1 className="text-xl font-bold text-white mb-2">{t('auth.emailSent')}</h1>
               <p className="text-slate-400 text-sm leading-relaxed mb-6">
-                Si <span className="text-white font-medium">{email}</span> est enregistré,
-                vous recevrez un lien de réinitialisation valable <strong className="text-white">1 heure</strong>.
+                {t('auth.resetLinkSentDesc', { email })}
               </p>
-              <p className="text-xs text-slate-500 mb-6">Vérifiez aussi votre dossier spam.</p>
+              <p className="text-xs text-slate-500 mb-6">{t('auth.checkSpam')}</p>
               <Link
                 to="/login"
                 className="inline-flex items-center gap-2 text-sm font-medium text-green-400 hover:text-green-300 transition-colors"
               >
-                <ArrowLeft className="h-4 w-4" /> Retour à la connexion
+                <ArrowLeft className="h-4 w-4" /> {t('auth.backToLogin')}
               </Link>
             </div>
           ) : (
@@ -69,16 +70,16 @@ export default function ForgotPassword() {
                 <div className="w-14 h-14 bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Mail className="h-7 w-7 text-blue-400" />
                 </div>
-                <h1 className="text-2xl font-bold text-white">Mot de passe oublié ?</h1>
+                <h1 className="text-2xl font-bold text-white">{t('auth.forgotPassword')}</h1>
                 <p className="text-slate-400 text-sm mt-2">
-                  Entrez votre adresse e-mail et nous vous enverrons un lien de réinitialisation.
+                  {t('auth.forgotPasswordDesc')}
                 </p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                    Adresse e-mail
+                    {t('auth.emailAddress')}
                   </label>
                   <input
                     type="email"
@@ -104,9 +105,9 @@ export default function ForgotPassword() {
                   className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-green-500 hover:bg-green-400 disabled:opacity-60 text-white font-bold text-sm transition-all shadow-xl shadow-green-500/30 mt-2"
                 >
                   {status === 'loading' ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> Envoi en cours…</>
+                    <><Loader2 className="h-4 w-4 animate-spin" /> {t('auth.sending')}</>
                   ) : (
-                    'Envoyer le lien de réinitialisation'
+                    t('auth.sendResetLink')
                   )}
                 </button>
               </form>
@@ -116,7 +117,7 @@ export default function ForgotPassword() {
                   to="/login"
                   className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
                 >
-                  <ArrowLeft className="h-4 w-4" /> Retour à la connexion
+                  <ArrowLeft className="h-4 w-4" /> {t('auth.backToLogin')}
                 </Link>
               </div>
             </>

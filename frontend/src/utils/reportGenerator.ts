@@ -32,6 +32,71 @@ interface ReportData {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// RECOMMANDATIONS DYNAMIQUES — basées sur les scores réels
+// ═══════════════════════════════════════════════════════════════
+
+interface Recommendation {
+  priority: 'HAUTE' | 'MOYENNE' | 'BASSE';
+  text: string;
+  impact: string;
+  pillar: 'Environnemental' | 'Social' | 'Gouvernance' | 'Global';
+}
+
+function generateRecommendations(scores: ReportData['scores']): Recommendation[] {
+  const recs: Recommendation[] = [];
+  const { environmental, social, governance, data_completeness } = scores;
+
+  // ── Environnement ────────────────────────────────────────────
+  if (environmental < 40) {
+    recs.push({ priority: 'HAUTE', text: 'Mettre en place un bilan carbone complet (Scopes 1/2/3) selon GHG Protocol', impact: `+${Math.round((60 - environmental) * 0.4)} pts`, pillar: 'Environnemental' });
+    recs.push({ priority: 'HAUTE', text: 'Définir des objectifs de réduction alignés SBTi (trajectoire 1.5°C)', impact: `+${Math.round((60 - environmental) * 0.3)} pts`, pillar: 'Environnemental' });
+  } else if (environmental < 60) {
+    recs.push({ priority: 'HAUTE', text: 'Compléter le reporting Scope 3 (catégories amont : achats, fret, déplacements)', impact: `+${Math.round((70 - environmental) * 0.35)} pts`, pillar: 'Environnemental' });
+    recs.push({ priority: 'MOYENNE', text: 'Augmenter la part d\'énergie renouvelable (PPA / garanties d\'origine)', impact: `+${Math.round((70 - environmental) * 0.25)} pts`, pillar: 'Environnemental' });
+  } else if (environmental < 80) {
+    recs.push({ priority: 'MOYENNE', text: 'Documenter les plans de transition climatique (ESRS E1-1)', impact: `+${Math.round((85 - environmental) * 0.3)} pts`, pillar: 'Environnemental' });
+  } else {
+    recs.push({ priority: 'BASSE', text: 'Viser la certification ISO 14001 et la vérification tierce partie', impact: '+2 pts', pillar: 'Environnemental' });
+  }
+
+  // ── Social ───────────────────────────────────────────────────
+  if (social < 40) {
+    recs.push({ priority: 'HAUTE', text: 'Structurer le reporting social : effectifs, formation, accidents du travail', impact: `+${Math.round((60 - social) * 0.4)} pts`, pillar: 'Social' });
+    recs.push({ priority: 'HAUTE', text: 'Mettre en place un plan d\'action égalité H/F et index Pénicaud', impact: `+${Math.round((60 - social) * 0.3)} pts`, pillar: 'Social' });
+  } else if (social < 60) {
+    recs.push({ priority: 'MOYENNE', text: 'Renforcer les programmes de formation et développement des compétences', impact: `+${Math.round((70 - social) * 0.35)} pts`, pillar: 'Social' });
+    recs.push({ priority: 'MOYENNE', text: 'Formaliser le devoir de vigilance sur la chaîne d\'approvisionnement (CSDDD)', impact: `+${Math.round((70 - social) * 0.25)} pts`, pillar: 'Social' });
+  } else if (social < 80) {
+    recs.push({ priority: 'BASSE', text: 'Publier un reporting détaillé sur la diversité et l\'inclusion (ESRS S1)', impact: `+${Math.round((85 - social) * 0.25)} pts`, pillar: 'Social' });
+  } else {
+    recs.push({ priority: 'BASSE', text: 'Étendre l\'audit social aux fournisseurs de rang 2 (ESRS S2)', impact: '+2 pts', pillar: 'Social' });
+  }
+
+  // ── Gouvernance ──────────────────────────────────────────────
+  if (governance < 40) {
+    recs.push({ priority: 'HAUTE', text: 'Documenter la politique anti-corruption et les procédures de conformité', impact: `+${Math.round((60 - governance) * 0.4)} pts`, pillar: 'Gouvernance' });
+  } else if (governance < 60) {
+    recs.push({ priority: 'MOYENNE', text: 'Renforcer la diversité du conseil d\'administration et le comité ESG dédié', impact: `+${Math.round((70 - governance) * 0.3)} pts`, pillar: 'Gouvernance' });
+  } else if (governance < 80) {
+    recs.push({ priority: 'BASSE', text: 'Formaliser l\'intégration des critères ESG dans la rémunération des dirigeants', impact: `+${Math.round((85 - governance) * 0.25)} pts`, pillar: 'Gouvernance' });
+  } else {
+    recs.push({ priority: 'BASSE', text: 'Publier un rapport d\'audit intégré (financier + extra-financier)', impact: '+2 pts', pillar: 'Gouvernance' });
+  }
+
+  // ── Complétude des données ───────────────────────────────────
+  if (data_completeness < 60) {
+    recs.push({ priority: 'HAUTE', text: 'Compléter la collecte de données ESG — complétude actuelle insuffisante pour la conformité CSRD', impact: `+${Math.round((80 - data_completeness) * 0.2)} pts`, pillar: 'Global' });
+  } else if (data_completeness < 80) {
+    recs.push({ priority: 'MOYENNE', text: 'Améliorer la complétude des données pour atteindre le seuil CSRD de 80 %', impact: `+${Math.round((85 - data_completeness) * 0.15)} pts`, pillar: 'Global' });
+  }
+
+  // Sort by priority (HAUTE → MOYENNE → BASSE), cap at 6
+  const order = { HAUTE: 0, MOYENNE: 1, BASSE: 2 };
+  recs.sort((a, b) => order[a.priority] - order[b.priority]);
+  return recs.slice(0, 6);
+}
+
+// ═══════════════════════════════════════════════════════════════
 // GÉNÉRATION PDF PROFESSIONNELLE
 // ═══════════════════════════════════════════════════════════════
 
@@ -199,25 +264,35 @@ export const generatePDF = async (data: ReportData) => {
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(0, 0, 0);
   
-  const recommendations = [
-    { priority: 'HAUTE', text: 'Améliorer la transparence des données carbone', impact: '+8 pts' },
-    { priority: 'MOYENNE', text: 'Renforcer les programmes de diversité', impact: '+5 pts' },
-    { priority: 'BASSE', text: 'Documenter les initiatives sociales', impact: '+3 pts' }
-  ];
-  
+  const recommendations = generateRecommendations(scores);
+
   recommendations.forEach(rec => {
-    doc.setFillColor(rec.priority === 'HAUTE' ? 239 : rec.priority === 'MOYENNE' ? 59 : 16, 
-                     rec.priority === 'HAUTE' ? 68 : rec.priority === 'MOYENNE' ? 130 : 185, 
+    // Check page space and add new page if needed
+    if (yPos > 270) {
+      doc.addPage();
+      yPos = 20;
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(99, 102, 241);
+      doc.text('RECOMMANDATIONS (suite)', 20, yPos);
+      yPos += 10;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 0, 0);
+    }
+    doc.setFillColor(rec.priority === 'HAUTE' ? 239 : rec.priority === 'MOYENNE' ? 59 : 16,
+                     rec.priority === 'HAUTE' ? 68 : rec.priority === 'MOYENNE' ? 130 : 185,
                      rec.priority === 'HAUTE' ? 68 : rec.priority === 'MOYENNE' ? 246 : 129);
     doc.rect(20, yPos - 4, 3, 6, 'F');
-    
+
     doc.setFont('helvetica', 'bold');
     doc.text(rec.priority, 26, yPos);
     doc.setFont('helvetica', 'normal');
-    doc.text(rec.text, 55, yPos);
+    const truncated = rec.text.length > 65 ? rec.text.slice(0, 62) + '…' : rec.text;
+    doc.text(truncated, 55, yPos);
     doc.setFont('helvetica', 'italic');
     doc.text(`Impact: ${rec.impact}`, 160, yPos);
-    
+
     yPos += 8;
   });
   
@@ -228,7 +303,7 @@ export const generatePDF = async (data: ReportData) => {
     doc.setFontSize(8);
     doc.setTextColor(128, 128, 128);
     doc.text(`Page ${i} sur ${pageCount}`, 105, 285, { align: 'center' });
-    doc.text('© ESGFlow Platform - Rapport confidentiel', 105, 290, { align: 'center' });
+    doc.text('© ESG Flow Platform - Rapport confidentiel', 105, 290, { align: 'center' });
   }
   
   // Télécharger
@@ -286,15 +361,12 @@ export const generateExcel = async (data: ReportData) => {
   XLSX.utils.book_append_sheet(wb, wsEvolution, 'Évolution');
   
   // ─── ONGLET 3: RECOMMANDATIONS ───
+  const dynamicRecs = generateRecommendations(scores);
   const recoData = [
     ['RECOMMANDATIONS D\'AMÉLIORATION'],
     [],
     ['Priorité', 'Recommandation', 'Impact Potentiel', 'Pilier'],
-    ['HAUTE', 'Améliorer la transparence des données carbone', '+8 points', 'Environnemental'],
-    ['HAUTE', 'Mettre en place un plan de réduction CO2', '+7 points', 'Environnemental'],
-    ['MOYENNE', 'Renforcer les programmes de diversité', '+5 points', 'Social'],
-    ['MOYENNE', 'Augmenter les heures de formation', '+4 points', 'Social'],
-    ['BASSE', 'Améliorer la documentation ESG', '+3 points', 'Gouvernance']
+    ...dynamicRecs.map(r => [r.priority, r.text, r.impact, r.pillar]),
   ];
   
   const wsReco = XLSX.utils.aoa_to_sheet(recoData);
@@ -493,36 +565,26 @@ export const generateWord = async (data: ReportData) => {
           width: { size: 100, type: WidthType.PERCENTAGE }
         }),
         
-        // ─── RECOMMANDATIONS ───
+        // ─── RECOMMANDATIONS (dynamiques) ───
         new Paragraph({
           text: 'Recommandations',
           heading: HeadingLevel.HEADING_1,
           spacing: { before: 400, after: 200 }
         }),
-        
-        new Paragraph({
-          children: [
-            new TextRun({ text: '🔴 PRIORITÉ HAUTE: ', bold: true, color: 'ef4444' }),
-            new TextRun({ text: 'Améliorer la transparence des données carbone (Impact: +8 points)' })
-          ],
-          spacing: { after: 150 }
+
+        ...generateRecommendations(scores).map(rec => {
+          const color = rec.priority === 'HAUTE' ? 'ef4444' : rec.priority === 'MOYENNE' ? 'f59e0b' : '10b981';
+          const emoji = rec.priority === 'HAUTE' ? '🔴' : rec.priority === 'MOYENNE' ? '🟡' : '🟢';
+          return new Paragraph({
+            children: [
+              new TextRun({ text: `${emoji} PRIORITÉ ${rec.priority}: `, bold: true, color }),
+              new TextRun({ text: `${rec.text} (Impact: ${rec.impact})` })
+            ],
+            spacing: { after: 150 }
+          });
         }),
-        
-        new Paragraph({
-          children: [
-            new TextRun({ text: '🟡 PRIORITÉ MOYENNE: ', bold: true, color: 'f59e0b' }),
-            new TextRun({ text: 'Renforcer les programmes de diversité (Impact: +5 points)' })
-          ],
-          spacing: { after: 150 }
-        }),
-        
-        new Paragraph({
-          children: [
-            new TextRun({ text: '🟢 PRIORITÉ BASSE: ', bold: true, color: '10b981' }),
-            new TextRun({ text: 'Documenter les initiatives sociales (Impact: +3 points)' })
-          ],
-          spacing: { after: 400 }
-        }),
+
+        new Paragraph({ text: '', spacing: { after: 250 } }),
         
         // ─── FOOTER ───
         new Paragraph({
@@ -534,7 +596,7 @@ export const generateWord = async (data: ReportData) => {
           alignment: AlignmentType.CENTER,
           children: [
             new TextRun({
-              text: '© ESGFlow Platform - Rapport confidentiel',
+              text: '© ESG Flow Platform - Rapport confidentiel',
               italics: true
             })
           ]

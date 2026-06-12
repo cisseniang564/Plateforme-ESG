@@ -13,15 +13,14 @@ export const reportsService = {
 
   getReports: async (): Promise<any[]> => {
     try {
-      const response = await api.get('/reports');
+      // Backend exposes scheduled reports at /reports/scheduled — no bare GET /reports exists
+      const response = await api.get('/reports/scheduled');
       const data = response.data;
-      return Array.isArray(data) ? data : data?.items || data?.reports || [];
+      const schedules: any[] = Array.isArray(data) ? data : data?.schedules || data?.items || data?.reports || [];
+      return schedules;
     } catch (err: any) {
-      // GET /reports not yet implemented on backend — return empty list gracefully
-      if (err?.response?.status === 404 || err?.response?.status === 405) {
-        return [];
-      }
-      throw err;
+      // Graceful fallback — return empty list on any error
+      return [];
     }
   },
 

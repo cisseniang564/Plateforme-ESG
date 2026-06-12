@@ -1,23 +1,24 @@
 import { ArrowLeft, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import Button from '@/components/common/Button';
+import { usePageSeo } from '@/hooks/usePageSeo';
 
 export default function PrivacyPolicy() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  usePageSeo({ id: 'privacy', title: 'Politique de Confidentialité — ESG Flow', description: 'Politique de confidentialité et protection des données personnelles de la plateforme ESG Flow. Hébergement France, RGPD.', url: 'https://greenconnect.cloud/privacy-policy', ogImage: 'https://greenconnect.cloud/og/privacy-policy.png' });
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-4xl px-6 py-12">
-        <Button
-          variant="secondary"
+        <button
+         
           onClick={() => navigate(-1)}
-          className="mb-8 flex items-center gap-2"
+          className="mb-8 flex items-center gap-2 tap-target"
         >
           <ArrowLeft className="h-4 w-4" />
           {t('legal.back')}
-        </Button>
+        </button>
 
         <div className="rounded-2xl bg-white p-8 shadow-sm md:p-12">
           <div className="mb-8 flex items-center gap-4">
@@ -41,11 +42,10 @@ export default function PrivacyPolicy() {
 
             <h2>1. Responsable du Traitement</h2>
             <p>
-              <strong>ESGFlow SAS</strong><br />
-              Siège social : 123 Avenue des Champs-Élysées, 75008 Paris, France<br />
-              SIRET : 123 456 789 00012<br />
-              Email : privacy@greenconnect.cloud<br />
-              Téléphone : +33 1 23 45 67 89
+              <strong>GreenConnect SAS</strong><br />
+              Siège social : 12 Vieux chemin de meaux, 93190 Livry-Gargan, France<br />
+              SIRET : [À renseigner]<br />
+              Email : privacy@greenconnect.cloud
             </p>
 
             <h2>2. Données Collectées</h2>
@@ -78,7 +78,7 @@ export default function PrivacyPolicy() {
             <p>Vos données sont collectées et traitées pour :</p>
             <ul>
               <li>Gestion des comptes utilisateurs et authentification</li>
-              <li>Fourniture des services de la plateforme ESGFlow</li>
+              <li>Fourniture des services de la plateforme ESG Flow</li>
               <li>Génération de rapports ESG conformes aux réglementations</li>
               <li>Calcul automatique d'indicateurs et scores ESG</li>
               <li>Support client et assistance technique</li>
@@ -125,14 +125,14 @@ export default function PrivacyPolicy() {
             <h2>5. Destinataires des Données</h2>
             <p>Vos données peuvent être transmises à :</p>
             <ul>
-              <li><strong>Personnel autorisé d'ESGFlow</strong> : accès strictement limité aux besoins</li>
+              <li><strong>Personnel autorisé de GreenConnect SAS</strong> : accès strictement limité aux besoins</li>
               <li><strong>Hébergeur</strong> : OVH Cloud (France) - certifié ISO 27001, HDS</li>
               <li><strong>Sous-traitants techniques</strong> : services d'envoi d'emails, analytics (avec DPA)</li>
               <li><strong>Autorités</strong> : sur réquisition judiciaire uniquement</li>
             </ul>
 
             <p className="font-semibold">
-              ⚠️ ESGFlow ne vend jamais vos données à des tiers.
+              ⚠️ GreenConnect SAS ne vend jamais vos données à des tiers.
             </p>
 
             <h2>6. Transferts Hors UE</h2>
@@ -204,13 +204,13 @@ export default function PrivacyPolicy() {
             <p>
               Pour exercer vos droits, contactez notre DPO :<br />
               Email : <a href="mailto:privacy@greenconnect.cloud" className="text-primary-600 hover:underline">privacy@greenconnect.cloud</a><br />
-              Courrier : ESGFlow SAS - DPO, 123 Avenue des Champs-Élysées, 75008 Paris<br />
+              Courrier : GreenConnect SAS - DPO, 12 Vieux chemin de meaux, 93190 Livry-Gargan, France<br />
               <br />
               Réponse sous 1 mois maximum.
             </p>
 
             <h2>9. Sécurité des Données</h2>
-            <p>ESGFlow met en œuvre les mesures de sécurité suivantes :</p>
+            <p>GreenConnect SAS met en œuvre les mesures de sécurité suivantes :</p>
             <ul>
               <li>✅ Chiffrement TLS 1.3 (transit)</li>
               <li>✅ Chiffrement AES-256 (stockage)</li>
@@ -223,7 +223,7 @@ export default function PrivacyPolicy() {
             </ul>
 
             <h2>10. Cookies et Traceurs</h2>
-            <p>ESGFlow utilise les cookies suivants :</p>
+            <p>ESG Flow utilise les cookies suivants :</p>
             
             <h3>Cookies strictement nécessaires (pas de consentement requis)</h3>
             <ul>
@@ -245,7 +245,7 @@ export default function PrivacyPolicy() {
             <h2>11. Violations de Données</h2>
             <p>
               En cas de violation de données susceptible de présenter un risque pour vos droits et libertés,
-              ESGFlow s'engage à :
+              GreenConnect SAS s'engage à :
             </p>
             <ul>
               <li>Notifier la CNIL sous 72h</li>
@@ -277,7 +277,7 @@ export default function PrivacyPolicy() {
               <br />
               <strong>Délégué à la Protection des Données (DPO)</strong><br />
               Email : <a href="mailto:privacy@greenconnect.cloud" className="text-primary-600 hover:underline">privacy@greenconnect.cloud</a><br />
-              Courrier : ESGFlow SAS - DPO, 12 Vieux chemin de meaux, 93190 Livry-Gargan France
+              Courrier : GreenConnect SAS - DPO, 12 Vieux chemin de meaux, 93190 Livry-Gargan, France
             </p>
           </div>
         </div>

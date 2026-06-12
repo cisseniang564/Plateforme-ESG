@@ -9,46 +9,53 @@ import { useDispatch } from 'react-redux';
 import { Leaf, Loader2, Play, Shield, BarChart3, Zap, ArrowRight, AlertCircle } from 'lucide-react';
 import api from '@/services/api';
 import { setUser } from '@/store/slices/authSlice';
+import { PROSPECT_DEMO_FLAG } from '@/components/tour/TourContext';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 
 type Status = 'idle' | 'loading' | 'error';
 
-const HIGHLIGHTS = [
-  { icon: BarChart3, label: 'Dashboard ESG complet', color: 'text-green-400' },
-  { icon: Zap,       label: 'IA & analyse automatique', color: 'text-yellow-400' },
-  { icon: Shield,    label: 'Conformité CSRD / ESRS', color: 'text-blue-400' },
+const getHighlights = (t: TFunction) => [
+  { icon: BarChart3, label: t('demo.highlight.dashboard', 'Dashboard ESG complet'), color: 'text-green-400' },
+  { icon: Zap,       label: t('demo.highlight.ai', 'IA & analyse automatique'), color: 'text-yellow-400' },
+  { icon: Shield,    label: t('demo.highlight.compliance', 'Conformité CSRD / ESRS'), color: 'text-blue-400' },
 ];
 
 export default function DemoPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [status, setStatus] = useState<Status>('idle');
   const [errorMsg, setErrorMsg] = useState('');
+  const HIGHLIGHTS = getHighlights(t);
 
   const startDemo = async () => {
     setStatus('loading');
     setErrorMsg('');
     try {
-      const res = await api.post('/auth/demo-login');
-      const { user, tokens } = res.data;
+      // /auth/demo-session — isolated sandbox tenant, viewer role, 1h JWT
+      // Token is set via httpOnly cookie by the backend — no client storage needed.
+      const res = await api.post('/auth/demo-session');
+      const { user } = res.data;
 
-      // Persist tokens
-      if (tokens?.access_token) {
-        localStorage.setItem('access_token', tokens.access_token);
-        localStorage.setItem('refresh_token', tokens.refresh_token ?? '');
-      }
+      // Mark this as a demo session so the banner appears + auto-expiry logic kicks in
+      try {
+        localStorage.setItem('is_demo_session', '1');
+        sessionStorage.setItem('demo_started_at', String(Date.now()));
+      } catch { /* ignore */ }
 
       dispatch(setUser(user));
 
-      if (user?.needs_onboarding) {
-        navigate('/app/setup', { replace: true });
-      } else {
-        navigate('/app', { replace: true });
-      }
+      // Flag à usage unique consommé par TourProvider pour auto-démarrer
+      // le tour commercial dès l'arrivée dans /app.
+      sessionStorage.setItem(PROSPECT_DEMO_FLAG, '1');
+
+      navigate('/app', { replace: true });
     } catch (err: any) {
       setStatus('error');
       setErrorMsg(
         err?.response?.data?.detail ||
-        'Le compte démo est temporairement indisponible. Veuillez réessayer dans quelques instants.'
+        t('demo.error.unavailable', 'Le compte démo est temporairement indisponible. Veuillez réessayer dans quelques instants.')
       );
     }
   };
@@ -88,12 +95,12 @@ export default function DemoPage() {
               </div>
 
               <h1 className="text-2xl font-bold text-white mb-2">
-                {status === 'loading' ? 'Démarrage de la démo…' : 'Démo ESGFlow'}
+                {status === 'loading' ? t('demo.loadingTitle', 'Démarrage de la démo…') : t('demo.title', 'Démo ESGFlow')}
               </h1>
               <p className="text-slate-400 text-sm mb-8 leading-relaxed">
                 {status === 'loading'
-                  ? 'Connexion en cours au compte de démonstration, veuillez patienter.'
-                  : 'Explorez toute la plateforme sans créer de compte — données pré-remplies, IA activée.'}
+                  ? t('demo.loadingBody', 'Connexion en cours au compte de démonstration, veuillez patienter.')
+                  : t('demo.idleBody', 'Explorez toute la plateforme sans créer de compte — données pré-remplies, IA activée.')}
               </p>
 
               {/* Feature highlights */}
@@ -113,7 +120,7 @@ export default function DemoPage() {
                   onClick={startDemo}
                   className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-green-500 hover:bg-green-400 text-white font-bold text-sm transition-all shadow-xl shadow-green-500/30"
                 >
-                  Accéder à la démo <ArrowRight className="h-4 w-4" />
+                  {t('demo.cta', 'Accéder à la démo')} <ArrowRight className="h-4 w-4" />
                 </button>
               )}
             </>
@@ -125,20 +132,20 @@ export default function DemoPage() {
               <div className="w-16 h-16 bg-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
                 <AlertCircle className="h-8 w-8 text-red-400" />
               </div>
-              <h1 className="text-xl font-bold text-white mb-2">Démo temporairement indisponible</h1>
+              <h1 className="text-xl font-bold text-white mb-2">{t('demo.errorTitle', 'Démo temporairement indisponible')}</h1>
               <p className="text-slate-400 text-sm mb-6 leading-relaxed">{errorMsg}</p>
               <div className="flex flex-col gap-3">
                 <button
                   onClick={startDemo}
                   className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-green-500 hover:bg-green-400 text-white font-semibold text-sm transition-all"
                 >
-                  <Loader2 className="h-4 w-4" /> Réessayer
+                  <Loader2 className="h-4 w-4" /> {t('demo.retry', 'Réessayer')}
                 </button>
                 <Link
                   to="/register"
                   className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-white/20 text-white/80 hover:text-white hover:bg-white/5 font-medium text-sm transition-all"
                 >
-                  Créer un compte gratuit
+                  {t('demo.createAccount', 'Créer un compte gratuit')}
                 </Link>
               </div>
             </>
@@ -147,8 +154,8 @@ export default function DemoPage() {
 
         {/* Fine print */}
         <p className="text-center text-xs text-slate-500 mt-5">
-          Compte partagé en lecture/écriture — données réinitialisées toutes les 24h.{' '}
-          <Link to="/privacy-policy" className="underline hover:text-slate-300">Confidentialité</Link>
+          {t('demo.finePrint', 'Compte partagé en lecture/écriture — données réinitialisées toutes les 24h.')}{' '}
+          <Link to="/privacy-policy" className="underline hover:text-slate-300">{t('demo.privacy', 'Confidentialité')}</Link>
         </p>
       </div>
     </div>

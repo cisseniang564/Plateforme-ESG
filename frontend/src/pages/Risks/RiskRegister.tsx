@@ -4,15 +4,15 @@ import {
   AlertTriangle, Plus, RefreshCw, Shield, TrendingUp, Clock,
   CheckCircle, XCircle, Edit, Trash2, Calendar, User, Target,
   Activity, X, Search, ChevronDown, ChevronUp, BarChart2,
-  Grid, List, Zap, ArrowUpRight,
+  Grid, List, Zap, ArrowUpRight, Sparkles,
 } from 'lucide-react';
 import Card from '@/components/common/Card';
-import Button from '@/components/common/Button';
 import Spinner from '@/components/common/Spinner';
 import api from '@/services/api';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import AIMitigationModal from './AIMitigationModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -73,19 +73,21 @@ const scoreColor = (score: number) => {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function KpiCard({ label, value, sub, icon: Icon, iconBg, valueColor = 'text-gray-900' }: {
+function KpiCard({ label, value, sub, icon: Icon, iconBg, valueColor = 'text-gray-900', variant }: {
   label: string; value: number | string; sub?: string;
   icon: React.ElementType; iconBg: string; valueColor?: string;
+  variant?: 'blue' | 'amber' | 'green' | 'purple' | 'red';
 }) {
+  const variantClass = variant ? `kpi-card-${variant}` : '';
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow">
+    <div className={`kpi-card ${variantClass} hover:shadow-md transition-shadow`}>
       <div className="flex items-start justify-between mb-3">
         <div className={`p-2.5 rounded-xl ${iconBg}`}>
           <Icon className="h-5 w-5" />
         </div>
         <ArrowUpRight className="h-4 w-4 text-gray-300" />
       </div>
-      <p className={`text-3xl font-bold mb-0.5 ${valueColor}`}>{value}</p>
+      <p className={`stat-value mb-0.5 ${valueColor}`}>{value}</p>
       <p className="text-sm text-gray-500 font-medium">{label}</p>
       {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
     </div>
@@ -226,18 +228,19 @@ function HeatmapTab({ risks }: { risks: ESGRisk[] }) {
   );
 }
 
-function RiskCard({ risk, onEdit, onDelete }: {
+function RiskCard({ risk, onEdit, onDelete, onGenerateMitigation }: {
   risk: ESGRisk;
   onEdit: (r: ESGRisk) => void;
   onDelete: (id: string, title: string) => void;
+  onGenerateMitigation: (r: ESGRisk) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const sev = SEVERITY_CONFIG[risk.severity as keyof typeof SEVERITY_CONFIG] ?? SEVERITY_CONFIG.low;
   const sta = STATUS_CONFIG[risk.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.active;
-  const cat = CATEGORY_CONFIG[risk.category as keyof typeof CATEGORY_CONFIG] ?? CATEGORY_CONFIG.environmental;
+  const cat = CATEGORY_CONFIG[normRiskCat(risk.category) as keyof typeof CATEGORY_CONFIG] ?? CATEGORY_CONFIG.environmental;
 
   return (
-    <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden`}>
+    <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:bg-gray-50/80 transition-all duration-100 overflow-hidden`}>
       {/* Left severity bar */}
       <div className={`flex`}>
         <div className={`w-1.5 flex-shrink-0 ${sev.bar}`} />
@@ -257,7 +260,7 @@ function RiskCard({ risk, onEdit, onDelete }: {
                 <h3 className="text-base font-bold text-gray-900 truncate">{risk.title}</h3>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${sev.bg} ${sev.text} ${sev.border}`}>
+                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${sev.bg} ${sev.text}`}>
                   {sev.label}
                 </span>
                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${sta.bg} ${sta.text}`}>
@@ -285,6 +288,13 @@ function RiskCard({ risk, onEdit, onDelete }: {
 
             {/* Actions */}
             <div className="flex items-center gap-1 flex-shrink-0">
+              <button
+                onClick={() => onGenerateMitigation(risk)}
+                className="p-2 text-violet-500 hover:bg-violet-50 rounded-lg transition-colors group"
+                title="Générer un plan de mitigation IA"
+              >
+                <Sparkles className="h-4 w-4 group-hover:scale-110 transition-transform" />
+              </button>
               <button
                 onClick={() => setExpanded(e => !e)}
                 className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
@@ -343,12 +353,40 @@ function RiskCard({ risk, onEdit, onDelete }: {
                 </div>
               </div>
 
-              {risk.mitigation_plan && (
+              {risk.mitigation_plan ? (
                 <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl">
-                  <p className="text-xs font-semibold text-blue-800 mb-1 flex items-center gap-1.5">
-                    <Target className="h-3.5 w-3.5" /> Plan de mitigation
-                  </p>
-                  <p className="text-sm text-blue-700">{risk.mitigation_plan}</p>
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <p className="text-xs font-semibold text-blue-800 flex items-center gap-1.5">
+                      <Target className="h-3.5 w-3.5" /> Plan de mitigation
+                    </p>
+                    <button
+                      onClick={() => onGenerateMitigation(risk)}
+                      className="inline-flex items-center gap-1 text-[10px] font-semibold text-violet-600 hover:text-violet-700 hover:bg-violet-50 px-2 py-0.5 rounded-full border border-violet-200 transition-colors"
+                      title="Régénérer avec l'IA"
+                    >
+                      <Sparkles className="h-3 w-3" />
+                      Régénérer IA
+                    </button>
+                  </div>
+                  <p className="text-sm text-blue-700 whitespace-pre-line">{risk.mitigation_plan}</p>
+                </div>
+              ) : (
+                <div className="p-3 bg-violet-50 border border-dashed border-violet-200 rounded-xl flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="p-1.5 bg-violet-100 rounded-lg flex-shrink-0">
+                      <Sparkles className="h-4 w-4 text-violet-600" />
+                    </div>
+                    <p className="text-xs text-violet-700">
+                      Aucun plan de mitigation. <span className="font-semibold">Laissez l'IA en générer un</span> en quelques secondes.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => onGenerateMitigation(risk)}
+                    className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Générer
+                  </button>
                 </div>
               )}
 
@@ -384,9 +422,9 @@ function AnalysisTab({ risks }: { risks: ESGRisk[] }) {
   const byCategory = ['environmental', 'social', 'governance'].map(cat => ({
     cat,
     cfg: CATEGORY_CONFIG[cat as keyof typeof CATEGORY_CONFIG],
-    count: risks.filter(r => r.category === cat).length,
-    avgScore: risks.filter(r => r.category === cat).reduce((s, r) => s + r.risk_score, 0) /
-              (risks.filter(r => r.category === cat).length || 1),
+    count: risks.filter(r => normRiskCat(r.category) === cat).length,
+    avgScore: risks.filter(r => normRiskCat(r.category) === cat).reduce((s, r) => s + r.risk_score, 0) /
+              (risks.filter(r => normRiskCat(r.category) === cat).length || 1),
   }));
 
   const bySeverity = ['critical', 'high', 'medium', 'low'].map(sev => ({
@@ -531,12 +569,22 @@ function ScorePreview({ prob, impact }: { prob: number; impact: number }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+// Normalize category: backend may store French or English variants
+const normRiskCat = (c: string): string => {
+  const lower = (c || '').toLowerCase().trim();
+  if (lower.startsWith('env')) return 'environmental';
+  if (lower.startsWith('soc')) return 'social';
+  if (lower.startsWith('gov') || lower.startsWith('gou')) return 'governance';
+  return lower;
+};
+
 export default function RiskRegister() {
   const { t } = useTranslation();
   const [risks, setRisks] = useState<ESGRisk[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedRisk, setSelectedRisk] = useState<ESGRisk | null>(null);
+  const [aiRisk, setAiRisk] = useState<ESGRisk | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('matrix');
   const [filterCategory, setFilterCategory] = useState<string>('all');
@@ -623,7 +671,7 @@ export default function RiskRegister() {
   const handleCloseModal = () => { setShowModal(false); setSelectedRisk(null); resetForm(); };
 
   const filteredRisks = risks.filter(r => {
-    if (filterCategory !== 'all' && r.category !== filterCategory) return false;
+    if (filterCategory !== 'all' && normRiskCat(r.category) !== filterCategory) return false;
     if (filterSeverity !== 'all' && r.severity !== filterSeverity) return false;
     if (filterStatus !== 'all' && r.status !== filterStatus) return false;
     if (search && !r.title.toLowerCase().includes(search.toLowerCase()) && !(r.description || '').toLowerCase().includes(search.toLowerCase())) return false;
@@ -645,54 +693,105 @@ export default function RiskRegister() {
   ];
 
   if (loading) {
-    return <div className="flex items-center justify-center h-96"><Spinner size="lg" /></div>;
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="skeleton h-36 rounded-2xl" />
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {[...Array(5)].map((_, i) => <div key={i} className="skeleton h-28 rounded-2xl" />)}
+        </div>
+        <div className="skeleton h-96 rounded-2xl" />
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden bg-gradient-to-br from-rose-600 via-red-600 to-orange-600 rounded-2xl p-8 text-white shadow-xl">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZyIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLW9wYWNpdHk9IjAuMDUiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg==')] opacity-30" />
-        <div className="relative flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide uppercase">
-                Gestion des Risques ESG
-              </span>
+        <div className="relative">
+          {/* Top row: title + actions */}
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide uppercase">
+                  Gestion des Risques ESG
+                </span>
+              </div>
+              <h1 className="text-3xl font-bold mb-1 flex items-center gap-3">
+                <Shield className="h-8 w-8" />
+                {t('risks.title')}
+              </h1>
+              <p className="text-red-100">{t('risks.subtitle')}</p>
             </div>
-            <h1 className="text-3xl font-bold mb-1 flex items-center gap-3">
-              <Shield className="h-8 w-8" />
-              {t('risks.title')}
-            </h1>
-            <p className="text-red-100">{t('risks.subtitle')}</p>
+            <div className="flex gap-2 flex-shrink-0">
+              <button
+                onClick={loadRisks}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white/15 hover:bg-white/25 hover:-translate-y-px backdrop-blur-sm border border-white/20 rounded-xl text-sm font-medium transition-all"
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Actualiser
+              </button>
+              <button
+                onClick={() => setShowModal(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white text-red-600 rounded-xl text-sm font-bold hover:bg-red-50 hover:-translate-y-px transition-all shadow-md"
+              >
+                <Plus className="h-4 w-4" />
+                Nouveau risque
+              </button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={loadRisks}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/20 rounded-xl text-sm font-medium transition-all"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              Actualiser
-            </button>
-            <button
-              onClick={() => setShowModal(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white text-red-600 rounded-xl text-sm font-bold hover:bg-red-50 transition-all shadow-md"
-            >
-              <Plus className="h-4 w-4" />
-              Nouveau risque
-            </button>
+
+          {/* Stats summary banner */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {/* Total */}
+            <div className="bg-white/15 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/20">
+              <p className="text-white/70 text-xs font-medium mb-1">Total risques</p>
+              <p className="text-2xl font-bold text-white">{risks.length}</p>
+            </div>
+            {/* Critiques + Élevés */}
+            <div className="bg-white/15 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/20">
+              <p className="text-white/70 text-xs font-medium mb-1">Critiques &amp; Élevés</p>
+              <p className="text-2xl font-bold text-white">
+                {risks.filter(r => r.risk_score > 12).length}
+                <span className="text-sm font-normal text-white/60 ml-1">/ {risks.length}</span>
+              </p>
+            </div>
+            {/* Category distribution */}
+            <div className="sm:col-span-2 bg-white/15 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/20">
+              <p className="text-white/70 text-xs font-medium mb-2">Répartition par catégorie</p>
+              <div className="space-y-1.5">
+                {[
+                  { key: 'environmental', label: '🌿 Env.', barColor: 'bg-emerald-400' },
+                  { key: 'social',        label: '👥 Social', barColor: 'bg-blue-400'  },
+                  { key: 'governance',    label: '⚖️ Gov.',  barColor: 'bg-purple-400' },
+                ].map(cat => {
+                  const count = risks.filter(r => normRiskCat(r.category) === cat.key).length;
+                  const pct = risks.length > 0 ? Math.round((count / risks.length) * 100) : 0;
+                  return (
+                    <div key={cat.key} className="flex items-center gap-2">
+                      <span className="text-[10px] text-white/80 w-16 flex-shrink-0">{cat.label}</span>
+                      <div className="flex-1 h-1.5 bg-white/20 rounded-full overflow-hidden">
+                        <div className={`h-full ${cat.barColor} rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-[10px] text-white/70 w-6 text-right">{count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* ── KPI Cards ─────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <KpiCard label="Total risques"   value={stats.total}     icon={AlertTriangle} iconBg="bg-slate-100 text-slate-600" />
-        <KpiCard label="Critiques"       value={stats.critical}  icon={XCircle}       iconBg="bg-red-100 text-red-600"     valueColor={stats.critical > 0 ? 'text-red-600' : 'text-gray-900'} />
-        <KpiCard label="Actifs"          value={stats.active}    icon={Activity}      iconBg="bg-orange-100 text-orange-600" valueColor="text-orange-600" />
-        <KpiCard label="Mitigés / Fermés" value={stats.mitigated} icon={CheckCircle}  iconBg="bg-green-100 text-green-600"  valueColor="text-green-600" />
-        <KpiCard label="Score moyen"     value={stats.avg_score} icon={TrendingUp}    iconBg="bg-purple-100 text-purple-600" valueColor={scoreColor(stats.avg_score)} />
+        <KpiCard label="Total risques"    value={stats.total}     icon={AlertTriangle} iconBg="bg-slate-100 text-slate-600" variant="blue" />
+        <KpiCard label="Critiques"        value={stats.critical}  icon={XCircle}       iconBg="bg-red-100 text-red-600"     valueColor={stats.critical > 0 ? 'text-red-600' : 'text-gray-900'} variant="amber" />
+        <KpiCard label="Actifs"           value={stats.active}    icon={Activity}      iconBg="bg-orange-100 text-orange-600" valueColor="text-orange-600" variant="amber" />
+        <KpiCard label="Mitigés / Fermés" value={stats.mitigated} icon={CheckCircle}  iconBg="bg-green-100 text-green-600"  valueColor="text-green-600" variant="green" />
+        <KpiCard label="Score moyen"      value={stats.avg_score} icon={TrendingUp}    iconBg="bg-purple-100 text-purple-600" valueColor={scoreColor(stats.avg_score)} variant="purple" />
       </div>
 
       {/* ── Tabs ──────────────────────────────────────────────────────────────── */}
@@ -734,59 +833,75 @@ export default function RiskRegister() {
           {activeTab === 'list' && (
             <div className="space-y-4">
               {/* Filters */}
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="relative flex-1">
+              <div className="bg-gray-50/80 rounded-2xl border border-gray-100 p-3 space-y-2.5">
+                {/* Search row */}
+                <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
                     type="text"
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="Rechercher un risque..."
-                    className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-red-300 focus:border-red-400 outline-none"
+                    className="w-full pl-9 pr-4 py-2.5 border border-gray-200 bg-white rounded-xl text-sm focus:ring-2 focus:ring-red-300 focus:border-red-400 outline-none transition-all"
                   />
                 </div>
-                <div className="flex gap-2 flex-wrap">
-                  {/* Category pills */}
-                  {[
-                    { value: 'all', label: 'Tout' },
-                    { value: 'environmental', label: '🌿 Env.' },
-                    { value: 'social', label: '👥 Social' },
-                    { value: 'governance', label: '⚖️ Gov.' },
-                  ].map(opt => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setFilterCategory(opt.value)}
-                      className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
-                        filterCategory === opt.value
-                          ? 'bg-red-500 text-white border-red-500'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-red-300'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                  <div className="w-px bg-gray-200 mx-1" />
-                  {/* Severity pills */}
-                  {[
-                    { value: 'all', label: 'Tout', color: '' },
-                    { value: 'critical', label: 'Critique', color: 'bg-red-500' },
-                    { value: 'high', label: 'Élevé', color: 'bg-orange-500' },
-                    { value: 'medium', label: 'Moyen', color: 'bg-yellow-400' },
-                    { value: 'low', label: 'Faible', color: 'bg-green-500' },
-                  ].map(opt => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setFilterSeverity(opt.value)}
-                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
-                        filterSeverity === opt.value
-                          ? 'bg-gray-900 text-white border-gray-900'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                      }`}
-                    >
-                      {opt.color && <span className={`w-2 h-2 rounded-full ${opt.color}`} />}
-                      {opt.label}
-                    </button>
-                  ))}
+
+                {/* Filter pills row */}
+                <div className="flex flex-col sm:flex-row gap-2 flex-wrap items-start sm:items-center">
+                  {/* Category group */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mr-0.5">Catégorie</span>
+                    {[
+                      { value: 'all',           label: 'Tout',        activeBg: 'bg-gray-700 text-white border-gray-700' },
+                      { value: 'environmental', label: '🌿 Env.',     activeBg: 'bg-emerald-600 text-white border-emerald-600' },
+                      { value: 'social',        label: '👥 Social',   activeBg: 'bg-blue-600 text-white border-blue-600' },
+                      { value: 'governance',    label: '⚖️ Gov.',     activeBg: 'bg-purple-600 text-white border-purple-600' },
+                    ].map(opt => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setFilterCategory(opt.value)}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                          filterCategory === opt.value
+                            ? opt.activeBg
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400 hover:bg-gray-50'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="hidden sm:block w-px h-6 bg-gray-200" />
+
+                  {/* Severity group */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mr-0.5">Sévérité</span>
+                    {[
+                      { value: 'all',      label: 'Tout',     activeBg: 'bg-gray-700 text-white border-gray-700', dot: '',               count: risks.length },
+                      { value: 'critical', label: 'Critique', activeBg: 'bg-red-600 text-white border-red-600',   dot: 'bg-red-500',     count: risks.filter(r => r.severity === 'critical').length },
+                      { value: 'high',     label: 'Élevé',    activeBg: 'bg-orange-500 text-white border-orange-500', dot: 'bg-orange-500', count: risks.filter(r => r.severity === 'high').length },
+                      { value: 'medium',   label: 'Moyen',    activeBg: 'bg-yellow-500 text-white border-yellow-500', dot: 'bg-yellow-400', count: risks.filter(r => r.severity === 'medium').length },
+                      { value: 'low',      label: 'Faible',   activeBg: 'bg-green-600 text-white border-green-600',  dot: 'bg-green-500',  count: risks.filter(r => r.severity === 'low').length },
+                    ].map(opt => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setFilterSeverity(opt.value)}
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                          filterSeverity === opt.value
+                            ? opt.activeBg
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400 hover:bg-gray-50'
+                        }`}
+                      >
+                        {opt.dot && <span className={`w-2 h-2 rounded-full flex-shrink-0 ${opt.dot}`} />}
+                        {opt.label}
+                        {opt.count > 0 && opt.value !== 'all' && (
+                          <span className={`text-[9px] font-bold px-1 rounded ${filterSeverity === opt.value ? 'bg-white/30 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                            {opt.count}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -807,22 +922,34 @@ export default function RiskRegister() {
               {filteredRisks.length > 0 ? (
                 <div className="space-y-3">
                   {filteredRisks.map(risk => (
-                    <RiskCard key={risk.id} risk={risk} onEdit={handleEdit} onDelete={handleDelete} />
+                    <RiskCard
+                      key={risk.id}
+                      risk={risk}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onGenerateMitigation={(r) => setAiRisk(r)}
+                    />
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-16">
-                  <Shield className="h-12 w-12 mx-auto text-gray-200 mb-3" />
-                  <p className="text-base font-semibold text-gray-700 mb-1">Aucun risque trouvé</p>
-                  <p className="text-sm text-gray-400">
+                <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
+                  <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mb-4">
+                    <AlertTriangle className="h-8 w-8 text-amber-400" />
+                  </div>
+                  <h3 className="text-base font-semibold text-gray-800 mb-1">
                     {search || filterCategory !== 'all' || filterSeverity !== 'all'
-                      ? 'Essayez de modifier les filtres'
-                      : 'Créez votre premier risque ESG'}
+                      ? 'Aucun risque trouvé'
+                      : 'Aucun risque enregistré'}
+                  </h3>
+                  <p className="text-sm text-gray-500 max-w-xs">
+                    {search || filterCategory !== 'all' || filterSeverity !== 'all'
+                      ? 'Essayez de modifier les filtres pour afficher plus de résultats.'
+                      : 'Commencez par créer votre premier risque ESG pour suivre et mitiger vos expositions.'}
                   </p>
                   {!search && filterCategory === 'all' && filterSeverity === 'all' && (
                     <button
                       onClick={() => setShowModal(true)}
-                      className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-colors"
+                      className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 hover:-translate-y-px transition-all shadow-sm"
                     >
                       <Plus className="h-4 w-4" /> Nouveau risque
                     </button>
@@ -839,7 +966,7 @@ export default function RiskRegister() {
 
       {/* ── Modal ─────────────────────────────────────────────────────────────── */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[92vh] overflow-y-auto">
             {/* Modal header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
@@ -951,7 +1078,19 @@ export default function RiskRegister() {
 
               {/* Mitigation */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">{t('risks.mitigationField')}</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-sm font-semibold text-gray-700">{t('risks.mitigationField')}</label>
+                  {selectedRisk && (
+                    <button
+                      type="button"
+                      onClick={() => setAiRisk(selectedRisk)}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-600 hover:text-violet-700 hover:bg-violet-50 px-2.5 py-1 rounded-lg border border-violet-200 transition-colors"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Générer avec l'IA
+                    </button>
+                  )}
+                </div>
                 <textarea
                   value={formData.mitigation_plan}
                   onChange={e => setFormData({ ...formData, mitigation_plan: e.target.value })}
@@ -1008,6 +1147,26 @@ export default function RiskRegister() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* ── AI Mitigation Modal ─────────────────────────────────────────────── */}
+      {aiRisk && (
+        <AIMitigationModal
+          riskId={aiRisk.id}
+          riskTitle={aiRisk.title}
+          currentScore={aiRisk.risk_score}
+          onClose={() => setAiRisk(null)}
+          onSaved={() => {
+            setAiRisk(null);
+            // If the edit modal is open on the same risk, also close it (changes persisted server-side).
+            if (selectedRisk && aiRisk && selectedRisk.id === aiRisk.id) {
+              setShowModal(false);
+              setSelectedRisk(null);
+              resetForm();
+            }
+            void loadRisks();
+          }}
+        />
       )}
     </div>
   );

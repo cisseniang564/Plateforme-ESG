@@ -1,25 +1,31 @@
 import api from './api';
 import type { LoginRequest, LoginResponse } from '@/types/api';
 
+/**
+ * Auth service.
+ *
+ * Tokens are managed via httpOnly cookies set by the backend
+ * (`access_token`, `refresh_token`). The frontend never reads or writes
+ * tokens directly — they flow with the request automatically thanks to
+ * `withCredentials: true` on the axios instance.
+ *
+ * This protects against XSS-based token exfiltration (cookies marked
+ * httpOnly are not accessible to `document.cookie`).
+ */
 export const authService = {
   async login(data: LoginRequest): Promise<LoginResponse> {
     const response = await api.post<LoginResponse>('/auth/login', data);
-    
-    // Stocker les tokens dans localStorage
-    if (response.data.tokens) {
-      localStorage.setItem('access_token', response.data.tokens.access_token);
-      localStorage.setItem('refresh_token', response.data.tokens.refresh_token);
-    }
-    
+    // Tokens are now in httpOnly cookies — nothing to store client-side.
     return response.data;
   },
 
   async logout(): Promise<void> {
+    // The backend clears both cookies. We don't keep any token client-side
+    // anymore, so there is nothing to scrub locally.
     try {
       await api.post('/auth/logout');
-    } finally {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
+    } catch {
+      // Best-effort: even on failure the user will be redirected to /login.
     }
   },
 
@@ -70,10 +76,7 @@ export const authService = {
       temp_token: tempToken,
       totp_code: totpCode,
     });
-    if (r.data.tokens) {
-      localStorage.setItem('access_token', r.data.tokens.access_token);
-      localStorage.setItem('refresh_token', r.data.tokens.refresh_token);
-    }
+    // Tokens set via httpOnly cookies by the backend.
     return r.data;
   },
 };

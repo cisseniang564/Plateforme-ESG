@@ -78,7 +78,7 @@ export default function GoogleSheetsConfigModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-[60] overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4">
         <div 
           className="fixed inset-0 bg-black bg-opacity-30"
@@ -133,7 +133,7 @@ export default function GoogleSheetsConfigModal({
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <p className="text-xs text-gray-600">
                     <strong>Note:</strong> You'll be redirected to Google to authorize access.
-                    ESGFlow will be able to read and write to your spreadsheets.
+                    ESG Flow will be able to read and write to your spreadsheets.
                   </p>
                 </div>
               </div>

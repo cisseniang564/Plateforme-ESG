@@ -4,15 +4,35 @@ import Joyride, {
   STATUS,
   type CallBackProps,
   type TooltipRenderProps,
+  type Step,
 } from 'react-joyride';
-import { ChevronLeft, ChevronRight, X, SkipForward, CheckCircle2 } from 'lucide-react';
-import { TOUR_STEPS, TOUR_CHAPTERS, getChapterForStep } from './tourSteps';
+import { ChevronLeft, ChevronRight, X, SkipForward, CheckCircle2, Mail, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { getTourSteps, getTourChapters, getChapterForStep } from './tourSteps';
+import {
+  getProspectSteps,
+  getProspectChapters,
+  getProspectChapterForStep,
+  PROSPECT_CONTACT_MAILTO,
+} from './prospectTour';
 import { useTourContext } from './TourContext';
+
+type ChapterLike = {
+  id: string;
+  title: string;
+  emoji: string;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+};
 
 // ── Custom Tooltip ────────────────────────────────────────────────────────────
 
+interface CustomTooltipProps extends TooltipRenderProps {
+  mode: 'standard' | 'prospect';
+}
+
 function CustomTooltip({
-  continuous,
   index,
   isLastStep,
   step,
@@ -21,13 +41,22 @@ function CustomTooltip({
   primaryProps,
   skipProps,
   tooltipProps,
-}: TooltipRenderProps) {
-  const chapter = getChapterForStep(index);
-  const stepData = step.data as { stepInChapter?: number; totalInChapter?: number } | undefined;
+  mode,
+}: CustomTooltipProps) {
+  const { t } = useTranslation();
+  const isProspect = mode === 'prospect';
+  const tourChapters = getTourChapters(t);
+  const prospectChapters = getProspectChapters(t);
+  const chapters: ChapterLike[] = isProspect ? prospectChapters : tourChapters;
+  const chapter: ChapterLike = isProspect
+    ? getProspectChapterForStep(index, prospectChapters)
+    : getChapterForStep(index, tourChapters);
+  const stepData = step.data as { stepInChapter?: number; totalInChapter?: number; finalCta?: boolean } | undefined;
   const stepInChapter = stepData?.stepInChapter ?? 1;
   const totalInChapter = stepData?.totalInChapter ?? 1;
-  const totalSteps = TOUR_STEPS.length;
+  const totalSteps = isProspect ? getProspectSteps(t).length : getTourSteps(t).length;
   const globalProgress = Math.round(((index + 1) / totalSteps) * 100);
+  const isFinalProspectCta = isProspect && isLastStep && stepData?.finalCta;
 
   return (
     <div
@@ -96,9 +125,20 @@ function CustomTooltip({
 
       {/* Chapter navigation pills */}
       <div className="px-5 py-2 flex gap-1 flex-wrap">
-        {TOUR_CHAPTERS.map((ch, i) => {
+        {chapters.map((ch) => {
           const isActive = ch.id === chapter.id;
-          const isPast = ch.stepStart + ch.stepCount - 1 < index;
+          // For the standard tour, we use stepStart/stepCount; for the prospect
+          // tour we derive past/active from chapter ordering since chapters are
+          // sequential and short.
+          let isPast = false;
+          if (!isProspect) {
+            const std = ch as ChapterLike & { stepStart: number; stepCount: number };
+            isPast = std.stepStart + std.stepCount - 1 < index;
+          } else {
+            const order = chapters.findIndex((c) => c.id === ch.id);
+            const activeOrder = chapters.findIndex((c) => c.id === chapter.id);
+            isPast = order < activeOrder;
+          }
           return (
             <span
               key={ch.id}
@@ -124,7 +164,7 @@ function CustomTooltip({
           className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors px-2 py-1 rounded-lg hover:bg-gray-100"
         >
           <SkipForward className="h-3.5 w-3.5" />
-          Ignorer le tour
+          {isProspect ? t('gtour.later', 'Plus tard') : t('gtour.skip', 'Ignorer le tour')}
         </button>
 
         <div className="flex items-center gap-1.5">
@@ -134,30 +174,50 @@ function CustomTooltip({
               className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-600 hover:bg-gray-50 transition-all active:scale-95"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
-              Préc.
+              {t('gtour.prev', 'Préc.')}
             </button>
           )}
 
-          <button
-            {...primaryProps}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold transition-all shadow-sm active:scale-95 ${
-              isLastStep
-                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-emerald-200'
-                : 'bg-gradient-to-r from-emerald-600 to-emerald-600 hover:from-emerald-700 hover:to-emerald-700'
-            }`}
-          >
-            {isLastStep ? (
-              <>
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                Terminer 🎉
-              </>
-            ) : (
-              <>
-                Suivant
-                <ChevronRight className="h-3.5 w-3.5" />
-              </>
-            )}
-          </button>
+          {isFinalProspectCta ? (
+            <a
+              href={PROSPECT_CONTACT_MAILTO}
+              onClick={(e) => {
+                // Marquer la complétion APRÈS l'ouverture du client mail
+                // pour que joyride fasse son cleanup proprement.
+                e.preventDefault();
+                window.location.href = PROSPECT_CONTACT_MAILTO;
+                setTimeout(() => {
+                  (primaryProps as { onClick?: (ev: unknown) => void }).onClick?.(e);
+                }, 100);
+              }}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold transition-all shadow-sm active:scale-95 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-amber-200"
+            >
+              <Mail className="h-3.5 w-3.5" />
+              {t('gtour.bookDemo', 'Réserver une démo')}
+              <Sparkles className="h-3 w-3" />
+            </a>
+          ) : (
+            <button
+              {...primaryProps}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold transition-all shadow-sm active:scale-95 ${
+                isLastStep
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-emerald-200'
+                  : 'bg-gradient-to-r from-emerald-600 to-emerald-600 hover:from-emerald-700 hover:to-emerald-700'
+              }`}
+            >
+              {isLastStep ? (
+                <>
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  {t('gtour.finish', 'Terminer 🎉')}
+                </>
+              ) : (
+                <>
+                  {t('gtour.next', 'Suivant')}
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -167,7 +227,9 @@ function CustomTooltip({
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function GuidedTour() {
-  const { run, stepIndex, setStep, completeTour, dismissTour } = useTourContext();
+  const { run, stepIndex, mode, setStep, completeTour, dismissTour } = useTourContext();
+  const { t } = useTranslation();
+  const steps: Step[] = mode === 'prospect' ? getProspectSteps(t) : getTourSteps(t);
 
   function handleCallback(data: CallBackProps) {
     const { action, index, type, status } = data;
@@ -198,9 +260,15 @@ export default function GuidedTour() {
   // (évite l'overlay transparent z-10000 qui bloque les clics)
   if (!run) return null;
 
+  // Couleurs du spotlight ajustées au mode (prospect = amber/teal contraste plus chaud)
+  const spotlightShadow =
+    mode === 'prospect'
+      ? '0 0 0 3px #fde68a, 0 0 0 6px #fffbeb'
+      : '0 0 0 3px #d1fae5, 0 0 0 6px #f0fdf4';
+
   return (
     <Joyride
-      steps={TOUR_STEPS}
+      steps={steps}
       run={run}
       stepIndex={stepIndex}
       continuous
@@ -210,11 +278,11 @@ export default function GuidedTour() {
       spotlightClicks={true}
       disableOverlayClose={false}
       callback={handleCallback}
-      tooltipComponent={CustomTooltip}
+      tooltipComponent={(props) => <CustomTooltip {...props} mode={mode} />}
       styles={{
         options: {
-          overlayColor: 'rgba(15, 23, 42, 0.50)',
-          spotlightShadow: '0 0 0 3px #d1fae5, 0 0 0 6px #f0fdf4',
+          overlayColor: 'rgba(15, 23, 42, 0.55)',
+          spotlightShadow,
           zIndex: 10000,
           arrowColor: '#ffffff',
         },

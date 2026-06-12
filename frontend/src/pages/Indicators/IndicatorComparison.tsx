@@ -36,9 +36,8 @@ import {
   ComposedChart,
   Line
 } from 'recharts';
-import Card from '@/components/common/Card';
-import Button from '@/components/common/Button';
 import Spinner from '@/components/common/Spinner';
+import BackButton from '@/components/common/BackButton';
 import api from '@/services/api';
 import toast from 'react-hot-toast';
 
@@ -228,7 +227,7 @@ export default function IndicatorComparison() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <Spinner size="lg" />
+        <Spinner />
       </div>
     );
   }
@@ -237,15 +236,8 @@ export default function IndicatorComparison() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <button
-          onClick={() => navigate('/app/indicators')}
-          className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          {t('indicators.backToIndicators')}
-        </button>
-
         <div className="bg-gradient-to-br from-primary-600 to-primary-700 rounded-2xl p-8 text-white shadow-xl">
+          <BackButton to="/app/indicators" label={t('indicators.backToIndicators', 'Indicateurs')} className="mb-4 text-white/70 hover:text-white" />
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
@@ -256,17 +248,17 @@ export default function IndicatorComparison() {
                 {t('indicators.comparisonSubtitle')}
               </p>
             </div>
-            <Button variant="secondary" onClick={exportToCSV}>
+            <button onClick={exportToCSV}>
               <Download className="h-4 w-4 mr-2" />
               {t('indicators.exportCSV')}
-            </Button>
+            </button>
           </div>
         </div>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-l-4 border-primary-500">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border-l-4 border-primary-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">{t('indicators.totalIndicatorsLabel')}</p>
@@ -276,9 +268,9 @@ export default function IndicatorComparison() {
               <Activity className="h-6 w-6 text-primary-600" />
             </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="border-l-4 border-green-500">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border-l-4 border-green-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">{t('indicators.targetsReached')}</p>
@@ -288,9 +280,9 @@ export default function IndicatorComparison() {
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="border-l-4 border-orange-500">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border-l-4 border-orange-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">{t('indicators.belowTarget')}</p>
@@ -300,9 +292,9 @@ export default function IndicatorComparison() {
               <AlertCircle className="h-6 w-6 text-orange-600" />
             </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="border-l-4 border-blue-500">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border-l-4 border-blue-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">{t('indicators.avgCompletion')}</p>
@@ -312,11 +304,11 @@ export default function IndicatorComparison() {
               <Target className="h-6 w-6 text-blue-600" />
             </div>
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* Filters */}
-      <Card>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="flex gap-2 flex-wrap">
             <button
@@ -362,14 +354,14 @@ export default function IndicatorComparison() {
             </select>
           </div>
         </div>
-      </Card>
+      </div>
 
       {filtered.length > 0 ? (
         <>
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Bar Chart */}
-            <Card>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
               <h3 className="text-lg font-semibold text-gray-900 mb-6">
                 {t('indicators.barChartTitle')}
               </h3>
@@ -401,10 +393,10 @@ export default function IndicatorComparison() {
                   />
                 </ComposedChart>
               </ResponsiveContainer>
-            </Card>
+            </div>
 
             {/* Radar Chart */}
-            <Card>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
               <h3 className="text-lg font-semibold text-gray-900 mb-6">
                 {t('indicators.radarChartTitle')}
               </h3>
@@ -431,11 +423,11 @@ export default function IndicatorComparison() {
                   <Tooltip />
                 </RadarChart>
               </ResponsiveContainer>
-            </Card>
+            </div>
           </div>
 
           {/* Comparison Table */}
-          <Card>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">
               {t('indicators.detailedTable')}
             </h3>
@@ -545,11 +537,11 @@ export default function IndicatorComparison() {
                 </tbody>
               </table>
             </div>
-          </Card>
+          </div>
 
           {/* Insights */}
           {stats.belowTarget > 0 && (
-            <Card className="bg-gradient-to-r from-orange-50 to-red-50 border-orange-200">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm bg-gradient-to-r from-orange-50 to-red-50 border-orange-200">
               <div className="flex items-start gap-4">
                 <AlertCircle className="h-6 w-6 text-orange-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
@@ -560,27 +552,27 @@ export default function IndicatorComparison() {
                     {t('indicators.insightExplanation')}
                   </p>
                   <div className="flex gap-3">
-                    <Button
-                      size="sm"
+                    <button
+                     
                       onClick={() => navigate('/app/indicators')}
                     >
                       {t('indicators.viewIndicators')}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
+                    </button>
+                    <button
+                     
+                     
                       onClick={() => navigate('/app/data/upload')}
                     >
                       {t('indicators.importData')}
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </div>
-            </Card>
+            </div>
           )}
         </>
       ) : (
-        <Card>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
           <div className="text-center py-16">
             <Activity className="h-16 w-16 mx-auto text-gray-300 mb-4" />
             <p className="text-gray-500 font-medium text-lg mb-2">
@@ -589,12 +581,12 @@ export default function IndicatorComparison() {
             <p className="text-sm text-gray-400 mb-6">
               {t('indicators.noComparisonHint')}
             </p>
-            <Button onClick={() => navigate('/app/indicators')}>
+            <button onClick={() => navigate('/app/indicators')}>
               <ArrowLeft className="h-5 w-5 mr-2" />
               {t('indicators.backToIndicators')}
-            </Button>
+            </button>
           </div>
-        </Card>
+        </div>
       )}
     </div>
   );

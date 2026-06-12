@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle, XCircle, Loader2, Mail, ArrowRight } from 'lucide-react';
 import api from '@/services/api';
 
 type State = 'loading' | 'success' | 'already' | 'error';
 
 export default function EmailVerification() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [state, setState] = useState<State>('loading');
@@ -16,7 +18,7 @@ export default function EmailVerification() {
     const token = searchParams.get('token');
     if (!token) {
       setState('error');
-      setErrMsg('Aucun token de vérification trouvé dans l\'URL.');
+      setErrMsg(t('auth.noTokenFound'));
       return;
     }
     verifyToken(token);
@@ -28,7 +30,7 @@ export default function EmailVerification() {
       setEmail(res.data.email || '');
       setState(res.data.already_verified ? 'already' : 'success');
     } catch (err: any) {
-      const msg = err?.response?.data?.detail || 'Lien invalide ou expiré.';
+      const msg = err?.response?.data?.detail || t('auth.linkExpired');
       setErrMsg(msg);
       setState('error');
     }
@@ -41,7 +43,7 @@ export default function EmailVerification() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2">
             <div className="w-1 h-8 bg-emerald-500 rounded-full" />
-            <span className="text-2xl font-bold text-white tracking-tight">ESGFlow</span>
+            <span className="text-2xl font-bold text-white tracking-tight">ESG Flow</span>
           </div>
         </div>
 
@@ -51,8 +53,8 @@ export default function EmailVerification() {
               <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
                 <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
               </div>
-              <h1 className="text-xl font-bold text-gray-900 mb-2">Vérification en cours…</h1>
-              <p className="text-gray-500 text-sm">Validation de votre adresse email.</p>
+              <h1 className="text-xl font-bold text-gray-900 mb-2">{t('auth.verifying')}</h1>
+              <p className="text-gray-500 text-sm">{t('auth.verifyingDesc')}</p>
             </>
           )}
 
@@ -61,16 +63,16 @@ export default function EmailVerification() {
               <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="h-8 w-8 text-emerald-500" />
               </div>
-              <h1 className="text-xl font-bold text-gray-900 mb-2">Email vérifié !</h1>
+              <h1 className="text-xl font-bold text-gray-900 mb-2">{t('auth.emailVerifiedTitle')}</h1>
               {email && <p className="text-gray-500 text-sm mb-1"><strong>{email}</strong></p>}
               <p className="text-gray-500 text-sm mb-6">
-                Votre adresse email a été confirmée. Votre compte est maintenant pleinement actif.
+                {t('auth.emailVerifiedDesc')}
               </p>
               <button
                 onClick={() => navigate('/app')}
                 className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold transition-colors"
               >
-                Accéder à la plateforme <ArrowRight className="h-4 w-4" />
+                {t('auth.goToPlatform')} <ArrowRight className="h-4 w-4" />
               </button>
             </>
           )}
@@ -80,15 +82,15 @@ export default function EmailVerification() {
               <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="h-8 w-8 text-blue-500" />
               </div>
-              <h1 className="text-xl font-bold text-gray-900 mb-2">Déjà vérifié</h1>
+              <h1 className="text-xl font-bold text-gray-900 mb-2">{t('auth.alreadyVerified')}</h1>
               <p className="text-gray-500 text-sm mb-6">
-                Cette adresse email a déjà été vérifiée. Vous pouvez accéder à votre compte.
+                {t('auth.alreadyVerifiedDesc')}
               </p>
               <button
                 onClick={() => navigate('/app')}
                 className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors"
               >
-                Accéder à la plateforme <ArrowRight className="h-4 w-4" />
+                {t('auth.goToPlatform')} <ArrowRight className="h-4 w-4" />
               </button>
             </>
           )}
@@ -98,23 +100,23 @@ export default function EmailVerification() {
               <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
                 <XCircle className="h-8 w-8 text-red-500" />
               </div>
-              <h1 className="text-xl font-bold text-gray-900 mb-2">Lien invalide</h1>
+              <h1 className="text-xl font-bold text-gray-900 mb-2">{t('auth.invalidLink')}</h1>
               <p className="text-gray-500 text-sm mb-2">{errMsg}</p>
               <p className="text-gray-400 text-xs mb-6">
-                Le lien a peut-être expiré (validité 24h). Reconnectez-vous pour en recevoir un nouveau.
+                {t('auth.linkExpiredHint')}
               </p>
               <div className="space-y-3">
                 <button
                   onClick={() => navigate('/login')}
                   className="w-full px-6 py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-semibold transition-colors"
                 >
-                  Se connecter
+                  {t('auth.login')}
                 </button>
                 <button
                   onClick={() => navigate('/app/profile')}
                   className="w-full flex items-center justify-center gap-2 px-6 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
                 >
-                  <Mail className="h-4 w-4" />Renvoyer l'email de vérification
+                  <Mail className="h-4 w-4" />{t('auth.resendVerification')}
                 </button>
               </div>
             </>
@@ -122,7 +124,7 @@ export default function EmailVerification() {
         </div>
 
         <p className="text-center text-slate-500 text-xs mt-6">
-          ESGFlow — Plateforme de reporting ESG professionnelle
+          {t('auth.platformTagline')}
         </p>
       </div>
     </div>

@@ -7,6 +7,9 @@ import { useOnboarding } from '@/hooks/useOnboarding';
 import { TourProvider, useTourContext } from '@/components/tour/TourContext';
 import GuidedTour from '@/components/tour/GuidedTour';
 import QuickActions from '@/components/common/QuickActions';
+import TrialBanner from '@/components/common/TrialExpiredBanner';
+import DemoSessionBanner from '@/components/common/DemoSessionBanner';
+import OnboardingChecklist from '@/components/common/OnboardingChecklist';
 
 // Mount Joyride ONLY when the tour is active (run=true)
 function ConditionalGuidedTour() {
@@ -57,23 +60,22 @@ class ErrorBoundary extends Component<
 // Remplacez CRISP_WEBSITE_ID par votre ID Crisp (dashboard.crisp.chat → Settings → Website)
 const CRISP_WEBSITE_ID = import.meta.env.VITE_CRISP_WEBSITE_ID || '';
 
+type CrispWindow = Window & { $crisp?: unknown[]; CRISP_WEBSITE_ID?: string };
+
 function CrispWidget() {
   useEffect(() => {
     if (!CRISP_WEBSITE_ID) return;
-    // @ts-ignore
-    window.$crisp = [];
-    // @ts-ignore
-    window.CRISP_WEBSITE_ID = CRISP_WEBSITE_ID;
+    const w = window as CrispWindow;
+    w.$crisp = [];
+    w.CRISP_WEBSITE_ID = CRISP_WEBSITE_ID;
     const s = document.createElement('script');
     s.src = 'https://client.crisp.chat/l.js';
     s.async = true;
     document.head.appendChild(s);
     return () => {
       document.head.removeChild(s);
-      // @ts-ignore
-      delete window.$crisp;
-      // @ts-ignore
-      delete window.CRISP_WEBSITE_ID;
+      delete w.$crisp;
+      delete w.CRISP_WEBSITE_ID;
     };
   }, []);
   return null;
@@ -103,17 +105,25 @@ export default function Layout() {
       <ConditionalGuidedTour />
       <CrispWidget />
 
-      <div className="flex h-screen bg-surface-50 overflow-hidden">
+      <div className="flex h-screen bg-[#eef0f3] overflow-hidden">
+        <a
+          href="#app-main"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[60] focus:px-4 focus:py-2 focus:bg-emerald-600 focus:text-white focus:rounded-lg focus:font-semibold"
+        >
+          Aller au contenu principal
+        </a>
         <Sidebar
           mobileOpen={mobileMenuOpen}
           onMobileClose={() => setMobileMenuOpen(false)}
         />
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <DemoSessionBanner />
           <Header onMenuToggle={() => setMobileMenuOpen(o => !o)} />
+          <TrialBanner />
 
           {/* ── Main content ── */}
-          <main className="flex-1 overflow-y-auto">
+          <main id="app-main" aria-label="Contenu principal" className="flex-1 overflow-y-auto">
             <div className="p-6 lg:p-7 max-w-[1600px] mx-auto animate-fade-in">
               <ErrorBoundary>
                 <Outlet />
@@ -122,19 +132,21 @@ export default function Layout() {
           </main>
 
           <QuickActions />
+          <OnboardingChecklist />
 
           {/* ── Footer ── */}
-          <footer className="flex-shrink-0 border-t border-[#e8ecf0] bg-white/70 backdrop-blur-sm px-6 py-2.5">
-            <div className="flex items-center justify-between text-xs text-gray-400 max-w-[1600px] mx-auto">
-              <p>© 2026 GreenConnect — {t('footer.allRightsReserved')}</p>
-              <div className="hidden sm:flex gap-5">
+          <footer className="flex-shrink-0 border-t border-gray-100 bg-white px-6 py-2">
+            <div className="flex items-center justify-between text-[11px] text-gray-400 max-w-[1600px] mx-auto">
+              <div className="flex items-center gap-1.5">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span className="text-gray-400">Tous les services opérationnels</span>
+              </div>
+              <div className="hidden sm:flex gap-4">
                 <Link to="/privacy-policy"   className="hover:text-gray-600 transition-colors">Confidentialité</Link>
                 <Link to="/terms-of-service" className="hover:text-gray-600 transition-colors">CGU</Link>
-                <Link to="/cgv"              className="hover:text-gray-600 transition-colors">CGV</Link>
                 <Link to="/legal-notice"     className="hover:text-gray-600 transition-colors">Mentions légales</Link>
                 <a href="mailto:support@greenconnect.cloud" className="hover:text-gray-600 transition-colors">Support</a>
               </div>
-              <p className="text-primary-500 font-semibold">{t('common.version')} 0.1.0</p>
             </div>
           </footer>
         </div>

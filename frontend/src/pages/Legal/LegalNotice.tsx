@@ -1,23 +1,24 @@
 import { ArrowLeft, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import Button from '@/components/common/Button';
+import { usePageSeo } from '@/hooks/usePageSeo';
 
 export default function LegalNotice() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  usePageSeo({ id: 'legal', title: 'Mentions Légales — ESG Flow', description: 'Mentions légales de la plateforme ESG Flow — éditeur, hébergement, responsabilité, propriété intellectuelle.', url: 'https://greenconnect.cloud/legal-notice', ogImage: 'https://greenconnect.cloud/og/legal-notice.png' });
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-4xl px-6 py-12">
-        <Button
-          variant="secondary"
+        <button
+         
           onClick={() => navigate(-1)}
-          className="mb-8 flex items-center gap-2"
+          className="mb-8 flex items-center gap-2 tap-target"
         >
           <ArrowLeft className="h-4 w-4" />
           {t('legal.back')}
-        </Button>
+        </button>
 
         <div className="rounded-2xl bg-white p-8 shadow-sm md:p-12">
           <div className="mb-8 flex items-center gap-4">
@@ -33,20 +34,19 @@ export default function LegalNotice() {
           <div className="prose prose-gray max-w-none">
             <h2>1. Éditeur du Site</h2>
             <p>
-              <strong>Raison sociale :</strong> ESGFlow SAS<br />
+              <strong>Raison sociale :</strong> GreenConnect SAS<br />
               <strong>Forme juridique :</strong> Société par Actions Simplifiée<br />
-              <strong>Capital social :</strong> 100 000 €<br />
-              <strong>SIRET :</strong> 123 456 789 00012<br />
-              <strong>RCS :</strong> Paris B 123 456 789<br />
-              <strong>TVA intracommunautaire :</strong> FR 12 123456789<br />
-              <strong>Siège social :</strong> 123 Avenue des Champs-Élysées, 75008 Paris, France<br />
-              <strong>Téléphone :</strong> +33 1 23 45 67 89<br />
+              <strong>Capital social :</strong> 1 000 €<br />
+              <strong>SIRET :</strong> [À renseigner]<br />
+              <strong>RCS :</strong> [À renseigner]<br />
+              <strong>TVA intracommunautaire :</strong> [À renseigner]<br />
+              <strong>Siège social :</strong> 12 Vieux chemin de meaux, 93190 Livry-Gargan, France<br />
               <strong>Email :</strong> contact@greenconnect.cloud
             </p>
 
             <h3>Directeur de la publication</h3>
             <p>
-              M. Jean Dupont, Président<br />
+              [À renseigner — Directeur de la publication]<br />
               Email : direction@greenconnect.cloud
             </p>
 
@@ -60,20 +60,20 @@ export default function LegalNotice() {
 
             <h2>3. Propriété Intellectuelle</h2>
             <p>
-              L'ensemble du site ESGFlow (structure, graphismes, textes, images, logos, icônes, etc.)
-              est la propriété exclusive d'ESGFlow SAS, sauf mentions particulières.
+              L'ensemble du site ESG Flow (structure, graphismes, textes, images, logos, icônes, etc.)
+              est la propriété exclusive de GreenConnect SAS, sauf mentions particulières.
             </p>
             <p>
               Toute reproduction, représentation, modification, publication ou adaptation de tout ou partie
               des éléments du site, quel que soit le moyen ou le procédé utilisé, est interdite sans
-              autorisation écrite préalable d'ESGFlow SAS.
+              autorisation écrite préalable de GreenConnect SAS.
             </p>
 
             <h3>Marques</h3>
             <p>
-              Les marques "ESGFlow" et les logos associés sont des marques déposées. Toute utilisation
-              non autorisée constitue une contrefaçon sanctionnée par les articles L.335-2 et suivants
-              du Code de la Propriété Intellectuelle.
+              Les marques "GreenConnect" et "ESG Flow" ainsi que les logos associés sont des marques
+              déposées. Toute utilisation non autorisée constitue une contrefaçon sanctionnée par les
+              articles L.335-2 et suivants du Code de la Propriété Intellectuelle.
             </p>
 
             <h2>4. Protection des Données Personnelles</h2>
@@ -91,7 +91,7 @@ export default function LegalNotice() {
             <h3>Délégué à la Protection des Données (DPO)</h3>
             <p>
               Email : privacy@greenconnect.cloud<br />
-              Courrier : ESGFlow SAS - DPO, 123 Avenue des Champs-Élysées, 75008 Paris, France
+              Courrier : GreenConnect SAS - DPO, 12 Vieux chemin de meaux, 93190 Livry-Gargan, France
             </p>
 
             <h2>5. Cookies</h2>
@@ -102,15 +102,15 @@ export default function LegalNotice() {
 
             <h2>6. Liens Hypertextes</h2>
             <p>
-              Le site peut contenir des liens vers des sites tiers. ESGFlow ne peut être tenu responsable
-              du contenu de ces sites externes.
+              Le site peut contenir des liens vers des sites tiers. GreenConnect SAS ne peut être tenu
+              responsable du contenu de ces sites externes.
             </p>
 
             <h2>7. Limitation de Responsabilité</h2>
             <p>
-              ESGFlow s'efforce d'assurer l'exactitude et la mise à jour des informations diffusées sur
-              ce site. Toutefois, ESGFlow ne peut garantir l'exactitude, la précision ou l'exhaustivité
-              des informations mises à disposition.
+              GreenConnect SAS s'efforce d'assurer l'exactitude et la mise à jour des informations diffusées
+              sur ce site. Toutefois, GreenConnect SAS ne peut garantir l'exactitude, la précision ou
+              l'exhaustivité des informations mises à disposition.
             </p>
 
             <h2>8. Droit Applicable</h2>
@@ -121,17 +121,16 @@ export default function LegalNotice() {
 
             <h2>9. Crédits</h2>
             <p>
-              <strong>Conception et développement :</strong> ESGFlow SAS<br />
+              <strong>Conception et développement :</strong> GreenConnect SAS<br />
               <strong>Icônes :</strong> Lucide Icons (MIT License)<br />
-              <strong>Illustrations :</strong> Propriété ESGFlow SAS
+              <strong>Illustrations :</strong> Propriété GreenConnect SAS
             </p>
 
             <h2>10. Contact</h2>
             <p>
               Pour toute question concernant ces mentions légales :<br />
               Email : legal@greenconnect.cloud<br />
-              Téléphone : +33 1 23 45 67 89<br />
-              Courrier : ESGFlow SAS, 12 Vieux chemin de meaux, 93190 Livry-Gargan, France
+              Courrier : GreenConnect SAS, 12 Vieux chemin de meaux, 93190 Livry-Gargan, France
             </p>
           </div>
         </div>

@@ -1,670 +1,546 @@
-import { useState, useEffect } from 'react';
+/**
+ * ReportGeneration — Page de génération de rapports ESG professionnels
+ * Connectée aux vraies données via le backend ReportLab
+ * Design : 2 colonnes — configurateur à gauche, aperçu live à droite
+ */
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  FileText,
-  Download,
-  Calendar,
-  Building2,
-  Filter,
-  CheckCircle,
-  Loader,
-  Sparkles,
-  BarChart3,
-  TrendingUp,
-  Award,
-  Globe
+  FileText, Download, Building2, CheckCircle, Loader2,
+  Sparkles, BarChart3, TrendingUp, Award, Globe,
+  FileSpreadsheet, FileType, Braces, ChevronRight,
+  Leaf, Users, Landmark, AlertTriangle, Target,
+  ShieldCheck, Calendar, RefreshCw, Eye, Star,
+  ArrowUpRight, ArrowDownRight, Minus,
 } from 'lucide-react';
-import Card from '@/components/common/Card';
-import Button from '@/components/common/Button';
-import Spinner from '@/components/common/Spinner';
 import BackButton from '@/components/common/BackButton';
 import api from '@/services/api';
 import { getOrgLatestScore, getOrgScores } from '@/services/esgScoringService';
-import { generateExcel, generateWord } from '@/utils/reportGenerator';
-import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
-interface Organization {
-  id: string;
-  name: string;
-  industry?: string;
-  external_id?: string;
-}
-
-type ReportType = 'executive' | 'detailed' | 'csrd' | 'gri' | 'tcfd';
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface Organization { id: string; name: string; industry?: string; }
+type ReportType = 'executive' | 'detailed' | 'csrd' | 'dpef' | 'carbon' | 'tcfd' | 'gri';
 type ReportFormat = 'pdf' | 'excel' | 'word';
 
-type ReportPeriod = 'monthly' | 'quarterly' | 'yearly' | 'custom';
-
-async function generatePdfReport(reportData: {
-  organization: Organization;
-  scores: any;
-  evolution: any[];
-  period: { start: string; end: string };
-  type: ReportType;
-  generatedAt: string;
-}) {
-  const { jsPDF } = await import('jspdf');
-  const doc = new jsPDF();
-  const generatedDate = format(new Date(reportData.generatedAt), 'dd/MM/yyyy HH:mm');
-  const start = format(new Date(reportData.period.start), 'dd/MM/yyyy');
-  const end = format(new Date(reportData.period.end), 'dd/MM/yyyy');
-
-  doc.setFillColor(37, 99, 235);
-  doc.rect(0, 0, 210, 30, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(20);
-  doc.text('Rapport ESG', 14, 19);
-
-  doc.setTextColor(31, 41, 55);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(11);
-  doc.text(`Organisation : ${reportData.organization.name}`, 14, 42);
-  doc.text(`Periode : ${start} au ${end}`, 14, 49);
-  doc.text(`Type : ${reportData.type}`, 14, 56);
-  doc.text(`Genere le : ${generatedDate}`, 14, 63);
-
-  doc.setDrawColor(229, 231, 235);
-  doc.line(14, 69, 196, 69);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.text('Synthese du score ESG', 14, 81);
-
-  doc.setFontSize(26);
-  doc.setTextColor(37, 99, 235);
-  doc.text(`${Number(reportData.scores?.overall_score ?? 0).toFixed(1)} / 100`, 14, 97);
-
-  doc.setTextColor(31, 41, 55);
-  doc.setFontSize(12);
-  doc.text(`Note : ${reportData.scores?.grade ?? 'N/A'}`, 140, 97);
-
-  const pillarRows = [
-    ['Environnement', Number(reportData.scores?.environmental_score ?? 0).toFixed(1)],
-    ['Social', Number(reportData.scores?.social_score ?? 0).toFixed(1)],
-    ['Gouvernance', Number(reportData.scores?.governance_score ?? 0).toFixed(1)],
-  ];
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('Detail par pilier', 14, 115);
-
-  let y = 126;
-  pillarRows.forEach(([label, value], index) => {
-    if (index % 2 === 0) {
-      doc.setFillColor(249, 250, 251);
-      doc.rect(14, y - 6, 182, 10, 'F');
-    }
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(31, 41, 55);
-    doc.text(String(label), 18, y);
-    doc.text(String(value), 175, y, { align: 'right' });
-    y += 12;
-  });
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('Historique recent', 14, 170);
-
-  const recentEvolution = (reportData.evolution || []).slice(-6);
-  y = 181;
-  recentEvolution.forEach((item, index) => {
-    const periodLabel = item?.month || item?.date || `Periode ${index + 1}`;
-    const value = Number(item?.overall_score ?? item?.score ?? 0).toFixed(1);
-    if (index % 2 === 0) {
-      doc.setFillColor(249, 250, 251);
-      doc.rect(14, y - 6, 182, 10, 'F');
-    }
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(31, 41, 55);
-    doc.text(String(periodLabel), 18, y);
-    doc.text(String(value), 175, y, { align: 'right' });
-    y += 12;
-  });
-
-  doc.setFontSize(8);
-  doc.setTextColor(107, 114, 128);
-  doc.text('ESGFlow - Document genere automatiquement', 14, 287);
-
-  const fileName = `ESG_Rapport_${reportData.organization.name.replace(/\s+/g, '_')}_${format(new Date(), 'yyyyMMdd_HHmm')}.pdf`;
-  const pdfBlob = doc.output('blob');
-  const pdfUrl = URL.createObjectURL(pdfBlob);
-  const link = document.createElement('a');
-  link.href = pdfUrl;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(pdfUrl);
+interface LiveData {
+  score: number;
+  rating: string;
+  environmental: number;
+  social: number;
+  governance: number;
+  data_completeness: number;
+  trend: number;          // delta vs previous score
+  materiality_count: number;
+  material_count: number;
+  risks_count: number;
+  critical_risks: number;
+  entries_count: number;
 }
 
+// ─── Config des types de rapports ────────────────────────────────────────────
+const REPORT_TYPES: Array<{
+  id: ReportType; name: string; desc: string; badge: string;
+  icon: React.ElementType; gradient: string; pages: string; formats: ReportFormat[];
+}> = [
+  {
+    id: 'csrd', name: 'Rapport CSRD', badge: 'Obligatoire',
+    desc: 'Rapport complet conforme directive CSRD/ESRS avec couverture E1-G1, double matérialité et piste d\'audit.',
+    icon: Globe, gradient: 'from-green-600 to-emerald-700', pages: '25-40 pages',
+    formats: ['pdf', 'excel', 'word'],
+  },
+  {
+    id: 'executive', name: 'Synthèse Exécutive', badge: 'Populaire',
+    desc: 'Tableau de bord 1 page pour COMEX et investisseurs — scores E/S/G, tendance, points clés.',
+    icon: Award, gradient: 'from-purple-600 to-violet-700', pages: '8-12 pages',
+    formats: ['pdf', 'excel', 'word'],
+  },
+  {
+    id: 'dpef', name: 'DPEF', badge: 'Réglementaire',
+    desc: 'Déclaration de performance extra-financière conforme articles L.225-102-1 et suivants.',
+    icon: FileText, gradient: 'from-blue-600 to-indigo-700', pages: '15-25 pages',
+    formats: ['pdf', 'word'],
+  },
+  {
+    id: 'carbon', name: 'Bilan Carbone', badge: 'GHG Protocol',
+    desc: 'Émissions Scopes 1/2/3 détaillées selon GHG Protocol, facteurs ADEME, objectifs SBTi.',
+    icon: Leaf, gradient: 'from-teal-600 to-green-700', pages: '10-18 pages',
+    formats: ['pdf', 'excel'],
+  },
+  {
+    id: 'tcfd', name: 'Rapport TCFD', badge: 'Investisseurs',
+    desc: 'Divulgations climatiques selon le cadre Task Force on Climate-related Financial Disclosures.',
+    icon: TrendingUp, gradient: 'from-orange-600 to-amber-700', pages: '12-20 pages',
+    formats: ['pdf', 'word'],
+  },
+  {
+    id: 'gri', name: 'Rapport GRI', badge: 'International',
+    desc: 'Standards GRI (Global Reporting Initiative) — référentiel international de durabilité.',
+    icon: BarChart3, gradient: 'from-rose-600 to-red-700', pages: '20-35 pages',
+    formats: ['pdf', 'excel', 'word'],
+  },
+  {
+    id: 'detailed', name: 'Rapport Détaillé', badge: 'Complet',
+    desc: 'Tous les indicateurs ESG avec données brutes, historique, matérialité, risques et fournisseurs.',
+    icon: ShieldCheck, gradient: 'from-gray-700 to-gray-900', pages: '30-50 pages',
+    formats: ['pdf', 'excel', 'word'],
+  },
+];
+
+const FORMAT_CONFIG: Record<ReportFormat, { icon: React.ElementType; label: string; ext: string; color: string }> = {
+  pdf:   { icon: FileType,        label: 'PDF',   ext: '.pdf',  color: 'text-red-600 bg-red-50 border-red-200' },
+  excel: { icon: FileSpreadsheet, label: 'Excel', ext: '.xlsx', color: 'text-green-700 bg-green-50 border-green-200' },
+  word:  { icon: FileText,        label: 'Word',  ext: '.docx', color: 'text-blue-700 bg-blue-50 border-blue-200' },
+};
+
+// ─── Score gauge SVG ──────────────────────────────────────────────────────────
+function ScoreGauge({ value, size = 96 }: { value: number; size?: number }) {
+  const r = 36; const cx = 50; const cy = 52;
+  const circ = Math.PI * r;
+  const pct = Math.min(1, Math.max(0, value / 100));
+  const dash = pct * circ;
+  const color = value >= 60 ? '#059669' : value >= 35 ? '#d97706' : '#dc2626';
+  return (
+    <svg width={size} height={size * 0.7} viewBox="0 0 100 65">
+      <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`} fill="none" stroke="#e5e7eb" strokeWidth="8" strokeLinecap="round" />
+      <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`} fill="none" stroke={color} strokeWidth="8" strokeLinecap="round"
+        strokeDasharray={`${dash} ${circ}`} style={{ transition: 'stroke-dasharray 0.6s ease' }} />
+      <text x={cx} y={cy - 4} textAnchor="middle" fontSize="16" fontWeight="700" fill={color}>{Math.round(value)}</text>
+      <text x={cx} y={cy + 10} textAnchor="middle" fontSize="7" fill="#9ca3af">/100</text>
+    </svg>
+  );
+}
+
+// ─── Mini bar ─────────────────────────────────────────────────────────────────
+function MiniBar({ label, value, color, icon: Icon }: { label: string; value: number; color: string; icon: React.ElementType }) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <span className="flex items-center gap-1 text-xs text-gray-500">
+          <Icon className={`h-3 w-3 ${color}`} /> {label}
+        </span>
+        <span className="text-xs font-bold text-gray-700">{Math.round(value)}</span>
+      </div>
+      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+        <div className="h-full rounded-full transition-all duration-700"
+          style={{ width: `${Math.min(100, value)}%`, background: color.includes('green') ? '#059669' : color.includes('blue') ? '#2563eb' : '#7c3aed' }} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Composant principal ──────────────────────────────────────────────────────
 export default function ReportGeneration() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
 
-  const [selectedOrg, setSelectedOrg] = useState<string>('');
-  const [reportType, setReportType] = useState<ReportType>('executive');
+  // State
+  const [orgs, setOrgs] = useState<Organization[]>([]);
+  const [selectedOrg, setSelectedOrg] = useState('');
+  const [reportType, setReportType] = useState<ReportType>('csrd');
   const [reportFormat, setReportFormat] = useState<ReportFormat>('pdf');
-  const [reportPeriod, setReportPeriod] = useState<ReportPeriod>('yearly');
-  const [startDate, setStartDate] = useState(format(new Date(2025, 0, 1), 'yyyy-MM-dd'));
-  const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [includeCharts, setIncludeCharts] = useState(true);
-  const [includeRecommendations, setIncludeRecommendations] = useState(true);
-  const [includeComparison, setIncludeComparison] = useState(false);
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [generating, setGenerating] = useState(false);
+  const [loadingData, setLoadingData] = useState(false);
+  const [liveData, setLiveData] = useState<LiveData | null>(null);
 
+  const selectedTypeConfig = REPORT_TYPES.find(r => r.id === reportType)!;
+  const availableFormats = selectedTypeConfig.formats;
+
+  // Charger les organisations
   useEffect(() => {
-    loadOrganizations();
+    api.get('/organizations').then(res => {
+      const data = res.data?.items || res.data?.organizations || (Array.isArray(res.data) ? res.data : []);
+      setOrgs(Array.isArray(data) ? data : []);
+      if (data.length > 0) setSelectedOrg(data[0].id);
+    }).catch(() => {});
   }, []);
 
-  const loadOrganizations = async () => {
-    try {
-      const res = await api.get('/organizations');
-      const orgs = res.data?.organizations || res.data?.items || [];
-      setOrganizations(orgs);
-      if (orgs.length > 0) {
-        setSelectedOrg(orgs[0].id);
-      }
-    } catch (error) {
-      console.error('Error loading organizations:', error);
-      toast.error(t('reporting.loadOrgError'));
-    } finally {
-      setLoading(false);
+  // Ajuster le format si pas dispo pour ce type
+  useEffect(() => {
+    if (!availableFormats.includes(reportFormat)) {
+      setReportFormat(availableFormats[0]);
     }
-  };
+  }, [reportType]);
 
-  const generateReport = async () => {
-    if (!selectedOrg) {
-      toast.error(t('reporting.selectOrgError'));
-      return;
-    }
-
-    setGenerating(true);
-
+  // Charger les données live quand org change
+  const loadLiveData = useCallback(async (orgId: string) => {
+    if (!orgId) return;
+    setLoadingData(true);
     try {
-      const org = organizations.find(o => o.id === selectedOrg);
-      if (!org) {
-        toast.error(t('reporting.orgNotFound'));
-        return;
-      }
-
-      // Charge les vrais scores depuis l'API
-      const [latestScore, scoreHistory] = await Promise.all([
-        getOrgLatestScore(selectedOrg),
-        getOrgScores(selectedOrg, 12),
+      const [latestScore, history, matRes, riskRes, entriesRes] = await Promise.allSettled([
+        getOrgLatestScore(orgId),
+        getOrgScores(orgId, 2),
+        api.get('/materiality/issues'),
+        api.get('/esg-risks'),
+        api.get('/data-entries'),
       ]);
 
-      const MONTHS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
-      const evolution = [...scoreHistory].reverse().map((s) => ({
-        month: MONTHS[new Date(s.date).getMonth()],
-        overall: s.overall_score,
-        environmental: s.environmental_score,
-        social: s.social_score,
-        governance: s.governance_score,
-      }));
+      const score = latestScore.status === 'fulfilled' ? latestScore.value : null;
+      const hist  = history.status === 'fulfilled' ? history.value : [];
+      const mat   = matRes.status === 'fulfilled' ? (matRes.value.data?.issues || matRes.value.data || []) : [];
+      const risks = riskRes.status === 'fulfilled' ? (riskRes.value.data?.risks || riskRes.value.data || []) : [];
+      const entries = entriesRes.status === 'fulfilled' ? (entriesRes.value.data?.entries || entriesRes.value.data || []) : [];
 
-      const reportData = {
-        organization: org,
-        scores: latestScore ? {
-          overall: latestScore.overall_score,
-          environmental: latestScore.environmental_score,
-          social: latestScore.social_score,
-          governance: latestScore.governance_score,
-          rating: latestScore.rating,
-          trend: 0,
-          data_completeness: latestScore.data_completeness ?? 0,
-        } : {
-          overall: 0, environmental: 0, social: 0,
-          governance: 0, rating: '—', trend: 0, data_completeness: 0,
-        },
-        evolution,
-        period: { start: startDate, end: endDate },
-        type: reportType,
-        generatedAt: new Date().toISOString(),
-      };
-
-      const progressToast = toast.loading(t('reporting.generatingProgress'));
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      switch (reportFormat) {
-        case 'pdf':
-          await generatePdfReport(reportData);
-          break;
-        case 'excel':
-          generateExcel(reportData);
-          break;
-        case 'word':
-          await generateWord(reportData);
-          break;
+      // Calcul de tendance
+      let trend = 0;
+      if (Array.isArray(hist) && hist.length >= 2) {
+        const sorted = [...hist].sort((a,b) => new Date(b.date||0).getTime() - new Date(a.date||0).getTime());
+        trend = (sorted[0]?.overall_score || 0) - (sorted[1]?.overall_score || 0);
       }
 
-      toast.success(t('reporting.generateSuccess'), { id: progressToast });
+      setLiveData({
+        score: score?.overall_score || 0,
+        rating: score?.rating || '—',
+        environmental: score?.environmental_score || 0,
+        social: score?.social_score || 0,
+        governance: score?.governance_score || 0,
+        data_completeness: score?.data_completeness || 0,
+        trend: Math.round(trend * 10) / 10,
+        materiality_count: Array.isArray(mat) ? mat.length : 0,
+        material_count: Array.isArray(mat) ? mat.filter((m:any) => m.is_material).length : 0,
+        risks_count: Array.isArray(risks) ? risks.length : 0,
+        critical_risks: Array.isArray(risks) ? risks.filter((r:any) => r.severity === 'critical').length : 0,
+        entries_count: Array.isArray(entries) ? entries.length : 0,
+      });
+    } catch {
+      setLiveData(null);
+    } finally {
+      setLoadingData(false);
+    }
+  }, []);
 
-    } catch (error: any) {
-      console.error('Error generating report:', error);
-      toast.error(t('reporting.generateError'));
+  useEffect(() => {
+    if (selectedOrg) loadLiveData(selectedOrg);
+  }, [selectedOrg]);
+
+  // Génération via backend
+  const handleGenerate = async () => {
+    if (!selectedOrg) { toast.error('Sélectionnez une organisation.'); return; }
+    setGenerating(true);
+    const toastId = toast.loading('Génération du rapport en cours…');
+    try {
+      const org = orgs.find(o => o.id === selectedOrg);
+      const res = await api.post('/reports/generate', {
+        report_type: reportType,
+        organization_id: selectedOrg,
+        year,
+        format: reportFormat,
+        period: 'yearly',
+      }, { responseType: 'blob' });
+
+      // Téléchargement du fichier
+      const ext = FORMAT_CONFIG[reportFormat].ext;
+      const orgSlug = (org?.name || 'rapport').toLowerCase().replace(/[^a-z0-9]/g, '_');
+      const filename = `esgflow_${reportType}_${orgSlug}_${year}${ext}`;
+      const url = URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+
+      toast.success(`Rapport ${FORMAT_CONFIG[reportFormat].label} généré avec succès !`, { id: toastId });
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail || 'Erreur lors de la génération.';
+      toast.error(msg, { id: toastId });
     } finally {
       setGenerating(false);
     }
   };
 
-  const reportTypes = [
-    {
-      id: 'executive' as ReportType,
-      name: t('reporting.typeExecutive'),
-      description: t('reporting.typeExecutiveDesc'),
-      icon: Award,
-      color: 'from-purple-500 to-purple-600'
-    },
-    {
-      id: 'detailed' as ReportType,
-      name: t('reporting.typeDetailed'),
-      description: t('reporting.typeDetailedDesc'),
-      icon: BarChart3,
-      color: 'from-blue-500 to-blue-600'
-    },
-    {
-      id: 'csrd' as ReportType,
-      name: t('reporting.typeCSRD'),
-      description: t('reporting.typeCSRDDesc'),
-      icon: Globe,
-      color: 'from-green-500 to-green-600'
-    },
-    {
-      id: 'gri' as ReportType,
-      name: t('reporting.typeGRI'),
-      description: t('reporting.typeGRIDesc'),
-      icon: CheckCircle,
-      color: 'from-orange-500 to-orange-600'
-    },
-    {
-      id: 'tcfd' as ReportType,
-      name: t('reporting.typeTCFD'),
-      description: t('reporting.typeTCFDDesc'),
-      icon: TrendingUp,
-      color: 'from-red-500 to-red-600'
-    }
-  ];
-
-  const REPORT_PERIOD_LABELS: Record<ReportPeriod, string> = {
-    monthly: t('reporting.monthly'),
-    quarterly: t('reporting.quarterly'),
-    yearly: t('reporting.yearly'),
-    custom: t('reporting.custom'),
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
+  const selectedOrg_ = orgs.find(o => o.id === selectedOrg);
+  const TrendIcon = liveData ? (liveData.trend > 0 ? ArrowUpRight : liveData.trend < 0 ? ArrowDownRight : Minus) : Minus;
+  const trendColor = liveData ? (liveData.trend > 0 ? 'text-green-600' : liveData.trend < 0 ? 'text-red-500' : 'text-gray-400') : 'text-gray-400';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <BackButton to="/app/reports" label="Rapports" />
-      {/* Header */}
-      <div className="rounded-3xl border border-gray-200 bg-gradient-to-r from-slate-900 via-slate-800 to-primary-700 p-8 text-white shadow-sm">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+
+      {/* ── Hero ───────────────────────────────────────────────────────────── */}
+      <div className="rounded-2xl p-6 text-white" style={{ background: 'linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%)' }}>
+        <div className="flex items-center justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/90 ring-1 ring-white/15">
-              <Sparkles className="h-3.5 w-3.5" />
-              {t('reporting.badge')}
+            <div className="inline-flex items-center gap-2 bg-white/15 rounded-full px-3 py-1 text-xs font-medium mb-3">
+              <Sparkles className="h-3.5 w-3.5" /> Rapports professionnels connectés aux données réelles
             </div>
-            <h1 className="mt-4 flex items-center gap-3 text-3xl font-bold tracking-tight">
-              <FileText className="h-8 w-8 text-white" />
-              {t('reporting.title')}
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm text-white/80">
-              {t('reporting.subtitle')}
+            <h1 className="text-2xl font-bold mb-1">Générateur de rapports ESG</h1>
+            <p className="text-green-200 text-sm">PDF haute qualité · ReportLab · Données temps réel · Piste d'audit SHA-256</p>
+          </div>
+          <div className="hidden lg:flex items-center gap-3">
+            <button onClick={() => navigate('/app/reports/list')} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-sm px-4 py-2 rounded-xl transition-colors border border-white/20">
+              <Eye className="h-4 w-4" /> Historique
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Layout 2 colonnes ──────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+
+        {/* ── Colonne gauche : Configurateur ─────────────────────────────── */}
+        <div className="xl:col-span-3 space-y-5">
+
+          {/* Organisation + Année */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-green-600" /> Organisation & Période
+            </h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">Organisation</label>
+                <select
+                  value={selectedOrg}
+                  onChange={e => setSelectedOrg(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                >
+                  <option value="">— Sélectionner —</option>
+                  {orgs.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">Exercice</label>
+                <select
+                  value={year}
+                  onChange={e => setYear(+e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                >
+                  {[2026, 2025, 2024, 2023].map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Type de rapport */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <FileText className="h-4 w-4 text-green-600" /> Type de rapport
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {REPORT_TYPES.map(type => {
+                const Icon = type.icon;
+                const selected = reportType === type.id;
+                return (
+                  <button
+                    key={type.id}
+                    onClick={() => setReportType(type.id)}
+                    className={`text-left p-4 rounded-xl border-2 transition-all ${
+                      selected ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300 bg-white'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`h-9 w-9 rounded-xl bg-gradient-to-br ${type.gradient} flex items-center justify-center flex-shrink-0`}>
+                        <Icon className="h-4.5 w-4.5 text-white" style={{ width: 18, height: 18 }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-sm font-semibold text-gray-900">{type.name}</span>
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                            type.badge === 'Obligatoire' ? 'bg-red-100 text-red-700' :
+                            type.badge === 'Populaire' ? 'bg-purple-100 text-purple-700' :
+                            type.badge === 'Réglementaire' ? 'bg-blue-100 text-blue-700' :
+                            'bg-gray-100 text-gray-600'
+                          }`}>{type.badge}</span>
+                        </div>
+                        <p className="text-xs text-gray-500 leading-snug line-clamp-2">{type.desc}</p>
+                        <p className="text-[10px] text-gray-400 mt-1 font-medium">{type.pages}</p>
+                      </div>
+                      {selected && <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Format */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <Download className="h-4 w-4 text-green-600" /> Format d'export
+            </h2>
+            <div className="flex flex-wrap gap-3">
+              {availableFormats.map(fmt => {
+                const cfg = FORMAT_CONFIG[fmt];
+                const Icon = cfg.icon;
+                return (
+                  <button
+                    key={fmt}
+                    onClick={() => setReportFormat(fmt)}
+                    className={`flex items-center gap-2.5 px-5 py-3 rounded-xl border-2 text-sm font-semibold transition-all ${
+                      reportFormat === fmt
+                        ? cfg.color + ' border-current shadow-sm'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    <Icon className="h-4.5 w-4.5" style={{ width: 18, height: 18 }} />
+                    {cfg.label}
+                    <span className="font-mono text-xs opacity-60">{cfg.ext}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-gray-400 mt-3">
+              {reportFormat === 'pdf' && '📄 PDF haute qualité — ReportLab, design professionnel, piste d\'audit SHA-256 intégrée.'}
+              {reportFormat === 'excel' && '📊 Excel multi-onglets — Données brutes ESRS, historique scores, matérialité, risques.'}
+              {reportFormat === 'word' && '📝 Word structuré — Document éditable pour personnalisation avant soumission.'}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-white/70">{t('reporting.formats')}</p>
-              <p className="mt-1 text-lg font-semibold">PDF · Excel · Word</p>
-            </div>
-            <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-white/70">{t('reporting.standards')}</p>
-              <p className="mt-1 text-lg font-semibold">CSRD · GRI · TCFD</p>
-            </div>
-            <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-white/70">{t('reporting.objective')}</p>
-              <p className="mt-1 text-lg font-semibold">{t('reporting.readyToShare')}</p>
-            </div>
-          </div>
+          {/* Bouton générer */}
+          <button
+            onClick={handleGenerate}
+            disabled={generating || !selectedOrg}
+            className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl text-white font-bold text-base transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+            style={{ background: generating || !selectedOrg ? '#9ca3af' : 'linear-gradient(135deg, #059669 0%, #047857 100%)' }}
+          >
+            {generating ? (
+              <><Loader2 className="h-5 w-5 animate-spin" /> Génération en cours…</>
+            ) : (
+              <><Download className="h-5 w-5" /> Générer {selectedTypeConfig.name} · {FORMAT_CONFIG[reportFormat].label} <ChevronRight className="h-4 w-4" /></>
+            )}
+          </button>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Configuration */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Report Type */}
-          <Card>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary-600" />
-              {t('reporting.reportType')}
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {reportTypes.map(type => (
-                <button
-                  key={type.id}
-                  onClick={() => setReportType(type.id)}
-                  className={`relative p-4 rounded-lg border-2 transition-all text-left ${
-                    reportType === type.id
-                      ? 'border-primary-500 bg-primary-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-lg bg-gradient-to-br ${type.color}`}>
-                      <type.icon className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-900">{type.name}</p>
-                      <p className="text-sm text-gray-600 mt-1">{type.description}</p>
-                    </div>
-                    {reportType === type.id && (
-                      <CheckCircle className="h-5 w-5 text-primary-600 absolute top-3 right-3" />
-                    )}
-                  </div>
+        {/* ── Colonne droite : Aperçu données live ─────────────────────────── */}
+        <div className="xl:col-span-2 space-y-4">
+
+          {/* Header aperçu */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-green-600" /> Données réelles
+              </h2>
+              {selectedOrg && (
+                <button onClick={() => loadLiveData(selectedOrg)} className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1">
+                  <RefreshCw className="h-3 w-3" /> Actualiser
                 </button>
+              )}
+            </div>
+
+            {!selectedOrg && (
+              <div className="text-center py-8 text-gray-400">
+                <Building2 className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                <p className="text-sm">Sélectionnez une organisation</p>
+              </div>
+            )}
+
+            {selectedOrg && loadingData && (
+              <div className="text-center py-8">
+                <Loader2 className="h-8 w-8 text-green-500 animate-spin mx-auto mb-2" />
+                <p className="text-xs text-gray-400">Chargement des données…</p>
+              </div>
+            )}
+
+            {selectedOrg && !loadingData && liveData && (
+              <div className="space-y-4">
+                {/* Org name */}
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center">
+                    <Building2 className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">{selectedOrg_?.name}</p>
+                    <p className="text-xs text-gray-400">{selectedOrg_?.industry || 'Exercice ' + year}</p>
+                  </div>
+                </div>
+
+                {/* Score global */}
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4">
+                  <div className="flex items-center gap-4">
+                    <ScoreGauge value={liveData.score} size={100} />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl font-black text-gray-900">{liveData.rating}</span>
+                        <span className={`flex items-center gap-0.5 text-sm font-bold ${trendColor}`}>
+                          <TrendIcon className="h-4 w-4" />
+                          {liveData.trend > 0 ? '+' : ''}{liveData.trend !== 0 ? liveData.trend : '—'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">Score ESG global</p>
+                      <div className="flex items-center gap-1.5 mt-2">
+                        <div className="h-1.5 w-16 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="h-full bg-green-500 rounded-full" style={{ width: `${Math.min(100, liveData.data_completeness)}%` }} />
+                        </div>
+                        <span className="text-[10px] text-gray-400">{Math.round(liveData.data_completeness)}% données</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* E/S/G bars */}
+                <div className="space-y-2.5">
+                  <MiniBar label="Environnement (E)" value={liveData.environmental} color="text-green-600" icon={Leaf} />
+                  <MiniBar label="Social (S)" value={liveData.social} color="text-blue-600" icon={Users} />
+                  <MiniBar label="Gouvernance (G)" value={liveData.governance} color="text-purple-600" icon={Landmark} />
+                </div>
+
+                {/* Stats */}
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { label: 'Enjeux matériels', value: liveData.material_count, sub: `sur ${liveData.materiality_count}`, icon: Target, color: 'text-green-600 bg-green-50' },
+                    { label: 'Risques critiques', value: liveData.critical_risks, sub: `sur ${liveData.risks_count}`, icon: AlertTriangle, color: liveData.critical_risks > 0 ? 'text-red-600 bg-red-50' : 'text-gray-600 bg-gray-50' },
+                  ].map(s => (
+                    <div key={s.label} className={`rounded-xl p-3 ${s.color.split(' ')[1]}`}>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <s.icon className={`h-3.5 w-3.5 ${s.color.split(' ')[0]}`} />
+                        <span className="text-[10px] text-gray-500 font-medium">{s.label}</span>
+                      </div>
+                      <p className={`text-xl font-black ${s.color.split(' ')[0]}`}>{s.value}</p>
+                      <p className="text-[10px] text-gray-400">{s.sub}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Contenu du rapport */}
+                <div className="border border-gray-100 rounded-xl p-3 bg-gray-50">
+                  <p className="text-[11px] font-bold text-gray-600 mb-2">Ce rapport contiendra :</p>
+                  <div className="space-y-1">
+                    {[
+                      `Score ESG ${liveData.rating} (${Math.round(liveData.score)}/100)`,
+                      `${liveData.entries_count} points de données ESRS`,
+                      `${liveData.material_count} enjeux de double matérialité`,
+                      `${liveData.risks_count} risques ESG évalués`,
+                      'Piste d\'audit SHA-256 certifiable',
+                      reportType === 'csrd' ? 'Balisage iXBRL EFRAG 2024-12-31' : 'Historique scores & tendances',
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-center gap-2 text-[11px] text-gray-600">
+                        <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {selectedOrg && !loadingData && !liveData && (
+              <div className="text-center py-6 text-gray-400">
+                <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                <p className="text-sm">Aucune donnée disponible</p>
+                <p className="text-xs mt-1">Collectez des données avant de générer un rapport.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Qualité du rapport */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <h3 className="text-xs font-bold text-gray-700 mb-3 flex items-center gap-2">
+              <Star className="h-3.5 w-3.5 text-amber-500" /> Standard professionnel
+            </h3>
+            <div className="space-y-2">
+              {[
+                { label: 'Moteur PDF', value: 'ReportLab 4.x', icon: '🔧' },
+                { label: 'Données', value: 'Temps réel (DB)', icon: '📡' },
+                { label: 'Audit trail', value: 'SHA-256 intégré', icon: '🔒' },
+                { label: 'Histori.', value: 'Sauvegardé auto', icon: '📁' },
+                { label: 'iXBRL', value: 'EFRAG 2024-12-31', icon: '✳️' },
+              ].map(r => (
+                <div key={r.label} className="flex items-center justify-between text-xs">
+                  <span className="text-gray-500">{r.icon} {r.label}</span>
+                  <span className="font-semibold text-gray-700">{r.value}</span>
+                </div>
               ))}
             </div>
-          </Card>
-
-          {/* Detailed Configuration */}
-          <Card>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Filter className="h-5 w-5 text-primary-600" />
-              {t('reporting.configuration')}
-            </h2>
-
-            <div className="space-y-4">
-              {/* Organization */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('reporting.organisation')} *
-                </label>
-                <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <select
-                    value={selectedOrg}
-                    onChange={(e) => setSelectedOrg(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  >
-                    {organizations.map(org => (
-                      <option key={org.id} value={org.id}>
-                        {org.name} {org.industry && `- ${org.industry}`}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Period */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('reporting.reportingPeriod')}
-                </label>
-                <div className="grid grid-cols-4 gap-2 mb-3">
-                  {(['monthly', 'quarterly', 'yearly', 'custom'] as ReportPeriod[]).map(period => (
-                    <button
-                      key={period}
-                      onClick={() => setReportPeriod(period)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                        reportPeriod === period
-                          ? 'bg-primary-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {REPORT_PERIOD_LABELS[period]}
-                    </button>
-                  ))}
-                </div>
-
-                {reportPeriod === 'custom' && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs text-gray-600 mb-1">{t('reporting.startDate')}</label>
-                      <input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-gray-600 mb-1">{t('reporting.endDate')}</label>
-                      <input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Format */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('reporting.outputFormat')}
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['pdf', 'excel', 'word'] as ReportFormat[]).map(fmt => (
-                    <button
-                      key={fmt}
-                      onClick={() => setReportFormat(fmt)}
-                      className={`px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-                        reportFormat === fmt
-                          ? 'bg-primary-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {fmt === 'pdf' ? 'PDF' : fmt === 'excel' ? 'Excel' : 'Word'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Options */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  {t('reporting.reportOptions')}
-                </label>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={includeCharts}
-                      onChange={(e) => setIncludeCharts(e.target.checked)}
-                      className="w-5 h-5 text-primary-600 rounded focus:ring-2 focus:ring-primary-500"
-                    />
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{t('reporting.includeCharts')}</p>
-                      <p className="text-sm text-gray-600">{t('reporting.includeChartsDesc')}</p>
-                    </div>
-                  </label>
-
-                  <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={includeRecommendations}
-                      onChange={(e) => setIncludeRecommendations(e.target.checked)}
-                      className="w-5 h-5 text-primary-600 rounded focus:ring-2 focus:ring-primary-500"
-                    />
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{t('reporting.includeRecommendations')}</p>
-                      <p className="text-sm text-gray-600">{t('reporting.includeRecommendationsDesc')}</p>
-                    </div>
-                  </label>
-
-                  <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={includeComparison}
-                      onChange={(e) => setIncludeComparison(e.target.checked)}
-                      className="w-5 h-5 text-primary-600 rounded focus:ring-2 focus:ring-primary-500"
-                    />
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{t('reporting.includeSectorComparison')}</p>
-                      <p className="text-sm text-gray-600">{t('reporting.includeSectorComparisonDesc')}</p>
-                    </div>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        {/* Preview & Actions */}
-        <div className="space-y-6">
-          {/* Preview */}
-          <Card className="border-gray-200 shadow-sm">
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">{t('reporting.reportPreview')}</h3>
-                <p className="text-sm text-gray-500 mt-1">{t('reporting.reportPreviewDesc')}</p>
-              </div>
-              <div className="rounded-xl bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700">
-                {reportFormat.toUpperCase()}
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="rounded-2xl bg-slate-900 p-4 text-white">
-                <p className="text-xs uppercase tracking-wide text-white/60">{t('reporting.selectedDocument')}</p>
-                <p className="mt-2 text-lg font-semibold">
-                  {reportTypes.find(t => t.id === reportType)?.name}
-                </p>
-                <p className="mt-1 text-sm text-white/70">
-                  {organizations.find(o => o.id === selectedOrg)?.name || t('reporting.noOrganisation')}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3">
-                  <p className="text-xs uppercase tracking-wide text-gray-500">{t('reporting.period')}</p>
-                  <p className="mt-1 font-semibold text-gray-900">{REPORT_PERIOD_LABELS[reportPeriod]}</p>
-                </div>
-                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3">
-                  <p className="text-xs uppercase tracking-wide text-gray-500">{t('reporting.format')}</p>
-                  <p className="mt-1 font-semibold text-gray-900">
-                    {reportFormat === 'pdf' ? 'PDF' : reportFormat === 'excel' ? 'Excel' : 'Word'}
-                  </p>
-                </div>
-              </div>
-
-              {reportPeriod === 'custom' && (
-                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-                  <p className="font-medium">{t('reporting.customPeriod')}</p>
-                  <p className="mt-1">
-                    {format(new Date(startDate), 'dd/MM/yyyy')} - {format(new Date(endDate), 'dd/MM/yyyy')}
-                  </p>
-                </div>
-              )}
-
-              <div>
-                <p className="text-sm font-medium text-gray-700 mb-3">{t('reporting.includedContent')}</p>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-2 text-sm">
-                    <span className="text-gray-700">{t('reporting.charts')}</span>
-                    <span className={`font-medium ${includeCharts ? 'text-green-600' : 'text-gray-400'}`}>
-                      {includeCharts ? t('reporting.included') : t('reporting.notIncluded')}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-2 text-sm">
-                    <span className="text-gray-700">{t('reporting.recommendations')}</span>
-                    <span className={`font-medium ${includeRecommendations ? 'text-green-600' : 'text-gray-400'}`}>
-                      {includeRecommendations ? t('reporting.included') : t('reporting.notIncluded')}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-2 text-sm">
-                    <span className="text-gray-700">{t('reporting.sectorComparison')}</span>
-                    <span className={`font-medium ${includeComparison ? 'text-green-600' : 'text-gray-400'}`}>
-                      {includeComparison ? t('reporting.included') : t('reporting.notIncluded')}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* Actions */}
-          <Card>
-            <Button
-              onClick={generateReport}
-              disabled={generating || !selectedOrg}
-              className="w-full mb-3"
-              size="lg"
-            >
-              {generating ? (
-                <>
-                  <Loader className="h-5 w-5 mr-2 animate-spin" />
-                  {t('reporting.generating')}
-                </>
-              ) : (
-                <>
-                  <Download className="h-5 w-5 mr-2" />
-                  {t('reporting.generateBtn')} {reportFormat === 'pdf' ? 'PDF' : reportFormat === 'excel' ? 'Excel' : 'Word'}
-                </>
-              )}
-            </Button>
-
-            <Button
-              variant="secondary"
-              className="w-full mb-3"
-              onClick={() => navigate('/app/reports/list')}
-            >
-              <FileText className="h-5 w-5 mr-2" />
-              {t('reporting.viewReports')}
-            </Button>
-
-            <Button
-              variant="secondary"
-              className="w-full"
-              onClick={() => navigate('/app/reports/scheduled')}
-            >
-              <Calendar className="h-5 w-5 mr-2" />
-              {t('reporting.scheduledReports')}
-            </Button>
-          </Card>
-
-          {/* Info */}
-          <Card className="bg-blue-50 border-blue-200">
-            <div className="flex gap-3">
-              <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium text-blue-900 mb-1">{t('reporting.complianceTitle')}</p>
-                <p className="text-sm text-blue-700">
-                  {t('reporting.complianceDesc')}
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          {/* Formats */}
-          <Card className="bg-green-50 border-green-200">
-            <div className="flex gap-3">
-              <Sparkles className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium text-green-900 mb-1">{t('reporting.professionalFormats')}</p>
-                <ul className="text-sm text-green-700 space-y-1">
-                  <li>PDF: {t('reporting.pdfDesc')}</li>
-                  <li>Excel: {t('reporting.excelDesc')}</li>
-                  <li>Word: {t('reporting.wordDesc')}</li>
-                </ul>
-              </div>
-            </div>
-          </Card>
+          </div>
         </div>
       </div>
     </div>

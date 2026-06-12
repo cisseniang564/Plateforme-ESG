@@ -13,7 +13,7 @@ import {
   GitMerge, BarChart2, AlertTriangle, BookOpen, Upload, RefreshCw,
   CheckSquare, TrendingUp as Trending, Cpu, MapPin, Code2,
   Menu, X as XIcon, Clock, Calculator, FileCheck, ArrowUpRight,
-  Newspaper, GraduationCap, ChevronLeft,
+  Newspaper, GraduationCap, ChevronLeft, Mail, ShieldAlert,
 } from 'lucide-react';
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
@@ -1318,12 +1318,7 @@ const WHY_PILLARS = [
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
-  const { t, i18n } = useTranslation();
-  const lang = (i18n.language || 'fr').split('-')[0];
-  const changeLang = (lng: string) => {
-    i18n.changeLanguage(lng);
-    try { localStorage.setItem('language', lng); } catch { /* noop */ }
-  };
+  const { t } = useTranslation();
   const tMod = (m: { id: string; name: string; tagline: string; desc: string }, field: 'name' | 'tagline' | 'desc') =>
     t(`landing.lp.modules.${m.id}.${field}`, m[field]) as string;
   const tBadge = (m: { id: string }, i: number, b: string) =>
@@ -1451,17 +1446,6 @@ export default function LandingPage() {
     },
   });
 
-  const langToggle = (
-    <div className={`flex items-center rounded-lg border overflow-hidden text-xs font-bold ${scrolled ? 'border-gray-200' : 'border-white/30'}`}>
-      {(['fr', 'en'] as const).map((lng) => (
-        <button key={lng} onClick={() => changeLang(lng)} aria-label={lng === 'fr' ? 'Français' : 'English'} aria-pressed={lang === lng}
-          className={`tap-target px-2.5 transition-colors ${lang === lng ? (scrolled ? 'bg-green-600 text-white' : 'bg-white/25 text-white') : (scrolled ? 'text-gray-500 hover:text-gray-900 hover:bg-gray-50' : 'text-white/70 hover:text-white hover:bg-white/10')}`}>
-          {lng.toUpperCase()}
-        </button>
-      ))}
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-white antialiased font-sans">
 
@@ -1515,6 +1499,13 @@ export default function LandingPage() {
             <button onClick={() => scrollTo('tarifs')} className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>{t('landing.lp.nav.pricing', 'Tarifs')}</button>
             <button onClick={() => scrollTo('qui-sommes-nous')} className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>{t('landing.lp.nav.about', 'À propos')}</button>
             <button onClick={() => scrollTo('faq')} className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>{t('landing.lp.nav.faqLabel', 'FAQ')}</button>
+            <Link to="/normes" className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>
+              {t('landing.lp.nav.normes', 'Normes')}
+            </Link>
+            <Link to="/contact" className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm flex items-center gap-1.5 ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>
+              <Mail className="h-3.5 w-3.5" />
+              {t('landing.lp.nav.contact', 'Contact')}
+            </Link>
             <div className="h-5 w-px bg-gray-300 mx-2" />
             <Link to="/login" className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600' : 'text-white/90 hover:text-white'}`}>{t('landing.lp.nav.login', 'Connexion')}</Link>
             <Link to="/demo">
@@ -1527,7 +1518,6 @@ export default function LandingPage() {
                 {t('landing.lp.nav.trial', 'Essai gratuit')}
               </button>
             </Link>
-            <div className="ml-2 pl-2 border-l border-gray-300/40">{langToggle}</div>
           </div>
 
           {/* Mobile hamburger */}
@@ -1545,11 +1535,15 @@ export default function LandingPage() {
               <button onClick={() => { scrollTo('qui-sommes-nous'); setMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">{t('landing.lp.nav.about', 'À propos')}</button>
               <button onClick={() => { scrollTo('faq'); setMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">{t('landing.lp.nav.faqLabel', 'FAQ')}</button>
               <Link to="/resources" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">{t('landing.lp.nav.resources', 'Ressources')}</Link>
+              <Link to="/normes" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">{t('landing.lp.nav.normes', 'Normes & Conformité')}</Link>
+              <Link to="/contact" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">
+                <Mail className="h-4 w-4 text-green-600" />
+                {t('landing.lp.nav.contact', 'Contact')}
+              </Link>
               <div className="border-t border-gray-100 pt-3 mt-3 space-y-2">
                 <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl text-center">{t('landing.lp.nav.login', 'Connexion')}</Link>
                 <Link to="/demo" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-semibold text-green-700 border border-green-200 bg-green-50 rounded-xl text-center">{t('landing.lp.nav.demo', 'Voir la démo')}</Link>
                 <Link to="/register" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-semibold text-white bg-green-600 rounded-xl text-center shadow-lg">{t('landing.lp.nav.trial14', 'Essai gratuit 14 jours')}</Link>
-                <div className="flex justify-center pt-2">{langToggle}</div>
               </div>
             </div>
           </div>
@@ -1557,17 +1551,24 @@ export default function LandingPage() {
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
-      <section ref={heroRef} className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-slate-900 via-green-950 to-emerald-900">
-        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 0)', backgroundSize: '40px 40px' }} />
-        <div className="absolute top-1/3 left-1/4 w-96 h-96 bg-green-500/15 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-emerald-400/10 rounded-full blur-3xl" />
+      <section ref={heroRef} className="relative min-h-screen flex items-center overflow-hidden" style={{ background: 'linear-gradient(135deg, #020b18 0%, #06101f 45%, #051a10 85%, #020b18 100%)' }}>
+        {/* Dot grid */}
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.038) 1px, transparent 0)', backgroundSize: '36px 36px' }} />
+        {/* Aurora blobs — animés via keyframes */}
+        <div className="absolute pointer-events-none" style={{ top: '-8%', left: '16%', width: 740, height: 740, borderRadius: '50%', filter: 'blur(130px)', background: 'radial-gradient(ellipse, rgba(16,185,129,0.22) 0%, transparent 65%)', animation: 'aurora1 9s ease-in-out infinite' }} />
+        <div className="absolute pointer-events-none" style={{ bottom: '-5%', right: '8%', width: 630, height: 630, borderRadius: '50%', filter: 'blur(110px)', background: 'radial-gradient(ellipse, rgba(5,150,105,0.16) 0%, transparent 65%)', animation: 'aurora2 11s ease-in-out infinite' }} />
+        <div className="absolute pointer-events-none" style={{ top: '42%', left: '-5%', width: 460, height: 460, borderRadius: '50%', filter: 'blur(90px)', background: 'radial-gradient(ellipse, rgba(14,165,233,0.08) 0%, transparent 65%)', animation: 'aurora3 13s ease-in-out infinite' }} />
+        <div className="absolute pointer-events-none" style={{ top: '5%', right: '4%', width: 340, height: 340, borderRadius: '50%', filter: 'blur(80px)', background: 'radial-gradient(ellipse, rgba(52,211,153,0.1) 0%, transparent 65%)', animation: 'aurora2 7s ease-in-out infinite reverse' }} />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/15 border border-green-500/30 rounded-full text-green-300 text-sm font-medium">
-              <Sparkles className="h-4 w-4" />
+            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full text-sm font-medium" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.32)', color: '#6ee7b7' }}>
+              <span className="relative flex h-2 w-2 flex-shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+              </span>
               {t('landing.lp.hero.badge', '22 modules · CSRD · Scope 3 · IA générative')}
-              <span className="bg-green-500/20 px-2 py-0.5 rounded-full text-xs text-green-400">2026</span>
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: 'rgba(16,185,129,0.25)', color: '#34d399' }}>2026</span>
             </div>
 
             <h1 className="text-5xl lg:text-6xl xl:text-7xl font-extrabold text-white leading-[1.05] tracking-tight">
@@ -1588,21 +1589,41 @@ export default function LandingPage() {
 
             <div className="flex flex-wrap gap-3">
               <Link to="/register">
-                <button className="group flex items-center gap-2 px-7 py-4 bg-green-500 hover:bg-green-400 text-white font-bold rounded-2xl transition-all shadow-xl shadow-green-500/30 hover:-translate-y-0.5 text-base">
+                <button className="group flex items-center gap-2 px-7 py-4 text-white font-bold rounded-2xl transition-all text-base hover:-translate-y-0.5 active:translate-y-0" style={{ background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', boxShadow: '0 0 0 1px rgba(16,185,129,0.5), 0 8px 32px rgba(5,150,105,0.45), 0 2px 6px rgba(0,0,0,0.3)' }}>
                   {t('landing.lp.hero.cta1', 'Essai gratuit 14 jours')}
                   <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </button>
               </Link>
               <Link to="/demo">
-                <button className="flex items-center gap-2 px-7 py-4 bg-white/10 hover:bg-white/20 border border-white/30 text-white font-semibold rounded-2xl transition-all text-base backdrop-blur-sm">
+                <button className="flex items-center gap-2 px-7 py-4 font-semibold rounded-2xl transition-all text-base text-white hover:bg-white/[0.13]" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.18)' }}>
                   <Play className="h-4 w-4 fill-white" /> {t('landing.lp.hero.cta2', 'Démo interactive')}
                 </button>
               </Link>
             </div>
 
-            <div className="flex items-center gap-2 text-sm text-slate-400">
-              <CheckCircle className="h-4 w-4 text-green-400 flex-shrink-0" />
-              {t('landing.lp.hero.noCard', 'Aucune carte bancaire · Sans engagement · Hébergé en France')}
+            <div className="space-y-3">
+              {/* Avatar social proof */}
+              <div className="flex items-center gap-3">
+                <div className="flex -space-x-2">
+                  {['#059669','#2563eb','#7c3aed','#dc2626','#d97706'].map((bg, i) => (
+                    <div key={i} className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                      style={{ backgroundColor: bg, borderColor: '#020b18' }}>
+                      {['A','M','L','R','S'][i]}
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <div className="flex items-center gap-0.5 mb-0.5">
+                    {[...Array(5)].map((_, i) => <Star key={i} className="h-3 w-3 text-amber-400 fill-amber-400" />)}
+                    <span className="text-xs text-slate-400 ml-1.5">4,9/5</span>
+                  </div>
+                  <span className="text-xs text-slate-400">500+ équipes ESG · Hébergé en France 🇫🇷</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-slate-400">
+                <CheckCircle className="h-4 w-4 text-green-400 flex-shrink-0" />
+                {t('landing.lp.hero.noCard', 'Aucune carte bancaire · Sans engagement · Hébergé en France')}
+              </div>
             </div>
 
             {/* Stats */}
@@ -1614,58 +1635,141 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Hero rotating preview */}
+          {/* Hero — Browser mockup avec preview rotatif */}
           <div className="relative hidden lg:block">
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
-              {/* Tabs */}
-              <div className="flex overflow-x-auto gap-1 p-3 bg-white/5 border-b border-white/10">
-                {MODULES.slice(0, 5).map((m, i) => (
-                  <button
-                    key={i}
-                    onClick={() => { setActiveModule(i); setAutoPlay(false); }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors flex-shrink-0 ${activeModule === i ? `${m.bg} text-white shadow-sm` : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
-                  >
-                    <m.icon className="h-3.5 w-3.5" />
-                    {tMod(m, 'name').split(' ')[0]}
-                  </button>
-                ))}
+            {/* Multi-layer glow */}
+            <div className="absolute rounded-3xl pointer-events-none" style={{ inset: '-28px', background: 'radial-gradient(ellipse at 50% 40%, rgba(16,185,129,0.28) 0%, rgba(5,150,105,0.12) 40%, transparent 65%)', filter: 'blur(40px)' }} />
+            <div className="absolute rounded-3xl pointer-events-none" style={{ inset: '-16px', background: 'radial-gradient(ellipse at 70% 60%, rgba(14,165,233,0.1) 0%, transparent 60%)', filter: 'blur(25px)' }} />
+
+            {/* Browser chrome frame */}
+            <div className="relative rounded-2xl overflow-hidden" style={{ boxShadow: '0 40px 80px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.07), inset 0 1px 0 rgba(255,255,255,0.07)' }}>
+              {/* Barre de titre navigateur */}
+              <div className="flex items-center gap-3 px-4 py-3 border-b" style={{ background: '#111927', borderColor: 'rgba(255,255,255,0.06)' }}>
+                {/* Boutons macOS */}
+                <div className="flex gap-1.5 flex-shrink-0">
+                  <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                  <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
+                  <div className="w-3 h-3 rounded-full bg-[#28ca41]" />
+                </div>
+                {/* Barre d'adresse */}
+                <div className="flex-1 flex items-center gap-2 bg-white/[0.06] rounded-lg px-3 py-1.5 mx-2">
+                  <div className="flex items-center gap-1">
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <circle cx="5" cy="5" r="4.5" stroke="#10b981" strokeWidth="1" />
+                      <path d="M3.5 5L4.5 6L6.5 4" stroke="#10b981" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <span className="text-[11px] text-slate-400 font-mono tracking-tight">app.greenconnect.cloud</span>
+                </div>
+                {/* Action icons */}
+                <div className="flex gap-2 flex-shrink-0">
+                  <div className="w-3.5 h-3.5 rounded bg-white/[0.06]" />
+                  <div className="w-3.5 h-3.5 rounded bg-white/[0.06]" />
+                </div>
               </div>
-              {/* Preview */}
-              <div className="min-h-[300px] transition-all duration-300">
-                {PreviewComp && <PreviewComp />}
-              </div>
-              {/* Bottom bar */}
-              <div className="flex items-center gap-2 px-4 py-2.5 bg-white/5 border-t border-white/10">
-                <div className="flex gap-1 flex-1">
-                  {MODULES.map((_, i) => (
-                    <div key={i} onClick={() => { setActiveModule(i); setAutoPlay(false); }} className={`h-1 rounded-full flex-1 cursor-pointer transition-all ${i === activeModule ? 'bg-green-400' : 'bg-white/20'}`} />
+
+              {/* Contenu app — mini sidebar + preview */}
+              <div className="flex bg-[#0f1117]" style={{ minHeight: 340 }}>
+                {/* Mini sidebar */}
+                <div className="w-[52px] flex-shrink-0 bg-[#0f1117] border-r border-white/[0.05] flex flex-col items-center py-3 gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-1">
+                    <div className="w-2.5 h-2.5 rounded-sm bg-white/90" />
+                  </div>
+                  {['#10b981','#6b7280','#6b7280','#6b7280','#6b7280'].map((c, i) => (
+                    <div key={i} className="w-8 h-7 rounded-lg flex flex-col items-center justify-center gap-0.5" style={{ background: i === 0 ? c + '18' : 'transparent' }}>
+                      <div className="w-3.5 h-0.5 rounded-full" style={{ background: i === 0 ? c : '#374151' }} />
+                      <div className="w-2.5 h-0.5 rounded-full" style={{ background: i === 0 ? c : '#374151' }} />
+                    </div>
                   ))}
                 </div>
-                <button onClick={() => setAutoPlay(a => !a)} className="text-xs text-slate-400 hover:text-white transition-colors ml-2">
-                  {autoPlay ? '⏸' : '▶'}
-                </button>
+
+                {/* Module preview */}
+                <div className="flex-1 flex flex-col overflow-hidden">
+                  {/* Tabs */}
+                  <div className="flex gap-1 px-3 pt-2.5 pb-0 bg-[#141720] border-b border-white/[0.05]">
+                    {MODULES.slice(0, 5).map((m, i) => (
+                      <button
+                        key={i}
+                        onClick={() => { setActiveModule(i); setAutoPlay(false); }}
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-t-lg text-[11px] font-semibold whitespace-nowrap transition-colors flex-shrink-0 -mb-px ${
+                          activeModule === i
+                            ? 'bg-[#0f1117] text-white border border-b-[#0f1117] border-white/[0.08]'
+                            : 'text-slate-500 hover:text-slate-300'
+                        }`}
+                      >
+                        <m.icon className="h-3 w-3" style={{ color: activeModule === i ? m.color : undefined }} />
+                        {tMod(m, 'name').split(' ')[0]}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Preview — fond sombre identique à l'app */}
+                  <div className="flex-1 overflow-hidden" style={{ background: '#1a1f2e' }}>
+                    <div className="scale-[0.82] origin-top-left" style={{ width: '122%', height: '122%' }}>
+                      {PreviewComp && <PreviewComp />}
+                    </div>
+                  </div>
+                  {/* Progress bar en bas */}
+                  <div className="flex items-center gap-2 px-3 py-2 bg-[#141720] border-t border-white/[0.05]">
+                    <div className="flex gap-0.5 flex-1">
+                      {MODULES.map((_, i) => (
+                        <div key={i} onClick={() => { setActiveModule(i); setAutoPlay(false); }}
+                          className="h-0.5 rounded-full flex-1 cursor-pointer transition-all"
+                          style={{ background: i === activeModule ? '#10b981' : 'rgba(255,255,255,0.12)' }}
+                        />
+                      ))}
+                    </div>
+                    <button onClick={() => setAutoPlay(a => !a)} className="text-[10px] text-slate-500 hover:text-white transition-colors ml-1">
+                      {autoPlay ? '⏸' : '▶'}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-            {/* Floating badges */}
-            <div className="absolute -top-5 -right-5 bg-white rounded-2xl p-3 shadow-2xl border border-gray-100">
+
+            {/* Floating card — CSRD, top right */}
+            <div className="absolute -top-5 -right-5 rounded-2xl px-3.5 py-3" style={{ background: 'white', border: '1px solid #ecfdf5', boxShadow: '0 20px 50px rgba(0,0,0,0.22), 0 4px 12px rgba(5,150,105,0.12)' }}>
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 bg-green-100 rounded-xl flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-green-50">
                   <CheckCircle className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-gray-900">{t('landing.lp.hero.badgeCsrd', 'CSRD Conforme')}</div>
-                  <div className="text-xs text-gray-500">ESRS 2024</div>
+                  <div className="text-[12px] font-bold text-gray-900">CSRD Conforme</div>
+                  <div className="text-[10px] text-gray-400">ESRS 2024 · iXBRL ready</div>
                 </div>
               </div>
             </div>
-            <div className="absolute -bottom-5 -left-5 bg-white rounded-2xl p-3 shadow-2xl border border-gray-100">
+
+            {/* Floating card — Score ESG, bottom left */}
+            <div className="absolute -bottom-5 -left-5 rounded-2xl px-3.5 py-3" style={{ background: 'white', border: '1px solid #f0f9ff', boxShadow: '0 20px 50px rgba(0,0,0,0.22), 0 4px 12px rgba(16,185,129,0.1)' }}>
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center">
-                  <Lock className="h-5 w-5 text-slate-700" />
+                <div className="relative flex-shrink-0 w-10 h-10">
+                  <svg width="40" height="40" viewBox="0 0 40 40" style={{ transform: 'rotate(-90deg)' }}>
+                    <circle cx="20" cy="20" r="16" fill="none" stroke="#e5e7eb" strokeWidth="4.5" />
+                    <circle cx="20" cy="20" r="16" fill="none" stroke="#10b981" strokeWidth="4.5"
+                      strokeDasharray={`${2 * Math.PI * 16 * 0.78} ${2 * Math.PI * 16 * 0.22}`} strokeLinecap="round" />
+                  </svg>
+                  <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-gray-800">78</span>
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-gray-900">SHA-256 · iXBRL/ESEF</div>
-                  <div className="text-xs text-gray-500">Audit-ready</div>
+                  <div className="text-[12px] font-bold text-gray-900">Score ESG /100</div>
+                  <div className="flex items-center gap-1">
+                    <TrendingUp className="h-3 w-3 text-emerald-500" />
+                    <span className="text-[10px] text-emerald-600 font-semibold">+4 pts ce mois</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Floating card — Live sync, right */}
+            <div className="absolute top-[38%] -right-10 rounded-xl px-3 py-2.5" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 10px 30px rgba(0,0,0,0.4)' }}>
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2 flex-shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+                </span>
+                <div>
+                  <div className="text-[11px] font-bold text-white whitespace-nowrap">47 sources</div>
+                  <div className="text-[10px] text-slate-400">Live · Temps réel</div>
                 </div>
               </div>
             </div>
@@ -1684,6 +1788,20 @@ export default function LandingPage() {
         @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
         .marquee-track { animation: marquee 45s linear infinite; }
         .marquee-track:hover { animation-play-state: paused; }
+        @keyframes aurora1 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33%  { transform: translate(-55px, 35px) scale(1.07); }
+          66%  { transform: translate(40px, -25px) scale(0.94); }
+        }
+        @keyframes aurora2 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33%  { transform: translate(50px, -40px) scale(1.1); }
+          66%  { transform: translate(-35px, 28px) scale(0.92); }
+        }
+        @keyframes aurora3 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          50%  { transform: translate(28px, -50px) scale(1.09); }
+        }
       `}</style>
       <section ref={proofRef} className="pt-16 pb-8 bg-white border-b border-gray-100 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1740,16 +1858,16 @@ export default function LandingPage() {
           {/* ── Key metrics counters ── */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-14">
             {[
-              { value: 500, suffix: '+', label: t('landing.lp.proof.metricClients', 'Entreprises clientes'), icon: Building2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-              { value: 12, suffix: 'M+', label: t('landing.lp.proof.metricDataPoints', 'Data points traités'), icon: Database, color: 'text-blue-600', bg: 'bg-blue-50' },
-              { value: 45, suffix: '+', label: t('landing.lp.proof.metricCountries', 'Pays couverts'), icon: Globe, color: 'text-violet-600', bg: 'bg-violet-50' },
-              { value: 99, suffix: ',9%', label: t('landing.lp.proof.metricSla', 'Disponibilité SLA'), icon: Activity, color: 'text-amber-600', bg: 'bg-amber-50' },
-            ].map(({ value, suffix, label, icon: Icon, color, bg }) => (
-              <div key={label} className="relative text-center p-6 rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow group">
+              { value: 22,  suffix: '',    label: 'Modules ESG couverts',       icon: BarChart3,  color: 'text-emerald-600', bg: 'bg-emerald-50', ring: 'ring-emerald-100', accent: '#059669' },
+              { value: 100, suffix: '+',   label: 'Indicateurs ESRS trackés',   icon: Database,   color: 'text-blue-600',    bg: 'bg-blue-50',    ring: 'ring-blue-100',    accent: '#2563eb' },
+              { value: 10,  suffix: '',    label: 'Référentiels intégrés',      icon: Globe,      color: 'text-violet-600',  bg: 'bg-violet-50',  ring: 'ring-violet-100',  accent: '#7c3aed' },
+              { value: 99,  suffix: ',9%', label: 'Disponibilité SLA garanti',  icon: Activity,   color: 'text-amber-600',   bg: 'bg-amber-50',   ring: 'ring-amber-100',   accent: '#d97706' },
+            ].map(({ value, suffix, label, icon: Icon, color, bg, ring, accent }) => (
+              <div key={label} className={`relative text-center p-6 rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-lg transition-all duration-200 group ring-1 ${ring}`}>
                 <div className={`w-12 h-12 ${bg} rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform`}>
                   <Icon className={`h-6 w-6 ${color}`} />
                 </div>
-                <div className="text-3xl lg:text-4xl font-extrabold text-gray-900 tabular-nums">
+                <div className="text-3xl lg:text-4xl font-extrabold tabular-nums" style={{ color: accent }}>
                   <CountUp end={value} started={proofInView} />{suffix}
                 </div>
                 <div className="text-sm text-gray-500 mt-1 font-medium">{label}</div>
@@ -1831,8 +1949,10 @@ export default function LandingPage() {
       </section>
 
       {/* ── Global stats ─────────────────────────────────────────────────────── */}
-      <section ref={statsRef} className="relative py-16 bg-gradient-to-r from-green-900 via-emerald-900 to-green-900 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(ellipse at 30% 50%, rgba(16,185,129,0.15) 0%, transparent 60%), radial-gradient(ellipse at 70% 50%, rgba(5,150,105,0.1) 0%, transparent 60%)' }} />
+      <section ref={statsRef} className="relative py-16 overflow-hidden" style={{ background: 'linear-gradient(135deg, #020b18 0%, #06101f 50%, #051a10 100%)' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.032) 1px, transparent 0)', backgroundSize: '36px 36px' }} />
+        <div className="absolute pointer-events-none" style={{ top: '50%', left: '20%', transform: 'translateY(-50%)', width: 600, height: 300, borderRadius: '50%', filter: 'blur(80px)', background: 'radial-gradient(ellipse, rgba(16,185,129,0.18) 0%, transparent 65%)' }} />
+        <div className="absolute pointer-events-none" style={{ top: '50%', right: '15%', transform: 'translateY(-50%)', width: 400, height: 300, borderRadius: '50%', filter: 'blur(70px)', background: 'radial-gradient(ellipse, rgba(5,150,105,0.12) 0%, transparent 65%)' }} />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 lg:gap-8">
             {[
@@ -1843,9 +1963,9 @@ export default function LandingPage() {
               { value: 10, suffix: '', label: t('landing.lp.stats.frameworks', 'Référentiels couverts'), icon: BookOpen },
               { value: 500, suffix: '+', label: t('landing.lp.stats.clients', 'Entreprises clientes'), icon: Building2 },
             ].map(({ value, suffix, label, icon: Icon }) => (
-              <div key={label} className="text-center group">
-                <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                  <Icon className="h-5 w-5 text-emerald-300" />
+              <div key={label} className="text-center group cursor-default">
+                <div className="w-12 h-12 mx-auto mb-3 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110" style={{ background: 'rgba(16,185,129,0.14)', border: '1px solid rgba(16,185,129,0.2)', boxShadow: '0 0 20px rgba(16,185,129,0.08)' }}>
+                  <Icon className="h-5 w-5 text-emerald-400" />
                 </div>
                 <StatCounter value={value} suffix={suffix} label={label} started={statsInView} />
               </div>
@@ -3082,7 +3202,7 @@ export default function LandingPage() {
                   problem: 'Coût prohibitif des solutions enterprise',
                   problemDesc: 'Les plateformes ESG historiques (Workiva, Enablon) commencent à 50 000 €/an. Hors de portée pour les PME et ETI qui représentent 99% du tissu économique européen.',
                   solution: 'Pricing accessible dès 0 € — sans engagement',
-                  solutionDesc: 'Plan gratuit fonctionnel, plans PME à partir de 99 €/mois. La conformité ESG ne doit pas être réservée aux grands groupes.',
+                  solutionDesc: 'Plan gratuit fonctionnel, plan PME à partir de 249 €/mois. La conformité ESG ne doit pas être réservée aux grands groupes.',
                   problemIcon: AlertTriangle,
                   solutionIcon: CheckCircle,
                   problemColor: 'text-orange-500',
@@ -3151,7 +3271,7 @@ export default function LandingPage() {
                 {
                   icon: Calculator,
                   iconBg: 'bg-emerald-600',
-                  title: 'Accessible aux PME dès 99 €/mois',
+                  title: 'Accessible aux PME dès 249 €/mois',
                   desc: 'Workiva commence à 50 000 €/an. IBM Envizi demande une implémentation de 6 mois. ESGFlow est opérationnel en 48h, avec un plan gratuit fonctionnel et des tarifs pensés pour les PME et ETI — celles qui ont le plus besoin de se conformer et le moins de ressources pour le faire.',
                   badge: 'vs IBM Envizi / Workiva',
                   badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -3229,6 +3349,66 @@ export default function LandingPage() {
           <div className="space-y-3">
             {faqs.map((f, i) => <FaqItem key={i} q={t(`landing.lp.faq.items.${i}.q`, f.q)} a={t(`landing.lp.faq.items.${i}.a`, f.a)} />)}
           </div>
+        </div>
+      </section>
+
+      {/* ── Différenciateurs ────────────────────────────────────────────────── */}
+      <section className="py-24 bg-white relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(ellipse at 30% 20%, rgba(16,185,129,0.05) 0%, transparent 60%)' }} />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
+              <span className="w-8 h-px bg-emerald-400 inline-block" />
+              {t('landing.lp.differentiators.eyebrow', 'Ce qui nous différencie')}
+              <span className="w-8 h-px bg-emerald-400 inline-block" />
+            </span>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mt-2 mb-4">{t('landing.lp.differentiators.title', "Des fonctionnalités que peu d'outils ESG proposent")}</h2>
+            <p className="text-lg text-gray-500 max-w-2xl mx-auto">{t('landing.lp.differentiators.subtitle', 'Au-delà du calcul de score, ESGFlow embarque nativement des modules avancés, déjà disponibles dans votre espace.')}</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { icon: ClipboardList, title: "Piste d'audit SHA-256", desc: "Chaque donnée et chaque modification est chaînée cryptographiquement (SHA-256), pour une assurance ISAE 3000 facilitée.", path: '/features/audit-trail', color: '#374151', light: '#f9fafb' },
+              { icon: ShieldAlert, title: 'Plan de vigilance & alerte éthique', desc: "Cartographie des risques, plan d'actions et canal de signalement public conforme à la directive lanceurs d'alerte.", path: '/features/vigilance', color: '#dc2626', light: '#fef2f2' },
+              { icon: Building2, title: 'Mode Cabinet multi-clients', desc: 'Pilotez tous vos clients depuis un espace unique, avec isolation stricte des données et comparateur intégré.', path: '/features/cabinet', color: '#4f46e5', light: '#eef2ff' },
+              { icon: Code2, title: 'Reporting iXBRL & validation Arelle', desc: 'Générez et validez votre rapport CSRD au format numérique ESEF, prêt pour le dépôt réglementaire.', path: '/features/ixbrl', color: '#0891b2', light: '#ecfeff' },
+            ].map(({ icon: Icon, title, desc, path, color, light }, i) => (
+              <Link key={path} to={path} className="group p-6 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: light }}>
+                  <Icon className="h-6 w-6" style={{ color }} />
+                </div>
+                <h3 className="font-bold text-gray-900 mb-2">{t(`landing.lp.differentiators.items.${i}.title`, title)}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed flex-1 mb-4">{t(`landing.lp.differentiators.items.${i}.desc`, desc)}</p>
+                <span className="inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color }}>
+                  {t('landing.lp.differentiators.cta', 'Découvrir')}
+                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </span>
+              </Link>
+            ))}
+          </div>
+
+          {/* Bandeau VSME */}
+          <Link
+            to="/normes"
+            className="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 p-6 rounded-2xl border border-lime-200 bg-lime-50/60 hover:bg-lime-50 hover:shadow-md transition-all group"
+          >
+            <div className="w-12 h-12 rounded-xl bg-lime-600 flex items-center justify-center flex-shrink-0">
+              <FileCheck className="h-6 w-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-gray-900 mb-1">
+                {t('landing.lp.differentiators.vsme.title', 'Nouveau : norme volontaire VSME (EFRAG) incluse')}
+                <span className="ml-2 align-middle text-[10px] font-extrabold uppercase tracking-wide bg-lime-600 text-white px-2 py-0.5 rounded-full">{t('landing.lp.differentiators.vsme.badge', 'PME')}</span>
+              </p>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                {t('landing.lp.differentiators.vsme.desc', "Template prêt à l'emploi couvrant les 11 exigences du Module de Base (B1–B11) : répondez aux demandes ESG de vos banques et donneurs d'ordre sans subir le coût d'un rapport CSRD complet. Et vos données s'exportent vers GRI, CDP et TCFD — 46 indicateurs mappés, 24 séries GRI.")}
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-lime-700 flex-shrink-0">
+              {t('landing.lp.differentiators.vsme.cta', 'Voir les normes couvertes')}
+              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </span>
+          </Link>
         </div>
       </section>
 

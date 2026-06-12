@@ -27,7 +27,7 @@ export default function FilterModal({ isOpen, onClose, onApply, currentFilters }
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-[60] overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4">
         {/* Overlay */}
         <div 

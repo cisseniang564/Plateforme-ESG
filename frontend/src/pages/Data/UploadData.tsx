@@ -5,8 +5,6 @@ import {
   Upload, FileText, CheckCircle, XCircle, AlertCircle, Database,
   UploadCloud, ArrowLeft, FileSpreadsheet, Info, ChevronRight,
 } from 'lucide-react';
-import Card from '@/components/common/Card';
-import Button from '@/components/common/Button';
 import Spinner from '@/components/common/Spinner';
 import api from '@/services/api';
 import toast from 'react-hot-toast';
@@ -147,7 +145,7 @@ export default function UploadData() {
 
       {/* Zone d'upload */}
       {!result && (
-        <Card>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
           <div
             className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all cursor-pointer ${
               dragActive
@@ -199,7 +197,7 @@ export default function UploadData() {
                     disabled={uploading}
                     className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors"
                   >
-                    {uploading ? <><Spinner size="sm" className="border-white" /> {t('upload.uploading', 'Analyse en cours…')}</> : <><Upload size={14} /> {t('common.upload', 'Analyser')}</>}
+                    {uploading ? <><Spinner className="border-white" /> {t('upload.uploading', 'Analyse en cours…')}</> : <><Upload size={14} /> {t('common.upload', 'Analyser')}</>}
                   </button>
                   <button
                     onClick={reset}
@@ -226,14 +224,14 @@ export default function UploadData() {
               </div>
             </div>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Résultats */}
       {result && (
         <div className="space-y-5">
           {/* Résumé */}
-          <Card className={`border-l-4 ${result.status === 'completed' ? 'border-emerald-500' : result.status === 'failed' ? 'border-red-500' : 'border-amber-500'}`}>
+          <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm border-l-4 ${result.status === 'completed' ? 'border-emerald-500' : result.status === 'failed' ? 'border-red-500' : 'border-amber-500'}`}>
             <div className="flex items-start gap-4">
               {result.status === 'completed'
                 ? <CheckCircle size={36} className="text-emerald-500 flex-shrink-0" />
@@ -276,11 +274,11 @@ export default function UploadData() {
                 )}
               </div>
             </div>
-          </Card>
+          </div>
 
           {/* Aperçu données */}
           {result.data_preview?.length > 0 && (
-            <Card>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
               <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <FileText size={14} className="text-gray-500" />
                 {t('upload.dataPreview', 'Aperçu des données')}
@@ -305,12 +303,12 @@ export default function UploadData() {
                   </tbody>
                 </table>
               </div>
-            </Card>
+            </div>
           )}
 
           {/* Résultat import */}
           {importResult && (
-            <Card className="border-l-4 border-emerald-500">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border-l-4 border-emerald-500">
               <div className="flex items-start gap-3">
                 <Database size={22} className="text-emerald-600 flex-shrink-0" />
                 <div>
@@ -328,7 +326,7 @@ export default function UploadData() {
                   )}
                 </div>
               </div>
-            </Card>
+            </div>
           )}
 
           {/* Actions */}
@@ -339,7 +337,7 @@ export default function UploadData() {
                 disabled={importing}
                 className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors"
               >
-                {importing ? <><Spinner size="sm" className="border-white" /> {t('upload.importing', 'Import…')}</> : <><Database size={14} /> {t('upload.importToIndicators', { count: result.valid_rows })}</>}
+                {importing ? <><Spinner className="border-white" /> {t('upload.importing', 'Import…')}</> : <><Database size={14} /> {t('upload.importToIndicators', { count: result.valid_rows })}</>}
               </button>
             )}
             <button

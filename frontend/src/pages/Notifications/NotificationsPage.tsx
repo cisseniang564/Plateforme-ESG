@@ -13,11 +13,10 @@ import {
   Zap,
   ChevronRight,
   XCircle,
+  Send,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import Card from '@/components/common/Card';
-import Button from '@/components/common/Button';
 import BackButton from '@/components/common/BackButton';
 import api from '@/services/api';
 import { notificationsService, type AppNotification } from '@/services/notificationsService';
@@ -218,7 +217,7 @@ export default function NotificationsPage() {
   const unreadByType = (type: AppNotification['type']) => notifications.filter(n => n.type === type && !n.read).length;
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-4xl mx-auto animate-fade-in">
       <BackButton label="Retour" />
       {/* Hero */}
       <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-emerald-900 to-teal-700 p-8 text-white shadow-xl">
@@ -260,7 +259,7 @@ export default function NotificationsPage() {
             {unreadCount > 0 && (
               <button
                 onClick={markAllRead}
-                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-medium px-4 py-2 rounded-xl transition-all"
+                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-medium px-4 py-2 rounded-xl transition-all hover:-translate-y-px"
               >
                 <CheckCheck size={14} />
                 {t('notifications.markAllRead', 'Tout marquer lu')}
@@ -377,7 +376,7 @@ export default function NotificationsPage() {
       </div>
 
       {/* Notifications list */}
-      <Card>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
         <div className="divide-y divide-gray-100">
           {loading ? (
             <div className="py-12 flex items-center justify-center gap-2 text-gray-400 text-sm">
@@ -396,7 +395,7 @@ export default function NotificationsPage() {
                   markRead(notif.id);
                   navigate(notif.link);
                 }}
-                className={`w-full text-left flex items-start gap-4 px-5 py-4 hover:bg-gray-50 transition-colors ${
+                className={`w-full text-left flex items-start gap-4 px-5 py-4 hover:bg-gray-50 transition-colors duration-100 ${
                   !notif.read ? 'bg-green-50/40' : ''
                 }`}
               >
@@ -416,13 +415,13 @@ export default function NotificationsPage() {
                   <p className="text-xs text-gray-400 mt-1">{notif.time}</p>
                 </div>
                 {!notif.read && (
-                  <span className="flex-shrink-0 mt-2 w-2.5 h-2.5 rounded-full bg-green-500" />
+                  <span className="flex-shrink-0 mt-2 w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
                 )}
               </button>
             ))
           )}
         </div>
-      </Card>
+      </div>
 
       {/* Notification settings section */}
       <div>
@@ -430,7 +429,7 @@ export default function NotificationsPage() {
           {t('notifications.alertSettings', 'Paramètres de notification')}
         </h2>
 
-        <Card>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
           <div className="px-5 py-4 space-y-4">
             {/* Alert category toggles */}
             <div>
@@ -489,6 +488,34 @@ export default function NotificationsPage() {
                 </button>
               </div>
 
+              {/* Send digest now */}
+              {emailEnabled && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Send className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm text-gray-700">Envoyer un rapport maintenant</span>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await api.post('/smart-alerts/send-digest');
+                        if (res.data?.sent) {
+                          toast.success(`Rapport envoyé à ${res.data.email}`);
+                        } else {
+                          toast('Aucune alerte active à envoyer', { icon: 'ℹ️' });
+                        }
+                      } catch {
+                        toast.error("Erreur lors de l'envoi");
+                      }
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 hover:bg-green-100 text-green-700 text-xs font-semibold transition-all"
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                    Envoyer
+                  </button>
+                </div>
+              )}
+
               {/* Webhook URL input */}
               <div>
                 <div className="flex items-center gap-2 mb-1.5">
@@ -509,19 +536,19 @@ export default function NotificationsPage() {
 
             {/* Save button */}
             <div className="flex justify-end pt-2">
-              <Button
-                variant="primary"
-                size="sm"
+              <button
+               
+               
                 onClick={handleSavePreferences}
                 disabled={savingPrefs}
               >
                 {savingPrefs
                   ? <><Loader2 className="h-4 w-4 animate-spin mr-2 inline" />Enregistrement…</>
                   : 'Enregistrer les préférences'}
-              </Button>
+              </button>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   );

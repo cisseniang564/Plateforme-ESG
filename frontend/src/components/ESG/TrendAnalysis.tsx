@@ -1,27 +1,16 @@
 import React from 'react';
-import { Line } from 'react-chartjs-2';
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Tooltip,
   Legend,
-  Filler
-} from 'chart.js';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
+  Area,
+  ComposedChart,
+} from 'recharts';
 
 interface TrendData {
   has_trend?: boolean;
@@ -45,93 +34,47 @@ interface Props {
   trendData: TrendData;
 }
 
+const SERIES = [
+  { key: 'overall',       label: 'Score Global',  color: '#10b981' },
+  { key: 'environmental', label: 'Environnement', color: '#3b82f6' },
+  { key: 'social',        label: 'Social',        color: '#8b5cf6' },
+  { key: 'governance',    label: 'Gouvernance',   color: '#f59e0b' },
+] as const;
+
 export const TrendAnalysis: React.FC<Props> = ({ trendData }) => {
   if (!trendData?.has_trend) {
     return <div className="text-gray-500 p-4 text-center">Données historiques insuffisantes</div>;
   }
 
   const getTrendColor = (trend: string) => {
-    switch(trend) {
+    switch (trend) {
       case 'improving': return 'text-green-600';
       case 'declining': return 'text-red-600';
-      default: return 'text-yellow-600';
+      default:          return 'text-yellow-600';
     }
   };
 
   const getTrendIcon = (trend: string) => {
-    switch(trend) {
+    switch (trend) {
       case 'improving': return '↑';
       case 'declining': return '↓';
-      default: return '→';
+      default:          return '→';
     }
   };
 
-  const chartData = {
-    labels: trendData.historical_data.dates.map(d => new Date(d).toLocaleDateString('fr-FR')),
-    datasets: [
-      {
-        label: 'Score Global',
-        data: trendData.historical_data.overall,
-        borderColor: '#10b981',
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-        tension: 0.4,
-        fill: true
-      },
-      {
-        label: 'Environnement',
-        data: trendData.historical_data.environmental,
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        tension: 0.4,
-        fill: true
-      },
-      {
-        label: 'Social',
-        data: trendData.historical_data.social,
-        borderColor: '#8b5cf6',
-        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-        tension: 0.4,
-        fill: true
-      },
-      {
-        label: 'Gouvernance',
-        data: trendData.historical_data.governance,
-        borderColor: '#f59e0b',
-        backgroundColor: 'rgba(245, 158, 11, 0.1)',
-        tension: 0.4,
-        fill: true
-      }
-    ]
-  };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top' as const,
-      },
-      tooltip: {
-        mode: 'index' as const,
-        intersect: false,
-      }
-    },
-    scales: {
-      y: {
-        min: 0,
-        max: 100,
-        title: {
-          display: true,
-          text: 'Score'
-        }
-      }
-    }
-  };
+  // Convert {dates: [], overall: [], …} → [{ date, overall, environmental, … }]
+  const data = trendData.historical_data.dates.map((d, i) => ({
+    date: new Date(d).toLocaleDateString('fr-FR'),
+    overall:       trendData.historical_data.overall[i],
+    environmental: trendData.historical_data.environmental[i],
+    social:        trendData.historical_data.social[i],
+    governance:    trendData.historical_data.governance[i],
+  }));
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h3 className="text-lg font-semibold mb-4">Analyse de Tendance</h3>
-      
+
       <div className="grid grid-cols-4 gap-4 mb-6">
         <div className="text-center p-3 bg-gray-50 rounded">
           <div className="text-sm text-gray-600">Global</div>
@@ -160,7 +103,29 @@ export const TrendAnalysis: React.FC<Props> = ({ trendData }) => {
       </div>
 
       <div className="h-64">
-        <Line data={chartData} options={chartOptions} />
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} />
+            <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#6b7280' }} />
+            <Tooltip
+              contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e5e7eb' }}
+            />
+            <Legend wrapperStyle={{ fontSize: 12 }} />
+            {SERIES.map(s => (
+              <Area
+                key={s.key}
+                type="monotone"
+                dataKey={s.key}
+                name={s.label}
+                stroke={s.color}
+                strokeWidth={2}
+                fill={s.color}
+                fillOpacity={0.08}
+              />
+            ))}
+          </ComposedChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );

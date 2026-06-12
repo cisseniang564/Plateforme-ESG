@@ -2,6 +2,9 @@
 const path = require('path');
 
 module.exports = {
+  // Enable class-based dark mode — toggled by adding/removing the "dark"
+  // class on <html>. Driven by the ThemeToggle component in the header.
+  darkMode: 'class',
   content: [
     path.join(__dirname, './index.html'),
     path.join(__dirname, './src/**/*.{js,ts,jsx,tsx}'),

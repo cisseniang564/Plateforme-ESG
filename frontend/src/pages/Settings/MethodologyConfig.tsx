@@ -2,13 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '@/services/api';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   CheckCircle, Settings, BookOpen, BarChart3,
   Thermometer, ChevronDown, ChevronUp, ExternalLink, Save, ArrowLeft
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import Card from '@/components/common/Card';
-import Button from '@/components/common/Button';
 
 interface Methodology {
   id: string;
@@ -26,89 +25,91 @@ interface Methodology {
   docsUrl: string;
 }
 
-const DEFAULT_METHODOLOGIES: Methodology[] = [
-  {
-    id: 'gri',
-    name: 'GRI Standards',
-    version: '2024',
-    description: 'Standards GRI 2021 — référentiel mondial pour le reporting de durabilité des entreprises.',
-    icon: BookOpen,
-    gradient: 'from-green-500 to-emerald-600',
-    bgLight: 'bg-green-50',
-    active: true,
-    coverage: 87,
-    indicators: 34,
-    lastUpdate: 'janv. 2026',
-    categories: [
-      { name: 'Environnement', count: 12, configured: 10 },
-      { name: 'Social', count: 14, configured: 12 },
-      { name: 'Gouvernance', count: 8, configured: 7 },
-    ],
-    docsUrl: 'https://www.globalreporting.org',
-  },
-  {
-    id: 'sasb',
-    name: 'SASB Framework',
-    version: 'v2.1',
-    description: 'Sustainability Accounting Standards Board — normes sectorielles pour la communication financière ESG.',
-    icon: BarChart3,
-    gradient: 'from-blue-500 to-blue-600',
-    bgLight: 'bg-blue-50',
-    active: true,
-    coverage: 72,
-    indicators: 27,
-    lastUpdate: 'déc. 2025',
-    categories: [
-      { name: 'Finance', count: 9, configured: 7 },
-      { name: 'Capital humain', count: 10, configured: 6 },
-      { name: 'Environnement', count: 8, configured: 6 },
-    ],
-    docsUrl: 'https://sasb.org',
-  },
-  {
-    id: 'tcfd',
-    name: 'TCFD Recommendations',
-    version: 'v3.0',
-    description: 'Task Force on Climate-related Financial Disclosures — divulgation des risques et opportunités climatiques.',
-    icon: Thermometer,
-    gradient: 'from-purple-500 to-indigo-600',
-    bgLight: 'bg-purple-50',
-    active: true,
-    coverage: 91,
-    indicators: 19,
-    lastUpdate: 'févr. 2026',
-    categories: [
-      { name: 'Gouvernance', count: 5, configured: 5 },
-      { name: 'Stratégie', count: 6, configured: 5 },
-      { name: 'Risques', count: 8, configured: 7 },
-    ],
-    docsUrl: 'https://www.fsb-tcfd.org',
-  },
-  {
-    id: 'csrd',
-    name: 'CSRD / ESRS',
-    version: '2024',
-    description: 'Corporate Sustainability Reporting Directive — directive européenne obligatoire pour le reporting extra-financier.',
-    icon: Settings,
-    gradient: 'from-orange-500 to-red-500',
-    bgLight: 'bg-orange-50',
-    active: false,
-    coverage: 41,
-    indicators: 48,
-    lastUpdate: 'mars 2026',
-    categories: [
-      { name: 'Environnement (E)', count: 18, configured: 8 },
-      { name: 'Social (S)', count: 16, configured: 7 },
-      { name: 'Gouvernance (G)', count: 14, configured: 5 },
-    ],
-    docsUrl: 'https://efrag.org/esrs',
-  },
-];
+function getDefaultMethodologies(t: TFunction): Methodology[] {
+  return [
+    {
+      id: 'gri',
+      name: 'GRI Standards',
+      version: '2024',
+      description: t('settings.methodology.gri.description', "Standards GRI 2021 — référentiel mondial pour le reporting de durabilité des entreprises."),
+      icon: BookOpen,
+      gradient: 'from-green-500 to-emerald-600',
+      bgLight: 'bg-green-50',
+      active: true,
+      coverage: 87,
+      indicators: 34,
+      lastUpdate: t('settings.methodology.gri.lastUpdate', 'janv. 2026'),
+      categories: [
+        { name: t('settings.methodology.catEnvironnement', 'Environnement'), count: 12, configured: 10 },
+        { name: t('settings.methodology.catSocial', 'Social'), count: 14, configured: 12 },
+        { name: t('settings.methodology.catGouvernance', 'Gouvernance'), count: 8, configured: 7 },
+      ],
+      docsUrl: 'https://www.globalreporting.org',
+    },
+    {
+      id: 'sasb',
+      name: 'SASB Framework',
+      version: 'v2.1',
+      description: t('settings.methodology.sasb.description', "Sustainability Accounting Standards Board — normes sectorielles pour la communication financière ESG."),
+      icon: BarChart3,
+      gradient: 'from-blue-500 to-blue-600',
+      bgLight: 'bg-blue-50',
+      active: true,
+      coverage: 72,
+      indicators: 27,
+      lastUpdate: t('settings.methodology.sasb.lastUpdate', 'déc. 2025'),
+      categories: [
+        { name: t('settings.methodology.catFinance', 'Finance'), count: 9, configured: 7 },
+        { name: t('settings.methodology.catCapitalHumain', 'Capital humain'), count: 10, configured: 6 },
+        { name: t('settings.methodology.catEnvironnement', 'Environnement'), count: 8, configured: 6 },
+      ],
+      docsUrl: 'https://sasb.org',
+    },
+    {
+      id: 'tcfd',
+      name: 'TCFD Recommendations',
+      version: 'v3.0',
+      description: t('settings.methodology.tcfd.description', "Task Force on Climate-related Financial Disclosures — divulgation des risques et opportunités climatiques."),
+      icon: Thermometer,
+      gradient: 'from-purple-500 to-indigo-600',
+      bgLight: 'bg-purple-50',
+      active: true,
+      coverage: 91,
+      indicators: 19,
+      lastUpdate: t('settings.methodology.tcfd.lastUpdate', 'févr. 2026'),
+      categories: [
+        { name: t('settings.methodology.catGouvernance', 'Gouvernance'), count: 5, configured: 5 },
+        { name: t('settings.methodology.catStrategie', "Stratégie"), count: 6, configured: 5 },
+        { name: t('settings.methodology.catRisques', 'Risques'), count: 8, configured: 7 },
+      ],
+      docsUrl: 'https://www.fsb-tcfd.org',
+    },
+    {
+      id: 'csrd',
+      name: 'CSRD / ESRS',
+      version: '2024',
+      description: t('settings.methodology.csrd.description', "Corporate Sustainability Reporting Directive — directive européenne obligatoire pour le reporting extra-financier."),
+      icon: Settings,
+      gradient: 'from-orange-500 to-red-500',
+      bgLight: 'bg-orange-50',
+      active: false,
+      coverage: 41,
+      indicators: 48,
+      lastUpdate: t('settings.methodology.csrd.lastUpdate', 'mars 2026'),
+      categories: [
+        { name: t('settings.methodology.catEnvironnementE', 'Environnement (E)'), count: 18, configured: 8 },
+        { name: t('settings.methodology.catSocialS', 'Social (S)'), count: 16, configured: 7 },
+        { name: t('settings.methodology.catGouvernanceG', 'Gouvernance (G)'), count: 14, configured: 5 },
+      ],
+      docsUrl: 'https://efrag.org/esrs',
+    },
+  ];
+}
 
 export default function MethodologyConfig() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [methodologies, setMethodologies] = useState<Methodology[]>(DEFAULT_METHODOLOGIES);
+  const [methodologies, setMethodologies] = useState<Methodology[]>(() => getDefaultMethodologies(t));
   const [expanded, setExpanded] = useState<string | null>('gri');
   const [saving, setSaving] = useState(false);
 
@@ -133,10 +134,10 @@ export default function MethodologyConfig() {
     try {
       await api.put('/esg-scoring/weights', { env: weights.env / 100, soc: weights.soc / 100, gov: weights.gov / 100 });
       setWeightsSaved(true);
-      toast.success('Pondérations ESG enregistrées');
+      toast.success(t('settings.methodology.toastWeightsSaved', 'Pondérations ESG enregistrées'));
       setTimeout(() => setWeightsSaved(false), 3000);
     } catch {
-      toast.error('Erreur lors de la sauvegarde');
+      toast.error(t('settings.methodology.toastWeightsError', 'Erreur lors de la sauvegarde'));
     } finally {
       setSavingWeights(false);
     }
@@ -214,11 +215,11 @@ export default function MethodologyConfig() {
               className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors mb-4"
             >
               <ArrowLeft className="h-4 w-4" />
-              Paramètres
+              {t('settings.methodology.backToSettings', 'Paramètres')}
             </button>
             <div className="flex items-center gap-2 mb-3">
               <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide uppercase">
-                Paramètres ESG
+                {t('settings.methodology.heroBadge', 'Paramètres ESG')}
               </span>
             </div>
             <h1 className="text-3xl font-bold mb-1">{t('methodology.title')}</h1>
@@ -267,8 +268,8 @@ export default function MethodologyConfig() {
       <div className="bg-white border-2 border-gray-100 rounded-2xl p-6">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-base font-bold text-gray-900">Pondération des piliers ESG</h2>
-            <p className="text-sm text-gray-500 mt-0.5">Définissez le poids de chaque pilier dans le score ESG global</p>
+            <h2 className="text-base font-bold text-gray-900">{t('settings.methodology.pillarWeightsTitle', 'Pondération des piliers ESG')}</h2>
+            <p className="text-sm text-gray-500 mt-0.5">{t('settings.methodology.pillarWeightsSubtitle', 'Définissez le poids de chaque pilier dans le score ESG global')}</p>
           </div>
           <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-bold ${Math.abs(weightSum - 100) <= 1 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
             Total : {weightSum}%
@@ -277,9 +278,9 @@ export default function MethodologyConfig() {
 
         <div className="space-y-5">
           {[
-            { key: 'env' as const, label: 'Environnement', color: 'text-green-700', bar: 'bg-green-500', border: 'border-green-200 focus:ring-green-400' },
-            { key: 'soc' as const, label: 'Social',         color: 'text-blue-700',  bar: 'bg-blue-500',  border: 'border-blue-200 focus:ring-blue-400'  },
-            { key: 'gov' as const, label: 'Gouvernance',    color: 'text-purple-700',bar: 'bg-purple-500',border: 'border-purple-200 focus:ring-purple-400'},
+            { key: 'env' as const, label: t('settings.methodology.pillarEnv', 'Environnement'), color: 'text-green-700', bar: 'bg-green-500', border: 'border-green-200 focus:ring-green-400' },
+            { key: 'soc' as const, label: t('settings.methodology.pillarSoc', 'Social'),         color: 'text-blue-700',  bar: 'bg-blue-500',  border: 'border-blue-200 focus:ring-blue-400'  },
+            { key: 'gov' as const, label: t('settings.methodology.pillarGov', 'Gouvernance'),    color: 'text-purple-700',bar: 'bg-purple-500',border: 'border-purple-200 focus:ring-purple-400'},
           ].map(({ key, label, color, bar, border }) => (
             <div key={key}>
               <div className="flex items-center justify-between mb-2">
@@ -310,8 +311,8 @@ export default function MethodologyConfig() {
         <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
           <p className="text-xs text-gray-400">
             {Math.abs(weightSum - 100) > 1
-              ? `⚠ La somme doit être 100% (manque ${100 - weightSum}%)`
-              : '✓ Pondérations valides'}
+              ? t('settings.methodology.weightInvalid', `⚠ La somme doit être 100% (manque ${100 - weightSum}%)`)
+              : t('settings.methodology.weightValid', '✓ Pondérations valides')}
           </p>
           <button
             onClick={handleSaveWeights}
@@ -319,10 +320,10 @@ export default function MethodologyConfig() {
             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 transition-all"
           >
             {savingWeights
-              ? <><div className="animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full" />Sauvegarde...</>
+              ? <><div className="animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full" />{t('settings.methodology.savingWeights', 'Sauvegarde...')}</>
               : weightsSaved
-              ? <><CheckCircle className="h-3.5 w-3.5" />Enregistré</>
-              : <><Save className="h-3.5 w-3.5" />Enregistrer</>
+              ? <><CheckCircle className="h-3.5 w-3.5" />{t('settings.methodology.saved', 'Enregistré')}</>
+              : <><Save className="h-3.5 w-3.5" />{t('settings.methodology.saveWeights', 'Enregistrer')}</>
             }
           </button>
         </div>
@@ -435,9 +436,11 @@ export default function MethodologyConfig() {
                       >
                         <ExternalLink className="h-3.5 w-3.5" /> {t('methodology.documentation')}
                       </a>
-                      <Button size="sm" variant="secondary">
-                        <Settings className="h-3.5 w-3.5 mr-1.5" /> {t('methodology.configure')}
-                      </Button>
+                      <button
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-gray-800 px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <Settings className="h-3.5 w-3.5" /> {t('methodology.configure')}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -448,7 +451,7 @@ export default function MethodologyConfig() {
       </div>
 
       {/* Info banner */}
-      <Card className="border-2 border-blue-100 bg-blue-50">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border-2 border-blue-100 bg-blue-50">
         <div className="flex items-start gap-3">
           <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
           <div>
@@ -458,7 +461,7 @@ export default function MethodologyConfig() {
             </p>
           </div>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

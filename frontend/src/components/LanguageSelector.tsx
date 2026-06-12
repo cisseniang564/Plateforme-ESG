@@ -27,10 +27,14 @@ export default function LanguageSelector() {
   return (
     <div ref={ref} className="relative">
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-gray-900 rounded-md hover:bg-gray-100"
+        aria-label={i18n.language === 'fr' ? 'Changer la langue' : 'Change language'}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
       >
-        <Globe className="h-5 w-5" />
+        <Globe className="h-5 w-5" aria-hidden="true" />
         <span className="text-sm font-medium uppercase">{i18n.language}</span>
       </button>
 

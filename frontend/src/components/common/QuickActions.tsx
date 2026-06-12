@@ -13,6 +13,8 @@ import {
   Plus, X, Database, Building2, Upload, FileText,
   Zap, BarChart3,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 
 interface QuickAction {
   label: string
@@ -23,9 +25,9 @@ interface QuickAction {
   shortcut?: string
 }
 
-const ACTIONS: QuickAction[] = [
+const getActions = (t: TFunction): QuickAction[] => [
   {
-    label: 'Saisir une donnée',
+    label: t('qa.enterData', 'Saisir une donnée'),
     icon: Database,
     href: '/app/data-entry',
     color: 'text-emerald-600',
@@ -33,7 +35,7 @@ const ACTIONS: QuickAction[] = [
     shortcut: 'D',
   },
   {
-    label: 'Nouvelle organisation',
+    label: t('qa.newOrg', 'Nouvelle organisation'),
     icon: Building2,
     href: '/app/organizations',
     color: 'text-blue-600',
@@ -41,7 +43,7 @@ const ACTIONS: QuickAction[] = [
     shortcut: 'O',
   },
   {
-    label: 'Importer CSV',
+    label: t('qa.importCSV', 'Importer CSV'),
     icon: Upload,
     href: '/app/import-csv',
     color: 'text-purple-600',
@@ -49,7 +51,7 @@ const ACTIONS: QuickAction[] = [
     shortcut: 'I',
   },
   {
-    label: 'Générer un rapport',
+    label: t('qa.genReport', 'Générer un rapport'),
     icon: FileText,
     href: '/app/reports',
     color: 'text-orange-600',
@@ -57,7 +59,7 @@ const ACTIONS: QuickAction[] = [
     shortcut: 'R',
   },
   {
-    label: 'Calculer les scores',
+    label: t('qa.calcScores', 'Calculer les scores'),
     icon: BarChart3,
     href: '/app/scores/calculate',
     color: 'text-indigo-600',
@@ -67,6 +69,8 @@ const ACTIONS: QuickAction[] = [
 ]
 
 export default function QuickActions() {
+  const { t } = useTranslation()
+  const ACTIONS = getActions(t)
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -115,7 +119,13 @@ export default function QuickActions() {
   }
 
   return (
-    <div ref={containerRef} className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2">
+    // ``pointer-events-none`` on the outer container means the invisible
+    // bounding box (which can be quite large when the FAB is positioned in a
+    // corner with optional menu items above) does NOT intercept clicks meant
+    // for content underneath. We then re-enable ``pointer-events-auto`` on
+    // each actual interactive element (the FAB itself, the menu items, the
+    // small "Alt+A" tooltip) so they remain clickable.
+    <div ref={containerRef} className="fixed bottom-[110px] right-6 z-50 flex flex-col items-end gap-2 pointer-events-none">
 
       {/* Menu des actions */}
       <div
@@ -154,11 +164,12 @@ export default function QuickActions() {
         })}
       </div>
 
-      {/* FAB principal */}
+      {/* FAB principal — re-enable pointer events so it stays clickable */}
       <button
         onClick={() => setOpen(v => !v)}
-        title={open ? 'Fermer (Échap)' : 'Actions rapides (Alt+A)'}
+        title={open ? t('qa.close', 'Fermer (Échap)') : t('qa.fabTitle', 'Actions rapides (Alt+A)')}
         className={`
+          pointer-events-auto
           w-14 h-14 rounded-full shadow-xl flex items-center justify-center
           transition-all duration-200 active:scale-95
           ${open
@@ -174,7 +185,7 @@ export default function QuickActions() {
         }
       </button>
 
-      {/* Tooltip raccourci clavier */}
+      {/* Tooltip raccourci clavier — non-interactive, stays pointer-events-none */}
       {!open && (
         <div className="text-[10px] text-gray-400 text-right leading-none mt-0.5 pr-1">
           Alt+A

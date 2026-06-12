@@ -1,23 +1,24 @@
 import { ArrowLeft, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import Button from '@/components/common/Button';
+import { usePageSeo } from '@/hooks/usePageSeo';
 
 export default function TermsOfService() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  usePageSeo({ id: 'terms', title: 'Conditions Générales d\'Utilisation — ESG Flow', description: 'Consultez les conditions générales d\'utilisation de la plateforme ESG Flow.', url: 'https://greenconnect.cloud/terms-of-service', robots: 'noindex,follow', ogImage: 'https://greenconnect.cloud/og/terms.png' });
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-4xl px-6 py-12">
-        <Button
-          variant="secondary"
+        <button
+         
           onClick={() => navigate(-1)}
-          className="mb-8 flex items-center gap-2"
+          className="mb-8 flex items-center gap-2 tap-target"
         >
           <ArrowLeft className="h-4 w-4" />
           {t('legal.back')}
-        </Button>
+        </button>
 
         <div className="rounded-2xl bg-white p-8 shadow-sm md:p-12">
           <div className="mb-8 flex items-center gap-4">
@@ -34,13 +35,13 @@ export default function TermsOfService() {
             <h2>1. Objet</h2>
             <p>
               Les présentes Conditions Générales d'Utilisation (CGU) ont pour objet de définir les modalités
-              et conditions dans lesquelles ESGFlow met à disposition sa plateforme de gestion ESG
-              (Environnementale, Sociale et de Gouvernance).
+              et conditions dans lesquelles GreenConnect SAS met à disposition sa plateforme de gestion ESG
+              (Environnementale, Sociale et de Gouvernance) dénommée «&nbsp;ESG Flow&nbsp;».
             </p>
 
             <h2>2. Définitions</h2>
             <ul>
-              <li><strong>Plateforme</strong> : désigne la solution SaaS ESGFlow accessible via l'URL https://greenconnect.cloud</li>
+              <li><strong>Plateforme</strong> : désigne la solution SaaS ESG Flow accessible via l'URL https://greenconnect.cloud</li>
               <li><strong>Utilisateur</strong> : toute personne physique ou morale accédant et utilisant la Plateforme</li>
               <li><strong>Données ESG</strong> : ensemble des données environnementales, sociales et de gouvernance collectées et traitées</li>
               <li><strong>Organisation</strong> : entité juridique pour laquelle les données ESG sont collectées</li>
@@ -90,13 +91,13 @@ export default function TermsOfService() {
             <h2>7. Propriété Intellectuelle</h2>
             <p>
               La Plateforme, son code source, sa structure, son design et tous les éléments qui la composent
-              sont la propriété exclusive d'ESGFlow. Toute reproduction, représentation, modification ou
-              exploitation non autorisée est interdite.
+              sont la propriété exclusive de GreenConnect SAS. Toute reproduction, représentation, modification
+              ou exploitation non autorisée est interdite.
             </p>
 
             <h3>7.1 Données de l'Utilisateur</h3>
             <p>
-              L'Utilisateur conserve l'entière propriété de ses données ESG. ESGFlow s'engage à ne pas
+              L'Utilisateur conserve l'entière propriété de ses données ESG. GreenConnect SAS s'engage à ne pas
               utiliser ces données à des fins autres que la fourniture du service.
             </p>
 
@@ -110,7 +111,7 @@ export default function TermsOfService() {
             </p>
 
             <h2>9. Sécurité</h2>
-            <p>ESGFlow met en œuvre les mesures de sécurité suivantes :</p>
+            <p>ESG Flow met en œuvre les mesures de sécurité suivantes :</p>
             <ul>
               <li>Chiffrement des données en transit (TLS/SSL)</li>
               <li>Chiffrement des données au repos</li>
@@ -122,13 +123,13 @@ export default function TermsOfService() {
 
             <h2>10. Disponibilité du Service</h2>
             <p>
-              ESGFlow s'efforce d'assurer une disponibilité de 99,5% de la Plateforme. Des interruptions
+              GreenConnect SAS s'efforce d'assurer une disponibilité de 99,5 % de la Plateforme. Des interruptions
               peuvent survenir pour maintenance, mises à jour ou cas de force majeure.
             </p>
 
             <h2>11. Limitation de Responsabilité</h2>
             <p>
-              ESGFlow ne saurait être tenu responsable :
+              GreenConnect SAS ne saurait être tenu responsable :
             </p>
             <ul>
               <li>De l'inexactitude des données fournies par l'Utilisateur</li>
@@ -140,13 +141,13 @@ export default function TermsOfService() {
             <h2>12. Résiliation</h2>
             <p>
               L'Utilisateur peut résilier son compte à tout moment depuis les paramètres de son compte.
-              ESGFlow se réserve le droit de suspendre ou résilier un compte en cas de violation des CGU.
+              ESG Flow se réserve le droit de suspendre ou résilier un compte en cas de violation des CGU.
             </p>
 
             <h2>13. Modifications des CGU</h2>
             <p>
-              ESGFlow se réserve le droit de modifier les présentes CGU. Les Utilisateurs seront informés
-              de toute modification substantielle par email et/ou notification dans la Plateforme.
+              GreenConnect SAS se réserve le droit de modifier les présentes CGU. Les Utilisateurs seront
+              informés de toute modification substantielle par email et/ou notification dans la Plateforme.
             </p>
 
             <h2>14. Loi Applicable et Juridiction</h2>
@@ -159,7 +160,7 @@ export default function TermsOfService() {
             <p>
               Pour toute question concernant les CGU :<br />
               Email : legal@greenconnect.cloud<br />
-              Adresse : ESGFlow SAS, 12 Vieux chemin de meaux, 93190 Livry-Gargan, France
+              Adresse : GreenConnect SAS, 12 Vieux chemin de meaux, 93190 Livry-Gargan, France
             </p>
           </div>
         </div>

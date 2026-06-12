@@ -6,8 +6,6 @@ import {
   BarChart3, Eye, Zap, Award, ArrowUpDown, Grid3x3, List,
   Sparkles, Activity, X, Minus, Plus, Loader2
 } from 'lucide-react';
-import Card from '@/components/common/Card';
-import Button from '@/components/common/Button';
 import Spinner from '@/components/common/Spinner';
 import api from '@/services/api';
 import { getBatchOrgScores } from '@/services/esgScoringService';
@@ -32,13 +30,17 @@ const INDUSTRIES = [
 interface CreateOrgModalProps {
   onClose: () => void
   onCreated: () => void
+  existingOrgs?: Array<{ id: string; name: string; org_type?: string | null }>
 }
 
-function CreateOrgModal({ onClose, onCreated }: CreateOrgModalProps) {
+function CreateOrgModal({ onClose, onCreated, existingOrgs = [] }: CreateOrgModalProps) {
   const [name, setName] = useState('')
   const [orgType, setOrgType] = useState('company')
   const [industry, setIndustry] = useState('')
   const [externalId, setExternalId] = useState('')
+  const [parentOrgId, setParentOrgId] = useState<string>('')
+  const [consolidationMethod, setConsolidationMethod] = useState<string>('full')
+  const [ownershipPct, setOwnershipPct] = useState<string>('100')
   const [saving, setSaving] = useState(false)
   const nameRef = useRef<HTMLInputElement>(null)
 
@@ -56,12 +58,19 @@ function CreateOrgModal({ onClose, onCreated }: CreateOrgModalProps) {
     if (!name.trim()) return
     try {
       setSaving(true)
-      await api.post('/organizations', {
+      const payload: Record<string, unknown> = {
         name: name.trim(),
         org_type: orgType,
         industry: industry || null,
         external_id: externalId.trim() || null,
-      })
+      }
+      if (parentOrgId) {
+        payload.parent_org_id = parentOrgId
+        payload.consolidation_method = consolidationMethod
+        const pct = parseFloat(ownershipPct)
+        if (!Number.isNaN(pct)) payload.ownership_percentage = pct
+      }
+      await api.post('/organizations', payload)
       toast.success(`Organisation "${name.trim()}" créée avec succès`)
       onCreated()
       onClose()
@@ -74,7 +83,7 @@ function CreateOrgModal({ onClose, onCreated }: CreateOrgModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
@@ -155,6 +164,74 @@ function CreateOrgModal({ onClose, onCreated }: CreateOrgModalProps) {
             />
           </div>
 
+          {/* ── Hiérarchie multi-entités ─────────────────────────────────── */}
+          {existingOrgs.length > 0 && (
+            <div className="pt-3 border-t border-gray-100 space-y-3">
+              <div className="flex items-center gap-2">
+                <Building2 size={14} className="text-emerald-600" />
+                <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  Hiérarchie (optionnel)
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                  Organisation parente
+                </label>
+                <select
+                  value={parentOrgId}
+                  onChange={e => setParentOrgId(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                >
+                  <option value="">— Aucune (organisation racine) —</option>
+                  {existingOrgs.map(o => (
+                    <option key={o.id} value={o.id}>
+                      {o.name}{o.org_type ? ` (${o.org_type})` : ''}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Crée une relation parent → filiale pour la consolidation groupe.
+                </p>
+              </div>
+
+              {parentOrgId && (
+                <div className="grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                      Méthode de consolidation
+                    </label>
+                    <select
+                      value={consolidationMethod}
+                      onChange={e => setConsolidationMethod(e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                    >
+                      <option value="full">Globale (100 %)</option>
+                      <option value="proportional">Proportionnelle</option>
+                      <option value="equity">Mise en équivalence</option>
+                      <option value="none">Exclue</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                      Détention (%)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.1}
+                      value={ownershipPct}
+                      onChange={e => setOwnershipPct(e.target.value)}
+                      disabled={consolidationMethod === 'full' || consolidationMethod === 'none'}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50 disabled:text-gray-400"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex gap-2 pt-1">
             <button
@@ -188,6 +265,8 @@ interface Organization {
   external_id?: string;
   industry?: string;
   type?: string;
+  org_type?: string | null;
+  parent_org_id?: string | null;
   esg_score: number | null;
   environmental_score: number | null;
   social_score: number | null;
@@ -386,7 +465,7 @@ export default function OrganizationsList() {
   const hasFilters = selectedIndustry !== 'all' || selectedRating !== 'all' || searchQuery;
 
   if (loading) return (
-    <div className="flex items-center justify-center h-96"><Spinner size="lg" /></div>
+    <div className="flex items-center justify-center h-96"><Spinner /></div>
   );
 
   return (
@@ -396,28 +475,53 @@ export default function OrganizationsList() {
         <CreateOrgModal
           onClose={() => setShowCreateModal(false)}
           onCreated={loadOrganizations}
+          existingOrgs={organizations.map(o => ({ id: o.id, name: o.name, org_type: o.org_type }))}
         />
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Building2 className="h-6 w-6 text-primary-600" />
-            {t('organizations.title')}
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {filtered.length} organisation{filtered.length > 1 ? 's' : ''}
-            {filtered.length !== organizations.length && ` sur ${organizations.length}`}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" size="sm" onClick={() => navigate('/app/organizations/compare')}>
-            <BarChart3 className="h-4 w-4 mr-1.5" />{t('organizations.compare')}
-          </Button>
-          <Button size="sm" onClick={() => setShowCreateModal(true)}>
-            <Plus className="h-4 w-4 mr-1.5" />Nouvelle organisation
-          </Button>
+      {/* ─── Hero ───────────────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-2xl shadow-xl" style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 50%, #2563eb 100%)' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 80% 10%, rgba(255,255,255,0.12) 0%, transparent 55%)' }} />
+        <div className="relative px-8 py-7 flex items-start justify-between gap-6">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.2)' }}>
+                <Building2 className="h-6 w-6 text-white" />
+              </div>
+              <h1 className="text-3xl font-bold text-white">{t('organizations.title')}</h1>
+            </div>
+            <p className="text-blue-200 text-sm ml-1 mb-4">
+              {filtered.length} organisation{filtered.length > 1 ? 's' : ''}
+              {filtered.length !== organizations.length && ` sur ${organizations.length} au total`}
+            </p>
+            <div className="flex items-center gap-2 flex-wrap">
+              {[
+                { label: `${stats.total} au total`, bg: 'rgba(255,255,255,0.15)' },
+                { label: `Score moyen ${stats.avgScore || '—'}`, bg: '#bbf7d0', text: '#166534' },
+                { label: `${stats.leaders} leaders ≥75`, bg: 'rgba(255,255,255,0.15)' },
+              ].map(pill => (
+                <div key={pill.label} className="px-3 py-1.5 rounded-full text-xs font-semibold text-white" style={{ backgroundColor: pill.bg, color: pill.text ?? 'white' }}>
+                  {pill.label}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-2 shrink-0 flex-wrap">
+            <button
+              onClick={() => navigate('/app/organizations/compare')}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors"
+              style={{ background: 'rgba(255,255,255,0.15)', color: 'white' }}
+            >
+              <BarChart3 className="h-4 w-4" />{t('organizations.compare')}
+            </button>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md transition-colors"
+              style={{ background: 'white', color: '#1d4ed8' }}
+            >
+              <Plus className="h-4 w-4" />Nouvelle organisation
+            </button>
+          </div>
         </div>
       </div>
 
@@ -667,9 +771,9 @@ export default function OrganizationsList() {
               <p className="text-gray-700 font-semibold mb-1">Aucune organisation trouvée</p>
               <p className="text-gray-400 text-sm mb-5">Modifiez vos critères de recherche</p>
               {hasFilters && (
-                <Button variant="secondary" size="sm" onClick={clearFilters}>
+                <button onClick={clearFilters}>
                   Réinitialiser les filtres
-                </Button>
+                </button>
               )}
             </>
           )}

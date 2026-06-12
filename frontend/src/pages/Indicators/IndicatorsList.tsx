@@ -16,7 +16,6 @@ import {
   CheckCircle2,
   Database,
 } from 'lucide-react';
-import Card from '@/components/common/Card';
 import Spinner from '@/components/common/Spinner';
 import api from '@/services/api';
 import toast from 'react-hot-toast';
@@ -45,43 +44,28 @@ export default function IndicatorsList() {
   const [pillarFilter, setPillarFilter] = useState('');
   const [dataFilter, setDataFilter] = useState<'all' | 'with_data' | 'no_data'>('all');
 
+  // Pillar color config — hex only, no dynamic Tailwind classes
+  const PILLAR_COLORS: Record<string, {
+    color: string;
+    softBg: string;
+    badgeBg: string;
+    badgeText: string;
+    stripColor: string;
+    activeButtonBg: string;
+  }> = {
+    environmental: { color: '#16a34a', softBg: '#f0fdf4', badgeBg: '#dcfce7', badgeText: '#15803d', stripColor: '#22c55e', activeButtonBg: '#16a34a' },
+    social:        { color: '#2563eb', softBg: '#eff6ff', badgeBg: '#dbeafe', badgeText: '#1d4ed8', stripColor: '#3b82f6', activeButtonBg: '#2563eb' },
+    governance:    { color: '#7c3aed', softBg: '#f5f3ff', badgeBg: '#ede9fe', badgeText: '#6d28d9', stripColor: '#8b5cf6', activeButtonBg: '#7c3aed' },
+  };
+
+  const DEFAULT_PILLAR_COLORS = {
+    color: '#6b7280', softBg: '#f9fafb', badgeBg: '#f3f4f6', badgeText: '#374151', stripColor: '#9ca3af', activeButtonBg: '#4b5563',
+  };
+
   const PILLARS = [
-    {
-      id: 'environmental',
-      name: t('indicators.environmental'),
-      icon: Leaf,
-      tone: {
-        badge: 'bg-green-100 text-green-800',
-        soft: 'bg-green-50',
-        text: 'text-green-600',
-        border: 'border-green-500',
-        buttonActive: 'bg-green-600 text-white',
-      },
-    },
-    {
-      id: 'social',
-      name: t('indicators.social'),
-      icon: Users,
-      tone: {
-        badge: 'bg-blue-100 text-blue-800',
-        soft: 'bg-blue-50',
-        text: 'text-blue-600',
-        border: 'border-blue-500',
-        buttonActive: 'bg-blue-600 text-white',
-      },
-    },
-    {
-      id: 'governance',
-      name: t('indicators.governance'),
-      icon: Scale,
-      tone: {
-        badge: 'bg-purple-100 text-purple-800',
-        soft: 'bg-purple-50',
-        text: 'text-purple-600',
-        border: 'border-purple-500',
-        buttonActive: 'bg-purple-600 text-white',
-      },
-    },
+    { id: 'environmental', name: t('indicators.environmental'), icon: Leaf },
+    { id: 'social',        name: t('indicators.social'),        icon: Users },
+    { id: 'governance',    name: t('indicators.governance'),    icon: Scale },
   ];
 
   useEffect(() => {
@@ -139,16 +123,8 @@ export default function IndicatorsList() {
     return getPillar(pillar)?.icon || TrendingUp;
   };
 
-  const getPillarTone = (pillar: string) => {
-    return (
-      getPillar(pillar)?.tone || {
-        badge: 'bg-gray-100 text-gray-800',
-        soft: 'bg-gray-50',
-        text: 'text-gray-600',
-        border: 'border-gray-300',
-        buttonActive: 'bg-gray-600 text-white',
-      }
-    );
+  const getPillarColors = (pillar: string) => {
+    return PILLAR_COLORS[pillar] ?? DEFAULT_PILLAR_COLORS;
   };
 
   const initializeIndicators = async () => {
@@ -186,10 +162,16 @@ export default function IndicatorsList() {
   return (
     <div className="space-y-6">
       {/* Hero */}
-      <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-teal-900 to-emerald-700 p-8 text-white shadow-xl">
+      <div
+        className="overflow-hidden rounded-3xl p-8 text-white shadow-xl"
+        style={{ background: 'linear-gradient(135deg, #1e40af 0%, #2563eb 40%, #3b82f6 100%)' }}
+      >
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/90 ring-1 ring-white/15">
+            <div
+              className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium"
+              style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.9)' }}
+            >
               <BarChart3 className="h-3.5 w-3.5" />
               {t('indicators.catalogue')}
             </div>
@@ -199,22 +181,42 @@ export default function IndicatorsList() {
               {t('indicators.catalogueTitle')}
             </h1>
 
-            <p className="mt-3 max-w-2xl text-sm text-white/80 md:text-base">
+            <p className="mt-3 max-w-2xl text-sm md:text-base" style={{ color: 'rgba(255,255,255,0.8)' }}>
               {t('indicators.catalogueSubtitle')}
             </p>
+
+            <div className="mt-5 flex flex-wrap gap-3">
+              <button
+                onClick={() => navigate('/app/data-entry')}
+                className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold shadow-sm transition hover:opacity-90"
+                style={{ backgroundColor: '#ffffff', color: '#1e40af' }}
+              >
+                <BarChart3 className="h-4 w-4" />
+                {t('indicators.addData') || 'Saisir des données'}
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-white/70">{t('indicators.statsTotal')}</p>
+            <div
+              className="rounded-2xl p-4 backdrop-blur-sm"
+              style={{ backgroundColor: 'rgba(255,255,255,0.12)', outline: '1px solid rgba(255,255,255,0.15)' }}
+            >
+              <p className="text-xs uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.7)' }}>{t('indicators.statsTotal')}</p>
               <p className="mt-1 text-2xl font-semibold">{getStats()}</p>
             </div>
-            <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-white/70">{t('indicators.statsPillars')}</p>
+            <div
+              className="rounded-2xl p-4 backdrop-blur-sm"
+              style={{ backgroundColor: 'rgba(255,255,255,0.12)', outline: '1px solid rgba(255,255,255,0.15)' }}
+            >
+              <p className="text-xs uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.7)' }}>{t('indicators.statsPillars')}</p>
               <p className="mt-1 text-2xl font-semibold">3</p>
             </div>
-            <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-white/70">{t('indicators.statsSearch')}</p>
+            <div
+              className="rounded-2xl p-4 backdrop-blur-sm"
+              style={{ backgroundColor: 'rgba(255,255,255,0.12)', outline: '1px solid rgba(255,255,255,0.15)' }}
+            >
+              <p className="text-xs uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.7)' }}>{t('indicators.statsSearch')}</p>
               <p className="mt-1 text-2xl font-semibold">{t('indicators.statsInstant')}</p>
             </div>
           </div>
@@ -223,37 +225,39 @@ export default function IndicatorsList() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <Card className="border border-gray-200 shadow-sm">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">{t('indicators.totalIndicators')}</p>
               <p className="mt-2 text-3xl font-bold text-gray-900">{getStats()}</p>
             </div>
-            <div className="rounded-2xl bg-teal-50 p-3">
-              <TrendingUp className="h-6 w-6 text-teal-600" />
+            <div className="rounded-2xl p-3" style={{ backgroundColor: '#f0fdfa' }}>
+              <TrendingUp className="h-6 w-6" style={{ color: '#0d9488' }} />
             </div>
           </div>
-        </Card>
+        </div>
 
         {PILLARS.map((pillar) => {
           const Icon = pillar.icon;
           const count = getStats(pillar.id);
+          const colors = getPillarColors(pillar.id);
 
           return (
-            <Card
+            <div
               key={pillar.id}
-              className={`border border-gray-200 shadow-sm border-l-4 ${pillar.tone.border}`}
+              className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 border-l-4"
+              style={{ borderLeftColor: colors.stripColor }}
             >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">{pillar.name}</p>
-                  <p className={`mt-2 text-3xl font-bold ${pillar.tone.text}`}>{count}</p>
+                  <p className="mt-2 text-3xl font-bold" style={{ color: colors.color }}>{count}</p>
                 </div>
-                <div className={`rounded-2xl p-3 ${pillar.tone.soft}`}>
-                  <Icon className={`h-6 w-6 ${pillar.tone.text}`} />
+                <div className="rounded-2xl p-3" style={{ backgroundColor: colors.softBg }}>
+                  <Icon className="h-6 w-6" style={{ color: colors.color }} />
                 </div>
               </div>
-            </Card>
+            </div>
           );
         })}
       </div>
@@ -276,15 +280,16 @@ export default function IndicatorsList() {
         </div>
         <button
           onClick={() => setDataFilter(dataFilter === 'with_data' ? 'all' : 'with_data')}
-          className={`flex items-center gap-3 rounded-xl border p-4 shadow-sm text-left transition ${
+          className="flex items-center gap-3 rounded-xl border p-4 shadow-sm text-left transition"
+          style={
             dataFilter === 'with_data'
-              ? 'border-blue-400 bg-blue-50 ring-2 ring-blue-300'
-              : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50'
-          }`}
+              ? { borderColor: '#93c5fd', backgroundColor: '#eff6ff', outline: '2px solid #93c5fd' }
+              : { borderColor: '#e5e7eb', backgroundColor: '#ffffff' }
+          }
         >
-          <Database className={`h-5 w-5 flex-shrink-0 ${dataFilter === 'with_data' ? 'text-blue-600' : 'text-blue-500'}`} />
+          <Database className="h-5 w-5 flex-shrink-0" style={{ color: dataFilter === 'with_data' ? '#2563eb' : '#3b82f6' }} />
           <div>
-            <p className={`text-2xl font-bold ${dataFilter === 'with_data' ? 'text-blue-700' : 'text-gray-900'}`}>
+            <p className="text-2xl font-bold" style={{ color: dataFilter === 'with_data' ? '#1d4ed8' : '#111827' }}>
               {indicators.filter((i) => i.has_data).length}
             </p>
             <p className="text-xs text-gray-500">{t('indicators.kpiWithData')}</p>
@@ -292,15 +297,16 @@ export default function IndicatorsList() {
         </button>
         <button
           onClick={() => setDataFilter(dataFilter === 'no_data' ? 'all' : 'no_data')}
-          className={`flex items-center gap-3 rounded-xl border p-4 shadow-sm text-left transition ${
+          className="flex items-center gap-3 rounded-xl border p-4 shadow-sm text-left transition"
+          style={
             dataFilter === 'no_data'
-              ? 'border-amber-400 bg-amber-50 ring-2 ring-amber-300'
-              : 'border-gray-200 bg-white hover:border-amber-300 hover:bg-amber-50'
-          }`}
+              ? { borderColor: '#fcd34d', backgroundColor: '#fffbeb', outline: '2px solid #fcd34d' }
+              : { borderColor: '#e5e7eb', backgroundColor: '#ffffff' }
+          }
         >
-          <AlertTriangle className={`h-5 w-5 flex-shrink-0 ${dataFilter === 'no_data' ? 'text-amber-600' : 'text-amber-500'}`} />
+          <AlertTriangle className="h-5 w-5 flex-shrink-0" style={{ color: dataFilter === 'no_data' ? '#d97706' : '#f59e0b' }} />
           <div>
-            <p className={`text-2xl font-bold ${dataFilter === 'no_data' ? 'text-amber-700' : 'text-gray-900'}`}>
+            <p className="text-2xl font-bold" style={{ color: dataFilter === 'no_data' ? '#b45309' : '#111827' }}>
               {indicators.filter((i) => !i.has_data).length}
             </p>
             <p className="text-xs text-gray-500">{t('indicators.kpiNoData')}</p>
@@ -309,7 +315,7 @@ export default function IndicatorsList() {
       </div>
 
       {/* Filters */}
-      <Card className="border border-gray-200 shadow-sm">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         <div className="flex flex-col gap-4">
           {/* Row 1: Search */}
           <div className="relative w-full">
@@ -328,28 +334,33 @@ export default function IndicatorsList() {
             <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mr-1">Pilier :</span>
             <button
               onClick={() => setPillarFilter('')}
-              className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+              className="rounded-xl px-4 py-2 text-sm font-medium transition"
+              style={
                 pillarFilter === ''
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                  ? { backgroundColor: '#0f172a', color: '#ffffff' }
+                  : { backgroundColor: '#f3f4f6', color: '#374151' }
+              }
             >
               {t('indicators.all')} ({getStats()})
             </button>
 
-            {PILLARS.map((pillar) => (
-              <button
-                key={pillar.id}
-                onClick={() => setPillarFilter(pillar.id)}
-                className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
-                  pillarFilter === pillar.id
-                    ? pillar.tone.buttonActive
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {pillar.name} ({getStats(pillar.id)})
-              </button>
-            ))}
+            {PILLARS.map((pillar) => {
+              const colors = getPillarColors(pillar.id);
+              return (
+                <button
+                  key={pillar.id}
+                  onClick={() => setPillarFilter(pillar.id)}
+                  className="rounded-xl px-4 py-2 text-sm font-medium transition"
+                  style={
+                    pillarFilter === pillar.id
+                      ? { backgroundColor: colors.activeButtonBg, color: '#ffffff' }
+                      : { backgroundColor: '#f3f4f6', color: '#374151' }
+                  }
+                >
+                  {pillar.name} ({getStats(pillar.id)})
+                </button>
+              );
+            })}
           </div>
 
           {/* Row 3: Data availability filter — segmented 3-state control */}
@@ -358,32 +369,35 @@ export default function IndicatorsList() {
             <div className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1 gap-1">
               <button
                 onClick={() => setDataFilter('all')}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition"
+                style={
                   dataFilter === 'all'
-                    ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
+                    ? { backgroundColor: '#ffffff', color: '#111827', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }
+                    : { color: '#6b7280' }
+                }
               >
                 Tous ({indicators.length})
               </button>
               <button
                 onClick={() => setDataFilter('with_data')}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition"
+                style={
                   dataFilter === 'with_data'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-gray-500 hover:text-blue-600'
-                }`}
+                    ? { backgroundColor: '#2563eb', color: '#ffffff', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }
+                    : { color: '#6b7280' }
+                }
               >
                 <Database className="h-3.5 w-3.5" />
                 Avec données ({indicators.filter((i) => i.has_data).length})
               </button>
               <button
                 onClick={() => setDataFilter('no_data')}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition"
+                style={
                   dataFilter === 'no_data'
-                    ? 'bg-amber-500 text-white shadow-sm'
-                    : 'text-gray-500 hover:text-amber-600'
-                }`}
+                    ? { backgroundColor: '#f59e0b', color: '#ffffff', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }
+                    : { color: '#6b7280' }
+                }
               >
                 <AlertTriangle className="h-3.5 w-3.5" />
                 Sans données ({indicators.filter((i) => !i.has_data).length})
@@ -401,13 +415,25 @@ export default function IndicatorsList() {
             )}
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* List */}
-      <Card className="border border-gray-200 shadow-sm">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         {loading ? (
-          <div className="flex justify-center py-14">
-            <Spinner size="lg" />
+          <div className="space-y-3 animate-fade-in">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="skeleton h-10 w-10 rounded-lg" />
+                  <div className="flex-1 min-w-0">
+                    <div className="skeleton h-4 w-2/3 mb-2" />
+                    <div className="skeleton h-3 w-1/2" />
+                  </div>
+                  <div className="skeleton h-6 w-16 rounded-full" />
+                  <div className="skeleton h-8 w-20 rounded-lg" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : filteredIndicators.length === 0 ? (
           <div className="py-16 text-center">
@@ -423,20 +449,20 @@ export default function IndicatorsList() {
 
                 {/* ESRS sections preview */}
                 <div className="mt-6 grid grid-cols-1 gap-3 text-left max-w-lg mx-auto sm:grid-cols-3">
-                  <div className="rounded-xl border border-green-200 bg-green-50 p-4">
+                  <div className="rounded-xl border p-4" style={{ borderColor: '#bbf7d0', backgroundColor: '#f0fdf4' }}>
                     <div className="flex items-center gap-2 mb-2">
-                      <Leaf className="h-4 w-4 text-green-600" />
-                      <span className="text-xs font-bold text-green-700">{t('indicators.esrsEnv')}</span>
+                      <Leaf className="h-4 w-4" style={{ color: '#16a34a' }} />
+                      <span className="text-xs font-bold" style={{ color: '#15803d' }}>{t('indicators.esrsEnv')}</span>
                     </div>
-                    <p className="text-xs text-green-600">E1 · E2 · E3 · E4 · E5</p>
+                    <p className="text-xs" style={{ color: '#16a34a' }}>E1 · E2 · E3 · E4 · E5</p>
                     <p className="text-xs text-gray-500 mt-1">{t('indicators.esrsEnvDesc')}</p>
                   </div>
-                  <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                  <div className="rounded-xl border p-4" style={{ borderColor: '#bfdbfe', backgroundColor: '#eff6ff' }}>
                     <div className="flex items-center gap-2 mb-2">
-                      <Users className="h-4 w-4 text-blue-600" />
-                      <span className="text-xs font-bold text-blue-700">{t('indicators.esrsSoc')}</span>
+                      <Users className="h-4 w-4" style={{ color: '#2563eb' }} />
+                      <span className="text-xs font-bold" style={{ color: '#1d4ed8' }}>{t('indicators.esrsSoc')}</span>
                     </div>
-                    <p className="text-xs text-blue-600">S1 · S2 · S3 · S4</p>
+                    <p className="text-xs" style={{ color: '#2563eb' }}>S1 · S2 · S3 · S4</p>
                     <p className="text-xs text-gray-500 mt-1">{t('indicators.esrsSocDesc')}</p>
                   </div>
                   <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
@@ -452,7 +478,8 @@ export default function IndicatorsList() {
                 <button
                   onClick={initializeIndicators}
                   disabled={initializing}
-                  className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-xl font-semibold hover:bg-teal-700 transition-colors disabled:opacity-60"
+                  className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-colors disabled:opacity-60"
+                  style={{ backgroundColor: '#0d9488', color: '#ffffff' }}
                 >
                   {initializing
                     ? <><RefreshCw className="h-4 w-4 animate-spin" />{t('indicators.initializing')}</>
@@ -483,17 +510,18 @@ export default function IndicatorsList() {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {filteredIndicators.map((indicator) => {
                 const Icon = getPillarIcon(indicator.pillar);
-                const tone = getPillarTone(indicator.pillar);
+                const colors = getPillarColors(indicator.pillar);
 
                 return (
                   <button
                     key={indicator.id}
                     onClick={() => navigate(`/app/indicators/${indicator.id}`)}
-                    className={`group rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${tone.border} border-l-4`}
+                    className="group rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg border-l-4"
+                    style={{ borderLeftColor: colors.stripColor }}
                   >
                     <div className="flex items-start gap-4">
-                      <div className={`rounded-2xl p-3 ${tone.soft}`}>
-                        <Icon className={`h-5 w-5 ${tone.text}`} />
+                      <div className="rounded-2xl p-3" style={{ backgroundColor: colors.softBg }}>
+                        <Icon className="h-5 w-5" style={{ color: colors.color }} />
                       </div>
 
                       <div className="min-w-0 flex-1">
@@ -521,14 +549,20 @@ export default function IndicatorsList() {
                         )}
 
                         <div className="mt-4 flex flex-wrap items-center gap-2">
-                          <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${tone.badge}`}>
+                          <span
+                            className="rounded-full px-2.5 py-1 text-xs font-medium"
+                            style={{ backgroundColor: colors.badgeBg, color: colors.badgeText }}
+                          >
                             {indicator.pillar}
                           </span>
 
                           {(() => {
                             const esrs = getEsrsBadge(indicator.pillar);
                             return (
-                              <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${esrs.className}`}>
+                              <span
+                                className="rounded-full px-2.5 py-1 text-xs font-semibold"
+                                style={{ backgroundColor: colors.badgeBg, color: colors.badgeText }}
+                              >
                                 ESRS {esrs.label}
                               </span>
                             );
@@ -541,23 +575,30 @@ export default function IndicatorsList() {
                           )}
 
                           <span
-                            className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                            className="rounded-full px-2.5 py-1 text-xs font-medium"
+                            style={
                               indicator.is_active
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : 'bg-gray-100 text-gray-500'
-                            }`}
+                                ? { backgroundColor: '#d1fae5', color: '#065f46' }
+                                : { backgroundColor: '#f3f4f6', color: '#6b7280' }
+                            }
                           >
                             {indicator.is_active ? t('indicators.active') : t('indicators.inactive')}
                           </span>
 
                           {/* Data availability badge */}
                           {indicator.has_data ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700">
+                            <span
+                              className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium"
+                              style={{ backgroundColor: '#dbeafe', color: '#1d4ed8' }}
+                            >
                               <Database className="h-3 w-3" />
                               {indicator.data_count} entrée{indicator.data_count > 1 ? 's' : ''}
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">
+                            <span
+                              className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium"
+                              style={{ backgroundColor: '#fef3c7', color: '#92400e' }}
+                            >
                               <AlertTriangle className="h-3 w-3" />
                               Sans données
                             </span>
@@ -580,13 +621,16 @@ export default function IndicatorsList() {
                                   )}
                                 </>
                               ) : (
-                                <span className="text-xs text-amber-500">Aucune donnée enregistrée</span>
+                                <span className="text-xs" style={{ color: '#f59e0b' }}>Aucune donnée enregistrée</span>
                               )}
                             </div>
                             <div className="h-1 w-full overflow-hidden rounded-full bg-gray-100">
                               <div
-                                className={`h-1 rounded-full transition-all ${indicator.has_data ? 'bg-teal-400' : 'bg-amber-200'}`}
-                                style={{ width: indicator.has_data ? `${Math.min(100, (indicator.data_count / 10) * 100)}%` : '0%' }}
+                                className="h-1 rounded-full transition-all"
+                                style={{
+                                  width: indicator.has_data ? `${Math.min(100, (indicator.data_count / 10) * 100)}%` : '0%',
+                                  backgroundColor: indicator.has_data ? '#2dd4bf' : '#fde68a',
+                                }}
                               />
                             </div>
                           </div>
@@ -599,7 +643,7 @@ export default function IndicatorsList() {
             </div>
           </>
         )}
-      </Card>
+      </div>
     </div>
   );
 }

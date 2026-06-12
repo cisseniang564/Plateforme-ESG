@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  ArrowLeft,
   ChevronRight,
   TrendingUp,
   TrendingDown,
@@ -41,9 +40,8 @@ import {
 } from 'recharts';
 import { format, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import Card from '@/components/common/Card';
-import Button from '@/components/common/Button';
 import Spinner from '@/components/common/Spinner';
+import BackButton from '@/components/common/BackButton';
 import api from '@/services/api';
 import toast from 'react-hot-toast';
 
@@ -239,22 +237,22 @@ export default function IndicatorDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <Spinner size="lg" />
+        <Spinner />
       </div>
     );
   }
 
   if (!indicator) {
     return (
-      <Card>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
         <div className="text-center py-16">
           <AlertCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 font-medium text-lg mb-4">{t('indicators.notFound')}</p>
-          <Button onClick={() => navigate('/app/indicators')}>
+          <button onClick={() => navigate('/app/indicators')}>
             {t('indicators.backToIndicators')}
-          </Button>
+          </button>
         </div>
-      </Card>
+      </div>
     );
   }
 
@@ -266,13 +264,7 @@ export default function IndicatorDetail() {
       {/* Header */}
       <div>
         <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-gray-500">
-          <button
-            onClick={() => navigate('/app/indicators')}
-            className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-medium text-gray-600 shadow-sm ring-1 ring-gray-200 transition hover:text-gray-900 hover:shadow"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {t('common.back')}
-          </button>
+          <BackButton to="/app/indicators" label={t('common.back', 'Retour')} />
 
           <ChevronRight className="h-4 w-4 text-gray-300" />
 
@@ -324,22 +316,22 @@ export default function IndicatorDetail() {
             </div>
 
             <div className="flex gap-3">
-              <Button
-                variant="secondary"
-                size="sm"
+              <button
+               
+               
                 onClick={loadAll}
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 {t('indicators.refresh')}
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
+              </button>
+              <button
+               
+               
                 onClick={() => setShowAddModal(true)}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 {t('indicators.enterValue')}
-              </Button>
+              </button>
             </div>
           </div>
         </div>
@@ -348,7 +340,7 @@ export default function IndicatorDetail() {
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Current Value */}
-        <Card className="border-l-4 border-primary-500">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border-l-4 border-primary-500">
           <div className="text-center">
             <p className="text-sm text-gray-600 mb-2 font-medium">{t('indicators.currentValueKpi')}</p>
             <p className="text-4xl font-bold text-primary-600 mb-1">
@@ -368,10 +360,10 @@ export default function IndicatorDetail() {
               </div>
             )}
           </div>
-        </Card>
+        </div>
 
         {/* Average */}
-        <Card className="border-l-4 border-blue-500">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border-l-4 border-blue-500">
           <div className="text-center">
             <p className="text-sm text-gray-600 mb-2 font-medium">{t('indicators.averageKpi')}</p>
             <p className="text-4xl font-bold text-blue-600 mb-1">
@@ -382,10 +374,10 @@ export default function IndicatorDetail() {
               {t('common.total')} {stats?.count || 0} {t('indicators.dataPoints')}
             </p>
           </div>
-        </Card>
+        </div>
 
         {/* Target */}
-        <Card className="border-l-4 border-green-500">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border-l-4 border-green-500">
           <div className="text-center">
             <p className="text-sm text-gray-600 mb-2 font-medium">{t('indicators.objectiveKpi')}</p>
             <p className="text-4xl font-bold text-green-600 mb-1">
@@ -408,10 +400,10 @@ export default function IndicatorDetail() {
               </div>
             )}
           </div>
-        </Card>
+        </div>
 
         {/* Verification */}
-        <Card className="border-l-4 border-purple-500">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border-l-4 border-purple-500">
           <div className="text-center">
             <p className="text-sm text-gray-600 mb-2 font-medium">{t('indicators.verificationKpi')}</p>
             <p className="text-4xl font-bold text-purple-600 mb-1">
@@ -425,13 +417,13 @@ export default function IndicatorDetail() {
               </span>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Evolution */}
-        <Card>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
             <LineChartIcon className="h-5 w-5 text-primary-600" />
             {t('indicators.temporalEvolution')}
@@ -485,10 +477,10 @@ export default function IndicatorDetail() {
               </div>
             </div>
           )}
-        </Card>
+        </div>
 
         {/* Statistics */}
-        <Card>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">
             {t('indicators.detailedStats')}
           </h3>
@@ -551,12 +543,12 @@ export default function IndicatorDetail() {
               </div>
             )}
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* Data table */}
       {data.length > 0 && (
-        <Card>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-semibold text-gray-900">
@@ -603,10 +595,10 @@ export default function IndicatorDetail() {
                   Soumettre tout ({data.filter(p => !p.validation_status || p.validation_status === 'draft').length})
                 </button>
               )}
-              <Button variant="secondary" size="sm">
+              <button>
                 <Download className="h-4 w-4 mr-2" />
                 {t('indicators.exportCSV')}
-              </Button>
+              </button>
             </div>
           </div>
 
@@ -691,12 +683,12 @@ export default function IndicatorDetail() {
               </tbody>
             </table>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Empty State */}
       {data.length === 0 && (
-        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm bg-gradient-to-br from-blue-50 to-indigo-50">
           <div className="text-center py-16">
             <Activity className="h-16 w-16 mx-auto text-blue-300 mb-4" />
             <p className="text-gray-900 font-semibold text-lg mb-2">
@@ -705,17 +697,17 @@ export default function IndicatorDetail() {
             <p className="text-gray-600 mb-6">
               {t('indicators.emptyDataHint')}
             </p>
-            <Button onClick={() => setShowAddModal(true)}>
+            <button onClick={() => setShowAddModal(true)}>
               <Plus className="h-5 w-5 mr-2" />
               {t('indicators.enterValue')}
-            </Button>
+            </button>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Modal enter data */}
       {showAddModal && indicator && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
             <div className={`flex items-center justify-between rounded-t-2xl bg-gradient-to-r ${getPillarConfig(indicator.pillar).gradient} p-6 text-white`}>
               <div>

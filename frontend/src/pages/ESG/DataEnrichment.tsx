@@ -22,10 +22,10 @@ import {
   Hash,
   FileSearch,
 } from 'lucide-react';
-import Card from '@/components/common/Card';
-import Button from '@/components/common/Button';
 import Spinner from '@/components/common/Spinner';
 import api from '@/services/api';
+import { useTranslation, Trans } from 'react-i18next';
+import type { TFunction } from 'i18next';
 
 interface Organization {
   id: string;
@@ -57,13 +57,13 @@ type SearchType = 'siren' | 'name' | 'siret';
 type Mode = 'siren' | 'secteur';
 type SirenStep = 'input' | 'preview' | 'confirm' | 'done';
 
-const EFFECTIFS_LABELS: Record<string, string> = {
-  NN: 'Non précisé', '00': '0 salarié', '01': '1–2 salariés', '02': '3–5 salariés',
-  '03': '6–9 salariés', '11': '10–19 salariés', '12': '20–49 salariés',
-  '21': '50–99 salariés', '22': '100–199 salariés', '31': '200–249 salariés',
-  '32': '250–499 salariés', '41': '500–999 salariés', '42': '1 000–1 999 salariés',
-  '51': '2 000–4 999 salariés', '52': '5 000–9 999 salariés', '53': '10 000+ salariés',
-};
+const getEffectifsLabels = (t: TFunction): Record<string, string> => ({
+  NN: t('enrich.effectifs.NN', 'Non précisé'), '00': t('enrich.effectifs.00', '0 salarié'), '01': t('enrich.effectifs.01', '1–2 salariés'), '02': t('enrich.effectifs.02', '3–5 salariés'),
+  '03': t('enrich.effectifs.03', '6–9 salariés'), '11': t('enrich.effectifs.11', '10–19 salariés'), '12': t('enrich.effectifs.12', '20–49 salariés'),
+  '21': t('enrich.effectifs.21', '50–99 salariés'), '22': t('enrich.effectifs.22', '100–199 salariés'), '31': t('enrich.effectifs.31', '200–249 salariés'),
+  '32': t('enrich.effectifs.32', '250–499 salariés'), '41': t('enrich.effectifs.41', '500–999 salariés'), '42': t('enrich.effectifs.42', '1 000–1 999 salariés'),
+  '51': t('enrich.effectifs.51', '2 000–4 999 salariés'), '52': t('enrich.effectifs.52', '5 000–9 999 salariés'), '53': t('enrich.effectifs.53', '10 000+ salariés'),
+});
 
 const QUICK_EXAMPLES = [
   { label: 'EDF',        siren: '552081317' },
@@ -74,8 +74,10 @@ const QUICK_EXAMPLES = [
 ];
 
 // ── Step indicator ──────────────────────────────────────────────
-const STEPS = ['Recherche', 'Aperçu INSEE', 'Confirmation', 'Terminé'];
+const getSteps = (t: TFunction) => [t('enrich.steps.search', 'Recherche'), t('enrich.steps.preview', 'Aperçu INSEE'), t('enrich.steps.confirm', 'Confirmation'), t('enrich.steps.done', 'Terminé')];
 function StepIndicator({ current }: { current: SirenStep }) {
+  const { t } = useTranslation();
+  const STEPS = getSteps(t);
   const idx = { input: 0, preview: 1, confirm: 2, done: 3 }[current];
   return (
     <div className="flex items-center gap-0 select-none">
@@ -105,13 +107,16 @@ function StepIndicator({ current }: { current: SirenStep }) {
 }
 
 // ── Search type pill button ─────────────────────────────────────
-const SEARCH_OPTIONS: { id: SearchType; icon: React.FC<{ className?: string }>; label: string; sublabel: string }[] = [
-  { id: 'siren',  icon: Hash,       label: 'Par SIREN',     sublabel: '9 chiffres' },
-  { id: 'name',   icon: Search,     label: 'Par nom',        sublabel: 'Recherche textuelle' },
-  { id: 'siret',  icon: FileSearch, label: 'Par SIRET',     sublabel: '14 chiffres' },
+const getSearchOptions = (t: TFunction): { id: SearchType; icon: React.FC<{ className?: string }>; label: string; sublabel: string }[] => [
+  { id: 'siren',  icon: Hash,       label: t('enrich.searchType.siren.label', 'Par SIREN'),     sublabel: t('enrich.searchType.siren.sub', '9 chiffres') },
+  { id: 'name',   icon: Search,     label: t('enrich.searchType.name.label', 'Par nom'),        sublabel: t('enrich.searchType.name.sub', 'Recherche textuelle') },
+  { id: 'siret',  icon: FileSearch, label: t('enrich.searchType.siret.label', 'Par SIRET'),     sublabel: t('enrich.searchType.siret.sub', '14 chiffres') },
 ];
 
 export default function DataEnrichment() {
+  const { t } = useTranslation();
+  const EFFECTIFS_LABELS = getEffectifsLabels(t);
+  const SEARCH_OPTIONS = getSearchOptions(t);
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -248,10 +253,10 @@ export default function DataEnrichment() {
         setSiren(found.siren || rawQuery.slice(0, 9));
         setSirenStep('preview');
       } else {
-        setSearchError(`Aucune entreprise trouvée pour ce ${searchType === 'siren' ? 'SIREN' : 'SIRET'} dans la base INSEE.`);
+        setSearchError(t('enrich.error.notFoundFor', 'Aucune entreprise trouvée pour ce {{type}} dans la base INSEE.', { type: searchType === 'siren' ? 'SIREN' : 'SIRET' }));
       }
     } catch (error: any) {
-      setSearchError(error.response?.data?.detail || 'Erreur lors de la recherche INSEE.');
+      setSearchError(error.response?.data?.detail || t('enrich.error.searchError', 'Erreur lors de la recherche INSEE.'));
     } finally {
       setSearching(false);
     }
@@ -275,7 +280,7 @@ export default function DataEnrichment() {
       const detail = error.response?.data?.detail;
       const msg = Array.isArray(detail)
         ? detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ')
-        : typeof detail === 'string' ? detail : "Échec de l'enrichissement";
+        : typeof detail === 'string' ? detail : t('enrich.enrichFailed', "Échec de l'enrichissement");
       setEnrichResult({ success: false, error: msg });
       setSirenStep('done');
     } finally {
@@ -295,7 +300,7 @@ export default function DataEnrichment() {
       setImportResult({ success: true, data: res.data });
       await loadData();
     } catch (error: any) {
-      setImportResult({ success: false, error: error.response?.data?.detail || "Échec de l'import" });
+      setImportResult({ success: false, error: error.response?.data?.detail || t('enrich.importFailed', "Échec de l'import") });
     } finally {
       setImporting(false);
     }
@@ -336,22 +341,22 @@ export default function DataEnrichment() {
               className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors mb-4"
             >
               <ArrowLeft className="h-4 w-4" />
-              Paramètres
+              {t('enrich.hero.settings', 'Paramètres')}
             </button>
             <div className="flex items-center gap-2 mb-3">
-              <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide uppercase">Données & IA</span>
-              <span className="px-2.5 py-1 bg-teal-400/20 border border-teal-300/30 rounded-full text-xs font-semibold text-teal-100">Base Sirene INSEE</span>
+              <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide uppercase">{t('enrich.hero.dataAi', 'Données & IA')}</span>
+              <span className="px-2.5 py-1 bg-teal-400/20 border border-teal-300/30 rounded-full text-xs font-semibold text-teal-100">{t('enrich.sireneBase', 'Base Sirene INSEE')}</span>
             </div>
-            <h1 className="text-3xl font-bold mb-1">Enrichissement ESG</h1>
+            <h1 className="text-3xl font-bold mb-1">{t('enrich.hero.title', 'Enrichissement ESG')}</h1>
             <p className="text-teal-100 text-sm max-w-lg">
-              Connectez vos organisations aux données officielles INSEE et générez automatiquement 12 mois d'indicateurs ESG
+              {t('enrich.hero.desc', "Connectez vos organisations aux données officielles INSEE et générez automatiquement 12 mois d'indicateurs ESG")}
             </p>
           </div>
           <div className="flex gap-3 flex-wrap">
             {[
-              { icon: Building2, label: 'Organisations', value: organizations.length },
-              { icon: Database, label: 'Secteurs', value: secteurs.length },
-              { icon: Sparkles, label: 'Mois auto', value: '12' },
+              { icon: Building2, label: t('enrich.hero.statOrgs', 'Organisations'), value: organizations.length },
+              { icon: Database, label: t('enrich.hero.statSectors', 'Secteurs'), value: secteurs.length },
+              { icon: Sparkles, label: t('enrich.hero.statMonths', 'Mois auto'), value: '12' },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex flex-col items-center bg-white/10 backdrop-blur-sm rounded-2xl px-5 py-3.5 border border-white/20 min-w-[88px]">
                 <Icon className="h-5 w-5 text-teal-200 mb-1.5" />
@@ -366,8 +371,8 @@ export default function DataEnrichment() {
       {/* ══ MODE TABS ══════════════════════════════════════════════ */}
       <div className="flex gap-2 bg-gray-100/80 p-1.5 rounded-2xl w-fit border border-gray-200/50">
         {[
-          { id: 'siren' as Mode, icon: Search, label: 'Enrichir par SIREN' },
-          { id: 'secteur' as Mode, icon: Layers, label: 'Importer un secteur' },
+          { id: 'siren' as Mode, icon: Search, label: t('enrich.mode.siren', 'Enrichir par SIREN') },
+          { id: 'secteur' as Mode, icon: Layers, label: t('enrich.mode.secteur', 'Importer un secteur') },
         ].map(({ id, icon: Icon, label }) => (
           <button
             key={id}
@@ -395,7 +400,7 @@ export default function DataEnrichment() {
 
           {/* ── STEP 1 : SEARCH INPUT ───────────────────────────── */}
           {sirenStep === 'input' && (
-            <Card>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
               <div className="max-w-2xl mx-auto py-2">
 
                 {/* Search type selector */}
@@ -429,14 +434,14 @@ export default function DataEnrichment() {
                     {searchType === 'siret' && <FileSearch className="h-8 w-8 text-teal-600" />}
                   </div>
                   <h2 className="text-xl font-bold text-gray-900 mb-1.5">
-                    {searchType === 'siren' && 'Rechercher par numéro SIREN'}
-                    {searchType === 'name' && "Rechercher par nom d'entreprise"}
-                    {searchType === 'siret' && 'Rechercher par numéro SIRET'}
+                    {searchType === 'siren' && t('enrich.step1.titleSiren', 'Rechercher par numéro SIREN')}
+                    {searchType === 'name' && t('enrich.step1.titleName', "Rechercher par nom d'entreprise")}
+                    {searchType === 'siret' && t('enrich.step1.titleSiret', 'Rechercher par numéro SIRET')}
                   </h2>
                   <p className="text-sm text-gray-500">
-                    {searchType === 'siren' && 'Entrez le numéro SIREN à 9 chiffres pour récupérer les données officielles'}
-                    {searchType === 'name' && 'Tapez le nom commercial ou la raison sociale pour trouver l\'entreprise'}
-                    {searchType === 'siret' && 'Entrez le numéro SIRET à 14 chiffres (SIREN + NIC établissement)'}
+                    {searchType === 'siren' && t('enrich.step1.descSiren', 'Entrez le numéro SIREN à 9 chiffres pour récupérer les données officielles')}
+                    {searchType === 'name' && t('enrich.step1.descName', "Tapez le nom commercial ou la raison sociale pour trouver l'entreprise")}
+                    {searchType === 'siret' && t('enrich.step1.descSiret', 'Entrez le numéro SIRET à 14 chiffres (SIREN + NIC établissement)')}
                   </p>
                 </div>
 
@@ -460,9 +465,9 @@ export default function DataEnrichment() {
                       onKeyDown={(e) => e.key === 'Enter' && canSearch && handleSearch()}
                       onFocus={() => searchType === 'name' && suggestions.length > 0 && setShowSuggest(true)}
                       placeholder={
-                        searchType === 'siren' ? 'Ex : 552 081 317' :
-                        searchType === 'name'  ? 'Ex : EDF, LVMH, Renault, Doctolib…' :
-                        'Ex : 55208131700063'
+                        searchType === 'siren' ? t('enrich.step1.phSiren', 'Ex : 552 081 317') :
+                        searchType === 'name'  ? t('enrich.step1.phName', 'Ex : EDF, LVMH, Renault, Doctolib…') :
+                        t('enrich.step1.phSiret', 'Ex : 55208131700063')
                       }
                       className={`flex-1 px-3 py-4 bg-transparent focus:outline-none ${
                         searchType !== 'name'
@@ -493,24 +498,24 @@ export default function DataEnrichment() {
                     <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-2xl shadow-2xl shadow-gray-200/80 z-50 overflow-hidden">
                       {suggestLoading ? (
                         <div className="flex items-center gap-3 px-5 py-4 text-sm text-gray-500">
-                          <Spinner size="sm" />
-                          Recherche dans la base Sirene…
+                          <Spinner />
+                          {t('enrich.search.searchingSirene', 'Recherche dans la base Sirene…')}
                         </div>
                       ) : suggestions.length === 0 ? (
                         <div className="flex flex-col items-center gap-2 py-8 text-center">
                           <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
                             <Search className="h-5 w-5 text-gray-400" />
                           </div>
-                          <p className="text-sm text-gray-500">Aucune entreprise trouvée</p>
-                          <p className="text-xs text-gray-400">Essayez avec un autre terme de recherche</p>
+                          <p className="text-sm text-gray-500">{t('enrich.search.noCompany', 'Aucune entreprise trouvée')}</p>
+                          <p className="text-xs text-gray-400">{t('enrich.search.tryAnother', 'Essayez avec un autre terme de recherche')}</p>
                         </div>
                       ) : (
                         <>
                           <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
                             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                              {suggestions.length} résultat{suggestions.length > 1 ? 's' : ''} trouvé{suggestions.length > 1 ? 's' : ''}
+                              {t('enrich.search.resultsFound', '{{count}} résultat{{ps}} trouvé{{ps}}', { count: suggestions.length, ps: suggestions.length > 1 ? 's' : '' })}
                             </span>
-                            <span className="text-xs text-gray-400">Base Sirene INSEE</span>
+                            <span className="text-xs text-gray-400">{t('enrich.sireneBase', 'Base Sirene INSEE')}</span>
                           </div>
                           <ul className="max-h-80 overflow-y-auto divide-y divide-gray-50/80">
                             {suggestions.map((comp, i) => (
@@ -544,7 +549,7 @@ export default function DataEnrichment() {
                                   </div>
                                   <div className="flex items-center gap-2 flex-shrink-0">
                                     {comp.etat_administratif === 'A' && (
-                                      <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full font-semibold">Actif</span>
+                                      <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full font-semibold">{t('enrich.active', 'Actif')}</span>
                                     )}
                                     <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-teal-500 transition-colors" />
                                   </div>
@@ -568,29 +573,29 @@ export default function DataEnrichment() {
 
                 {/* Search button — SIREN / SIRET only */}
                 {searchType !== 'name' && (
-                  <Button
+                  <button
                     onClick={handleSearch}
                     disabled={!canSearch || searching}
                     className="w-full mt-4 py-3 text-base"
                   >
                     {searching ? (
-                      <><Spinner size="sm" /><span className="ml-2">Recherche en cours…</span></>
+                      <><Spinner /><span className="ml-2">{t('enrich.step1.searching', 'Recherche en cours…')}</span></>
                     ) : (
-                      <><Search className="h-5 w-5 mr-2" />Rechercher dans la base INSEE</>
+                      <><Search className="h-5 w-5 mr-2" />{t('enrich.step1.searchBtn', 'Rechercher dans la base INSEE')}</>
                     )}
-                  </Button>
+                  </button>
                 )}
 
                 {/* Name search helper */}
                 {searchType === 'name' && query.trim().length < 2 && (
                   <p className="text-center text-xs text-gray-400 mt-3">
-                    Commencez à taper pour voir les suggestions apparaître automatiquement
+                    {t('enrich.step1.nameHelper', 'Commencez à taper pour voir les suggestions apparaître automatiquement')}
                   </p>
                 )}
 
                 {/* Quick examples */}
                 <div className="mt-6 pt-5 border-t border-gray-100">
-                  <p className="text-center text-xs text-gray-400 font-medium mb-3 uppercase tracking-wide">Exemples rapides</p>
+                  <p className="text-center text-xs text-gray-400 font-medium mb-3 uppercase tracking-wide">{t('enrich.step1.examples', 'Exemples rapides')}</p>
                   <div className="flex flex-wrap gap-2 justify-center">
                     {QUICK_EXAMPLES.map(({ label, siren: s }) => (
                       <button
@@ -617,10 +622,10 @@ export default function DataEnrichment() {
                                 setSiren(found.siren || s);
                                 setSirenStep('preview');
                               } else {
-                                setSearchError(`Aucune entreprise trouvée pour ce SIREN dans la base INSEE.`);
+                                setSearchError(t('enrich.error.notFoundFor', 'Aucune entreprise trouvée pour ce {{type}} dans la base INSEE.', { type: 'SIREN' }));
                               }
                             } catch (err: any) {
-                              setSearchError(err.response?.data?.detail || 'Erreur lors de la recherche INSEE.');
+                              setSearchError(err.response?.data?.detail || t('enrich.error.searchError', 'Erreur lors de la recherche INSEE.'));
                             } finally {
                               setSearching(false);
                             }
@@ -634,16 +639,16 @@ export default function DataEnrichment() {
                     ))}
                   </div>
                   <p className="text-center text-xs text-gray-400 mt-3">
-                    Fonctionne pour <strong className="text-gray-500">toute entreprise française</strong> avec un SIREN valide
+                    <Trans i18nKey="enrich.search.worksFor">Fonctionne pour <strong className="text-gray-500">toute entreprise française</strong> avec un SIREN valide</Trans>
                   </p>
                 </div>
               </div>
-            </Card>
+            </div>
           )}
 
           {/* ── STEP 2 : INSEE PREVIEW ───────────────────────────── */}
           {sirenStep === 'preview' && company && (
-            <Card>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
               {/* Header */}
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-4">
@@ -655,14 +660,14 @@ export default function DataEnrichment() {
                       <h2 className="text-xl font-bold text-gray-900">{company.denomination}</h2>
                       {company.etat_administratif === 'A' && (
                         <span className="px-2.5 py-0.5 text-xs bg-green-100 text-green-700 rounded-full font-semibold border border-green-200">
-                          ✓ Actif
+                          ✓ {t('enrich.active', 'Actif')}
                         </span>
                       )}
                     </div>
                     <div className="flex items-center gap-3 mt-1">
-                      <span className="text-sm text-gray-400 font-mono">SIREN : {siren}</span>
+                      <span className="text-sm text-gray-400 font-mono">{t('enrich.preview.sirenLabel', 'SIREN : {{siren}}', { siren })}</span>
                       <span className="w-1 h-1 bg-gray-300 rounded-full" />
-                      <span className="text-xs text-gray-400">Données officielles INSEE Sirene</span>
+                      <span className="text-xs text-gray-400">{t('enrich.preview.officialData', 'Données officielles INSEE Sirene')}</span>
                     </div>
                   </div>
                 </div>
@@ -682,7 +687,7 @@ export default function DataEnrichment() {
                       <Factory className="h-4 w-4 text-gray-500" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Code APE</p>
+                      <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">{t('enrich.preview.apeCode', 'Code APE')}</p>
                       <p className="text-sm font-semibold text-gray-900">{company.activite_principale}</p>
                     </div>
                   </div>
@@ -693,7 +698,7 @@ export default function DataEnrichment() {
                       <Users className="h-4 w-4 text-gray-500" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Effectifs</p>
+                      <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">{t('enrich.preview.headcount', 'Effectifs')}</p>
                       <p className="text-sm font-semibold text-gray-900">{EFFECTIFS_LABELS[company.tranche_effectifs] || company.tranche_effectifs}</p>
                     </div>
                   </div>
@@ -704,7 +709,7 @@ export default function DataEnrichment() {
                       <MapPin className="h-4 w-4 text-gray-500" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Adresse</p>
+                      <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">{t('enrich.preview.address', 'Adresse')}</p>
                       <p className="text-sm font-semibold text-gray-900 leading-snug">{company.adresse.adresse_complete}</p>
                     </div>
                   </div>
@@ -718,34 +723,34 @@ export default function DataEnrichment() {
                   className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all"
                 >
                   <RefreshCw className="h-4 w-4" />
-                  Nouvelle recherche
+                  {t('enrich.preview.newSearch', 'Nouvelle recherche')}
                 </button>
-                <Button onClick={() => setSirenStep('confirm')} className="flex-1">
+                <button onClick={() => setSirenStep('confirm')} className="flex-1">
                   <Zap className="h-4 w-4 mr-2" />
-                  Enrichir cette organisation
+                  {t('enrich.preview.enrichThis', 'Enrichir cette organisation')}
                   <ChevronRight className="h-4 w-4 ml-2" />
-                </Button>
+                </button>
               </div>
-            </Card>
+            </div>
           )}
 
           {/* ── STEP 3 : CONFIRMATION ────────────────────────────── */}
           {sirenStep === 'confirm' && company && (
-            <Card>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
               {/* Header */}
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-11 h-11 bg-gradient-to-br from-teal-50 to-emerald-100 rounded-2xl flex items-center justify-center border border-teal-100 shadow-sm">
                   <Zap className="h-5 w-5 text-teal-600" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">Confirmer l'enrichissement</h2>
+                  <h2 className="text-lg font-bold text-gray-900">{t('enrich.confirm.title', "Confirmer l'enrichissement")}</h2>
                   <p className="text-sm text-gray-500">{company.denomination} · SIREN {siren}</p>
                 </div>
               </div>
 
               {/* Org linking */}
               <div className="mb-5">
-                <p className="text-sm font-semibold text-gray-700 mb-3">Lier à une organisation ESGFlow</p>
+                <p className="text-sm font-semibold text-gray-700 mb-3">{t('enrich.confirm.linkLabel', 'Lier à une organisation ESG Flow')}</p>
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <button
                     onClick={() => setOrgMode('new')}
@@ -757,8 +762,8 @@ export default function DataEnrichment() {
                       <Plus className={`h-5 w-5 ${orgMode === 'new' ? 'text-teal-600' : 'text-gray-400'}`} />
                     </div>
                     <div>
-                      <p className={`text-sm font-semibold ${orgMode === 'new' ? 'text-teal-700' : 'text-gray-700'}`}>Créer automatiquement</p>
-                      <p className="text-xs text-gray-400 mt-0.5">Nouvelle organisation depuis INSEE</p>
+                      <p className={`text-sm font-semibold ${orgMode === 'new' ? 'text-teal-700' : 'text-gray-700'}`}>{t('enrich.confirm.createAuto', 'Créer automatiquement')}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{t('enrich.confirm.createAutoSub', 'Nouvelle organisation depuis INSEE')}</p>
                     </div>
                   </button>
                   <button
@@ -771,8 +776,8 @@ export default function DataEnrichment() {
                       <Building2 className={`h-5 w-5 ${orgMode === 'existing' ? 'text-teal-600' : 'text-gray-400'}`} />
                     </div>
                     <div>
-                      <p className={`text-sm font-semibold ${orgMode === 'existing' ? 'text-teal-700' : 'text-gray-700'}`}>Lier à l'existante</p>
-                      <p className="text-xs text-gray-400 mt-0.5">Choisir dans la liste</p>
+                      <p className={`text-sm font-semibold ${orgMode === 'existing' ? 'text-teal-700' : 'text-gray-700'}`}>{t('enrich.confirm.linkExisting', "Lier à l'existante")}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{t('enrich.confirm.linkExistingSub', 'Choisir dans la liste')}</p>
                     </div>
                   </button>
                 </div>
@@ -781,10 +786,10 @@ export default function DataEnrichment() {
                   <select
                     value={selectedOrg}
                     onChange={(e) => setSelectedOrg(e.target.value)}
-                    aria-label="Sélectionner une organisation"
+                    aria-label={t('enrich.confirm.selectOrgAria', 'Sélectionner une organisation')}
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-400 text-sm bg-white appearance-none"
                   >
-                    <option value="">— Sélectionner une organisation —</option>
+                    <option value="">{t('enrich.confirm.selectOrgOption', '— Sélectionner une organisation —')}</option>
                     {organizations.map(org => (
                       <option key={org.id} value={org.id}>
                         {org.name}{org.external_id ? ` (${org.external_id})` : ''}
@@ -798,13 +803,13 @@ export default function DataEnrichment() {
               <div className="bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-200/70 rounded-2xl p-4 mb-5">
                 <p className="text-sm font-semibold text-teal-800 mb-3 flex items-center gap-1.5">
                   <Sparkles className="h-4 w-4 text-teal-600" />
-                  Ce qui va se passer
+                  {t('enrich.confirm.whatHappens', 'Ce qui va se passer')}
                 </p>
                 <ul className="space-y-2">
                   {[
-                    'Récupération des données officielles INSEE (secteur, taille, adresse)',
-                    'Génération automatique de 12 mois de données ESG réalistes',
-                    'Calcul des indicateurs selon le secteur d\'activité et la taille',
+                    t('enrich.confirm.list1', 'Récupération des données officielles INSEE (secteur, taille, adresse)'),
+                    t('enrich.confirm.list2', 'Génération automatique de 12 mois de données ESG réalistes'),
+                    t('enrich.confirm.list3', "Calcul des indicateurs selon le secteur d'activité et la taille"),
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2.5 text-sm text-teal-700">
                       <CheckCircle className="h-4 w-4 text-teal-500 mt-0.5 flex-shrink-0" />
@@ -819,26 +824,26 @@ export default function DataEnrichment() {
                   onClick={() => setSirenStep('preview')}
                   className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all"
                 >
-                  Retour
+                  {t('enrich.confirm.back', 'Retour')}
                 </button>
-                <Button
+                <button
                   onClick={handleEnrich}
                   disabled={enriching || (orgMode === 'existing' && !selectedOrg)}
                   className="flex-1"
                 >
                   {enriching ? (
-                    <><Spinner size="sm" /><span className="ml-2">Enrichissement en cours…</span></>
+                    <><Spinner /><span className="ml-2">{t('enrich.confirm.enriching', 'Enrichissement en cours…')}</span></>
                   ) : (
-                    <><Sparkles className="h-4 w-4 mr-2" />Lancer l'enrichissement ESG</>
+                    <><Sparkles className="h-4 w-4 mr-2" />{t('enrich.confirm.launch', "Lancer l'enrichissement ESG")}</>
                   )}
-                </Button>
+                </button>
               </div>
-            </Card>
+            </div>
           )}
 
           {/* ── STEP 4 : DONE ───────────────────────────────────── */}
           {sirenStep === 'done' && enrichResult && (
-            <Card>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
               {enrichResult.success ? (
                 <div className="space-y-6">
                   {/* Success header */}
@@ -847,10 +852,10 @@ export default function DataEnrichment() {
                       <CheckCircle className="h-7 w-7 text-green-600" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900 text-xl">Enrichissement réussi !</h3>
+                      <h3 className="font-bold text-gray-900 text-xl">{t('enrich.done.success', 'Enrichissement réussi !')}</h3>
                       {enrichResult.data?.enrichissement?.organisation_creee && (
                         <p className="text-sm text-emerald-600 font-medium mt-0.5">
-                          ✦ Nouvelle organisation créée : {enrichResult.data.enrichissement.nom}
+                          {t('enrich.done.orgCreated', '✦ Nouvelle organisation créée : {{name}}', { name: enrichResult.data.enrichissement.nom })}
                         </p>
                       )}
                       <p className="text-sm text-gray-500 mt-0.5">
@@ -863,10 +868,10 @@ export default function DataEnrichment() {
                   {enrichResult.data?.donnees_generees && (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {[
-                        { value: enrichResult.data.donnees_generees.metrics_count ?? enrichResult.data.donnees_generees.indicators_count, label: 'Métriques ESG', color: 'green' },
-                        { value: enrichResult.data.donnees_generees.data_points_created, label: 'Points de données', color: 'blue' },
-                        { value: enrichResult.data.donnees_generees.months_generated, label: 'Mois générés', color: 'purple' },
-                        { value: enrichResult.data.donnees_generees.secteur, label: 'Secteur', color: 'teal', small: true },
+                        { value: enrichResult.data.donnees_generees.metrics_count ?? enrichResult.data.donnees_generees.indicators_count, label: t('enrich.done.metrics', 'Métriques ESG'), color: 'green' },
+                        { value: enrichResult.data.donnees_generees.data_points_created, label: t('enrich.done.dataPoints', 'Points de données'), color: 'blue' },
+                        { value: enrichResult.data.donnees_generees.months_generated, label: t('enrich.done.monthsGen', 'Mois générés'), color: 'purple' },
+                        { value: enrichResult.data.donnees_generees.secteur, label: t('enrich.done.sector', 'Secteur'), color: 'teal', small: true },
                       ].map(({ value, label, color, small }) => (
                         <div key={label} className={`bg-${color}-50 border border-${color}-100 rounded-2xl p-4 text-center`}>
                           <p className={`${small ? 'text-sm' : 'text-3xl'} font-bold text-${color}-600 mb-1`}>{value ?? '—'}</p>
@@ -877,14 +882,14 @@ export default function DataEnrichment() {
                   )}
 
                   <div className="flex gap-3 flex-wrap">
-                    <Button onClick={() => navigate('/app/organizations')}>
+                    <button onClick={() => navigate('/app/organizations')}>
                       <Building2 className="h-4 w-4 mr-2" />
-                      Voir les organisations
-                    </Button>
-                    <Button variant="secondary" onClick={resetFlow}>
+                      {t('enrich.viewOrgs', 'Voir les organisations')}
+                    </button>
+                    <button onClick={resetFlow}>
                       <RefreshCw className="h-4 w-4 mr-2" />
-                      Nouvel enrichissement
-                    </Button>
+                      {t('enrich.done.newEnrich', 'Nouvel enrichissement')}
+                    </button>
                   </div>
                 </div>
               ) : (
@@ -894,16 +899,16 @@ export default function DataEnrichment() {
                       <AlertCircle className="h-5 w-5 text-red-600" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900 mb-1">Échec de l'enrichissement</h3>
+                      <h3 className="font-bold text-gray-900 mb-1">{t('enrich.enrichFailed', "Échec de l'enrichissement")}</h3>
                       <p className="text-sm text-red-600">{enrichResult.error}</p>
                     </div>
                   </div>
-                  <Button variant="secondary" onClick={() => setSirenStep('confirm')}>
-                    Réessayer
-                  </Button>
+                  <button onClick={() => setSirenStep('confirm')}>
+                    {t('enrich.done.retry', 'Réessayer')}
+                  </button>
                 </div>
               )}
-            </Card>
+            </div>
           )}
         </div>
       )}
@@ -913,27 +918,27 @@ export default function DataEnrichment() {
       ══════════════════════════════════════════════════════════ */}
       {mode === 'secteur' && (
         <div className="space-y-5">
-          <Card>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-11 h-11 bg-gradient-to-br from-indigo-50 to-violet-100 rounded-2xl flex items-center justify-center border border-indigo-100 shadow-sm">
                 <Layers className="h-5 w-5 text-indigo-600" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Importer un secteur complet</h2>
-                <p className="text-sm text-gray-500">Crée automatiquement des organisations pour toutes les entreprises d'un secteur</p>
+                <h2 className="text-lg font-bold text-gray-900">{t('enrich.secteur.title', 'Importer un secteur complet')}</h2>
+                <p className="text-sm text-gray-500">{t('enrich.secteur.subtitle', "Crée automatiquement des organisations pour toutes les entreprises d'un secteur")}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Secteur d'activité</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">{t('enrich.secteur.sectorLabel', "Secteur d'activité")}</label>
                 <select
                   value={selectedSecteur}
                   onChange={(e) => setSelectedSecteur(e.target.value)}
-                  aria-label="Secteur d'activité"
+                  aria-label={t('enrich.secteur.sectorLabel', "Secteur d'activité")}
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-400 text-sm bg-white appearance-none"
                 >
-                  <option value="">— Sélectionner un secteur —</option>
+                  <option value="">{t('enrich.secteur.selectOption', '— Sélectionner un secteur —')}</option>
                   {secteurs.map(s => (
                     <option key={s.id} value={s.id}>{s.nom}</option>
                   ))}
@@ -941,13 +946,13 @@ export default function DataEnrichment() {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Département <span className="font-normal text-gray-400">(optionnel)</span>
+                  {t('enrich.secteur.deptLabel', 'Département')} <span className="font-normal text-gray-400">{t('enrich.secteur.optional', '(optionnel)')}</span>
                 </label>
                 <input
                   type="text"
                   value={departement}
                   onChange={(e) => setDepartement(e.target.value.replace(/\D/g, '').slice(0, 3))}
-                  placeholder="ex : 75, 93, 69…"
+                  placeholder={t('enrich.secteur.deptPlaceholder', 'ex : 75, 93, 69…')}
                   maxLength={3}
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-400 text-sm"
                 />
@@ -958,52 +963,52 @@ export default function DataEnrichment() {
               <div className="flex items-start gap-2.5">
                 <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
                 <p className="text-sm text-amber-800">
-                  Cette action crée automatiquement des organisations pour toutes les entreprises du secteur sélectionné. Les doublons sont ignorés.
+                  {t('enrich.secteur.warning', 'Cette action crée automatiquement des organisations pour toutes les entreprises du secteur sélectionné. Les doublons sont ignorés.')}
                 </p>
               </div>
             </div>
 
-            <Button
+            <button
               onClick={handleImportSecteur}
               disabled={importing || !selectedSecteur}
               className="w-full py-3"
             >
               {importing ? (
-                <><Spinner size="sm" /><span className="ml-2">Import en cours…</span></>
+                <><Spinner /><span className="ml-2">{t('enrich.secteur.importing', 'Import en cours…')}</span></>
               ) : (
-                <><Download className="h-4 w-4 mr-2" />Importer les entreprises du secteur</>
+                <><Download className="h-4 w-4 mr-2" />{t('enrich.secteur.importBtn', 'Importer les entreprises du secteur')}</>
               )}
-            </Button>
-          </Card>
+            </button>
+          </div>
 
           {importResult && (
-            <Card>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
               {importResult.success ? (
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <div className="w-11 h-11 bg-green-50 rounded-2xl flex items-center justify-center border border-green-200">
                       <CheckCircle className="h-5 w-5 text-green-600" />
                     </div>
-                    <h3 className="font-bold text-gray-900 text-lg">Import réussi !</h3>
+                    <h3 className="font-bold text-gray-900 text-lg">{t('enrich.secteur.importSuccess', 'Import réussi !')}</h3>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="bg-green-50 border border-green-100 rounded-2xl p-4 text-center">
                       <p className="text-3xl font-bold text-green-600">{importResult.data.created}</p>
-                      <p className="text-xs text-green-600 font-medium mt-1">Créées</p>
+                      <p className="text-xs text-green-600 font-medium mt-1">{t('enrich.secteur.created', 'Créées')}</p>
                     </div>
                     <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 text-center">
                       <p className="text-3xl font-bold text-gray-500">{importResult.data.skipped}</p>
-                      <p className="text-xs text-gray-500 font-medium mt-1">Ignorées</p>
+                      <p className="text-xs text-gray-500 font-medium mt-1">{t('enrich.secteur.skipped', 'Ignorées')}</p>
                     </div>
                     <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-center">
                       <p className="text-3xl font-bold text-blue-600">{importResult.data.total_entreprises}</p>
                       <p className="text-xs text-blue-600 font-medium mt-1">Total</p>
                     </div>
                   </div>
-                  <Button onClick={() => navigate('/app/organizations')}>
+                  <button onClick={() => navigate('/app/organizations')}>
                     <Building2 className="h-4 w-4 mr-2" />
-                    Voir les organisations
-                  </Button>
+                    {t('enrich.viewOrgs', 'Voir les organisations')}
+                  </button>
                 </div>
               ) : (
                 <div className="flex items-start gap-3">
@@ -1011,20 +1016,20 @@ export default function DataEnrichment() {
                     <AlertCircle className="h-5 w-5 text-red-500" />
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900 mb-1">Erreur lors de l'import</p>
+                    <p className="font-semibold text-gray-900 mb-1">{t('enrich.secteur.importError', "Erreur lors de l'import")}</p>
                     <p className="text-sm text-red-600">{importResult.error}</p>
                   </div>
                 </div>
               )}
-            </Card>
+            </div>
           )}
 
           {/* How it works */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { icon: Building2, color: 'blue', title: '1. Sélectionner', desc: "Choisissez un secteur d'activité parmi les secteurs à fort impact ESG" },
-              { icon: TrendingUp, color: 'indigo', title: '2. Importer', desc: 'Toutes les entreprises actives du secteur sont importées depuis Sirene' },
-              { icon: Sparkles, color: 'purple', title: '3. Enrichir', desc: 'Enrichissez ensuite chaque organisation individuellement via son SIREN' },
+              { icon: Building2, color: 'blue', title: t('enrich.how.step1Title', '1. Sélectionner'), desc: t('enrich.how.step1Desc', "Choisissez un secteur d'activité parmi les secteurs à fort impact ESG") },
+              { icon: TrendingUp, color: 'indigo', title: t('enrich.how.step2Title', '2. Importer'), desc: t('enrich.how.step2Desc', 'Toutes les entreprises actives du secteur sont importées depuis Sirene') },
+              { icon: Sparkles, color: 'purple', title: t('enrich.how.step3Title', '3. Enrichir'), desc: t('enrich.how.step3Desc', 'Enrichissez ensuite chaque organisation individuellement via son SIREN') },
             ].map(({ icon: Icon, color, title, desc }) => (
               <div key={title} className={`flex items-start gap-3 p-4 bg-${color}-50 border border-${color}-100 rounded-2xl`}>
                 <div className={`w-9 h-9 bg-${color}-100 rounded-xl flex items-center justify-center flex-shrink-0`}>

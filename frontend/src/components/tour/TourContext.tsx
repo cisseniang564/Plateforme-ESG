@@ -12,6 +12,10 @@ import type { RootState } from '@/store';
 // ─── Storage helpers ──────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'esgflow_tour_v1';
+/** Flag set by DemoPage when a prospect lands via /demo — triggers prospect tour auto-start once. */
+export const PROSPECT_DEMO_FLAG = 'esgflow_demo_prospect_pending';
+
+export type TourMode = 'standard' | 'prospect';
 
 interface TourStorage {
   completed: boolean;
@@ -41,14 +45,18 @@ export interface TourContextValue {
   run: boolean;
   /** Currently active step index (controlled) */
   stepIndex: number;
+  /** Active tour mode — 'standard' (general) or 'prospect' (commercial pitch) */
+  mode: TourMode;
   /** True once the user has finished the full tour */
   isCompleted: boolean;
   /** True if the user dismissed via "Je connais" */
   isDismissed: boolean;
-  /** (Re)start the tour from step 0 */
+  /** (Re)start the standard tour from step 0 */
   startTour: () => void;
-  /** Start the tour from a specific step index */
+  /** Start the standard tour from a specific step index */
   startFromStep: (step: number) => void;
+  /** Start the short prospect-focused tour (commercial pitch) */
+  startProspectTour: () => void;
   /** Stop without marking as completed */
   stopTour: () => void;
   /** Move to a specific step (called from joyride callback) */
@@ -66,6 +74,7 @@ const TourContext = createContext<TourContextValue | null>(null);
 export function TourProvider({ children }: { children: ReactNode }) {
   const [run, setRun] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
+  const [mode, setMode] = useState<TourMode>('standard');
   const [isCompleted, setIsCompleted] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
   const [hasAutoStarted, setHasAutoStarted] = useState(false);
@@ -81,12 +90,33 @@ export function TourProvider({ children }: { children: ReactNode }) {
     setIsCompleted(stored.completed);
     setIsDismissed(stored.dismissed);
 
-    // Ne jamais auto-démarrer le tour — il bloque les clics sur la page.
-    // L'utilisateur peut le lancer manuellement via le bouton "Tour guidé".
+    // ── Prospect demo: si un prospect arrive via /demo, on auto-démarre le
+    //    tour commercial UNE seule fois (le flag est posé par DemoPage).
+    const prospectPending = sessionStorage.getItem(PROSPECT_DEMO_FLAG) === '1';
+    if (prospectPending) {
+      sessionStorage.removeItem(PROSPECT_DEMO_FLAG);
+      // Laisser le sidebar/header se monter avant de cibler ses sélecteurs
+      const t = setTimeout(() => {
+        setMode('prospect');
+        setIsCompleted(false);
+        setIsDismissed(false);
+        setStepIndex(0);
+        setRun(true);
+      }, 800);
+      setHasAutoStarted(true);
+      return () => clearTimeout(t);
+    }
+
+    // Auto-démarrer le tour standard pour les nouveaux utilisateurs
+    // (ni completed, ni dismissed) — avec un délai pour laisser le DOM se monter.
     if (!stored.completed && !stored.dismissed) {
-      // Marquer comme dismissed pour éviter le blocage des clics
-      saveStorage({ dismissed: true });
-      setIsDismissed(true);
+      const t2 = setTimeout(() => {
+        setMode('standard');
+        setStepIndex(0);
+        setRun(true);
+      }, 1200);
+      setHasAutoStarted(true);
+      return () => clearTimeout(t2);
     }
 
     setHasAutoStarted(true);
@@ -96,6 +126,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
 
   const startTour = useCallback(() => {
     saveStorage({ completed: false, dismissed: false, lastStep: 0 });
+    setMode('standard');
     setIsCompleted(false);
     setIsDismissed(false);
     setStepIndex(0);
@@ -104,9 +135,19 @@ export function TourProvider({ children }: { children: ReactNode }) {
 
   const startFromStep = useCallback((step: number) => {
     saveStorage({ completed: false, dismissed: false, lastStep: step });
+    setMode('standard');
     setIsCompleted(false);
     setIsDismissed(false);
     setStepIndex(step);
+    setTimeout(() => setRun(true), 150);
+  }, []);
+
+  const startProspectTour = useCallback(() => {
+    // Ne persiste pas dans le storage standard — le tour prospect est éphémère.
+    setMode('prospect');
+    setIsCompleted(false);
+    setIsDismissed(false);
+    setStepIndex(0);
     setTimeout(() => setRun(true), 150);
   }, []);
 
@@ -116,30 +157,39 @@ export function TourProvider({ children }: { children: ReactNode }) {
 
   const setStep = useCallback((step: number) => {
     setStepIndex(step);
-    saveStorage({ lastStep: step });
-  }, []);
+    // Only persist progression for the standard tour — prospect tour is ephemeral.
+    if (mode === 'standard') {
+      saveStorage({ lastStep: step });
+    }
+  }, [mode]);
 
   const completeTour = useCallback(() => {
     setRun(false);
     setIsCompleted(true);
-    saveStorage({ completed: true, dismissed: false, lastStep: 0 });
-  }, []);
+    if (mode === 'standard') {
+      saveStorage({ completed: true, dismissed: false, lastStep: 0 });
+    }
+  }, [mode]);
 
   const dismissTour = useCallback(() => {
     setRun(false);
     setIsDismissed(true);
-    saveStorage({ dismissed: true });
-  }, []);
+    if (mode === 'standard') {
+      saveStorage({ dismissed: true });
+    }
+  }, [mode]);
 
   return (
     <TourContext.Provider
       value={{
         run,
         stepIndex,
+        mode,
         isCompleted,
         isDismissed,
         startTour,
         startFromStep,
+        startProspectTour,
         stopTour,
         setStep,
         completeTour,

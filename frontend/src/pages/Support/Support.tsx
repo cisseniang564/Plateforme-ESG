@@ -17,7 +17,7 @@ const FAQ = [
   },
   {
     q: 'Mes données CSRD sont-elles conformes ESRS ?',
-    a: "Oui — ESGFlow implémente les normes ESRS E1-E5, S1-S4 et G1. Consultez la page Conformité pour voir votre score de conformité par référentiel.",
+    a: "Oui — ESG Flow implémente les normes ESRS E1-E5, S1-S4 et G1. Consultez la page Conformité pour voir votre score de conformité par référentiel.",
   },
   {
     q: 'Comment ajouter un nouvel utilisateur à mon espace ?',
@@ -59,7 +59,7 @@ export default function Support() {
             </div>
             <h1 className="text-3xl font-bold mb-1 flex items-center gap-3">
               <LifeBuoy className="h-8 w-8" />
-              Support ESGFlow
+              Support ESG Flow
             </h1>
             <p className="text-emerald-100">Notre équipe est disponible pour vous accompagner</p>
           </div>

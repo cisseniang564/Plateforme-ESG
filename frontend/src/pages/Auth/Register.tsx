@@ -128,22 +128,25 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8">
 
         {/* Left Side - Branding */}
-        <div className="hidden lg:flex flex-col justify-center p-12 bg-gradient-to-br from-primary-600 to-primary-800 rounded-2xl text-white">
-          <div className="mb-8">
-            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-sm">
-              <Sparkles className="h-8 w-8" />
+        <div className="hidden lg:flex flex-col justify-center p-12 bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 rounded-2xl text-white relative overflow-hidden">
+          <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0)', backgroundSize: '32px 32px' }} />
+          <div className="absolute top-1/4 -left-20 w-64 h-64 bg-emerald-500/15 rounded-full blur-3xl" />
+
+          <div className="relative mb-8">
+            <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-green-500 rounded-2xl flex items-center justify-center mb-5 shadow-lg shadow-emerald-500/30">
+              <Sparkles className="h-7 w-7" />
             </div>
-            <h1 className="text-4xl font-bold mb-4">{t('auth.joinEsgflow')}</h1>
-            <p className="text-xl text-white/90 mb-8">
+            <h1 className="text-4xl font-extrabold mb-4">{t('auth.joinEsgflow')}</h1>
+            <p className="text-lg text-slate-300 leading-relaxed">
               {t('auth.platformTagline')}
             </p>
           </div>
 
-          <div className="space-y-6">
+          <div className="relative space-y-5">
             {[
               { icon: Shield, titleKey: 'auth.featureMaxSecurity', descKey: 'auth.featureMaxSecurityDesc' },
               { icon: Sparkles, titleKey: 'auth.featureAI', descKey: 'auth.featureAIDesc' },
@@ -151,24 +154,30 @@ export default function Register() {
             ].map((feature, idx) => {
               const Icon = feature.icon;
               return (
-                <div key={idx} className="flex items-start gap-4">
-                  <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
-                    <Icon className="h-6 w-6" />
+                <div key={idx} className="flex items-start gap-4 p-4 bg-white/5 border border-white/10 rounded-xl">
+                  <div className="p-2 bg-emerald-500/20 rounded-lg flex-shrink-0">
+                    <Icon className="h-5 w-5 text-emerald-400" />
                   </div>
                   <div>
                     <h3 className="font-semibold mb-1">{t(feature.titleKey)}</h3>
-                    <p className="text-sm text-white/80">{t(feature.descKey)}</p>
+                    <p className="text-sm text-slate-400">{t(feature.descKey)}</p>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          <div className="mt-12 p-6 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20">
-            <p className="text-sm text-white/90">
-              "ESGFlow a transformé notre approche ESG. En 3 mois, nous avons amélioré notre score de 40%."
+          <div className="relative mt-10 p-5 bg-white/5 rounded-xl border border-white/10">
+            <p className="text-sm text-slate-200 italic leading-relaxed">
+              "ESG Flow a transformé notre approche ESG. En 3 mois, nous avons amélioré notre score de 40%."
             </p>
-            <p className="text-sm font-semibold mt-2">— Marie Dupont, Directrice RSE</p>
+            <div className="flex items-center gap-3 mt-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center text-white text-xs font-bold">MD</div>
+              <div>
+                <p className="text-sm font-semibold text-white">Marie Dupont</p>
+                <p className="text-xs text-slate-400">Directrice RSE</p>
+              </div>
+            </div>
           </div>
         </div>
 

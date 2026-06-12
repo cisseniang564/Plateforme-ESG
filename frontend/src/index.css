@@ -23,13 +23,65 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     line-height: 1.5;
     letter-spacing: -0.01em;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
+
+  /* Dark mode — uses the `.dark` class on <html> (toggled by ThemeToggle).
+     We target Tailwind's most common utility classes when they appear on
+     elements WITHOUT an explicit `dark:` override, so the bulk of the app
+     gets a coherent dark theme without per-component refactoring. Tailwind
+     darkMode is set to 'class' in tailwind.config.cjs. */
+  html.dark body {
+    background-color: #0b1220;
+    @apply text-gray-100;
+  }
+  html.dark ::selection {
+    background-color: #14532d;
+    color: #bbf7d0;
+  }
+
+  /* Generic surface swaps — applied only when an element does NOT carry its
+     own dark: override. Keeps existing custom-themed sections (like the
+     navy hero banners) untouched.
+     NOTE: these blanket selectors are intentionally light-weight; they only
+     swap background + text colors, not gradients or images. */
+  html.dark .bg-white                            { background-color: #111827; color-scheme: dark; }
+  html.dark .bg-gray-50                          { background-color: #1f2937; }
+  html.dark .bg-gray-100                         { background-color: #1f2937; }
+  html.dark .text-gray-900                       { color: #f3f4f6; }
+  html.dark .text-gray-800                       { color: #e5e7eb; }
+  html.dark .text-gray-700                       { color: #d1d5db; }
+  html.dark .text-gray-600                       { color: #9ca3af; }
+  html.dark .text-gray-500                       { color: #9ca3af; }
+  html.dark .border-gray-100,
+  html.dark .border-gray-200,
+  html.dark .border-gray-300                     { border-color: #374151; }
+  html.dark hr                                   { border-color: #374151; }
+  html.dark input:not([type='checkbox']):not([type='radio']),
+  html.dark select,
+  html.dark textarea                             {
+    background-color: #1f2937;
+    border-color: #374151;
+    color: #f3f4f6;
+  }
+  html.dark input::placeholder,
+  html.dark textarea::placeholder                { color: #6b7280; }
 
   /* Focus rings — emerald brand */
   :focus-visible {
     outline: 2px solid #16a34a;
     outline-offset: 2px;
     border-radius: 4px;
+  }
+
+  /* Respect users' OS preference for reduced motion (vestibular disorders, low-end devices) */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 
   /* Refined scrollbar */
@@ -109,6 +161,76 @@
   .pillar-environmental { @apply text-emerald-700 bg-emerald-50 border-emerald-200; }
   .pillar-social        { @apply text-blue-700    bg-blue-50    border-blue-200;   }
   .pillar-governance    { @apply text-violet-700  bg-violet-50  border-violet-200; }
+
+  /* ── Skeleton loading ── */
+  .skeleton {
+    @apply rounded-lg bg-gray-100 relative overflow-hidden;
+    background: linear-gradient(90deg, #f1f5f9 25%, #e8ecf0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.6s linear infinite;
+  }
+  .skeleton-text { @apply skeleton h-4 w-full rounded; }
+  .skeleton-title { @apply skeleton h-6 w-2/3 rounded; }
+  .skeleton-circle { @apply skeleton rounded-full; }
+
+  /* ── KPI Card ── */
+  .kpi-card {
+    @apply bg-white rounded-2xl border border-gray-100
+           hover:-translate-y-0.5
+           transition-all duration-200 cursor-pointer
+           overflow-hidden relative;
+    box-shadow: 0 2px 8px -2px rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+  }
+  .kpi-card:hover {
+    box-shadow: 0 8px 24px -4px rgb(0 0 0 / 0.12), 0 2px 6px -2px rgb(0 0 0 / 0.06);
+  }
+  .kpi-card::before {
+    content: '';
+    @apply absolute inset-x-0 top-0 h-0.5;
+  }
+  .kpi-card-green::before  { @apply bg-gradient-to-r from-emerald-400 to-green-500; }
+  .kpi-card-blue::before   { @apply bg-gradient-to-r from-blue-400 to-cyan-500; }
+  .kpi-card-purple::before { @apply bg-gradient-to-r from-violet-400 to-purple-500; }
+  .kpi-card-amber::before  { @apply bg-gradient-to-r from-amber-400 to-orange-400; }
+
+  /* ── Gradient text ── */
+  .text-gradient-green {
+    @apply bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent;
+  }
+  .text-gradient-brand {
+    @apply bg-gradient-to-r from-primary-600 to-emerald-500 bg-clip-text text-transparent;
+  }
+
+  /* ── Glass card (for dark contexts) ── */
+  .glass-card {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.1);
+    @apply rounded-2xl;
+  }
+
+  /* ── Section header ── */
+  .section-header {
+    @apply flex items-center justify-between mb-5;
+  }
+  .section-title {
+    @apply text-base font-semibold text-gray-800 flex items-center gap-2;
+  }
+
+  /* ── Data table ── */
+  .data-table { @apply w-full text-sm; }
+  .data-table th { @apply text-xs font-semibold text-gray-500 uppercase tracking-wide text-left py-2.5 px-3 bg-gray-50 first:rounded-l-lg last:rounded-r-lg; }
+  .data-table td { @apply py-3 px-3 border-b border-gray-50 text-gray-700; }
+  .data-table tr:last-child td { @apply border-b-0; }
+  .data-table tr:hover td { @apply bg-gray-50/50; }
+
+  /* ── Page container ── */
+  .page-container { @apply max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6; }
+
+  /* ── Stat value ── */
+  .stat-value { @apply text-3xl font-bold tabular-nums text-gray-900 leading-none; }
+  .stat-label { @apply text-xs font-medium text-gray-500 uppercase tracking-wide; }
 }
 
 /* ─── Utilities ────────────────────────────────────────────────────────────── */
@@ -142,6 +264,9 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+
+  .tabular { font-variant-numeric: tabular-nums; }
+  .ease-spring { transition-timing-function: cubic-bezier(0.34,1.56,0.64,1); }
 }
 
 /* ─── Animations ───────────────────────────────────────────────────────────── */
@@ -222,6 +347,19 @@
 }
 .modal-backdrop { animation: backdrop-fade 0.15s ease-out; }
 
+/* Marquee — infinite horizontal scroll (used on landing page standards strip) */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+  width: max-content;
+  display: flex;
+  align-items: center;
+}
+.animate-marquee:hover { animation-play-state: paused; }
+
 /* Blob */
 @keyframes blob {
   0%, 100% { transform: translate(0, 0) scale(1); }
@@ -248,4 +386,91 @@
 
 .page-enter {
   animation: fadeIn 0.2s ease-out forwards;
+}
+
+/* ─── Print / PDF via ⌘+P ──────────────────────────────────────────────────── */
+/* Converts dark-themed pages to white when printing via browser native print  */
+
+@media print {
+  /* Force white background on all elements */
+  *,
+  *::before,
+  *::after {
+    background-color: white !important;
+    background-image: none !important;
+    color: #111827 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Hide navigation chrome */
+  nav,
+  aside,
+  [class*="sidebar"],
+  [class*="navbar"],
+  [class*="no-print"],
+  .no-print,
+  header nav,
+  [role="navigation"] {
+    display: none !important;
+  }
+
+  /* Readable body */
+  body {
+    background: white !important;
+    font-size: 11pt;
+  }
+
+  /* Tables legible */
+  table, th, td {
+    border-color: #d1d5db !important;
+  }
+
+  /* Cards — keep light borders */
+  [class*="rounded"],
+  [class*="border"] {
+    border-color: #e5e7eb !important;
+  }
+
+  /* Keep links readable */
+  a {
+    color: #1d4ed8 !important;
+    text-decoration: underline;
+  }
+
+  /* Page breaks */
+  section, article, .card {
+    page-break-inside: avoid;
+  }
+
+  /* Hide interactive elements */
+  button:not([aria-label*="print"]):not([aria-label*="PDF"]),
+  input,
+  select,
+  textarea {
+    display: none !important;
+  }
+}
+
+/* ─── Touch targets (WCAG 2.5.5 / 2.5.8) ───────────────────────────────────── */
+@layer utilities {
+  /* Opt-in 44×44 tap target for icon-only controls (hamburger, social, etc.) */
+  .tap-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* On coarse pointers (touch screens), guarantee comfortable tap areas for
+   navigation- and footer-style link/button lists — without touching inline
+   prose links, so paragraph copy keeps its natural line-height. Opt-in via
+   the `.tap-list` class on the parent container, which keeps dense UIs
+   (tables, dashboards) unaffected. */
+@media (pointer: coarse) {
+  .tap-list a,
+  .tap-list button {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
 }

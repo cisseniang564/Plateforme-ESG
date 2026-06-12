@@ -1,12 +1,14 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
+import { useNavigate } from 'react-router-dom';
 import api from '@/services/api';
 // ⚡ Export libs loaded lazily (dynamic import) to avoid bundle-init crashes
 import {
   Shield, CheckCircle, XCircle, AlertTriangle, ChevronDown,
   ChevronRight, FileText, Download, ExternalLink, Info,
   Building2, Globe, Scale, Landmark, Banknote, Leaf,
-  BarChart3, Users, TrendingUp, RefreshCw,
+  BarChart3, Users, TrendingUp, RefreshCw, ArrowRight, Zap,
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -80,250 +82,284 @@ function ScoreRing({ score, color }: { score: number; color: string }) {
 }
 
 // ─── Regulations data ─────────────────────────────────────────────────────────
-const regulations: Regulation[] = [
+const getRegulations = (t: TFunction): Regulation[] => [
   {
     id: 'csrd',
     name: 'CSRD',
-    fullName: 'Corporate Sustainability Reporting Directive',
+    fullName: t('compliance.multiReg.csrd.fullName', 'Corporate Sustainability Reporting Directive'),
     category: 'Reporting ESG',
     icon: FileText,
     color: '#16a34a',
     bgColor: 'bg-green-50',
-    description: 'Directive européenne imposant un reporting de durabilité standardisé selon les ESRS pour les grandes entreprises.',
-    scope: 'Entreprises >250 salariés ou >40M€ CA',
+    description: t('compliance.multiReg.csrd.description', "Directive européenne imposant un reporting de durabilité standardisé selon les ESRS pour les grandes entreprises."),
+    scope: t('compliance.multiReg.csrd.scope', "Entreprises >250 salariés ou >40M€ CA"),
     deadline: 'Exercice 2024 (rapport 2025)',
-    authority: 'Commission Européenne / EFRAG',
+    authority: t('compliance.multiReg.csrd.authority', 'Commission Européenne / EFRAG'),
     globalStatus: 'partiel',
     score: 72,
     checks: [
-      { label: 'Collecte des données ESRS', status: 'conforme' },
-      { label: 'Double matérialité documentée', status: 'conforme' },
-      { label: 'Indicateurs E1 (Changement climatique)', status: 'conforme' },
-      { label: 'Indicateurs S1 (Effectifs propres)', status: 'partiel', note: 'Données partielles Q3' },
-      { label: 'Indicateurs G1 (Gouvernance)', status: 'partiel', note: 'Politique anticorruption à formaliser' },
-      { label: 'Audit / assurance limitée', status: 'non_conforme', note: 'Commissaire aux comptes non mandaté' },
-      { label: 'Publication dans rapport de gestion', status: 'non_conforme' },
+      { label: t('compliance.multiReg.csrd.check1', 'Collecte des données ESRS'), status: 'conforme' },
+      { label: t('compliance.multiReg.csrd.check2', 'Double matérialité documentée'), status: 'conforme' },
+      { label: t('compliance.multiReg.csrd.check3', 'Indicateurs E1 (Changement climatique)'), status: 'conforme' },
+      { label: t('compliance.multiReg.csrd.check4', 'Indicateurs S1 (Effectifs propres)'), status: 'partiel', note: t('compliance.multiReg.csrd.note4', 'Données partielles Q3') },
+      { label: t('compliance.multiReg.csrd.check5', 'Indicateurs G1 (Gouvernance)'), status: 'partiel', note: t('compliance.multiReg.csrd.note5', 'Politique anticorruption à formaliser') },
+      { label: t('compliance.multiReg.csrd.check6', 'Audit / assurance limitée'), status: 'non_conforme', note: t('compliance.multiReg.csrd.note6', 'Commissaire aux comptes non mandaté') },
+      { label: t('compliance.multiReg.csrd.check7', 'Publication dans rapport de gestion'), status: 'non_conforme' },
     ],
-    actions: ['Mandater un commissaire aux comptes pour l\'assurance limitée', 'Compléter indicateurs S1-S4', 'Intégrer au rapport de gestion annuel'],
+    actions: [
+      t('compliance.multiReg.csrd.action1', "Mandater un commissaire aux comptes pour l'assurance limitée"),
+      t('compliance.multiReg.csrd.action2', 'Compléter indicateurs S1-S4'),
+      t('compliance.multiReg.csrd.action3', 'Intégrer au rapport de gestion annuel'),
+    ],
   },
   {
     id: 'taxonomie',
     name: 'Taxonomie UE',
-    fullName: 'Règlement UE 2020/852 — Taxonomie verte',
+    fullName: t('compliance.multiReg.taxonomie.fullName', 'Règlement UE 2020/852 — Taxonomie verte'),
     category: 'Finance durable',
     icon: Leaf,
     color: '#059669',
     bgColor: 'bg-emerald-50',
-    description: 'Classification des activités économiques durables selon 6 objectifs environnementaux. Exigée pour les rapports NFRD/CSRD.',
-    scope: 'Grandes entreprises cotées + secteur financier',
+    description: t('compliance.multiReg.taxonomie.description', 'Classification des activités économiques durables selon 6 objectifs environnementaux. Exigée pour les rapports NFRD/CSRD.'),
+    scope: t('compliance.multiReg.taxonomie.scope', 'Grandes entreprises cotées + secteur financier'),
     deadline: 'Annuel — exercice en cours',
-    authority: 'Commission Européenne',
+    authority: t('compliance.multiReg.taxonomie.authority', 'Commission Européenne'),
     globalStatus: 'partiel',
     score: 58,
     checks: [
-      { label: 'Éligibilité des activités identifiée', status: 'conforme' },
-      { label: 'Critères techniques d\'examen (CTE)', status: 'partiel' },
-      { label: 'Principe DNSH (pas de préjudice significatif)', status: 'partiel', note: 'Objectifs eau et biodiversité à compléter' },
-      { label: 'Garanties minimales sociales', status: 'conforme' },
-      { label: 'Calcul % CA aligné', status: 'non_conforme' },
-      { label: 'Calcul % CapEx aligné', status: 'non_conforme' },
-      { label: 'Calcul % OpEx aligné', status: 'non_conforme' },
+      { label: t('compliance.multiReg.taxonomie.check1', 'Éligibilité des activités identifiée'), status: 'conforme' },
+      { label: t('compliance.multiReg.taxonomie.check2', "Critères techniques d'examen (CTE)"), status: 'partiel' },
+      { label: t('compliance.multiReg.taxonomie.check3', 'Principe DNSH (pas de préjudice significatif)'), status: 'partiel', note: t('compliance.multiReg.taxonomie.note3', 'Objectifs eau et biodiversité à compléter') },
+      { label: t('compliance.multiReg.taxonomie.check4', 'Garanties minimales sociales'), status: 'conforme' },
+      { label: t('compliance.multiReg.taxonomie.check5', 'Calcul % CA aligné'), status: 'non_conforme' },
+      { label: t('compliance.multiReg.taxonomie.check6', 'Calcul % CapEx aligné'), status: 'non_conforme' },
+      { label: t('compliance.multiReg.taxonomie.check7', 'Calcul % OpEx aligné'), status: 'non_conforme' },
     ],
-    actions: ['Calculer les ratios CA/CapEx/OpEx alignés', 'Documenter les CTE pour chaque activité éligible', 'Compléter l\'analyse DNSH eau et biodiversité'],
+    actions: [
+      t('compliance.multiReg.taxonomie.action1', 'Calculer les ratios CA/CapEx/OpEx alignés'),
+      t('compliance.multiReg.taxonomie.action2', 'Documenter les CTE pour chaque activité éligible'),
+      t('compliance.multiReg.taxonomie.action3', "Compléter l'analyse DNSH eau et biodiversité"),
+    ],
   },
   {
     id: 'dpef',
     name: 'DPEF',
-    fullName: 'Déclaration de Performance Extra-Financière',
+    fullName: t('compliance.multiReg.dpef.fullName', 'Déclaration de Performance Extra-Financière'),
     category: 'Reporting ESG',
     icon: BarChart3,
     color: '#2563eb',
     bgColor: 'bg-blue-50',
-    description: 'Rapport annuel obligatoire sur les enjeux sociaux, environnementaux et de gouvernance. Remplacée progressivement par la CSRD.',
-    scope: 'SA/SCA cotées >500 salariés, SAS >500 salariés et >100M€ CA',
+    description: t('compliance.multiReg.dpef.description', 'Rapport annuel obligatoire sur les enjeux sociaux, environnementaux et de gouvernance. Remplacée progressivement par la CSRD.'),
+    scope: t('compliance.multiReg.dpef.scope', "SA/SCA cotées >500 salariés, SAS >500 salariés et >100M€ CA"),
     deadline: 'Rapport de gestion annuel',
-    authority: 'AMF / Commissaires aux comptes',
+    authority: t('compliance.multiReg.dpef.authority', 'AMF / Commissaires aux comptes'),
     globalStatus: 'conforme',
     score: 85,
     checks: [
-      { label: 'Informations sociales (effectifs, égalité, santé)', status: 'conforme' },
-      { label: 'Informations environnementales (GHG, eau, déchets)', status: 'conforme' },
-      { label: 'Informations sociétales (sous-traitance, droits humains)', status: 'partiel' },
-      { label: 'Modèle d\'affaires et risques extra-financiers', status: 'conforme' },
-      { label: 'Vérification organisme tiers indépendant (OTI)', status: 'conforme' },
-      { label: 'Publication dans rapport de gestion', status: 'conforme' },
+      { label: t('compliance.multiReg.dpef.check1', 'Informations sociales (effectifs, égalité, santé)'), status: 'conforme' },
+      { label: t('compliance.multiReg.dpef.check2', 'Informations environnementales (GHG, eau, déchets)'), status: 'conforme' },
+      { label: t('compliance.multiReg.dpef.check3', 'Informations sociétales (sous-traitance, droits humains)'), status: 'partiel' },
+      { label: t('compliance.multiReg.dpef.check4', "Modèle d'affaires et risques extra-financiers"), status: 'conforme' },
+      { label: t('compliance.multiReg.dpef.check5', 'Vérification organisme tiers indépendant (OTI)'), status: 'conforme' },
+      { label: t('compliance.multiReg.dpef.check6', 'Publication dans rapport de gestion'), status: 'conforme' },
     ],
-    actions: ['Renforcer le reporting sur la sous-traitance et les droits humains (Pilier 3 DPEF)'],
+    actions: [
+      t('compliance.multiReg.dpef.action1', 'Renforcer le reporting sur la sous-traitance et les droits humains (Pilier 3 DPEF)'),
+    ],
   },
   {
     id: 'sapin2',
     name: 'Loi Sapin II',
-    fullName: 'Loi n°2016-1691 — Transparence & Anticorruption',
+    fullName: t('compliance.multiReg.sapin2.fullName', 'Loi n°2016-1691 — Transparence & Anticorruption'),
     category: 'Gouvernance',
     icon: Scale,
     color: '#7c3aed',
     bgColor: 'bg-violet-50',
-    description: 'Oblige les grandes entreprises à mettre en place un programme de conformité anticorruption et de trafic d\'influence.',
-    scope: 'Entreprises >500 salariés et >100M€ CA',
-    deadline: 'Continu — évalué par l\'AFA',
-    authority: 'Agence Française Anticorruption (AFA)',
+    description: t('compliance.multiReg.sapin2.description', "Oblige les grandes entreprises à mettre en place un programme de conformité anticorruption et de trafic d'influence."),
+    scope: t('compliance.multiReg.sapin2.scope', "Entreprises >500 salariés et >100M€ CA"),
+    deadline: t('compliance.multiReg.sapin2.deadline', "Continu — évalué par l'AFA"),
+    authority: t('compliance.multiReg.sapin2.authority', 'Agence Française Anticorruption (AFA)'),
     globalStatus: 'partiel',
     score: 61,
     checks: [
-      { label: 'Code de conduite anticorruption', status: 'conforme' },
-      { label: 'Dispositif d\'alerte interne', status: 'conforme' },
-      { label: 'Cartographie des risques de corruption', status: 'partiel', note: 'Mise à jour annuelle requise' },
-      { label: 'Procédures d\'évaluation des tiers', status: 'partiel', note: 'Couverture fournisseurs < 80%' },
-      { label: 'Procédures comptables de contrôle', status: 'non_conforme' },
-      { label: 'Formation des collaborateurs exposés', status: 'conforme' },
-      { label: 'Régime disciplinaire', status: 'conforme' },
-      { label: 'Dispositif de contrôle & évaluation', status: 'partiel' },
+      { label: t('compliance.multiReg.sapin2.check1', 'Code de conduite anticorruption'), status: 'conforme' },
+      { label: t('compliance.multiReg.sapin2.check2', "Dispositif d'alerte interne"), status: 'conforme' },
+      { label: t('compliance.multiReg.sapin2.check3', 'Cartographie des risques de corruption'), status: 'partiel', note: t('compliance.multiReg.sapin2.note3', 'Mise à jour annuelle requise') },
+      { label: t('compliance.multiReg.sapin2.check4', "Procédures d'évaluation des tiers"), status: 'partiel', note: t('compliance.multiReg.sapin2.note4', 'Couverture fournisseurs < 80%') },
+      { label: t('compliance.multiReg.sapin2.check5', 'Procédures comptables de contrôle'), status: 'non_conforme' },
+      { label: t('compliance.multiReg.sapin2.check6', 'Formation des collaborateurs exposés'), status: 'conforme' },
+      { label: t('compliance.multiReg.sapin2.check7', 'Régime disciplinaire'), status: 'conforme' },
+      { label: t('compliance.multiReg.sapin2.check8', 'Dispositif de contrôle & évaluation'), status: 'partiel' },
     ],
-    actions: ['Mettre à jour la cartographie des risques', 'Étendre l\'évaluation tiers à 100% des fournisseurs critiques', 'Formaliser les procédures comptables de contrôle'],
+    actions: [
+      t('compliance.multiReg.sapin2.action1', 'Mettre à jour la cartographie des risques'),
+      t('compliance.multiReg.sapin2.action2', "Étendre l'évaluation tiers à 100% des fournisseurs critiques"),
+      t('compliance.multiReg.sapin2.action3', 'Formaliser les procédures comptables de contrôle'),
+    ],
   },
   {
     id: 'devoir_vigilance',
     name: 'Devoir de Vigilance',
-    fullName: 'Loi n°2017-399 — Devoir de vigilance',
+    fullName: t('compliance.multiReg.devoirVigilance.fullName', 'Loi n°2017-399 — Devoir de vigilance'),
     category: 'Droits humains & Environnement',
     icon: Users,
     color: '#0891b2',
     bgColor: 'bg-cyan-50',
-    description: 'Impose aux grandes entreprises un plan de vigilance pour prévenir atteintes aux droits humains et à l\'environnement dans leur chaîne de valeur.',
-    scope: 'SA >5 000 salariés en France ou >10 000 dans le monde',
+    description: t('compliance.multiReg.devoirVigilance.description', "Impose aux grandes entreprises un plan de vigilance pour prévenir atteintes aux droits humains et à l'environnement dans leur chaîne de valeur."),
+    scope: t('compliance.multiReg.devoirVigilance.scope', 'SA >5 000 salariés en France ou >10 000 dans le monde'),
     deadline: 'Plan de vigilance annuel',
-    authority: 'Tribunaux judiciaires / Parties civiles',
+    authority: t('compliance.multiReg.devoirVigilance.authority', 'Tribunaux judiciaires / Parties civiles'),
     globalStatus: 'partiel',
     score: 54,
     checks: [
-      { label: 'Plan de vigilance publié', status: 'conforme' },
-      { label: 'Cartographie des risques droits humains', status: 'partiel' },
-      { label: 'Procédures d\'évaluation filiales & fournisseurs', status: 'partiel', note: 'Fournisseurs rang 2 non couverts' },
-      { label: 'Actions d\'atténuation des risques identifiés', status: 'partiel' },
-      { label: 'Mécanisme d\'alerte & recueil signalements', status: 'conforme' },
-      { label: 'Dispositif de suivi & évaluation', status: 'non_conforme' },
+      { label: t('compliance.multiReg.devoirVigilance.check1', 'Plan de vigilance publié'), status: 'conforme' },
+      { label: t('compliance.multiReg.devoirVigilance.check2', 'Cartographie des risques droits humains'), status: 'partiel' },
+      { label: t('compliance.multiReg.devoirVigilance.check3', "Procédures d'évaluation filiales & fournisseurs"), status: 'partiel', note: t('compliance.multiReg.devoirVigilance.note3', 'Fournisseurs rang 2 non couverts') },
+      { label: t('compliance.multiReg.devoirVigilance.check4', "Actions d'atténuation des risques identifiés"), status: 'partiel' },
+      { label: t('compliance.multiReg.devoirVigilance.check5', 'Mécanisme d\'alerte & recueil signalements'), status: 'conforme' },
+      { label: t('compliance.multiReg.devoirVigilance.check6', 'Dispositif de suivi & évaluation'), status: 'non_conforme' },
     ],
-    actions: ['Étendre la cartographie aux fournisseurs rang 2 et 3', 'Mettre en place des KPIs de suivi du plan de vigilance', 'Renforcer les clauses contractuelles fournisseurs'],
+    actions: [
+      t('compliance.multiReg.devoirVigilance.action1', 'Étendre la cartographie aux fournisseurs rang 2 et 3'),
+      t('compliance.multiReg.devoirVigilance.action2', 'Mettre en place des KPIs de suivi du plan de vigilance'),
+      t('compliance.multiReg.devoirVigilance.action3', 'Renforcer les clauses contractuelles fournisseurs'),
+    ],
   },
   {
     id: 'art29',
     name: 'Article 29 LEC',
-    fullName: 'Article 29 Loi Énergie-Climat — Reporting climatique',
+    fullName: t('compliance.multiReg.art29.fullName', 'Article 29 Loi Énergie-Climat — Reporting climatique'),
     category: 'Finance & Climat',
     icon: TrendingUp,
     color: '#d97706',
     bgColor: 'bg-amber-50',
-    description: 'Oblige les investisseurs institutionnels et sociétés de gestion à intégrer et déclarer les risques climatiques dans leur gestion et reporting.',
-    scope: 'Investisseurs institutionnels, sociétés de gestion, assureurs',
+    description: t('compliance.multiReg.art29.description', 'Oblige les investisseurs institutionnels et sociétés de gestion à intégrer et déclarer les risques climatiques dans leur gestion et reporting.'),
+    scope: t('compliance.multiReg.art29.scope', 'Investisseurs institutionnels, sociétés de gestion, assureurs'),
     deadline: 'Rapport annuel',
-    authority: 'AMF / ACPR',
+    authority: t('compliance.multiReg.art29.authority', 'AMF / ACPR'),
     globalStatus: 'na',
     score: 0,
     checks: [
-      { label: 'Politique d\'intégration des risques ESG', status: 'na' },
-      { label: 'Exposition aux risques physiques climatiques', status: 'na' },
-      { label: 'Exposition aux risques de transition', status: 'na' },
-      { label: 'Alignement portefeuille avec Accord de Paris', status: 'na' },
-      { label: 'Stratégie de vote (engagement actionnarial)', status: 'na' },
+      { label: t('compliance.multiReg.art29.check1', "Politique d'intégration des risques ESG"), status: 'na' },
+      { label: t('compliance.multiReg.art29.check2', 'Exposition aux risques physiques climatiques'), status: 'na' },
+      { label: t('compliance.multiReg.art29.check3', 'Exposition aux risques de transition'), status: 'na' },
+      { label: t('compliance.multiReg.art29.check4', 'Alignement portefeuille avec Accord de Paris'), status: 'na' },
+      { label: t('compliance.multiReg.art29.check5', 'Stratégie de vote (engagement actionnarial)'), status: 'na' },
     ],
-    actions: ['Non applicable — réservé aux investisseurs institutionnels et sociétés de gestion d\'actifs'],
+    actions: [
+      t('compliance.multiReg.art29.action1', "Non applicable — réservé aux investisseurs institutionnels et sociétés de gestion d'actifs"),
+    ],
   },
   {
     id: 'sfdr',
     name: 'SFDR',
-    fullName: 'Sustainable Finance Disclosure Regulation (2019/2088)',
+    fullName: t('compliance.multiReg.sfdr.fullName', 'Sustainable Finance Disclosure Regulation (2019/2088)'),
     category: 'Finance durable',
     icon: Banknote,
     color: '#be185d',
     bgColor: 'bg-pink-50',
-    description: 'Règlement européen imposant aux acteurs des marchés financiers de classer et déclarer leurs produits selon leur durabilité (Art. 6, 8 ou 9).',
-    scope: 'Gestionnaires actifs, conseillers financiers, fonds d\'investissement',
-    deadline: 'Continu — mis à jour trimestriellement',
-    authority: 'ESMA / AMF',
+    description: t('compliance.multiReg.sfdr.description', "Règlement européen imposant aux acteurs des marchés financiers de classer et déclarer leurs produits selon leur durabilité (Art. 6, 8 ou 9)."),
+    scope: t('compliance.multiReg.sfdr.scope', "Gestionnaires actifs, conseillers financiers, fonds d'investissement"),
+    deadline: t('compliance.multiReg.sfdr.deadline', 'Continu — mis à jour trimestriellement'),
+    authority: t('compliance.multiReg.sfdr.authority', 'ESMA / AMF'),
     globalStatus: 'na',
     score: 0,
     checks: [
-      { label: 'Classification produits Art. 6/8/9', status: 'na' },
-      { label: 'Déclarations précontractuelles', status: 'na' },
-      { label: 'Rapports périodiques durabilité', status: 'na' },
-      { label: 'Intégration risques durabilité (PAI)', status: 'na' },
+      { label: t('compliance.multiReg.sfdr.check1', 'Classification produits Art. 6/8/9'), status: 'na' },
+      { label: t('compliance.multiReg.sfdr.check2', 'Déclarations précontractuelles'), status: 'na' },
+      { label: t('compliance.multiReg.sfdr.check3', 'Rapports périodiques durabilité'), status: 'na' },
+      { label: t('compliance.multiReg.sfdr.check4', 'Intégration risques durabilité (PAI)'), status: 'na' },
     ],
-    actions: ['Non applicable — réservé aux acteurs des marchés financiers'],
+    actions: [
+      t('compliance.multiReg.sfdr.action1', 'Non applicable — réservé aux acteurs des marchés financiers'),
+    ],
   },
   {
     id: 'iso14001',
     name: 'ISO 14001',
-    fullName: 'Système de Management Environnemental ISO 14001:2015',
+    fullName: t('compliance.multiReg.iso14001.fullName', 'Système de Management Environnemental ISO 14001:2015'),
     category: 'Normes ISO',
     icon: Leaf,
     color: '#15803d',
     bgColor: 'bg-green-50',
-    description: 'Norme internationale pour les systèmes de management environnemental. Démontre l\'engagement envers la réduction de l\'impact environnemental.',
-    scope: 'Toute organisation souhaitant certifier son SME',
+    description: t('compliance.multiReg.iso14001.description', "Norme internationale pour les systèmes de management environnemental. Démontre l'engagement envers la réduction de l'impact environnemental."),
+    scope: t('compliance.multiReg.iso14001.scope', 'Toute organisation souhaitant certifier son SME'),
     deadline: 'Certification initiale + audits annuels',
-    authority: 'Organismes certificateurs accrédités (COFRAC)',
+    authority: t('compliance.multiReg.iso14001.authority', 'Organismes certificateurs accrédités (COFRAC)'),
     globalStatus: 'partiel',
     score: 45,
     checks: [
-      { label: 'Analyse du contexte & parties intéressées', status: 'conforme' },
-      { label: 'Politique environnementale', status: 'conforme' },
-      { label: 'Identification aspects/impacts significatifs', status: 'partiel' },
-      { label: 'Objectifs environnementaux & plans d\'action', status: 'partiel' },
-      { label: 'Compétences & sensibilisation', status: 'non_conforme' },
-      { label: 'Maîtrise opérationnelle', status: 'non_conforme' },
-      { label: 'Audit interne SME', status: 'non_conforme' },
-      { label: 'Revue de direction', status: 'non_conforme' },
+      { label: t('compliance.multiReg.iso14001.check1', 'Analyse du contexte & parties intéressées'), status: 'conforme' },
+      { label: t('compliance.multiReg.iso14001.check2', 'Politique environnementale'), status: 'conforme' },
+      { label: t('compliance.multiReg.iso14001.check3', 'Identification aspects/impacts significatifs'), status: 'partiel' },
+      { label: t('compliance.multiReg.iso14001.check4', "Objectifs environnementaux & plans d'action"), status: 'partiel' },
+      { label: t('compliance.multiReg.iso14001.check5', 'Compétences & sensibilisation'), status: 'non_conforme' },
+      { label: t('compliance.multiReg.iso14001.check6', 'Maîtrise opérationnelle'), status: 'non_conforme' },
+      { label: t('compliance.multiReg.iso14001.check7', 'Audit interne SME'), status: 'non_conforme' },
+      { label: t('compliance.multiReg.iso14001.check8', 'Revue de direction'), status: 'non_conforme' },
     ],
-    actions: ['Désigner un responsable SME', 'Planifier un audit interne ISO 14001', 'Mettre en place un programme de formations environnementales'],
+    actions: [
+      t('compliance.multiReg.iso14001.action1', 'Désigner un responsable SME'),
+      t('compliance.multiReg.iso14001.action2', 'Planifier un audit interne ISO 14001'),
+      t('compliance.multiReg.iso14001.action3', 'Mettre en place un programme de formations environnementales'),
+    ],
   },
   {
     id: 'iso26000',
     name: 'ISO 26000',
-    fullName: 'Lignes directrices pour la responsabilité sociétale ISO 26000:2010',
+    fullName: t('compliance.multiReg.iso26000.fullName', 'Lignes directrices pour la responsabilité sociétale ISO 26000:2010'),
     category: 'Normes ISO',
     icon: Globe,
     color: '#1d4ed8',
     bgColor: 'bg-blue-50',
-    description: 'Norme de référence (non certifiable) pour la responsabilité sociétale des organisations. Couvre 7 questions centrales RSE.',
-    scope: 'Toute organisation, tous secteurs',
-    deadline: 'Référentiel — pas de date limite',
-    authority: 'ISO (non certifiable)',
+    description: t('compliance.multiReg.iso26000.description', 'Norme de référence (non certifiable) pour la responsabilité sociétale des organisations. Couvre 7 questions centrales RSE.'),
+    scope: t('compliance.multiReg.iso26000.scope', 'Toute organisation, tous secteurs'),
+    deadline: t('compliance.multiReg.iso26000.deadline', 'Référentiel — pas de date limite'),
+    authority: t('compliance.multiReg.iso26000.authority', 'ISO (non certifiable)'),
     globalStatus: 'partiel',
     score: 63,
     checks: [
-      { label: 'Gouvernance de l\'organisation', status: 'conforme' },
-      { label: 'Droits de l\'Homme', status: 'partiel' },
-      { label: 'Relations et conditions de travail', status: 'conforme' },
-      { label: 'Environnement', status: 'partiel' },
-      { label: 'Loyauté des pratiques', status: 'conforme' },
-      { label: 'Questions relatives aux consommateurs', status: 'partiel', note: 'Politique réclamations à renforcer' },
-      { label: 'Communautés et développement local', status: 'non_conforme' },
+      { label: t('compliance.multiReg.iso26000.check1', "Gouvernance de l'organisation"), status: 'conforme' },
+      { label: t('compliance.multiReg.iso26000.check2', "Droits de l'Homme"), status: 'partiel' },
+      { label: t('compliance.multiReg.iso26000.check3', 'Relations et conditions de travail'), status: 'conforme' },
+      { label: t('compliance.multiReg.iso26000.check4', 'Environnement'), status: 'partiel' },
+      { label: t('compliance.multiReg.iso26000.check5', 'Loyauté des pratiques'), status: 'conforme' },
+      { label: t('compliance.multiReg.iso26000.check6', 'Questions relatives aux consommateurs'), status: 'partiel', note: t('compliance.multiReg.iso26000.note6', 'Politique réclamations à renforcer') },
+      { label: t('compliance.multiReg.iso26000.check7', 'Communautés et développement local'), status: 'non_conforme' },
     ],
-    actions: ['Cartographier les impacts sur les communautés locales', 'Renforcer la politique de traitement des réclamations', 'Documenter la chaîne d\'approvisionnement responsable'],
+    actions: [
+      t('compliance.multiReg.iso26000.action1', 'Cartographier les impacts sur les communautés locales'),
+      t('compliance.multiReg.iso26000.action2', 'Renforcer la politique de traitement des réclamations'),
+      t('compliance.multiReg.iso26000.action3', "Documenter la chaîne d'approvisionnement responsable"),
+    ],
   },
   {
     id: 'lksg',
     name: 'LkSG',
-    fullName: 'Lieferkettensorgfaltspflichtengesetz (Loi allemande chaîne d\'approvisionnement)',
+    fullName: t('compliance.multiReg.lksg.fullName', "Lieferkettensorgfaltspflichtengesetz (Loi allemande chaîne d'approvisionnement)"),
     category: 'Droits humains & Environnement',
     icon: Landmark,
     color: '#374151',
     bgColor: 'bg-gray-50',
-    description: 'Loi allemande sur le devoir de diligence dans la chaîne d\'approvisionnement, applicable aux entreprises exportant vers l\'Allemagne.',
-    scope: 'Entreprises >3 000 salariés présentes sur le marché allemand',
+    description: t('compliance.multiReg.lksg.description', "Loi allemande sur le devoir de diligence dans la chaîne d'approvisionnement, applicable aux entreprises exportant vers l'Allemagne."),
+    scope: t('compliance.multiReg.lksg.scope', 'Entreprises >3 000 salariés présentes sur le marché allemand'),
     deadline: 'Rapport annuel — depuis 2023',
-    authority: 'BAFA (Office fédéral allemand)',
+    authority: t('compliance.multiReg.lksg.authority', 'BAFA (Office fédéral allemand)'),
     globalStatus: 'non_conforme',
     score: 20,
     checks: [
-      { label: 'Gestion des risques en matière de droits humains', status: 'partiel' },
-      { label: 'Déclaration de principes', status: 'conforme' },
-      { label: 'Analyse de risques fournisseurs directs', status: 'non_conforme' },
-      { label: 'Mesures préventives', status: 'non_conforme' },
-      { label: 'Mécanisme de réclamation', status: 'non_conforme' },
-      { label: 'Rapport annuel BAFA', status: 'non_conforme' },
+      { label: t('compliance.multiReg.lksg.check1', 'Gestion des risques en matière de droits humains'), status: 'partiel' },
+      { label: t('compliance.multiReg.lksg.check2', 'Déclaration de principes'), status: 'conforme' },
+      { label: t('compliance.multiReg.lksg.check3', 'Analyse de risques fournisseurs directs'), status: 'non_conforme' },
+      { label: t('compliance.multiReg.lksg.check4', 'Mesures préventives'), status: 'non_conforme' },
+      { label: t('compliance.multiReg.lksg.check5', 'Mécanisme de réclamation'), status: 'non_conforme' },
+      { label: t('compliance.multiReg.lksg.check6', 'Rapport annuel BAFA'), status: 'non_conforme' },
     ],
-    actions: ['Évaluer si l\'entreprise est dans le scope LkSG', 'Analyser les fournisseurs directs allemands', 'Mettre en place un mécanisme de réclamation conforme'],
+    actions: [
+      t('compliance.multiReg.lksg.action1', 'Évaluer si l\'entreprise est dans le scope LkSG'),
+      t('compliance.multiReg.lksg.action2', 'Analyser les fournisseurs directs allemands'),
+      t('compliance.multiReg.lksg.action3', 'Mettre en place un mécanisme de réclamation conforme'),
+    ],
   },
 ];
 
@@ -417,6 +453,13 @@ function RegulationCard({ reg }: { reg: Regulation }) {
 
         {expanded && (
           <div className="mt-4 space-y-4">
+            {/* Disclaimer points de contrôle */}
+            <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg border text-xs" style={{ background: '#fefce8', borderColor: '#fde047' }}>
+              <span className="text-sm mt-0.5 flex-shrink-0">⚠️</span>
+              <span className="text-yellow-800 leading-relaxed">
+                <strong>{t('compliance.multiReg.checklistDisclaimerTitle', 'Points de contrôle indicatifs')}</strong> — {t('compliance.multiReg.checklistDisclaimerBody', 'Ces statuts sont des points de départ basés sur les pratiques courantes. Vérifiez et mettez à jour chaque élément selon votre situation réelle avec votre équipe juridique / commissaires aux comptes.')}
+              </span>
+            </div>
             {/* Checklist */}
             <div className="space-y-2">
               {reg.checks.map((check, i) => {
@@ -494,6 +537,8 @@ function computeLiveRegulations(base: Regulation[], esgData: any): Regulation[] 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function MultiRegulatoryCompliance() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const regulations = getRegulations(t);
   const [activeCategory, setActiveCategory] = useState(CATEGORY_KEYS[0].value);
   const [search, setSearch] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -728,30 +773,36 @@ export default function MultiRegulatoryCompliance() {
   });
 
   return (
-    <div className="space-y-6">
+    <div
+      className="rounded-2xl p-6 max-w-6xl mx-auto space-y-6 shadow-xl"
+      style={{
+        background: 'linear-gradient(180deg, #0f172a 0%, #0b1220 100%)',
+        border: '1px solid rgba(255,255,255,0.06)',
+      }}
+    >
       {loadingData ? (
         <div className="flex items-center gap-3 p-4 bg-violet-50 border border-violet-200 rounded-xl text-sm text-violet-700 animate-pulse">
           <RefreshCw className="h-4 w-4 animate-spin" />
-          Chargement des scores de conformité depuis vos données ESG réelles…
+          {t('compliance.multiReg.loadingScores', 'Chargement des scores de conformité depuis vos données ESG réelles…')}
         </div>
       ) : esgData ? (
         <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800">
           <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
           <div>
-            <span className="font-bold">Scores calculés depuis vos données réelles</span>
+            <span className="font-bold">{t('compliance.multiReg.scoresFromRealData', 'Scores calculés depuis vos données réelles')}</span>
             {' — '}ESG : <span className="font-bold">{Math.round(esgData.esg_score ?? 0)}/100</span>
             {' · '}E : <span className="font-semibold">{Math.round(esgData.environmental_score ?? 0)}</span>
             {' · '}S : <span className="font-semibold">{Math.round(esgData.social_score ?? 0)}</span>
             {' · '}G : <span className="font-semibold">{Math.round(esgData.governance_score ?? 0)}</span>
             {esgData.total_entries > 0 && (
-              <span className="text-green-600"> · {esgData.total_entries} données</span>
+              <span className="text-green-600"> · {esgData.total_entries} {t('compliance.multiReg.dataEntries', 'données')}</span>
             )}
           </div>
         </div>
       ) : (
         <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
           <AlertTriangle className="h-4 w-4" />
-          Données ESG non disponibles — les scores affichés sont indicatifs. Importez vos données pour obtenir une analyse personnalisée.
+          {t('compliance.multiReg.noEsgData', 'Données ESG non disponibles — les scores affichés sont indicatifs. Importez vos données pour obtenir une analyse personnalisée.')}
         </div>
       )}
 
@@ -762,7 +813,7 @@ export default function MultiRegulatoryCompliance() {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide uppercase">
-                Conformité Multi-Réglementaire
+                {t('compliance.multiReg.heroBadge', 'Conformité Multi-Réglementaire')}
               </span>
             </div>
             <h1 className="text-3xl font-bold mb-1 flex items-center gap-3">
@@ -778,7 +829,7 @@ export default function MultiRegulatoryCompliance() {
               className="flex items-center gap-2 px-4 py-2.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/20 rounded-xl text-sm font-medium transition-all disabled:opacity-60 disabled:cursor-not-allowed active:scale-95"
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {isRefreshing ? 'Actualisation...' : t('compliance.refresh')}
+              {isRefreshing ? t('compliance.multiReg.refreshing', 'Actualisation...') : t('compliance.refresh')}
             </button>
             <div className="relative">
               <button
@@ -786,16 +837,16 @@ export default function MultiRegulatoryCompliance() {
                 className="flex items-center gap-2 px-4 py-2.5 bg-white text-violet-700 rounded-xl text-sm font-bold hover:bg-violet-50 transition-all shadow-md active:scale-95"
               >
                 <Download className="h-4 w-4" />
-                Exporter
+                {t('compliance.multiReg.export', 'Exporter')}
                 <ChevronDown className="h-3.5 w-3.5" />
               </button>
               {exportMenuOpen && (
                 <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
                   {[
-                    { label: '📄 PDF', action: handleExportPDF },
-                    { label: '📊 Excel (.xlsx)', action: handleExportExcel },
-                    { label: '📝 Word (.docx)', action: handleExportWord },
-                    { label: '🗂 CSV', action: handleExportCSV },
+                    { label: t('compliance.multiReg.exportPdf', '📄 PDF'), action: handleExportPDF },
+                    { label: t('compliance.multiReg.exportExcel', '📊 Excel (.xlsx)'), action: handleExportExcel },
+                    { label: t('compliance.multiReg.exportWord', '📝 Word (.docx)'), action: handleExportWord },
+                    { label: t('compliance.multiReg.exportCsv', '🗂 CSV'), action: handleExportCSV },
                   ].map(item => (
                     <button key={item.label} onClick={item.action}
                       className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-violet-50 hover:text-violet-700 transition-colors"
@@ -885,12 +936,12 @@ export default function MultiRegulatoryCompliance() {
           </h2>
           <div className="space-y-3">
             {[
-              { date: 'T2 2025', label: 'CSRD — Rapport de durabilité exercice 2024', status: 'non_conforme' as Status, urgency: 'high' },
-              { date: 'T2 2025', label: 'DPEF — Intégration rapport de gestion annuel', status: 'conforme' as Status, urgency: 'low' },
-              { date: 'T3 2025', label: 'Sapin II — Mise à jour cartographie risques corruption', status: 'partiel' as Status, urgency: 'medium' },
-              { date: 'T3 2025', label: 'Devoir de vigilance — Plan de vigilance annuel', status: 'partiel' as Status, urgency: 'medium' },
-              { date: 'T4 2025', label: 'ISO 14001 — Audit interne système management environnemental', status: 'non_conforme' as Status, urgency: 'high' },
-              { date: 'T4 2025', label: 'LkSG — Rapport annuel BAFA (marché allemand)', status: 'non_conforme' as Status, urgency: 'high' },
+              { date: 'T2 2025', label: t('compliance.multiReg.roadmap1', 'CSRD — Rapport de durabilité exercice 2024'), status: 'non_conforme' as Status, urgency: 'high' },
+              { date: 'T2 2025', label: t('compliance.multiReg.roadmap2', 'DPEF — Intégration rapport de gestion annuel'), status: 'conforme' as Status, urgency: 'low' },
+              { date: 'T3 2025', label: t('compliance.multiReg.roadmap3', 'Sapin II — Mise à jour cartographie risques corruption'), status: 'partiel' as Status, urgency: 'medium' },
+              { date: 'T3 2025', label: t('compliance.multiReg.roadmap4', 'Devoir de vigilance — Plan de vigilance annuel'), status: 'partiel' as Status, urgency: 'medium' },
+              { date: 'T4 2025', label: t('compliance.multiReg.roadmap5', 'ISO 14001 — Audit interne système management environnemental'), status: 'non_conforme' as Status, urgency: 'high' },
+              { date: 'T4 2025', label: t('compliance.multiReg.roadmap6', 'LkSG — Rapport annuel BAFA (marché allemand)'), status: 'non_conforme' as Status, urgency: 'high' },
             ].map((item, i) => (
               <div key={i} className={`flex items-center gap-4 p-3 rounded-xl border ${item.urgency === 'high' ? 'bg-red-50 border-red-200' : item.urgency === 'medium' ? 'bg-amber-50 border-amber-200' : 'bg-green-50 border-green-200'}`}>
                 <div className={`text-xs font-bold px-2 py-1 rounded-lg ${item.urgency === 'high' ? 'bg-red-200 text-red-800' : item.urgency === 'medium' ? 'bg-amber-200 text-amber-800' : 'bg-green-200 text-green-800'}`}>
@@ -900,6 +951,70 @@ export default function MultiRegulatoryCompliance() {
                 <StatusBadge status={item.status} />
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* ── Compliance Tools ── */}
+        <div className="rounded-2xl overflow-hidden border border-gray-200">
+          <div className="px-5 py-4 flex items-center gap-2" style={{ background: 'linear-gradient(135deg, #0c4a6e, #0284c7)' }}>
+            <Zap className="h-5 w-5 text-sky-300" />
+            <h2 className="text-base font-bold text-white">{t('compliance.multiReg.climateToolsTitle', 'Outils de reporting climatique')}</h2>
+          </div>
+          <div className="bg-white grid grid-cols-1 sm:grid-cols-3 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
+            {[
+              {
+                icon: Shield,
+                title: t('compliance.multiReg.tool1Title', 'TCFD / ISSB / IFRS S2 Builder'),
+                desc: t('compliance.multiReg.tool1Desc', 'Rédigez vos divulgations climatiques alignées TCFD, ISSB S1/S2 et IFRS S2 en 4 piliers.'),
+                href: '/app/tcfd',
+                color: '#0284c7',
+                soft: '#f0f9ff',
+                badge: t('compliance.multiReg.badgeNew', 'Nouveau'),
+              },
+              {
+                icon: BarChart3,
+                title: t('compliance.multiReg.tool2Title', 'Analyse ESRS / DMA'),
+                desc: t('compliance.multiReg.tool2Desc', 'Évaluez votre couverture ESRS E1-E5, S1-S4, G1 et identifiez les lacunes de reporting.'),
+                href: '/app/esrs-gap',
+                color: '#7c3aed',
+                soft: '#faf5ff',
+                badge: t('compliance.multiReg.badgePro', 'Pro'),
+              },
+              {
+                icon: Leaf,
+                title: t('compliance.multiReg.tool3Title', 'Plan Décarbonation'),
+                desc: t('compliance.multiReg.tool3Desc', 'Scénarios IPCC AR6, compensation carbone, trajectoire SBTi 1,5°C.'),
+                href: '/app/decarbonation',
+                color: '#059669',
+                soft: '#ecfdf5',
+                badge: null,
+              },
+            ].map(tool => {
+              const Icon = tool.icon;
+              return (
+                <button key={tool.href}
+                  onClick={() => navigate(tool.href)}
+                  className="flex items-start gap-4 p-5 hover:bg-gray-50 transition-colors text-left w-full group">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: tool.soft }}>
+                    <Icon className="h-5 w-5" style={{ color: tool.color }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-sm font-bold text-gray-900">{tool.title}</span>
+                      {tool.badge && (
+                        <span className="text-xs px-1.5 py-0.5 rounded-full font-bold"
+                          style={{ backgroundColor: tool.soft, color: tool.color }}>
+                          {tool.badge}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 leading-relaxed">{tool.desc}</p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-gray-300 group-hover:text-gray-500 flex-shrink-0 mt-1 transition-colors" />
+                </button>
+              );
+            })}
           </div>
         </div>
 

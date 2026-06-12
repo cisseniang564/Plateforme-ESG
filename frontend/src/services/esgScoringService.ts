@@ -10,6 +10,8 @@ export interface OrgScore {
   governance_score: number;
   confidence_level: number;
   data_completeness: number;
+  /** Sliding data window in months used to compute the score (6 / 12 / 24 / 36 / 60). */
+  period_months?: number | null;
 }
 
 export interface OrgScoresResponse {
@@ -70,6 +72,7 @@ function normalizeScore(raw: any): OrgScore {
     governance_score: round(raw.governance_score),
     confidence_level: round(raw.confidence_level),
     data_completeness: normalizeCompleteness(raw.data_completeness),
+    period_months: raw.period_months ?? null,
   };
 }
 

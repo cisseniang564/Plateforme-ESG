@@ -5,6 +5,7 @@
  * - Supports inline customization drawer
  */
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Cookie, ChevronDown, ChevronUp, Shield, BarChart2 } from 'lucide-react';
 
 type ConsentLevel = 'all' | 'essential' | null;
@@ -33,6 +34,7 @@ export function useCookieConsent() {
 }
 
 export default function CookieBanner() {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [analytics, setAnalytics] = useState(true);
@@ -51,7 +53,8 @@ export default function CookieBanner() {
   return (
     <div
       role="dialog"
-      aria-label="Gestion des cookies"
+      aria-label={t('cookieBanner.title')}
+      aria-modal="true"
       className="fixed bottom-0 left-0 right-0 z-[9999] p-4 pointer-events-none"
     >
       <div className="max-w-4xl mx-auto pointer-events-auto">
@@ -63,14 +66,14 @@ export default function CookieBanner() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-slate-800 text-sm">
-                Nous utilisons des cookies
+                {t('cookieBanner.title')}
               </p>
               <p className="text-xs text-slate-500 leading-tight mt-0.5">
-                Certains sont essentiels au fonctionnement de la plateforme, d'autres nous aident à l'améliorer.
+                {t('cookieBanner.description')}
               </p>
             </div>
-            <button onClick={() => accept('essential')} className="flex-shrink-0 text-slate-400 hover:text-slate-600 transition-colors">
-              <X className="w-4 h-4" />
+            <button type="button" onClick={() => accept('essential')} className="flex-shrink-0 text-slate-400 hover:text-slate-600 transition-colors" aria-label={t('common.close')}>
+              <X className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
 

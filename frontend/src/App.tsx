@@ -6,6 +6,7 @@ import { setUser, setInitialized } from './store/slices/authSlice';
 import api from './services/api';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import CookieBanner from './components/common/CookieBanner';
+import RobotsMeta from './components/seo/RobotsMeta';
 
 export default function App() {
   const dispatch = useDispatch();
@@ -22,13 +23,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      dispatch(setInitialized());
-      return;
-    }
-
-    // Tente de restaurer la session avec retries sur erreurs temporaires (429/500/réseau)
+    // Tokens live in httpOnly cookies — there is no client-side flag to read.
+    // We just call /auth/me: if the access_token cookie is valid, the response
+    // returns the user; otherwise the response interceptor will silently try
+    // /auth/refresh (using the refresh_token cookie) and either renew or 401.
     const restoreSession = async (retriesLeft = 3): Promise<void> => {
       try {
         const response = await api.get('/auth/me');
@@ -36,22 +34,16 @@ export default function App() {
       } catch (err: any) {
         const status = err?.response?.status;
         if (status === 401) {
-          // Token invalide ou expiré → nettoyage + initialisation sans session
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
+          // No valid session — proceed as guest
           dispatch(setInitialized());
         } else if (retriesLeft > 0) {
-          // Erreur temporaire (429, 500, réseau) → retry avec backoff
+          // Transient error (429 / 5xx / network) — back off and retry
           const delay = status === 429 ? 2000 : 1000;
-          console.warn('Restauration session échouée (status=%s) — retry dans %dms', status ?? 'network', delay);
+          if (import.meta.env.DEV) console.warn('Session restore failed (status=%s) — retrying in %dms', status ?? 'network', delay);
           await new Promise(r => setTimeout(r, delay));
           return restoreSession(retriesLeft - 1);
         } else {
-          // Toutes les tentatives épuisées — on ne laisse pas passer sans vérification
-          // Le token sera revalidé au prochain chargement
-          console.warn('Restauration session impossible après 3 tentatives — déconnexion par sécurité');
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
+          if (import.meta.env.DEV) console.warn('Session restore impossible after 3 attempts — proceeding as guest');
           dispatch(setInitialized());
         }
       }
@@ -63,6 +55,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
+        <RobotsMeta />
         <AppRoutes />
         <CookieBanner />
       </BrowserRouter>

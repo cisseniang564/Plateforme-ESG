@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
 import toast from 'react-hot-toast';
 import {
   Users as UsersIcon, Plus, Search, Edit2, Trash2, Shield,
@@ -10,7 +10,6 @@ import {
   Crown, BarChart3, Zap, Lock, ArrowLeft, AlertTriangle,
   MoreHorizontal, Clock, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight,
 } from 'lucide-react';
-import Button from '@/components/common/Button';
 import Spinner from '@/components/common/Spinner';
 import api from '@/services/api';
 
@@ -46,6 +45,8 @@ interface UserForm {
 }
 
 /* ─── Constants ──────────────────────────────────────────────────────────── */
+type TFunc = ReturnType<typeof useTranslation>['t'];
+
 const PAGE_SIZE = 20;
 
 const EMPTY_FORM: UserForm = {
@@ -53,19 +54,20 @@ const EMPTY_FORM: UserForm = {
   role_id: '', password: '', confirm_password: '',
 };
 
-const FALLBACK_ROLES: Role[] = [
-  { id: '', name: 'tenant_admin', display_name: 'Administrateur', description: 'Accès complet à la plateforme',    is_system: true },
-  { id: '', name: 'esg_manager',  display_name: 'Manager ESG',    description: 'Gestion des organisations',        is_system: true },
-  { id: '', name: 'esg_analyst',  display_name: 'Analyste ESG',   description: 'Saisie et analyse des données ESG', is_system: true },
-  { id: '', name: 'viewer',       display_name: 'Lecteur',        description: 'Consultation uniquement',            is_system: true },
+const getFallbackRoles = (t: TFunc): Role[] => [
+  { id: '', name: 'tenant_admin', display_name: t('settings.userMgmt.roleAdminName', 'Administrateur'), description: t('settings.userMgmt.roleAdminDesc', 'Accès complet à la plateforme'),    is_system: true },
+  { id: '', name: 'esg_manager',  display_name: t('settings.userMgmt.roleManagerName', 'Manager ESG'),   description: t('settings.userMgmt.roleManagerDesc', 'Gestion des organisations'),        is_system: true },
+  { id: '', name: 'esg_analyst',  display_name: t('settings.userMgmt.roleAnalystName', 'Analyste ESG'),  description: t('settings.userMgmt.roleAnalystDesc', 'Saisie et analyse des données ESG'), is_system: true },
+  { id: '', name: 'viewer',       display_name: t('settings.userMgmt.roleViewerName', 'Lecteur'),        description: t('settings.userMgmt.roleViewerDesc', 'Consultation uniquement'),            is_system: true },
 ];
 
 const ADMIN_ROLE_NAMES = new Set(['tenant_admin', 'esg_admin', 'admin']);
 
-function mergeRoles(apiRoles: Role[]): Role[] {
-  if (apiRoles.length === 0) return FALLBACK_ROLES;
+function mergeRoles(apiRoles: Role[], t: TFunc): Role[] {
+  const fallback = getFallbackRoles(t);
+  if (apiRoles.length === 0) return fallback;
   const apiNames = new Set(apiRoles.map(r => r.name));
-  return [...apiRoles, ...FALLBACK_ROLES.filter(f => !apiNames.has(f.name))];
+  return [...apiRoles, ...fallback.filter(f => !apiNames.has(f.name))];
 }
 
 const isValidUUID = (v: string) =>
@@ -91,16 +93,16 @@ const getAvatarColor = (name: string) =>
   AVATAR_COLORS[(name.charCodeAt(0) || 0) % AVATAR_COLORS.length];
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
-function formatRelativeTime(iso: string | null): string {
-  if (!iso) return 'Jamais';
+function formatRelativeTime(iso: string | null, t: TFunc): string {
+  if (!iso) return t('settings.userMgmt.never', 'Jamais');
   const diff = Date.now() - new Date(iso).getTime();
   const days = Math.floor(diff / 86400000);
-  if (days === 0) return "Aujourd'hui";
-  if (days === 1) return 'Hier';
-  if (days < 7) return `Il y a ${days}j`;
-  if (days < 30) return `Il y a ${Math.floor(days / 7)} sem.`;
-  if (days < 365) return `Il y a ${Math.floor(days / 30)} mois`;
-  return `Il y a ${Math.floor(days / 365)} an(s)`;
+  if (days === 0) return t('settings.userMgmt.today', "Aujourd'hui");
+  if (days === 1) return t('settings.userMgmt.yesterday', 'Hier');
+  if (days < 7) return t('settings.userMgmt.daysAgo', 'Il y a {{days}}j', { days });
+  if (days < 30) return t('settings.userMgmt.weeksAgo', 'Il y a {{count}} sem.', { count: Math.floor(days / 7) });
+  if (days < 365) return t('settings.userMgmt.monthsAgo', 'Il y a {{count}} mois', { count: Math.floor(days / 30) });
+  return t('settings.userMgmt.yearsAgo', 'Il y a {{count}} an(s)', { count: Math.floor(days / 365) });
 }
 
 /* ─── RoleCombobox ─────────────────────────────────────────────────────────── */
@@ -108,6 +110,7 @@ function RoleCombobox({ roles, value, displayValue, onChange, error }: {
   roles: Role[]; value: string; displayValue: string;
   onChange: (id: string, label: string) => void; error?: string;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const ref = useRef<HTMLDivElement>(null);
@@ -141,21 +144,21 @@ function RoleCombobox({ roles, value, displayValue, onChange, error }: {
         <input
           type="text"
           value={open ? query : displayLabel}
-          placeholder="Sélectionner un rôle..."
+          placeholder={t('settings.userMgmt.selectRolePlaceholder', 'Sélectionner un rôle...')}
           onChange={(e) => { setQuery(e.target.value); setOpen(true); onChange('', e.target.value); }}
           onFocus={() => setOpen(true)}
-          aria-label="Sélectionner un rôle"
+          aria-label={t('settings.userMgmt.selectRoleAria', 'Sélectionner un rôle')}
           aria-expanded={open}
           className="w-full pl-10 pr-10 py-2.5 bg-transparent outline-none text-sm rounded-xl text-gray-900 placeholder:text-gray-400"
         />
-        <button type="button" onClick={() => setOpen(o => !o)} aria-label="Ouvrir la liste des rôles" className="absolute right-3 p-0.5 z-10">
+        <button type="button" onClick={() => setOpen(o => !o)} aria-label={t('settings.userMgmt.openRoleList', 'Ouvrir la liste des rôles')} className="absolute right-3 p-0.5 z-10">
           <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
         </button>
       </div>
       {open && (
         <div className="absolute z-[200] mt-1.5 w-full bg-white border border-[#e8ecf0] rounded-xl shadow-dropdown overflow-hidden" role="listbox">
           {filtered.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-gray-500 italic">Aucun rôle trouvé</div>
+            <div className="px-4 py-3 text-sm text-gray-500 italic">{t('settings.userMgmt.noRoleFound', 'Aucun rôle trouvé')}</div>
           ) : (
             <ul className="max-h-52 overflow-y-auto py-1">
               {filtered.map(role => {
@@ -191,11 +194,17 @@ function RoleCombobox({ roles, value, displayValue, onChange, error }: {
 
 /* ─── PasswordStrength ──────────────────────────────────────────────────────── */
 function PasswordStrength({ password }: { password: string }) {
+  const { t } = useTranslation();
   if (!password) return null;
   const checks = [password.length >= 8, /[A-Z]/.test(password), /[0-9]/.test(password), /[^A-Za-z0-9]/.test(password)];
   const score = checks.filter(Boolean).length;
   const colors = ['bg-red-400', 'bg-orange-400', 'bg-yellow-400', 'bg-emerald-500'];
-  const labels = ['Très faible', 'Faible', 'Moyen', 'Fort'];
+  const labels = [
+    t('settings.userMgmt.pwdVeryWeak', 'Très faible'),
+    t('settings.userMgmt.pwdWeak', 'Faible'),
+    t('settings.userMgmt.pwdMedium', 'Moyen'),
+    t('settings.userMgmt.pwdStrong', 'Fort'),
+  ];
   return (
     <div className="mt-2 space-y-1">
       <div className="flex gap-1">
@@ -203,7 +212,7 @@ function PasswordStrength({ password }: { password: string }) {
           <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i < score ? colors[score - 1] : 'bg-gray-200'}`} />
         ))}
       </div>
-      <p className="text-xs text-gray-500">{labels[score - 1] || 'Très faible'}</p>
+      <p className="text-xs text-gray-500">{labels[score - 1] || t('settings.userMgmt.pwdVeryWeak', 'Très faible')}</p>
     </div>
   );
 }
@@ -213,6 +222,7 @@ function SidePanel({ open, onClose, title, subtitle, children, footer }: {
   open: boolean; onClose: () => void; title: string; subtitle?: string;
   children: React.ReactNode; footer: React.ReactNode;
 }) {
+  const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -258,7 +268,7 @@ function SidePanel({ open, onClose, title, subtitle, children, footer }: {
             <h2 id="sidepanel-title" className="text-[17px] font-bold text-gray-900 tracking-tight">{title}</h2>
             {subtitle && <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>}
           </div>
-          <button type="button" onClick={onClose} aria-label="Fermer le panneau" className="p-1.5 hover:bg-gray-100 rounded-xl transition-colors">
+          <button type="button" onClick={onClose} aria-label={t('settings.userMgmt.closePanel', 'Fermer le panneau')} className="p-1.5 hover:bg-gray-100 rounded-xl transition-colors">
             <X className="h-5 w-5 text-gray-400" />
           </button>
         </div>
@@ -274,6 +284,7 @@ function SidePanel({ open, onClose, title, subtitle, children, footer }: {
 function ToggleActiveModal({ user, onClose, onConfirm }: {
   user: User; onClose: () => void; onConfirm: () => void;
 }) {
+  const { t } = useTranslation();
   const isDeactivating = user.is_active;
   return createPortal(
     <div className="fixed inset-0 z-[210] flex items-center justify-center p-4" role="dialog" aria-modal="true">
@@ -287,7 +298,9 @@ function ToggleActiveModal({ user, onClose, onConfirm }: {
           </div>
           <div className="flex-1">
             <h3 className="text-base font-bold text-gray-900">
-              {isDeactivating ? 'Désactiver cet utilisateur ?' : 'Réactiver cet utilisateur ?'}
+              {isDeactivating
+                ? t('settings.userMgmt.deactivateUserTitle', 'Désactiver cet utilisateur ?')
+                : t('settings.userMgmt.reactivateUserTitle', 'Réactiver cet utilisateur ?')}
             </h3>
             <p className="text-sm text-gray-500 mt-1">
               <strong>{user.first_name} {user.last_name}</strong> ({user.email})
@@ -297,15 +310,17 @@ function ToggleActiveModal({ user, onClose, onConfirm }: {
         <div className={`px-4 py-3 rounded-xl border mb-5 ${isDeactivating ? 'bg-orange-50 border-orange-100' : 'bg-emerald-50 border-emerald-100'}`}>
           <p className={`text-xs font-medium ${isDeactivating ? 'text-orange-700' : 'text-emerald-700'}`}>
             {isDeactivating
-              ? "L'utilisateur ne pourra plus se connecter. Ses données seront conservées."
-              : "L'utilisateur pourra à nouveau accéder à la plateforme."}
+              ? t('settings.userMgmt.deactivateWarning', "L'utilisateur ne pourra plus se connecter. Ses données seront conservées.")
+              : t('settings.userMgmt.reactivateWarning', "L'utilisateur pourra à nouveau accéder à la plateforme.")}
           </p>
         </div>
         <div className="flex gap-3">
-          <Button variant="secondary" className="flex-1" onClick={onClose}>Annuler</Button>
-          <Button variant="danger" className="flex-1" onClick={onConfirm} icon={isDeactivating ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}>
-            {isDeactivating ? 'Désactiver' : 'Réactiver'}
-          </Button>
+          <button className="flex-1" onClick={onClose}>{t('settings.userMgmt.cancel', 'Annuler')}</button>
+          <button className="flex-1" onClick={onConfirm}>
+            {isDeactivating
+              ? t('settings.userMgmt.deactivate', 'Désactiver')
+              : t('settings.userMgmt.reactivate', 'Réactiver')}
+          </button>
         </div>
       </div>
     </div>,
@@ -317,6 +332,7 @@ function ToggleActiveModal({ user, onClose, onConfirm }: {
 function DeleteConfirmModal({ user, onClose, onConfirm, loading }: {
   user: User; onClose: () => void; onConfirm: () => void; loading: boolean;
 }) {
+  const { t } = useTranslation();
   return createPortal(
     <div className="fixed inset-0 z-[210] flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
@@ -326,21 +342,26 @@ function DeleteConfirmModal({ user, onClose, onConfirm, loading }: {
             <AlertTriangle className="h-5 w-5 text-red-600" aria-hidden />
           </div>
           <div className="flex-1">
-            <h3 className="text-base font-bold text-gray-900">Supprimer cet utilisateur ?</h3>
+            <h3 className="text-base font-bold text-gray-900">{t('settings.userMgmt.deleteUserTitle', 'Supprimer cet utilisateur ?')}</h3>
             <p className="text-sm text-gray-500 mt-1">
-              <strong>{user.first_name} {user.last_name}</strong> ({user.email}) sera définitivement supprimé.
+              <Trans
+                i18nKey="settings.userMgmt.deleteUserDesc"
+                defaults="<0>{{name}}</0> ({{email}}) sera définitivement supprimé."
+                values={{ name: `${user.first_name} ${user.last_name}`, email: user.email }}
+                components={[<strong />]}
+              />
             </p>
           </div>
         </div>
         <div className="flex items-start gap-2.5 px-4 py-3 bg-red-50 border border-red-100 rounded-xl mb-5">
           <XCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-px" aria-hidden />
-          <p className="text-xs text-red-700 font-medium">Cette action est irréversible. Toutes les données associées seront perdues.</p>
+          <p className="text-xs text-red-700 font-medium">{t('settings.userMgmt.deleteUserIrreversible', 'Cette action est irréversible. Toutes les données associées seront perdues.')}</p>
         </div>
         <div className="flex gap-3">
-          <Button variant="secondary" className="flex-1" onClick={onClose} disabled={loading}>Annuler</Button>
-          <Button variant="danger" className="flex-1" onClick={onConfirm} loading={loading}>
-            Supprimer définitivement
-          </Button>
+          <button className="flex-1" onClick={onClose} disabled={loading}>{t('settings.userMgmt.cancel', 'Annuler')}</button>
+          <button className="flex-1" onClick={onConfirm}>
+            {t('settings.userMgmt.deletePermanently', 'Supprimer définitivement')}
+          </button>
         </div>
       </div>
     </div>,
@@ -352,6 +373,7 @@ function DeleteConfirmModal({ user, onClose, onConfirm, loading }: {
 function BulkDeleteModal({ count, onClose, onConfirm, loading }: {
   count: number; onClose: () => void; onConfirm: () => void; loading: boolean;
 }) {
+  const { t } = useTranslation();
   return createPortal(
     <div className="fixed inset-0 z-[210] flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
@@ -361,15 +383,15 @@ function BulkDeleteModal({ count, onClose, onConfirm, loading }: {
             <AlertTriangle className="h-5 w-5 text-red-600" aria-hidden />
           </div>
           <div className="flex-1">
-            <h3 className="text-base font-bold text-gray-900">Supprimer {count} utilisateur{count > 1 ? 's' : ''} ?</h3>
-            <p className="text-sm text-gray-500 mt-1">Cette suppression est définitive et irréversible.</p>
+            <h3 className="text-base font-bold text-gray-900">{t('settings.userMgmt.bulkDeleteTitle', { defaultValue: 'Supprimer {{count}} utilisateur ?', defaultValue_other: 'Supprimer {{count}} utilisateurs ?', count })}</h3>
+            <p className="text-sm text-gray-500 mt-1">{t('settings.userMgmt.bulkDeleteDesc', 'Cette suppression est définitive et irréversible.')}</p>
           </div>
         </div>
         <div className="flex gap-3">
-          <Button variant="secondary" className="flex-1" onClick={onClose} disabled={loading}>Annuler</Button>
-          <Button variant="danger" className="flex-1" onClick={onConfirm} loading={loading}>
-            Supprimer {count} utilisateur{count > 1 ? 's' : ''}
-          </Button>
+          <button className="flex-1" onClick={onClose} disabled={loading}>{t('settings.userMgmt.cancel', 'Annuler')}</button>
+          <button className="flex-1" onClick={onConfirm}>
+            {t('settings.userMgmt.bulkDeleteConfirm', { defaultValue: 'Supprimer {{count}} utilisateur', defaultValue_other: 'Supprimer {{count}} utilisateurs', count })}
+          </button>
         </div>
       </div>
     </div>,
@@ -383,6 +405,7 @@ function RowMenu({ user, onEdit, onToggle, onDelete, open, onOpenChange }: {
   onEdit: () => void; onToggle: () => void; onDelete: () => void;
   open: boolean; onOpenChange: (v: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -399,7 +422,7 @@ function RowMenu({ user, onEdit, onToggle, onDelete, open, onOpenChange }: {
       <button
         type="button"
         onClick={() => onOpenChange(!open)}
-        aria-label="Actions"
+        aria-label={t('settings.userMgmt.actions', 'Actions')}
         aria-expanded={open}
         className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
       >
@@ -409,16 +432,18 @@ function RowMenu({ user, onEdit, onToggle, onDelete, open, onOpenChange }: {
         <div className="absolute right-0 top-8 z-50 w-44 bg-white border border-[#e8ecf0] rounded-xl shadow-dropdown overflow-hidden">
           <button type="button" onClick={() => { onEdit(); onOpenChange(false); }}
             className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-            <Edit2 className="h-3.5 w-3.5 text-blue-500" />Modifier
+            <Edit2 className="h-3.5 w-3.5 text-blue-500" />{t('settings.userMgmt.edit', 'Modifier')}
           </button>
           <button type="button" onClick={() => { onToggle(); onOpenChange(false); }}
             className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm hover:bg-gray-50 transition-colors ${user.is_active ? 'text-orange-600' : 'text-emerald-600'}`}>
-            {user.is_active ? <><UserX className="h-3.5 w-3.5" />Désactiver</> : <><UserCheck className="h-3.5 w-3.5" />Réactiver</>}
+            {user.is_active
+              ? <><UserX className="h-3.5 w-3.5" />{t('settings.userMgmt.deactivate', 'Désactiver')}</>
+              : <><UserCheck className="h-3.5 w-3.5" />{t('settings.userMgmt.reactivate', 'Réactiver')}</>}
           </button>
           <div className="h-px bg-gray-100 mx-3" />
           <button type="button" onClick={() => { onDelete(); onOpenChange(false); }}
             className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
-            <Trash2 className="h-3.5 w-3.5" />Supprimer
+            <Trash2 className="h-3.5 w-3.5" />{t('settings.userMgmt.delete', 'Supprimer')}
           </button>
         </div>
       )}
@@ -487,7 +512,7 @@ export default function UserManagement() {
       ]);
       if (usersRes.status === 'fulfilled') setUsers(usersRes.value.data.items || []);
       const fetchedRoles: Role[] = rolesRes.status === 'fulfilled' ? rolesRes.value.data.roles || [] : [];
-      setRoles(mergeRoles(fetchedRoles));
+      setRoles(mergeRoles(fetchedRoles, t));
     } finally {
       setLoading(false);
     }
@@ -533,39 +558,39 @@ export default function UserManagement() {
   /* ── Per-field blur validation ── */
   const validateField = (field: string, value: string) => {
     let error = '';
-    if (field === 'first_name' && !value.trim()) error = 'Prénom requis';
-    if (field === 'last_name'  && !value.trim()) error = 'Nom requis';
+    if (field === 'first_name' && !value.trim()) error = t('settings.userMgmt.errFirstNameRequired', 'Prénom requis');
+    if (field === 'last_name'  && !value.trim()) error = t('settings.userMgmt.errLastNameRequired', 'Nom requis');
     if (field === 'email') {
-      if (!value) error = 'Email requis';
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = 'Email invalide';
+      if (!value) error = t('settings.userMgmt.errEmailRequired', 'Email requis');
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = t('settings.userMgmt.errEmailInvalid', 'Email invalide');
     }
     if (field === 'password') {
-      if (!value) error = 'Mot de passe requis';
-      else if (value.length < 8) error = 'Min. 8 caractères';
-      else if (!/[A-Z]/.test(value)) error = 'Doit contenir une majuscule';
-      else if (!/[0-9]/.test(value)) error = 'Doit contenir un chiffre';
-      else if (!/[^A-Za-z0-9]/.test(value)) error = 'Doit contenir un caractère spécial';
+      if (!value) error = t('settings.userMgmt.errPasswordRequired', 'Mot de passe requis');
+      else if (value.length < 8) error = t('settings.userMgmt.errPasswordMin', 'Min. 8 caractères');
+      else if (!/[A-Z]/.test(value)) error = t('settings.userMgmt.errPasswordUppercase', 'Doit contenir une majuscule');
+      else if (!/[0-9]/.test(value)) error = t('settings.userMgmt.errPasswordDigit', 'Doit contenir un chiffre');
+      else if (!/[^A-Za-z0-9]/.test(value)) error = t('settings.userMgmt.errPasswordSpecial', 'Doit contenir un caractère spécial');
     }
-    if (field === 'confirm_password' && value !== form.password) error = 'Les mots de passe ne correspondent pas';
+    if (field === 'confirm_password' && value !== form.password) error = t('settings.userMgmt.errPasswordMismatch', 'Les mots de passe ne correspondent pas');
     setFormErrors(prev => ({ ...prev, [field]: error || undefined }));
   };
 
   /* ── Validation ── */
   const validate = (isEdit = false): boolean => {
     const errors: Partial<UserForm & { role_label: string }> = {};
-    if (!form.first_name.trim()) errors.first_name = 'Prénom requis';
-    if (!form.last_name.trim())  errors.last_name  = 'Nom requis';
-    if (!form.email)             errors.email = 'Email requis';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = 'Email invalide';
-    if (!isEdit && !form.role_id && !roleLabel.trim()) errors.role_label = 'Rôle requis';
+    if (!form.first_name.trim()) errors.first_name = t('settings.userMgmt.errFirstNameRequired', 'Prénom requis');
+    if (!form.last_name.trim())  errors.last_name  = t('settings.userMgmt.errLastNameRequired', 'Nom requis');
+    if (!form.email)             errors.email = t('settings.userMgmt.errEmailRequired', 'Email requis');
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = t('settings.userMgmt.errEmailInvalid', 'Email invalide');
+    if (!isEdit && !form.role_id && !roleLabel.trim()) errors.role_label = t('settings.userMgmt.errRoleRequired', 'Rôle requis');
     if (!isEdit) {
-      if (!form.password)                              errors.password = 'Mot de passe requis';
-      else if (form.password.length < 8)               errors.password = 'Min. 8 caractères';
-      else if (!/[A-Z]/.test(form.password))           errors.password = 'Doit contenir une majuscule';
-      else if (!/[0-9]/.test(form.password))           errors.password = 'Doit contenir un chiffre';
-      else if (!/[^A-Za-z0-9]/.test(form.password))   errors.password = 'Doit contenir un caractère spécial';
+      if (!form.password)                              errors.password = t('settings.userMgmt.errPasswordRequired', 'Mot de passe requis');
+      else if (form.password.length < 8)               errors.password = t('settings.userMgmt.errPasswordMin', 'Min. 8 caractères');
+      else if (!/[A-Z]/.test(form.password))           errors.password = t('settings.userMgmt.errPasswordUppercase', 'Doit contenir une majuscule');
+      else if (!/[0-9]/.test(form.password))           errors.password = t('settings.userMgmt.errPasswordDigit', 'Doit contenir un chiffre');
+      else if (!/[^A-Za-z0-9]/.test(form.password))   errors.password = t('settings.userMgmt.errPasswordSpecial', 'Doit contenir un caractère spécial');
       if (form.password && form.confirm_password !== form.password)
-        errors.confirm_password = 'Les mots de passe ne correspondent pas';
+        errors.confirm_password = t('settings.userMgmt.errPasswordMismatch', 'Les mots de passe ne correspondent pas');
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -589,13 +614,13 @@ export default function UserManagement() {
 
   const handleResetPassword = async () => {
     if (!editingUser) return;
-    if (resetPwd.password.length < 8) { setResetPwdError('Min. 8 caractères'); return; }
-    if (resetPwd.password !== resetPwd.confirm) { setResetPwdError('Les mots de passe ne correspondent pas'); return; }
+    if (resetPwd.password.length < 8) { setResetPwdError(t('settings.userMgmt.errPasswordMin', 'Min. 8 caractères')); return; }
+    if (resetPwd.password !== resetPwd.confirm) { setResetPwdError(t('settings.userMgmt.errPasswordMismatch', 'Les mots de passe ne correspondent pas')); return; }
     setResetPwdError('');
     setResetting(true);
     try {
       await api.patch(`/users/${editingUser.id}/password`, { new_password: resetPwd.password });
-      toast.success('Mot de passe réinitialisé avec succès');
+      toast.success(t('settings.userMgmt.toastPasswordReset', 'Mot de passe réinitialisé avec succès'));
       setResetPwdOpen(false);
       setResetPwd({ password: '', confirm: '' });
     } catch (err: any) {
@@ -619,11 +644,11 @@ export default function UserManagement() {
 
   const parseApiError = (err: any): string => {
     const status = err.response?.status;
-    if (status === 403) return "Vous n'avez pas les droits pour effectuer cette action";
-    if (status === 429) return 'Trop de requêtes — veuillez patienter avant de réessayer';
-    if (status === 409) return 'Conflit : cet email est peut-être déjà utilisé';
+    if (status === 403) return t('settings.userMgmt.errForbidden', "Vous n'avez pas les droits pour effectuer cette action");
+    if (status === 429) return t('settings.userMgmt.errRateLimit', 'Trop de requêtes — veuillez patienter avant de réessayer');
+    if (status === 409) return t('settings.userMgmt.errConflict', 'Conflit : cet email est peut-être déjà utilisé');
     const raw = err.response?.data?.detail || err.response?.data?.message;
-    if (!raw) return err.message || 'Une erreur est survenue';
+    if (!raw) return err.message || t('settings.userMgmt.errGeneric', 'Une erreur est survenue');
     if (typeof raw === 'string') return raw;
     if (Array.isArray(raw)) return raw.map((e: any) => {
       const field = Array.isArray(e.loc) ? e.loc.filter((l: any) => l !== 'body').join('.') : '';
@@ -641,7 +666,7 @@ export default function UserManagement() {
         email: form.email, first_name: form.first_name, last_name: form.last_name,
         password: form.password, ...(roleId ? { role_id: roleId } : {}),
       });
-      toast.success(`${form.first_name} ${form.last_name} ajouté avec succès`);
+      toast.success(t('settings.userMgmt.toastCreated', '{{name}} ajouté avec succès', { name: `${form.first_name} ${form.last_name}` }));
       setCreateOpen(false);
       await loadData();
     } catch (err: any) {
@@ -661,7 +686,7 @@ export default function UserManagement() {
       const newRoleName = newRole?.name || '';
       if (ADMIN_ROLE_NAMES.has(oldRoleName) && !ADMIN_ROLE_NAMES.has(newRoleName)) {
         const confirmed = window.confirm(
-          "Vous allez vous retirer vos droits d'administrateur. Vous perdrez l'accès à certaines fonctionnalités. Continuer ?"
+          t('settings.userMgmt.selfDemotionConfirm', "Vous allez vous retirer vos droits d'administrateur. Vous perdrez l'accès à certaines fonctionnalités. Continuer ?")
         );
         if (!confirmed) return;
       }
@@ -674,7 +699,7 @@ export default function UserManagement() {
         first_name: form.first_name, last_name: form.last_name,
         ...(roleId ? { role_id: roleId } : {}),
       });
-      toast.success('Utilisateur mis à jour');
+      toast.success(t('settings.userMgmt.toastUpdated', 'Utilisateur mis à jour'));
       setEditOpen(false); setEditingUser(null);
       await loadData();
     } catch (err: any) {
@@ -692,10 +717,10 @@ export default function UserManagement() {
     setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_active: newState } : u));
     try {
       await api.patch(`/users/${user.id}`, { is_active: newState });
-      toast.success(newState ? 'Utilisateur réactivé' : 'Utilisateur désactivé');
+      toast.success(newState ? t('settings.userMgmt.toastReactivated', 'Utilisateur réactivé') : t('settings.userMgmt.toastDeactivated', 'Utilisateur désactivé'));
     } catch (err: any) {
       setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_active: !newState } : u));
-      toast.error(err.response?.data?.detail || 'Erreur lors de la mise à jour');
+      toast.error(err.response?.data?.detail || t('settings.userMgmt.errUpdateFailed', 'Erreur lors de la mise à jour'));
     }
   };
 
@@ -704,12 +729,12 @@ export default function UserManagement() {
     setSaving(true);
     try {
       await api.delete(`/users/${deletingUser.id}`);
-      toast.success('Utilisateur supprimé');
+      toast.success(t('settings.userMgmt.toastDeleted', 'Utilisateur supprimé'));
       setDeletingUser(null);
       setSelected(prev => { const n = new Set(prev); n.delete(deletingUser.id); return n; });
       await loadData();
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || 'Erreur lors de la suppression');
+      toast.error(err.response?.data?.detail || t('settings.userMgmt.errDeleteFailed', 'Erreur lors de la suppression'));
     } finally {
       setSaving(false);
     }
@@ -717,11 +742,11 @@ export default function UserManagement() {
 
   const handleBulkDeactivate = async () => {
     const ids = Array.from(selected).filter(id => users.find(u => u.id === id)?.is_active);
-    if (!ids.length) { toast('Tous les utilisateurs sélectionnés sont déjà inactifs'); return; }
+    if (!ids.length) { toast(t('settings.userMgmt.toastAlreadyInactive', 'Tous les utilisateurs sélectionnés sont déjà inactifs')); return; }
     setUsers(prev => prev.map(u => ids.includes(u.id) ? { ...u, is_active: false } : u));
     await Promise.allSettled(ids.map(id => api.patch(`/users/${id}`, { is_active: false })));
     setSelected(new Set());
-    toast.success(`${ids.length} utilisateur${ids.length > 1 ? 's' : ''} désactivé${ids.length > 1 ? 's' : ''}`);
+    toast.success(t('settings.userMgmt.toastBulkDeactivated', { defaultValue: '{{count}} utilisateur désactivé', defaultValue_other: '{{count}} utilisateurs désactivés', count: ids.length }));
   };
 
   const handleBulkDelete = async () => {
@@ -732,20 +757,29 @@ export default function UserManagement() {
     setBulkDeleting(false);
     setSelected(new Set());
     await loadData();
-    if (ok === ids.length) toast.success(`${ok} utilisateur${ok > 1 ? 's' : ''} supprimé${ok > 1 ? 's' : ''}`);
-    else toast.error(`${ok}/${ids.length} supprimé${ok > 1 ? 's' : ''} — certains ont échoué`);
+    if (ok === ids.length) toast.success(t('settings.userMgmt.toastBulkDeleted', { defaultValue: '{{count}} utilisateur supprimé', defaultValue_other: '{{count}} utilisateurs supprimés', count: ok }));
+    else toast.error(t('settings.userMgmt.toastBulkDeletePartial', '{{ok}}/{{total}} supprimés — certains ont échoué', { ok, total: ids.length }));
     setSaving(false);
   };
 
   const exportCSV = () => {
     const rows = [
-      ['Prénom', 'Nom', 'Email', 'Rôle', 'Statut', 'Dernière connexion', 'Vérifié', 'Membre depuis'],
+      [
+        t('settings.userMgmt.csvFirstName', 'Prénom'),
+        t('settings.userMgmt.csvLastName', 'Nom'),
+        t('settings.userMgmt.csvEmail', 'Email'),
+        t('settings.userMgmt.csvRole', 'Rôle'),
+        t('settings.userMgmt.csvStatus', 'Statut'),
+        t('settings.userMgmt.csvLastLogin', 'Dernière connexion'),
+        t('settings.userMgmt.csvVerified', 'Vérifié'),
+        t('settings.userMgmt.csvMemberSince', 'Membre depuis'),
+      ],
       ...users.map(u => [
         u.first_name, u.last_name, u.email,
         u.role?.display_name || '',
-        u.is_active ? 'Actif' : 'Inactif',
-        u.last_login_at ? new Date(u.last_login_at).toLocaleDateString('fr-FR') : 'Jamais',
-        u.email_verified_at ? 'Oui' : 'Non',
+        u.is_active ? t('settings.userMgmt.statusActive', 'Actif') : t('settings.userMgmt.statusInactive', 'Inactif'),
+        u.last_login_at ? new Date(u.last_login_at).toLocaleDateString('fr-FR') : t('settings.userMgmt.never', 'Jamais'),
+        u.email_verified_at ? t('settings.userMgmt.yes', 'Oui') : t('settings.userMgmt.no', 'Non'),
         new Date(u.created_at).toLocaleDateString('fr-FR'),
       ]),
     ];
@@ -772,7 +806,7 @@ export default function UserManagement() {
         {(['first_name', 'last_name'] as const).map((field, i) => (
           <div key={field}>
             <label htmlFor={`form-${field}`} className="block text-sm font-semibold text-gray-700 mb-1.5">
-              {i === 0 ? 'Prénom' : 'Nom'} <span className="text-red-500" aria-hidden>*</span>
+              {i === 0 ? t('settings.userMgmt.labelFirstName', 'Prénom') : t('settings.userMgmt.labelLastName', 'Nom')} <span className="text-red-500" aria-hidden>*</span>
             </label>
             <input
               id={`form-${field}`}
@@ -793,7 +827,7 @@ export default function UserManagement() {
 
       <div>
         <label htmlFor="form-email" className="block text-sm font-semibold text-gray-700 mb-1.5">
-          Email <span className="text-red-500" aria-hidden>*</span>
+          {t('settings.userMgmt.labelEmail', 'Email')} <span className="text-red-500" aria-hidden>*</span>
         </label>
         <div className="relative">
           <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" aria-hidden />
@@ -816,7 +850,7 @@ export default function UserManagement() {
 
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-          Rôle <span className="text-red-500" aria-hidden>*</span>
+          {t('settings.userMgmt.labelRole', 'Rôle')} <span className="text-red-500" aria-hidden>*</span>
         </label>
         <RoleCombobox
           roles={roles}
@@ -841,7 +875,7 @@ export default function UserManagement() {
         <>
           <div>
             <label htmlFor="form-password" className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Mot de passe <span className="text-red-500" aria-hidden>*</span>
+              {t('settings.userMgmt.labelPassword', 'Mot de passe')} <span className="text-red-500" aria-hidden>*</span>
             </label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" aria-hidden />
@@ -851,12 +885,12 @@ export default function UserManagement() {
                 value={form.password}
                 onChange={(e) => setForm(f => ({ ...f, password: e.target.value }))}
                 onBlur={(e) => validateField('password', e.target.value)}
-                placeholder="Min. 8 caractères"
+                placeholder={t('settings.userMgmt.pwdPlaceholder', 'Min. 8 caractères')}
                 className={`w-full pl-10 pr-11 py-2.5 border rounded-xl outline-none transition-all text-sm
                   focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
                   ${formErrors.password ? 'border-red-300 bg-red-50/30' : 'border-[#e2e8f0] hover:border-gray-300'}`}
               />
-              <button type="button" onClick={() => setShowPwd(v => !v)} aria-label={showPwd ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+              <button type="button" onClick={() => setShowPwd(v => !v)} aria-label={showPwd ? t('settings.userMgmt.hidePwd', 'Masquer le mot de passe') : t('settings.userMgmt.showPwd', 'Afficher le mot de passe')}
                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
                 {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -868,7 +902,7 @@ export default function UserManagement() {
 
           <div>
             <label htmlFor="form-confirm-password" className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Confirmer le mot de passe <span className="text-red-500" aria-hidden>*</span>
+              {t('settings.userMgmt.labelConfirmPwd', 'Confirmer le mot de passe')} <span className="text-red-500" aria-hidden>*</span>
             </label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" aria-hidden />
@@ -878,7 +912,7 @@ export default function UserManagement() {
                 value={form.confirm_password}
                 onChange={(e) => setForm(f => ({ ...f, confirm_password: e.target.value }))}
                 onBlur={(e) => validateField('confirm_password', e.target.value)}
-                placeholder="Répéter le mot de passe"
+                placeholder={t('settings.userMgmt.confirmPwdPlaceholder', 'Répéter le mot de passe')}
                 className={`w-full pl-10 pr-4 py-2.5 border rounded-xl outline-none transition-all text-sm
                   focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
                   ${formErrors.confirm_password ? 'border-red-300 bg-red-50/30' : 'border-[#e2e8f0] hover:border-gray-300'}`}
@@ -900,7 +934,7 @@ export default function UserManagement() {
           >
             <span className="flex items-center gap-2">
               <Lock className="h-4 w-4 text-gray-400" aria-hidden />
-              Réinitialiser le mot de passe
+              {t('settings.userMgmt.resetPwdSection', 'Réinitialiser le mot de passe')}
             </span>
             <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${resetPwdOpen ? 'rotate-180' : ''}`} aria-hidden />
           </button>
@@ -913,8 +947,8 @@ export default function UserManagement() {
                   type="password"
                   value={resetPwd.password}
                   onChange={(e) => setResetPwd(p => ({ ...p, password: e.target.value }))}
-                  placeholder="Nouveau mot de passe"
-                  aria-label="Nouveau mot de passe"
+                  placeholder={t('settings.userMgmt.newPwdPlaceholder', 'Nouveau mot de passe')}
+                  aria-label={t('settings.userMgmt.newPwdPlaceholder', 'Nouveau mot de passe')}
                   className="w-full pl-10 pr-4 py-2.5 border border-[#e2e8f0] rounded-xl outline-none text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
                 />
               </div>
@@ -924,22 +958,22 @@ export default function UserManagement() {
                   type="password"
                   value={resetPwd.confirm}
                   onChange={(e) => setResetPwd(p => ({ ...p, confirm: e.target.value }))}
-                  placeholder="Confirmer le nouveau mot de passe"
-                  aria-label="Confirmer le nouveau mot de passe"
+                  placeholder={t('settings.userMgmt.confirmNewPwdPlaceholder', 'Confirmer le nouveau mot de passe')}
+                  aria-label={t('settings.userMgmt.confirmNewPwdPlaceholder', 'Confirmer le nouveau mot de passe')}
                   className="w-full pl-10 pr-4 py-2.5 border border-[#e2e8f0] rounded-xl outline-none text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
                 />
               </div>
               {resetPwdError && <p className="text-xs text-red-600" role="alert">{resetPwdError}</p>}
-              <Button
-                size="sm"
-                variant="secondary"
+              <button
+               
+               
                 onClick={handleResetPassword}
-                loading={resetting}
+               
                 disabled={!resetPwd.password || !resetPwd.confirm}
-                icon={<CheckCircle className="h-3.5 w-3.5" />}
+               
               >
-                Confirmer la réinitialisation
-              </Button>
+                {t('settings.userMgmt.confirmResetBtn', 'Confirmer la réinitialisation')}
+              </button>
             </div>
           )}
         </div>
@@ -949,7 +983,7 @@ export default function UserManagement() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
-      <Spinner size="lg" />
+      <Spinner />
     </div>
   );
 
@@ -967,26 +1001,26 @@ export default function UserManagement() {
               className="inline-flex items-center gap-1.5 text-sm text-white/60 hover:text-white transition-colors mb-4"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
-              Paramètres
+              {t('settings.userMgmt.breadcrumbSettings', 'Paramètres')}
             </button>
             <div className="flex items-center gap-3 mb-2">
               <div className="w-11 h-11 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center shadow-lg">
                 <UsersIcon className="h-6 w-6 text-white" aria-hidden />
               </div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight">Gestion des utilisateurs</h1>
-                <p className="text-sm text-white/70">Membres, rôles et permissions de votre organisation</p>
+                <h1 className="text-2xl font-bold tracking-tight">{t('settings.userMgmt.pageTitle', 'Gestion des utilisateurs')}</h1>
+                <p className="text-sm text-white/70">{t('settings.userMgmt.pageSubtitle', 'Membres, rôles et permissions de votre organisation')}</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2 mt-4">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15">
-                <UsersIcon className="h-3 w-3" />{stats.total} membres
+                <UsersIcon className="h-3 w-3" />{t('settings.userMgmt.badgeMembers', '{{count}} membres', { count: stats.total })}
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-medium ring-1 ring-emerald-400/30 text-emerald-200">
-                <CheckCircle className="h-3 w-3" />{stats.active} actifs
+                <CheckCircle className="h-3 w-3" />{t('settings.userMgmt.badgeActive', '{{count}} actifs', { count: stats.active })}
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15">
-                <Shield className="h-3 w-3" />{roles.length} rôles
+                <Shield className="h-3 w-3" />{t('settings.userMgmt.badgeRoles', '{{count}} rôles', { count: roles.length })}
               </span>
             </div>
           </div>
@@ -996,21 +1030,21 @@ export default function UserManagement() {
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-medium transition-all"
             >
               <Download className="h-4 w-4" aria-hidden />
-              Export CSV
+              {t('settings.userMgmt.exportCsv', 'Export CSV')}
             </button>
             <button
               onClick={loadData}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-medium transition-all"
             >
               <RefreshCw className="h-4 w-4" aria-hidden />
-              Actualiser
+              {t('settings.userMgmt.refresh', 'Actualiser')}
             </button>
             <button
               onClick={openCreate}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white text-indigo-900 hover:bg-white/90 text-sm font-semibold transition-all shadow"
             >
               <Plus className="h-4 w-4" aria-hidden />
-              Nouvel utilisateur
+              {t('settings.userMgmt.newUser', 'Nouvel utilisateur')}
             </button>
           </div>
         </div>
@@ -1019,10 +1053,10 @@ export default function UserManagement() {
       {/* ── Stats ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Utilisateurs',  value: stats.total,    icon: UsersIcon, color: 'text-primary-600', bg: 'bg-primary-50',  ring: 'ring-primary-100' },
-          { label: 'Actifs',        value: stats.active,   icon: UserCheck, color: 'text-emerald-600', bg: 'bg-emerald-50', ring: 'ring-emerald-100' },
-          { label: 'Inactifs',      value: stats.inactive, icon: UserX,     color: 'text-gray-500',    bg: 'bg-gray-100',   ring: 'ring-gray-200' },
-          { label: 'Rôles',         value: roles.length,   icon: Shield,    color: 'text-violet-600',  bg: 'bg-violet-50',  ring: 'ring-violet-100' },
+          { label: t('settings.userMgmt.statUsers', 'Utilisateurs'),  value: stats.total,    icon: UsersIcon, color: 'text-primary-600', bg: 'bg-primary-50',  ring: 'ring-primary-100' },
+          { label: t('settings.userMgmt.statActive', 'Actifs'),       value: stats.active,   icon: UserCheck, color: 'text-emerald-600', bg: 'bg-emerald-50', ring: 'ring-emerald-100' },
+          { label: t('settings.userMgmt.statInactive', 'Inactifs'),   value: stats.inactive, icon: UserX,     color: 'text-gray-500',    bg: 'bg-gray-100',   ring: 'ring-gray-200' },
+          { label: t('settings.userMgmt.statRoles', 'Rôles'),         value: roles.length,   icon: Shield,    color: 'text-violet-600',  bg: 'bg-violet-50',  ring: 'ring-violet-100' },
         ].map(({ label, value, icon: Icon, color, bg, ring }) => (
           <div key={label} className="bg-white border border-[#e8ecf0] rounded-2xl p-5 shadow-card">
             <div className="flex items-center justify-between mb-3">
@@ -1041,7 +1075,7 @@ export default function UserManagement() {
         <div className="bg-white border border-[#e8ecf0] rounded-2xl px-5 py-4 shadow-card flex items-center gap-5">
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-1.5">
-              <p className="text-sm font-semibold text-gray-700">Sièges utilisés</p>
+              <p className="text-sm font-semibold text-gray-700">{t('settings.userMgmt.seatsUsed', 'Sièges utilisés')}</p>
               <span className={`text-sm font-bold tabular-nums ${stats.total >= maxUsers ? 'text-red-600' : 'text-gray-900'}`}>
                 {stats.total} / {maxUsers}
               </span>
@@ -1057,13 +1091,13 @@ export default function UserManagement() {
                 aria-valuenow={stats.total}
                 aria-valuemin={0}
                 aria-valuemax={maxUsers}
-                aria-label={`${stats.total} sièges sur ${maxUsers} utilisés`}
+                aria-label={t('settings.userMgmt.seatsAriaLabel', '{{used}} sièges sur {{max}} utilisés', { used: stats.total, max: maxUsers })}
               />
             </div>
           </div>
           {stats.total >= maxUsers && (
             <div className="flex-shrink-0 text-xs font-semibold text-red-600 bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg">
-              Limite atteinte
+              {t('settings.userMgmt.seatsLimitReached', 'Limite atteinte')}
             </div>
           )}
         </div>
@@ -1072,7 +1106,7 @@ export default function UserManagement() {
       {/* ── Répartition des rôles ── */}
       {stats.byRole.some(r => r.count > 0) && (
         <div className="bg-white border border-[#e8ecf0] rounded-2xl p-5 shadow-card">
-          <p className="text-sm font-semibold text-gray-700 mb-3">Répartition des rôles</p>
+          <p className="text-sm font-semibold text-gray-700 mb-3">{t('settings.userMgmt.roleDistribution', 'Répartition des rôles')}</p>
           <div className="flex flex-wrap gap-2.5">
             {stats.byRole.map(role => {
               const s = ROLE_STYLE[role.name] || ROLE_STYLE.viewer;
@@ -1108,12 +1142,12 @@ export default function UserManagement() {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher des utilisateurs..."
-              aria-label="Rechercher des utilisateurs"
+              placeholder={t('settings.userMgmt.searchPlaceholder', 'Rechercher des utilisateurs...')}
+              aria-label={t('settings.userMgmt.searchAria', 'Rechercher des utilisateurs')}
               className="w-full pl-10 pr-9 py-2.5 border border-[#e2e8f0] rounded-xl focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none text-sm transition-all hover:border-gray-300"
             />
             {search && (
-              <button type="button" onClick={() => setSearch('')} aria-label="Effacer la recherche"
+              <button type="button" onClick={() => setSearch('')} aria-label={t('settings.userMgmt.clearSearch', 'Effacer la recherche')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
                 <X className="h-4 w-4" />
               </button>
@@ -1123,16 +1157,16 @@ export default function UserManagement() {
           <select
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
-            aria-label="Filtrer par rôle"
+            aria-label={t('settings.userMgmt.filterByRole', 'Filtrer par rôle')}
             className="px-3.5 py-2.5 border border-[#e2e8f0] rounded-xl focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none text-sm bg-white hover:border-gray-300 transition-all cursor-pointer"
           >
-            <option value="">Tous les rôles</option>
+            <option value="">{t('settings.userMgmt.allRoles', 'Tous les rôles')}</option>
             {roles.map(r => (
               <option key={r.id || r.name} value={isValidUUID(r.id) ? r.id : r.name}>{r.display_name}</option>
             ))}
           </select>
 
-          <div className="flex gap-1 p-1 bg-gray-100 rounded-xl" role="group" aria-label="Filtrer par statut">
+          <div className="flex gap-1 p-1 bg-gray-100 rounded-xl" role="group" aria-label={t('settings.userMgmt.filterByStatus', 'Filtrer par statut')}>
             {(['all', 'active', 'inactive'] as const).map(s => (
               <button key={s} type="button" onClick={() => setFilterStatus(s)}
                 aria-pressed={filterStatus === s}
@@ -1140,7 +1174,7 @@ export default function UserManagement() {
                   filterStatus === s ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                {s === 'all' ? 'Tous' : s === 'active' ? 'Actif' : 'Inactif'}
+                {s === 'all' ? t('settings.userMgmt.filterAll', 'Tous') : s === 'active' ? t('settings.userMgmt.filterActive', 'Actif') : t('settings.userMgmt.filterInactive', 'Inactif')}
               </button>
             ))}
           </div>
@@ -1154,22 +1188,22 @@ export default function UserManagement() {
             <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
               <UsersIcon className="h-7 w-7 text-gray-300" aria-hidden />
             </div>
-            <p className="text-base font-semibold text-gray-700 mb-1">Aucun utilisateur trouvé</p>
+            <p className="text-base font-semibold text-gray-700 mb-1">{t('settings.userMgmt.emptyTitle', 'Aucun utilisateur trouvé')}</p>
             <p className="text-sm text-gray-400 mb-5 max-w-xs">
               {search || filterRole || filterStatus !== 'all'
-                ? 'Essayez de modifier vos filtres de recherche.'
-                : 'Invitez votre premier collaborateur pour commencer.'}
+                ? t('settings.userMgmt.emptyFilterHint', 'Essayez de modifier vos filtres de recherche.')
+                : t('settings.userMgmt.emptyInviteHint', 'Invitez votre premier collaborateur pour commencer.')}
             </p>
             {!search && !filterRole && filterStatus === 'all' && (
-              <Button onClick={openCreate} icon={<Plus className="h-4 w-4" />}>
-                Ajouter un utilisateur
-              </Button>
+              <button onClick={openCreate}>
+                {t('settings.userMgmt.addUser', 'Ajouter un utilisateur')}
+              </button>
             )}
           </div>
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full" aria-label="Liste des utilisateurs">
+              <table className="w-full" aria-label={t('settings.userMgmt.tableAriaLabel', 'Liste des utilisateurs')}>
                 <thead>
                   <tr className="bg-gray-50/80 border-b border-[#f0f4f8]">
                     <th scope="col" className="px-5 py-3.5 w-10">
@@ -1178,16 +1212,16 @@ export default function UserManagement() {
                         checked={allPageSelected}
                         ref={el => { if (el) el.indeterminate = somePageSelected; }}
                         onChange={toggleSelectAll}
-                        aria-label="Sélectionner tous les utilisateurs de la page"
+                        aria-label={t('settings.userMgmt.selectAllAria', 'Sélectionner tous les utilisateurs de la page')}
                         className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
                       />
                     </th>
-                    <th scope="col" className="text-left px-5 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Utilisateur</th>
-                    <th scope="col" className="text-left px-5 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Rôle</th>
-                    <th scope="col" className="text-left px-5 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Statut</th>
-                    <th scope="col" className="text-left px-5 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider hidden md:table-cell">Dernière connexion</th>
-                    <th scope="col" className="text-left px-5 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider hidden lg:table-cell">Membre depuis</th>
-                    <th scope="col" className="text-right px-5 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Actions</th>
+                    <th scope="col" className="text-left px-5 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t('settings.userMgmt.colUser', 'Utilisateur')}</th>
+                    <th scope="col" className="text-left px-5 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t('settings.userMgmt.colRole', 'Rôle')}</th>
+                    <th scope="col" className="text-left px-5 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t('settings.userMgmt.colStatus', 'Statut')}</th>
+                    <th scope="col" className="text-left px-5 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider hidden md:table-cell">{t('settings.userMgmt.colLastLogin', 'Dernière connexion')}</th>
+                    <th scope="col" className="text-left px-5 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider hidden lg:table-cell">{t('settings.userMgmt.colMemberSince', 'Membre depuis')}</th>
+                    <th scope="col" className="text-right px-5 py-3.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">{t('settings.userMgmt.colActions', 'Actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#f8fafc]">
@@ -1208,7 +1242,7 @@ export default function UserManagement() {
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => toggleSelect(user.id)}
-                            aria-label={`Sélectionner ${user.first_name} ${user.last_name}`}
+                            aria-label={t('settings.userMgmt.selectUserAria', 'Sélectionner {{name}}', { name: `${user.first_name} ${user.last_name}` })}
                             className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
                           />
                         </td>
@@ -1225,11 +1259,11 @@ export default function UserManagement() {
                                   {user.first_name} {user.last_name}
                                 </p>
                                 {isVerified
-                                  ? <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" aria-label="Email vérifié" />
-                                  : <ShieldAlert className="h-3.5 w-3.5 text-amber-400 flex-shrink-0" aria-label="Email non vérifié" />
+                                  ? <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" aria-label={t('settings.userMgmt.emailVerified', 'Email vérifié')} />
+                                  : <ShieldAlert className="h-3.5 w-3.5 text-amber-400 flex-shrink-0" aria-label={t('settings.userMgmt.emailNotVerified', 'Email non vérifié')} />
                                 }
                                 {user.mfa_enabled && (
-                                  <span className="text-[9px] font-bold text-violet-600 bg-violet-50 border border-violet-200 px-1 py-0.5 rounded" title="2FA activé">2FA</span>
+                                  <span className="text-[9px] font-bold text-violet-600 bg-violet-50 border border-violet-200 px-1 py-0.5 rounded" title={t('settings.userMgmt.mfaEnabled', '2FA activé')}>2FA</span>
                                 )}
                               </div>
                               <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
@@ -1248,7 +1282,7 @@ export default function UserManagement() {
                               {user.role.display_name}
                             </span>
                           ) : (
-                            <span className="text-xs text-gray-400 italic">Aucun rôle</span>
+                            <span className="text-xs text-gray-400 italic">{t('settings.userMgmt.noRole', 'Aucun rôle')}</span>
                           )}
                         </td>
 
@@ -1257,12 +1291,12 @@ export default function UserManagement() {
                           {user.is_active ? (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg">
                               <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" aria-hidden />
-                              Actif
+                              {t('settings.userMgmt.statusActive', 'Actif')}
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-gray-500 bg-gray-100 border border-gray-200 rounded-lg">
                               <span className="w-1.5 h-1.5 bg-gray-400 rounded-full" aria-hidden />
-                              Inactif
+                              {t('settings.userMgmt.statusInactive', 'Inactif')}
                             </span>
                           )}
                         </td>
@@ -1271,7 +1305,7 @@ export default function UserManagement() {
                         <td className="px-5 py-4 hidden md:table-cell">
                           <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
                             <Clock className="h-3.5 w-3.5 flex-shrink-0" aria-hidden />
-                            {formatRelativeTime(user.last_login_at)}
+                            {formatRelativeTime(user.last_login_at, t)}
                           </span>
                         </td>
 
@@ -1293,16 +1327,16 @@ export default function UserManagement() {
                               <button
                                 type="button"
                                 onClick={() => openEdit(user)}
-                                aria-label={`Modifier ${user.first_name} ${user.last_name}`}
+                                aria-label={t('settings.userMgmt.editUserAria', 'Modifier {{name}}', { name: `${user.first_name} ${user.last_name}` })}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-all active:scale-[0.97] cursor-pointer"
                               >
                                 <Edit2 className="h-3.5 w-3.5" aria-hidden />
-                                Modifier
+                                {t('settings.userMgmt.edit', 'Modifier')}
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setTogglingUser(user)}
-                                aria-label={user.is_active ? `Désactiver ${user.first_name} ${user.last_name}` : `Réactiver ${user.first_name} ${user.last_name}`}
+                                aria-label={user.is_active ? t('settings.userMgmt.deactivateUserAria', 'Désactiver {{name}}', { name: `${user.first_name} ${user.last_name}` }) : t('settings.userMgmt.reactivateUserAria', 'Réactiver {{name}}', { name: `${user.first_name} ${user.last_name}` })}
                                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all active:scale-[0.97] cursor-pointer ${
                                   user.is_active
                                     ? 'text-orange-600 bg-orange-50 border-orange-200 hover:bg-orange-100 hover:border-orange-300'
@@ -1310,18 +1344,18 @@ export default function UserManagement() {
                                 }`}
                               >
                                 {user.is_active
-                                  ? <><UserX className="h-3.5 w-3.5" aria-hidden />Désactiver</>
-                                  : <><UserCheck className="h-3.5 w-3.5" aria-hidden />Réactiver</>
+                                  ? <><UserX className="h-3.5 w-3.5" aria-hidden />{t('settings.userMgmt.deactivate', 'Désactiver')}</>
+                                  : <><UserCheck className="h-3.5 w-3.5" aria-hidden />{t('settings.userMgmt.reactivate', 'Réactiver')}</>
                                 }
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setDeletingUser(user)}
-                                aria-label={`Supprimer ${user.first_name} ${user.last_name}`}
+                                aria-label={t('settings.userMgmt.deleteUserAria', 'Supprimer {{name}}', { name: `${user.first_name} ${user.last_name}` })}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 hover:border-red-300 transition-all active:scale-[0.97] cursor-pointer"
                               >
                                 <Trash2 className="h-3.5 w-3.5" aria-hidden />
-                                Supprimer
+                                {t('settings.userMgmt.delete', 'Supprimer')}
                               </button>
                             </div>
 
@@ -1348,30 +1382,30 @@ export default function UserManagement() {
             {/* ── Footer: count + pagination ── */}
             <div className="px-5 py-3 border-t border-[#f0f4f8] bg-gray-50/50 flex items-center justify-between gap-4 flex-wrap">
               <p className="text-xs text-gray-500">
-                {allFiltered.length} utilisateur{allFiltered.length > 1 ? 's' : ''}
-                {users.length !== allFiltered.length && <span className="text-gray-400"> · {users.length} au total</span>}
-                {selected.size > 0 && <span className="ml-2 font-semibold text-primary-600">· {selected.size} sélectionné{selected.size > 1 ? 's' : ''}</span>}
+                {t('settings.userMgmt.footerCount', { defaultValue: '{{count}} utilisateur', defaultValue_other: '{{count}} utilisateurs', count: allFiltered.length })}
+                {users.length !== allFiltered.length && <span className="text-gray-400"> · {t('settings.userMgmt.footerTotal', '{{count}} au total', { count: users.length })}</span>}
+                {selected.size > 0 && <span className="ml-2 font-semibold text-primary-600">· {t('settings.userMgmt.footerSelected', { defaultValue: '{{count}} sélectionné', defaultValue_other: '{{count}} sélectionnés', count: selected.size })}</span>}
               </p>
 
               {totalPages > 1 && (
-                <nav className="flex items-center gap-1" aria-label="Pagination">
+                <nav className="flex items-center gap-1" aria-label={t('settings.userMgmt.pagination', 'Pagination')}>
                   <button
                     type="button"
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                     disabled={safePage === 1}
-                    aria-label="Page précédente"
+                    aria-label={t('settings.userMgmt.prevPage', 'Page précédente')}
                     className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     <ChevronLeft className="h-4 w-4 text-gray-600" />
                   </button>
                   <span className="text-xs font-semibold text-gray-600 px-2">
-                    Page {safePage} / {totalPages}
+                    {t('settings.userMgmt.pageOf', 'Page {{page}} / {{total}}', { page: safePage, total: totalPages })}
                   </span>
                   <button
                     type="button"
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                     disabled={safePage === totalPages}
-                    aria-label="Page suivante"
+                    aria-label={t('settings.userMgmt.nextPage', 'Page suivante')}
                     className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     <ChevronRight className="h-4 w-4 text-gray-600" />
@@ -1385,7 +1419,7 @@ export default function UserManagement() {
                   onClick={() => { setSearch(''); setFilterRole(''); setFilterStatus('all'); }}
                   className="text-xs text-primary-600 hover:text-primary-700 font-semibold transition-colors"
                 >
-                  Réinitialiser les filtres
+                  {t('settings.userMgmt.resetFilters', 'Réinitialiser les filtres')}
                 </button>
               )}
             </div>
@@ -1397,19 +1431,19 @@ export default function UserManagement() {
       {selected.size > 0 && createPortal(
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[150] flex items-center gap-3 px-4 py-3 bg-gray-900 text-white rounded-2xl shadow-xl animate-slide-in">
           <span className="text-sm font-semibold pr-2 border-r border-white/20">
-            {selected.size} sélectionné{selected.size > 1 ? 's' : ''}
+            {t('settings.userMgmt.bulkSelected', { defaultValue: '{{count}} sélectionné', defaultValue_other: '{{count}} sélectionnés', count: selected.size })}
           </span>
           <button type="button" onClick={handleBulkDeactivate}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-orange-300 hover:text-orange-200 transition-colors">
             <UserX className="h-4 w-4" aria-hidden />
-            Désactiver
+            {t('settings.userMgmt.deactivate', 'Désactiver')}
           </button>
           <button type="button" onClick={() => setBulkDeleting(true)}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-red-300 hover:text-red-200 transition-colors">
             <Trash2 className="h-4 w-4" aria-hidden />
-            Supprimer
+            {t('settings.userMgmt.delete', 'Supprimer')}
           </button>
-          <button type="button" onClick={() => setSelected(new Set())} aria-label="Annuler la sélection"
+          <button type="button" onClick={() => setSelected(new Set())} aria-label={t('settings.userMgmt.cancelSelection', 'Annuler la sélection')}
             className="ml-2 p-1 rounded-lg hover:bg-white/10 transition-colors">
             <X className="h-4 w-4 text-gray-400" />
           </button>
@@ -1421,16 +1455,16 @@ export default function UserManagement() {
       <SidePanel
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        title="Nouvel utilisateur"
-        subtitle="Invitez un nouveau membre dans votre organisation"
+        title={t('settings.userMgmt.createPanelTitle', 'Nouvel utilisateur')}
+        subtitle={t('settings.userMgmt.createPanelSubtitle', 'Invitez un nouveau membre dans votre organisation')}
         footer={
           <>
-            <Button variant="secondary" className="flex-1" onClick={() => setCreateOpen(false)} disabled={saving}>
-              Annuler
-            </Button>
-            <Button className="flex-1" onClick={handleCreate} loading={saving} icon={<Plus className="h-4 w-4" />}>
-              Créer l'utilisateur
-            </Button>
+            <button className="flex-1" onClick={() => setCreateOpen(false)} disabled={saving}>
+              {t('settings.userMgmt.cancel', 'Annuler')}
+            </button>
+            <button className="flex-1" onClick={handleCreate}>
+              {t('settings.userMgmt.createUserBtn', "Créer l'utilisateur")}
+            </button>
           </>
         }
       >
@@ -1441,16 +1475,16 @@ export default function UserManagement() {
       <SidePanel
         open={editOpen}
         onClose={() => { setEditOpen(false); setEditingUser(null); }}
-        title={editingUser ? `Modifier — ${editingUser.first_name} ${editingUser.last_name}` : 'Modifier'}
-        subtitle="Mettez à jour les informations de ce membre"
+        title={editingUser ? t('settings.userMgmt.editPanelTitle', 'Modifier — {{name}}', { name: `${editingUser.first_name} ${editingUser.last_name}` }) : t('settings.userMgmt.edit', 'Modifier')}
+        subtitle={t('settings.userMgmt.editPanelSubtitle', 'Mettez à jour les informations de ce membre')}
         footer={
           <>
-            <Button variant="secondary" className="flex-1" onClick={() => { setEditOpen(false); setEditingUser(null); }} disabled={saving}>
-              Annuler
-            </Button>
-            <Button className="flex-1" onClick={handleEdit} loading={saving} icon={<CheckCircle className="h-4 w-4" />}>
-              Enregistrer
-            </Button>
+            <button className="flex-1" onClick={() => { setEditOpen(false); setEditingUser(null); }} disabled={saving}>
+              {t('settings.userMgmt.cancel', 'Annuler')}
+            </button>
+            <button className="flex-1" onClick={handleEdit}>
+              {t('settings.userMgmt.save', 'Enregistrer')}
+            </button>
           </>
         }
       >
@@ -1472,7 +1506,7 @@ export default function UserManagement() {
           user={deletingUser}
           onClose={() => setDeletingUser(null)}
           onConfirm={handleDelete}
-          loading={saving}
+          loading={false}
         />
       )}
 
@@ -1482,7 +1516,7 @@ export default function UserManagement() {
           count={selected.size}
           onClose={() => setBulkDeleting(false)}
           onConfirm={handleBulkDelete}
-          loading={saving}
+          loading={false}
         />
       )}
     </div>

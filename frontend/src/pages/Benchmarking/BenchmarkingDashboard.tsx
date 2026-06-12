@@ -33,6 +33,7 @@ import {
 import api from '@/services/api'
 import { usePlan } from '@/hooks/usePlan'
 import PlanGate from '@/components/common/PlanGate'
+import PageHero from '@/components/layout/PageHero'
 
 // --- Per-sector mock data ---
 
@@ -394,19 +395,51 @@ export default function BenchmarkingDashboard() {
   }, [])
 
   /**
-   * Benchmarks actifs : les valeurs "your" sont remplacées par les scores réels
-   * lorsque disponibles. Les moyennes sectorielles et percentiles restent fixes
-   * (données de référence industrie).
+   * Live sector benchmarks from the backend.
+   *
+   * The backend returns either real cross-tenant aggregates (source =
+   * "cross_tenant", cohort_size populated) or public reference baselines
+   * (CDP/MSCI/ADEME) when the cohort is too small for k-anonymity.
+   */
+  const [liveBenchmarks, setLiveBenchmarks] = useState<{
+    source: 'cross_tenant' | 'public_reference' | null;
+    cohort_size: number | null;
+    distinct_tenants: number | null;
+    sector_label: string | null;
+    reference_source: string | null;
+    environmental?: { p25: number; median: number; p75: number; top10: number };
+    social?:        { p25: number; median: number; p75: number; top10: number };
+    governance?:    { p25: number; median: number; p75: number; top10: number };
+    overall?:       { p25: number; median: number; p75: number; top10: number };
+    anonymization_note?: string | null;
+  }>({
+    source: null, cohort_size: null, distinct_tenants: null,
+    sector_label: null, reference_source: null,
+  });
+
+  /**
+   * Benchmarks actifs : les valeurs "your" sont les scores réels du tenant,
+   * les colonnes "avg/top25/top10" viennent du backend (réel ou référence).
    */
   const activeBenchmarks = useMemo((): BenchmarkData => {
     const base = SECTOR_DATA[sector].benchmarks
-    if (!realScores) return base
+    const lb = liveBenchmarks;
+    const merge = (
+      mockPillar: { your: number; avg: number; top25: number; top10: number },
+      livePillar?: { p25: number; median: number; p75: number; top10: number },
+      realScore?: number,
+    ) => ({
+      your:  realScore !== undefined ? Math.round(realScore) : mockPillar.your,
+      avg:   livePillar ? livePillar.median : mockPillar.avg,
+      top25: livePillar ? livePillar.p75    : mockPillar.top25,
+      top10: livePillar ? livePillar.top10  : mockPillar.top10,
+    })
     return {
-      environmental: { ...base.environmental, your: Math.round(realScores.env) },
-      social:        { ...base.social,        your: Math.round(realScores.soc) },
-      governance:    { ...base.governance,    your: Math.round(realScores.gov) },
+      environmental: merge(base.environmental, lb.environmental, realScores?.env),
+      social:        merge(base.social,        lb.social,        realScores?.soc),
+      governance:    merge(base.governance,    lb.governance,    realScores?.gov),
     }
-  }, [sector, realScores])
+  }, [sector, realScores, liveBenchmarks])
 
   /**
    * Radar data with real "you" values, scaled proportionally to real scores
@@ -454,15 +487,27 @@ export default function BenchmarkingDashboard() {
 
   const applyMockWithDelay = useCallback(async (selectedSector: SectorKey) => {
     setLoading(true)
-    // Try real API first, fall back to per-sector mock
     try {
-      const res = await fetch(`/api/v1/benchmarks/sector/${selectedSector}`)
-      if (!res.ok) throw new Error('no data')
-      const data = await res.json()
-      if (!data?.environmental) throw new Error('bad shape')
-      // real data handled here if API exists
+      const res = await api.get(`/benchmarks/sector/${selectedSector}`)
+      if (res.data?.environmental) {
+        setLiveBenchmarks({
+          source:            res.data.source || 'public_reference',
+          cohort_size:       res.data.cohort_size ?? null,
+          distinct_tenants:  res.data.distinct_tenants ?? null,
+          sector_label:      res.data.sector_label || null,
+          reference_source:  res.data.reference_source || null,
+          environmental:     res.data.environmental,
+          social:            res.data.social,
+          governance:        res.data.governance,
+          overall:           res.data.overall,
+          anonymization_note: res.data.anonymization?.note || null,
+        })
+      } else {
+        // Reset to mock fallback if API shape unexpected
+        setLiveBenchmarks({ source: null, cohort_size: null, distinct_tenants: null, sector_label: null, reference_source: null })
+      }
     } catch {
-      // use local sector mock — intentionally ignored
+      setLiveBenchmarks({ source: null, cohort_size: null, distinct_tenants: null, sector_label: null, reference_source: null })
     } finally {
       setLoading(false)
     }
@@ -491,9 +536,9 @@ export default function BenchmarkingDashboard() {
       `"Social","${bm.social.your}","${bm.social.avg}","${bm.social.top25}","${bm.social.top10}"`,
       `"Gouvernance","${bm.governance.your}","${bm.governance.avg}","${bm.governance.top25}","${bm.governance.top10}"`,
       `""`,
-      `"CLASSEMENT SECTORIEL"`,
-      `"Rang","Entreprises totales","Position estimée"`,
-      `"${mock.rankPos}","${mock.rankTotal}","${computedRank}"`,
+      `"POSITION ESTIMÉE (données de référence sectorielles)"`,
+      `"Position estimée","Source","Note"`,
+      `"${computedRank}","Référentiels publics (ADEME / CDP / GHG Protocol)","Classement précis disponible lorsque suffisamment d'organisations rejoignent la plateforme"`,
       `""`,
       `"COMPARAISON INDICATEURS DÉTAILLÉS"`,
       `"Indicateur","Votre valeur","Moy. Secteur","Percentile","Performance"`,
@@ -521,9 +566,48 @@ export default function BenchmarkingDashboard() {
   const sectorMock = SECTOR_DATA[sector]
   const benchmarks = activeBenchmarks   // scores réels injectés si disponibles
   const radarData = activeRadar
-  const indicators = sectorMock.indicators
-  const sectorRankPos = sectorMock.rankPos
-  const sectorRankTotal = sectorMock.rankTotal
+
+  // Stockage des indicateurs backend (Phase 5 API : carbon_intensity_per_revenue, gender_pay_gap, ...)
+  const [backendIndicators, setBackendIndicators] = useState<Record<string, number> | null>(null)
+  useEffect(() => {
+    api.get(`/benchmarks/sector/${sector}`)
+      .then(r => setBackendIndicators(r.data?.indicators || null))
+      .catch(() => setBackendIndicators(null))
+  }, [sector])
+
+  // Indicators rendus à l'UI — sector_avg remplacé par valeur backend quand disponible
+  const indicators = useMemo(() => {
+    if (!backendIndicators) return sectorMock.indicators
+    // Mapping par mot-clef du nom (heuristique simple)
+    const keyMap: Array<{ keys: string[]; backendField: string; format: (v: number) => string }> = [
+      { keys: ['co2', 'carbone', 'intensit', 'ghg', 'émissions'],
+        backendField: 'carbon_intensity_per_revenue',
+        format: v => `${v.toFixed(1)} tCO₂e/M€` },
+      { keys: ['renouv', 'renewable', 'élec'],
+        backendField: 'renewable_energy_pct',
+        format: v => `${v.toFixed(0)} %` },
+      { keys: ['écart', 'pay gap', 'gender', 'rémun', 'remun'],
+        backendField: 'gender_pay_gap',
+        format: v => `${v.toFixed(1)} %` },
+      { keys: ['turnover', 'rotation', 'départ', 'depart'],
+        backendField: 'employee_turnover',
+        format: v => `${v.toFixed(0)} %` },
+      { keys: ['ceo', 'pdg', 'ratio'],
+        backendField: 'ceo_pay_ratio',
+        format: v => `${v.toFixed(0)}:1` },
+      { keys: ['accident', 'tfat', 'tf '],
+        backendField: 'accident_rate',
+        format: v => v.toFixed(1) },
+    ]
+    return sectorMock.indicators.map(ind => {
+      const lowName = ind.name.toLowerCase()
+      const match = keyMap.find(m => m.keys.some(k => lowName.includes(k)))
+      if (match && backendIndicators[match.backendField] !== undefined) {
+        return { ...ind, sector_avg: match.format(backendIndicators[match.backendField]) }
+      }
+      return ind
+    })
+  }, [sectorMock.indicators, backendIndicators])
 
   const { yourScore, sectorAvg, bestScore, rank } = computeKPIs(benchmarks)
   const barData = buildBarData(benchmarks, t)
@@ -536,9 +620,9 @@ export default function BenchmarkingDashboard() {
   // Dynamic strengths & improvements from real pillar scores
   const { dynamicStrengths, dynamicImprovements } = useMemo(() => {
     const pillars = [
-      { name: 'Environnement', your: benchmarks.environmental.your, avg: benchmarks.environmental.avg, top10: benchmarks.environmental.top10 },
-      { name: 'Social', your: benchmarks.social.your, avg: benchmarks.social.avg, top10: benchmarks.social.top10 },
-      { name: 'Gouvernance', your: benchmarks.governance.your, avg: benchmarks.governance.avg, top10: benchmarks.governance.top10 },
+      { name: t('benchmarking.environment', 'Environnement'), your: benchmarks.environmental.your, avg: benchmarks.environmental.avg, top10: benchmarks.environmental.top10 },
+      { name: t('benchmarking.social', 'Social'), your: benchmarks.social.your, avg: benchmarks.social.avg, top10: benchmarks.social.top10 },
+      { name: t('benchmarking.governance', 'Gouvernance'), your: benchmarks.governance.your, avg: benchmarks.governance.avg, top10: benchmarks.governance.top10 },
     ]
     const sorted = [...pillars].sort((a, b) => (b.your - b.avg) - (a.your - a.avg))
 
@@ -546,32 +630,32 @@ export default function BenchmarkingDashboard() {
       .filter(p => p.your >= p.avg)
       .map(p => {
         const delta = p.your - p.avg
-        if (p.your >= p.top10) return `${p.name} : score ${p.your}/100 — Top 10 % du secteur`
-        return `${p.name} : score ${p.your}/100 — +${delta} pts au-dessus de la moyenne`
+        if (p.your >= p.top10) return t('benchmarking.strengthTop10', '{{name}} : score {{your}}/100 — Top 10 % du secteur', { name: p.name, your: p.your })
+        return t('benchmarking.strengthAbove', '{{name}} : score {{your}}/100 — +{{delta}} pts au-dessus de la moyenne', { name: p.name, your: p.your, delta })
       })
 
     const imps: string[] = sorted
       .filter(p => p.your < p.avg)
       .map(p => {
         const delta = p.avg - p.your
-        return `${p.name} : score ${p.your}/100 — ${delta} pts sous la moyenne sectorielle (${p.avg})`
+        return t('benchmarking.improvementBelow', '{{name}} : score {{your}}/100 — {{delta}} pts sous la moyenne sectorielle ({{avg}})', { name: p.name, your: p.your, delta, avg: p.avg })
       })
 
     // If all pillars outperform average, suggest progress toward Top 10
     if (imps.length === 0) {
       sorted.forEach(p => {
         const gap = p.top10 - p.your
-        if (gap > 0) imps.push(`${p.name} : +${gap} pts pour atteindre le Top 10 % (${p.top10})`)
+        if (gap > 0) imps.push(t('benchmarking.improvementGap', '{{name}} : +{{gap}} pts pour atteindre le Top 10 % ({{top10}})', { name: p.name, gap, top10: p.top10 }))
       })
     }
 
     // Ensure at least one entry in strengths fallback
     if (strs.length === 0) {
-      sorted.slice(0, 1).forEach(p => strs.push(`${p.name} : score ${p.your}/100 — meilleur pilier de votre profil`))
+      sorted.slice(0, 1).forEach(p => strs.push(t('benchmarking.strengthBest', '{{name}} : score {{your}}/100 — meilleur pilier de votre profil', { name: p.name, your: p.your })))
     }
 
     return { dynamicStrengths: strs.slice(0, 3), dynamicImprovements: imps.slice(0, 3) }
-  }, [benchmarks])
+  }, [benchmarks, t])
 
   // Gate — Pro feature
   if (!can('benchmark')) {
@@ -584,34 +668,44 @@ export default function BenchmarkingDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Hero */}
-      <div className="rounded-3xl bg-gradient-to-br from-slate-900 via-teal-900 to-slate-800 px-8 py-10 shadow-xl">
-        <div>
-          <button
-            onClick={() => navigate(-1)}
-            className="mb-4 inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-sm font-medium text-white/80 hover:bg-white/20 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Retour
-          </button>
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-teal-500/20 px-4 py-1.5 text-sm font-medium text-teal-300 ring-1 ring-teal-500/30">
-            <BarChart3 className="h-4 w-4" />
-            {t('benchmarking.badge')}
-          </div>
-          <h1 className="text-3xl font-bold text-white md:text-4xl">
-            {t('benchmarking.title')}
-          </h1>
-          <p className="mt-2 max-w-2xl text-slate-300">
-            {t('benchmarking.subtitle')}
-          </p>
+      {/* Hero (signature) */}
+      <PageHero
+        backTo="/app"
+        badge={t('benchmarking.badge')}
+        badgeIcon={BarChart3}
+        icon={BarChart3}
+        title={t('benchmarking.title')}
+        description={t('benchmarking.subtitle')}
+      />
+      {/* Status pills (data source) — moved out of hero so they stay readable on light surface */}
+      {(realScores || liveBenchmarks.source) && (
+        <div className="flex flex-wrap items-center gap-2 -mt-2">
           {realScores && (
-            <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-medium text-emerald-300 ring-1 ring-emerald-500/30">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Scores ESG réels chargés
+            <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              {t('benchmarking.realScoresLoaded', 'Scores ESG réels chargés')}
+            </div>
+          )}
+          {liveBenchmarks.source === 'cross_tenant' && (
+            <div
+              className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700 ring-1 ring-teal-200"
+              title={t('benchmarking.crossTenantTitle', '{{n}} organisations · {{d}} distinct tenants (k-anonymity)', { n: liveBenchmarks.cohort_size, d: liveBenchmarks.distinct_tenants })}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
+              {t('benchmarking.crossTenantPill', 'Données cross-tenant · {{n}} organisations', { n: liveBenchmarks.cohort_size })}
+            </div>
+          )}
+          {liveBenchmarks.source === 'public_reference' && (
+            <div
+              className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 ring-1 ring-amber-200"
+              title={liveBenchmarks.anonymization_note || t('benchmarking.publicRefWaiting', "Référentiel public utilisé en attente d'une cohorte suffisante.")}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+              {t('benchmarking.publicRefPill', 'Référentiel public · {{src}}', { src: liveBenchmarks.reference_source || 'CDP / MSCI / ADEME' })}
             </div>
           )}
         </div>
-      </div>
+      )}
 
       <div className="space-y-6">
         {/* Toolbar */}
@@ -634,7 +728,7 @@ export default function BenchmarkingDashboard() {
             {sectorOpen && (
               <div className="absolute left-0 z-30 mt-1.5 w-56 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-xl">
                 <div className="px-3 py-2 border-b border-gray-100">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Filtrer par secteur</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">{t('benchmarking.filterBySector', 'Filtrer par secteur')}</p>
                 </div>
                 <div className="py-1 max-h-72 overflow-y-auto">
                   {SECTORS.map((s) => (
@@ -775,28 +869,33 @@ export default function BenchmarkingDashboard() {
           </div>
         </div>
 
-        {/* Ranking banner */}
-        <div className="mb-6 rounded-2xl bg-gradient-to-r from-teal-900 via-teal-800 to-emerald-800 p-6 text-white shadow-lg">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-yellow-400/20 ring-2 ring-yellow-400/40">
-                <Trophy className="h-8 w-8 text-yellow-300" />
+        {/* Position estimée — données de référence publiques */}
+        <div className="mb-6 rounded-2xl border border-teal-100 bg-gradient-to-r from-teal-50 to-slate-50 p-6 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start gap-4 flex-1">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-teal-100">
+                <BarChart3 className="h-6 w-6 text-teal-600" />
               </div>
-              <div>
-                <p className="text-sm font-medium text-teal-200">{t('benchmarking.sectorRank')}</p>
-                <p className="text-3xl font-bold">{sectorRankPos}<span className="text-lg font-normal text-teal-200">e / {sectorRankTotal} {t('benchmarking.companies')}</span></p>
-                <p className="mt-0.5 text-sm font-medium text-yellow-300">{rank}</p>
-              </div>
-            </div>
-            <div className="flex-1 max-w-xs">
-              <p className="mb-2 text-xs text-teal-300">{t('benchmarking.positionInSector')}</p>
-              <div className="relative h-3 w-full overflow-hidden rounded-full bg-white/10">
-                <div className="h-full rounded-full bg-gradient-to-r from-green-400 to-emerald-400" style={{ width: `${100 - rankLeftPct}%` }} />
-                <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-5 w-5 rounded-full bg-yellow-400 ring-2 ring-white shadow" style={{ left: `${rankLeftPct}%` }} />
-              </div>
-              <div className="mt-1 flex justify-between text-xs text-teal-300">
-                <span>{t('benchmarking.best')}</span>
-                <span>{t('benchmarking.worst')}</span>
+              <div className="flex-1">
+                <div className="flex items-center flex-wrap gap-2 mb-1">
+                  <p className="text-sm font-bold text-teal-900">{t('benchmarking.sectorRank')} — {rank}</p>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border" style={{ background: '#fef3c7', color: '#92400e', borderColor: '#fde68a' }}>
+                    <AlertTriangle className="h-3 w-3" /> {t('benchmarking.indicativeData', 'Données indicatives')}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed max-w-lg">
+                  {t('benchmarking.rankDescription', "Position estimée par rapport aux moyennes sectorielles issues de référentiels publics (ADEME, CDP, GHG Protocol). Le classement précis parmi les pairs sera disponible lorsque davantage d'organisations auront rejoint la plateforme.")}
+                </p>
+                <div className="mt-3 max-w-xs">
+                  <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-teal-100">
+                    <div className="h-full rounded-full bg-gradient-to-r from-teal-400 to-emerald-500" style={{ width: `${100 - rankLeftPct}%` }} />
+                    <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-4 w-4 rounded-full bg-teal-600 ring-2 ring-white shadow" style={{ left: `${rankLeftPct}%` }} />
+                  </div>
+                  <div className="mt-1 flex justify-between text-xs text-teal-400">
+                    <span>{t('benchmarking.best')}</span>
+                    <span>{t('benchmarking.worst')}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

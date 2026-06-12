@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { CSSProperties, useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import api from '@/services/api';
 import { useTranslation } from 'react-i18next';
 import {
@@ -7,9 +7,10 @@ import {
   FileText, Upload, Trash2, Edit3, Plus, LogIn, Send,
   RefreshCw, Shield, Lock, Hash, Paperclip, Calendar,
   User, Database, ArrowRight, X, Check, Info,
-  BookOpen, GitBranch, Star, Stamp,
+  BookOpen, GitBranch, Star, Stamp, Link, Tag,
 } from 'lucide-react';
 import BackButton from '@/components/common/BackButton';
+import PageHero, { PageHeroPrimaryButton } from '@/components/layout/PageHero';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ActionType =
@@ -34,6 +35,7 @@ interface AuditEvent {
   ipAddress: string;
   sessionId: string;
   hash: string;
+  signatureHash?: string | null;  // SHA-256 e-signature (ISAE 3000 / CSRD Art. 29a)
   attachments?: string[];
   comment?: string;
 }
@@ -70,6 +72,20 @@ const ACTION_CFG_STATIC: Record<ActionType, { color: string; bg: string; border:
   PUBLISH:   { color: 'text-pink-700',    bg: 'bg-pink-50',     border: 'border-pink-200',    icon: Star },
 };
 
+// Fallback used when the backend emits an action the frontend hasn't seen.
+// Without this, ``ACTION_CFG_STATIC[event.action]`` returns undefined and the
+// next ``cfg.icon`` access crashes with "undefined is not an object".
+const ACTION_CFG_FALLBACK = {
+  color: 'text-gray-700', bg: 'bg-gray-50', border: 'border-gray-200', icon: BookOpen,
+} as const;
+
+/** Safe lookup that always returns a valid config — defends against new
+ *  server-side action types that haven't been added to ACTION_CFG_STATIC yet. */
+function getActionCfg(action: string | null | undefined) {
+  if (!action) return ACTION_CFG_FALLBACK;
+  return (ACTION_CFG_STATIC as Record<string, any>)[action] ?? ACTION_CFG_FALLBACK;
+}
+
 const MODULES = ['Tous', 'Collecte Données', 'Pilotage ESG', 'Validation', 'Rapports', 'Supply Chain', 'Matérialité', 'Décarbonation', 'IA & Automatisation', 'Authentification'];
 const ACTIONS: (ActionType | 'Tous')[] = ['Tous', 'CREATE', 'UPDATE', 'DELETE', 'SUBMIT', 'APPROVE', 'REJECT', 'IMPORT', 'EXPORT', 'COMMENT', 'ATTACH'];
 
@@ -93,10 +109,10 @@ function userInitials(name: string) {
 // ─── Event detail panel ───────────────────────────────────────────────────────
 function EventDetail({ event, onClose }: { event: AuditEvent; onClose: () => void }) {
   const { t } = useTranslation();
-  const cfg = ACTION_CFG_STATIC[event.action];
+  const cfg = getActionCfg(event.action);
   const ActionIcon = cfg.icon;
   return (
-    <div className="fixed inset-0 z-50 flex">
+    <div className="fixed inset-0 z-[60] flex">
       <div className="flex-1 bg-black/40" onClick={onClose} />
       <div className="w-full max-w-lg bg-white shadow-2xl overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
@@ -172,6 +188,34 @@ function EventDetail({ event, onClose }: { event: AuditEvent; onClose: () => voi
             <code className="text-xs text-slate-300 font-mono break-all">{event.hash ?? '—'}:{event.entityId}:{event.timestamp}</code>
           </div>
 
+          {/* E-signature block — only on signed actions (approve / verify) */}
+          {event.signatureHash && (
+            <div className="bg-gradient-to-br from-indigo-900 to-blue-900 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <Lock className="h-4 w-4 text-indigo-300" />
+                <span className="text-xs font-bold text-indigo-200 uppercase tracking-wider">
+                  Signature électronique
+                </span>
+                <span className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-indigo-100/20 text-indigo-100 border border-indigo-300/30">
+                  SHA-256
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-blue-100/20 text-blue-100 border border-blue-300/30">
+                  ISAE 3000
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-100/20 text-emerald-100 border border-emerald-300/30">
+                  CSRD Art. 29a
+                </span>
+              </div>
+              <code className="block text-xs text-indigo-100 font-mono break-all bg-black/30 px-3 py-2 rounded-lg">
+                {event.signatureHash}
+              </code>
+              <p className="text-[11px] text-indigo-200 mt-2 leading-relaxed">
+                Empreinte cryptographique liant l'approbateur, la valeur, l'horodatage et l'adresse IP.
+                Recalculable pour preuve légale lors d'un audit externe.
+              </p>
+            </div>
+          )}
+
           {/* Attachments */}
           {event.attachments && event.attachments.length > 0 && (
             <div>
@@ -208,8 +252,12 @@ export default function AuditTrail() {
   const [exportFormat, setExportFormat] = useState<'csv' | 'pdf' | 'json'>('pdf');
   const [exportDone, setExportDone] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [uploadedDocs, setUploadedDocs] = useState<Array<{ id: string; name: string; size: string; type: string; status: string; uploadedBy: string; uploadedAt: string; linkedEntity: string; linkedModule: string; hash: string }>>([]);
+  const [uploadedDocs, setUploadedDocs] = useState<Array<{ id: string; name: string; size: string; type: string; status: string; uploadedBy: string; uploadedAt: string; linkedEntity: string; linkedModule: string; hash: string; linkedIndicator?: string; indicatorRef?: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Evidence vault — link modal
+  const [linkingDocId, setLinkingDocId] = useState<string | null>(null);
+  const [linkIndicatorSearch, setLinkIndicatorSearch] = useState('');
+  const [linkIndicatorDraft, setLinkIndicatorDraft] = useState('');
 
   // ── API state ──
   const [events, setEvents] = useState<AuditEvent[]>([]);
@@ -263,6 +311,57 @@ export default function AuditTrail() {
     // Reset input so same file can be re-selected
     e.target.value = '';
   };
+
+  const INDICATOR_OPTIONS = [
+    // ESRS Environmental
+    { ref: 'ESRS E1 §44', label: 'Émissions GES Scope 1' },
+    { ref: 'ESRS E1 §45', label: 'Émissions GES Scope 2' },
+    { ref: 'ESRS E1 §51', label: 'Émissions GES Scope 3' },
+    { ref: 'ESRS E1 §34', label: 'Objectifs de réduction carbone' },
+    { ref: 'ESRS E2 §28', label: 'Émissions de polluants atmosphériques' },
+    { ref: 'ESRS E3 §28', label: 'Consommation d\'eau' },
+    { ref: 'ESRS E4 §33', label: 'Biodiversité — espèces affectées' },
+    { ref: 'ESRS E5 §25', label: 'Production de déchets' },
+    // ESRS Social
+    { ref: 'ESRS S1 §48', label: 'Effectifs — répartition par contrat' },
+    { ref: 'ESRS S1 §55', label: 'Rémunération — écart de genre' },
+    { ref: 'ESRS S1 §88', label: 'Santé & sécurité — accidents' },
+    { ref: 'ESRS S1 §96', label: 'Formation — heures par salarié' },
+    // ESRS Governance
+    { ref: 'ESRS G1 §25', label: 'Gouvernance — composition du conseil' },
+    { ref: 'ESRS G1 §28', label: 'Lutte contre la corruption — formation' },
+    // GRI
+    { ref: 'GRI 305-1', label: 'Émissions directes GES (Scope 1)' },
+    { ref: 'GRI 305-2', label: 'Émissions indirectes énergie (Scope 2)' },
+    { ref: 'GRI 305-3', label: 'Autres émissions indirectes (Scope 3)' },
+    { ref: 'GRI 302-1', label: 'Énergie — consommation au sein de l\'org.' },
+    { ref: 'GRI 303-5', label: 'Eau — consommation' },
+    { ref: 'GRI 306-3', label: 'Déchets générés' },
+    { ref: 'GRI 401-1', label: 'Embauches et départs' },
+    { ref: 'GRI 403-9', label: 'Accidents du travail' },
+    // TCFD / ISSB S2
+    { ref: 'ISSB S2 §29', label: 'Indicateurs climatiques — GES total' },
+    { ref: 'ISSB S2 §33', label: 'Cibles climatiques' },
+  ];
+
+  const applyIndicatorLink = () => {
+    if (!linkingDocId || !linkIndicatorDraft) return;
+    const found = INDICATOR_OPTIONS.find(o => o.ref === linkIndicatorDraft);
+    setUploadedDocs(prev => prev.map(d =>
+      d.id === linkingDocId
+        ? { ...d, linkedIndicator: found?.label ?? linkIndicatorDraft, indicatorRef: linkIndicatorDraft }
+        : d
+    ));
+    setLinkingDocId(null);
+    setLinkIndicatorSearch('');
+    setLinkIndicatorDraft('');
+  };
+
+  const filteredIndicatorOptions = INDICATOR_OPTIONS.filter(o =>
+    !linkIndicatorSearch ||
+    o.label.toLowerCase().includes(linkIndicatorSearch.toLowerCase()) ||
+    o.ref.toLowerCase().includes(linkIndicatorSearch.toLowerCase())
+  );
 
   // ── Derive unique users from loaded events (replaces hardcoded USERS list) ──
   const uniqueUsers = useMemo(
@@ -319,35 +418,19 @@ export default function AuditTrail() {
     <div className="space-y-6">
       <BackButton to="/app/settings" label="Paramètres" />
 
-      {/* ── Hero ── */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 rounded-2xl p-8 text-white shadow-xl">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZyIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLW9wYWNpdHk9IjAuMDUiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg==')] opacity-40" />
-        <div className="relative flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="px-3 py-1 bg-white/15 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide uppercase">
-                Traçabilité & Conformité
-              </span>
-              <span className="flex items-center gap-1.5 px-3 py-1 bg-green-500/20 border border-green-400/30 rounded-full text-xs font-semibold text-green-300">
-                <Lock className="h-3 w-3" />
-                {t('audit.integrityVerified')}
-              </span>
-            </div>
-            <h1 className="text-3xl font-bold mb-1 flex items-center gap-3">
-              <ClipboardList className="h-8 w-8" />
-              {t('audit.title')}
-            </h1>
-            <p className="text-slate-300">{t('audit.subtitle')}</p>
-          </div>
-          <button
-            onClick={() => setTab('export')}
-            className="flex items-center gap-2 px-5 py-2.5 bg-white text-slate-800 rounded-xl text-sm font-bold hover:bg-slate-100 transition-all shadow-md"
-          >
-            <Download className="h-4 w-4" />
+      {/* ── Hero (signature) ── */}
+      <PageHero
+        badge="Traçabilité & Conformité"
+        badgeIcon={Lock}
+        icon={ClipboardList}
+        title={t('audit.title')}
+        description={t('audit.subtitle')}
+        actions={
+          <PageHeroPrimaryButton onClick={() => setTab('export')} icon={Download}>
             {t('audit.exportForAudit')}
-          </button>
-        </div>
-      </div>
+          </PageHeroPrimaryButton>
+        }
+      />
 
       {/* ── Tabs ── */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -410,7 +493,7 @@ export default function AuditTrail() {
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 block">{t('audit.filterActionType')}</label>
-                    <select value={actionFilter} onChange={e => setActionFilter(e.target.value as any)} className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400">
+                    <select value={actionFilter} onChange={e => setActionFilter(e.target.value as ActionType | 'Tous')} className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400">
                       {ACTIONS.map(a => <option key={a}>{a}</option>)}
                     </select>
                   </div>
@@ -443,7 +526,7 @@ export default function AuditTrail() {
               <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-200" />
               <div className="space-y-2">
                 {filtered.map((event) => {
-                  const cfg = ACTION_CFG_STATIC[event.action];
+                  const cfg = getActionCfg(event.action);
                   const ActionIcon = cfg.icon;
                   const initials = userInitials(event.user);
                   const avatarColor = getUserColor[event.user] || 'bg-gray-400';
@@ -465,6 +548,14 @@ export default function AuditTrail() {
                             {event.attachments && event.attachments.length > 0 && (
                               <span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded-lg flex items-center gap-1">
                                 <Paperclip className="h-3 w-3" />{event.attachments.length}
+                              </span>
+                            )}
+                            {event.signatureHash && (
+                              <span
+                                className="text-xs bg-indigo-600 text-white px-2 py-1 rounded-lg flex items-center gap-1 font-semibold shadow-sm"
+                                title="Signature électronique SHA-256 (ISAE 3000 · CSRD Art. 29a)"
+                              >
+                                <Lock className="h-3 w-3" />Signée
                               </span>
                             )}
                           </div>
@@ -514,7 +605,7 @@ export default function AuditTrail() {
 
             <div className="space-y-4">
               {events.filter(e => e.action === 'UPDATE' || e.action === 'CALCULATE').map(event => {
-                const cfg = ACTION_CFG_STATIC[event.action];
+                const cfg = getActionCfg(event.action);
                 const ActionIcon = cfg.icon;
                 return (
                   <div key={event.id} className="bg-white rounded-2xl border border-gray-200 p-5">
@@ -643,9 +734,23 @@ export default function AuditTrail() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-sm text-gray-600">{doc.linkedEntity}</td>
+                      <td className="px-5 py-3 text-sm text-gray-600">
+                        <div>{doc.linkedEntity}</div>
+                        {doc.linkedIndicator && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <Tag className="h-3 w-3 flex-shrink-0" style={{ color: '#7c3aed' }} />
+                            <span className="text-xs font-semibold" style={{ color: '#7c3aed' }}>{doc.indicatorRef}</span>
+                          </div>
+                        )}
+                      </td>
                       <td className="px-5 py-3">
                         <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg">{doc.linkedModule}</span>
+                        {doc.linkedIndicator && (
+                          <div className="mt-1 text-xs px-2 py-0.5 rounded-lg inline-block truncate max-w-[140px]"
+                            style={{ backgroundColor: '#faf5ff', color: '#7c3aed' }}>
+                            {doc.linkedIndicator}
+                          </div>
+                        )}
                       </td>
                       <td className="px-5 py-3 text-sm text-gray-600">{doc.uploadedBy || <span className="text-amber-500 text-xs font-semibold">{t('audit.notUploaded')}</span>}</td>
                       <td className="px-5 py-3 text-center text-sm text-gray-500">{doc.uploadedAt}</td>
@@ -665,6 +770,12 @@ export default function AuditTrail() {
                           <button className="p-1.5 hover:bg-blue-50 rounded-lg transition-colors" title={t('common.download')}>
                             <Download className="h-3.5 w-3.5 text-blue-600" />
                           </button>
+                          <button
+                            className="p-1.5 hover:bg-violet-50 rounded-lg transition-colors"
+                            title="Lier à un indicateur"
+                            onClick={() => { setLinkingDocId(doc.id); setLinkIndicatorDraft(doc.indicatorRef ?? ''); setLinkIndicatorSearch(''); }}>
+                            <Link className="h-3.5 w-3.5" style={{ color: doc.linkedIndicator ? '#7c3aed' : '#9ca3af' }} />
+                          </button>
                           {doc.status === 'En attente' && (
                             <button className="p-1.5 hover:bg-amber-50 rounded-lg transition-colors" title={t('common.upload')}>
                               <Upload className="h-3.5 w-3.5 text-amber-600" />
@@ -679,6 +790,92 @@ export default function AuditTrail() {
             </div>
           </div>
         )}
+
+        {/* ── Evidence vault link-to-indicator modal ── */}
+        {linkingDocId && (() => {
+          const doc = uploadedDocs.find(d => d.id === linkingDocId);
+          return (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+                {/* Modal header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#faf5ff' }}>
+                      <Link className="h-4 w-4" style={{ color: '#7c3aed' }} />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900">Lier à un indicateur ESG</h3>
+                      <p className="text-xs text-gray-400 truncate max-w-[300px]">{doc?.name}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setLinkingDocId(null)} className="p-1.5 hover:bg-gray-100 rounded-lg">
+                    <X className="h-4 w-4 text-gray-500" />
+                  </button>
+                </div>
+                {/* Search */}
+                <div className="px-6 pt-4 pb-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      value={linkIndicatorSearch}
+                      onChange={e => setLinkIndicatorSearch(e.target.value)}
+                      placeholder="Rechercher un indicateur ESRS, GRI, ISSB…"
+                      className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2"
+                      style={{ '--tw-ring-color': '#7c3aed' } as CSSProperties}
+                      autoFocus
+                    />
+                  </div>
+                </div>
+                {/* Indicator list */}
+                <div className="px-6 pb-2 max-h-64 overflow-y-auto space-y-1">
+                  {filteredIndicatorOptions.map(opt => (
+                    <button key={opt.ref}
+                      onClick={() => setLinkIndicatorDraft(opt.ref)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors"
+                      style={linkIndicatorDraft === opt.ref
+                        ? { backgroundColor: '#faf5ff', border: '1px solid #ddd6fe' }
+                        : { backgroundColor: 'transparent', border: '1px solid transparent' }}>
+                      <div className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center"
+                        style={{ backgroundColor: linkIndicatorDraft === opt.ref ? '#7c3aed' : '#f3f4f6' }}>
+                        {linkIndicatorDraft === opt.ref && <Check className="h-3 w-3 text-white" />}
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold" style={{ color: '#7c3aed' }}>{opt.ref}</span>
+                        <span className="text-xs text-gray-600 ml-2">{opt.label}</span>
+                      </div>
+                    </button>
+                  ))}
+                  {filteredIndicatorOptions.length === 0 && (
+                    <p className="text-sm text-gray-400 text-center py-4">Aucun indicateur trouvé</p>
+                  )}
+                </div>
+                {/* Custom ref */}
+                <div className="px-6 pb-4">
+                  <p className="text-xs text-gray-400 mb-1">ou saisissez une référence libre :</p>
+                  <input
+                    value={linkIndicatorDraft.startsWith('ESRS') || linkIndicatorDraft.startsWith('GRI') || linkIndicatorDraft.startsWith('ISSB') ? '' : linkIndicatorDraft}
+                    onChange={e => setLinkIndicatorDraft(e.target.value)}
+                    placeholder="ex : ISO 14064 §4.2.3"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2"
+                    style={{ '--tw-ring-color': '#7c3aed' } as any}
+                  />
+                </div>
+                {/* Footer */}
+                <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100">
+                  <button onClick={() => setLinkingDocId(null)}
+                    className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">
+                    Annuler
+                  </button>
+                  <button onClick={applyIndicatorLink} disabled={!linkIndicatorDraft}
+                    className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-colors"
+                    style={{ backgroundColor: '#7c3aed' }}>
+                    Lier le document
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── Export & Certification ── */}
         {tab === 'export' && (

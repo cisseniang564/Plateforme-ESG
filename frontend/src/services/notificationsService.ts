@@ -9,6 +9,10 @@ export interface AppNotification {
   read: boolean;
   link: string;
   created_at: string;
+  /** Proactive notification category (deadline, missing_data, validation, anomaly, billing, system, invitation). */
+  category?: string;
+  /** Priority for proactive notifications: low | medium | high | urgent. */
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
 }
 
 export interface NotificationsResponse {

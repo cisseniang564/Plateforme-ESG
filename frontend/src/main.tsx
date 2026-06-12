@@ -6,11 +6,58 @@ import * as Sentry from '@sentry/react';
 import App from './App';
 import { store } from './store';
 import { initSentry } from './lib/sentry';
+import InstallPrompt from './components/pwa/InstallPrompt';
 import './index.css';
 import './i18n/config';
 
 // Initialize Sentry before everything else
 initSentry();
+
+// ─── Privacy-friendly analytics (Plausible or self-hosted Umami) ────────────
+// Activé uniquement si VITE_ANALYTICS_DOMAIN est défini.
+// Plausible / Umami / Pirsch sont compatibles RGPD : pas de cookies, pas de
+// fingerprinting, anonymisation des IPs côté serveur. Aucun consentement
+// utilisateur requis pour ce type d'analytics (CNIL Décision 2020-091).
+if (import.meta.env.PROD) {
+  const domain = import.meta.env.VITE_ANALYTICS_DOMAIN as string | undefined;
+  const host   = (import.meta.env.VITE_ANALYTICS_HOST as string | undefined) || 'https://plausible.io';
+  if (domain) {
+    const s = document.createElement('script');
+    s.defer = true;
+    s.setAttribute('data-domain', domain);
+    s.src = `${host.replace(/\/$/, '')}/js/script.js`;
+    document.head.appendChild(s);
+  }
+}
+
+// Register service worker (production only — Vite dev has HMR, SW would interfere)
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/sw.js')
+      .then((reg) => {
+        // When a new SW is found, force it to activate immediately and
+        // reload once it takes control — guarantees favicon / brand assets
+        // get refreshed for users with a previously installed PWA.
+        reg.addEventListener('updatefound', () => {
+          const installing = reg.installing;
+          if (!installing) return;
+          installing.addEventListener('statechange', () => {
+            if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+              installing.postMessage('SKIP_WAITING');
+            }
+          });
+        });
+        let reloadedOnce = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (reloadedOnce) return;
+          reloadedOnce = true;
+          window.location.reload();
+        });
+      })
+      .catch((err) => console.warn('SW registration failed:', err));
+  });
+}
 
 try {
   ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -53,6 +100,7 @@ try {
               error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
             }}
           />
+          <InstallPrompt />
         </Provider>
       </Sentry.ErrorBoundary>
     </React.StrictMode>

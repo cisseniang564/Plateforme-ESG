@@ -13,7 +13,7 @@ import {
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Difficulty = 'Facile' | 'Moyen' | 'Difficile';
 type ActionStatus = 'à_faire' | 'en_cours' | 'terminé';
-type TabId = 'overview' | 'actions' | 'scenarios' | 'trajectory';
+type TabId = 'overview' | 'actions' | 'scenarios' | 'trajectory' | 'offsets' | 'business_case';
 
 interface HistoricalPoint {
   year: number;
@@ -194,7 +194,7 @@ function TrajectoryChart({ planReduction, baseEmissions, trajectory, historicalD
         { label: tr('decarbonation.legendSbtiPath'), color: '#16a34a', dash: '', dot: false },
         { label: tr('decarbonation.legendCurrentPace'), color: '#f59e0b', dash: '4 3', dot: false },
         ...(planReduction > 0 ? [{ label: tr('decarbonation.legendWithPlan'), color: '#3b82f6', dash: '6 3', dot: false }] : []),
-        ...(historicalData.some(h => h.has_data) ? [{ label: 'Données réelles', color: '#8b5cf6', dash: '', dot: true }] : []),
+        ...(historicalData.some(h => h.has_data) ? [{ label: tr('decarb.legendRealData', 'Données réelles'), color: '#8b5cf6', dash: '', dot: true }] : []),
       ].map((l, i) => (
         <g key={i} transform={`translate(${PAD.l + i * 145}, ${H - 8})`}>
           {l.dot
@@ -288,7 +288,7 @@ function ActionCard({ action, onTogglePlan, onStatusChange }: {
       {/* Progress bar */}
       <div className="mb-3">
         <div className="flex justify-between text-xs text-gray-400 mb-1">
-          <span>Avancement</span>
+          <span>{tr('decarb.progress', 'Avancement')}</span>
           <span className="font-semibold">
             {action.status === 'terminé' ? '100%' : action.status === 'en_cours' ? '50%' : '0%'}
           </span>
@@ -407,7 +407,7 @@ export default function DecarbonationPlan() {
         saved_at: new Date().toISOString(),
       };
       api.post('/carbon/plan', payload)
-        .catch(() => toast.error('Impossible de sauvegarder le plan'))
+        .catch(() => toast.error(tr('decarb.savePlanError', 'Impossible de sauvegarder le plan')))
         .finally(() => setSaving(false));
     }, 1500);
   }, [planLoaded]);
@@ -473,15 +473,33 @@ export default function DecarbonationPlan() {
     })));
   };
 
+  // Carbon offsets state
+  const [offsets, setOffsets] = useState<Array<{ id: string; type: string; standard: string; volume: number; pricePerTon: number; vintage: number; description: string }>>([]);
+  const [showOffsetModal, setShowOffsetModal] = useState(false);
+  const [offsetForm, setOffsetForm] = useState({ type: 'avoidance', standard: 'VCS', volume: 0, pricePerTon: 15, vintage: new Date().getFullYear(), description: '' });
+
+  const totalOffsetVolume = offsets.reduce((s, o) => s + o.volume, 0);
+  const totalOffsetCost   = offsets.reduce((s, o) => s + o.volume * o.pricePerTon / 1000, 0);
+  const netEmissions      = Math.max(0, baseEmissions - totalOffsetVolume);
+
+  const addOffset = () => {
+    if (!offsetForm.volume) return;
+    setOffsets(prev => [...prev, { id: Date.now().toString(), ...offsetForm }]);
+    setOffsetForm({ type: 'avoidance', standard: 'VCS', volume: 0, pricePerTon: 15, vintage: new Date().getFullYear(), description: '' });
+    setShowOffsetModal(false);
+  };
+
   const tabs: { id: TabId; label: string }[] = [
-    { id: 'overview', label: tr('decarbonation.tabs.overview') },
-    { id: 'actions', label: `${tr('decarbonation.tabs.catalogue')} (${actions.length})` },
-    { id: 'scenarios', label: tr('decarbonation.tabs.scenarios') },
+    { id: 'overview',   label: tr('decarbonation.tabs.overview') },
+    { id: 'actions',    label: `${tr('decarbonation.tabs.catalogue')} (${actions.length})` },
+    { id: 'scenarios',  label: tr('decarbonation.tabs.scenarios') },
     { id: 'trajectory', label: tr('decarbonation.tabs.trajectory') },
+    { id: 'offsets',       label: tr('decarb.tabOffsets', 'Compensation carbone') },
+    { id: 'business_case', label: tr('decarb.tabBusinessCase', 'Business Case') },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
 
       {/* ── Hero gradient ─────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-800 via-emerald-700 to-teal-600 p-8 text-white shadow-xl">
@@ -501,11 +519,11 @@ export default function DecarbonationPlan() {
           <div className="flex items-center gap-2">
             {saving && (
               <span className="text-xs text-green-200 flex items-center gap-1">
-                <RefreshCw className="h-3 w-3 animate-spin" /> Sauvegarde…
+                <RefreshCw className="h-3 w-3 animate-spin" /> {tr('decarb.saving', 'Sauvegarde…')}
               </span>
             )}
             {!saving && planLoaded && planActions.length > 0 && (
-              <span className="text-xs text-green-200">✓ Plan sauvegardé</span>
+              <span className="text-xs text-green-200">{tr('decarb.planSaved', '✓ Plan sauvegardé')}</span>
             )}
             <button
               onClick={() => {
@@ -550,7 +568,7 @@ export default function DecarbonationPlan() {
             {hasRealData && (
               <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700">
                 <CheckCircle className="h-4 w-4 flex-shrink-0" />
-                <span>Émissions calculées depuis vos données réelles —
+                <span>{tr('decarb.realDataBanner', 'Émissions calculées depuis vos données réelles —')}
                   Scope 1 : <strong>{scope1.toLocaleString()} tCO₂e</strong> ·
                   Scope 2 : <strong>{scope2.toLocaleString()} tCO₂e</strong>
                   {scope3 > 0 ? <> · Scope 3 : <strong>{scope3.toLocaleString()} tCO₂e</strong></> : null}
@@ -560,15 +578,15 @@ export default function DecarbonationPlan() {
             {/* KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: tr('decarbonation.kpiBase2024'), value: `${(baseEmissions / 1000).toFixed(1)}k`, unit: 'tCO₂e', color: 'text-gray-900', bg: 'bg-white border-gray-200' },
-                { label: tr('decarbonation.kpiSbtiTarget'), value: `${(sbtiTarget2030 / 1000).toFixed(1)}k`, unit: 'tCO₂e (-42%)', color: 'text-green-700', bg: 'bg-green-50 border-green-200' },
-                { label: tr('decarbonation.kpiPlanReduction'), value: planReduction.toLocaleString(), unit: 'tCO₂e/an', color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
-                { label: tr('decarbonation.kpiTotalInvestment'), value: `${planCost}k`, unit: '€', color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
+                { label: tr('decarbonation.kpiBase2024'), value: `${(baseEmissions / 1000).toFixed(1)}k`, unit: 'tCO₂e', variant: 'kpi-card-amber' },
+                { label: tr('decarbonation.kpiSbtiTarget'), value: `${(sbtiTarget2030 / 1000).toFixed(1)}k`, unit: 'tCO₂e (−42%)', variant: 'kpi-card-green' },
+                { label: tr('decarbonation.kpiPlanReduction'), value: planReduction.toLocaleString(), unit: 'tCO₂e/an', variant: 'kpi-card-blue' },
+                { label: tr('decarbonation.kpiTotalInvestment'), value: `${planCost}k`, unit: '€ investis', variant: 'kpi-card-purple' },
               ].map((k, i) => (
-                <div key={i} className={`rounded-2xl border-2 ${k.bg} p-5`}>
-                  <div className={`text-3xl font-extrabold ${k.color}`}>{k.value}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{k.unit}</div>
-                  <div className="text-sm font-semibold text-gray-700 mt-2">{k.label}</div>
+                <div key={i} className={`kpi-card ${k.variant} p-5 cursor-default`}>
+                  <p className="stat-label mb-3">{k.label}</p>
+                  <p className="stat-value">{k.value}</p>
+                  <p className="text-xs text-gray-500 mt-1">{k.unit}</p>
                 </div>
               ))}
             </div>
@@ -623,9 +641,9 @@ export default function DecarbonationPlan() {
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                    <span className="text-xl">🎯</span> Engagement SBTi — Science Based Targets
+                    <span className="text-xl">🎯</span> {tr('decarb.sbtiEngagementTitle', 'Engagement SBTi — Science Based Targets')}
                   </h2>
-                  <p className="text-xs text-gray-400 mt-0.5">Suivez votre parcours de validation auprès de la Science Based Targets initiative</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{tr('decarb.sbtiEngagementSubtitle', 'Suivez votre parcours de validation auprès de la Science Based Targets initiative')}</p>
                 </div>
                 <a
                   href="https://sciencebasedtargets.org"
@@ -642,10 +660,10 @@ export default function DecarbonationPlan() {
                 <div className="absolute top-5 left-5 right-5 h-0.5 bg-gray-200" />
                 <div className="relative flex justify-between">
                   {([
-                    { key: 'not_committed', label: 'Non engagé',       desc: 'Étape initiale',              icon: '○' },
-                    { key: 'letter_sent',   label: 'Lettre d\'engagement', desc: 'Envoyée à SBTi',          icon: '📩' },
-                    { key: 'targets_set',   label: 'Cibles soumises',  desc: 'En cours de validation',      icon: '📋' },
-                    { key: 'validated',     label: 'Cibles validées',  desc: 'Approuvées par SBTi',         icon: '✅' },
+                    { key: 'not_committed', label: tr('decarb.sbtiStep1Label', 'Non engagé'),           desc: tr('decarb.sbtiStep1Desc', 'Étape initiale'),         icon: '1' },
+                    { key: 'letter_sent',   label: tr('decarb.sbtiStep2Label', "Lettre d'engagement"), desc: tr('decarb.sbtiStep2Desc', 'Envoyée à SBTi'),         icon: '2' },
+                    { key: 'targets_set',   label: tr('decarb.sbtiStep3Label', 'Cibles soumises'),      desc: tr('decarb.sbtiStep3Desc', 'En cours de validation'), icon: '3' },
+                    { key: 'validated',     label: tr('decarb.sbtiStep4Label', 'Cibles validées'),      desc: tr('decarb.sbtiStep4Desc', 'Approuvées par SBTi'),    icon: '4' },
                   ] as { key: SBTiStatus; label: string; desc: string; icon: string }[]).map((step, i) => {
                     const statuses: SBTiStatus[] = ['not_committed', 'letter_sent', 'targets_set', 'validated'];
                     const currentIdx = statuses.indexOf(sbtiStatus);
@@ -682,23 +700,33 @@ export default function DecarbonationPlan() {
                 sbtiStatus === 'letter_sent'   ? 'bg-amber-50 border border-amber-200 text-amber-800' :
                                                  'bg-gray-50 border border-gray-200 text-gray-600'
               }`}>
-                {sbtiStatus === 'validated'   && '✅ Félicitations — vos cibles sont validées par SBTi. Publiez-les dans votre rapport CSRD (ESRS E1-1) et sur votre site corporate.'}
-                {sbtiStatus === 'targets_set' && '📋 Cibles soumises à SBTi. La validation prend généralement 3 à 6 mois. Assurez-vous que vos plans d\'action couvrent la réduction requise.'}
-                {sbtiStatus === 'letter_sent' && '📩 Lettre d\'engagement reçue par SBTi. Vous avez 24 mois pour soumettre vos cibles chiffrées (Scope 1+2 obligatoire, Scope 3 si >40% des émissions).'}
-                {sbtiStatus === 'not_committed' && '💡 Votre entreprise n\'a pas encore soumis de lettre d\'engagement SBTi. Cliquez sur une étape pour mettre à jour votre statut.'}
+                {sbtiStatus === 'validated'   && tr('decarb.sbtiMsgValidated', 'Cibles validées par SBTi. Publiez-les dans votre rapport CSRD (ESRS E1-1) et sur votre site corporate.')}
+                {sbtiStatus === 'targets_set' && tr('decarb.sbtiMsgTargetsSet', "Cibles soumises à SBTi. La validation prend généralement 3 à 6 mois. Assurez-vous que vos plans d'action couvrent la réduction requise.")}
+                {sbtiStatus === 'letter_sent' && tr('decarb.sbtiMsgLetterSent', "Lettre d'engagement reçue par SBTi. Vous avez 24 mois pour soumettre vos cibles chiffrées (Scope 1+2 obligatoire, Scope 3 si >40% des émissions).")}
+                {sbtiStatus === 'not_committed' && tr('decarb.sbtiMsgNotCommitted', "Votre entreprise n'a pas encore soumis de lettre d'engagement SBTi. Cliquez sur une étape pour mettre à jour votre statut.")}
               </div>
+
+              {/* Generate official dossier button — wires the local SBTi state to the backend */}
+              <SBTiDossierButton
+                method={sbtiMethod}
+                netZeroYear={sbtiNetZeroYear}
+                baselineYear={new Date().getFullYear() - 1}
+                baselineEmissions={baseEmissions}
+                targetReductionPct={42}
+                onSubmitted={() => setSbtiStatus('targets_set')}
+              />
 
               {/* Methodology & targets */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Methodology selector */}
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Méthodologie SBTi</p>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{tr('decarb.sbtiMethodTitle', 'Méthodologie SBTi')}</p>
                   <div className="grid grid-cols-2 gap-2">
                     {([
-                      { key: '1.5C',  label: '1,5°C',          desc: 'Trajectoire ambitieuse (recommandée)', badge: 'bg-green-100 text-green-700' },
-                      { key: 'WB2C',  label: 'Well-Below 2°C',  desc: 'Trajectoire alignée 2°C',             badge: 'bg-blue-100 text-blue-700' },
-                      { key: 'FLAG',  label: 'FLAG',             desc: 'Forêts, terres & agriculture',        badge: 'bg-amber-100 text-amber-700' },
-                      { key: 'SDA',   label: 'SDA sectoriel',   desc: 'Allocation sectorielle',              badge: 'bg-purple-100 text-purple-700' },
+                      { key: '1.5C',  label: '1,5°C',          desc: tr('decarb.sbtiMethod1Desc', 'Trajectoire ambitieuse (recommandée)'), badge: 'bg-green-100 text-green-700' },
+                      { key: 'WB2C',  label: 'Well-Below 2°C',  desc: tr('decarb.sbtiMethod2Desc', 'Trajectoire alignée 2°C'),             badge: 'bg-blue-100 text-blue-700' },
+                      { key: 'FLAG',  label: 'FLAG',             desc: tr('decarb.sbtiMethod3Desc', 'Forêts, terres & agriculture'),        badge: 'bg-amber-100 text-amber-700' },
+                      { key: 'SDA',   label: 'SDA sectoriel',   desc: tr('decarb.sbtiMethod4Desc', 'Allocation sectorielle'),              badge: 'bg-purple-100 text-purple-700' },
                     ] as { key: SBTiMethod; label: string; desc: string; badge: string }[]).map(m => (
                       <button
                         key={m.key}
@@ -718,12 +746,12 @@ export default function DecarbonationPlan() {
 
                 {/* Targets summary */}
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Objectifs cibles</p>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{tr('decarb.sbtiTargetsTitle', 'Objectifs cibles')}</p>
                   <div className="space-y-3">
                     {/* Near-term 2030 */}
                     <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-semibold text-gray-700">Objectif court terme (2030)</span>
+                        <span className="text-xs font-semibold text-gray-700">{tr('decarb.sbtiShortTermObj', 'Objectif court terme (2030)')}</span>
                         <span className="text-xs font-bold text-green-700">
                           {sbtiMethod === '1.5C' ? '−42%' : sbtiMethod === 'WB2C' ? '−35%' : '−30%'} Scope 1+2
                         </span>
@@ -734,12 +762,12 @@ export default function DecarbonationPlan() {
                           style={{ width: `${Math.min(planPct, 100)}%` }}
                         />
                       </div>
-                      <p className="text-[10px] text-gray-400 mt-1">{planPct}% de l'objectif couvert par le plan actuel</p>
+                      <p className="text-[10px] text-gray-400 mt-1">{tr('decarb.sbtiShortTermCoverage', '{{pct}}% de l\'objectif couvert par le plan actuel', { pct: planPct })}</p>
                     </div>
                     {/* Long-term net-zero */}
                     <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-semibold text-gray-700">Objectif long terme (Net-Zéro)</span>
+                        <span className="text-xs font-semibold text-gray-700">{tr('decarb.sbtiLongTermObj', 'Objectif long terme (Net-Zéro)')}</span>
                         <div className="flex items-center gap-1">
                           <select
                             value={sbtiNetZeroYear}
@@ -753,7 +781,7 @@ export default function DecarbonationPlan() {
                         </div>
                       </div>
                       <p className="text-[10px] text-gray-500">
-                        Réduction de {sbtiMethod === '1.5C' ? '≥90%' : '≥90%'} des émissions Scope 1+2+3 + neutralisation du résiduel avec CDR permanent.
+                        {tr('decarb.sbtiLongTermDesc', 'Réduction de ≥90% des émissions Scope 1+2+3 + neutralisation du résiduel avec CDR permanent.')}
                       </p>
                     </div>
                   </div>
@@ -764,17 +792,17 @@ export default function DecarbonationPlan() {
               <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-6 text-sm">
                   <div>
-                    <span className="text-xs text-gray-400">Cible SBTi 2030</span>
+                    <span className="text-xs text-gray-400">{tr('decarb.sbtiTarget2030Label', 'Cible SBTi 2030')}</span>
                     <p className="font-bold text-gray-900">{(sbtiTarget2030 / 1000).toFixed(1)}k tCO₂e</p>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-400">Projeté 2030 (plan actuel)</span>
+                    <span className="text-xs text-gray-400">{tr('decarb.sbtiProjected2030', 'Projeté 2030 (plan actuel)')}</span>
                     <p className={`font-bold ${onTrack ? 'text-green-700' : 'text-red-600'}`}>{(projected2030 / 1000).toFixed(1)}k tCO₂e</p>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-400">Écart</span>
+                    <span className="text-xs text-gray-400">{tr('decarb.sbtiGap', 'Écart')}</span>
                     <p className={`font-bold ${onTrack ? 'text-green-700' : 'text-red-600'}`}>
-                      {onTrack ? '✓ Dans la cible' : `+${((projected2030 - sbtiTarget2030) / 1000).toFixed(1)}k à réduire`}
+                      {onTrack ? tr('decarb.sbtiOnTrack', '✓ Dans la cible') : tr('decarb.sbtiOffTrack', '+{{n}}k à réduire', { n: ((projected2030 - sbtiTarget2030) / 1000).toFixed(1) })}
                     </p>
                   </div>
                 </div>
@@ -784,10 +812,10 @@ export default function DecarbonationPlan() {
                   sbtiStatus === 'letter_sent' ? 'bg-amber-100 text-amber-700 border border-amber-300' :
                                                  'bg-gray-100 text-gray-500 border border-gray-300'
                 }`}>
-                  {sbtiStatus === 'validated'   ? '✅ SBTi Validé' :
-                   sbtiStatus === 'targets_set' ? '📋 En validation' :
-                   sbtiStatus === 'letter_sent' ? '📩 Engagé' :
-                                                  '○ Non soumis'}
+                  {sbtiStatus === 'validated'   ? tr('decarb.sbtiStatusValidated', 'SBTi validé') :
+                   sbtiStatus === 'targets_set' ? tr('decarb.sbtiStatusInValidation', 'En validation') :
+                   sbtiStatus === 'letter_sent' ? tr('decarb.sbtiStatusCommitted', 'Engagé') :
+                                                  tr('decarb.sbtiStatusNotSubmitted', 'Non soumis')}
                 </span>
               </div>
             </div>
@@ -802,28 +830,28 @@ export default function DecarbonationPlan() {
                 <div className="bg-white rounded-2xl border border-gray-200 p-6">
                   <h2 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-green-500" />
-                    Progression du plan
+                    {tr('decarb.planProgressTitle', 'Progression du plan')}
                   </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
                     <div className="bg-green-50 rounded-xl p-4 text-center border border-green-100">
                       <p className="text-3xl font-bold text-green-700">{completionPct}%</p>
-                      <p className="text-xs text-green-600 mt-1 font-medium">Actions terminées</p>
+                      <p className="text-xs text-green-600 mt-1 font-medium">{tr('decarb.actionsDone', 'Actions terminées')}</p>
                       <p className="text-xs text-gray-400">{planCompleted.length}/{planActions.length} actions</p>
                     </div>
                     <div className="bg-emerald-50 rounded-xl p-4 text-center border border-emerald-100">
                       <p className="text-3xl font-bold text-emerald-700">{achievedReduction.toLocaleString()}</p>
-                      <p className="text-xs text-emerald-600 mt-1 font-medium">tCO₂e économisées</p>
-                      <p className="text-xs text-gray-400">réductions réalisées</p>
+                      <p className="text-xs text-emerald-600 mt-1 font-medium">{tr('decarb.tco2eSaved', 'tCO₂e économisées')}</p>
+                      <p className="text-xs text-gray-400">{tr('decarb.reductionsDone', 'réductions réalisées')}</p>
                     </div>
                     <div className="bg-blue-50 rounded-xl p-4 text-center border border-blue-100">
                       <p className="text-3xl font-bold text-blue-700">{(planReduction - achievedReduction).toLocaleString()}</p>
-                      <p className="text-xs text-blue-600 mt-1 font-medium">tCO₂e restantes</p>
-                      <p className="text-xs text-gray-400">{planInProgress.length} en cours</p>
+                      <p className="text-xs text-blue-600 mt-1 font-medium">{tr('decarb.tco2eRemaining', 'tCO₂e restantes')}</p>
+                      <p className="text-xs text-gray-400">{planInProgress.length} {tr('decarb.inProgress', 'en cours')}</p>
                     </div>
                   </div>
                   <div>
                     <div className="flex justify-between text-xs text-gray-500 mb-1.5">
-                      <span>Avancement global du plan</span>
+                      <span>{tr('decarb.globalProgress', 'Avancement global du plan')}</span>
                       <span className="font-bold text-gray-700">{completionPct}%</span>
                     </div>
                     <div className="h-3 bg-gray-100 rounded-full overflow-hidden flex">
@@ -831,9 +859,9 @@ export default function DecarbonationPlan() {
                       <div className="h-full bg-blue-300 transition-all duration-700" style={{ width: `${Math.round((planInProgress.length / planActions.length) * 100)}%` }} />
                     </div>
                     <div className="flex gap-4 mt-2 text-xs text-gray-400">
-                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />Terminé</span>
-                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-300 inline-block" />En cours</span>
-                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-200 inline-block" />À faire</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />{tr('decarb.statusDone', 'Terminé')}</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-300 inline-block" />{tr('decarb.statusInProgress', 'En cours')}</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-200 inline-block" />{tr('decarb.statusTodo', 'À faire')}</span>
                     </div>
                   </div>
                 </div>
@@ -883,6 +911,14 @@ export default function DecarbonationPlan() {
         {/* ── Actions catalog tab ── */}
         {tab === 'actions' && (
           <div className="space-y-6">
+            {/* Disclaimer — valeurs de référence */}
+            <div className="flex items-start gap-3 px-4 py-3 rounded-xl border" style={{ background: '#fffbeb', borderColor: '#fde68a' }}>
+              <span className="text-base mt-0.5">ℹ️</span>
+              <p className="text-xs text-amber-800 leading-relaxed">
+                <strong>{tr('decarb.indicativeTitle', 'Valeurs indicatives')}</strong> — {tr('decarb.indicativeDesc', 'Les impacts (tCO₂e/an), coûts et délais de retour proviennent de références sectorielles publiques (ADEME, IEA, GHG Protocol). Ajustez-les selon vos données réelles avant de les intégrer à votre plan officiel.')}
+              </p>
+            </div>
+
             {/* Summary bar */}
             {planActions.length > 0 && (
               <div className="flex items-center gap-4 p-4 bg-green-50 border-2 border-green-200 rounded-2xl flex-wrap">
@@ -989,6 +1025,102 @@ export default function DecarbonationPlan() {
               <TrajectoryChart planReduction={planReduction} baseEmissions={baseEmissions} trajectory={trajectory} historicalData={historicalData} />
             </div>
 
+            {/* ── IPCC Physical Climate Scenarios (TCFD-aligned) ── */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">{tr('decarb.tcfdTitle', 'Analyse de scénarios climatiques — TCFD')}</h2>
+                  <p className="text-sm text-gray-500 mt-0.5">{tr('decarb.tcfdSubtitle', 'Risques physiques & de transition selon les trajectoires IPCC AR6 · Conforme TCFD/IFRS S2')}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 border border-blue-200 text-blue-700">IPCC AR6</span>
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 border border-indigo-200 text-indigo-700">IFRS S2</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                {[
+                  {
+                    label: 'Scénario 1,5°C',
+                    subtitle: 'SSP1-1.9 — Transition rapide',
+                    horizon2030: { physicalRisk: 'Faible', transitionRisk: 'Élevé', capex: baseEmissions * 0.12 },
+                    horizon2050: { physicalRisk: 'Modéré', transitionRisk: 'Très élevé', capex: baseEmissions * 0.45 },
+                    color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-300',
+                    desc: 'Neutralité carbone avant 2050. Forte pression réglementaire (taxe carbone >150€/t d\'ici 2035). Actifs carbone-intensifs stranded.',
+                    risks: ['Taxe carbone +150€/t d\'ici 2035', 'Réglementation CSRD/SFDR contraignante', 'Dépréciation actifs fossiles', 'Compétitivité produits bas-carbone'],
+                    opportunities: ['Marchés verts ×3 d\'ici 2030', 'Green bonds & financement ESG', 'Avantage concurrentiel SBTi'],
+                  },
+                  {
+                    label: 'Scénario 2°C',
+                    subtitle: 'SSP2-4.5 — Transition modérée',
+                    horizon2030: { physicalRisk: 'Modéré', transitionRisk: 'Modéré', capex: baseEmissions * 0.07 },
+                    horizon2050: { physicalRisk: 'Élevé', transitionRisk: 'Modéré', capex: baseEmissions * 0.28 },
+                    color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-300',
+                    desc: 'Réchauffement de 2°C en 2100. Politiques climatiques progressives. Risques physiques croissants (inondations, canicules).',
+                    risks: ['Interruptions opérationnelles (canicules)', 'Sinistres assurance +40%', 'Stress hydrique sur chaîne d\'approvisionnement', 'Taxe carbone ~80€/t'],
+                    opportunities: ['Efficacité énergétique rentable', 'Adaptation produits & services'],
+                  },
+                  {
+                    label: 'Scénario 3°C+ / BAU',
+                    subtitle: 'SSP5-8.5 — Statu quo',
+                    horizon2030: { physicalRisk: 'Modéré', transitionRisk: 'Faible', capex: baseEmissions * 0.02 },
+                    horizon2050: { physicalRisk: 'Très élevé', transitionRisk: 'Faible', capex: baseEmissions * 0.85 },
+                    color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-300',
+                    desc: 'Aucune action climatique significative. +3°C à +4°C en 2100. Dommages physiques catastrophiques, risques systémiques.',
+                    risks: ['Événements météo extrêmes +300%', 'Montée des eaux (actifs côtiers)', 'Disruption supply chain globale', 'Inassurabilité de certains actifs'],
+                    opportunities: ['Marché de l\'adaptation climatique'],
+                  },
+                ].map(sc => (
+                  <div key={sc.label} className={`rounded-2xl border-2 p-5 ${sc.bg} ${sc.border}`}>
+                    <div className="mb-3">
+                      <div className={`text-base font-bold ${sc.color}`}>{sc.label}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{sc.subtitle}</div>
+                    </div>
+                    <p className="text-xs text-gray-700 mb-4 leading-relaxed">{sc.desc}</p>
+
+                    <div className="grid grid-cols-2 gap-2 mb-4">
+                      <div className="bg-white/70 rounded-lg p-2 text-center">
+                        <div className="text-xs text-gray-500 mb-1">{tr('decarb.tcfdPhysRisk2030', 'Risque physique 2030')}</div>
+                        <div className={`text-xs font-bold ${sc.color}`}>{sc.horizon2030.physicalRisk}</div>
+                      </div>
+                      <div className="bg-white/70 rounded-lg p-2 text-center">
+                        <div className="text-xs text-gray-500 mb-1">{tr('decarb.tcfdTransRisk2030', 'Risque transition 2030')}</div>
+                        <div className={`text-xs font-bold ${sc.color}`}>{sc.horizon2030.transitionRisk}</div>
+                      </div>
+                      <div className="bg-white/70 rounded-lg p-2 text-center">
+                        <div className="text-xs text-gray-500 mb-1">{tr('decarb.tcfdCapex2050', 'Investissement adaptation 2050')}</div>
+                        <div className={`text-sm font-extrabold ${sc.color}`}>~{Math.round(sc.horizon2050.capex / 1000)}M€</div>
+                      </div>
+                      <div className="bg-white/70 rounded-lg p-2 text-center">
+                        <div className="text-xs text-gray-500 mb-1">{tr('decarb.tcfdPhysRisk2050', 'Risque physique 2050')}</div>
+                        <div className={`text-xs font-bold ${sc.color}`}>{sc.horizon2050.physicalRisk}</div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div>
+                        <div className="text-xs font-semibold text-gray-600 mb-1">{tr('decarb.tcfdKeyRisks', '⚠ Risques clés')}</div>
+                        <ul className="space-y-0.5">
+                          {sc.risks.slice(0,3).map(r => <li key={r} className="text-xs text-gray-600">• {r}</li>)}
+                        </ul>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-gray-600 mb-1">{tr('decarb.tcfdOpportunities', '✅ Opportunités')}</div>
+                        <ul className="space-y-0.5">
+                          {sc.opportunities.map(o => <li key={o} className="text-xs text-gray-600">• {o}</li>)}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-700">
+                <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <span>{tr('decarb.scenarioSources', 'Sources : IPCC AR6 (2021–2023), TCFD Guidance (2022), IFRS S2 Climate Disclosures (2023). Les estimations financières sont calculées proportionnellement à votre empreinte carbone ({{n}} tCO₂e) et sont indicatives — adaptez-les à votre secteur.', { n: baseEmissions.toLocaleString() })}</span>
+              </div>
+            </div>
+
             {/* Impact matrix */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4">{tr('decarbonation.matrixTitle')}</h2>
@@ -1092,18 +1224,18 @@ export default function DecarbonationPlan() {
               <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-purple-500" />
-                  <h2 className="text-lg font-bold text-gray-900">Historique réel des émissions</h2>
-                  <span className="ml-auto text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">Source : vos données</span>
+                  <h2 className="text-lg font-bold text-gray-900">{tr('decarb.historyTitle', 'Historique réel des émissions')}</h2>
+                  <span className="ml-auto text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">{tr('decarb.historySource', 'Source : vos données')}</span>
                 </div>
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
-                      <th className="px-6 py-3 text-left">Année</th>
+                      <th className="px-6 py-3 text-left">{tr('decarb.histYear', 'Année')}</th>
                       <th className="px-6 py-3 text-right">Scope 1</th>
                       <th className="px-6 py-3 text-right">Scope 2</th>
                       <th className="px-6 py-3 text-right">Scope 3</th>
-                      <th className="px-6 py-3 text-right font-bold">Total</th>
-                      <th className="px-6 py-3 text-right">Évolution</th>
+                      <th className="px-6 py-3 text-right font-bold">{tr('decarb.histTotal', 'Total')}</th>
+                      <th className="px-6 py-3 text-right">{tr('decarb.histEvolution', 'Évolution')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -1116,7 +1248,7 @@ export default function DecarbonationPlan() {
                       return (
                         <tr key={h.year} className={h.year === new Date().getFullYear() ? 'bg-purple-50' : ''}>
                           <td className="px-6 py-3 font-bold text-gray-900">{h.year}
-                            {h.year === new Date().getFullYear() && <span className="ml-2 text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full">En cours</span>}
+                            {h.year === new Date().getFullYear() && <span className="ml-2 text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full">{tr('decarb.yearInProgress', 'En cours')}</span>}
                           </td>
                           <td className="px-6 py-3 text-right text-gray-700">{h.scope1 > 0 ? `${h.scope1.toLocaleString()} t` : '—'}</td>
                           <td className="px-6 py-3 text-right text-gray-700">{h.scope2 > 0 ? `${h.scope2.toLocaleString()} t` : '—'}</td>
@@ -1144,14 +1276,584 @@ export default function DecarbonationPlan() {
                 {tr('decarbonation.trajectoryInfoBox')}
                 {!historicalData.some(h => h.has_data && h.total_tco2e > 0) && (
                   <span className="block mt-1 text-xs text-blue-500">
-                    💡 Aucune donnée historique trouvée. Importez vos données via <strong>Saisie de données</strong> pour voir l'évolution réelle de vos émissions.
+                    {tr('decarb.noHistoricalData', "💡 Aucune donnée historique trouvée. Importez vos données via Saisie de données pour voir l'évolution réelle de vos émissions.")}
                   </span>
                 )}
               </div>
             </div>
           </div>
         )}
+
+        {/* ── Carbon Offsets Tab ── */}
+        {tab === 'offsets' && (
+          <div className="space-y-6">
+            {/* Hero stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { label: tr('decarb.grossEmissions', 'Émissions brutes'),     value: `${baseEmissions.toLocaleString()} tCO₂e`,        color: 'text-red-600',   bg: 'bg-red-50',   border: 'border-red-200',   icon: '' },
+                { label: tr('decarb.offsetBought', 'Compensation achetée'), value: `${totalOffsetVolume.toLocaleString()} tCO₂e`,    color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200', icon: '' },
+                { label: tr('decarb.netEmissions', 'Émissions nettes'),     value: `${netEmissions.toLocaleString()} tCO₂e`,         color: netEmissions === 0 ? 'text-green-700' : 'text-gray-900', bg: netEmissions === 0 ? 'bg-green-50' : 'bg-gray-50', border: netEmissions === 0 ? 'border-green-200' : 'border-gray-200', icon: '' },
+              ].map(k => (
+                <div key={k.label} className={`rounded-2xl border-2 p-6 ${k.bg} ${k.border}`}>
+                  <div className="text-2xl mb-1">{k.icon}</div>
+                  <div className={`text-2xl font-extrabold ${k.color}`}>{k.value}</div>
+                  <div className="text-sm font-medium text-gray-600 mt-1">{k.label}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-start gap-3 px-4 py-3 rounded-xl border" style={{ background: '#fffbeb', borderColor: '#fde68a' }}>
+              <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-800 leading-relaxed">
+                <strong>{tr('decarb.sbtiNoteTitle', 'Note SBTi')}</strong> — {tr('decarb.sbtiNoteDesc', "La compensation carbone volontaire ne peut pas compter pour les objectifs SBTi Scope 1+2+3. Elle complémente la réduction pour neutraliser les émissions résiduelles. Source : SBTi Corporate Standard (2023).")}
+              </p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">{tr('decarb.offsetPortfolioTitle', 'Portefeuille de crédits carbone')}</h2>
+                  <p className="text-sm text-gray-500 mt-0.5">{tr('decarb.offsetPortfolioSub', 'VCS · Gold Standard · CDR certifié')}</p>
+                </div>
+                <button onClick={() => setShowOffsetModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm"
+                  style={{ background: 'linear-gradient(135deg,#059669,#10b981)' }}>
+                  <Plus className="h-4 w-4" /> {tr('decarb.addCredits', 'Ajouter des crédits')}
+                </button>
+              </div>
+              {offsets.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                  <span className="text-4xl mb-3">♻️</span>
+                  <p className="text-sm font-medium text-gray-600">{tr('decarb.noOffset', 'Aucun crédit carbone enregistré')}</p>
+                  <p className="text-xs text-gray-400 mt-1 max-w-xs text-center">{tr('decarb.noOffsetDesc', 'Ajoutez vos achats VCS, Gold Standard ou projets CDR pour calculer vos émissions nettes.')}</p>
+                </div>
+              ) : (
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left">{tr('decarb.offsetColType', 'Type')}</th>
+                      <th className="px-6 py-3 text-left">{tr('decarb.offsetColStandard', 'Standard')}</th>
+                      <th className="px-6 py-3 text-right">{tr('decarb.offsetColVolume', 'Volume (tCO₂e)')}</th>
+                      <th className="px-6 py-3 text-right">{tr('decarb.offsetColPrice', 'Prix/t')}</th>
+                      <th className="px-6 py-3 text-right">{tr('decarb.offsetColTotal', 'Coût total')}</th>
+                      <th className="px-6 py-3 text-left">{tr('decarb.offsetColVintage', 'Millésime')}</th>
+                      <th className="px-6 py-3"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {offsets.map(o => (
+                      <tr key={o.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-3">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${o.type === 'avoidance' ? 'bg-blue-50 text-blue-700 border border-blue-200' : o.type === 'removal' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-purple-50 text-purple-700 border border-purple-200'}`}>
+                            {o.type === 'avoidance' ? tr('decarb.offsetTypeAvoidance', 'Évitement') : o.type === 'removal' ? tr('decarb.offsetTypeRemoval', 'Retrait (CDR)') : tr('decarb.offsetTypeEngineered', 'Ingénierie')}
+                          </span>
+                        </td>
+                        <td className="px-6 py-3 text-sm font-semibold text-gray-700">{o.standard}</td>
+                        <td className="px-6 py-3 text-right font-bold text-green-700">{o.volume.toLocaleString()}</td>
+                        <td className="px-6 py-3 text-right text-gray-600">{o.pricePerTon}€</td>
+                        <td className="px-6 py-3 text-right font-semibold">{(o.volume * o.pricePerTon / 1000).toFixed(1)}k€</td>
+                        <td className="px-6 py-3 text-sm text-gray-500">{o.vintage}</td>
+                        <td className="px-6 py-3">
+                          <button onClick={() => setOffsets(prev => prev.filter(x => x.id !== o.id))} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                            <Minus className="h-3.5 w-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  {offsets.length > 0 && (
+                    <tfoot className="bg-gray-50 border-t-2 border-gray-200">
+                      <tr>
+                        <td colSpan={2} className="px-6 py-3 text-sm font-bold text-gray-700">{tr('decarb.offsetTotal', 'Total')}</td>
+                        <td className="px-6 py-3 text-right font-extrabold text-green-700">{totalOffsetVolume.toLocaleString()}</td>
+                        <td></td>
+                        <td className="px-6 py-3 text-right font-extrabold">{totalOffsetCost.toFixed(1)}k€</td>
+                        <td colSpan={2}></td>
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+              )}
+            </div>
+
+            {/* CDR reference */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-2">{tr('decarb.cdrTitle', 'Référentiel CDR — Technologies de retrait carbone')}</h2>
+              <p className="text-sm text-gray-500 mb-4">{tr('decarb.cdrSubtitle', 'Prix indicatifs 2024–2025 · Source : CDR.fyi, Oxford Offsetting Principles')}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {[
+                  { name: 'Biochar (BECCS)',         price: '80–200€/t',    permanence: '100+ ans',     maturity: 'Disponible', color: 'text-green-700 bg-green-50 border-green-200' },
+                  { name: 'Forêts & sols (NBS)',     price: '10–30€/t',     permanence: '20–50 ans',    maturity: 'Disponible', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
+                  { name: 'Direct Air Capture (DAC)',price: '400–1000€/t',  permanence: '1000+ ans',    maturity: 'Scale-up',   color: 'text-blue-700 bg-blue-50 border-blue-200' },
+                  { name: 'Enhanced Weathering',     price: '150–400€/t',   permanence: '10 000+ ans',  maturity: 'Pilote',     color: 'text-purple-700 bg-purple-50 border-purple-200' },
+                ].map(cdr => (
+                  <div key={cdr.name} className={`rounded-xl border p-4 ${cdr.color}`}>
+                    <div className="font-semibold text-sm mb-2">{cdr.name}</div>
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div><div className="text-gray-500">{tr('decarb.cdrPrice', 'Prix')}</div><div className="font-bold">{cdr.price}</div></div>
+                      <div><div className="text-gray-500">{tr('decarb.cdrPermanence', 'Permanence')}</div><div className="font-bold">{cdr.permanence}</div></div>
+                      <div><div className="text-gray-500">{tr('decarb.cdrMaturity', 'Maturité')}</div><div className="font-bold">{cdr.maturity}</div></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Business Case Tab ── */}
+        {tab === 'business_case' && (() => {
+          const totalInvestment = planActions.reduce((s, a) => s + a.cost, 0);
+          const totalCO2Savings = planActions.reduce((s, a) => s + a.impact, 0);
+          const avgPayback = planActions.length > 0
+            ? Math.round(planActions.reduce((s, a) => s + a.roi, 0) / planActions.length)
+            : 0;
+          const carbonTaxSavings = Math.round(totalCO2Savings * 50);
+          const reductionPercent = baseEmissions > 0 ? Math.round((totalCO2Savings / baseEmissions) * 100) : 0;
+          const nbActions = planActions.length;
+
+          const handlePDFExport = async () => {
+            try {
+              const { default: jsPDF } = await import('jspdf');
+              const { default: autoTable } = await import('jspdf-autotable');
+              const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+              const pageW = 210;
+              const dateStr = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+              doc.setFillColor(5, 46, 22);
+              doc.rect(0, 0, pageW, 28, 'F');
+              doc.setFillColor(22, 163, 74);
+              doc.rect(0, 28, pageW, 2, 'F');
+              doc.setFont('helvetica', 'bold');
+              doc.setFontSize(16);
+              doc.setTextColor(255, 255, 255);
+              doc.text('Business Case — Plan de Décarbonation', 12, 12);
+              doc.setFontSize(9);
+              doc.setFont('helvetica', 'normal');
+              doc.text(`${nbActions} action${nbActions !== 1 ? 's' : ''} sélectionnée${nbActions !== 1 ? 's' : ''}  ·  Généré le ${dateStr}`, 12, 22);
+
+              let y = 38;
+
+              autoTable(doc, {
+                startY: y,
+                margin: { left: 12, right: 12 },
+                head: [['Indicateur', 'Valeur']],
+                body: [
+                  ['Investissement total', `${totalInvestment} k€`],
+                  ['Réduction CO₂', `${totalCO2Savings.toLocaleString('fr-FR')} tCO₂e/an`],
+                  ['Réduction vs empreinte totale', `${reductionPercent}%`],
+                  ['ROI moyen', avgPayback >= 12 ? `${Math.round(avgPayback / 12)} an${Math.round(avgPayback / 12) > 1 ? 's' : ''}` : `${avgPayback} mois`],
+                  ['Économie taxe carbone (EU ETS 50€/t)', `${carbonTaxSavings.toLocaleString('fr-FR')} €/an`],
+                ],
+                headStyles: { fillColor: [22, 163, 74], textColor: [255, 255, 255], fontSize: 9, fontStyle: 'bold' },
+                bodyStyles: { fontSize: 9 },
+                columnStyles: { 0: { cellWidth: 120 }, 1: { halign: 'right' as const, fontStyle: 'bold' as const } },
+                alternateRowStyles: { fillColor: [240, 253, 244] },
+                theme: 'grid',
+              });
+              y = (doc as any).lastAutoTable.finalY + 10;
+
+              if (nbActions > 0) {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.setTextColor(22, 163, 74);
+                doc.text('Détail des actions du plan', 12, y);
+                y += 4;
+                autoTable(doc, {
+                  startY: y,
+                  margin: { left: 12, right: 12 },
+                  head: [['Action', 'Scope', 'Coût', 'Réduction CO₂', 'ROI', 'Priorité']],
+                  body: planActions.map(a => [
+                    `${a.title}\n${a.category}`,
+                    a.scope,
+                    `${a.cost} k€`,
+                    `${a.impact.toLocaleString('fr-FR')} tCO₂e`,
+                    a.roi < 12 ? `${a.roi} mois` : `${Math.round(a.roi / 12)} ans`,
+                    a.difficulty,
+                  ]),
+                  headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold' },
+                  bodyStyles: { fontSize: 8 },
+                  columnStyles: {
+                    0: { cellWidth: 60 },
+                    1: { cellWidth: 22, halign: 'center' as const },
+                    2: { cellWidth: 24, halign: 'right' as const },
+                    3: { cellWidth: 32, halign: 'right' as const },
+                    4: { cellWidth: 22, halign: 'center' as const },
+                    5: { cellWidth: 18, halign: 'center' as const },
+                  },
+                  alternateRowStyles: { fillColor: [248, 250, 252] },
+                  theme: 'grid',
+                  didParseCell: (data: any) => {
+                    if (data.column.index === 5 && data.section === 'body') {
+                      const val = String(data.cell.raw);
+                      if (val === 'Facile') data.cell.styles.textColor = [22, 163, 74];
+                      else if (val === 'Moyen') data.cell.styles.textColor = [217, 119, 6];
+                      else data.cell.styles.textColor = [220, 38, 38];
+                    }
+                  },
+                });
+                y = (doc as any).lastAutoTable.finalY + 10;
+
+                if (y > 240) { doc.addPage(); y = 20; }
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.setTextColor(59, 130, 246);
+                doc.text('Recommandation de financement', 12, y);
+                y += 4;
+                autoTable(doc, {
+                  startY: y,
+                  margin: { left: 12, right: 12 },
+                  head: [['Source', 'Détail']],
+                  body: [
+                    ['Financement bancaire (crédit vert BPI)', `Couvre 70% — Part à financer : ${Math.round(totalInvestment * 0.3)} k€`],
+                    ["CEE — Certificats d'Économies d'Énergie", `Bonus estimé : ${Math.round(totalInvestment * 0.15)} k€`],
+                    ["Crédit d'impôt & suramortissement fiscal", 'Certains investissements déductibles à 140%'],
+                  ],
+                  headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold' },
+                  bodyStyles: { fontSize: 8 },
+                  alternateRowStyles: { fillColor: [239, 246, 255] },
+                  theme: 'grid',
+                });
+              }
+
+              const totalPages = doc.getNumberOfPages();
+              for (let i = 1; i <= totalPages; i++) {
+                doc.setPage(i);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7);
+                doc.setTextColor(150, 150, 150);
+                doc.text(`Page ${i} / ${totalPages}  ·  Business Case Décarbonation  ·  ESGFlow`, pageW / 2, 292, { align: 'center' });
+              }
+
+              doc.save(`BusinessCase_Decarbonation_${new Date().getFullYear()}.pdf`);
+              toast.success(tr('decarb.pdfSuccess', 'PDF Business Case généré et téléchargé'));
+            } catch (err) {
+              console.error(err);
+              toast.error(tr('decarb.pdfError', 'Erreur lors de la génération du PDF'));
+            }
+          };
+
+          return (
+            <div className="space-y-6">
+              <style>{`@media print { .no-print { display: none !important; } }`}</style>
+
+              {/* Header */}
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">{tr('decarb.bcTitle', 'Business Case CFO')}</h2>
+                  <p className="text-sm text-gray-500 mt-0.5">{tr('decarb.bcSubtitle', 'Synthèse financière du plan de décarbonation — {{n}} action{{s}} sélectionnée{{s}}', { n: nbActions, s: nbActions !== 1 ? 's' : '' })}</p>
+                </div>
+                <button
+                  onClick={handlePDFExport}
+                  className="no-print bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-colors"
+                >
+                  <Download className="h-4 w-4" />
+                  {tr('decarb.exportPdf', 'Exporter en PDF')}
+                </button>
+              </div>
+
+              {/* Section 1 — Résumé exécutif */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                <h3 className="text-base font-bold text-gray-900 mb-4">{tr('decarb.bcExecSummary', 'Résumé exécutif')}</h3>
+                {nbActions === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                    <span className="text-4xl mb-3">💼</span>
+                    <p className="text-sm font-medium text-gray-600">{tr('decarb.bcNoActions', 'Aucune action sélectionnée dans le plan')}</p>
+                    <p className="text-xs text-gray-400 mt-1 max-w-xs text-center">{tr('decarb.bcNoActionsHint', "Ajoutez des actions depuis l'onglet Actions pour générer votre Business Case.")}</p>
+                    <button
+                      onClick={() => setTab('actions')}
+                      className="mt-4 flex items-center gap-1 text-sm text-blue-600 hover:underline"
+                    >
+                      {tr('decarb.bcGoToActions', "Aller au catalogue d'actions")} <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="rounded-2xl border-2 border-blue-200 bg-blue-50 p-5">
+                      <div className="text-3xl font-extrabold text-blue-700">{totalInvestment} k€</div>
+                      <div className="text-sm font-semibold text-gray-700 mt-2">{tr('decarb.bcTotalInvestment', 'Investissement total')}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{tr('decarb.bcActionsInPlan', '{{n}} action{{s}} dans le plan', { n: nbActions, s: nbActions !== 1 ? 's' : '' })}</div>
+                    </div>
+                    <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-5">
+                      <div className="text-3xl font-extrabold text-green-700">{totalCO2Savings.toLocaleString()} tCO₂e/an</div>
+                      <div className="text-sm font-semibold text-gray-700 mt-2">{tr('decarb.bcCO2Reduction', 'Réduction CO₂')}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{tr('decarb.bcFootprintPct', "{{pct}}% de l'empreinte totale", { pct: reductionPercent })}</div>
+                    </div>
+                    <div className="rounded-2xl border-2 border-amber-200 bg-amber-50 p-5">
+                      <div className="text-3xl font-extrabold text-amber-700">{avgPayback} mois</div>
+                      <div className="text-sm font-semibold text-gray-700 mt-2">{tr('decarb.bcAvgROI', 'Retour sur investissement moyen')}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{avgPayback >= 12 ? tr('decarb.bcROIYears', '{{n}} an{{s}}', { n: Math.round(avgPayback / 12), s: Math.round(avgPayback / 12) > 1 ? 's' : '' }) : tr('decarb.bcROIUnderYear', "Moins d'un an")}</div>
+                    </div>
+                    <div className="rounded-2xl border-2 border-violet-200 bg-violet-50 p-5">
+                      <div className="text-3xl font-extrabold text-violet-700">{carbonTaxSavings.toLocaleString()} €/an</div>
+                      <div className="text-sm font-semibold text-gray-700 mt-2">{tr('decarb.bcCarbonTaxSaving', 'Économie taxe carbone')}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{tr('decarb.bcEtsPrice', 'au prix EU ETS 50€/t')}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Section 2 — Détail des actions */}
+              {nbActions > 0 && (
+                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-gray-100">
+                    <h3 className="text-base font-bold text-gray-900">{tr('decarb.bcDetailTitle', 'Détail des actions du plan')}</h3>
+                  </div>
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left">{tr('decarb.bcColAction', 'Action')}</th>
+                        <th className="px-6 py-3 text-left">{tr('decarb.bcColScope', 'Scope')}</th>
+                        <th className="px-6 py-3 text-right">{tr('decarb.bcColInvestment', 'Investissement')}</th>
+                        <th className="px-6 py-3 text-right">{tr('decarb.bcColCO2', 'Réduction CO₂')}</th>
+                        <th className="px-6 py-3 text-right">ROI</th>
+                        <th className="px-6 py-3 text-left">{tr('decarb.bcColPriority', 'Priorité')}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {planActions.map(a => (
+                        <tr key={a.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-3">
+                            <div className="text-sm font-semibold text-gray-900">{a.title}</div>
+                            <div className="text-xs text-gray-400">{a.category}</div>
+                          </td>
+                          <td className="px-6 py-3">
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium">{a.scope}</span>
+                          </td>
+                          <td className="px-6 py-3 text-right font-semibold text-blue-700">{a.cost} k€</td>
+                          <td className="px-6 py-3 text-right font-semibold text-green-700">{a.impact.toLocaleString()} tCO₂e</td>
+                          <td className="px-6 py-3 text-right font-semibold text-amber-700">{a.roi < 12 ? `${a.roi} ${tr('decarbonation.months')}` : `${Math.round(a.roi / 12)} ${tr('decarbonation.years')}`}</td>
+                          <td className="px-6 py-3">
+                            <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
+                              a.difficulty === 'Facile' ? 'bg-green-100 text-green-700' :
+                              a.difficulty === 'Moyen' ? 'bg-amber-100 text-amber-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>{a.difficulty}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-gray-50 border-t-2 border-gray-200">
+                      <tr>
+                        <td colSpan={2} className="px-6 py-3 text-sm font-bold text-gray-700">{tr('decarb.bcTotal', 'Total')}</td>
+                        <td className="px-6 py-3 text-right font-extrabold text-blue-700">{totalInvestment} k€</td>
+                        <td className="px-6 py-3 text-right font-extrabold text-green-700">{totalCO2Savings.toLocaleString()} tCO₂e</td>
+                        <td className="px-6 py-3 text-right font-extrabold text-amber-700">{avgPayback} {tr('decarb.bcMonthsAvg', 'mois moy.')}</td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
+
+              {/* Section 3 — Recommandation de financement */}
+              {nbActions > 0 && (
+                <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                  <h3 className="text-base font-bold text-gray-900 mb-4">{tr('decarb.finTitle', 'Recommandation de financement')}</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                      <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                        <BarChart3 className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-gray-900 mb-0.5">{tr('decarb.finBank', 'Financement bancaire (crédit vert BPI)')}</div>
+                        <p className="text-sm text-gray-600">{tr('decarb.finBankDesc', 'Un crédit vert BPI/banque couvre typiquement 70% du montant. Part à financer :')} <strong className="text-blue-700">{Math.round(totalInvestment * 0.3)} k€</strong></p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+                      <div className="w-9 h-9 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+                        <Leaf className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-gray-900 mb-0.5">{tr('decarb.finCee', "CEE — Certificats d'Économies d'Énergie")}</div>
+                        <p className="text-sm text-gray-600">{tr('decarb.finCeeDesc', 'Actions énergie éligibles aux CEE pour un bonus estimé de')} <strong className="text-green-700">{Math.round(totalInvestment * 0.15)} k€</strong></p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                      <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                        <Target className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-gray-900 mb-0.5">{tr('decarb.finTax', "Crédit d'impôt & suramortissement fiscal")}</div>
+                        <p className="text-sm text-gray-600">{tr('decarb.finTaxDesc', 'Certains investissements verts sont éligibles au suramortissement fiscal (déductible à 140%)')}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* ── Offset Modal ── */}
+        {showOffsetModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+              <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                <h2 className="text-xl font-bold text-gray-900">{tr('decarb.modalAddCreditsTitle', 'Ajouter des crédits carbone')}</h2>
+                <button onClick={() => setShowOffsetModal(false)} className="p-2 hover:bg-gray-100 rounded-lg"><Minus className="h-5 w-5 text-gray-400" /></button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{tr('decarb.modalCreditType', 'Type de crédit')}</label>
+                  <select value={offsetForm.type} onChange={e => setOffsetForm({ ...offsetForm, type: e.target.value })}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm">
+                    <option value="avoidance">🛡 {tr('decarb.modalTypeAvoidance', 'Évitement (ex : EnR)')}</option>
+                    <option value="removal">🌱 {tr('decarb.modalTypeRemoval', 'Retrait biologique (forêt, biochar)')}</option>
+                    <option value="engineered">⚙️ {tr('decarb.modalTypeEngineered', 'Retrait technique (DAC, BECCS)')}</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{tr('decarb.modalStandard', 'Standard')}</label>
+                  <select value={offsetForm.standard} onChange={e => setOffsetForm({ ...offsetForm, standard: e.target.value })}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm">
+                    <option>VCS (Verra)</option><option>Gold Standard</option><option>Plan Vivo</option>
+                    <option>CDR.fyi verified</option><option>Puro.earth</option><option>CORSIA</option><option>Autre</option>
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{tr('decarb.modalVolume', 'Volume (tCO₂e)')}</label>
+                    <input type="number" min="0" value={offsetForm.volume} onChange={e => setOffsetForm({ ...offsetForm, volume: Number(e.target.value) })}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{tr('decarb.modalPricePerTon', 'Prix / tonne (€)')}</label>
+                    <input type="number" min="0" value={offsetForm.pricePerTon} onChange={e => setOffsetForm({ ...offsetForm, pricePerTon: Number(e.target.value) })}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{tr('decarb.modalVintage', 'Millésime')}</label>
+                  <input type="number" min="2020" max="2030" value={offsetForm.vintage} onChange={e => setOffsetForm({ ...offsetForm, vintage: Number(e.target.value) })}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{tr('decarb.modalDescription', 'Description')} <span className="text-gray-400">({tr('decarb.modalOptional', 'optionnel')})</span></label>
+                  <input type="text" value={offsetForm.description} onChange={e => setOffsetForm({ ...offsetForm, description: e.target.value })}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm" placeholder={tr('decarb.modalDescPlaceholder', 'Reforestation Amazonie...')} />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button onClick={addOffset} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white"
+                    style={{ background: 'linear-gradient(135deg,#059669,#10b981)' }}>{tr('decarb.modalAdd', 'Ajouter')}</button>
+                  <button onClick={() => setShowOffsetModal(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200">{tr('decarb.modalCancel', 'Annuler')}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+// ─── SBTi Dossier button ─────────────────────────────────────────────────────
+// Generates the official SBTi target validation dossier (PDF) by creating a
+// commitment via /sbti/commitments and downloading /sbti/commitments/{id}/dossier.
+
+function SBTiDossierButton({
+  method, netZeroYear, baselineYear, baselineEmissions, targetReductionPct, onSubmitted,
+}: {
+  method: '1.5C' | 'WB2C' | 'FLAG' | 'SDA';
+  netZeroYear: number;
+  baselineYear: number;
+  baselineEmissions: number;
+  targetReductionPct: number;
+  onSubmitted: () => void;
+}) {
+  const { t: tr } = useTranslation();
+  const [busy, setBusy] = useState<'idle' | 'validating' | 'generating'>('idle');
+  const [validation, setValidation] = useState<any>(null);
+
+  const targetYear = baselineYear + 7;
+
+  const handleGenerate = async () => {
+    setBusy('generating');
+    setValidation(null);
+    try {
+      const res = await api.post('/sbti/commitments', {
+        method,
+        baseline_year: baselineYear,
+        baseline_total_tco2e: baselineEmissions,
+        baseline_scope1_tco2e: Math.round(baselineEmissions * 0.20),
+        baseline_scope2_tco2e: Math.round(baselineEmissions * 0.15),
+        baseline_scope3_tco2e: Math.round(baselineEmissions * 0.65),
+        near_term_target_year: targetYear,
+        near_term_reduction_pct: targetReductionPct,
+        near_term_scope_coverage: 'scope1+2',
+        net_zero_year: netZeroYear,
+        long_term_reduction_pct: 90,
+        scope3_pct_of_total: 65,
+        scope3_screening_completed: true,
+        scope3_target_pct: 25,
+      });
+      const commitmentId = res.data.id;
+
+      const vRes = await api.post(`/sbti/commitments/${commitmentId}/validate`);
+      setValidation(vRes.data);
+
+      const dossierRes = await api.get(`/sbti/commitments/${commitmentId}/dossier`, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([dossierRes.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `sbti_dossier_${baselineYear}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      onSubmitted();
+    } catch (err: any) {
+      console.error('SBTi dossier generation failed:', err);
+      alert(`Erreur génération dossier : ${err?.response?.data?.detail || err.message}`);
+    } finally {
+      setBusy('idle');
+    }
+  };
+
+  return (
+    <div className="mb-5 rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-emerald-900 mb-1">
+            📄 {tr('decarb.sbtiDossierTitle', 'Dossier officiel de validation SBTi')}
+          </p>
+          <p className="text-xs text-emerald-700 leading-relaxed">
+            {tr('decarb.sbtiDossierDesc', "Génère le PDF prêt à joindre à votre soumission sur sciencebasedtargets.org — inclut la pré-validation contre les critères v5.2 (réduction min, Scope 3, net-zéro ≤ 2050).")}
+          </p>
+        </div>
+        <button
+          onClick={handleGenerate}
+          disabled={busy !== 'idle'}
+          className="flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors disabled:opacity-60 shadow-sm"
+        >
+          {busy === 'generating' ? tr('decarb.generating', 'Génération…') : tr('decarb.generateDossier', 'Générer le dossier')}
+        </button>
+      </div>
+
+      {validation && (
+        <div className="mt-3 pt-3 border-t border-emerald-200">
+          <p className={`text-xs font-semibold mb-1.5 ${
+            validation.is_submission_ready ? 'text-emerald-700' : 'text-red-700'
+          }`}>
+            {validation.is_submission_ready ? tr('decarb.dossierReady', '✓ Dossier prêt') : tr('decarb.dossierBlockers', '⚠ {{n}} critère(s) bloquant(s)', { n: validation.blockers })}
+            {validation.warnings > 0 && ` · ${tr('decarb.dossierWarnings', '{{n}} avertissement(s)', { n: validation.warnings })}`}
+          </p>
+          <p className="text-[11px] text-gray-600">{validation.summary_fr}</p>
+          {validation.issues && validation.issues.length > 0 && (
+            <ul className="mt-2 space-y-0.5">
+              {validation.issues.slice(0, 4).map((iss: any, i: number) => (
+                <li key={i} className="text-[11px] text-gray-700 flex items-start gap-1.5">
+                  <span className={`inline-block px-1 py-0.5 rounded text-[9px] font-bold ${
+                    iss.severity === 'blocker' ? 'bg-red-100 text-red-700' :
+                    iss.severity === 'warning' ? 'bg-amber-100 text-amber-700' :
+                                                 'bg-blue-100 text-blue-700'
+                  }`}>{iss.code}</span>
+                  <span>{iss.message_fr}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }

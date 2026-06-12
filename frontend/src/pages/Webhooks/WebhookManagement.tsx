@@ -6,24 +6,29 @@ import {
   Trash2,
   Activity,
   CheckCircle,
-  XCircle,
   ExternalLink,
   ArrowLeft,
   Zap,
   BarChart3,
-  Clock,
-  AlertTriangle,
   Copy,
   Check,
   ChevronDown,
   ChevronUp,
   RefreshCw,
+  Power,
+  PowerOff,
+  AlertCircle,
 } from 'lucide-react';
-import Card from '@/components/common/Card';
-import Button from '@/components/common/Button';
+import toast from 'react-hot-toast';
 import Spinner from '@/components/common/Spinner';
 import CreateWebhookModal from '@/components/modals/CreateWebhookModal';
 import api from '@/services/api';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
+import i18n from '@/i18n/config';
+
+const dateLocale = () => (i18n.language?.startsWith('en') ? 'en-US' : 'fr-FR');
+const numLocale  = () => (i18n.language?.startsWith('en') ? 'en-US' : 'fr-FR');
 
 interface Webhook {
   id: string;
@@ -44,50 +49,66 @@ interface WebhookEvent {
   description: string;
 }
 
-const EVENT_COLORS: Record<string, string> = {
-  'data':       'bg-blue-100 text-blue-700 border-blue-200',
-  'score':      'bg-purple-100 text-purple-700 border-purple-200',
-  'indicator':  'bg-teal-100 text-teal-700 border-teal-200',
-  'user':       'bg-orange-100 text-orange-700 border-orange-200',
-  'threshold':  'bg-red-100 text-red-700 border-red-200',
+// Static maps so Tailwind JIT actually generates these classes
+const EVENT_BADGE: Record<string, string> = {
+  data:      'bg-blue-50 text-blue-700 border-blue-200',
+  score:     'bg-purple-50 text-purple-700 border-purple-200',
+  indicator: 'bg-teal-50 text-teal-700 border-teal-200',
+  user:      'bg-orange-50 text-orange-700 border-orange-200',
+  threshold: 'bg-red-50 text-red-700 border-red-200',
+};
+
+const STAT_TILE: Record<string, { bg: string; text: string }> = {
+  gray:   { bg: 'bg-gray-50 border-gray-100',     text: 'text-gray-700' },
+  green:  { bg: 'bg-emerald-50 border-emerald-100', text: 'text-emerald-700' },
+  red:    { bg: 'bg-red-50 border-red-100',       text: 'text-red-700' },
+  yellow: { bg: 'bg-amber-50 border-amber-100',   text: 'text-amber-700' },
 };
 
 function eventColor(type: string) {
-  const prefix = type.split('.')[0];
-  return EVENT_COLORS[prefix] || 'bg-gray-100 text-gray-700 border-gray-200';
+  return EVENT_BADGE[type.split('.')[0]] ?? 'bg-gray-50 text-gray-700 border-gray-200';
 }
 
-function formatRelativeTime(iso: string | null) {
+function formatRelativeTime(iso: string | null, t: TFunction) {
   if (!iso) return null;
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "à l'instant";
-  if (mins < 60) return `il y a ${mins} min`;
+  if (mins < 1) return t('webhook.relNow', "à l'instant");
+  if (mins < 60) return t('webhook.relMins', 'il y a {{n}} min', { n: mins });
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `il y a ${hours}h`;
-  return `il y a ${Math.floor(hours / 24)}j`;
+  if (hours < 24) return t('webhook.relHours', 'il y a {{n}}h', { n: hours });
+  return t('webhook.relDays', 'il y a {{n}}j', { n: Math.floor(hours / 24) });
 }
 
 function CopyButton({ value }: { value: string }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
-  const handleCopy = () => {
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
     navigator.clipboard.writeText(value);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 1500);
   };
   return (
-    <button onClick={handleCopy} className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors flex-shrink-0" title="Copier">
-      {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors flex-shrink-0"
+      title={t('webhook.copyUrl',"Copier l'URL")}
+      aria-label={t('webhook.copy','Copier')}
+    >
+      {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
     </button>
   );
 }
 
 function SuccessBar({ rate, total }: { rate: number; total: number }) {
-  if (total === 0) return <span className="text-xs text-gray-400 italic">Aucun appel</span>;
-  const color = rate >= 95 ? 'bg-green-500' : rate >= 80 ? 'bg-yellow-400' : 'bg-red-500';
-  const textColor = rate >= 95 ? 'text-green-700' : rate >= 80 ? 'text-yellow-700' : 'text-red-700';
+  const { t } = useTranslation();
+  if (total === 0) return <span className="text-xs text-gray-400 italic">{t('webhook.noCalls','Aucun appel')}</span>;
+  const color = rate >= 95 ? 'bg-emerald-500' : rate >= 80 ? 'bg-amber-400' : 'bg-red-500';
+  const textColor = rate >= 95 ? 'text-emerald-700' : rate >= 80 ? 'text-amber-700' : 'text-red-700';
   return (
-    <div className="flex items-center gap-2 min-w-[100px]">
+    <div className="flex items-center gap-2 min-w-[110px]">
       <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
         <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${rate}%` }} />
       </div>
@@ -96,52 +117,50 @@ function SuccessBar({ rate, total }: { rate: number; total: number }) {
   );
 }
 
-function WebhookCard({ webhook, onDelete, onToggle }: {
+function WebhookCard({ webhook, onAskDelete, onToggle }: {
   webhook: Webhook;
-  onDelete: (id: string) => void;
+  onAskDelete: (w: Webhook) => void;
   onToggle: (id: string, active: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-
-  const handleDelete = async () => {
-    if (!confirm(`Supprimer le webhook "${webhook.name}" ?`)) return;
-    setDeleting(true);
-    onDelete(webhook.id);
-  };
 
   return (
-    <div className={`bg-white border rounded-2xl transition-all ${webhook.is_active ? 'border-gray-100 hover:border-gray-200 hover:shadow-sm' : 'border-gray-100 opacity-70'}`}>
+    <div className={`bg-white border rounded-2xl transition-all ${webhook.is_active ? 'border-gray-200 hover:border-emerald-200 hover:shadow-md' : 'border-gray-200 opacity-75'}`}>
       {/* Header */}
       <div className="flex items-center gap-4 p-5">
-        {/* Status dot */}
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${webhook.is_active ? 'bg-green-50' : 'bg-gray-100'}`}>
-          <WebhookIcon className={`h-5 w-5 ${webhook.is_active ? 'text-green-600' : 'text-gray-400'}`} />
+        {/* Status icon */}
+        <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${webhook.is_active ? 'bg-emerald-50' : 'bg-gray-100'}`}>
+          <WebhookIcon className={`h-5 w-5 ${webhook.is_active ? 'text-emerald-600' : 'text-gray-400'}`} />
         </div>
 
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <p className="font-bold text-gray-900 text-sm">{webhook.name}</p>
+            <p className="font-bold text-gray-900 text-sm truncate">{webhook.name}</p>
             {webhook.is_active ? (
-              <span className="flex items-center gap-1 px-2 py-0.5 text-xs bg-green-50 text-green-700 border border-green-200 rounded-full font-semibold">
-                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                Actif
+              <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-bold uppercase tracking-wide flex-shrink-0">
+                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                {t('webhook.active','Actif')}
               </span>
             ) : (
-              <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-500 rounded-full font-semibold">Inactif</span>
+              <span className="px-2 py-0.5 text-[10px] bg-gray-100 text-gray-500 rounded-full font-bold uppercase tracking-wide flex-shrink-0">
+                {t('webhook.inactive','Inactif')}
+              </span>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <code className="text-xs text-gray-500 font-mono truncate max-w-xs">{webhook.url}</code>
+          <div className="flex items-center gap-1">
+            <code className="text-xs text-gray-500 font-mono truncate min-w-0">{webhook.url}</code>
             <CopyButton value={webhook.url} />
           </div>
         </div>
 
-        {/* Events badges */}
+        {/* Events */}
         <div className="hidden md:flex items-center gap-1.5 flex-shrink-0">
           {webhook.events.includes('*') ? (
-            <span className="px-2.5 py-1 text-xs bg-purple-100 text-purple-700 border border-purple-200 rounded-full font-semibold">Tous les événements</span>
+            <span className="px-2.5 py-1 text-xs bg-purple-50 text-purple-700 border border-purple-200 rounded-full font-semibold">
+              {t('webhook.allEvents','Tous événements')}
+            </span>
           ) : (
             <>
               {webhook.events.slice(0, 2).map(e => (
@@ -158,35 +177,42 @@ function WebhookCard({ webhook, onDelete, onToggle }: {
           )}
         </div>
 
-        {/* Stats */}
+        {/* Success rate */}
         <div className="hidden lg:block flex-shrink-0 w-32">
           <SuccessBar rate={webhook.success_rate} total={webhook.total_calls} />
-          <p className="text-xs text-gray-400 mt-1 text-right">{webhook.total_calls} appels</p>
+          <p className="text-[11px] text-gray-400 mt-1 text-right">{t('webhook.callsN','{{n}} appels',{n:webhook.total_calls})}</p>
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
+            type="button"
             onClick={() => onToggle(webhook.id, !webhook.is_active)}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+            title={webhook.is_active ? t('webhook.disable','Désactiver') : t('webhook.enable','Activer')}
+            aria-label={webhook.is_active ? t('webhook.disable','Désactiver') : t('webhook.enable','Activer')}
+            className={`inline-flex items-center justify-center h-9 w-9 rounded-lg transition-colors ${
               webhook.is_active
-                ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                : 'bg-green-50 text-green-700 hover:bg-green-100'
+                ? 'text-gray-500 hover:text-amber-600 hover:bg-amber-50'
+                : 'text-gray-500 hover:text-emerald-600 hover:bg-emerald-50'
             }`}
           >
-            {webhook.is_active ? 'Désactiver' : 'Activer'}
+            {webhook.is_active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
           </button>
           <button
-            onClick={() => setExpanded(!expanded)}
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+            type="button"
+            onClick={() => setExpanded(v => !v)}
+            title={expanded ? t('webhook.hideDetails','Masquer les détails') : t('webhook.showDetails','Voir les détails')}
+            aria-label="Détails"
+            className="inline-flex items-center justify-center h-9 w-9 text-gray-500 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors"
           >
             {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
           <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
+            type="button"
+            onClick={() => onAskDelete(webhook)}
             title="Supprimer"
+            aria-label="Supprimer"
+            className="inline-flex items-center justify-center h-9 w-9 text-gray-500 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -195,50 +221,64 @@ function WebhookCard({ webhook, onDelete, onToggle }: {
 
       {/* Expanded details */}
       {expanded && (
-        <div className="border-t border-gray-100 px-5 pb-5 pt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-1">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Événements abonnés</p>
-            <div className="flex flex-wrap gap-1.5 mt-2">
+        <div className="border-t border-gray-100 px-5 pb-5 pt-4 grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Events column */}
+          <div>
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.08em] mb-2">{t('webhook.subscribedEvents','Événements abonnés')}</p>
+            <div className="flex flex-wrap gap-1.5">
               {webhook.events.includes('*') ? (
-                <span className="px-2.5 py-1 text-xs bg-purple-100 text-purple-700 border border-purple-200 rounded-full">Tous</span>
+                <span className="px-2.5 py-1 text-xs bg-purple-50 text-purple-700 border border-purple-200 rounded-full font-semibold">{t('webhook.all','Tous')}</span>
               ) : webhook.events.map(e => (
-                <span key={e} className={`px-2.5 py-1 text-xs border rounded-full ${eventColor(e)}`}>{e}</span>
+                <span key={e} className={`px-2.5 py-1 text-xs border rounded-full font-semibold ${eventColor(e)}`}>{e}</span>
               ))}
             </div>
           </div>
+
+          {/* Timing column */}
           <div className="space-y-3">
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Dernier appel</p>
-              <p className="text-sm text-gray-700 mt-1">
-                {webhook.last_called_at ? formatRelativeTime(webhook.last_called_at) : '—'}
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.08em] mb-1">{t('webhook.lastCall','Dernier appel')}</p>
+              <p className="text-sm text-gray-700">
+                {webhook.last_called_at ? formatRelativeTime(webhook.last_called_at, t) : '—'}
               </p>
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Créé le</p>
-              <p className="text-sm text-gray-700 mt-1">
-                {new Date(webhook.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.08em] mb-1">{t('webhook.createdAt','Créé le')}</p>
+              <p className="text-sm text-gray-700">
+                {new Date(webhook.created_at).toLocaleDateString(dateLocale(), { day: '2-digit', month: 'long', year: 'numeric' })}
               </p>
             </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Statistiques</p>
-            <div className="grid grid-cols-2 gap-2 mt-2">
+
+          {/* Stats column */}
+          <div>
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.08em] mb-2">{t('webhook.statsTitle','Statistiques')}</p>
+            <div className="grid grid-cols-2 gap-2">
               {[
-                { label: 'Total', value: webhook.total_calls, color: 'gray' },
-                { label: 'Succès', value: webhook.success_calls, color: 'green' },
-                { label: 'Échecs', value: webhook.total_calls - webhook.success_calls, color: 'red' },
-                { label: 'Taux', value: `${webhook.success_rate.toFixed(1)}%`, color: webhook.success_rate >= 95 ? 'green' : webhook.success_rate >= 80 ? 'yellow' : 'red' },
-              ].map(({ label, value, color }) => (
-                <div key={label} className={`bg-${color}-50 border border-${color}-100 rounded-lg p-2 text-center`}>
-                  <p className={`text-base font-bold text-${color}-700`}>{value}</p>
-                  <p className={`text-xs text-${color}-600`}>{label}</p>
+                { label: t('webhook.stTotal','Total'),   value: webhook.total_calls,                          tile: STAT_TILE.gray },
+                { label: t('webhook.stSuccess','Succès'),value: webhook.success_calls,                        tile: STAT_TILE.green },
+                { label: t('webhook.stErrors','Échecs'), value: webhook.total_calls - webhook.success_calls,  tile: STAT_TILE.red },
+                {
+                  label: t('webhook.stRate','Taux'),
+                  value: webhook.total_calls > 0 ? `${webhook.success_rate.toFixed(1)}%` : '—',
+                  tile:  webhook.total_calls === 0
+                          ? STAT_TILE.gray
+                          : webhook.success_rate >= 95 ? STAT_TILE.green
+                          : webhook.success_rate >= 80 ? STAT_TILE.yellow
+                          : STAT_TILE.red,
+                },
+              ].map(({ label, value, tile }) => (
+                <div key={label} className={`border rounded-lg p-2 text-center ${tile.bg}`}>
+                  <p className={`text-base font-bold ${tile.text}`}>{value}</p>
+                  <p className={`text-[11px] ${tile.text} opacity-70`}>{label}</p>
                 </div>
               ))}
             </div>
+
             {webhook.last_error && (
               <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-xs text-red-600 font-semibold mb-0.5">Dernière erreur</p>
-                <p className="text-xs text-red-500 font-mono truncate">{webhook.last_error}</p>
+                <p className="text-[11px] text-red-700 font-bold mb-0.5">{t('webhook.lastError','Dernière erreur')}</p>
+                <p className="text-xs text-red-600 font-mono break-all line-clamp-2">{webhook.last_error}</p>
               </div>
             )}
           </div>
@@ -248,19 +288,44 @@ function WebhookCard({ webhook, onDelete, onToggle }: {
   );
 }
 
+function StatCard({ icon: Icon, label, value, accent }: {
+  icon: React.ElementType; label: string; value: string | number; accent: 'emerald' | 'blue' | 'purple' | 'amber';
+}) {
+  const colors = {
+    emerald: 'bg-emerald-50 text-emerald-600',
+    blue:    'bg-blue-50 text-blue-600',
+    purple:  'bg-purple-50 text-purple-600',
+    amber:   'bg-amber-50 text-amber-600',
+  };
+  return (
+    <div className="bg-white border border-gray-200 rounded-2xl p-5 hover:border-gray-300 transition-colors">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</p>
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${colors[accent]}`}>
+          <Icon className="h-4 w-4" />
+        </div>
+      </div>
+      <p className="text-2xl font-black text-gray-900 tabular-nums">{value}</p>
+    </div>
+  );
+}
+
 export default function WebhookManagement() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [events, setEvents] = useState<WebhookEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Webhook | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => { loadData(); }, []);
 
   const loadData = async (silent = false) => {
-    if (!silent) setLoading(true);
-    else setRefreshing(true);
+    if (silent) setRefreshing(true);
+    else setLoading(true);
     try {
       const [webhooksRes, eventsRes] = await Promise.all([
         api.get('/webhooks'),
@@ -276,36 +341,46 @@ export default function WebhookManagement() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const id = deleteTarget.id;
+    setDeletingId(id);
     try {
       await api.delete(`/webhooks/${id}`);
       setWebhooks(prev => prev.filter(w => w.id !== id));
+      setDeleteTarget(null);
     } catch (error: any) {
-      alert(error.response?.data?.detail || 'Échec de la suppression');
+      toast.error(error?.response?.data?.detail || t('webhook.deleteError','Échec de la suppression'));
+    } finally {
+      setDeletingId(null);
     }
   };
 
   const handleToggle = async (id: string, active: boolean) => {
+    // Optimistic update
+    setWebhooks(prev => prev.map(w => w.id === id ? { ...w, is_active: active } : w));
     try {
       await api.patch(`/webhooks/${id}`, { is_active: active });
-      setWebhooks(prev => prev.map(w => w.id === id ? { ...w, is_active: active } : w));
     } catch {
-      // silently ignore — UI will not change
+      // Revert on failure
+      setWebhooks(prev => prev.map(w => w.id === id ? { ...w, is_active: !active } : w));
     }
   };
 
   const totalCalls = webhooks.reduce((s, w) => s + w.total_calls, 0);
   const activeCount = webhooks.filter(w => w.is_active).length;
-  const avgRate = webhooks.length > 0 && totalCalls > 0
-    ? webhooks.reduce((s, w) => s + w.success_calls, 0) / totalCalls * 100
-    : 0;
+  const totalSuccess = webhooks.reduce((s, w) => s + w.success_calls, 0);
+  const avgRate = totalCalls > 0 ? (totalSuccess / totalCalls) * 100 : 0;
 
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-40 bg-gradient-to-br from-gray-800 to-slate-800 rounded-2xl animate-pulse" />
+        <div className="h-32 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl animate-pulse" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-white border border-gray-200 rounded-2xl animate-pulse" />)}
+        </div>
         <div className="space-y-3">
-          {[1, 2].map(i => <div key={i} className="h-20 bg-white border border-gray-100 rounded-2xl animate-pulse" />)}
+          {[1, 2].map(i => <div key={i} className="h-20 bg-white border border-gray-200 rounded-2xl animate-pulse" />)}
         </div>
       </div>
     );
@@ -313,151 +388,209 @@ export default function WebhookManagement() {
 
   return (
     <div className="space-y-6">
-      {/* ── Hero ── */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-gray-800 via-gray-700 to-slate-800 rounded-2xl p-8 text-white shadow-xl">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZyIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLW9wYWNpdHk9IjAuMDUiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg==')] opacity-30" />
+      {/* ── Hero (light, on-brand) ─────────────────────────────────────────── */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-teal-50 border border-emerald-100 rounded-2xl p-6 md:p-8">
         <div className="relative flex items-start justify-between gap-6 flex-wrap">
-          <div>
-            <button onClick={() => navigate('/app/settings')} className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors mb-4">
+          <div className="flex-1 min-w-0">
+            <button
+              type="button"
+              onClick={() => navigate('/app/settings')}
+              className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-emerald-700 transition-colors mb-3"
+            >
               <ArrowLeft className="h-4 w-4" />
-              Paramètres
+              {t('webhook.backToSettings','Retour aux paramètres')}
             </button>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide uppercase">Intégrations & Automatisation</span>
-            </div>
-            <h1 className="text-3xl font-bold mb-1 flex items-center gap-3">
-              <WebhookIcon className="h-8 w-8" />
+            <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[11px] font-bold tracking-wide uppercase mb-3">
+              {t('webhook.badge','Intégrations · Automatisation')}
+            </span>
+            <h1 className="text-3xl font-black text-gray-900 mb-1 flex items-center gap-3">
+              <span className="inline-flex items-center justify-center w-10 h-10 bg-emerald-600 text-white rounded-xl">
+                <WebhookIcon className="h-5 w-5" />
+              </span>
               Webhooks
             </h1>
-            <p className="text-gray-300">Notifications d'événements en temps réel vers vos services externes</p>
+            <p className="text-sm text-gray-600 max-w-xl">
+              {t('webhook.heroDesc',"Notifications HTTP en temps réel vers vos services externes. Chaque payload est signé HMAC pour vérification d'intégrité.")}
+            </p>
           </div>
-          {/* Stats */}
-          <div className="flex gap-3 flex-wrap">
-            {[
-              { icon: WebhookIcon, label: 'Webhooks', value: webhooks.length },
-              { icon: CheckCircle, label: 'Actifs', value: activeCount },
-              { icon: BarChart3, label: 'Appels total', value: totalCalls.toLocaleString('fr-FR') },
-              { icon: Zap, label: 'Taux succès', value: totalCalls > 0 ? `${avgRate.toFixed(0)}%` : '—' },
-            ].map(({ icon: Icon, label, value }) => (
-              <div key={label} className="flex flex-col items-center bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/20 min-w-[80px]">
-                <Icon className="h-4 w-4 text-gray-300 mb-1" />
-                <span className="text-lg font-bold">{value}</span>
-                <span className="text-xs text-gray-400">{label}</span>
-              </div>
-            ))}
-          </div>
-          {/* Actions */}
-          <div className="flex gap-2 flex-wrap items-start">
+
+          <div className="flex flex-wrap gap-2 items-start">
             <button
+              type="button"
               onClick={() => loadData(true)}
-              className={`flex items-center gap-2 px-3 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-sm font-medium transition-all ${refreshing ? 'opacity-70' : ''}`}
+              disabled={refreshing}
+              title="Actualiser"
+              aria-label="Actualiser"
+              className="inline-flex items-center justify-center h-10 w-10 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl transition-colors disabled:opacity-50"
             >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 text-gray-600 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
-            <button
-              onClick={() => window.open(`${(import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1').replace('/api/v1', '')}/docs#/Webhooks`, '_blank', 'noopener,noreferrer')}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 rounded-xl text-sm font-medium transition-all"
+            <a
+              href="/docs#/Webhooks"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 h-10 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold transition-colors"
             >
               <ExternalLink className="h-4 w-4" />
               API Docs
-            </button>
+            </a>
             <button
+              type="button"
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white text-gray-800 rounded-xl text-sm font-bold hover:bg-gray-100 transition-all shadow-md"
+              className="inline-flex items-center gap-2 px-4 h-10 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold transition-all shadow-sm hover:shadow-md"
             >
               <Plus className="h-4 w-4" />
-              Nouveau webhook
+              {t('webhook.newWebhook','Nouveau webhook')}
             </button>
           </div>
         </div>
       </div>
 
-      {/* ── Webhooks list ── */}
+      {/* ── Stats row ─────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard icon={WebhookIcon} label="Webhooks"                                value={webhooks.length}                                     accent="emerald" />
+        <StatCard icon={CheckCircle} label={t('webhook.activeLabel','Actifs')}      value={activeCount}                                         accent="blue" />
+        <StatCard icon={BarChart3}   label={t('webhook.callsTotal','Appels (total)')} value={totalCalls.toLocaleString(numLocale())}            accent="purple" />
+        <StatCard icon={Zap}         label={t('webhook.successRate','Taux de succès')} value={totalCalls > 0 ? `${avgRate.toFixed(0)}%` : '—'} accent="amber" />
+      </div>
+
+      {/* ── Webhooks list ─────────────────────────────────────────────────── */}
       {webhooks.length === 0 ? (
-        <Card>
-          <div className="text-center py-14">
-            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <WebhookIcon className="h-8 w-8 text-gray-400" />
+        <div className="bg-white rounded-2xl border border-dashed border-gray-300 shadow-sm">
+          <div className="text-center py-16 px-6">
+            <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <WebhookIcon className="h-8 w-8 text-emerald-600" />
             </div>
-            <p className="text-gray-800 font-bold text-lg mb-1">Aucun webhook configuré</p>
-            <p className="text-sm text-gray-400 mb-6 max-w-sm mx-auto">
-              Créez votre premier webhook pour recevoir des notifications en temps réel lors d'événements ESGFlow
+            <p className="text-gray-900 font-bold text-lg mb-1">{t('webhook.noWebhooks','Aucun webhook configuré')}</p>
+            <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
+              {t('webhook.noWebhooksDesc',"Créez votre premier webhook pour recevoir des notifications en temps réel lors d'événements ESGflow.")}
             </p>
-            <Button onClick={() => setShowCreateModal(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Créer un webhook
-            </Button>
+            <button
+              type="button"
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center gap-2 px-5 h-10 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold transition-colors shadow-sm hover:shadow-md"
+            >
+              <Plus className="h-4 w-4" />
+              {t('webhook.createFirst','Créer mon premier webhook')}
+            </button>
           </div>
-        </Card>
+        </div>
       ) : (
         <div className="space-y-3">
           {webhooks.map(webhook => (
             <WebhookCard
               key={webhook.id}
               webhook={webhook}
-              onDelete={handleDelete}
+              onAskDelete={setDeleteTarget}
               onToggle={handleToggle}
             />
           ))}
         </div>
       )}
 
-      {/* ── Available Events ── */}
-      <div>
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
-          <Activity className="h-4 w-4" />
-          Événements disponibles
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {events.map(event => {
-            const prefix = event.type.split('.')[0];
-            const color = eventColor(event.type);
-            return (
-              <div key={event.type} className="bg-white border border-gray-100 rounded-xl p-4 hover:border-gray-200 hover:shadow-sm transition-all group">
-                <div className="flex items-start justify-between mb-2">
-                  <span className={`px-2.5 py-1 text-xs border rounded-full font-semibold font-mono ${color}`}>
-                    {event.type}
-                  </span>
-                  <Activity className="h-4 w-4 text-gray-300 group-hover:text-gray-400 transition-colors mt-0.5" />
-                </div>
-                <p className="text-sm text-gray-600">{event.description}</p>
+      {/* ── Available Events ──────────────────────────────────────────────── */}
+      {events.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wide flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              {t('webhook.availableEvents','Événements disponibles')}
+            </h2>
+            <span className="text-xs text-gray-400">{t('webhook.eventsCount','{{n}} types',{n:events.length})}</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {events.map(event => (
+              <div
+                key={event.type}
+                className="bg-white border border-gray-200 rounded-xl p-4 hover:border-emerald-200 hover:shadow-sm transition-all"
+              >
+                <span className={`inline-block px-2.5 py-1 text-xs border rounded-full font-bold font-mono mb-2 ${eventColor(event.type)}`}>
+                  {event.type}
+                </span>
+                <p className="text-sm text-gray-600 leading-snug">{event.description}</p>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* ── Guide rapide ── */}
-      <div className="bg-gradient-to-br from-slate-50 to-gray-50 border border-gray-200 rounded-2xl p-6">
-        <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <Zap className="h-5 w-5 text-gray-500" />
-          Guide d'intégration rapide
+      {/* ── Quick guide (kept compact) ────────────────────────────────────── */}
+      <div className="bg-gradient-to-br from-gray-50 to-emerald-50/30 border border-gray-200 rounded-2xl p-6">
+        <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <Zap className="h-5 w-5 text-emerald-600" />
+          {t('webhook.howTitle','Comment ça marche')}
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {[
-            { step: '1', icon: Plus, title: 'Créer un endpoint', desc: 'Exposez une URL HTTPS sur votre serveur qui accepte les requêtes POST' },
-            { step: '2', icon: WebhookIcon, title: 'Configurer le webhook', desc: "Enregistrez votre URL dans ESGFlow et sélectionnez les événements à écouter" },
-            { step: '3', icon: CheckCircle, title: 'Recevoir les événements', desc: 'ESGFlow enverra un payload JSON signé à chaque événement déclenché' },
-          ].map(({ step, icon: Icon, title, desc }) => (
+            { step: '1', title: t('webhook.step1title','Exposez un endpoint'),   desc: t('webhook.step1desc','Une URL HTTPS sur votre serveur qui accepte un POST JSON.') },
+            { step: '2', title: t('webhook.step2title','Configurez le webhook'), desc: t('webhook.step2desc',"Renseignez l'URL ci-dessus et cochez les événements à écouter.") },
+            { step: '3', title: t('webhook.step3title','Recevez & vérifiez'),    desc: t('webhook.step3desc','À chaque événement, ESGflow envoie un payload signé HMAC SHA-256.') },
+          ].map(({ step, title, desc }) => (
             <div key={step} className="flex gap-3">
-              <div className="w-8 h-8 bg-gray-800 text-white rounded-lg flex items-center justify-center text-sm font-bold flex-shrink-0">
+              <div className="w-8 h-8 bg-emerald-600 text-white rounded-lg flex items-center justify-center text-sm font-black flex-shrink-0">
                 {step}
               </div>
-              <div>
-                <p className="font-semibold text-gray-800 text-sm mb-1">{title}</p>
-                <p className="text-xs text-gray-500">{desc}</p>
+              <div className="min-w-0">
+                <p className="font-bold text-gray-900 text-sm mb-1">{title}</p>
+                <p className="text-xs text-gray-600 leading-snug">{desc}</p>
               </div>
             </div>
           ))}
         </div>
       </div>
 
+      {/* ── Create modal ──────────────────────────────────────────────────── */}
       <CreateWebhookModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSuccess={() => loadData()}
         availableEvents={events}
       />
+
+      {/* ── Delete confirmation modal ─────────────────────────────────────── */}
+      {deleteTarget && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+          onClick={() => deletingId === null && setDeleteTarget(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-4">
+              <div className="p-2.5 bg-red-100 rounded-xl flex-shrink-0">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-bold text-gray-900">{t('webhook.deleteTitle','Supprimer ce webhook ?')}</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  <span className="font-semibold text-gray-800 break-all">"{deleteTarget.name}"</span>
+                  {t('webhook.deleteBodyB',' ne recevra plus aucune notification. Cette action est irréversible.')}
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={deletingId !== null}
+                className="px-4 h-10 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {t('webhook.cancel','Annuler')}
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={deletingId !== null}
+                className="inline-flex items-center gap-2 px-4 h-10 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {deletingId !== null ? <Spinner size="sm" /> : <Trash2 className="h-4 w-4" />}
+                {t('webhook.delete','Supprimer')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

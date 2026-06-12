@@ -5,39 +5,37 @@ import {
   TrendingDown,
   RefreshCcw,
   AlertTriangle,
-  ShieldCheck,
   Leaf,
   Users,
   Gavel,
 } from 'lucide-react';
+import { getConfidenceInfo } from '@/utils/confidenceLevel';
 
-import { Line, Radar } from 'react-chartjs-2';
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  RadialLinearScale,
-  Filler,
-  Tooltip,
-  Legend,
-} from 'chart.js';
+  ResponsiveContainer,
+  ComposedChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RTooltip,
+  Legend as RLegend,
+  RadarChart as RRadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar as RRadar,
+} from 'recharts';
 
 // ✅ Robust api import: works whether you use default export or named export
 import apiDefault, { api as apiNamed } from '@/services/api';
 const api = apiNamed ?? apiDefault;
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  RadialLinearScale,
-  Filler,
-  Tooltip,
-  Legend
-);
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
+import i18n from '@/i18n/config';
+
+const dateLocale = () => (i18n.language?.startsWith('en') ? 'en-US' : 'fr-FR');
 
 type PillarKey = 'environmental' | 'social' | 'governance';
 
@@ -75,7 +73,7 @@ function clamp(n: number, min: number, max: number) {
 function formatDateFR(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: '2-digit' });
+  return d.toLocaleDateString(dateLocale(), { year: 'numeric', month: 'short', day: '2-digit' });
 }
 
 function gradeColor(rating?: string) {
@@ -86,22 +84,15 @@ function gradeColor(rating?: string) {
   return 'bg-red-50 text-red-700 ring-red-200';
 }
 
-function confidenceBadge(conf?: string) {
-  const c = (conf || '').toLowerCase();
-  if (c === 'high')
-    return { label: 'Confiance élevée', cls: 'bg-green-50 text-green-700 ring-green-200', Icon: ShieldCheck };
-  if (c === 'medium')
-    return { label: 'Confiance moyenne', cls: 'bg-blue-50 text-blue-700 ring-blue-200', Icon: ShieldCheck };
-  if (c === 'low')
-    return { label: 'Confiance faible', cls: 'bg-yellow-50 text-yellow-800 ring-yellow-200', Icon: AlertTriangle };
-  if (c) return { label: `Confiance: ${conf}`, cls: 'bg-gray-50 text-gray-700 ring-gray-200', Icon: ShieldCheck };
-  return { label: 'Confiance: N/A', cls: 'bg-gray-50 text-gray-700 ring-gray-200', Icon: ShieldCheck };
+function confidenceBadge(conf: string | undefined, t: TFunction) {
+  const info = getConfidenceInfo(conf, t);
+  return { label: info.label, cls: info.badgeClass, Icon: info.Icon, description: info.description, isLowData: info.isLowData };
 }
 
-function PillarLabel(p: PillarKey) {
-  if (p === 'environmental') return 'Environnement';
-  if (p === 'social') return 'Social';
-  return 'Gouvernance';
+function PillarLabel(p: PillarKey, t: TFunction) {
+  if (p === 'environmental') return t('esgdash.pillarEnv', 'Environnement');
+  if (p === 'social') return t('esgdash.pillarSocial', 'Social');
+  return t('esgdash.pillarGov', 'Gouvernance');
 }
 
 function PillarDotClass(p: PillarKey) {
@@ -154,6 +145,7 @@ function StatCard({
 }
 
 function DeltaBadge({ label, delta }: { label: string; delta: number | null }) {
+  const { t } = useTranslation();
   if (delta === null) {
     return (
       <span className="inline-flex items-center gap-2 rounded-full bg-gray-50 px-3 py-1 text-xs text-gray-600 ring-1 ring-gray-200">
@@ -170,7 +162,7 @@ function DeltaBadge({ label, delta }: { label: string; delta: number | null }) {
           ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
           : 'bg-rose-50 text-rose-700 ring-rose-200'
       }`}
-      title="Variation vs période précédente"
+      title={t('esgdash.deltaTooltip', 'Variation vs période précédente')}
     >
       {up ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
       {label}: {up ? '+' : ''}
@@ -207,6 +199,7 @@ function ActivityIcon() {
 }
 
 export const ESGDashboard: React.FC<{ companyId: string }> = ({ companyId }) => {
+  const { t } = useTranslation();
   const [orgScores, setOrgScores] = useState<OrgScoresResponse | null>(null);
   const [dataQuality, setDataQuality] = useState<DataQualityResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -249,7 +242,7 @@ export const ESGDashboard: React.FC<{ companyId: string }> = ({ companyId }) => 
       });
     } catch (e: any) {
       console.error(e);
-      setError(e?.response?.data?.detail || "Impossible de charger les scores ESG.");
+      setError(e?.response?.data?.detail || t('esgdash.errLoad', 'Impossible de charger les scores ESG.'));
       setOrgScores(null);
     } finally {
       setLoading(false);
@@ -284,113 +277,26 @@ export const ESGDashboard: React.FC<{ companyId: string }> = ({ companyId }) => 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId, periodMonths]);
 
-  const chartData = useMemo(() => {
+  // Line chart data: chronological order (oldest → newest) for recharts
+  const lineData = useMemo(() => {
     const asc = [...scores].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-    return {
-      labels: asc.map((s) => formatDateFR(s.date)),
-      datasets: [
-        {
-          label: 'Global',
-          data: asc.map((s) => s.overall_score),
-          borderColor: '#111827',
-          backgroundColor: 'rgba(17, 24, 39, 0.08)',
-          tension: 0.35,
-          pointRadius: 2,
-          fill: true,
-        },
-        {
-          label: 'Environnement',
-          data: asc.map((s) => s.environmental_score),
-          borderColor: '#10b981',
-          backgroundColor: 'rgba(16, 185, 129, 0.08)',
-          tension: 0.35,
-          pointRadius: 2,
-          fill: false,
-        },
-        {
-          label: 'Social',
-          data: asc.map((s) => s.social_score),
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59, 130, 246, 0.08)',
-          tension: 0.35,
-          pointRadius: 2,
-          fill: false,
-        },
-        {
-          label: 'Gouvernance',
-          data: asc.map((s) => s.governance_score),
-          borderColor: '#8b5cf6',
-          backgroundColor: 'rgba(139, 92, 246, 0.08)',
-          tension: 0.35,
-          pointRadius: 2,
-          fill: false,
-        },
-      ],
-    };
+    return asc.map((s) => ({
+      date: formatDateFR(s.date),
+      Global:        s.overall_score,
+      Environnement: s.environmental_score,
+      Social:        s.social_score,
+      Gouvernance:   s.governance_score,
+    }));
   }, [scores]);
 
-  // ✅ Radar: only show company dataset (no null benchmark => no crash)
+  // Radar data — one entry per pillar
   const radarData = useMemo(() => {
-    const env = latest ? latest.environmental_score : 0;
-    const soc = latest ? latest.social_score : 0;
-    const gov = latest ? latest.governance_score : 0;
-
-    return {
-      labels: ['Environnement', 'Social', 'Gouvernance'],
-      datasets: [
-        {
-          label: 'Votre entreprise',
-          data: [env, soc, gov],
-          backgroundColor: 'rgba(17, 24, 39, 0.12)',
-          borderColor: '#111827',
-          pointBackgroundColor: '#111827',
-        },
-      ],
-    };
-  }, [latest]);
-
-  const lineOptions = useMemo(
-    () => ({
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'bottom' as const },
-        tooltip: { mode: 'index' as const, intersect: false },
-      },
-      interaction: { mode: 'index' as const, intersect: false },
-      scales: {
-        y: {
-          min: 0,
-          max: 100,
-          ticks: { stepSize: 20 },
-          grid: { color: 'rgba(17, 24, 39, 0.06)' },
-        },
-        x: { grid: { display: false } },
-      },
-    }),
-    []
-  );
-
-  const radarOptions = useMemo(
-    () => ({
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'bottom' as const },
-      },
-      scales: {
-        r: {
-          min: 0,
-          max: 100,
-          ticks: { stepSize: 20 },
-          grid: { color: 'rgba(17, 24, 39, 0.06)' },
-          angleLines: { color: 'rgba(17, 24, 39, 0.06)' },
-        },
-      },
-    }),
-    []
-  );
+    return [
+      { pillar: t('esgdash.pillarEnv', 'Environnement'), value: latest?.environmental_score ?? 0 },
+      { pillar: t('esgdash.pillarSocial', 'Social'),     value: latest?.social_score ?? 0 },
+      { pillar: t('esgdash.pillarGov', 'Gouvernance'),   value: latest?.governance_score ?? 0 },
+    ];
+  }, [latest, t]);
 
   if (loading) {
     return (
@@ -430,14 +336,14 @@ export const ESGDashboard: React.FC<{ companyId: string }> = ({ companyId }) => 
         <div className="flex items-start gap-3">
           <AlertTriangle className="h-5 w-5 mt-0.5" />
           <div>
-            <p className="font-semibold">Erreur</p>
+            <p className="font-semibold">{t('esgdash.errorTitle', 'Erreur')}</p>
             <p className="mt-1 text-sm">{error}</p>
             <button
               onClick={fetchScores}
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700"
             >
               <RefreshCcw className="h-4 w-4" />
-              Réessayer
+              {t('esgdash.retry', 'Réessayer')}
             </button>
           </div>
         </div>
@@ -448,9 +354,9 @@ export const ESGDashboard: React.FC<{ companyId: string }> = ({ companyId }) => 
   if (!latest) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-        <p className="text-lg font-semibold text-gray-900">Aucun score disponible</p>
+        <p className="text-lg font-semibold text-gray-900">{t('esgdash.noScore', 'Aucun score disponible')}</p>
         <p className="mt-2 text-sm text-gray-600">
-          Calcule un score ESG pour commencer (ou vérifie que des données d’indicateurs existent).
+          {t('esgdash.noScoreDesc', 'Calcule un score ESG pour commencer (ou vérifie que des données d’indicateurs existent).')}
         </p>
         <button
           onClick={() => {
@@ -460,22 +366,22 @@ export const ESGDashboard: React.FC<{ companyId: string }> = ({ companyId }) => 
           className="mt-6 inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-black"
         >
           <RefreshCcw className="h-4 w-4" />
-          Rafraîchir
+          {t('esgdash.refresh', 'Rafraîchir')}
         </button>
       </div>
     );
   }
 
-  const conf = confidenceBadge(latest.confidence_level);
+  const conf = confidenceBadge(latest.confidence_level, t);
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Tableau de bord ESG</h2>
+          <h2 className="text-2xl font-semibold text-gray-900">{t('esgdash.title', 'Tableau de bord ESG')}</h2>
           <p className="mt-1 text-sm text-gray-600">
-            Dernière mise à jour : <span className="font-medium">{formatDateFR(latest.date)}</span>
+            {t('esgdash.lastUpdate', 'Dernière mise à jour :')} <span className="font-medium">{formatDateFR(latest.date)}</span>
           </p>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -484,33 +390,40 @@ export const ESGDashboard: React.FC<{ companyId: string }> = ({ companyId }) => 
               <span className="text-gray-500">— Rating</span>
             </span>
 
-            <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs ring-1 ${conf.cls}`}>
+            <span
+              className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs ring-1 ${conf.cls}`}
+              title={conf.description}
+            >
               <conf.Icon className="h-3.5 w-3.5" />
               {conf.label}
             </span>
 
             {typeof latest.data_completeness === 'number' && (
               <span className="inline-flex items-center gap-2 rounded-full bg-gray-50 px-3 py-1 text-xs text-gray-700 ring-1 ring-gray-200">
-                Complétude : <span className="font-semibold">{latest.data_completeness.toFixed(0)}%</span>
+                {t('esgdash.completenessLabel', 'Complétude :')} <span className="font-semibold">{latest.data_completeness.toFixed(0)}%</span>
               </span>
             )}
           </div>
+
+          {conf.isLowData && (
+            <p className="mt-2 text-xs text-gray-500">{conf.description}</p>
+          )}
         </div>
 
         <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm">
-            <label htmlFor="period-select" className="text-xs text-gray-600">Période</label>
+            <label htmlFor="period-select" className="text-xs text-gray-600">{t('esgdash.period', 'Période')}</label>
             <select
               id="period-select"
-              aria-label="Sélectionner la période"
+              aria-label={t('esgdash.selectPeriod', 'Sélectionner la période')}
               value={periodMonths}
               onChange={(e) => setPeriodMonths(Number(e.target.value))}
               className="text-sm font-medium text-gray-900 outline-none"
             >
-              <option value={3}>3 mois</option>
-              <option value={6}>6 mois</option>
-              <option value={12}>12 mois</option>
-              <option value={24}>24 mois</option>
+              <option value={3}>{t('esgdash.months', '{{n}} mois', { n: 3 })}</option>
+              <option value={6}>{t('esgdash.months', '{{n}} mois', { n: 6 })}</option>
+              <option value={12}>{t('esgdash.months', '{{n}} mois', { n: 12 })}</option>
+              <option value={24}>{t('esgdash.months', '{{n}} mois', { n: 24 })}</option>
             </select>
           </div>
 
@@ -522,14 +435,14 @@ export const ESGDashboard: React.FC<{ companyId: string }> = ({ companyId }) => 
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-black"
           >
             <RefreshCcw className="h-4 w-4" />
-            Actualiser
+            {t('esgdash.refreshAll', 'Actualiser')}
           </button>
 
           <button
             onClick={() => setShowRadar((v) => !v)}
             className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50"
           >
-            {showRadar ? 'Masquer radar' : 'Afficher radar'}
+            {showRadar ? t('esgdash.hideRadar', 'Masquer radar') : t('esgdash.showRadar', 'Afficher radar')}
           </button>
         </div>
       </div>
@@ -537,30 +450,30 @@ export const ESGDashboard: React.FC<{ companyId: string }> = ({ companyId }) => 
       {/* KPI Row */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <StatCard
-          title="Score global"
+          title={t('esgdash.kpiOverall', 'Score global')}
           value={Math.round(latest.overall_score ?? 0).toString()}
-          subtitle="Sur 100"
+          subtitle={t('esgdash.outOf100', 'Sur 100')}
           icon={<ActivityIcon />}
           accentClass="bg-gray-900 text-white"
         />
         <StatCard
-          title="Environnement"
+          title={t('esgdash.pillarEnv', 'Environnement')}
           value={Math.round(latest.environmental_score ?? 0).toString()}
-          subtitle="Pilier E"
+          subtitle={t('esgdash.pillarE', 'Pilier E')}
           icon={<Leaf className="h-6 w-6 text-emerald-700" />}
           accentClass="bg-emerald-50"
         />
         <StatCard
-          title="Social"
+          title={t('esgdash.pillarSocial', 'Social')}
           value={Math.round(latest.social_score ?? 0).toString()}
-          subtitle="Pilier S"
+          subtitle={t('esgdash.pillarS', 'Pilier S')}
           icon={<Users className="h-6 w-6 text-blue-700" />}
           accentClass="bg-blue-50"
         />
         <StatCard
-          title="Gouvernance"
+          title={t('esgdash.pillarGov', 'Gouvernance')}
           value={Math.round(latest.governance_score ?? 0).toString()}
-          subtitle="Pilier G"
+          subtitle={t('esgdash.pillarG', 'Pilier G')}
           icon={<Gavel className="h-6 w-6 text-violet-700" />}
           accentClass="bg-violet-50"
         />
@@ -568,8 +481,8 @@ export const ESGDashboard: React.FC<{ companyId: string }> = ({ companyId }) => 
 
       {/* Delta row */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-gray-600">Variation vs score précédent :</span>
-        <DeltaBadge label="Global" delta={deltas.overall} />
+        <span className="text-sm text-gray-600">{t('esgdash.deltaTitle', 'Variation vs score précédent :')}</span>
+        <DeltaBadge label={t('esgdash.deltaGlobal', 'Global')} delta={deltas.overall} />
         <DeltaBadge label="E" delta={deltas.environmental} />
         <DeltaBadge label="S" delta={deltas.social} />
         <DeltaBadge label="G" delta={deltas.governance} />
@@ -580,13 +493,25 @@ export const ESGDashboard: React.FC<{ companyId: string }> = ({ companyId }) => 
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-gray-900">Évolution des scores</p>
-              <p className="mt-1 text-xs text-gray-600">Global & piliers (0–100)</p>
+              <p className="text-sm font-semibold text-gray-900">{t('esgdash.chartTrend', 'Évolution des scores')}</p>
+              <p className="mt-1 text-xs text-gray-600">{t('esgdash.chartTrendSub', 'Global & piliers (0–100)')}</p>
             </div>
-            <div className="text-xs text-gray-500">{scores.length} point(s)</div>
+            <div className="text-xs text-gray-500">{t('esgdash.points', '{{n}} point(s)', { n: scores.length })}</div>
           </div>
           <div className="mt-4 h-72">
-            <Line data={chartData as any} options={lineOptions as any} />
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={lineData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(17,24,39,0.06)" />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} />
+                <YAxis domain={[0, 100]} tickCount={6} tick={{ fontSize: 11, fill: '#6b7280' }} />
+                <RTooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                <RLegend wrapperStyle={{ fontSize: 12 }} />
+                <Area type="monotone" dataKey="Global"        name={t('esgdash.legendGlobal', 'Global')}       stroke="#111827" strokeWidth={2} fill="#111827" fillOpacity={0.08} />
+                <Area type="monotone" dataKey="Environnement" name={t('esgdash.pillarEnv', 'Environnement')}  stroke="#10b981" strokeWidth={2} fill="transparent" />
+                <Area type="monotone" dataKey="Social"        name={t('esgdash.pillarSocial', 'Social')}      stroke="#3b82f6" strokeWidth={2} fill="transparent" />
+                <Area type="monotone" dataKey="Gouvernance"   name={t('esgdash.pillarGov', 'Gouvernance')}    stroke="#8b5cf6" strokeWidth={2} fill="transparent" />
+              </ComposedChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
@@ -594,13 +519,21 @@ export const ESGDashboard: React.FC<{ companyId: string }> = ({ companyId }) => 
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-gray-900">Profil ESG</p>
-                <p className="mt-1 text-xs text-gray-600">Dernier score (benchmark à connecter)</p>
+                <p className="text-sm font-semibold text-gray-900">{t('esgdash.radarTitle', 'Profil ESG')}</p>
+                <p className="mt-1 text-xs text-gray-600">{t('esgdash.radarSub', 'Dernier score (benchmark à connecter)')}</p>
               </div>
               <span className="text-xs text-gray-500">Radar</span>
             </div>
             <div className="mt-4 h-72">
-              <Radar data={radarData as any} options={radarOptions as any} />
+              <ResponsiveContainer width="100%" height="100%">
+                <RRadarChart data={radarData} outerRadius={90}>
+                  <PolarGrid stroke="rgba(17,24,39,0.06)" />
+                  <PolarAngleAxis dataKey="pillar" tick={{ fontSize: 11, fill: '#374151' }} />
+                  <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 10, fill: '#6b7280' }} />
+                  <RRadar name={t('esgdash.yourCompany', 'Votre entreprise')} dataKey="value" stroke="#111827" fill="#111827" fillOpacity={0.12} />
+                  <RTooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                </RRadarChart>
+              </ResponsiveContainer>
             </div>
           </div>
         )}
@@ -610,9 +543,9 @@ export const ESGDashboard: React.FC<{ companyId: string }> = ({ companyId }) => 
       <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold text-gray-900">Qualité des données</p>
+            <p className="text-sm font-semibold text-gray-900">{t('esgdash.dqTitle', 'Qualité des données')}</p>
             <p className="mt-1 text-xs text-gray-600">
-              Calculée sur la période sélectionnée ({periodMonths} mois)
+              {t('esgdash.dqSub', 'Calculée sur la période sélectionnée ({{n}} mois)', { n: periodMonths })}
             </p>
           </div>
           <button
@@ -621,23 +554,23 @@ export const ESGDashboard: React.FC<{ companyId: string }> = ({ companyId }) => 
             className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50 disabled:opacity-50"
           >
             <RefreshCcw className={`h-4 w-4 ${loadingQuality ? 'animate-spin' : ''}`} />
-            Recalculer
+            {t('esgdash.recalc', 'Recalculer')}
           </button>
         </div>
 
         {dataQuality ? (
           <div className="mt-4 grid grid-cols-1 md:grid-cols-5 gap-3">
-            <QualityMini label="Qualité globale" value={dataQuality.overall_quality} />
-            <QualityMini label="Complétude" value={dataQuality.completeness} />
-            <QualityMini label="Cohérence" value={dataQuality.consistency} />
-            <QualityMini label="Exactitude" value={dataQuality.accuracy} />
-            <QualityMini label="Fraîcheur" value={dataQuality.timeliness} />
+            <QualityMini label={t('esgdash.dqOverall', 'Qualité globale')} value={dataQuality.overall_quality} />
+            <QualityMini label={t('esgdash.dqCompleteness', 'Complétude')} value={dataQuality.completeness} />
+            <QualityMini label={t('esgdash.dqConsistency', 'Cohérence')} value={dataQuality.consistency} />
+            <QualityMini label={t('esgdash.dqAccuracy', 'Exactitude')} value={dataQuality.accuracy} />
+            <QualityMini label={t('esgdash.dqTimeliness', 'Fraîcheur')} value={dataQuality.timeliness} />
 
             {dataQuality.recommendations?.length > 0 && (
               <div className="md:col-span-5 mt-2 rounded-lg bg-amber-50 p-4 text-amber-900 ring-1 ring-amber-200">
                 <p className="text-sm font-semibold flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4" />
-                  Recommandations
+                  {t('esgdash.recommendations', 'Recommandations')}
                 </p>
                 <ul className="mt-2 list-disc pl-5 text-sm">
                   {dataQuality.recommendations.slice(0, 5).map((r, idx) => (
@@ -649,15 +582,15 @@ export const ESGDashboard: React.FC<{ companyId: string }> = ({ companyId }) => 
           </div>
         ) : (
           <p className="mt-4 text-sm text-gray-600">
-            Aucune donnée de qualité disponible (endpoint non appelé ou données insuffisantes).
+            {t('esgdash.dqNone', 'Aucune donnée de qualité disponible (endpoint non appelé ou données insuffisantes).')}
           </p>
         )}
       </div>
 
       {/* Pillar breakdown quick view */}
       <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <p className="text-sm font-semibold text-gray-900">Lecture rapide</p>
-        <p className="mt-1 text-xs text-gray-600">Dernière mesure</p>
+        <p className="text-sm font-semibold text-gray-900">{t('esgdash.quickRead', 'Lecture rapide')}</p>
+        <p className="mt-1 text-xs text-gray-600">{t('esgdash.lastMeasure', 'Dernière mesure')}</p>
 
         <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           {(['environmental', 'social', 'governance'] as PillarKey[]).map((p) => {
@@ -673,7 +606,7 @@ export const ESGDashboard: React.FC<{ companyId: string }> = ({ companyId }) => 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className={`h-2.5 w-2.5 rounded-full ${PillarDotClass(p)}`} />
-                    <span className="text-sm font-semibold text-gray-900">{PillarLabel(p)}</span>
+                    <span className="text-sm font-semibold text-gray-900">{PillarLabel(p, t)}</span>
                   </div>
                   <PillarIcon pillar={p} />
                 </div>
@@ -691,7 +624,7 @@ export const ESGDashboard: React.FC<{ companyId: string }> = ({ companyId }) => 
                 </div>
 
                 <div className="mt-3 text-xs text-gray-600">
-                  {score >= 70 ? 'Très bon niveau' : score >= 50 ? 'Niveau correct' : score >= 30 ? 'À améliorer' : 'Critique'}
+                  {score >= 70 ? t('esgdash.lvlVeryGood', 'Très bon niveau') : score >= 50 ? t('esgdash.lvlOk', 'Niveau correct') : score >= 30 ? t('esgdash.lvlImprove', 'À améliorer') : t('esgdash.lvlCritical', 'Critique')}
                 </div>
               </div>
             );

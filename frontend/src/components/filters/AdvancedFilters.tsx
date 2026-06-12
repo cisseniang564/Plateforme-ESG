@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Filter, X, Save, Download, ChevronDown } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Button from '@/components/common/Button';
+import { useTranslation } from 'react-i18next';
 
 interface FilterConfig {
   id: string;
@@ -24,6 +26,7 @@ export default function AdvancedFilters({
   onReset,
   onSave 
 }: AdvancedFiltersProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [values, setValues] = useState<Record<string, any>>({});
   const [savedFilters, setSavedFilters] = useState<Array<{ name: string; values: Record<string, any> }>>([]);
@@ -39,12 +42,12 @@ export default function AdvancedFilters({
   };
 
   const handleSaveFilter = () => {
-    const name = prompt('Nom du filtre:');
+    const name = prompt(t('advf.promptName', 'Nom du filtre:'));
     if (name) {
       const newFilter = { name, values };
       setSavedFilters(prev => [...prev, newFilter]);
       if (onSave) onSave(name, values);
-      alert(`Filtre "${name}" sauvegardé !`);
+      toast.success(t('advf.saved', 'Filtre "{{name}}" sauvegardé', { name }));
     }
   };
 
@@ -80,7 +83,7 @@ export default function AdvancedFilters({
       {isOpen && (
         <div className="absolute top-full left-0 mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-xl z-50">
           <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 className="font-semibold text-gray-900">Filtres Avancés</h3>
+            <h3 className="font-semibold text-gray-900">{t('advf.title', 'Filtres Avancés')}</h3>
             <button
               onClick={() => setIsOpen(false)}
               className="p-1 hover:bg-gray-100 rounded transition-colors"
@@ -162,7 +165,7 @@ export default function AdvancedFilters({
                 {filter.type === 'text' && (
                   <input
                     type="text"
-                    placeholder={`Rechercher ${filter.label.toLowerCase()}...`}
+                    placeholder={t('advf.searchPlaceholder', 'Rechercher {{label}}...', { label: filter.label.toLowerCase() })}
                     value={values[filter.id] || ''}
                     onChange={(e) => setValues(prev => ({ ...prev, [filter.id]: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
@@ -175,7 +178,7 @@ export default function AdvancedFilters({
           {/* Filtres sauvegardés */}
           {savedFilters.length > 0 && (
             <div className="p-4 border-t border-gray-200">
-              <p className="text-xs font-medium text-gray-500 mb-2">FILTRES SAUVEGARDÉS</p>
+              <p className="text-xs font-medium text-gray-500 mb-2">{t('advf.savedFilters', 'FILTRES SAUVEGARDÉS')}</p>
               <div className="space-y-1">
                 {savedFilters.map((filter, idx) => (
                   <button
@@ -198,7 +201,7 @@ export default function AdvancedFilters({
               size="sm"
             >
               <X className="h-4 w-4 mr-1" />
-              Réinitialiser
+              {t('advf.reset', 'Réinitialiser')}
             </Button>
             <div className="flex gap-2">
               {onSave && activeFilterCount > 0 && (
@@ -208,14 +211,14 @@ export default function AdvancedFilters({
                   size="sm"
                 >
                   <Save className="h-4 w-4 mr-1" />
-                  Sauvegarder
+                  {t('advf.save', 'Sauvegarder')}
                 </Button>
               )}
               <Button
                 onClick={handleApply}
                 size="sm"
               >
-                Appliquer ({activeFilterCount})
+                {t('advf.apply', 'Appliquer ({{n}})', { n: activeFilterCount })}
               </Button>
             </div>
           </div>

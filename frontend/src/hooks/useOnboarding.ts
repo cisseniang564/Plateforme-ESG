@@ -45,24 +45,15 @@ export function useOnboarding() {
           navigate('/app/setup', { replace: true });
           return;
         }
-        // Billing welcome — redirect first-time users to billing page
+        // Billing welcome — redirect first-time users to billing page (one-time only)
         if (location.pathname !== '/app/billing') {
           const key = billingWelcomedKey(userId);
           if (key && !localStorage.getItem(key)) {
             navigate('/app/billing?welcome=1', { replace: true });
             return;
           }
-          // Also redirect if trial expired and no active subscription
-          try {
-            const billingRes = await api.get('/billing/subscription');
-            const billing = billingRes.data;
-            const isExpired = !billing.is_active && !billing.is_trial;
-            if (isExpired) {
-              navigate('/app/billing', { replace: true });
-            }
-          } catch {
-            // Silencieux — ne pas bloquer si la facturation est indisponible
-          }
+          // Trial expiry is now handled by the TrialExpiredBanner in Layout —
+          // no forced redirect so users can freely navigate the platform.
         }
       } catch {
         // Silencieux — ne pas bloquer si l'endpoint est indisponible

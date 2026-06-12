@@ -25,6 +25,7 @@ export type FeatureKey =
   | 'api_access'
   | 'data_export'
   | 'multi_standard'
+  | 'risk_register'
 
 export interface PlanData {
   plan_tier: string
@@ -58,6 +59,7 @@ const DEFAULT_PLAN: PlanData = {
     api_access: false,
     data_export: false,
     multi_standard: false,
+    risk_register: false,
   },
   feature_min_plan: {
     basic_reports: 'Free',
@@ -75,6 +77,7 @@ const DEFAULT_PLAN: PlanData = {
     api_access: 'Starter',
     data_export: 'Starter',
     multi_standard: 'Pro',
+    risk_register: 'Starter',
   },
   is_free: true,
   is_trial: false,

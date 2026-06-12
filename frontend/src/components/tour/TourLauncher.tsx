@@ -4,15 +4,13 @@ import {
   Sparkles, BookOpen, Clock, ChevronDown, Keyboard, ArrowRight,
 } from 'lucide-react';
 import { useTourContext } from './TourContext';
-import { TOUR_CHAPTERS, TOUR_STEPS } from './tourSteps';
-
-// Total steps per chapter for progress display
-const CHAPTER_STEP_MAP = TOUR_CHAPTERS.reduce<Record<string, number>>((acc, ch) => {
-  acc[ch.id] = ch.stepCount;
-  return acc;
-}, {});
+import { getTourChapters, getTourSteps } from './tourSteps';
+import { useTranslation } from 'react-i18next';
 
 export default function TourLauncher() {
+  const { t } = useTranslation();
+  const chapters = getTourChapters(t);
+  const totalSteps = getTourSteps(t).length;
   const { startTour, startFromStep, isCompleted, isDismissed, run, stepIndex } = useTourContext();
   const [open, setOpen] = useState(false);
   const [pulse, setPulse] = useState(true);
@@ -46,7 +44,6 @@ export default function TourLauncher() {
     return () => document.removeEventListener('keydown', handleKey);
   }, [open]);
 
-  const totalSteps = TOUR_STEPS.length;
   const totalMinutes = Math.ceil(totalSteps * 0.12);
 
   // Global progress
@@ -55,7 +52,7 @@ export default function TourLauncher() {
     : 0;
 
   // Which chapters are "done" (stepStart + stepCount - 1 < current stepIndex)
-  const chapterProgress = (ch: typeof TOUR_CHAPTERS[0]) => {
+  const chapterProgress = (ch: (typeof chapters)[0]) => {
     if (isCompleted) return 'done';
     const last = ch.stepStart + ch.stepCount - 1;
     if (last < stepIndex) return 'done';
@@ -70,7 +67,7 @@ export default function TourLauncher() {
         ref={btnRef}
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        aria-label="Ouvrir le tour guidé"
+        aria-label={t('tour.openLabel', 'Ouvrir le tour guidé')}
         className={`relative flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-xl transition-all duration-200 shadow-sm
           ${open
             ? 'bg-emerald-700 text-white shadow-lg shadow-emerald-900/20 ring-2 ring-emerald-400/30'
@@ -81,7 +78,7 @@ export default function TourLauncher() {
           <span className="absolute inset-0 rounded-xl animate-ping bg-emerald-400 opacity-25 pointer-events-none" />
         )}
         <Map className="h-4 w-4 flex-shrink-0" />
-        <span className="hidden sm:inline">Tour guidé</span>
+        <span className="hidden sm:inline">{t('tour.guidedTour', 'Tour guidé')}</span>
         {isCompleted ? (
           <CheckCircle2 className="h-3.5 w-3.5 opacity-90" />
         ) : (
@@ -95,7 +92,7 @@ export default function TourLauncher() {
           ref={panelRef}
           role="dialog"
           aria-modal="true"
-          aria-label="Tour guidé ESGFlow"
+          aria-label={t('tour.dialogLabel', 'Tour guidé ESG Flow')}
           className="absolute right-0 top-full mt-2 w-[460px] max-w-[calc(100vw-2rem)] origin-top-right rounded-2xl border border-gray-100/80 bg-white shadow-2xl shadow-gray-400/20 z-50 overflow-hidden"
           style={{ animation: 'tourPanelIn 0.2s cubic-bezier(0.16,1,0.3,1) both' }}
         >
@@ -110,17 +107,17 @@ export default function TourLauncher() {
                 <div className="flex items-center gap-2 mb-2">
                   <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full px-3 py-1">
                     <Sparkles className="h-3 w-3" />
-                    Tour interactif
+                    {t('tour.interactive', 'Tour interactif')}
                   </span>
                 </div>
-                <h3 className="text-xl font-bold tracking-tight">Découvrez ESGFlow</h3>
+                <h3 className="text-xl font-bold tracking-tight">{t('tour.discover', 'Découvrez ESG Flow')}</h3>
                 <p className="text-sm text-slate-300/80 mt-1 max-w-xs">
-                  Toutes les fonctionnalités, étape par étape, en moins de {totalMinutes} minutes.
+                  {t('tour.subtitle', 'Toutes les fonctionnalités, étape par étape, en moins de {{min}} minutes.', { min: totalMinutes })}
                 </p>
               </div>
               <button
                 onClick={() => setOpen(false)}
-                aria-label="Fermer"
+                aria-label={t('tour.close', 'Fermer')}
                 className="flex-shrink-0 p-1.5 rounded-xl hover:bg-white/10 transition-colors text-white/50 hover:text-white"
               >
                 <X className="h-4 w-4" />
@@ -131,7 +128,7 @@ export default function TourLauncher() {
             <div className="relative mt-4 flex items-center gap-4 text-xs text-white/60">
               <span className="flex items-center gap-1.5">
                 <BookOpen className="h-3.5 w-3.5 text-emerald-400" />
-                <strong className="text-white">{totalSteps}</strong> étapes
+                <strong className="text-white">{totalSteps}</strong> {t('tour.steps', 'étapes')}
               </span>
               <span className="flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5 text-emerald-400" />
@@ -139,14 +136,14 @@ export default function TourLauncher() {
               </span>
               <span className="flex items-center gap-1.5">
                 <Map className="h-3.5 w-3.5 text-emerald-400" />
-                <strong className="text-white">{TOUR_CHAPTERS.length}</strong> chapitres
+                <strong className="text-white">{chapters.length}</strong> {t('tour.chapters', 'chapitres')}
               </span>
             </div>
 
             {/* Global progress bar */}
             <div className="relative mt-3">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] text-white/40 uppercase tracking-wider">Progression</span>
+                <span className="text-[10px] text-white/40 uppercase tracking-wider">{t('tour.progress', 'Progression')}</span>
                 <span className="text-[10px] font-bold text-emerald-300">{globalProgress}%</span>
               </div>
               <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
@@ -162,11 +159,11 @@ export default function TourLauncher() {
           <div className="max-h-[360px] overflow-y-auto">
             <div className="px-3 pt-3 pb-1">
               <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-1">
-                Chapitres — cliquez pour démarrer
+                {t('tour.chaptersHint', 'Chapitres — cliquez pour démarrer')}
               </p>
             </div>
             <div className="py-1 px-2 space-y-0.5">
-              {TOUR_CHAPTERS.map((chapter) => {
+              {chapters.map((chapter) => {
                 const status = chapterProgress(chapter);
                 const isOpen = activeChapter === chapter.id;
 
@@ -194,10 +191,10 @@ export default function TourLauncher() {
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-semibold text-gray-900 truncate">{chapter.title}</p>
                           {status === 'done' && (
-                            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">✓ Complété</span>
+                            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">{t('tour.completed', '✓ Complété')}</span>
                           )}
                           {status === 'active' && (
-                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${chapter.bgColor} ${chapter.color} border ${chapter.borderColor}`}>En cours</span>
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${chapter.bgColor} ${chapter.color} border ${chapter.borderColor}`}>{t('tour.inProgress', 'En cours')}</span>
                           )}
                         </div>
                         <p className="text-xs text-gray-500 truncate">{chapter.description}</p>
@@ -206,7 +203,7 @@ export default function TourLauncher() {
                       {/* Step badge + chevron */}
                       <div className="flex-shrink-0 flex items-center gap-2">
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${chapter.bgColor} ${chapter.color}`}>
-                          {chapter.stepCount} étape{chapter.stepCount > 1 ? 's' : ''}
+                          {t('tour.stepCount', '{{n}} étape{{s}}', { n: chapter.stepCount, s: chapter.stepCount > 1 ? 's' : '' })}
                         </span>
                         <ChevronRight className={`h-4 w-4 text-gray-300 transition-transform duration-200 ${isOpen ? 'rotate-90 text-gray-500' : 'group-hover:translate-x-0.5'}`} />
                       </div>
@@ -224,7 +221,7 @@ export default function TourLauncher() {
                           className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${chapter.bgColor} ${chapter.color} border ${chapter.borderColor} hover:shadow-sm active:scale-95`}
                         >
                           <ArrowRight className="h-3.5 w-3.5" />
-                          Démarrer ce chapitre
+                          {t('tour.startChapter', 'Démarrer ce chapitre')}
                         </button>
                       </div>
                     )}
@@ -242,12 +239,12 @@ export default function TourLauncher() {
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-sm font-semibold transition-all shadow-sm hover:shadow active:scale-[0.98]"
               >
                 <PlayCircle className="h-4 w-4" />
-                {isCompleted || isDismissed ? 'Relancer le tour complet' : 'Démarrer le tour complet'}
+                {isCompleted || isDismissed ? t('tour.relaunch', 'Relancer le tour complet') : t('tour.startFull', 'Démarrer le tour complet')}
               </button>
               {(isCompleted || isDismissed) && (
                 <button
                   onClick={() => { setOpen(false); startTour(); }}
-                  title="Recommencer depuis le début"
+                  title={t('tour.restart', 'Recommencer depuis le début')}
                   className="flex items-center justify-center gap-1.5 p-2.5 border border-gray-200 bg-white hover:bg-gray-100 text-gray-600 rounded-xl transition-colors"
                 >
                   <RotateCcw className="h-4 w-4" />
@@ -257,7 +254,7 @@ export default function TourLauncher() {
             {/* Keyboard hint */}
             <p className="mt-2 flex items-center gap-1.5 text-[10px] text-gray-400 justify-center">
               <Keyboard className="h-3 w-3" />
-              Appuyez sur <kbd className="px-1 py-0.5 bg-gray-200 rounded text-[10px] font-mono">ESC</kbd> pour fermer
+              {t('tour.escA', 'Appuyez sur')} <kbd className="px-1 py-0.5 bg-gray-200 rounded text-[10px] font-mono">ESC</kbd> {t('tour.escB', 'pour fermer')}
             </p>
           </div>
         </div>

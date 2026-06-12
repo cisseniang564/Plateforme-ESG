@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X, Copy, Check } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Button from '../common/Button';
 import api from '@/services/api';
 
@@ -38,7 +39,7 @@ export default function CreateWebhookModal({
 
       setSecret(response.data.secret);
     } catch (error: any) {
-      alert(error.response?.data?.detail || 'Failed to create webhook');
+      toast.error(error.response?.data?.detail || 'Échec de la création du webhook');
       setLoading(false);
     }
   };
@@ -73,7 +74,7 @@ export default function CreateWebhookModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-[60] overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4">
         <div 
           className="fixed inset-0 bg-black bg-opacity-30"

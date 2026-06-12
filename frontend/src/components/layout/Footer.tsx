@@ -6,7 +6,7 @@ export default function Footer() {
     <footer className="bg-white border-t border-gray-200 px-6 py-3">
       <div className="flex items-center justify-between text-sm text-gray-600">
         <div className="flex items-center gap-4">
-          <span>© {currentYear} ESGFlow. All rights reserved.</span>
+          <span>© {currentYear} ESG Flow. All rights reserved.</span>
           <span className="text-gray-400">|</span>
           <Link to="/privacy-policy" className="hover:text-primary-600 transition-colors">Privacy</Link>
           <Link to="/terms-of-service" className="hover:text-primary-600 transition-colors">Terms</Link>

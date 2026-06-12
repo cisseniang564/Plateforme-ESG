@@ -1,15 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Leaf, Lock, Eye, EyeOff, Loader2, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import api from '@/services/api';
 
-const RULES = [
-  { label: '8 caractères minimum', test: (v: string) => v.length >= 8 },
-  { label: '1 majuscule', test: (v: string) => /[A-Z]/.test(v) },
-  { label: '1 chiffre', test: (v: string) => /\d/.test(v) },
-];
-
 export default function ResetPassword() {
+  const { t } = useTranslation();
+  const RULES = useMemo(() => [
+    { label: t('profile.pwd8chars'), test: (v: string) => v.length >= 8 },
+    { label: t('profile.pwd1upper'), test: (v: string) => /[A-Z]/.test(v) },
+    { label: t('profile.pwd1digit'), test: (v: string) => /\d/.test(v) },
+  ], [t]);
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const token = params.get('token') || '';
@@ -42,7 +43,7 @@ export default function ResetPassword() {
     } catch (err: any) {
       setErrorMsg(
         err?.response?.data?.detail ||
-        'Token invalide ou expiré. Demandez un nouveau lien.'
+        t('auth.tokenExpired')
       );
       setStatus('error');
     }
@@ -62,7 +63,7 @@ export default function ResetPassword() {
             <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/30">
               <Leaf className="h-5 w-5 text-white" />
             </div>
-            <span className="text-2xl font-bold text-white">ESGFlow</span>
+            <span className="text-2xl font-bold text-white">ESG Flow</span>
           </Link>
         </div>
 
@@ -74,12 +75,12 @@ export default function ResetPassword() {
               <div className="w-16 h-16 bg-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
                 <CheckCircle className="h-8 w-8 text-green-400" />
               </div>
-              <h1 className="text-xl font-bold text-white mb-2">Mot de passe mis à jour !</h1>
+              <h1 className="text-xl font-bold text-white mb-2">{t('auth.passwordUpdated')}</h1>
               <p className="text-slate-400 text-sm mb-4">
-                Vous allez être redirigé vers la connexion dans quelques secondes…
+                {t('auth.redirectingToLogin')}
               </p>
               <Link to="/login" className="text-sm font-medium text-green-400 hover:text-green-300 transition-colors">
-                Connexion →
+                {t('auth.login')} →
               </Link>
             </div>
           ) : (
@@ -88,15 +89,15 @@ export default function ResetPassword() {
                 <div className="w-14 h-14 bg-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Lock className="h-7 w-7 text-green-400" />
                 </div>
-                <h1 className="text-2xl font-bold text-white">Nouveau mot de passe</h1>
-                <p className="text-slate-400 text-sm mt-2">Choisissez un mot de passe fort.</p>
+                <h1 className="text-2xl font-bold text-white">{t('auth.newPassword')}</h1>
+                <p className="text-slate-400 text-sm mt-2">{t('auth.chooseStrongPassword')}</p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Password */}
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                    Nouveau mot de passe
+                    {t('auth.newPassword')}
                   </label>
                   <div className="relative">
                     <input
@@ -132,7 +133,7 @@ export default function ResetPassword() {
                 {/* Confirm */}
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                    Confirmer le mot de passe
+                    {t('auth.confirmPassword')}
                   </label>
                   <input
                     type={showPwd ? 'text' : 'password'}
@@ -148,7 +149,7 @@ export default function ResetPassword() {
                     style={{ background: confirm && confirm !== password ? undefined : 'rgba(255,255,255,0.05)' }}
                   />
                   {confirm && confirm !== password && (
-                    <p className="text-xs text-red-400 mt-1">Les mots de passe ne correspondent pas.</p>
+                    <p className="text-xs text-red-400 mt-1">{t('profile.passwordMismatch')}</p>
                   )}
                 </div>
 
@@ -165,16 +166,16 @@ export default function ResetPassword() {
                   className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-green-500 hover:bg-green-400 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm transition-all shadow-xl shadow-green-500/30 mt-2"
                 >
                   {status === 'loading' ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> Mise à jour…</>
+                    <><Loader2 className="h-4 w-4 animate-spin" /> {t('profile.updating')}</>
                   ) : (
-                    'Réinitialiser le mot de passe'
+                    t('auth.resetPassword')
                   )}
                 </button>
               </form>
 
               <div className="mt-5 text-center">
                 <Link to="/forgot-password" className="text-xs text-slate-500 hover:text-slate-300 transition-colors">
-                  Renvoyer un nouveau lien
+                  {t('auth.resendLink')}
                 </Link>
               </div>
             </>

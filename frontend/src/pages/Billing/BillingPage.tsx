@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import type { RootState } from '@/store';
 import {
   CreditCard, Zap, Shield, BarChart3, Users, Building2,
@@ -10,6 +11,7 @@ import {
 } from 'lucide-react';
 import api from '@/services/api';
 import Spinner from '@/components/common/Spinner';
+import { invalidatePlanCache } from '@/hooks/usePlan';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Subscription {
@@ -25,6 +27,9 @@ interface Subscription {
   max_users: number;
   max_organizations: number;
   max_api_calls: number;
+  // Current usage (populated by backend)
+  current_users?: number;
+  current_orgs?: number;
 }
 
 interface Invoice {
@@ -45,92 +50,86 @@ interface UsageSummary {
 }
 
 // ─── Plan config ──────────────────────────────────────────────────────────────
-const PLANS = [
-  {
-    id: 'free',
-    name: 'Free',
-    priceMonthly: 0,
-    priceYearly: 0,
-    description: 'Pour découvrir ESGFlow',
-    highlight: false,
-    features: [
-      '3 utilisateurs',
-      '5 organisations',
-      '1 000 appels API/mois',
-      'Rapports basiques',
-      'Matrice de matérialité',
-      'Support email',
-    ],
-    notIncluded: ['Rapports CSRD', 'Analyses IA', 'Connecteurs avancés'],
-  },
-  {
-    id: 'starter',
-    name: 'Starter',
-    priceMonthly: 29,
-    priceYearly: 23,   // ~20% off
-    description: 'Pour les PME ESG-actives',
-    highlight: false,
-    features: [
-      '10 utilisateurs',
-      '25 organisations',
-      '10 000 appels API/mois',
-      'Rapports CSRD & DPEF',
-      'Bilan Carbone & SBTi',
-      'Supply Chain ESG',
-      'Import FEC',
-      'Support prioritaire',
-    ],
-    notIncluded: ['Rapports SFDR', 'IA narrative', 'Connecteurs avancés'],
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    priceMonthly: 99,
-    priceYearly: 79,   // ~20% off
-    description: 'Pour les entreprises en croissance',
-    highlight: true,
-    badge: 'Populaire',
-    features: [
-      '50 utilisateurs',
-      '100 organisations',
-      '100 000 appels API/mois',
-      'Tous les rapports ESG',
-      'IA prédictive & narrative',
-      'Connecteurs avancés',
-      'Benchmarking sectoriel',
-      'Multi-standards (GRI, SASB…)',
-      'Support dédié',
-    ],
-    notIncluded: [],
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    priceMonthly: null,
-    priceYearly: null,
-    description: 'Pour les grandes organisations',
-    highlight: false,
-    features: [
-      'Utilisateurs illimités',
-      'Organisations illimitées',
-      'API illimitée',
-      'SLA garanti 99.9%',
-      'SSO / SAML',
-      'Déploiement on-premise',
-      'Support 24/7 dédié',
-    ],
-    notIncluded: [],
-  },
-];
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildPlans(t: any) {
+  return [
+    {
+      id: 'free', name: 'Free', priceMonthly: 0, priceYearly: 0,
+      description: t('billing.plans.free.desc'),
+      highlight: false,
+      features: [
+        t('billing.plans.free.f1'), t('billing.plans.free.f2'), t('billing.plans.free.f3'),
+        t('billing.plans.free.f4'), t('billing.plans.free.f5'), t('billing.plans.free.f6'),
+      ],
+      notIncluded: [t('billing.plans.free.n1'), t('billing.plans.free.n2'), t('billing.plans.free.n3')],
+    },
+    {
+      id: 'pme', name: 'PME', priceMonthly: 249, priceYearly: 212,
+      description: t('billing.plans.pme.desc'),
+      highlight: false,
+      features: [
+        t('billing.plans.pme.f1'), t('billing.plans.pme.f2'), t('billing.plans.pme.f3'),
+        t('billing.plans.pme.f4'), t('billing.plans.pme.f5'), t('billing.plans.pme.f6'),
+        t('billing.plans.pme.f7'), t('billing.plans.pme.f8'), t('billing.plans.pme.f9'),
+      ],
+      notIncluded: [t('billing.plans.pme.n1'), t('billing.plans.pme.n2'), t('billing.plans.pme.n3')],
+    },
+    {
+      id: 'eti', name: 'ETI', priceMonthly: 599, priceYearly: 509,
+      description: t('billing.plans.eti.desc'),
+      highlight: true, badge: t('billing.recommended'),
+      features: [
+        t('billing.plans.eti.f1'), t('billing.plans.eti.f2'), t('billing.plans.eti.f3'),
+        t('billing.plans.eti.f4'), t('billing.plans.eti.f5'), t('billing.plans.eti.f6'),
+        t('billing.plans.eti.f7'), t('billing.plans.eti.f8'), t('billing.plans.eti.f9'),
+        t('billing.plans.eti.f10'),
+      ],
+      notIncluded: [],
+    },
+    {
+      id: 'groupe', name: 'Groupe', priceMonthly: 1199, priceYearly: 1019,
+      description: t('billing.plans.groupe.desc'),
+      highlight: false,
+      features: [
+        t('billing.plans.groupe.f1'), t('billing.plans.groupe.f2'), t('billing.plans.groupe.f3'),
+        t('billing.plans.groupe.f4'), t('billing.plans.groupe.f5'), t('billing.plans.groupe.f6'),
+        t('billing.plans.groupe.f7'), t('billing.plans.groupe.f8'),
+      ],
+      notIncluded: [],
+    },
+    {
+      id: 'enterprise', name: 'Enterprise', priceMonthly: null, priceYearly: null,
+      description: t('billing.plans.enterprise.desc'),
+      highlight: false,
+      features: [
+        t('billing.plans.enterprise.f1'), t('billing.plans.enterprise.f2'), t('billing.plans.enterprise.f3'),
+        t('billing.plans.enterprise.f4'), t('billing.plans.enterprise.f5'), t('billing.plans.enterprise.f6'),
+      ],
+      notIncluded: [],
+    },
+  ];
+}
 
-const PLAN_LABELS: Record<string, string> = { free: 'Free', starter: 'Starter', pro: 'Pro', enterprise: 'Enterprise' };
+const PLAN_LABELS: Record<string, string> = {
+  free: 'Free', pme: 'PME', eti: 'ETI', groupe: 'Groupe', enterprise: 'Enterprise',
+  // Legacy
+  starter: 'Starter', pro: 'Pro',
+};
 const PLAN_COLORS: Record<string, string> = {
   free: 'bg-gray-100 text-gray-700',
+  pme: 'bg-blue-100 text-blue-700',
+  eti: 'bg-emerald-100 text-emerald-700',
+  groupe: 'bg-violet-100 text-violet-700',
+  enterprise: 'bg-purple-100 text-purple-700',
+  // Legacy
   starter: 'bg-blue-100 text-blue-700',
   pro: 'bg-emerald-100 text-emerald-700',
-  enterprise: 'bg-purple-100 text-purple-700',
 };
-const TIER_ORDER: Record<string, number> = { free: 0, starter: 1, pro: 2, enterprise: 3 };
+const TIER_ORDER: Record<string, number> = {
+  free: 0, pme: 1, eti: 2, groupe: 3, enterprise: 4,
+  // Legacy mapped to equivalent rank
+  starter: 1, pro: 2,
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function fmtDate(ts?: string | number | null): string {
@@ -148,23 +147,53 @@ function daysUntil(ts?: string | null): number | null {
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-function UsageBar({ label, used, max, color }: { label: string; used: number; max: number; color: string }) {
-  const pct = max > 0 ? Math.min(100, Math.round((used / max) * 100)) : 0;
-  const warn = pct >= 80;
+function UsageBar({
+  label, used, max, color, onUpgrade,
+}: {
+  label: string; used: number; max: number; color: string; onUpgrade?: () => void;
+}) {
+  const { t } = useTranslation();
+  const unlimited = max < 0;
+  const pct = (!unlimited && max > 0) ? Math.min(100, Math.round((used / max) * 100)) : 0;
+  const warn = !unlimited && pct >= 80;
+  const full = !unlimited && pct >= 100;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-sm text-gray-600 font-medium">{label}</span>
-        <span className={`text-sm font-semibold ${warn ? 'text-orange-600' : 'text-gray-800'}`}>
-          {used.toLocaleString()} / {max > 0 ? max.toLocaleString() : '∞'}
-          {max > 0 && <span className="text-xs text-gray-400 ml-1">({pct}%)</span>}
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm text-gray-600 font-medium">{label}</span>
+          {warn && !full && (
+            <span className="inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded-full">
+              <AlertTriangle className="h-3 w-3" /> {pct}%
+            </span>
+          )}
+          {full && (
+            <span className="inline-flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 bg-red-100 text-red-700 rounded-full">
+              <AlertTriangle className="h-3 w-3" /> {t('billing.limitReached')}
+            </span>
+          )}
+        </div>
+        <span className={`text-sm font-semibold tabular-nums ${full ? 'text-red-600' : warn ? 'text-orange-600' : 'text-gray-800'}`}>
+          {unlimited ? '∞' : `${used.toLocaleString()} / ${max.toLocaleString()}`}
         </span>
       </div>
-      {max > 0 && (
+      {!unlimited && max > 0 && (
         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-          <div className={`h-full rounded-full transition-all duration-700 ${warn ? 'bg-orange-400' : color}`}
-            style={{ width: `${pct}%` }} />
+          <div
+            className={`h-full rounded-full transition-all duration-700 ${full ? 'bg-red-500' : warn ? 'bg-orange-400' : color}`}
+            style={{ width: `${pct}%` }}
+          />
         </div>
+      )}
+      {(warn || full) && onUpgrade && (
+        <button
+          onClick={onUpgrade}
+          className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition-colors"
+        >
+          <ArrowUpRight className="h-3 w-3" />
+          {full ? t('billing.upgradeToContine') : t('billing.increaseQuota')}
+        </button>
       )}
     </div>
   );
@@ -172,6 +201,8 @@ function UsageBar({ label, used, max, color }: { label: string; used: number; ma
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function BillingPage() {
+  const { t } = useTranslation();
+  const PLANS = useMemo(() => buildPlans(t), [t]);
   const [sub, setSub]               = useState<Subscription | null>(null);
   const [invoices, setInvoices]     = useState<Invoice[]>([]);
   const [usage, setUsage]           = useState<UsageSummary | null>(null);
@@ -201,7 +232,7 @@ export default function BillingPage() {
       window.history.replaceState({}, '', window.location.pathname);
     }
     if (p.get('checkout') === 'success') {
-      setSuccess('Abonnement activé ! Bienvenue sur ESG Flow.');
+      setSuccess(t('billing.checkoutSuccess'));
       window.history.replaceState({}, '', window.location.pathname);
       setTimeout(() => setSuccess(null), 10_000);
     }
@@ -219,14 +250,29 @@ export default function BillingPage() {
       if (subRes.status === 'fulfilled') setSub(subRes.value.data);
       if (invRes.status === 'fulfilled') setInvoices(invRes.value.data?.invoices || invRes.value.data || []);
       if (usageRes.status === 'fulfilled') setUsage(usageRes.value.data);
-    } catch { setError('Impossible de charger les données de facturation.'); }
+    } catch { setError(t('billing.loadError')); }
     finally { setLoading(false); }
+  };
+
+  // ── Downgrade to Free plan ──
+  const handleDowngradeToFree = async () => {
+    if (!confirm(t('billing.confirmDowngradeToFree'))) return;
+    setAction('downgrade-free'); setError(null);
+    try {
+      await api.post('/billing/downgrade-free');
+      invalidatePlanCache();
+      setSuccess(t('billing.successDowngradeToFree'));
+      setTimeout(() => setSuccess(null), 8_000);
+      await loadAll();
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || t('billing.errorDowngrade'));
+    } finally { setAction(null); }
   };
 
   // ── New subscription (Checkout) ──
   const handleCheckout = async (planId: string) => {
-    // Free plan has no Stripe price — just go back to the app
-    if (planId === 'free') { navigate('/app'); return; }
+    // Free plan — downgrade to free tier properly
+    if (planId === 'free') { handleDowngradeToFree(); return; }
     setAction(`checkout-${planId}`); setError(null);
     try {
       const res = await api.post('/billing/checkout', {
@@ -236,10 +282,10 @@ export default function BillingPage() {
         cancel_url:  `${window.location.origin}/app/billing`,
       });
       const url = res.data.checkout_url || res.data.url;
-      if (!url) throw new Error('URL de paiement manquante');
+      if (!url) throw new Error(t('billing.errorPaymentUrl'));
       window.location.href = url;
     } catch (err: any) {
-      setError(err?.response?.data?.detail || err?.message || 'Erreur lors du paiement.');
+      setError(err?.response?.data?.detail || err?.message || t('billing.errorPayment'));
     } finally { setAction(null); }
   };
 
@@ -249,8 +295,8 @@ export default function BillingPage() {
     const label = isUpgrade ? 'upgrade' : 'downgrade';
     if (!confirm(
       isUpgrade
-        ? `Passer au plan ${PLAN_LABELS[planId]} maintenant ? La différence de prix sera débitée immédiatement au prorata.`
-        : `Passer au plan ${PLAN_LABELS[planId]} ? Le changement prendra effet à la fin de votre période en cours.`
+        ? t('billing.confirmUpgrade', { plan: PLAN_LABELS[planId] })
+        : t('billing.confirmDowngradeChange', { plan: PLAN_LABELS[planId] })
     )) return;
 
     setAction(`change-${planId}`); setError(null);
@@ -260,11 +306,11 @@ export default function BillingPage() {
         billing_cycle: billingCycle,
         proration_behavior: proration,
       });
-      setSuccess(`Plan mis à jour vers ${PLAN_LABELS[planId]} (${label}).`);
+      setSuccess(t('billing.successPlanChange', { plan: PLAN_LABELS[planId], action: label }));
       setTimeout(() => setSuccess(null), 8_000);
       await loadAll();
     } catch (err: any) {
-      setError(err?.response?.data?.detail || err?.message || 'Erreur lors du changement de plan.');
+      setError(err?.response?.data?.detail || err?.message || t('billing.errorPlanChange'));
     } finally { setAction(null); }
   };
 
@@ -274,24 +320,24 @@ export default function BillingPage() {
     try {
       const res = await api.post('/billing/portal', { return_url: window.location.href });
       const url = res.data.portal_url || res.data.url;
-      if (!url) throw new Error('URL portail manquante');
+      if (!url) throw new Error(t('billing.errorPortalUrl'));
       window.open(url, '_blank', 'noopener,noreferrer');
     } catch (err: any) {
-      setError(err?.response?.data?.detail || err?.message || 'Erreur portail de facturation.');
+      setError(err?.response?.data?.detail || err?.message || t('billing.errorPortal'));
     } finally { setAction(null); }
   };
 
   // ── Cancel ──
   const handleCancel = async () => {
-    if (!confirm("Annuler votre abonnement ? Vous conserverez l'accès jusqu'à la fin de la période.")) return;
+    if (!confirm(t('billing.confirmCancel'))) return;
     setAction('cancel'); setError(null);
     try {
       await api.post('/billing/cancel');
-      setSuccess("Abonnement annulé — accès maintenu jusqu'à la fin de la période.");
+      setSuccess(t('billing.successCancel'));
       setTimeout(() => setSuccess(null), 8_000);
       await loadAll();
     } catch (err: any) {
-      setError(err?.response?.data?.detail || 'Erreur lors de l\'annulation.');
+      setError(err?.response?.data?.detail || t('billing.errorCancel'));
     } finally { setAction(null); }
   };
 
@@ -300,11 +346,11 @@ export default function BillingPage() {
     setAction('reactivate'); setError(null);
     try {
       await api.post('/billing/reactivate');
-      setSuccess('Abonnement réactivé !');
+      setSuccess(t('billing.successReactivate'));
       setTimeout(() => setSuccess(null), 6_000);
       await loadAll();
     } catch (err: any) {
-      setError(err?.response?.data?.detail || 'Erreur lors de la réactivation.');
+      setError(err?.response?.data?.detail || t('billing.errorReactivate'));
     } finally { setAction(null); }
   };
 
@@ -314,14 +360,14 @@ export default function BillingPage() {
     try {
       const res = await api.post('/billing/retry-payment');
       if (res.data.status === 'paid') {
-        setSuccess('Paiement réussi ! Votre abonnement est de nouveau actif.');
+        setSuccess(t('billing.successPayment'));
         setTimeout(() => setSuccess(null), 8_000);
         await loadAll();
       } else {
-        setError(`Paiement non abouti (statut : ${res.data.status}). Vérifiez votre moyen de paiement.`);
+        setError(t('billing.paymentNotCompleted', { status: res.data.status }));
       }
     } catch (err: any) {
-      setError(err?.response?.data?.detail || 'Échec du paiement.');
+      setError(err?.response?.data?.detail || t('billing.errorPaymentRetry'));
     } finally { setAction(null); }
   };
 
@@ -331,7 +377,7 @@ export default function BillingPage() {
   const isPaid = !!sub?.stripe_subscription_id;
   const isPastDue = sub?.status === 'past_due';
   const trialDays = sub?.is_trial ? daysUntil(sub.trial_ends_at) : null;
-  const yearlyDiscount = 20; // %
+  const yearlyDiscount = 15; // %
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -341,16 +387,16 @@ export default function BillingPage() {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15">
-              <CreditCard className="h-3.5 w-3.5" /> Facturation
+              <CreditCard className="h-3.5 w-3.5" /> {t('billing.billing')}
             </div>
-            <h1 className="mt-4 text-4xl font-bold tracking-tight">Abonnement & Facturation</h1>
-            <p className="mt-2 text-sm text-white/80">Gérez votre plan, vos usages et vos factures Stripe.</p>
+            <h1 className="mt-4 text-4xl font-bold tracking-tight">{t('billing.title')}</h1>
+            <p className="mt-2 text-sm text-white/80">{t('billing.subtitle')}</p>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {[
-              { label: 'Plan actuel', value: PLAN_LABELS[tier] || tier },
-              { label: 'Statut', value: sub?.is_trial ? 'Essai' : sub?.is_active ? 'Actif' : (sub?.status || '—') },
-              { label: 'Renouvellement', value: sub?.current_period_end ? fmtDate(sub.current_period_end) : '—' },
+              { label: t('billing.currentPlan'), value: PLAN_LABELS[tier] || tier },
+              { label: t('billing.status'), value: sub?.is_trial ? t('billing.trial') : sub?.is_active ? t('billing.active') : (sub?.status || '—') },
+              { label: t('billing.renewal'), value: sub?.current_period_end ? fmtDate(sub.current_period_end) : '—' },
             ].map(s => (
               <div key={s.label} className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10 backdrop-blur-sm">
                 <p className="text-xs uppercase tracking-wide text-white/70">{s.label}</p>
@@ -365,14 +411,14 @@ export default function BillingPage() {
       {isWelcome && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-emerald-50 border border-emerald-200 rounded-2xl">
           <div>
-            <p className="font-bold text-emerald-900 text-lg">🎉 Votre essai gratuit de 14 jours a commencé !</p>
-            <p className="text-sm text-emerald-700 mt-1">Aucune carte bancaire requise. Choisissez votre plan ci-dessous ou explorez la plateforme gratuitement.</p>
+            <p className="font-bold text-emerald-900 text-lg">🎉 {t('billing.trialStarted')}</p>
+            <p className="text-sm text-emerald-700 mt-1">{t('billing.trialStartedDesc')}</p>
           </div>
           <button
             onClick={() => { setIsWelcome(false); navigate('/app'); }}
             className="flex-shrink-0 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-colors"
           >
-            Continuer avec l'essai gratuit →
+            {t('billing.continueFreeTrial')} →
           </button>
         </div>
       )}
@@ -393,18 +439,18 @@ export default function BillingPage() {
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-5 bg-red-50 border border-red-300 rounded-2xl">
           <AlertTriangle className="h-6 w-6 text-red-500 flex-shrink-0" />
           <div className="flex-1">
-            <p className="font-semibold text-red-800">Paiement en échec</p>
-            <p className="text-sm text-red-700 mt-0.5">Votre dernier paiement n'a pas abouti. Mettez à jour votre moyen de paiement pour conserver l'accès.</p>
+            <p className="font-semibold text-red-800">{t('billing.paymentFailed')}</p>
+            <p className="text-sm text-red-700 mt-0.5">{t('billing.paymentFailedDesc')}</p>
           </div>
           <div className="flex gap-2">
             <button onClick={handleRetryPayment} disabled={actionLoading === 'retry'}
               className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition disabled:opacity-60">
               {actionLoading === 'retry' ? <Spinner size="sm" /> : <Repeat className="h-4 w-4" />}
-              Relancer le paiement
+              {t('billing.retryPayment')}
             </button>
             <button onClick={handlePortal} disabled={actionLoading === 'portal'}
               className="inline-flex items-center gap-2 rounded-xl border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100 transition">
-              <ExternalLink className="h-3.5 w-3.5" /> Mettre à jour la carte
+              <ExternalLink className="h-3.5 w-3.5" /> {t('billing.updateCard')}
             </button>
           </div>
         </div>
@@ -414,27 +460,27 @@ export default function BillingPage() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-purple-600" />
-              <p className="font-semibold text-purple-900">Période d'essai</p>
+              <p className="font-semibold text-purple-900">{t('billing.trialPeriod')}</p>
             </div>
-            <span className="text-sm font-bold text-purple-700">{trialDays} jour{trialDays !== 1 ? 's' : ''} restant{trialDays !== 1 ? 's' : ''}</span>
+            <span className="text-sm font-bold text-purple-700">{t('billing.daysRemaining', { count: trialDays })}</span>
           </div>
           <div className="w-full h-2 bg-purple-100 rounded-full">
             <div className="h-2 bg-purple-500 rounded-full" style={{ width: `${Math.max(5, 100 - (trialDays / 14) * 100)}%` }} />
           </div>
-          <p className="text-xs text-purple-600 mt-2">Fin d'essai le {fmtDate(sub.trial_ends_at)} — souscrivez avant pour ne pas perdre vos données.</p>
+          <p className="text-xs text-purple-600 mt-2">{t('billing.trialEndWarning', { date: fmtDate(sub.trial_ends_at) })}</p>
         </div>
       )}
       {sub?.cancel_at_period_end && (
         <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
           <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
           <div className="flex-1">
-            <p className="font-semibold text-amber-800">Résiliation programmée</p>
-            <p className="text-sm text-amber-700">Accès maintenu jusqu'au {fmtDate(sub.current_period_end)}.</p>
+            <p className="font-semibold text-amber-800">{t('billing.cancellationScheduled')}</p>
+            <p className="text-sm text-amber-700">{t('billing.accessUntil')} {fmtDate(sub.current_period_end)}.</p>
           </div>
           <button onClick={handleReactivate} disabled={actionLoading === 'reactivate'}
             className="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition disabled:opacity-60">
             {actionLoading === 'reactivate' ? <Spinner size="sm" /> : <RefreshCw className="h-3.5 w-3.5" />}
-            Réactiver
+            {t('billing.reactivate')}
           </button>
         </div>
       )}
@@ -447,17 +493,17 @@ export default function BillingPage() {
               <span className={`px-3 py-1 rounded-full text-sm font-bold ${PLAN_COLORS[tier]}`}>
                 {PLAN_LABELS[tier] || tier}
               </span>
-              {sub?.is_trial && <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">Essai gratuit</span>}
-              {isPastDue && <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">Paiement en attente</span>}
-              {!isPastDue && sub?.is_active && !sub.is_trial && <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Actif</span>}
+              {sub?.is_trial && <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">{t('billing.freeTrial')}</span>}
+              {isPastDue && <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">{t('billing.paymentPending')}</span>}
+              {!isPastDue && sub?.is_active && !sub.is_trial && <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">{t('billing.active')}</span>}
             </div>
             <h2 className="text-xl font-bold text-gray-900">{PLANS.find(p => p.id === tier)?.name || tier}</h2>
             <p className="text-sm text-gray-500 mt-0.5">{PLANS.find(p => p.id === tier)?.description}</p>
             {sub?.current_period_end && !sub.is_trial && (
               <p className="text-sm text-gray-500 mt-2">
                 {sub.cancel_at_period_end
-                  ? `Accès jusqu'au ${fmtDate(sub.current_period_end)}`
-                  : `Prochain renouvellement : ${fmtDate(sub.current_period_end)}`}
+                  ? t('billing.accessUntilDate', { date: fmtDate(sub.current_period_end) })
+                  : t('billing.nextRenewal', { date: fmtDate(sub.current_period_end) })}
               </p>
             )}
           </div>
@@ -466,13 +512,13 @@ export default function BillingPage() {
               <button onClick={handlePortal} disabled={actionLoading === 'portal'}
                 className="flex items-center gap-1.5 px-4 py-2 border border-gray-200 text-sm font-medium text-gray-700 rounded-xl hover:bg-gray-50 transition disabled:opacity-60">
                 {actionLoading === 'portal' ? <Spinner size="sm" /> : <ExternalLink className="h-3.5 w-3.5" />}
-                Portail Stripe
+                {t('billing.stripePortal')}
               </button>
             )}
             {isPaid && !sub?.cancel_at_period_end && tier !== 'free' && (
               <button onClick={handleCancel} disabled={!!actionLoading}
                 className="px-4 py-2 border border-red-200 text-red-600 text-sm font-medium rounded-xl hover:bg-red-50 transition disabled:opacity-60">
-                Annuler
+                {t('common.cancel')}
               </button>
             )}
           </div>
@@ -483,20 +529,20 @@ export default function BillingPage() {
       {sub && (
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <h3 className="text-sm font-semibold text-gray-700 mb-5 flex items-center gap-2">
-            <Activity className="h-4 w-4 text-violet-500" /> Usage du mois en cours
+            <Activity className="h-4 w-4 text-violet-500" /> {t('billing.currentMonthUsage')}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <UsageBar label="Appels API" used={usage?.current_month.calls || 0} max={sub.max_api_calls || 0} color="bg-violet-500" />
-              <UsageBar label="Utilisateurs" used={0} max={sub.max_users || 0} color="bg-blue-500" />
-              <UsageBar label="Organisations" used={0} max={sub.max_organizations || 0} color="bg-purple-500" />
+              <UsageBar label={t('billing.apiCalls')} used={usage?.current_month.calls || 0} max={sub.max_api_calls || 0} color="bg-violet-500" onUpgrade={() => document.getElementById('plans-section')?.scrollIntoView({ behavior: 'smooth' })} />
+              <UsageBar label={t('billing.users')} used={sub.current_users ?? 0} max={sub.max_users || 0} color="bg-blue-500" onUpgrade={() => document.getElementById('plans-section')?.scrollIntoView({ behavior: 'smooth' })} />
+              <UsageBar label={t('billing.organizations')} used={sub.current_orgs ?? 0} max={sub.max_organizations || 0} color="bg-purple-500" onUpgrade={() => document.getElementById('plans-section')?.scrollIntoView({ behavior: 'smooth' })} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: "Appels auj.", value: (usage?.today.calls || 0).toLocaleString(), icon: Zap, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                { label: 'Ce mois', value: (usage?.current_month.calls || 0).toLocaleString(), icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50' },
-                { label: 'Limite', value: sub.max_api_calls ? sub.max_api_calls.toLocaleString() : '∞', icon: Shield, color: 'text-purple-600', bg: 'bg-purple-50' },
-                { label: 'Utilisation', value: usage?.usage_pct != null ? `${usage.usage_pct}%` : '—', icon: BarChart3, color: 'text-orange-600', bg: 'bg-orange-50' },
+                { label: t('billing.callsToday'), value: (usage?.today.calls || 0).toLocaleString(), icon: Zap, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                { label: t('billing.thisMonth'), value: (usage?.current_month.calls || 0).toLocaleString(), icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50' },
+                { label: t('billing.limit'), value: sub.max_api_calls ? sub.max_api_calls.toLocaleString() : '∞', icon: Shield, color: 'text-purple-600', bg: 'bg-purple-50' },
+                { label: t('billing.usage'), value: usage?.usage_pct != null ? `${usage.usage_pct}%` : '—', icon: BarChart3, color: 'text-orange-600', bg: 'bg-orange-50' },
               ].map(({ label, value, icon: Icon, color, bg }) => (
                 <div key={label} className={`${bg} rounded-xl p-3`}>
                   <Icon className={`h-4 w-4 ${color} mb-1.5 opacity-70`} />
@@ -510,27 +556,27 @@ export default function BillingPage() {
       )}
 
       {/* ── Plan comparison ── */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div id="plans-section" className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-violet-500" />
-            {isPaid ? 'Changer de plan' : 'Choisir un plan'}
+            {isPaid ? t('billing.changePlan') : t('billing.choosePlan')}
           </h3>
           {/* Monthly / yearly toggle */}
           <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-xl text-sm">
             <button type="button" onClick={() => setCycle('monthly')}
               className={`px-3 py-1.5 rounded-lg font-medium transition ${billingCycle === 'monthly' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
-              <span className="pointer-events-none">Mensuel</span>
+              <span className="pointer-events-none">{t('billing.monthly')}</span>
             </button>
             <button type="button" onClick={() => setCycle('yearly')}
               className={`px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 ${billingCycle === 'yearly' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
-              <span className="pointer-events-none">Annuel</span>
+              <span className="pointer-events-none">{t('billing.yearly')}</span>
               <span className="pointer-events-none text-[10px] font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full">-{yearlyDiscount}%</span>
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {PLANS.map(plan => {
             const isCurrent = plan.id === tier;
             const price = billingCycle === 'yearly' ? plan.priceYearly : plan.priceMonthly;
@@ -550,7 +596,7 @@ export default function BillingPage() {
                   <span className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-wide whitespace-nowrap ${
                     isCurrent ? 'bg-emerald-600 text-white' : 'bg-violet-600 text-white'
                   }`}>
-                    {isCurrent ? 'Plan actuel' : plan.badge}
+                    {isCurrent ? t('billing.currentPlan') : plan.badge}
                   </span>
                 )}
 
@@ -561,18 +607,18 @@ export default function BillingPage() {
 
                 <div className="flex items-baseline gap-0.5 mb-1">
                   {price === null ? (
-                    <span className="text-xl font-bold text-gray-900">Sur devis</span>
+                    <span className="text-xl font-bold text-gray-900">{t('billing.contactUs')}</span>
                   ) : price === 0 ? (
-                    <span className="text-2xl font-bold text-gray-900">Gratuit</span>
+                    <span className="text-2xl font-bold text-gray-900">{t('billing.free')}</span>
                   ) : (
                     <>
                       <span className="text-2xl font-bold text-gray-900">{price}€</span>
-                      <span className="text-xs text-gray-400">/mois</span>
+                      <span className="text-xs text-gray-400">/{t('billing.mo')}</span>
                     </>
                   )}
                 </div>
                 {billingCycle === 'yearly' && price !== null && price > 0 && (
-                  <p className="text-xs text-emerald-600 font-medium mb-3">facturé {price * 12}€/an</p>
+                  <p className="text-xs text-emerald-600 font-medium mb-3">{t('billing.billedYearly', { amount: price * 12 })}</p>
                 )}
                 {(price === null || price === 0 || billingCycle === 'monthly') && <div className="mb-3" />}
 
@@ -593,12 +639,15 @@ export default function BillingPage() {
                   <button
                     onClick={() => {
                       if (plan.id === 'enterprise') { window.open('mailto:sales@esgflow.io', '_self'); return; }
-                      if (plan.id === 'free') { navigate('/app'); return; }
+                      if (plan.id === 'free') {
+                        // Explicitly downgrade to Free (updates DB, clears trial)
+                        handleDowngradeToFree(); return;
+                      }
                       if (isPaid) {
-                        // Existing subscriber → change plan with proration
+                        // Existing paid subscriber → change plan with proration
                         handleChangePlan(plan.id, isUpgrade ? 'create_prorations' : 'none');
                       } else {
-                        // New subscriber → Stripe Checkout
+                        // New subscriber (trial or expired) → Stripe Checkout
                         handleCheckout(plan.id);
                       }
                     }}
@@ -611,16 +660,16 @@ export default function BillingPage() {
                         : 'bg-gray-900 hover:bg-gray-800 text-white'
                     }`}
                   >
-                    {(actionLoading === `checkout-${plan.id}` || actionLoading === `change-${plan.id}`) && <Spinner size="sm" />}
+                    {(actionLoading === `checkout-${plan.id}` || actionLoading === `change-${plan.id}` || (plan.id === 'free' && actionLoading === 'downgrade-free')) && <Spinner size="sm" />}
                     {plan.id === 'enterprise'
-                      ? 'Contacter'
+                      ? t('billing.contact')
                       : plan.id === 'free'
-                      ? 'Continuer gratuitement'
+                      ? t('billing.continueFree')
                       : isUpgrade
-                      ? 'Passer à ce plan'
+                      ? t('billing.upgradeToPlan')
                       : isDowngrade
-                      ? 'Réduire le plan'
-                      : 'Choisir'}
+                      ? t('billing.downgradePlan')
+                      : t('billing.choose')}
                     <ArrowRight className="h-3 w-3" />
                   </button>
                 )}
@@ -635,15 +684,15 @@ export default function BillingPage() {
         <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
           <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
             <Calendar className="h-4 w-4 text-gray-500" />
-            <h3 className="text-sm font-semibold text-gray-700">Historique des factures</h3>
+            <h3 className="text-sm font-semibold text-gray-700">{t('billing.invoiceHistory')}</h3>
           </div>
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50/60 border-b border-gray-100">
-                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Facture</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Date</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Montant</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Statut</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('billing.invoice')}</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('billing.date')}</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('billing.amount')}</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('billing.status')}</th>
                 <th className="w-12" />
               </tr>
             </thead>
@@ -661,7 +710,7 @@ export default function BillingPage() {
                       : inv.status === 'open' ? 'bg-orange-100 text-orange-700'
                       : 'bg-gray-100 text-gray-600'
                     }`}>
-                      {inv.status === 'paid' ? 'Payée' : inv.status === 'open' ? 'En attente' : inv.status}
+                      {inv.status === 'paid' ? t('billing.invoicePaid') : inv.status === 'open' ? t('billing.invoiceOpen') : inv.status}
                     </span>
                   </td>
                   <td className="px-4 py-3.5 text-center">
@@ -682,8 +731,8 @@ export default function BillingPage() {
       {!loading && invoices.length === 0 && (
         <div className="text-center py-10 rounded-2xl border border-dashed border-gray-200">
           <CreditCard className="h-10 w-10 text-gray-200 mx-auto mb-3" />
-          <p className="text-gray-500 text-sm font-medium">Aucune facture pour le moment</p>
-          <p className="text-gray-400 text-xs mt-1">Les factures apparaîtront ici après votre premier paiement.</p>
+          <p className="text-gray-500 text-sm font-medium">{t('billing.noInvoicesTitle')}</p>
+          <p className="text-gray-400 text-xs mt-1">{t('billing.noInvoicesDesc')}</p>
         </div>
       )}
 

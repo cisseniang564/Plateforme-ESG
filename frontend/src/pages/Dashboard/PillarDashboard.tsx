@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Activity, Award } from 'lucide-react';
-import Card from '@/components/common/Card';
+import { Activity, Award, Leaf, Users, Shield } from 'lucide-react';
 import ScoreCard from '@/components/widgets/ScoreCard';
 import BarChart from '@/components/charts/BarChart';
 import Spinner from '@/components/common/Spinner';
+import BackButton from '@/components/common/BackButton';
 import api from '@/services/api';
 
 interface PillarScore {
@@ -47,6 +47,24 @@ const PILLAR_CHART_COLORS: Record<string, string> = {
   environmental: '#22c55e',
   social: '#3b82f6',
   governance: '#a855f7',
+};
+
+const PILLAR_GRADIENTS: Record<string, string> = {
+  environmental: 'linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%)',
+  social:        'linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%)',
+  governance:    'linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #c084fc 100%)',
+};
+
+const PILLAR_ICONS: Record<string, React.ElementType> = {
+  environmental: Leaf,
+  social:        Users,
+  governance:    Shield,
+};
+
+const PILLAR_LABELS: Record<string, string> = {
+  environmental: 'Environnement',
+  social:        'Social',
+  governance:    'Gouvernance',
 };
 
 export default function PillarDashboard() {
@@ -102,32 +120,48 @@ export default function PillarDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Spinner size="lg" />
+        <Spinner />
       </div>
     );
   }
 
+  const PillarIcon = PILLAR_ICONS[pillarKey] ?? Leaf;
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <button
-          onClick={() => navigate('/app')}
-          className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          {t('common.backToDashboard', 'Back to Dashboard')}
-        </button>
-        <h1 className="text-3xl font-bold text-gray-900 capitalize">
-          {t(`pillars.${pillarKey}`, pillarKey)} Dashboard
-        </h1>
-        <p className="mt-2 text-gray-600">
-          {pillarKey === 'environmental'
-            ? t('pillars.environmentalDesc', 'Environmental impact and sustainability metrics')
-            : pillarKey === 'social'
-            ? t('pillars.socialDesc', 'Social responsibility and community impact')
-            : t('pillars.governanceDesc', 'Corporate governance and ethics')}
-        </p>
+      {/* ── Hero ── */}
+      <div
+        className="relative overflow-hidden rounded-2xl p-8 text-white shadow-xl"
+        style={{ background: PILLAR_GRADIENTS[pillarKey] ?? PILLAR_GRADIENTS.environmental }}
+      >
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '28px 28px' }} />
+        <div className="relative">
+          <BackButton to="/app" label={t('common.backToDashboard', 'Tableau de bord')} className="mb-4 text-white/70 hover:text-white" />
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-11 h-11 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center shadow-lg">
+              <PillarIcon className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">
+                {PILLAR_LABELS[pillarKey] ?? pillarKey} — Tableau de bord
+              </h1>
+              <p className="text-sm text-white/70">
+                {pillarKey === 'environmental'
+                  ? t('pillars.environmentalDesc', 'Impact environnemental et métriques de durabilité')
+                  : pillarKey === 'social'
+                  ? t('pillars.socialDesc', 'Responsabilité sociale et impact communautaire')
+                  : t('pillars.governanceDesc', 'Gouvernance d\'entreprise et éthique')}
+              </p>
+            </div>
+          </div>
+          {/* Score pill */}
+          {pillarScore > 0 && (
+            <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm text-sm font-semibold">
+              <Award className="h-4 w-4" />
+              Score actuel : {pillarScore.toFixed(1)} / 100
+            </div>
+          )}
+        </div>
       </div>
 
       {score ? (
@@ -140,7 +174,7 @@ export default function PillarDashboard() {
           />
 
           {/* Performance vs Target */}
-          <Card title={t('scores.performanceVsTarget', 'Performance vs Target')}>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm" title={t('scores.performanceVsTarget', 'Performance vs Target')}>
             <div className="space-y-5">
               <div>
                 <div className="flex justify-between text-sm mb-2">
@@ -176,10 +210,10 @@ export default function PillarDashboard() {
                   : `${(PILLAR_TARGET - pillarScore).toFixed(1)} below target`}
               </p>
             </div>
-          </Card>
+          </div>
 
           {/* Overview */}
-          <Card title={t('dashboard.overview', 'Overview')}>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm" title={t('dashboard.overview', 'Overview')}>
             <div className="space-y-0">
               <div className="flex justify-between items-center py-3 border-b border-gray-100">
                 <span className="text-sm text-gray-600">{t('scores.rating', 'Grade')}</span>
@@ -196,10 +230,10 @@ export default function PillarDashboard() {
                 </span>
               </div>
             </div>
-          </Card>
+          </div>
         </div>
       ) : (
-        <Card>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
           <div className="text-center py-10">
             <Award className="h-12 w-12 mx-auto text-gray-300 mb-3" />
             <p className="text-gray-500 font-medium">{t('scores.noScores', 'No scores calculated yet')}</p>
@@ -210,24 +244,24 @@ export default function PillarDashboard() {
               {t('scores.calculateScore', 'Calculate scores')} →
             </button>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Indicators Breakdown Chart */}
       {indicatorChartData.length > 0 && (
-        <Card title={t('indicators.breakdown', 'Indicators Breakdown (Weights)')}>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm" title={t('indicators.breakdown', 'Indicators Breakdown (Weights)')}>
           <BarChart
             data={indicatorChartData}
             xKey="name"
             bars={[{ key: 'weight', name: t('indicators.weight', 'Weight'), color: chartColor }]}
             height={300}
           />
-        </Card>
+        </div>
       )}
 
       {/* Indicators Table */}
       {indicators.length > 0 && (
-        <Card title={t('indicators.title', 'Indicators')}>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm" title={t('indicators.title', 'Indicators')}>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -269,11 +303,11 @@ export default function PillarDashboard() {
               </tbody>
             </table>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Recent Activity */}
-      <Card title={t('dashboard.recentActivity', 'Recent Activity')}>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm" title={t('dashboard.recentActivity', 'Recent Activity')}>
         {recentUploads.length > 0 ? (
           <div className="space-y-3">
             {recentUploads.map(upload => (
@@ -309,7 +343,7 @@ export default function PillarDashboard() {
             <p className="text-sm text-gray-500">{t('common.noRecentActivity', 'No recent activity')}</p>
           </div>
         )}
-      </Card>
+      </div>
     </div>
   );
 }

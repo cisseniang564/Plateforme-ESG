@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
 import {
   Upload, Database, CheckCircle, AlertCircle, Trash2, RefreshCw,
   ChevronRight, FileSpreadsheet, Wifi, Shield, TrendingUp,
   Clock, XCircle, BarChart3, Plus,
 } from 'lucide-react';
-import Card from '@/components/common/Card';
 import Spinner from '@/components/common/Spinner';
 import api from '@/services/api';
 
@@ -67,6 +67,7 @@ export default function DataManagement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<UploadItem | null>(null);
 
   useEffect(() => { loadData(); }, []);
 
@@ -93,15 +94,17 @@ export default function DataManagement() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm(t('data.confirmDelete', 'Delete this upload record?'))) return;
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const id = deleteTarget.id;
     setDeletingId(id);
     try {
       await api.delete(`/data/uploads/${id}`);
+      setDeleteTarget(null);
       await loadData();
     } catch (err) {
       console.error('Error deleting upload:', err);
-      alert(t('data.deleteError', 'Erreur lors de la suppression. Réessayez.'));
+      toast.error(t('data.deleteError', 'Erreur lors de la suppression. Réessayez.'));
     } finally {
       setDeletingId(null);
     }
@@ -114,14 +117,14 @@ export default function DataManagement() {
   const quickLinks = [
     { icon: Upload, label: t('data.uploadData', 'Upload Data'), desc: t('data.uploadDataDesc', 'Import CSV/Excel files'), href: '/app/data/upload', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200' },
     { icon: Wifi, label: t('data.connectorsTitle', 'Connectors'), desc: t('data.connectorsDesc', 'Connect external sources'), href: '/app/data/connectors', color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200' },
-    { icon: Shield, label: t('data.qualityTitle', 'Data Quality'), desc: t('data.qualityDesc', 'Review validation metrics'), href: '/app/data/quality', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+    { icon: Shield, label: t('data.qualityTitle', 'Data Quality'), desc: t('data.qualityDesc', 'Review validation metrics'), href: '/app/data-quality', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
     { icon: BarChart3, label: t('data.myDataTitle', 'My Data'), desc: t('data.myDataDesc', 'View entered data'), href: '/app/my-data', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200' },
   ];
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Spinner size="lg" />
+        <Spinner />
       </div>
     );
   }
@@ -228,7 +231,7 @@ export default function DataManagement() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-l-4 border-blue-500">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border-l-4 border-blue-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">{t('data.totalRecords', 'Total Records')}</p>
@@ -245,9 +248,9 @@ export default function DataManagement() {
               <Database className="h-6 w-6 text-blue-600" />
             </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="border-l-4 border-emerald-500">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border-l-4 border-emerald-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">{t('data.validated', 'Validated')}</p>
@@ -267,9 +270,9 @@ export default function DataManagement() {
               <CheckCircle className="h-6 w-6 text-emerald-600" />
             </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="border-l-4 border-amber-500">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border-l-4 border-amber-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">{t('data.pendingReview', 'Pending Review')}</p>
@@ -288,7 +291,7 @@ export default function DataManagement() {
               <AlertCircle className="h-6 w-6 text-amber-600" />
             </div>
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* DB entries by pillar — only shown when entryStats available */}
@@ -302,7 +305,7 @@ export default function DataManagement() {
             const count = entryStats.by_pillar?.[key] ?? 0;
             const pct = entryStats.total > 0 ? Math.round((count / entryStats.total) * 100) : 0;
             return (
-              <Card key={key} className={`border-l-4 ${color}`}>
+              <div key={key} className={`bg-white rounded-2xl border border-gray-100 shadow-sm border-l-4 ${color}`}>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">{label}</p>
@@ -313,14 +316,14 @@ export default function DataManagement() {
                     <Icon className={`h-6 w-6 ${text}`} />
                   </div>
                 </div>
-              </Card>
+              </div>
             );
           })}
         </div>
       )}
 
       {/* Uploads Table */}
-      <Card>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
         <div className="flex items-center justify-between mb-5">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">{t('data.recentUploads', 'Recent Uploads')}</h2>
@@ -384,12 +387,14 @@ export default function DataManagement() {
                       <td className="px-4 py-3 text-gray-500">{new Date(upload.created_at).toLocaleDateString()}</td>
                       <td className="px-4 py-3 text-right">
                         <button
-                          onClick={() => handleDelete(upload.id)}
+                          type="button"
+                          onClick={() => setDeleteTarget(upload)}
                           disabled={deletingId === upload.id}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                          aria-label={t('common.delete', 'Delete')}
                           title={t('common.delete', 'Delete')}
+                          className="inline-flex items-center justify-center h-9 w-9 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 active:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <Trash2 size={14} />
+                          {deletingId === upload.id ? <Spinner size="sm" /> : <Trash2 size={16} />}
                         </button>
                       </td>
                     </tr>
@@ -414,7 +419,54 @@ export default function DataManagement() {
             </Link>
           </div>
         )}
-      </Card>
+      </div>
+
+      {/* Delete confirmation modal */}
+      {deleteTarget && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+          onClick={() => deletingId === null && setDeleteTarget(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-4">
+              <div className="p-2.5 bg-red-100 rounded-xl flex-shrink-0">
+                <Trash2 className="h-5 w-5 text-red-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-bold text-gray-900">
+                  {t('data.confirmDeleteTitle', 'Supprimer cet import ?')}
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  <span className="font-semibold text-gray-800 break-all">"{deleteTarget.filename}"</span>{' '}
+                  {t('data.confirmDeleteBody', "et ses données associées seront définitivement supprimés. Cette action est irréversible.")}
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={deletingId !== null}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {t('common.cancel', 'Annuler')}
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={deletingId !== null}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {deletingId !== null ? <Spinner size="sm" /> : <Trash2 size={14} />}
+                {t('common.delete', 'Supprimer')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

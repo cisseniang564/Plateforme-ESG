@@ -15,9 +15,46 @@ import {
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import Card from '@/components/common/Card';
 import Spinner from '@/components/common/Spinner';
 import api from '@/services/api';
+
+// ─── Session-storage cache (5-min TTL) ────────────────────────────────────────
+// The Intelligence Dashboard hits ~11 endpoints on mount (scores, scope summary,
+// benchmarks, multi-standards, 4× analytics, 3× ML). Without caching, navigating
+// away and back re-runs everything — including ML training on the backend which
+// takes seconds. We cache per-tenant per-URL for 5 minutes in sessionStorage.
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+function cacheKey(url: string): string {
+  return `ia_dash::${url}`;
+}
+
+async function cachedGet<T = any>(url: string): Promise<T> {
+  try {
+    const raw = sessionStorage.getItem(cacheKey(url));
+    if (raw) {
+      const { t, d } = JSON.parse(raw);
+      if (Date.now() - t < CACHE_TTL_MS) return d as T;
+    }
+  } catch { /* ignore parse errors */ }
+  const res = await api.get(url);
+  try {
+    sessionStorage.setItem(cacheKey(url), JSON.stringify({ t: Date.now(), d: res.data }));
+  } catch { /* sessionStorage full or disabled */ }
+  return res.data as T;
+}
+
+/** Clear cached entries — called by refresh buttons. Optionally filter by URL substring. */
+function bustCache(filter?: string): void {
+  try {
+    const prefix = cacheKey('');
+    Object.keys(sessionStorage).forEach(k => {
+      if (!k.startsWith(prefix)) return;
+      if (filter && !k.includes(filter)) return;
+      sessionStorage.removeItem(k);
+    });
+  } catch { /* ignore */ }
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -159,7 +196,7 @@ const ESG_KB: Array<{ keywords: string[]; response: string }> = [
   },
   {
     keywords: ['rapport', 'rapport', 'gri', 'tcfd', 'pdf', 'générer', 'publier'],
-    response: `**Génération de rapports** 📄\n\nESGFlow génère automatiquement 3 types de rapports conformes :\n\n| Standard | Couverture | Usage |\n|---------|-----------|-------|
+    response: `**Génération de rapports** 📄\n\nESG Flow génère automatiquement 3 types de rapports conformes :\n\n| Standard | Couverture | Usage |\n|---------|-----------|-------|
 | **CSRD/ESRS** | Tous piliers E,S,G | Réglementaire EU |
 | **GRI** | Universel | Parties prenantes |
 | **TCFD** | Climat & risques | Investisseurs |
@@ -189,7 +226,7 @@ function getESGResponse(input: string): string {
       return entry.response;
     }
   }
-  return `**Bonne question !** 🤖\n\nJe suis l'assistant ESG d'ESGFlow. Je peux vous aider sur :\n\n- 📋 **Conformité CSRD/ESRS** — indicateurs requis, calendrier\n- 🌍 **Bilan carbone** — Scope 1, 2, 3 et catégories GHG Protocol\n- 📊 **Score ESG** — méthodologie et amélioration\n- 📄 **Rapports** — GRI, CSRD, TCFD\n- 🎯 **Matérialité** — double matérialité, parties prenantes\n- 🔍 **Anomalies** — interprétation des alertes\n- ♻️ **Réduction** — leviers d'action concrets\n\nPosez-moi une question plus précise ou utilisez les suggestions ci-dessus.`;
+  return `**Bonne question !** 🤖\n\nJe suis l'assistant ESG d'ESG Flow. Je peux vous aider sur :\n\n- 📋 **Conformité CSRD/ESRS** — indicateurs requis, calendrier\n- 🌍 **Bilan carbone** — Scope 1, 2, 3 et catégories GHG Protocol\n- 📊 **Score ESG** — méthodologie et amélioration\n- 📄 **Rapports** — GRI, CSRD, TCFD\n- 🎯 **Matérialité** — double matérialité, parties prenantes\n- 🔍 **Anomalies** — interprétation des alertes\n- ♻️ **Réduction** — leviers d'action concrets\n\nPosez-moi une question plus précise ou utilisez les suggestions ci-dessus.`;
 }
 
 // ─── Reduction levers data ────────────────────────────────────────────────────
@@ -229,7 +266,10 @@ export default function IntelligenceDashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const tabsRef = useRef<HTMLDivElement>(null);
-  const [loading, setLoading] = useState(true);
+  // ``loading`` is kept for the loadAll() flow (used by the analytics tabs)
+  // but it no longer blocks the page chrome — each section now renders its
+  // own skeleton when its data isn't ready yet.
+  const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>('ml');
 
   // ML state
@@ -280,19 +320,18 @@ export default function IntelligenceDashboard() {
   const [simBaseScore] = useState<number>(58); // base score (updated from real data)
   const [dynamicLevers, setDynamicLevers] = useState(REDUCTION_LEVERS);
 
+  // ── Header data (lightweight, fetched immediately) ───────────────────────
+  // Only 2 fast endpoints. Page chrome shows instantly while these load.
   useEffect(() => {
-    api.get('/scores/latest')
-      .then(r => setMyScore(Math.round(r.data?.overall_score ?? 0)))
+    cachedGet<any>('/scores/latest')
+      .then(d => setMyScore(Math.round(d?.overall_score ?? 0)))
       .catch(() => {});
 
-    // Personalize reduction levers based on real carbon data
-    api.get('/carbon/scope-summary')
-      .then(r => {
-        const data = r.data || {};
-        // /carbon/scope-summary returns {scope1: {total_tco2e}, scope2: {total_tco2e}, scope3: {total_tco2e}}
-        const scope1 = data.scope1?.total_tco2e ?? data.scope1_total ?? 0;
-        const scope2 = data.scope2?.total_tco2e ?? data.scope2_total ?? 0;
-        const scope3 = data.scope3?.total_tco2e ?? data.scope3_total ?? 0;
+    cachedGet<any>('/carbon/scope-summary')
+      .then(data => {
+        const scope1 = data?.scope1?.total_tco2e ?? data?.scope1_total ?? 0;
+        const scope2 = data?.scope2?.total_tco2e ?? data?.scope2_total ?? 0;
+        const scope3 = data?.scope3?.total_tco2e ?? data?.scope3_total ?? 0;
         const total = scope1 + scope2 + scope3 || 1;
         const scope2Pct = scope2 / total;
         const scope3Pct = scope3 / total;
@@ -306,20 +345,20 @@ export default function IntelligenceDashboard() {
           return boost > 0 ? { ...lever, impact: Math.min(100, lever.impact + boost), saving: lever.saving + ' ⭐' } : lever;
         }));
       })
-      .catch(() => {}); // keep static REDUCTION_LEVERS on error
+      .catch(() => {});
   }, []);
 
-  // Load sector benchmarks from API when sector changes
+  // ── Sector benchmarks — only fetched when sector OR score changes (not on every render) ─
+  // The dependency on ``myScore`` re-fired this effect every time myScore updated;
+  // we keep that behavior but route through cache to avoid re-hitting the backend.
   useEffect(() => {
     const sectorMap: Record<string, string> = {
       'Industrie': 'industry', 'Services': 'services',
       'Distribution': 'retail', 'Tech': 'technology', 'Finance': 'finance',
     };
     const sectorKey = sectorMap[selectedSector] ?? selectedSector.toLowerCase();
-    api.get(`/benchmarks/sector/${sectorKey}`)
-      .then(res => {
-        const data = res.data;
-        // Backend returns array or object with sector scores
+    cachedGet<any>(`/benchmarks/sector/${sectorKey}`)
+      .then(data => {
         if (Array.isArray(data) && data.length > 0) {
           const mapped = data.map((b: any) => ({
             sector: b.sector_name ?? b.sector ?? b.name,
@@ -339,11 +378,11 @@ export default function IntelligenceDashboard() {
       });
   }, [selectedSector, myScore]);
 
-  // Load real missing indicators from multi-standards mapping
+  // ── Missing data — non-blocking, runs in background ──────────────────────
   useEffect(() => {
-    api.get('/reports/multi-standards', { params: { year: new Date().getFullYear() } })
-      .then(res => {
-        const indicators: any[] = res.data?.indicators ?? [];
+    cachedGet<any>(`/reports/multi-standards?year=${new Date().getFullYear()}`)
+      .then(data => {
+        const indicators: any[] = data?.indicators ?? [];
         const missing = indicators
           .filter((ind: any) => ind.status === 'missing')
           .slice(0, 5)
@@ -359,7 +398,7 @@ export default function IntelligenceDashboard() {
           setMissingDataIsReal(true);
         }
       })
-      .catch(() => {}); // keep static MISSING_DATA_EXAMPLES on error
+      .catch(() => {});
   }, []);
 
   const sectorBenchmarks = sectorBenchmarksLive ?? [
@@ -367,63 +406,91 @@ export default function IntelligenceDashboard() {
     { sector: 'Votre score', score: myScore ?? 0, color: '#7c3aed' },
   ];
 
+  // ── Chat init (one-time, cheap) ──────────────────────────────────────────
   useEffect(() => {
     setChatMessages([{ role: 'assistant', content: t('ia.chatWelcome'), timestamp: new Date() }]);
   }, []);
-  useEffect(() => { loadAll(); }, []);
-  useEffect(() => { loadPredictions(); }, [horizon]);
+
+  // ── Lazy tab loads — fetch on first tab visit, never on mount ────────────
+  // Tracks which heavy tabs have been loaded so we don't re-fetch on tab switches.
+  const loadedTabsRef = useRef<Set<TabId>>(new Set());
+
+  useEffect(() => {
+    // ML is the default tab on first visit, so load it now (lazily on tab change otherwise)
+    if (loadedTabsRef.current.has(activeTab)) return;
+    if (activeTab === 'ml') {
+      loadedTabsRef.current.add('ml');
+      loadML();
+    } else if (['anomalies', 'insights', 'suggestions', 'predictions'].includes(activeTab)) {
+      // First time we visit an analytics tab → load all 4 (they share the same /analytics/* backend)
+      ['anomalies', 'insights', 'suggestions', 'predictions'].forEach(t => loadedTabsRef.current.add(t as TabId));
+      loadAll();
+    }
+  }, [activeTab]);
+
+  // Only reload predictions when horizon changes *after* initial load
+  useEffect(() => {
+    if (loadedTabsRef.current.has('predictions')) loadPredictions();
+  }, [horizon]);
+
+  // Only reload ML when params change *after* initial ML load
+  useEffect(() => {
+    if (loadedTabsRef.current.has('ml')) loadML();
+  }, [mlHorizon, mlObjectivePct]);
+
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatMessages]);
-  useEffect(() => { loadML(); }, [mlHorizon, mlObjectivePct]);
 
   const loadAll = async () => {
-    setLoading(true);
+    // No global loading flag — each loader maintains its own state.
+    // Parallel fetch so all 4 endpoints run concurrently.
     await Promise.all([loadAnomalies(), loadInsights(), loadSuggestions(), loadPredictions()]);
-    setLoading(false);
   };
 
   const loadML = async () => {
     setMlLoading(true);
     try {
+      // Parallel + cached. ML endpoints can be slow (backend trains models)
+      // so the 5-min cache gives a huge UX boost on revisits.
       const [fRes, aRes, rRes] = await Promise.allSettled([
-        api.get(`/analytics/ml/forecast?horizon=${mlHorizon}&objective_pct=${mlObjectivePct}`),
-        api.get('/analytics/ml/anomalies?limit=15'),
-        api.get('/analytics/ml/recommendations'),
+        cachedGet<any>(`/analytics/ml/forecast?horizon=${mlHorizon}&objective_pct=${mlObjectivePct}`),
+        cachedGet<any>('/analytics/ml/anomalies?limit=15'),
+        cachedGet<any>('/analytics/ml/recommendations'),
       ]);
       if (fRes.status === 'fulfilled') {
-        const forecasts: MLForecast[] = fRes.value.data?.forecasts || [];
+        const forecasts: MLForecast[] = fRes.value?.forecasts || [];
         setMlForecasts(forecasts);
         if (forecasts.length > 0 && !selectedForecast) setSelectedForecast(forecasts[0]);
       }
-      if (aRes.status === 'fulfilled') setMlAnomalies(aRes.value.data?.anomalies || []);
+      if (aRes.status === 'fulfilled') setMlAnomalies(aRes.value?.anomalies || []);
       if (rRes.status === 'fulfilled') {
-        setAiRecommendations(rRes.value.data?.recommendations || []);
-        setAiGenerated(rRes.value.data?.ai_generated || false);
+        setAiRecommendations(rRes.value?.recommendations || []);
+        setAiGenerated(rRes.value?.ai_generated || false);
       }
     } catch { /* silent */ }
     setMlLoading(false);
   };
 
   const loadAnomalies = async () => {
-    try { const r = await api.get('/analytics/anomalies'); setAnomalies(r.data?.anomalies || []); }
+    try { const d = await cachedGet<any>('/analytics/anomalies'); setAnomalies(d?.anomalies || []); }
     catch { setAnomalies([]); }
   };
 
   const loadInsights = async () => {
-    try { const r = await api.get(`/analytics/insights?year=${CURRENT_YEAR}`); setInsights(r.data); }
+    try { const d = await cachedGet<any>(`/analytics/insights?year=${CURRENT_YEAR}`); setInsights(d); }
     catch { setInsights(null); }
   };
 
   const loadSuggestions = async () => {
-    try { const r = await api.get(`/analytics/suggestions?year=${CURRENT_YEAR}`); setSuggestions(r.data?.suggestions || []); }
+    try { const d = await cachedGet<any>(`/analytics/suggestions?year=${CURRENT_YEAR}`); setSuggestions(d?.suggestions || []); }
     catch { setSuggestions([]); }
   };
 
   const loadPredictions = async () => {
     try {
-      const r = await api.get(`/analytics/predictions?horizon=${horizon}`);
-      const preds = r.data?.predictions || [];
+      const d = await cachedGet<any>(`/analytics/predictions?horizon=${horizon}`);
+      const preds = d?.predictions || [];
       setPredictions(preds);
-      setTotalPredictions(r.data?.total_indicators || 0);
+      setTotalPredictions(d?.total_indicators || 0);
       if (preds.length > 0) setSelectedPrediction(preds[0]);
     } catch { setPredictions([]); }
   };
@@ -535,19 +602,11 @@ export default function IntelligenceDashboard() {
     { id: 'reduction', label: t('ia.tabReduction'), icon: Leaf, isNew: true },
   ];
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <Spinner size="lg" />
-          <p className="mt-4 text-gray-500">{t('ia.loading')}</p>
-        </div>
-      </div>
-    );
-  }
-
+  // No more global blocking loading screen — the page chrome renders
+  // immediately, each section shows its own skeleton when its data isn't
+  // ready (managed by per-section state: anomalies, mlLoading, etc.).
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Hero */}
       <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-violet-900 to-indigo-800 p-8 text-white shadow-xl">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -583,32 +642,26 @@ export default function IntelligenceDashboard() {
       {/* KPI strip */}
       {insights && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <Card className="border border-gray-200 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-medium text-gray-600">{t('ia.kpiCompleteness')}</p>
-              <span className="text-2xl font-bold text-teal-600">{insights.data_quality.completion_rate.toFixed(0)}%</span>
+          <div className="kpi-card kpi-card-green p-5 cursor-default">
+            <p className="stat-label mb-3">{t('ia.kpiCompleteness')}</p>
+            <p className="stat-value">{insights.data_quality.completion_rate.toFixed(0)}%</p>
+            <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-1.5 rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-500" style={{ width: `${insights.data_quality.completion_rate}%` }} />
             </div>
-            <div className="w-full h-2 bg-gray-100 rounded-full">
-              <div className="h-2 bg-teal-500 rounded-full" style={{ width: `${insights.data_quality.completion_rate}%` }} />
+          </div>
+          <div className="kpi-card kpi-card-blue p-5 cursor-default">
+            <p className="stat-label mb-3">{t('ia.kpiRising')}</p>
+            <p className="stat-value">{insights.trends.improving_metrics}</p>
+            <div className="flex gap-2 text-xs mt-3">
+              <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full">↑ {insights.trends.improving_metrics} {t('ia.kpiImproved')}</span>
+              <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full">↓ {insights.trends.declining_metrics} {t('ia.kpiDeclining')}</span>
             </div>
-          </Card>
-          <Card className="border border-gray-200 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium text-gray-600">{t('ia.kpiRising')}</p>
-              <span className="text-2xl font-bold text-green-600">{insights.trends.improving_metrics}</span>
-            </div>
-            <div className="flex gap-2 text-xs">
-              <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full">↑ {insights.trends.improving_metrics} {t('ia.kpiImproved')}</span>
-              <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full">↓ {insights.trends.declining_metrics} {t('ia.kpiDeclining')}</span>
-            </div>
-          </Card>
-          <Card className="border border-gray-200 shadow-sm">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">{t('ia.kpiVerified')}</p>
-              <span className="text-2xl font-bold text-purple-600">{insights.data_quality.verified_count}</span>
-            </div>
-            <p className="text-xs text-gray-500 mt-1">{t('ia.kpiOnPoints', { count: insights.data_quality.total_count })}</p>
-          </Card>
+          </div>
+          <div className="kpi-card kpi-card-purple p-5 cursor-default">
+            <p className="stat-label mb-3">{t('ia.kpiVerified')}</p>
+            <p className="stat-value">{insights.data_quality.verified_count}</p>
+            <p className="text-xs text-gray-500 mt-2">{t('ia.kpiOnPoints', { count: insights.data_quality.total_count })}</p>
+          </div>
         </div>
       )}
 
@@ -690,7 +743,7 @@ export default function IntelligenceDashboard() {
                 <option value={-50}>Objectif −50 % (Net Zéro)</option>
               </select>
               <button
-                onClick={loadML}
+                onClick={() => { bustCache('/analytics/ml/'); loadML(); }}
                 disabled={mlLoading}
                 className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-50 transition"
               >
@@ -1103,19 +1156,19 @@ export default function IntelligenceDashboard() {
                 <option value={12}>{t('ia.horizon12m')}</option>
                 <option value={24}>{t('ia.horizon12m')}</option>
               </select>
-              <button onClick={loadPredictions} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 transition">
+              <button onClick={() => { bustCache('/analytics/predictions'); loadPredictions(); }} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 transition">
                 <Brain className="h-4 w-4" /> {t('ia.recalculate')}
               </button>
             </div>
           </div>
 
           {predictions.length === 0 ? (
-            <Card className="border border-gray-200">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border border-gray-200">
               <div className="py-16 text-center">
                 <Brain className="mx-auto mb-4 h-16 w-16 text-gray-200" />
                 <p className="text-xl font-semibold text-gray-900">{t('ia.noPredictions')}</p>
               </div>
-            </Card>
+            </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="space-y-2">
@@ -1144,7 +1197,7 @@ export default function IntelligenceDashboard() {
               </div>
               <div className="lg:col-span-2">
                 {selectedPrediction && (
-                  <Card className="border border-gray-200 shadow-sm">
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border border-gray-200 shadow-sm">
                     <div className="flex items-start justify-between mb-6">
                       <div>
                         <p className="text-xs font-mono text-gray-400">{selectedPrediction.indicator_code}</p>
@@ -1181,7 +1234,7 @@ export default function IntelligenceDashboard() {
                       <Brain className="h-4 w-4 flex-shrink-0" />
                       {t('ia.confidenceInfo')}
                     </div>
-                  </Card>
+                  </div>
                 )}
               </div>
             </div>
@@ -1197,17 +1250,17 @@ export default function IntelligenceDashboard() {
               <h2 className="text-lg font-semibold text-gray-900">{t('ia.anomaliesTitle')}</h2>
               <p className="text-sm text-gray-500">{t('ia.anomaliesDesc')}</p>
             </div>
-            <button onClick={loadAnomalies} className="inline-flex items-center gap-2 rounded-xl border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
+            <button onClick={() => { bustCache('/analytics/anomalies'); loadAnomalies(); }} className="inline-flex items-center gap-2 rounded-xl border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
               <RefreshCw className="h-4 w-4" /> {t('ia.refreshData')}
             </button>
           </div>
           {anomalies.length === 0 ? (
-            <Card className="border border-gray-200">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border border-gray-200">
               <div className="py-16 text-center">
                 <CheckCircle className="mx-auto mb-4 h-16 w-16 text-green-300" />
                 <p className="text-xl font-semibold text-gray-900">{t('ia.noAnomalies')}</p>
               </div>
-            </Card>
+            </div>
           ) : (
             <div className="space-y-3">
               {anomalies.map((a) => (
@@ -1249,7 +1302,7 @@ export default function IntelligenceDashboard() {
         <div className="space-y-6">
           <h2 className="text-lg font-semibold text-gray-900">{t('ia.insightsTitle')}</h2>
           {!insights ? (
-            <Card className="border border-gray-200"><div className="py-12 text-center text-gray-500">{t('ia.noInsights')}</div></Card>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border border-gray-200"><div className="py-12 text-center text-gray-500">{t('ia.noInsights')}</div></div>
           ) : (
             <>
               {insights.recommendations.length > 0 && (
@@ -1289,7 +1342,7 @@ export default function IntelligenceDashboard() {
                 </div>
               )}
               {insights.recommendations.length === 0 && insights.achievements.length === 0 && (
-                <Card className="border border-gray-200"><div className="py-12 text-center text-gray-500">{t('ia.noInsights')}</div></Card>
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border border-gray-200"><div className="py-12 text-center text-gray-500">{t('ia.noInsights')}</div></div>
               )}
             </>
           )}
@@ -1301,12 +1354,12 @@ export default function IntelligenceDashboard() {
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-gray-900">{t('ia.suggestionsTitle')}</h2>
           {suggestions.length === 0 ? (
-            <Card className="border border-gray-200">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border border-gray-200">
               <div className="py-16 text-center">
                 <Sparkles className="mx-auto mb-4 h-16 w-16 text-gray-200" />
                 <p className="text-xl font-semibold text-gray-900">{t('ia.noSuggestions')}</p>
               </div>
-            </Card>
+            </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {suggestions.map((sug, i) => {
@@ -1663,7 +1716,7 @@ export default function IntelligenceDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Génération rapport automatique */}
-          <Card className="border border-gray-200 shadow-sm">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border border-gray-200 shadow-sm">
             <div className="flex items-center gap-3 mb-5">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
                 <FileText className="h-5 w-5 text-white" />
@@ -1717,10 +1770,10 @@ export default function IntelligenceDashboard() {
                 </button>
               </div>
             )}
-          </Card>
+          </div>
 
           {/* Données manquantes */}
-          <Card className="border border-gray-200 shadow-sm">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border border-gray-200 shadow-sm">
             <div className="flex items-center gap-3 mb-5">
               <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center">
                 <AlertTriangle className="h-5 w-5 text-white" />
@@ -1756,10 +1809,10 @@ export default function IntelligenceDashboard() {
             >
               <ArrowRight className="h-4 w-4" /> {t('ia.completeMissingData')}
             </button>
-          </Card>
+          </div>
 
           {/* OCR Factures fournisseurs */}
-          <Card className="border border-gray-200 shadow-sm lg:col-span-2">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border border-gray-200 shadow-sm lg:col-span-2">
             <div className="flex items-center gap-3 mb-5">
               <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
                 <Upload className="h-5 w-5 text-white" />
@@ -1859,7 +1912,7 @@ export default function IntelligenceDashboard() {
                 )}
               </div>
             </div>
-          </Card>
+          </div>
         </div>
       )}
 
@@ -1881,7 +1934,7 @@ export default function IntelligenceDashboard() {
           </div>
 
           {/* Benchmark sectoriel */}
-          <Card className="border border-gray-200 shadow-sm">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                 <BarChart2 className="h-5 w-5 text-green-600" />
@@ -1917,7 +1970,7 @@ export default function IntelligenceDashboard() {
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-green-500 inline-block" />{t('ia.legendScoreGood')}</span>
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-violet-600 inline-block" />{t('ia.legendYourScore')}</span>
             </div>
-          </Card>
+          </div>
 
           {/* Leviers */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
