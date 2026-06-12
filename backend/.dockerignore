@@ -1,0 +1,37 @@
+# Ad-hoc seed/calc/test scripts — NEVER ship in prod image
+seed_*.py
+calculate_*.py
+test_*.py
+find_*.py
+verify_*.py
+scores.py
+
+# Local dev artefacts
+__pycache__
+*.pyc
+.pytest_cache
+.mypy_cache
+.coverage
+htmlcov
+*.egg-info
+
+# Local env (image gets vars from compose env_file)
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+
+# Git
+.git
+.gitignore
+
+# Tests output
+test-results
+coverage
+
+# Backups
+*.bak
+*.bak-*
