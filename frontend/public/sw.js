@@ -9,7 +9,7 @@
  *
  * Bump CACHE_VERSION when shipping breaking changes (rebrand, etc.).
  */
-const CACHE_VERSION = 'esgflow-v4-brand';
+const CACHE_VERSION = 'esgflow-v5-brand';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const HTML_CACHE   = `${CACHE_VERSION}-html`;
 
@@ -17,6 +17,17 @@ const PRECACHE_URLS = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/brand/logo-full.png',
+];
+
+// Old asset paths to actively purge from any pre-existing cache on activation.
+// Includes the previous v3 brand icons: the service worker used to pin them
+// cache-first, which is exactly what kept the old logo showing in the browser.
+const STALE_ASSETS = [
+  '/icon-maskable.svg',
+  '/favicon.svg',
+  '/favicon.ico',
+  '/favicon.png',
   '/icon-esgflow-v3.svg',
   '/favicon-v3.ico',
   '/brand/icon-esgflow-v3-32.png',
@@ -24,15 +35,6 @@ const PRECACHE_URLS = [
   '/brand/icon-esgflow-v3-128.png',
   '/brand/icon-esgflow-v3-256.png',
   '/brand/icon-esgflow-v3-512.png',
-  '/brand/logo-full.png',
-];
-
-// Old asset paths to actively purge from any pre-existing cache on activation
-const STALE_ASSETS = [
-  '/icon-maskable.svg',
-  '/favicon.svg',
-  '/favicon.ico',
-  '/favicon.png',
   '/brand/logo-mark-32.png',
   '/brand/logo-mark-64.png',
   '/brand/logo-mark-128.png',
@@ -80,6 +82,15 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/api/')) return;
   if (url.pathname.startsWith('/docs') || url.pathname.startsWith('/redoc')) return;
+
+  // Favicons / brand icons / manifest: never pin them cache-first. Let them follow
+  // the network + HTTP cache (short max-age + must-revalidate) so a future logo
+  // change propagates immediately instead of getting stuck in the SW cache.
+  if (url.pathname === '/manifest.json' ||
+      url.pathname.startsWith('/brand/') ||
+      /(?:^\/favicon|^\/icon-esgflow|^\/icon-maskable)/.test(url.pathname)) {
+    return;
+  }
 
   // HTML navigations: network-first, fall back to cached shell
   if (request.mode === 'navigate' || request.destination === 'document') {

@@ -59,7 +59,7 @@ export default function GuideCsrdPmePage() {
       "dateModified": "2026-05-20T08:00:00+02:00",
       "author":    { "@type": "Organization", "name": "ESG Flow", "url": "https://greenconnect.cloud" },
       "publisher": { "@type": "Organization", "name": "GreenConnect SAS",
-                     "logo": { "@type": "ImageObject", "url": "https://greenconnect.cloud/brand/icon-esgflow-v3-256.png", "width": 256, "height": 256 } },
+                     "logo": { "@type": "ImageObject", "url": "https://greenconnect.cloud/brand/icon-esgflow-v4-256.png", "width": 256, "height": 256 } },
       "mainEntityOfPage": { "@type": "WebPage", "@id": url },
       "inLanguage": "fr-FR",
       "isAccessibleForFree": true,

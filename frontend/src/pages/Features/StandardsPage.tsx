@@ -218,7 +218,7 @@ export default function StandardsPage() {
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <img src="/icon-esgflow-v3.svg" alt="ESG Flow" className="h-7 w-7" />
+            <img src="/icon-esgflow-v4.svg" alt="ESG Flow" className="h-7 w-7" />
             <span className="font-semibold text-gray-900">ESG Flow</span>
           </Link>
           <div className="flex items-center gap-3">

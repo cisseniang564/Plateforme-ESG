@@ -20,8 +20,9 @@ interface LogoMarkProps {
  */
 export function LogoMark({ size = 32, className = '', rounded = false }: LogoMarkProps) {
   // SVG source — crisp at any resolution, no PNG needed.
-  // ?v=6 cache-busts the new design across all browsers.
-  const src = `/icon-esgflow-v3.svg?v=6`;
+  // v4 filename = clean fetch across all browsers (query strings are unreliable
+  // for icon/favicon caches).
+  const src = `/icon-esgflow-v4.svg`;
 
   return (
     <img

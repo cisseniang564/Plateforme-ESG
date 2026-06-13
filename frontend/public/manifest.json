@@ -12,11 +12,11 @@
   "lang": "fr-FR",
   "dir": "ltr",
   "icons": [
-    { "src": "/brand/icon-esgflow-v3-64.png",  "sizes": "64x64",   "type": "image/png", "purpose": "any" },
-    { "src": "/brand/icon-esgflow-v3-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
-    { "src": "/brand/icon-esgflow-v3-256.png", "sizes": "256x256", "type": "image/png", "purpose": "any" },
-    { "src": "/brand/icon-esgflow-v3-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/brand/icon-esgflow-v3-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/brand/icon-esgflow-v4-64.png",  "sizes": "64x64",   "type": "image/png", "purpose": "any" },
+    { "src": "/brand/icon-esgflow-v4-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
+    { "src": "/brand/icon-esgflow-v4-256.png", "sizes": "256x256", "type": "image/png", "purpose": "any" },
+    { "src": "/brand/icon-esgflow-v4-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/brand/icon-esgflow-v4-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "categories": ["business", "productivity", "finance"],
   "shortcuts": [
