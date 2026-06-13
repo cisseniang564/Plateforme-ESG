@@ -2,7 +2,7 @@
 from typing import Optional
 from uuid import UUID
 from fastapi import HTTPException, Request, status
-from jose import JWTError
+from jwt import PyJWTError as JWTError
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 from app.utils.jwt import decode_token, extract_tenant_id, extract_user_id, is_token_expired

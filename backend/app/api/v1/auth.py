@@ -430,7 +430,7 @@ async def reset_password(
     db: AsyncSession = Depends(get_db),
 ) -> MessageResponse:
     """Verify reset token and set new password."""
-    from jose import JWTError
+    from jwt import PyJWTError as JWTError
     from uuid import UUID as _UUID
     from sqlalchemy import select
     from app.models.user import User

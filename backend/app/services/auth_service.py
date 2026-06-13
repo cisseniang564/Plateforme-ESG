@@ -10,7 +10,7 @@ from uuid import UUID
 logger = logging.getLogger(__name__)
 
 from fastapi import HTTPException, status
-from jose import JWTError
+from jwt import PyJWTError as JWTError
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -645,7 +645,7 @@ class AuthService:
     async def verify_2fa_login(self, temp_token: str, totp_code: str, response_obj=None) -> "LoginResponse":
         """Verify a TOTP code (or backup code) and issue full JWT tokens."""
         import pyotp
-        from jose import JWTError as _JWTError
+        from jwt import PyJWTError as _JWTError
 
         try:
             payload = decode_token(temp_token)

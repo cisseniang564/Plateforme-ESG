@@ -213,7 +213,7 @@ async def register(
     try:
         from app.config import settings as app_settings
         from datetime import datetime, timedelta, timezone
-        from jose import jwt as _jwt
+        import jwt as _jwt
         from app.tasks.email_tasks import send_email_verification
         _token = _jwt.encode(
             {

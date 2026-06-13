@@ -5,7 +5,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 from uuid import UUID, uuid4
 
-from jose import JWTError, jwt
+import jwt
+from jwt import PyJWTError as JWTError
 
 from app.config import settings
 
@@ -111,7 +112,7 @@ def is_token_expired(payload: Dict[str, Any]) -> bool:
     """
     Check whether a decoded token payload is expired.
 
-    Note: ``decode_token()`` already validates expiration via python-jose.
+    Note: ``decode_token()`` already validates expiration via PyJWT.
     This function provides an explicit check for code paths that need it.
     """
     exp = payload.get("exp")
