@@ -414,6 +414,10 @@ app.include_router(_vigilance.public_router, prefix="/api/v1")
 from app.api.v1.endpoints import templates as _templates
 app.include_router(_templates.router, prefix="/api/v1")
 
+# Public platform status page (no auth — listed in PUBLIC_PATHS)
+from app.api.v1.endpoints import status as _status
+app.include_router(_status.router, prefix="/api/v1", tags=["System"])
+
 # FEC Wizard (3-click Scope 3 from accounting file)
 from app.api.v1.endpoints import fec_wizard as _fec_wizard
 app.include_router(_fec_wizard.router, prefix="/api/v1")
