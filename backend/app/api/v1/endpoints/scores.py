@@ -38,7 +38,7 @@ async def calculate_score(
     if calculation_date:
         try:
             calc_date = datetime.strptime(calculation_date, '%Y-%m-%d').date()
-        except:
+        except (ValueError, TypeError):
             raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
     else:
         calc_date = date.today()
@@ -142,13 +142,13 @@ async def get_score_history(
     if start_date:
         try:
             start = datetime.strptime(start_date, '%Y-%m-%d').date()
-        except:
+        except (ValueError, TypeError):
             raise HTTPException(status_code=400, detail="Invalid start_date format. Use YYYY-MM-DD")
     
     if end_date:
         try:
             end = datetime.strptime(end_date, '%Y-%m-%d').date()
-        except:
+        except (ValueError, TypeError):
             raise HTTPException(status_code=400, detail="Invalid end_date format. Use YYYY-MM-DD")
     
     if not start:
@@ -194,7 +194,7 @@ async def compare_organizations(
     if calculation_date:
         try:
             calc_date = datetime.strptime(calculation_date, '%Y-%m-%d').date()
-        except:
+        except (ValueError, TypeError):
             raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
     else:
         calc_date = date.today()

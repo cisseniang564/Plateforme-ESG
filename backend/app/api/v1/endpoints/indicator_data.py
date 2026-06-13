@@ -141,13 +141,13 @@ async def get_indicator_data(
     if start_date:
         try:
             start = datetime.strptime(start_date, '%Y-%m-%d')
-        except:
+        except (ValueError, TypeError):
             raise HTTPException(status_code=400, detail="Invalid start_date format. Use YYYY-MM-DD")
     
     if end_date:
         try:
             end = datetime.strptime(end_date, '%Y-%m-%d')
-        except:
+        except (ValueError, TypeError):
             raise HTTPException(status_code=400, detail="Invalid end_date format. Use YYYY-MM-DD")
     
     # Récupérer les données

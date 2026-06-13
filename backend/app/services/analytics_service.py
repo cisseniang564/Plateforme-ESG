@@ -57,7 +57,7 @@ class AnalyticsService:
             mean = statistics.mean(values)
             try:
                 stdev = statistics.stdev(values)
-            except:
+            except statistics.StatisticsError:
                 continue
             
             if stdev == 0:

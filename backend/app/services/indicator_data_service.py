@@ -91,7 +91,7 @@ class IndicatorDataService:
                         data_date = datetime.strptime(date_str, '%Y-%m-%d').date()
                     else:
                         data_date = date_str
-                except:
+                except (ValueError, TypeError):
                     errors.append(f"Row {idx}: Invalid date format")
                     skipped += 1
                     continue
