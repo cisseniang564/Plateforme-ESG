@@ -5,6 +5,7 @@ and returns section-by-section coverage, missing disclosures, and priority actio
 import logging
 import csv
 import io
+import math
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,7 +29,7 @@ ESRS_SECTIONS = [
         "pillar": "governance",
         "short": "Général",
         "description": "Informations générales obligatoires pour toutes les entreprises soumises à la CSRD.",
-        "keywords": ["gouvernance", "gouvernance", "strategy", "strategie", "business", "model"],
+        "keywords": ["gouvernance", "strategy", "strategie", "business", "model"],
         "disclosures": [
             {"id": "GOV-1", "label": "Rôle de la direction sur les questions de durabilité"},
             {"id": "GOV-2", "label": "Informations fournies aux organes directeurs"},
@@ -224,11 +225,45 @@ def _normalize(text: str) -> str:
     return "".join(c for c in nfkd if not unicodedata.combining(c))
 
 
+# DataEntry.pillar is stored with mixed conventions across the codebase
+# (English "environmental"/"social"/"governance" but also French "environnement"/
+# "gouvernance"). Normalise both sides so French-tagged entries aren't silently
+# dropped from the gap analysis.
+_PILLAR_ALIASES = {
+    "environnement": "environmental", "environment": "environmental",
+    "environmental": "environmental",
+    "social": "social", "societal": "social",
+    "gouvernance": "governance", "governance": "governance",
+}
+
+
+def _norm_pillar(pillar: str) -> str:
+    key = _normalize(pillar or "").strip()
+    return _PILLAR_ALIASES.get(key, key)
+
+
+def _covered_count(matching: int, n_disc: int) -> int:
+    """
+    Heuristic count of a section's disclosures considered 'covered' given the
+    number of matching data entries.
+
+    Monotonic and rounds half *up* so a single matching entry covers at least
+    one disclosure — Python's built-in round() uses banker's rounding, which
+    sent round(0.5) -> 0 (one entry => zero coverage) and round(2.5) -> 2.
+    Saturates at full coverage once entries are roughly twice the disclosures.
+    """
+    if matching <= 0 or n_disc <= 0:
+        return 0
+    if matching >= n_disc * 2:
+        return n_disc
+    return min(n_disc, math.ceil(matching / 2))
+
+
 def _section_matches_entry(section: Dict, pillar: str, category: str, metric: str) -> bool:
     """Return True if a DataEntry seems relevant to this ESRS section."""
     entry_text = _normalize(f"{pillar} {category} {metric}")
     # Pillar must match (loose: governance matches both ESRS 2 and G1)
-    if section["pillar"] != pillar:
+    if _norm_pillar(section["pillar"]) != _norm_pillar(pillar):
         return False
     return any(_normalize(kw) in entry_text for kw in section["keywords"])
 
@@ -316,15 +351,9 @@ async def get_esrs_gap_analysis(
         n_disc = len(disclosures)
         total_disclosures += n_disc
 
-        # Heuristic coverage: each matching entry covers ~0.5 disclosures (capped at n_disc)
-        # More entries → more disclosures covered, but requires diverse data
-        if matching == 0:
-            covered = 0
-        elif matching >= n_disc * 2:
-            covered = n_disc
-        else:
-            # Linear scale: 1 entry covers ~0.5 disclosures
-            covered = min(n_disc, round(matching * 0.5))
+        # Heuristic coverage: more matching entries → more disclosures covered,
+        # capped at n_disc. See _covered_count for the exact (monotonic) rule.
+        covered = _covered_count(matching, n_disc)
 
         covered_disclosures += covered
         coverage_pct = round((covered / n_disc) * 100) if n_disc else 0
@@ -400,12 +429,7 @@ async def export_gap_analysis(
     for section in ESRS_SECTIONS:
         matching = sum(1 for (p, c, m) in entry_tuples if _section_matches_entry(section, p, c, m))
         n_disc = len(section["disclosures"])
-        if matching == 0:
-            covered = 0
-        elif matching >= n_disc * 2:
-            covered = n_disc
-        else:
-            covered = min(n_disc, round(matching * 0.5))
+        covered = _covered_count(matching, n_disc)
 
         for i, d in enumerate(section["disclosures"]):
             status = "Couvert" if i < covered else "Manquant"

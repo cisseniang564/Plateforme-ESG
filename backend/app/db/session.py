@@ -185,6 +185,11 @@ async def init_db() -> None:
         # ── Score data window (6m/1y/3y/5y) persisted on each ESG score row ─
         "ALTER TABLE esg_scores ADD COLUMN IF NOT EXISTS period_months INTEGER DEFAULT 12",
 
+        # ── CSRD IRO classification on materiality issues (ESRS 1 §43) ───────
+        "ALTER TABLE materiality_issues ADD COLUMN IF NOT EXISTS iro_type VARCHAR(20)",
+        "ALTER TABLE materiality_issues ADD COLUMN IF NOT EXISTS iro_actual_or_potential VARCHAR(20)",
+        "ALTER TABLE materiality_issues ADD COLUMN IF NOT EXISTS esrs_topic VARCHAR(10)",
+
         # ── Framework assessments (CDP, CSDDD, climate, investor, iXBRL) ─────
         """
         CREATE TABLE IF NOT EXISTS framework_assessments (

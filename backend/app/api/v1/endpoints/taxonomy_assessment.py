@@ -247,17 +247,3 @@ async def delete_activity(
     if not ok:
         raise HTTPException(status_code=404, detail="Activity not found")
     await db.commit()
-
-
-# ─── KPIs ──────────────────────────────────────────────────────────────────
-@router.get("/{assessment_id}/kpis")
-async def get_kpis(
-    assessment_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    tenant_id: UUID = Depends(get_current_tenant_id),
-) -> Dict[str, Any]:
-    svc = TaxonomyAssessmentService(db, tenant_id)
-    assess = await svc.get_assessment(assessment_id)
-    if assess is None:
-        raise HTTPException(status_code=404, detail="Assessment not found")
-    return await svc.compute_kpis(assessment_id)

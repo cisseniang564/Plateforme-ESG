@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from decimal import Decimal
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
@@ -240,58 +239,3 @@ class TaxonomyAssessmentService:
         await self.db.delete(activity)
         await self.db.flush()
         return True
-
-    # ── KPIs ───────────────────────────────────────────────────────────────
-    async def compute_kpis(self, assessment_id: UUID) -> Dict[str, Any]:
-        """
-        Compute Turnover, CapEx, OpEx alignment ratios for the assessment.
-        Returns share of aligned activities for each financial denominator.
-        """
-        assess = await self.get_assessment(assessment_id)
-        if assess is None:
-            return {}
-
-        activities = await self.list_activities(assessment_id)
-
-        def _share(field: str, denom: Optional[Decimal]) -> Dict[str, Any]:
-            if not denom or float(denom) == 0:
-                return {
-                    "eligible_eur": 0.0, "aligned_eur": 0.0,
-                    "eligible_pct": 0.0, "aligned_pct": 0.0,
-                }
-            eligible_sum = sum(
-                (float(getattr(a, field) or 0)) for a in activities
-                if a.is_eligible
-            )
-            aligned_sum = sum(
-                (float(getattr(a, field) or 0)) for a in activities
-                if a.status == "aligned"
-            )
-            denom_f = float(denom)
-            return {
-                "eligible_eur": round(eligible_sum, 2),
-                "aligned_eur": round(aligned_sum, 2),
-                "eligible_pct": round((eligible_sum / denom_f) * 100, 2),
-                "aligned_pct": round((aligned_sum / denom_f) * 100, 2),
-            }
-
-        return {
-            "assessment_id": str(assess.id),
-            "year": assess.year,
-            "status": assess.status,
-            "total_turnover_eur": float(assess.total_turnover_eur) if assess.total_turnover_eur else None,
-            "total_capex_eur": float(assess.total_capex_eur) if assess.total_capex_eur else None,
-            "total_opex_eur": float(assess.total_opex_eur) if assess.total_opex_eur else None,
-            "turnover_kpi": _share("turnover_eur", assess.total_turnover_eur),
-            "capex_kpi": _share("capex_eur", assess.total_capex_eur),
-            "opex_kpi": _share("opex_eur", assess.total_opex_eur),
-            "activity_counts": {
-                "total": len(activities),
-                "eligible": sum(1 for a in activities if a.is_eligible),
-                "aligned": sum(1 for a in activities if a.status == "aligned"),
-                "partial": sum(1 for a in activities if a.status == "partial"),
-                "not_aligned": sum(1 for a in activities if a.status == "not_aligned"),
-                "not_eligible": sum(1 for a in activities if a.status == "not_eligible"),
-                "unassessed": sum(1 for a in activities if a.status == "unassessed"),
-            },
-        }

@@ -1,27 +1,11 @@
 """EU Taxonomy Regulation 2020/852 - Alignment assessment endpoints."""
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-from typing import List, Optional, Any, Dict
-from datetime import datetime
-import json
-import logging
+from typing import Optional
 
 from app.dependencies import get_current_user
 from app.models.user import User
-from app.config import settings
 
-logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/taxonomy", tags=["EU Taxonomy"])
-
-
-def _get_redis():
-    try:
-        import redis as _redis
-        redis_url = str(settings.REDIS_URL) if settings.REDIS_URL else "redis://redis:6379/0"
-        return _redis.from_url(redis_url, decode_responses=True, socket_connect_timeout=2)
-    except Exception as e:
-        logger.warning("Taxonomy: Redis unavailable — %s", e)
-        return None
 
 # ─── Static EU Taxonomy Reference Data ───────────────────────────────────────
 
@@ -176,6 +160,7 @@ DNSH_CRITERIA: dict = {
         "biodiversity": {"criterion": "Évaluation impacts avifaune et chiroptères, mesures compensatoires documentées", "required": True},
     },
     "_default": {
+        "mitigation": {"criterion": "L'activité n'entraîne pas d'émissions de GES significatives ni de verrouillage carbone (« high-carbon lock-in ») incompatible avec la neutralité climatique à 2050", "required": True},
         "adaptation": {"criterion": "Évaluation et gestion des risques climatiques physiques (court, moyen, long terme selon TCFD)", "required": True},
         "water": {"criterion": "Pas de détérioration de l'état des masses d'eau — conformité à la directive-cadre sur l'eau (DCE)", "required": True},
         "circular": {"criterion": "Prévention des déchets, réutilisation et recyclage prioritaires selon la hiérarchie des déchets", "required": True},
@@ -183,24 +168,6 @@ DNSH_CRITERIA: dict = {
         "biodiversity": {"criterion": "Pas de dégradation significative des habitats naturels sensibles ou des espèces protégées (directive Habitats)", "required": True},
     },
 }
-
-
-# ─── Schemas ─────────────────────────────────────────────────────────────────
-
-class ActivityAssessment(BaseModel):
-    activity_id: str
-    substantial_contribution: bool
-    dnsh_passed: bool
-    min_safeguards: bool
-    capex_eligible: Optional[float] = None     # M€
-    opex_eligible: Optional[float] = None      # M€
-    turnover_eligible: Optional[float] = None  # M€
-    notes: Optional[str] = None
-
-
-class TaxonomyReportRequest(BaseModel):
-    assessments: List[ActivityAssessment]
-    reporting_year: int = 2024
 
 
 # ─── Endpoints ───────────────────────────────────────────────────────────────
@@ -265,150 +232,3 @@ async def get_dnsh_criteria(
         for obj_id, crit in raw.items()
     }
     return {"activity_id": activity_id, "main_objective": activity["objective"], "dnsh_criteria": result}
-
-
-@router.post("/assess")
-async def assess_alignment(
-    request: TaxonomyReportRequest,
-    current_user: User = Depends(get_current_user),
-):
-    """Calculate taxonomy alignment from user assessments."""
-    results = []
-    total_capex = 0.0
-    aligned_capex = 0.0
-    total_turnover = 0.0
-    aligned_turnover = 0.0
-
-    for assessment in request.assessments:
-        activity = next((a for a in REFERENCE_ACTIVITIES if a["id"] == assessment.activity_id), None)
-        if not activity:
-            continue
-
-        is_aligned = (
-            assessment.substantial_contribution
-            and assessment.dnsh_passed
-            and assessment.min_safeguards
-        )
-        is_eligible = assessment.substantial_contribution
-
-        capex = assessment.capex_eligible or 0.0
-        turnover = assessment.turnover_eligible or 0.0
-        total_capex += capex
-        total_turnover += turnover
-        if is_aligned:
-            aligned_capex += capex
-            aligned_turnover += turnover
-
-        results.append({
-            "activity_id": assessment.activity_id,
-            "activity_name": activity["name"],
-            "sector": activity["sector"],
-            "objective": activity["objective"],
-            "is_eligible": is_eligible,
-            "is_aligned": is_aligned,
-            "substantial_contribution": assessment.substantial_contribution,
-            "dnsh_passed": assessment.dnsh_passed,
-            "min_safeguards": assessment.min_safeguards,
-            "capex_eligible": capex,
-            "turnover_eligible": turnover,
-        })
-
-    aligned_pct_capex = (aligned_capex / total_capex * 100) if total_capex > 0 else 0
-    aligned_pct_turnover = (aligned_turnover / total_turnover * 100) if total_turnover > 0 else 0
-
-    return {
-        "reporting_year": request.reporting_year,
-        "generated_at": datetime.utcnow().isoformat(),
-        "summary": {
-            "total_activities": len(results),
-            "aligned_activities": sum(1 for r in results if r["is_aligned"]),
-            "eligible_activities": sum(1 for r in results if r["is_eligible"]),
-            "total_capex_m": round(total_capex, 2),
-            "aligned_capex_m": round(aligned_capex, 2),
-            "aligned_capex_pct": round(aligned_pct_capex, 1),
-            "aligned_turnover_pct": round(aligned_pct_turnover, 1),
-        },
-        "results": results,
-    }
-
-
-@router.get("/kpis")
-async def get_taxonomy_kpis(current_user: User = Depends(get_current_user)):
-    """Return pre-computed taxonomy KPI structure for dashboard display."""
-    return {
-        "eligible_activities": len(REFERENCE_ACTIVITIES),
-        "objectives_covered": len(OBJECTIVES),
-        "sectors_covered": len(SECTORS),
-        "regulation": "EU 2020/852",
-        "last_update": "2023-12-01",
-        "reporting_framework": "Annexes I & II - Actes délégués climatiques",
-    }
-
-
-@router.get("/plan", response_model=Dict[str, Any])
-async def get_taxonomy_plan(current_user: User = Depends(get_current_user)):
-    """Load the tenant's saved taxonomy assessment plan from Redis."""
-    r = _get_redis()
-    if r:
-        try:
-            key = f"taxonomy:plan:{current_user.tenant_id}"
-            data = r.get(key)
-            if data:
-                return json.loads(data)
-        except Exception as e:
-            logger.warning("get_taxonomy_plan Redis error: %s", e)
-    return {"activities": []}
-
-
-@router.post("/plan", response_model=Dict[str, Any])
-async def save_taxonomy_plan(
-    payload: Dict[str, Any],
-    current_user: User = Depends(get_current_user),
-):
-    """Save the tenant's taxonomy assessment plan to Redis (TTL 1 year)."""
-    r = _get_redis()
-    if r:
-        try:
-            key = f"taxonomy:plan:{current_user.tenant_id}"
-            r.set(key, json.dumps(payload), ex=365 * 24 * 3600)
-            return {"saved": True}
-        except Exception as e:
-            logger.warning("save_taxonomy_plan Redis error: %s", e)
-    return {"saved": False}
-
-
-@router.post("/report", response_model=Dict[str, Any])
-async def generate_taxonomy_report(
-    payload: Dict[str, Any],
-    current_user: User = Depends(get_current_user),
-):
-    """Generate a taxonomy alignment report from saved activities (frontend-driven)."""
-    activities = payload.get("activities", [])
-    total = len(activities)
-    aligned = sum(1 for a in activities if a.get("status") == "aligned")
-    partial = sum(1 for a in activities if a.get("status") == "partial")
-    not_aligned = sum(1 for a in activities if a.get("status") == "not_aligned")
-    capex_pct = round((aligned / total * 100) if total > 0 else 0, 1)
-
-    by_objective: dict = {}
-    for a in activities:
-        obj = a.get("objective", "unknown")
-        if obj not in by_objective:
-            by_objective[obj] = {"total": 0, "aligned": 0}
-        by_objective[obj]["total"] += 1
-        if a.get("status") == "aligned":
-            by_objective[obj]["aligned"] += 1
-
-    return {
-        "reporting_year": datetime.now().year,
-        "generated_at": datetime.utcnow().isoformat(),
-        "summary": {
-            "total_activities": total,
-            "aligned_activities": aligned,
-            "partial_activities": partial,
-            "not_aligned_activities": not_aligned,
-            "aligned_capex_pct": capex_pct,
-        },
-        "by_objective": by_objective,
-        "regulation": "EU 2020/852",
-    }

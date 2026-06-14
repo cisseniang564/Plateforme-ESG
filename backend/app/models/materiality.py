@@ -32,7 +32,13 @@ class MaterialityIssue(Base, UUIDMixin, TenantMixin, TimestampMixin):
     data_sources: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_material: Mapped[bool] = mapped_column(Boolean, default=False)
     priority: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    
+
+    # CSRD IRO classification (ESRS 1 §43): qualifies each material issue as an
+    # Impact / Risk / Opportunity, optionally bound to an ESRS topic (E1…G1).
+    iro_type: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)            # 'impact' | 'risk' | 'opportunity'
+    iro_actual_or_potential: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)  # 'actual' | 'potential' (impacts only)
+    esrs_topic: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)          # 'E1'..'E5' | 'S1'..'S4' | 'G1'
+
     # Relationships
     tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="materiality_issues")
     risks: Mapped[list["ESGRisk"]] = relationship(

@@ -244,9 +244,13 @@ export default function TaxonomyAlignment() {
         const newDbMap: Record<string, string> = {};
 
         for (const dbAct of dbActs) {
-          // Find matching reference activity by NACE code
-          const ref = refActivities.find(r => r.nace === dbAct.activity_code)
-                   ?? refActivities.find(r => r.name === dbAct.label);
+          // Match the saved row back to a reference activity by its UNIQUE name
+          // first: several activities share a NACE code (e.g. D35.11 is used by
+          // solar, wind, hydraulic and geothermal production), so matching by
+          // NACE alone collapses them onto the first match and corrupts the
+          // reload. NACE stays as a fallback for rows whose label was renamed.
+          const ref = refActivities.find(r => r.name === dbAct.label)
+                   ?? refActivities.find(r => r.nace === dbAct.activity_code);
           const refId = ref?.id ?? dbAct.activity_code ?? dbAct.id;
 
           newSelected.add(refId);

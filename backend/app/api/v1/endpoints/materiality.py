@@ -19,6 +19,17 @@ router = APIRouter()
 
 # ============= SCHEMAS =============
 
+# CSRD IRO classification fields (ESRS 1 §43). The frontend sends "" for an
+# unset selection — normalise empty strings to None so they store cleanly.
+_IRO_FIELDS = ("iro_type", "iro_actual_or_potential", "esrs_topic")
+
+
+def _empty_to_none(v: Any) -> Optional[str]:
+    if isinstance(v, str) and v.strip() == "":
+        return None
+    return v
+
+
 class MaterialityIssueCreate(BaseModel):
     name: str
     description: Optional[str] = None
@@ -27,6 +38,14 @@ class MaterialityIssueCreate(BaseModel):
     esg_impact: float = Field(50.0, ge=0, le=100)
     stakeholders: Optional[str] = None
     data_sources: Optional[str] = None
+    iro_type: Optional[str] = None
+    iro_actual_or_potential: Optional[str] = None
+    esrs_topic: Optional[str] = None
+
+    @field_validator(*_IRO_FIELDS, mode="before")
+    @classmethod
+    def _norm_iro(cls, v: Any) -> Optional[str]:
+        return _empty_to_none(v)
 
 class MaterialityIssueUpdate(BaseModel):
     name: Optional[str] = None
@@ -36,6 +55,14 @@ class MaterialityIssueUpdate(BaseModel):
     esg_impact: Optional[float] = Field(None, ge=0, le=100)
     stakeholders: Optional[str] = None
     data_sources: Optional[str] = None
+    iro_type: Optional[str] = None
+    iro_actual_or_potential: Optional[str] = None
+    esrs_topic: Optional[str] = None
+
+    @field_validator(*_IRO_FIELDS, mode="before")
+    @classmethod
+    def _norm_iro(cls, v: Any) -> Optional[str]:
+        return _empty_to_none(v)
 
 class MaterialityIssueResponse(BaseModel):
     id: str | UUID
@@ -48,6 +75,9 @@ class MaterialityIssueResponse(BaseModel):
     priority: Optional[str]
     stakeholders: Optional[str]
     data_sources: Optional[str]
+    iro_type: Optional[str] = None
+    iro_actual_or_potential: Optional[str] = None
+    esrs_topic: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -131,9 +161,10 @@ async def create_materiality_issue(
 ):
     """Create a new materiality issue"""
     
-    # Calculate if material (threshold: both > 60)
-    is_material = issue.financial_impact > 60 and issue.esg_impact > 60
-    
+    # CSRD double materiality (ESRS 1): an issue is material if it is significant
+    # on EITHER axis — impact materiality OR financial materiality (threshold 60).
+    is_material = issue.financial_impact > 60 or issue.esg_impact > 60
+
     # Calculate priority
     avg_score = (issue.financial_impact + issue.esg_impact) / 2
     if avg_score >= 75:
@@ -215,9 +246,10 @@ async def update_materiality_issue(
     for field, value in update_data.items():
         setattr(db_issue, field, value)
     
-    # Recalculate materiality
-    if db_issue.financial_impact and db_issue.esg_impact:
-        db_issue.is_material = db_issue.financial_impact > 60 and db_issue.esg_impact > 60
+    # Recalculate materiality (ESRS 1 double materiality: OR across the two axes).
+    # Guard with `is not None` so a slider set to 0 still triggers recompute.
+    if db_issue.financial_impact is not None and db_issue.esg_impact is not None:
+        db_issue.is_material = db_issue.financial_impact > 60 or db_issue.esg_impact > 60
         avg_score = (db_issue.financial_impact + db_issue.esg_impact) / 2
         db_issue.priority = "high" if avg_score >= 75 else "medium" if avg_score >= 50 else "low"
     
