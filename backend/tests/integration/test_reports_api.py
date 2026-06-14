@@ -42,11 +42,17 @@ def client():
     mock_user.role = MagicMock()
     mock_user.role.name = "tenant_admin"
 
+    mock_tenant = MagicMock()
+    mock_tenant.id = TENANT_ID
+    mock_tenant.plan_tier = "pro"
+    mock_tenant.billing_is_active = True
+
     mock_db = AsyncMock()
     mock_db.execute = AsyncMock(return_value=MagicMock(
         scalar_one_or_none=MagicMock(return_value=mock_user),
         scalars=MagicMock(return_value=MagicMock(all=MagicMock(return_value=[]))),
     ))
+    mock_db.get = AsyncMock(return_value=mock_tenant)
     mock_db.commit = AsyncMock()
     mock_db.refresh = AsyncMock()
 

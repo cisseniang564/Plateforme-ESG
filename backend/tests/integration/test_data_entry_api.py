@@ -61,6 +61,8 @@ def _make_entry():
     e.updated_at       = datetime.now(timezone.utc)
     e.validated_by     = None
     e.validated_at     = None
+    e.verification_status = "pending"
+    e.created_by       = USER_ID
     return e
 
 

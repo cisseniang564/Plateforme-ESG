@@ -6,7 +6,7 @@ Routes covered:
   GET /api/v1/audit-trail/stats — audit statistics (manager+)
 
 Uses get_current_tenant_id from auth_middleware.
-Role guard (require_role) is bypassed via dependency override.
+require_role() is satisfied via a mocked DB row with role_name="tenant_admin".
 """
 import pytest
 from unittest.mock import AsyncMock, MagicMock
@@ -45,7 +45,6 @@ def client():
     from app.main import app
     from app.db.session import get_db
     from app.middleware.auth_middleware import get_current_tenant_id
-    from app.core.permissions import require_role
 
     logs = [_make_log("create"), _make_log("update"), _make_log("delete", "ESGScore")]
 
@@ -60,6 +59,8 @@ def client():
     execute_result.fetchall = MagicMock(return_value=[
         ("create", 10), ("update", 5), ("delete", 2)
     ])
+    # require_role() runs a raw-SQL query and reads row.role_name
+    execute_result.first = MagicMock(return_value=MagicMock(role_name="tenant_admin"))
 
     mock_db = AsyncMock()
     mock_db.execute = AsyncMock(return_value=execute_result)
@@ -70,29 +71,13 @@ def client():
     async def _tenant_id():
         return TENANT_ID
 
-    # Bypass role guard for all require_role dependencies
-    async def _no_role_check():
-        return None
-
     app.dependency_overrides[get_db]                = _db
     app.dependency_overrides[get_current_tenant_id] = _tenant_id
-
-    # Patch require_role to always pass
-    from app.core import permissions as _perm
-    original_require_role = _perm.require_role
-
-    def _mock_require_role(*roles):
-        async def _dep():
-            return None
-        return _dep
-
-    _perm.require_role = _mock_require_role
 
     with TestClient(app, raise_server_exceptions=False) as c:
         yield c
 
     app.dependency_overrides.clear()
-    _perm.require_role = original_require_role
 
 
 # ─── GET /audit-trail ────────────────────────────────────────────────────────

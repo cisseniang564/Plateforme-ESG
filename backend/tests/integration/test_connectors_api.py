@@ -71,7 +71,9 @@ class TestConnectorsCatalog:
             headers=AUTH_HEADERS,
         )
         if resp.status_code == 200:
-            assert isinstance(resp.json(), list)
+            body = resp.json()
+            assert isinstance(body, dict)
+            assert isinstance(body["connectors"], list)
 
     def test_catalog_has_connectors(self, client):
         resp = client.get(
@@ -104,7 +106,7 @@ class TestConnectorTest:
     def test_test_endpoint_returns_result(self, client):
         resp = client.post(
             "/api/v1/connectors/test",
-            json={"provider": "climatiq"},
+            json={"connector_id": "climatiq"},
         )
         assert resp.status_code in (200, 400, 503)
 
@@ -142,9 +144,11 @@ class TestClimatiqEstimate:
         resp = client.post(
             "/api/v1/connectors/climatiq/estimate",
             json={
-                "activity_id": "electricity-supply_grid-source_residual_mix",
-                "region": "FR",
-                "energy_kwh": 1000.0,
+                "emission_factor": {
+                    "activity_id": "electricity-supply_grid-source_residual_mix",
+                    "region": "FR",
+                },
+                "parameters": {"energy": 1000.0, "energy_unit": "kWh"},
             },
             headers=AUTH_HEADERS,
         )

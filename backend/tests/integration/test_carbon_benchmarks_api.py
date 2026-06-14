@@ -37,6 +37,15 @@ def _make_user():
     return u
 
 
+def _make_tenant():
+    """Pro plan tenant — required for the benchmark feature gate."""
+    t = MagicMock()
+    t.id = TENANT_ID
+    t.plan_tier = "pro"
+    t.billing_is_active = True
+    return t
+
+
 @pytest.fixture
 def client():
     from fastapi.testclient import TestClient
@@ -55,6 +64,7 @@ def client():
 
     mock_db = AsyncMock()
     mock_db.execute = AsyncMock(return_value=execute_result)
+    mock_db.get = AsyncMock(return_value=_make_tenant())
     mock_db.add = MagicMock(); mock_db.commit = AsyncMock()
 
     async def _db(): yield mock_db
@@ -183,12 +193,14 @@ class TestBenchmarksSector:
         # No auth required for benchmarks; expect 200 or 404 (no data), not 500
         assert resp.status_code in (200, 404)
 
-    def test_invalid_sector_404(self, client):
+    def test_invalid_sector_falls_back_to_default(self, client):
+        """Unknown sectors fall back to the 'default' public-reference baseline (200), not 404."""
         resp = client.get(
             "/api/v1/benchmarks/sector/completely_unknown_sector_xyz",
             headers=AUTH_HEADERS,
         )
-        assert resp.status_code in (404, 400)
+        assert resp.status_code == 200
+        assert resp.json()["source"] == "public_reference"
 
     def test_with_year_filter(self, client):
         resp = client.get(

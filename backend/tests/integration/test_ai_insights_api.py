@@ -42,6 +42,14 @@ def _make_score():
     return s
 
 
+def _make_tenant():
+    """Pro plan tenant — required for the ai_narrative feature gate."""
+    t = MagicMock()
+    t.id = TENANT_ID
+    t.plan_tier = "pro"
+    return t
+
+
 @pytest.fixture
 def client():
     from fastapi.testclient import TestClient
@@ -63,6 +71,7 @@ def client():
 
     mock_db = AsyncMock()
     mock_db.execute = AsyncMock(return_value=execute_result)
+    mock_db.get = AsyncMock(return_value=_make_tenant())
 
     async def _db(): yield mock_db
     async def _uid(): return USER_ID

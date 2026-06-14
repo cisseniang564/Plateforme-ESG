@@ -40,6 +40,10 @@ def _make_webhook():
     w.events = ["score.calculated", "data.imported"]
     w.is_active = True
     w.secret = "whsec_test123"
+    w.total_calls = 10
+    w.success_calls = 8
+    w.last_called_at = None
+    w.last_error = None
     w.created_at = datetime.now(timezone.utc)
     return w
 
@@ -65,6 +69,7 @@ def client():
 
     mock_db = AsyncMock()
     mock_db.execute = AsyncMock(return_value=execute_result)
+    mock_db.scalar = AsyncMock(return_value=1)
     mock_db.add = MagicMock(); mock_db.commit = AsyncMock()
     mock_db.delete = AsyncMock(); mock_db.refresh = AsyncMock()
 

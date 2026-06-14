@@ -40,6 +40,7 @@ def _make_upload(status: str = "completed"):
     u.validation_errors = []
     u.file_metadata = {}
     u.error_message = None
+    u.success_rate = 90.0
     u.created_at = datetime.now(timezone.utc)
     return u
 
@@ -79,6 +80,7 @@ def client():
 
     mock_db = AsyncMock()
     mock_db.execute = db_execute_mock
+    mock_db.scalar = AsyncMock(return_value=1)
     mock_db.add = MagicMock()
     mock_db.commit = AsyncMock()
     mock_db.refresh = AsyncMock()
@@ -141,23 +143,23 @@ class TestUploadFile:
         )
         assert resp.status_code == 400
 
-    def test_upload_too_large_413(self, client):
-        """File exceeding 10 MB → 413."""
+    def test_upload_too_large_400(self, client):
+        """File exceeding 10 MB → 400."""
         large_content = b"a" * (11 * 1024 * 1024)
         resp = client.post(
             "/api/v1/data/upload",
             files={"file": ("big.csv", io.BytesIO(large_content), "text/csv")},
             headers=AUTH_HEADERS,
         )
-        assert resp.status_code == 413
+        assert resp.status_code == 400
 
     def test_upload_csv_accepted(self, client):
         """Valid small CSV → accepted (200 or 201)."""
-        from unittest.mock import patch, AsyncMock as AM
+        from unittest.mock import patch
         csv_content = b"indicator_id,value,year\nco2_emissions,1000,2025\n"
         with patch(
-            "app.services.data_import_service.DataImportService.process_upload",
-            new_callable=lambda: lambda *a, **kw: AM(return_value=_make_upload()),
+            "app.services.data_import_service.DataImportService.parse_file",
+            new_callable=lambda: AsyncMock(return_value=_make_upload()),
         ):
             resp = client.post(
                 "/api/v1/data/upload",

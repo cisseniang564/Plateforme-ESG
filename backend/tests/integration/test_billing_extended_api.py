@@ -75,6 +75,8 @@ def client():
         mock_tenant, mock_user,
         mock_tenant, mock_user,
     ])
+    # require_role() runs a raw-SQL query and reads row.role_name
+    execute_result.first = MagicMock(return_value=MagicMock(role_name="tenant_admin"))
 
     mock_db = AsyncMock()
     mock_db.execute = AsyncMock(return_value=execute_result)
@@ -231,7 +233,7 @@ class TestBillingChangePlan:
         assert resp.status_code not in (401, 403)
 
     def test_change_plan_with_mock(self, client):
-        with patch("app.services.stripe_service.StripeService.change_subscription_plan",
+        with patch("app.services.stripe_service.StripeService.change_plan",
                    return_value={"status": "updated"}):
             resp = client.post(
                 "/api/v1/billing/change-plan",
@@ -261,8 +263,11 @@ class TestBillingRetryPayment:
         assert resp.status_code != 401
 
     def test_retry_with_mock(self, client):
-        with patch("app.services.stripe_service.StripeService.retry_failed_payment",
-                   return_value={"status": "succeeded"}):
+        """With mocked Stripe (no open invoice), should return 200, not 401/403."""
+        mock_invoices = MagicMock()
+        mock_invoices.data = []
+        with patch("app.services.stripe_service._get_stripe", return_value=MagicMock()), \
+             patch("stripe.Invoice.list", return_value=mock_invoices):
             resp = client.post(
                 "/api/v1/billing/retry-payment",
                 headers=AUTH_HEADERS,

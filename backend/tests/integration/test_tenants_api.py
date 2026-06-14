@@ -2,6 +2,7 @@
 Tests d'intégration — Endpoints /tenants/me
 """
 import pytest
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -27,8 +28,8 @@ def _make_mock_tenant(plan: str = "pro"):
     t.settings = {}
     t.feature_flags = {}
     t.is_active = True
-    t.created_at = None
-    t.updated_at = None
+    t.created_at = datetime.now(timezone.utc)
+    t.updated_at = datetime.now(timezone.utc)
     return t
 
 
@@ -55,10 +56,12 @@ def client():
         result = MagicMock()
         result.scalar_one_or_none.return_value = mock_tenant
         result.scalar_one.return_value = 5          # user count
+        result.scalar.return_value = 5               # count(*) queries
         result.scalars.return_value.all.return_value = []
         return result
 
     mock_db = AsyncMock()
+    mock_db.get = AsyncMock(return_value=mock_tenant)
     mock_db.execute = mock_execute
     mock_db.commit = AsyncMock()
 
