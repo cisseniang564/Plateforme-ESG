@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation, Trans } from 'react-i18next';
 import { usePageSeo } from '@/hooks/usePageSeo';
+import LazySection from '@/components/common/LazySection';
 import {
   TrendingUp, Shield, Zap, Users, FileText, BarChart3,
   CheckCircle, ArrowRight, Sparkles, Award, ChevronDown,
@@ -1975,6 +1976,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Module explorer ───────────────────────────────────────────────────── */}
+      <LazySection id="modules">
       <section id="modules" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
@@ -2638,6 +2640,8 @@ export default function LandingPage() {
       </section>
 
       {/* ── Pricing ──────────────────────────────────────────────────────────── */}
+      </LazySection>
+      <LazySection id="tarifs">
       <section id="tarifs" className="py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
@@ -3055,6 +3059,8 @@ export default function LandingPage() {
       </section>
 
       {/* ── Qui sommes-nous ──────────────────────────────────────────────────── */}
+      </LazySection>
+      <LazySection id="qui-sommes-nous">
       <section id="qui-sommes-nous" className="py-24 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -3340,6 +3346,8 @@ export default function LandingPage() {
       </section>
 
       {/* ── FAQ ──────────────────────────────────────────────────────────────── */}
+      </LazySection>
+      <LazySection id="faq">
       <section id="faq" className="py-24 bg-gray-50">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
@@ -3468,6 +3476,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      </LazySection>
 
       {/* ── Footer ───────────────────────────────────────────────────────────── */}
       <footer className="bg-slate-950 text-white py-16">
