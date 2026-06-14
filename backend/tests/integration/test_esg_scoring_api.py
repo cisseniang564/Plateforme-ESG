@@ -119,7 +119,13 @@ def _auth_headers(client_tuple):
     import jwt
     secret = os.environ.get("JWT_SECRET_KEY", "test-jwt-secret-key-at-least-32-chars!!")
     token = jwt.encode(
-        {"sub": str(USER_ID), "tenant_id": str(TENANT_ID), "exp": 9_999_999_999, "type": "access"},
+        {
+            "sub": str(USER_ID),
+            "user_id": str(USER_ID),
+            "tenant_id": str(TENANT_ID),
+            "exp": 9_999_999_999,
+            "type": "access",
+        },
         secret, algorithm="HS256"
     )
     return {"Authorization": f"Bearer {token}"}

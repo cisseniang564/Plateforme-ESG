@@ -42,17 +42,22 @@ def client():
     mock_user.email_verified_at = None
     mock_user.last_login_at = None
     mock_user.updated_at = None
+    mock_user.mfa_enabled = False
 
     # Mock Tenant
     mock_tenant = MagicMock()
     mock_tenant.id = DEMO_TENANT
     mock_tenant.name = "Demo Company"
     mock_tenant.plan_tier = "pro"
+    mock_tenant.is_active = True
+    mock_tenant.settings = {}
 
     # Mock DB result
     def make_scalar_result(obj):
         r = MagicMock()
         r.scalar_one_or_none.return_value = obj
+        # require_role() runs a raw-SQL query and reads row.role_name
+        r.first.return_value = MagicMock(role_name="tenant_admin")
         return r
 
     async def mock_execute(query, *args, **kwargs):
@@ -65,6 +70,7 @@ def client():
 
     mock_db = AsyncMock()
     mock_db.execute = AsyncMock(side_effect=mock_execute)
+    mock_db.get = AsyncMock(return_value=mock_tenant)
     mock_db.commit = AsyncMock()
     mock_db.add = MagicMock()
     mock_db.flush = AsyncMock()
@@ -156,7 +162,7 @@ class TestProtectedEndpoints:
     def test_stripe_webhook_is_public_no_401(self, client):
         """Webhook doit être accessible sans token (retourne 400 sig invalide, pas 401)."""
         c, *_ = client
-        resp = c.post("/webhooks/stripe", content=b"{}", headers={"stripe-signature": "invalid"})
+        resp = c.post("/api/v1/webhooks/stripe", content=b"{}", headers={"stripe-signature": "invalid"})
         assert resp.status_code != 401
 
     def test_register_is_public(self, client):
@@ -221,7 +227,8 @@ class TestBillingEndpoints:
             return tokens.get("access_token", "")
         return ""
 
-    def test_checkout_without_price_id_returns_422(self, client):
+    def test_checkout_without_price_id_returns_400(self, client):
+        """plan/price_id ont des valeurs par défaut (pas de 422) — erreur métier 400 si aucun n'est résolu."""
         c, *_ = client
         token = self._get_token(client)
         if not token:
@@ -229,7 +236,7 @@ class TestBillingEndpoints:
         resp = c.post("/api/v1/billing/checkout",
                       json={},
                       headers={"Authorization": f"Bearer {token}"})
-        assert resp.status_code == 422
+        assert resp.status_code == 400
 
     def test_invoices_returns_list(self, client):
         c, *_ = client

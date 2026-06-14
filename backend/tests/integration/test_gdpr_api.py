@@ -1,14 +1,16 @@
 """
-Tests d'intégration — Endpoints RGPD (/api/v1/me/export et /api/v1/me)
+Tests d'intégration — Endpoints RGPD (/api/v1/users/me/export et /api/v1/users/me)
 """
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
+from tests.conftest import make_access_token
 
 pytestmark = pytest.mark.integration
 
 TENANT_ID = uuid4()
 USER_ID    = uuid4()
+AUTH_HEADERS = {"Authorization": f"Bearer {make_access_token(USER_ID, TENANT_ID)}"}
 
 
 def _make_mock_user():
@@ -73,44 +75,44 @@ def client():
 
 class TestGDPRExport:
     def test_returns_200(self, client):
-        resp = client.get("/api/v1/me/export")
+        resp = client.get("/api/v1/users/me/export", headers=AUTH_HEADERS)
         assert resp.status_code == 200
 
     def test_response_is_json(self, client):
-        resp = client.get("/api/v1/me/export")
+        resp = client.get("/api/v1/users/me/export", headers=AUTH_HEADERS)
         assert resp.headers["content-type"].startswith("application/json")
 
     def test_contains_user_section(self, client):
-        resp = client.get("/api/v1/me/export")
+        resp = client.get("/api/v1/users/me/export", headers=AUTH_HEADERS)
         data = resp.json()
         assert "user" in data
 
     def test_user_has_email(self, client):
-        resp = client.get("/api/v1/me/export")
+        resp = client.get("/api/v1/users/me/export", headers=AUTH_HEADERS)
         data = resp.json()
         assert "email" in data["user"]
         assert data["user"]["email"] == "alice@example.com"
 
     def test_contains_exported_at(self, client):
-        resp = client.get("/api/v1/me/export")
+        resp = client.get("/api/v1/users/me/export", headers=AUTH_HEADERS)
         data = resp.json()
         assert "exported_at" in data
 
     def test_contains_regulation_field(self, client):
-        resp = client.get("/api/v1/me/export")
+        resp = client.get("/api/v1/users/me/export", headers=AUTH_HEADERS)
         data = resp.json()
         assert "regulation" in data
         assert "Article 15" in data["regulation"]
 
     def test_no_password_hash_in_export(self, client):
         """Password hash must never appear in GDPR export."""
-        resp = client.get("/api/v1/me/export")
+        resp = client.get("/api/v1/users/me/export", headers=AUTH_HEADERS)
         raw = resp.text
         assert "password_hash" not in raw
         assert "$2b$" not in raw  # bcrypt prefix
 
     def test_contains_data_categories(self, client):
-        resp = client.get("/api/v1/me/export")
+        resp = client.get("/api/v1/users/me/export", headers=AUTH_HEADERS)
         data = resp.json()
         assert "data_categories" in data
         assert isinstance(data["data_categories"], list)
@@ -119,7 +121,7 @@ class TestGDPRExport:
         from fastapi.testclient import TestClient
         from app.main import app
         with TestClient(app) as c:
-            resp = c.get("/api/v1/me/export")
+            resp = c.get("/api/v1/users/me/export")
         assert resp.status_code == 401
 
 
@@ -127,21 +129,21 @@ class TestGDPRExport:
 
 class TestGDPRDelete:
     def test_returns_200(self, client):
-        resp = client.delete("/api/v1/me")
+        resp = client.delete("/api/v1/users/me", headers=AUTH_HEADERS)
         assert resp.status_code == 200
 
     def test_response_contains_message(self, client):
-        resp = client.delete("/api/v1/me")
+        resp = client.delete("/api/v1/users/me", headers=AUTH_HEADERS)
         data = resp.json()
         assert "message" in data
 
     def test_response_contains_anonymized_at(self, client):
-        resp = client.delete("/api/v1/me")
+        resp = client.delete("/api/v1/users/me", headers=AUTH_HEADERS)
         data = resp.json()
         assert "anonymized_at" in data
 
     def test_response_contains_note_about_data_retention(self, client):
-        resp = client.delete("/api/v1/me")
+        resp = client.delete("/api/v1/users/me", headers=AUTH_HEADERS)
         data = resp.json()
         assert "note" in data
 
@@ -149,10 +151,10 @@ class TestGDPRDelete:
         from fastapi.testclient import TestClient
         from app.main import app
         with TestClient(app) as c:
-            resp = c.delete("/api/v1/me")
+            resp = c.delete("/api/v1/users/me")
         assert resp.status_code == 401
 
     def test_message_mentions_rgpd(self, client):
-        resp = client.delete("/api/v1/me")
+        resp = client.delete("/api/v1/users/me", headers=AUTH_HEADERS)
         data = resp.json()
         assert "RGPD" in data["message"] or "rgpd" in data["message"].lower()

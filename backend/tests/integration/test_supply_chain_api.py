@@ -18,6 +18,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 from datetime import datetime, timezone, timedelta
+from tests.conftest import make_access_token
 
 pytestmark = pytest.mark.integration
 
@@ -27,6 +28,7 @@ TENANT_ID = uuid4()
 USER_ID = uuid4()
 SUPPLIER_ID = uuid4()
 PORTAL_TOKEN = "test-portal-token-valid-abc123"
+AUTH_HEADERS = {"Authorization": f"Bearer {make_access_token(USER_ID, TENANT_ID)}"}
 
 
 # ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -204,35 +206,35 @@ class TestPortalPublicEndpoints:
 class TestListSuppliers:
 
     def test_list_suppliers_with_auth_returns_200(self, client):
-        resp = client.get("/api/v1/supply-chain/suppliers")
+        resp = client.get("/api/v1/supply-chain/suppliers", headers=AUTH_HEADERS)
         assert resp.status_code == 200
 
     def test_list_suppliers_returns_list(self, client):
-        resp = client.get("/api/v1/supply-chain/suppliers")
+        resp = client.get("/api/v1/supply-chain/suppliers", headers=AUTH_HEADERS)
         if resp.status_code == 200:
             assert isinstance(resp.json(), list)
 
     def test_list_suppliers_risk_filter_invalid_page_returns_422(self, client):
         """page must be >= 1."""
-        resp = client.get("/api/v1/supply-chain/suppliers?page=0")
+        resp = client.get("/api/v1/supply-chain/suppliers?page=0", headers=AUTH_HEADERS)
         assert resp.status_code == 422
 
     def test_list_suppliers_page_size_too_large_returns_422(self, client):
         """page_size has max=200."""
-        resp = client.get("/api/v1/supply-chain/suppliers?page_size=9999")
+        resp = client.get("/api/v1/supply-chain/suppliers?page_size=9999", headers=AUTH_HEADERS)
         assert resp.status_code == 422
 
     def test_list_suppliers_with_risk_filter(self, client):
         """risk_level filter is optional — must not 422."""
-        resp = client.get("/api/v1/supply-chain/suppliers?risk_level=high")
+        resp = client.get("/api/v1/supply-chain/suppliers?risk_level=high", headers=AUTH_HEADERS)
         assert resp.status_code in (200, 500)
 
     def test_list_suppliers_with_category_filter(self, client):
-        resp = client.get("/api/v1/supply-chain/suppliers?category=Services")
+        resp = client.get("/api/v1/supply-chain/suppliers?category=Services", headers=AUTH_HEADERS)
         assert resp.status_code in (200, 500)
 
     def test_list_suppliers_pagination(self, client):
-        resp = client.get("/api/v1/supply-chain/suppliers?page=1&page_size=10")
+        resp = client.get("/api/v1/supply-chain/suppliers?page=1&page_size=10", headers=AUTH_HEADERS)
         assert resp.status_code in (200, 500)
 
 
@@ -241,13 +243,14 @@ class TestListSuppliers:
 class TestCreateSupplier:
 
     def test_create_supplier_missing_name_returns_422(self, client):
-        resp = client.post("/api/v1/supply-chain/suppliers", json={})
+        resp = client.post("/api/v1/supply-chain/suppliers", json={}, headers=AUTH_HEADERS)
         assert resp.status_code == 422
 
     def test_create_supplier_valid_minimal_returns_201(self, client):
         resp = client.post(
             "/api/v1/supply-chain/suppliers",
-            json={"name": "New Supplier"}
+            json={"name": "New Supplier"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (201, 500)
 
@@ -261,14 +264,16 @@ class TestCreateSupplier:
                 "contact_email": "contact@greentech.de",
                 "employees": 120,
                 "spend_k_eur": 250.0,
-            }
+            },
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (201, 500)
 
     def test_create_supplier_returns_supplier_data(self, client):
         resp = client.post(
             "/api/v1/supply-chain/suppliers",
-            json={"name": "Test Supplier"}
+            json={"name": "Test Supplier"},
+            headers=AUTH_HEADERS,
         )
         if resp.status_code == 201:
             data = resp.json()
@@ -283,14 +288,16 @@ class TestUpdateSupplier:
     def test_update_supplier_with_valid_id_returns_non_401(self, client):
         resp = client.put(
             f"/api/v1/supply-chain/suppliers/{SUPPLIER_ID}",
-            json={"name": "Updated Name"}
+            json={"name": "Updated Name"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
     def test_update_supplier_invalid_uuid_returns_422(self, client):
         resp = client.put(
             "/api/v1/supply-chain/suppliers/not-a-uuid",
-            json={"name": "Updated"}
+            json={"name": "Updated"},
+            headers=AUTH_HEADERS,
         )
         # FastAPI path param validation may not validate UUIDs here (str type)
         # so the response should not be 401
@@ -299,14 +306,16 @@ class TestUpdateSupplier:
     def test_update_supplier_partial_update_accepted(self, client):
         resp = client.put(
             f"/api/v1/supply-chain/suppliers/{SUPPLIER_ID}",
-            json={"risk_level": "low", "status": "active"}
+            json={"risk_level": "low", "status": "active"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (200, 404, 500)
 
     def test_update_supplier_scores(self, client):
         resp = client.put(
             f"/api/v1/supply-chain/suppliers/{SUPPLIER_ID}",
-            json={"global_score": 85.0, "env_score": 90.0}
+            json={"global_score": 85.0, "env_score": 90.0},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (200, 404, 500)
 
@@ -316,11 +325,11 @@ class TestUpdateSupplier:
 class TestDeleteSupplier:
 
     def test_delete_supplier_valid_id_returns_non_401(self, client):
-        resp = client.delete(f"/api/v1/supply-chain/suppliers/{SUPPLIER_ID}")
+        resp = client.delete(f"/api/v1/supply-chain/suppliers/{SUPPLIER_ID}", headers=AUTH_HEADERS)
         assert resp.status_code != 401
 
     def test_delete_supplier_returns_204_or_404(self, client):
-        resp = client.delete(f"/api/v1/supply-chain/suppliers/{SUPPLIER_ID}")
+        resp = client.delete(f"/api/v1/supply-chain/suppliers/{SUPPLIER_ID}", headers=AUTH_HEADERS)
         assert resp.status_code in (204, 404, 500)
 
 
@@ -329,18 +338,18 @@ class TestDeleteSupplier:
 class TestSupplyChainDashboard:
 
     def test_dashboard_with_auth_returns_200(self, client):
-        resp = client.get("/api/v1/supply-chain/dashboard")
+        resp = client.get("/api/v1/supply-chain/dashboard", headers=AUTH_HEADERS)
         assert resp.status_code in (200, 500)
 
     def test_dashboard_response_has_required_keys(self, client):
-        resp = client.get("/api/v1/supply-chain/dashboard")
+        resp = client.get("/api/v1/supply-chain/dashboard", headers=AUTH_HEADERS)
         if resp.status_code == 200:
             data = resp.json()
             assert "total_suppliers" in data
             assert "risk_distribution" in data
 
     def test_dashboard_risk_distribution_is_list(self, client):
-        resp = client.get("/api/v1/supply-chain/dashboard")
+        resp = client.get("/api/v1/supply-chain/dashboard", headers=AUTH_HEADERS)
         if resp.status_code == 200:
             data = resp.json()
             assert isinstance(data.get("risk_distribution"), list)
@@ -351,18 +360,18 @@ class TestSupplyChainDashboard:
 class TestQuestionnaireQuestions:
 
     def test_questions_with_auth_returns_200(self, client):
-        resp = client.get("/api/v1/supply-chain/questionnaire/questions")
+        resp = client.get("/api/v1/supply-chain/questionnaire/questions", headers=AUTH_HEADERS)
         assert resp.status_code == 200
 
     def test_questions_returns_list(self, client):
-        resp = client.get("/api/v1/supply-chain/questionnaire/questions")
+        resp = client.get("/api/v1/supply-chain/questionnaire/questions", headers=AUTH_HEADERS)
         if resp.status_code == 200:
             data = resp.json()
             assert isinstance(data, list)
             assert len(data) > 0
 
     def test_each_question_has_required_fields(self, client):
-        resp = client.get("/api/v1/supply-chain/questionnaire/questions")
+        resp = client.get("/api/v1/supply-chain/questionnaire/questions", headers=AUTH_HEADERS)
         if resp.status_code == 200:
             for q in resp.json():
                 assert "id" in q
@@ -370,13 +379,13 @@ class TestQuestionnaireQuestions:
                 assert "question" in q
 
     def test_questions_contain_environmental_section(self, client):
-        resp = client.get("/api/v1/supply-chain/questionnaire/questions")
+        resp = client.get("/api/v1/supply-chain/questionnaire/questions", headers=AUTH_HEADERS)
         if resp.status_code == 200:
             sections = {q["section"] for q in resp.json()}
             assert "Environnement" in sections or any("env" in s.lower() for s in sections)
 
     def test_questions_contain_governance_section(self, client):
-        resp = client.get("/api/v1/supply-chain/questionnaire/questions")
+        resp = client.get("/api/v1/supply-chain/questionnaire/questions", headers=AUTH_HEADERS)
         if resp.status_code == 200:
             sections = {q["section"] for q in resp.json()}
             assert "Gouvernance" in sections or any("gov" in s.lower() for s in sections)
@@ -387,12 +396,13 @@ class TestQuestionnaireQuestions:
 class TestSendQuestionnaire:
 
     def test_send_questionnaire_valid_id_returns_non_401(self, client):
-        resp = client.post(f"/api/v1/supply-chain/suppliers/{SUPPLIER_ID}/questionnaire")
+        resp = client.post(f"/api/v1/supply-chain/suppliers/{SUPPLIER_ID}/questionnaire", headers=AUTH_HEADERS)
         assert resp.status_code != 401
 
     def test_send_questionnaire_with_email_returns_non_422(self, client):
         resp = client.post(
             f"/api/v1/supply-chain/suppliers/{SUPPLIER_ID}/questionnaire",
-            json={"recipient_email": "supplier@example.com"}
+            json={"recipient_email": "supplier@example.com"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 422

@@ -364,6 +364,9 @@ app.include_router(tenants.router, prefix="/api/v1")
 app.include_router(organizations.router, prefix="/api/v1")
 app.include_router(tasks.router, prefix="/api/v1")
 
+# gdpr.router (DELETE/GET /me*) must be registered before user_management.router
+# so its specific "/me" path isn't shadowed by user_management's "/{target_user_id}".
+app.include_router(gdpr.router, prefix="/api/v1/users", tags=["GDPR"])
 app.include_router(user_management.router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(indicator_data.router, prefix="/api/v1/indicator-data", tags=["Indicator Data"])
 app.include_router(data_upload.router, prefix="/api/v1/data", tags=["Data Upload"])
@@ -401,7 +404,6 @@ app.include_router(connectors.router, prefix="/api/v1/connectors", tags=["Connec
 app.include_router(billing.router, prefix="/api/v1/billing", tags=["Billing"])
 app.include_router(scores.router, prefix="/api/v1/scores", tags=["Scores"])
 app.include_router(stripe_webhook.router, prefix="/api/v1/webhooks", tags=["Stripe Webhook"])
-app.include_router(gdpr.router, prefix="/api/v1/users", tags=["GDPR"])
 app.include_router(company_indicators.router, prefix="/api/v1", tags=["Company Indicators"])
 app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["Notifications"])
 

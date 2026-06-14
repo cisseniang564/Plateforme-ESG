@@ -1,17 +1,21 @@
 """
-Integration tests — POST /api/v1/auth/demo-login
+Integration tests — POST /api/v1/auth/demo-session
 Verifies the full HTTP flow: routing, DB lookup, token generation, and response shape.
-No real database — DB is mocked at the dependency level.
+
+The legacy /demo-login endpoint has been permanently disabled (security fix —
+it used to share the admin's tenant) and now always returns 403. /demo-session
+is its replacement: it seeds an isolated, viewer-only sandbox tenant and issues
+a short-lived JWT. ``seed_demo_data`` is mocked so no real database is needed.
 """
 import pytest
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 from fastapi.testclient import TestClient
 
 pytestmark = pytest.mark.integration
 
-DEMO_EMAIL = "demo@greenconnect.cloud"
+DEMO_USER_EMAIL = "demo@esgflow.io"
 
 
 # ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -21,8 +25,8 @@ def _make_mock_user(email: str, tenant_id=None):
     u.id = uuid4()
     u.tenant_id = tenant_id or uuid4()
     u.email = email
-    u.first_name = "Compte"
-    u.last_name = "Démo"
+    u.first_name = "Démo"
+    u.last_name = "Compte"
     u.is_active = True
     u.email_verified_at = datetime.now(timezone.utc)
     u.mfa_enabled = False
@@ -31,20 +35,15 @@ def _make_mock_user(email: str, tenant_id=None):
 
 
 @pytest.fixture
-def demo_client_existing_user():
-    """Client with an existing demo user already in DB."""
-    demo_user = _make_mock_user(DEMO_EMAIL)
+def demo_client():
+    """Client with seed_demo_data mocked and the demo user pre-resolved."""
+    demo_user = _make_mock_user(DEMO_USER_EMAIL)
 
-    def _scalar(obj):
-        r = MagicMock()
-        r.scalar_one_or_none = MagicMock(return_value=obj)
-        return r
-
-    async def _execute(query, *a, **kw):
-        return _scalar(demo_user)
+    result = MagicMock()
+    result.scalar_one_or_none = MagicMock(return_value=demo_user)
 
     mock_db = AsyncMock()
-    mock_db.execute = AsyncMock(side_effect=_execute)
+    mock_db.execute = AsyncMock(return_value=result)
     mock_db.commit = AsyncMock()
     mock_db.add = MagicMock()
     mock_db.flush = AsyncMock()
@@ -57,152 +56,146 @@ def demo_client_existing_user():
     from app.db.session import get_db
 
     app.dependency_overrides[get_db] = override_db
-    with TestClient(app, raise_server_exceptions=False) as c:
-        yield c
-    app.dependency_overrides.clear()
 
+    with patch(
+        "app.services.demo_tenant.seed_demo_data",
+        new=AsyncMock(return_value={"counts": {"organizations": 1}}),
+    ):
+        with TestClient(app, raise_server_exceptions=False) as c:
+            c._demo_user = demo_user
+            yield c
 
-@pytest.fixture
-def demo_client_no_user():
-    """Client where no demo OR admin user exists — fallback org path."""
-    call_count = {"n": 0}
-
-    def _scalar(obj):
-        r = MagicMock()
-        r.scalar_one_or_none = MagicMock(return_value=obj)
-        return r
-
-    async def _execute(query, *a, **kw):
-        # Always return None so both demo and admin lookups return None
-        return _scalar(None)
-
-    mock_db = AsyncMock()
-    mock_db.execute = AsyncMock(side_effect=_execute)
-    mock_db.commit = AsyncMock()
-    mock_db.add = MagicMock()
-    mock_db.flush = AsyncMock()
-    # After refresh(), the user object needs enough attributes to serialise
-    refreshed_user = _make_mock_user(DEMO_EMAIL)
-    mock_db.refresh = AsyncMock(side_effect=lambda u: None)
-
-    async def override_db():
-        yield mock_db
-
-    from app.main import app
-    from app.db.session import get_db
-
-    app.dependency_overrides[get_db] = override_db
-    with TestClient(app, raise_server_exceptions=False) as c:
-        yield c
     app.dependency_overrides.clear()
 
 
 # ─── Happy path ───────────────────────────────────────────────────────────────
 
-class TestDemoLoginHappyPath:
+class TestDemoSessionHappyPath:
 
-    def test_returns_200(self, demo_client_existing_user):
-        resp = demo_client_existing_user.post("/api/v1/auth/demo-login")
+    def test_returns_200(self, demo_client):
+        resp = demo_client.post("/api/v1/auth/demo-session")
         assert resp.status_code == 200
 
-    def test_response_contains_tokens(self, demo_client_existing_user):
-        resp = demo_client_existing_user.post("/api/v1/auth/demo-login")
+    def test_response_contains_access_token(self, demo_client):
+        resp = demo_client.post("/api/v1/auth/demo-session")
         assert resp.status_code == 200
         data = resp.json()
-        assert "tokens" in data
-        assert "access_token" in data["tokens"]
-        assert "refresh_token" in data["tokens"]
+        assert "access_token" in data
+        assert data["access_token"]
 
-    def test_token_type_is_bearer(self, demo_client_existing_user):
-        resp = demo_client_existing_user.post("/api/v1/auth/demo-login")
-        assert resp.json()["tokens"]["token_type"] == "bearer"
+    def test_token_type_is_bearer(self, demo_client):
+        resp = demo_client.post("/api/v1/auth/demo-session")
+        assert resp.json()["token_type"] == "bearer"
 
-    def test_user_email_is_demo(self, demo_client_existing_user):
-        resp = demo_client_existing_user.post("/api/v1/auth/demo-login")
-        assert resp.json()["user"]["email"] == DEMO_EMAIL
+    def test_user_email_is_demo(self, demo_client):
+        resp = demo_client.post("/api/v1/auth/demo-session")
+        assert resp.json()["user"]["email"] == DEMO_USER_EMAIL
 
-    def test_needs_onboarding_is_false(self, demo_client_existing_user):
-        resp = demo_client_existing_user.post("/api/v1/auth/demo-login")
-        assert resp.json()["user"]["needs_onboarding"] is False
+    def test_is_demo_flag_true(self, demo_client):
+        resp = demo_client.post("/api/v1/auth/demo-session")
+        assert resp.json()["is_demo"] is True
 
-    def test_role_defaults_to_viewer(self, demo_client_existing_user):
-        resp = demo_client_existing_user.post("/api/v1/auth/demo-login")
-        assert resp.json()["user"]["role"] == "viewer"
+    def test_response_contains_seed_counts(self, demo_client):
+        resp = demo_client.post("/api/v1/auth/demo-session")
+        assert "seed_counts" in resp.json()
 
-    def test_access_token_is_valid_jwt(self, demo_client_existing_user):
+    def test_access_token_is_valid_jwt(self, demo_client):
         import jwt as _jwt
         import os
 
-        resp = demo_client_existing_user.post("/api/v1/auth/demo-login")
-        token = resp.json()["tokens"]["access_token"]
+        resp = demo_client.post("/api/v1/auth/demo-session")
+        token = resp.json()["access_token"]
         secret = os.environ["JWT_SECRET_KEY"]
         payload = _jwt.decode(token, secret, algorithms=["HS256"])
-        assert payload["sub"] == DEMO_EMAIL
+        assert payload["sub"] == DEMO_USER_EMAIL
+        assert payload["is_demo"] is True
 
-    def test_no_body_required(self, demo_client_existing_user):
-        """demo-login is a POST with no body — must work with empty request."""
-        resp = demo_client_existing_user.post(
-            "/api/v1/auth/demo-login",
+    def test_no_body_required(self, demo_client):
+        """demo-session is a POST with no body — must work with empty request."""
+        resp = demo_client.post(
+            "/api/v1/auth/demo-session",
             json=None,
             headers={"Content-Type": "application/json"},
         )
         assert resp.status_code == 200
 
-    def test_idempotent_multiple_calls(self, demo_client_existing_user):
-        """Calling demo-login twice should return 200 both times."""
-        r1 = demo_client_existing_user.post("/api/v1/auth/demo-login")
-        r2 = demo_client_existing_user.post("/api/v1/auth/demo-login")
+    def test_idempotent_multiple_calls(self, demo_client):
+        """Calling demo-session twice should return 200 both times.
+
+        The first call sets an httpOnly access_token cookie; the second
+        request must authenticate via the Bearer header (not the cookie) to
+        avoid tripping CSRFMiddleware, which rejects cookie-authenticated
+        mutating requests without a matching Origin/Referer.
+        """
+        r1 = demo_client.post("/api/v1/auth/demo-session")
         assert r1.status_code == 200
+        token = r1.json()["access_token"]
+
+        r2 = demo_client.post(
+            "/api/v1/auth/demo-session",
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert r2.status_code == 200
 
 
 # ─── Public access ────────────────────────────────────────────────────────────
 
-class TestDemoLoginIsPublic:
+class TestDemoSessionIsPublic:
 
-    def test_no_auth_header_required(self, demo_client_existing_user):
-        """demo-login must be callable without any Authorization header."""
-        resp = demo_client_existing_user.post("/api/v1/auth/demo-login")
+    def test_no_auth_header_required(self, demo_client):
+        """demo-session must be callable without any Authorization header."""
+        resp = demo_client.post("/api/v1/auth/demo-session")
         assert resp.status_code != 401
 
-    def test_wrong_auth_header_still_200(self, demo_client_existing_user):
-        """Even a garbage token header must not block demo-login."""
-        resp = demo_client_existing_user.post(
-            "/api/v1/auth/demo-login",
+    def test_wrong_auth_header_still_200(self, demo_client):
+        """Even a garbage token header must not block demo-session."""
+        resp = demo_client.post(
+            "/api/v1/auth/demo-session",
             headers={"Authorization": "Bearer garbage.token.here"},
         )
         assert resp.status_code == 200
 
-    def test_method_not_allowed_for_get(self, demo_client_existing_user):
-        """GET /auth/demo-login should return 405."""
-        resp = demo_client_existing_user.get("/api/v1/auth/demo-login")
+    def test_method_not_allowed_for_get(self, demo_client):
+        """GET /auth/demo-session should return 405."""
+        resp = demo_client.get("/api/v1/auth/demo-session")
         assert resp.status_code == 405
 
 
-# ─── Token usage after demo-login ─────────────────────────────────────────────
+# ─── Legacy /demo-login is permanently disabled ───────────────────────────────
+
+class TestLegacyDemoLoginDisabled:
+    """The old /demo-login endpoint must keep returning 403 (security fix —
+    it used to share the admin's tenant and expose real customer data)."""
+
+    def test_demo_login_returns_403(self, demo_client):
+        resp = demo_client.post("/api/v1/auth/demo-login")
+        assert resp.status_code == 403
+
+
+# ─── Token usage after demo-session ───────────────────────────────────────────
 
 class TestDemoTokenCanAuthenticateProtectedRoutes:
-    """The token from demo-login must be accepted by protected endpoints."""
+    """The token from demo-session must be accepted by protected endpoints."""
 
-    def test_token_accepted_by_supply_chain_dashboard(self, demo_client_existing_user):
-        login_resp = demo_client_existing_user.post("/api/v1/auth/demo-login")
+    def test_token_accepted_by_supply_chain_dashboard(self, demo_client):
+        login_resp = demo_client.post("/api/v1/auth/demo-session")
         assert login_resp.status_code == 200
-        token = login_resp.json()["tokens"]["access_token"]
+        token = login_resp.json()["access_token"]
 
-        # Supply chain dashboard is protected — should return 200 (not 401)
-        # (May return 500 due to mocked DB, but NOT 401)
-        resp = demo_client_existing_user.get(
+        # Supply chain dashboard is protected — should not return 401.
+        # (May return 500 due to the mocked DB, but NOT 401.)
+        resp = demo_client.get(
             "/api/v1/supply-chain/dashboard",
             headers={"Authorization": f"Bearer {token}"},
         )
         assert resp.status_code != 401
 
-    def test_token_accepted_by_organisations_endpoint(self, demo_client_existing_user):
-        login_resp = demo_client_existing_user.post("/api/v1/auth/demo-login")
+    def test_token_accepted_by_organisations_endpoint(self, demo_client):
+        login_resp = demo_client.post("/api/v1/auth/demo-session")
         assert login_resp.status_code == 200
-        token = login_resp.json()["tokens"]["access_token"]
+        token = login_resp.json()["access_token"]
 
-        resp = demo_client_existing_user.get(
+        resp = demo_client.get(
             "/api/v1/organizations",
             headers={"Authorization": f"Bearer {token}"},
         )

@@ -4,11 +4,13 @@ Tests d'intégration — Endpoints de facturation (/api/v1/billing/*)
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
+from tests.conftest import make_access_token
 
 pytestmark = pytest.mark.integration
 
 TENANT_ID = uuid4()
 USER_ID    = uuid4()
+AUTH_HEADERS = {"Authorization": f"Bearer {make_access_token(USER_ID, TENANT_ID)}"}
 
 
 def _make_tenant(plan: str = "starter", stripe_id: str | None = None):
@@ -52,11 +54,15 @@ def client():
     async def mock_execute(query, *args, **kwargs):
         result = MagicMock()
         q = str(query).lower()
-        if "user" in q:
+        # NB: "from tenants" also matches "user" (max_users column) — match on
+        # the FROM clause's table name instead.
+        if "from users" in q:
             result.scalar_one_or_none.return_value = mock_user
         else:
             result.scalar_one_or_none.return_value = mock_tenant
         result.scalars.return_value.all.return_value = []
+        # require_role() runs a raw-SQL query and reads row.role_name
+        result.first.return_value = MagicMock(role_name="tenant_admin")
         return result
 
     mock_db = AsyncMock()
@@ -81,21 +87,21 @@ def client():
 
 class TestGetSubscription:
     def test_returns_200(self, client):
-        resp = client.get("/api/v1/billing/subscription")
+        resp = client.get("/api/v1/billing/subscription", headers=AUTH_HEADERS)
         assert resp.status_code == 200
 
     def test_contains_plan_tier(self, client):
-        resp = client.get("/api/v1/billing/subscription")
+        resp = client.get("/api/v1/billing/subscription", headers=AUTH_HEADERS)
         data = resp.json()
         assert "plan_tier" in data
 
     def test_contains_status(self, client):
-        resp = client.get("/api/v1/billing/subscription")
+        resp = client.get("/api/v1/billing/subscription", headers=AUTH_HEADERS)
         data = resp.json()
         assert "status" in data
 
     def test_contains_max_users(self, client):
-        resp = client.get("/api/v1/billing/subscription")
+        resp = client.get("/api/v1/billing/subscription", headers=AUTH_HEADERS)
         data = resp.json()
         assert "max_users" in data
 
@@ -105,11 +111,11 @@ class TestGetSubscription:
 class TestListInvoices:
     def test_returns_200_when_no_stripe_customer(self, client):
         """When no Stripe customer → return empty list, not 500."""
-        resp = client.get("/api/v1/billing/invoices")
+        resp = client.get("/api/v1/billing/invoices", headers=AUTH_HEADERS)
         assert resp.status_code == 200
 
     def test_returns_list(self, client):
-        resp = client.get("/api/v1/billing/invoices")
+        resp = client.get("/api/v1/billing/invoices", headers=AUTH_HEADERS)
         data = resp.json()
         assert isinstance(data, list)
 
@@ -125,21 +131,27 @@ class TestListInvoices:
 
 class TestCreateCheckout:
     def test_stripe_not_configured_returns_503(self, client):
-        """When Stripe key is placeholder, returns 503 with helpful message."""
-        resp = client.post(
-            "/api/v1/billing/checkout",
-            json={"price_id": "price_test123"},
-        )
-        # Either 503 (Stripe not configured) or 200 (Stripe configured)
-        assert resp.status_code in (200, 503)
+        """When STRIPE_SECRET_KEY is unset/placeholder, returns 503 with helpful message."""
+        with patch(
+            "app.services.stripe_service._get_stripe",
+            side_effect=ValueError("Stripe not configured: set STRIPE_SECRET_KEY in .env"),
+        ):
+            resp = client.post(
+                "/api/v1/billing/checkout",
+                json={"price_id": "price_test123"},
+                headers=AUTH_HEADERS,
+            )
+        assert resp.status_code == 503
 
-    def test_missing_price_id_returns_422(self, client):
-        resp = client.post("/api/v1/billing/checkout", json={})
-        assert resp.status_code == 422
+    def test_missing_price_id_returns_400(self, client):
+        """plan/price_id ont des valeurs par défaut (pas de 422) — erreur métier 400 si aucun n'est résolu."""
+        resp = client.post("/api/v1/billing/checkout", json={}, headers=AUTH_HEADERS)
+        assert resp.status_code == 400
 
-    def test_invalid_body_returns_422(self, client):
-        resp = client.post("/api/v1/billing/checkout", json={"wrong_field": "value"})
-        assert resp.status_code == 422
+    def test_extra_fields_ignored_returns_400(self, client):
+        """Les champs inconnus sont ignorés par Pydantic — même erreur 400 que pour un body vide."""
+        resp = client.post("/api/v1/billing/checkout", json={"wrong_field": "value"}, headers=AUTH_HEADERS)
+        assert resp.status_code == 400
 
 
 # ─── POST /billing/portal ─────────────────────────────────────────────────────
@@ -147,6 +159,6 @@ class TestCreateCheckout:
 class TestCreatePortal:
     def test_no_stripe_customer_returns_400(self, client):
         """Tenant without stripe_customer_id → 400 Bad Request."""
-        resp = client.post("/api/v1/billing/portal", json={})
+        resp = client.post("/api/v1/billing/portal", json={}, headers=AUTH_HEADERS)
         # Returns 400 (no subscription yet) or 503 (Stripe not configured)
         assert resp.status_code in (400, 503)
