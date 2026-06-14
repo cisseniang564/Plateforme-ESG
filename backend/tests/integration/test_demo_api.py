@@ -130,7 +130,7 @@ class TestDemoLoginHappyPath:
         assert resp.json()["user"]["role"] == "viewer"
 
     def test_access_token_is_valid_jwt(self, demo_client_existing_user):
-        from jose import jwt as _jwt
+        import jwt as _jwt
         import os
 
         resp = demo_client_existing_user.post("/api/v1/auth/demo-login")

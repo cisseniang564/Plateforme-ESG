@@ -116,7 +116,7 @@ def client():
 def _auth_headers(client_tuple):
     """Return valid JWT auth headers using conftest fixture logic."""
     import os
-    from jose import jwt
+    import jwt
     secret = os.environ.get("JWT_SECRET_KEY", "test-jwt-secret-key-at-least-32-chars!!")
     token = jwt.encode(
         {"sub": str(USER_ID), "tenant_id": str(TENANT_ID), "exp": 9_999_999_999, "type": "access"},

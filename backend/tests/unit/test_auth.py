@@ -32,7 +32,7 @@ class TestJWTTokens:
     """Test JWT token creation and decoding."""
 
     def test_create_access_token(self):
-        from jose import jwt
+        import jwt
         secret = "test-secret"
         data = {"sub": "user-123", "tenant_id": "tenant-abc"}
         expire = datetime.now(timezone.utc) + timedelta(minutes=30)
@@ -44,9 +44,9 @@ class TestJWTTokens:
         assert decoded["tenant_id"] == "tenant-abc"
 
     def test_expired_token_raises(self):
-        from jose import jwt, JWTError
+        import jwt
         secret = "test-secret"
         expire = datetime.now(timezone.utc) - timedelta(minutes=1)
         token = jwt.encode({"sub": "user", "exp": expire}, secret, algorithm="HS256")
-        with pytest.raises(JWTError):
+        with pytest.raises(jwt.PyJWTError):
             jwt.decode(token, secret, algorithms=["HS256"])

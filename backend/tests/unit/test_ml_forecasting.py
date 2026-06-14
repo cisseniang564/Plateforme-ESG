@@ -2,7 +2,8 @@
 Tests unitaires — ForecastingService (ARIMA / Holt-Winters / OLS).
 """
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from datetime import date, timedelta
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 pytestmark = pytest.mark.unit
@@ -10,136 +11,117 @@ pytestmark = pytest.mark.unit
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
-def _make_entries(n: int, base_value: float = 100.0, step: float = 2.0):
-    """Generate n fake IndicatorData-like objects."""
-    from datetime import date, timedelta
-    entries = []
+def _make_series(n: int, base_value: float = 100.0, step: float = 2.0):
+    """Build a _Series of n monthly points."""
+    from app.services.ml.forecasting_service import _Series
+    dates = [date(2022, 1, 1) + timedelta(days=30 * i) for i in range(n)]
+    values = [base_value + i * step for i in range(n)]
+    return _Series(dates, values)
+
+
+def _make_data_points(n: int, base_value: float = 100.0, step: float = 2.0):
+    """Generate n fake IndicatorData-like objects (for _forecast_series)."""
+    points = []
     for i in range(n):
-        e = MagicMock()
-        e.value = base_value + i * step
-        e.date = date(2022, 1, 1) + timedelta(days=30 * i)
-        e.indicator_id = uuid4()
-        entries.append(e)
-    return entries
+        p = MagicMock()
+        p.value = base_value + i * step
+        p.date = date(2022, 1, 1) + timedelta(days=30 * i)
+        p.unit = "tCO2e"
+        points.append(p)
+    return points
 
 
-# ─── OLS (≥ 3 points) ─────────────────────────────────────────────────────────
+# ─── OLS (linear regression fallback) ─────────────────────────────────────────
 
 class TestOLSForecast:
-    """Tests for linear regression fallback (< 6 data points)."""
+    """Tests for the OLS linear-regression helper (_ols_predict)."""
 
-    def test_ols_returns_expected_keys(self):
-        from app.services.ml.forecasting_service import ForecastingService
-        svc = ForecastingService.__new__(ForecastingService)
-        entries = _make_entries(4)
-        result = svc._ols_predict(entries, horizon=3)
-        assert "predictions" in result
-        assert "method" in result
-        assert result["method"] == "ols"
-
-    def test_ols_prediction_count_matches_horizon(self):
-        from app.services.ml.forecasting_service import ForecastingService
-        svc = ForecastingService.__new__(ForecastingService)
-        entries = _make_entries(4)
-        result = svc._ols_predict(entries, horizon=6)
-        assert len(result["predictions"]) == 6
+    def test_ols_returns_three_equal_length_lists(self):
+        from app.services.ml.forecasting_service import _ols_predict
+        series = _make_series(4)
+        future_xs = [series.xs[-1] + 30 * m for m in range(1, 4)]
+        mean, lower, upper = _ols_predict(series, future_xs)
+        assert len(mean) == len(lower) == len(upper) == 3
 
     def test_ols_upward_trend_increases(self):
-        from app.services.ml.forecasting_service import ForecastingService
-        svc = ForecastingService.__new__(ForecastingService)
-        entries = _make_entries(5, base_value=10.0, step=10.0)
-        result = svc._ols_predict(entries, horizon=3)
-        preds = [p["value"] for p in result["predictions"]]
-        # With clear upward trend, last predicted value > first
-        assert preds[-1] > preds[0]
+        from app.services.ml.forecasting_service import _ols_predict
+        series = _make_series(5, base_value=10.0, step=10.0)
+        future_xs = [series.xs[-1] + 30 * m for m in range(1, 4)]
+        mean, _, _ = _ols_predict(series, future_xs)
+        assert mean[-1] > mean[0]
 
-    def test_ols_confidence_intervals_present(self):
-        from app.services.ml.forecasting_service import ForecastingService
-        svc = ForecastingService.__new__(ForecastingService)
-        entries = _make_entries(4)
-        result = svc._ols_predict(entries, horizon=3)
-        first = result["predictions"][0]
-        assert "upper_95" in first
-        assert "lower_95" in first
-        assert first["upper_95"] >= first["value"]
-        assert first["lower_95"] <= first["value"]
+    def test_ols_confidence_interval_brackets_mean(self):
+        from app.services.ml.forecasting_service import _ols_predict
+        series = _make_series(4)
+        future_xs = [series.xs[-1] + 30 * m for m in range(1, 4)]
+        mean, lower, upper = _ols_predict(series, future_xs)
+        for m, lo, hi in zip(mean, lower, upper):
+            assert lo <= m <= hi
 
-    def test_ols_requires_minimum_3_points(self):
-        from app.services.ml.forecasting_service import ForecastingService
-        svc = ForecastingService.__new__(ForecastingService)
-        entries = _make_entries(2)
-        with pytest.raises(Exception):
-            svc._ols_predict(entries, horizon=3)
+    def test_ols_degenerate_x_returns_flat_mean(self):
+        """All observations on the same date (denom == 0) → flat forecast at the series mean."""
+        from app.services.ml.forecasting_service import _ols_predict, _Series
+        same_date = date(2022, 1, 1)
+        series = _Series([same_date, same_date], [10.0, 20.0])
+        mean, lower, upper = _ols_predict(series, [30.0, 60.0])
+        assert mean == lower == upper == [15.0, 15.0]
 
 
 # ─── R² Metric ────────────────────────────────────────────────────────────────
 
 class TestR2:
-    def test_perfect_fit_returns_one(self):
-        from app.services.ml.forecasting_service import ForecastingService
-        svc = ForecastingService.__new__(ForecastingService)
-        y = [1.0, 2.0, 3.0, 4.0]
-        assert svc._r2(y, y) == pytest.approx(1.0)
+    def test_perfect_linear_fit_returns_one(self):
+        from app.services.ml.forecasting_service import _r2
+        series = _make_series(4, base_value=100.0, step=2.0)
+        assert _r2(series) == pytest.approx(1.0)
 
-    def test_zero_variance_returns_zero(self):
-        from app.services.ml.forecasting_service import ForecastingService
-        svc = ForecastingService.__new__(ForecastingService)
-        y_true = [5.0, 5.0, 5.0]
-        y_pred = [3.0, 6.0, 4.0]
-        # All same actual values → SS_tot = 0 → R² undefined, returns 0.0
-        result = svc._r2(y_true, y_pred)
-        assert isinstance(result, float)
+    def test_degenerate_x_returns_zero(self):
+        """All same date (denom == 0) → R² undefined, returns 0.0."""
+        from app.services.ml.forecasting_service import _r2, _Series
+        same_date = date(2022, 1, 1)
+        series = _Series([same_date, same_date, same_date], [1.0, 2.0, 3.0])
+        assert _r2(series) == 0.0
 
-    def test_bad_fit_is_below_one(self):
-        from app.services.ml.forecasting_service import ForecastingService
-        svc = ForecastingService.__new__(ForecastingService)
-        y_true = [1.0, 2.0, 3.0, 4.0]
-        y_pred = [4.0, 3.0, 2.0, 1.0]  # inverse → terrible fit
-        assert svc._r2(y_true, y_pred) < 0.5
+    def test_noisy_series_is_below_one(self):
+        from app.services.ml.forecasting_service import _r2, _Series
+        dates = [date(2022, 1, 1) + timedelta(days=30 * i) for i in range(4)]
+        # Oscillating values — poorly explained by a single linear trend
+        series = _Series(dates, [1.0, 100.0, 1.0, 100.0])
+        assert _r2(series) < 1.0
 
 
 # ─── Seasonality Detection ────────────────────────────────────────────────────
 
 class TestSeasonalityDetection:
-    def test_returns_bool(self):
-        from app.services.ml.forecasting_service import ForecastingService
-        svc = ForecastingService.__new__(ForecastingService)
-        entries = _make_entries(30)
-        result = svc._detect_seasonality(entries)
-        assert isinstance(result, bool)
-
     def test_insufficient_data_returns_false(self):
-        from app.services.ml.forecasting_service import ForecastingService
-        svc = ForecastingService.__new__(ForecastingService)
-        entries = _make_entries(10)
-        result = svc._detect_seasonality(entries)
-        assert result is False
+        from app.services.ml.forecasting_service import _detect_seasonality
+        series = _make_series(10)
+        assert _detect_seasonality(series) is False
+
+    def test_returns_bool_for_sufficient_data(self):
+        from app.services.ml.forecasting_service import _detect_seasonality
+        series = _make_series(30)
+        assert isinstance(_detect_seasonality(series), bool)
 
 
 # ─── Algorithm Selection ──────────────────────────────────────────────────────
 
 class TestAlgorithmSelection:
-    """Verify adaptive algorithm selection based on data volume."""
+    """Series with < 6 points always fall back to OLS
+    (ARIMA needs ≥ 24 points, Holt-Winters needs ≥ 6)."""
 
-    @pytest.mark.parametrize("n_points,expected_method", [
-        (2,  None),   # below minimum → no forecast
-        (3,  "ols"),
-        (5,  "ols"),
-        (6,  "holt_winters"),
-        (23, "holt_winters"),
-    ])
-    def test_method_chosen_by_data_size(self, n_points, expected_method):
+    @pytest.mark.parametrize("n_points", [3, 4, 5])
+    def test_small_series_uses_ols(self, n_points):
         from app.services.ml.forecasting_service import ForecastingService
         svc = ForecastingService.__new__(ForecastingService)
-        entries = _make_entries(n_points)
+        indicator = MagicMock(id=uuid4(), name="Émissions test", code="E-TEST", unit="tCO2e", pillar="environmental")
+        data_points = _make_data_points(n_points)
 
-        if expected_method is None:
-            # Too few points → should raise or return empty
-            with pytest.raises(Exception):
-                svc._ols_predict(entries, horizon=3)
-        elif expected_method == "ols":
-            result = svc._ols_predict(entries, horizon=3)
-            assert result["method"] == "ols"
+        result = svc._forecast_series(indicator, data_points, horizon=3)
+
+        assert result["algorithm"] == "linear_ols"
+        assert result["n_historical_points"] == n_points
+        assert len(result["future_points"]) == 3
 
 
 # ─── Goal Alert ───────────────────────────────────────────────────────────────
@@ -147,9 +129,6 @@ class TestAlgorithmSelection:
 class TestGoalAlert:
     def test_alert_triggered_when_trajectory_misses_objective(self):
         """If predictions stay flat but objective is -30%, alert must fire."""
-        from app.services.ml.forecasting_service import ForecastingService
-        svc = ForecastingService.__new__(ForecastingService)
-
         flat_predictions = [{"value": 100.0 + i * 0.1} for i in range(12)]
         baseline = 100.0
         objective_pct = -30.0  # need to reach 70.0

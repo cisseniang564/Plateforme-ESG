@@ -117,7 +117,7 @@ def test_org_id():
 @pytest.fixture
 def valid_jwt_token(test_user_id, test_tenant_id):
     """Generate a valid JWT access token for test authentication."""
-    from jose import jwt as _jwt
+    import jwt as _jwt
     secret = os.environ["JWT_SECRET_KEY"]
     payload = {
         "sub": str(test_user_id),

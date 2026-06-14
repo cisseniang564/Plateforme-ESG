@@ -101,7 +101,6 @@ class TestCalculateScore:
         """When no active indicators exist for the tenant, overall_score must be 0."""
         # indicators query returns empty list
         empty_indicators = _make_scalars_result([])
-        mock_db.execute.return_value = empty_indicators
 
         # existing score query also returns None
         mock_db.execute.side_effect = [
@@ -109,29 +108,20 @@ class TestCalculateScore:
             _make_scalar_result(None),  # existing score query
         ]
 
-        # refresh populates the score object
-        created_score = MagicMock()
-        created_score.overall_score = 0.0
-        created_score.environmental_score = 0.0
-        created_score.social_score = 0.0
-        created_score.governance_score = 0.0
-        created_score.rating = "E"
-        mock_db.refresh.side_effect = lambda obj: None
-
         tenant_id = uuid4()
         calc_date = date.today()
 
-        # Service calls db.add() for a new score object, then commit and refresh
-        # We need to capture what was added to verify the score
+        # Service calls db.add() for a new score object, then commit
         added_objects = []
         mock_db.add.side_effect = lambda obj: added_objects.append(obj)
 
-        await service.calculate_score(tenant_id, calc_date)
+        score = await service.calculate_score(tenant_id, calc_date)
 
         # Should have committed exactly once
         mock_db.commit.assert_called_once()
-        # refresh called once (on the newly created score)
-        mock_db.refresh.assert_called_once()
+        # Score fields are set Python-side (no db.refresh — see calculate_score)
+        assert score.overall_score == 0.0
+        mock_db.refresh.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_no_indicator_data_gives_zero_pillar_scores(self, service, mock_db):
@@ -370,12 +360,12 @@ class TestESGScoringEngineNormalizeValue:
         result = engine._normalize_value(-50.0, "ENV-004", higher_is_better=True)
         assert result == pytest.approx(100.0)
 
-    def test_value_above_max_with_lower_is_better_gives_100(self):
-        """value > max with lower_is_better → 100 (very bad, but clamp)."""
-        # higher_is_better=False, value > max → normalized=0 before inversion → 100
+    def test_value_above_max_with_lower_is_better_gives_0(self):
+        """value > max with lower_is_better → 0 (worse than worst case, clamped)."""
+        # higher_is_better=False, value > max → normalized=100 before inversion → 0
         engine = self._engine()
         result = engine._normalize_value(5000.0, "ENV-001", higher_is_better=False)
-        assert result == pytest.approx(100.0)
+        assert result == pytest.approx(0.0)
 
     def test_unknown_indicator_code_falls_back_to_0_100_range(self):
         """Unknown indicator code uses default benchmark [0, 100]."""

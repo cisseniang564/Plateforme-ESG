@@ -64,13 +64,16 @@ class TestRuleBasedRecommendations:
             assert rec["priority"] in valid_priorities
 
     def test_low_environmental_score_triggers_env_recommendation(self):
-        """When E score is very low, at least one environmental recommendation expected."""
+        """When environmental is the weakest pillar, its recommendation comes first."""
         svc = _get_service()
-        profile = {"environmental_score": 15.0, "social_score": 70.0, "governance_score": 70.0}
+        profile = {
+            "environmental_score": 15.0,
+            "social_score": 70.0,
+            "governance_score": 70.0,
+            "weakest_pillar": "environmental",
+        }
         result = svc._rule_based_recommendations(profile)
-        titles = " ".join(r.get("title", "").lower() for r in result)
-        # Should mention emissions, energy, or environmental
-        assert any(kw in titles for kw in ["émission", "emiss", "énergie", "energ", "carbone", "carbon", "environnement"])
+        assert result[0]["pillar"] == "environmental"
 
     def test_high_scores_return_fewer_recommendations(self):
         """Good performers need fewer urgent improvements."""

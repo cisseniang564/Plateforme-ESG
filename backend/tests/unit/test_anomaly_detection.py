@@ -8,12 +8,16 @@ from uuid import uuid4
 pytestmark = pytest.mark.unit
 
 
-def _make_entries(values: list, pillar: str = "environmental"):
-    """Build mock IndicatorData entries from a list of values."""
+def _make_entries(values: list, pillar: str = "environmental", metric_name: str = "Metric Test"):
+    """Build mock DataEntry objects, all sharing one metric_name so
+    _zscore_detect groups them into a single per-metric series."""
     from datetime import date, timedelta
     entries = []
     for i, v in enumerate(values):
         e = MagicMock()
+        e.id = uuid4()
+        e.metric_name = metric_name
+        e.value_numeric = float(v)
         e.value = float(v)
         e.date = date(2023, 1, 1) + timedelta(days=30 * i)
         e.indicator_id = uuid4()
