@@ -12,6 +12,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 from datetime import date, datetime, timezone
+from tests.conftest import make_access_token
 
 pytestmark = pytest.mark.integration
 
@@ -19,6 +20,7 @@ TENANT_ID = uuid4()
 USER_ID   = uuid4()
 ORG_ID    = uuid4()
 SCORE_ID  = uuid4()
+AUTH_HEADERS = {"Authorization": f"Bearer {make_access_token(USER_ID, TENANT_ID)}"}
 
 
 def _make_user():
@@ -77,14 +79,14 @@ class TestAIInsightsRecommendations:
     def test_returns_200(self, client):
         resp = client.get(
             "/api/v1/ai-insights",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_returns_dict(self, client):
         resp = client.get(
             "/api/v1/ai-insights",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         if resp.status_code == 200:
             assert isinstance(resp.json(), dict)
@@ -92,7 +94,7 @@ class TestAIInsightsRecommendations:
     def test_has_recommendations(self, client):
         resp = client.get(
             "/api/v1/ai-insights",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         if resp.status_code == 200:
             body = resp.json()
@@ -102,7 +104,7 @@ class TestAIInsightsRecommendations:
     def test_with_org_filter(self, client):
         resp = client.get(
             f"/api/v1/ai-insights?organization_id={ORG_ID}",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (200, 404, 422)
 
@@ -121,7 +123,7 @@ class TestAIInsightsChat:
         resp = client.post(
             "/api/v1/ai-insights/chat",
             json={"message": "Quels sont mes principaux axes d'amélioration ESG?"},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -129,7 +131,7 @@ class TestAIInsightsChat:
         resp = client.post(
             "/api/v1/ai-insights/chat",
             json={"message": "Comment améliorer mon score environnemental?"},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         if resp.status_code == 200:
             body = resp.json()
@@ -146,7 +148,7 @@ class TestAIInsightsChat:
             resp = client.post(
                 "/api/v1/ai-insights/chat",
                 json={"message": "Analyse mes données ESG"},
-                headers={"Authorization": "Bearer test"},
+                headers=AUTH_HEADERS,
             )
         assert resp.status_code in (200, 500)
 
@@ -154,7 +156,7 @@ class TestAIInsightsChat:
         resp = client.post(
             "/api/v1/ai-insights/chat",
             json={"message": ""},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (200, 400, 422)
 
@@ -162,7 +164,7 @@ class TestAIInsightsChat:
         resp = client.post(
             "/api/v1/ai-insights/chat",
             json={},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (200, 422)
 
@@ -181,7 +183,7 @@ class TestAIInsightsAnalyze:
         resp = client.post(
             "/api/v1/ai-insights/analyze",
             json={"indicator": "co2_emissions", "year": 2025},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -189,6 +191,6 @@ class TestAIInsightsAnalyze:
         resp = client.post(
             "/api/v1/ai-insights/analyze",
             json={"indicator": "co2_emissions", "year": 2025},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (200, 400, 422, 500)

@@ -16,11 +16,13 @@ Analytics uses get_current_user from app.dependencies (not get_current_user_id).
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
+from tests.conftest import make_access_token
 
 pytestmark = pytest.mark.integration
 
 TENANT_ID = uuid4()
 USER_ID   = uuid4()
+AUTH_HEADERS = {"Authorization": f"Bearer {make_access_token(USER_ID, TENANT_ID)}"}
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -81,14 +83,14 @@ class TestAnomalies:
     def test_returns_200(self, client):
         resp = client.get(
             "/api/v1/analytics/anomalies",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_has_anomalies_key(self, client):
         resp = client.get(
             "/api/v1/analytics/anomalies",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         body = resp.json()
         assert "anomalies" in body
@@ -97,7 +99,7 @@ class TestAnomalies:
     def test_year_filter(self, client):
         resp = client.get(
             "/api/v1/analytics/anomalies?year=2025",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
@@ -117,14 +119,14 @@ class TestInsights:
         """year is required — missing it should return 422."""
         resp = client.get(
             "/api/v1/analytics/insights",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 422
 
     def test_returns_200_with_year(self, client):
         resp = client.get(
             "/api/v1/analytics/insights?year=2025",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
@@ -143,21 +145,21 @@ class TestSuggestions:
     def test_requires_year(self, client):
         resp = client.get(
             "/api/v1/analytics/suggestions",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 422
 
     def test_returns_200_with_year(self, client):
         resp = client.get(
             "/api/v1/analytics/suggestions?year=2025",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_has_suggestions_key(self, client):
         resp = client.get(
             "/api/v1/analytics/suggestions?year=2025",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         if resp.status_code == 200:
             body = resp.json()
@@ -170,14 +172,14 @@ class TestMLForecast:
     def test_returns_non_401(self, client):
         resp = client.get(
             "/api/v1/analytics/ml/forecast",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
     def test_returns_200_or_error(self, client):
         resp = client.get(
             "/api/v1/analytics/ml/forecast",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         # 200 = OK, 422 = missing param, 500 = service error (all acceptable)
         assert resp.status_code in (200, 422, 500)
@@ -189,14 +191,14 @@ class TestMLAnomalies:
     def test_returns_non_401(self, client):
         resp = client.get(
             "/api/v1/analytics/ml/anomalies",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
     def test_returns_200_or_known(self, client):
         resp = client.get(
             "/api/v1/analytics/ml/anomalies",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (200, 422, 500)
 
@@ -207,14 +209,14 @@ class TestMLRecommendations:
     def test_returns_non_401(self, client):
         resp = client.get(
             "/api/v1/analytics/ml/recommendations",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
     def test_returns_200_or_known(self, client):
         resp = client.get(
             "/api/v1/analytics/ml/recommendations",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (200, 422, 500)
 
@@ -234,7 +236,7 @@ class TestAnalyticsChat:
         resp = client.post(
             "/api/v1/analytics/chat",
             json={"message": "Analyse mes performances ESG"},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -242,7 +244,7 @@ class TestAnalyticsChat:
         resp = client.post(
             "/api/v1/analytics/chat",
             json={},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         # message field is required
         assert resp.status_code in (200, 422)

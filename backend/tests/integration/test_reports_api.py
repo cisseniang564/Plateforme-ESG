@@ -15,12 +15,14 @@ No real Postgres or file-system access required.
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
+from tests.conftest import make_access_token
 
 pytestmark = pytest.mark.integration
 
 TENANT_ID = uuid4()
 USER_ID = uuid4()
 ORG_ID = uuid4()
+AUTH_HEADERS = {"Authorization": f"Bearer {make_access_token(USER_ID, TENANT_ID)}"}
 
 
 # ─── Fixture ─────────────────────────────────────────────────────────────────
@@ -71,14 +73,14 @@ class TestReportTypes:
     def test_returns_200(self, client):
         resp = client.get(
             "/api/v1/reports/types",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_returns_list_of_types(self, client):
         resp = client.get(
             "/api/v1/reports/types",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         body = resp.json()
         # Should be a list or a dict with a "types" key
@@ -87,7 +89,7 @@ class TestReportTypes:
     def test_includes_executive_type(self, client):
         resp = client.get(
             "/api/v1/reports/types",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         text = resp.text.lower()
         assert "executive" in text or "csrd" in text or "gri" in text
@@ -99,21 +101,21 @@ class TestReportPreview:
     def test_executive_preview_200(self, client):
         resp = client.get(
             "/api/v1/reports/preview/executive",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_csrd_preview_200(self, client):
         resp = client.get(
             "/api/v1/reports/preview/csrd",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_unknown_type_returns_error(self, client):
         resp = client.get(
             "/api/v1/reports/preview/unknown_garbage_type",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (400, 404, 422)
 
@@ -124,14 +126,14 @@ class TestMultiStandards:
     def test_returns_200(self, client):
         resp = client.get(
             "/api/v1/reports/multi-standards",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_contains_standards(self, client):
         resp = client.get(
             "/api/v1/reports/multi-standards",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         text = resp.text.lower()
         # Should mention at least one standard
@@ -148,7 +150,7 @@ class TestGenerateReport:
             resp = client.post(
                 "/api/v1/reports/generate",
                 json={"report_type": "executive", "format": "pdf"},
-                headers={"Authorization": "Bearer test"},
+                headers=AUTH_HEADERS,
             )
         assert resp.status_code != 401
 
@@ -157,7 +159,7 @@ class TestGenerateReport:
         resp = client.post(
             "/api/v1/reports/generate",
             json={},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         # report_type is required
         assert resp.status_code == 422
@@ -169,7 +171,7 @@ class TestGenerateReport:
             resp = client.post(
                 "/api/v1/reports/generate",
                 json={"report_type": "executive", "format": "pdf", "year": 2025},
-                headers={"Authorization": "Bearer test"},
+                headers=AUTH_HEADERS,
             )
         if resp.status_code == 200:
             ct = resp.headers.get("content-type", "")
@@ -189,7 +191,7 @@ class TestScheduledReports:
                 "format": "pdf",
                 "recipients": ["cfo@test.com"],
             },
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         # Should succeed or return a known error (not 401/403)
         assert resp.status_code not in (401, 403)
@@ -197,7 +199,7 @@ class TestScheduledReports:
     def test_list_scheduled_reports(self, client):
         resp = client.get(
             "/api/v1/reports/scheduled",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
         assert isinstance(resp.json(), (list, dict))

@@ -12,11 +12,13 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 from datetime import datetime, timezone
+from tests.conftest import make_access_token
 
 pytestmark = pytest.mark.integration
 
 TENANT_ID = uuid4()
 USER_ID   = uuid4()
+AUTH_HEADERS = {"Authorization": f"Bearer {make_access_token(USER_ID, TENANT_ID)}"}
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -99,35 +101,35 @@ class TestAuditTrailList:
     def test_returns_200(self, client):
         resp = client.get(
             "/api/v1/audit-trail",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_returns_list_or_dict(self, client):
         resp = client.get(
             "/api/v1/audit-trail",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert isinstance(resp.json(), (list, dict))
 
     def test_filter_by_action(self, client):
         resp = client.get(
             "/api/v1/audit-trail?action=create",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_filter_by_entity(self, client):
         resp = client.get(
             "/api/v1/audit-trail?entity=DataEntry",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_pagination_params(self, client):
         resp = client.get(
             "/api/v1/audit-trail?page=1&page_size=20",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
@@ -143,7 +145,7 @@ class TestAuditTrailList:
     def test_response_has_items(self, client):
         resp = client.get(
             "/api/v1/audit-trail",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         if resp.status_code == 200:
             body = resp.json()
@@ -157,14 +159,14 @@ class TestAuditTrailStats:
     def test_returns_200(self, client):
         resp = client.get(
             "/api/v1/audit-trail/stats",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_returns_dict(self, client):
         resp = client.get(
             "/api/v1/audit-trail/stats",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         if resp.status_code == 200:
             assert isinstance(resp.json(), dict)
@@ -172,7 +174,7 @@ class TestAuditTrailStats:
     def test_contains_count(self, client):
         resp = client.get(
             "/api/v1/audit-trail/stats",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         if resp.status_code == 200:
             body = resp.json()

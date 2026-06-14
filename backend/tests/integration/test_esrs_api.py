@@ -11,11 +11,13 @@ Uses get_current_user from app.dependencies.
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
+from tests.conftest import make_access_token
 
 pytestmark = pytest.mark.integration
 
 TENANT_ID = uuid4()
 USER_ID   = uuid4()
+AUTH_HEADERS = {"Authorization": f"Bearer {make_access_token(USER_ID, TENANT_ID)}"}
 
 
 def _make_user():
@@ -58,21 +60,21 @@ class TestESRSStandards:
     def test_returns_200(self, client):
         resp = client.get(
             "/api/v1/esrs/standards",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_returns_list_or_dict(self, client):
         resp = client.get(
             "/api/v1/esrs/standards",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert isinstance(resp.json(), (list, dict))
 
     def test_contains_esrs_standards(self, client):
         resp = client.get(
             "/api/v1/esrs/standards",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         if resp.status_code == 200:
             text = resp.text.upper()
@@ -91,14 +93,14 @@ class TestESRSGapAnalysis:
     def test_gap_analysis_returns_200(self, client):
         resp = client.get(
             "/api/v1/esrs/gap-analysis",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_gap_analysis_structure(self, client):
         resp = client.get(
             "/api/v1/esrs/gap-analysis",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         if resp.status_code == 200:
             body = resp.json()
@@ -107,7 +109,7 @@ class TestESRSGapAnalysis:
     def test_gap_analysis_with_year(self, client):
         resp = client.get(
             "/api/v1/esrs/gap-analysis?year=2025",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (200, 422)
 
@@ -125,7 +127,7 @@ class TestESRSGapExport:
         resp = client.post(
             "/api/v1/esrs/gap-analysis/export",
             json={},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -133,7 +135,7 @@ class TestESRSGapExport:
         resp = client.post(
             "/api/v1/esrs/gap-analysis/export",
             json={},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         if resp.status_code == 200:
             ct = resp.headers.get("content-type", "")

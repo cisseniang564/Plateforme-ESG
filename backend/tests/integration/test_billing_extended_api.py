@@ -12,11 +12,13 @@ Completes test_billing_api.py by covering routes not tested there:
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
+from tests.conftest import make_access_token
 
 pytestmark = pytest.mark.integration
 
 TENANT_ID = uuid4()
 USER_ID   = uuid4()
+AUTH_HEADERS = {"Authorization": f"Bearer {make_access_token(USER_ID, TENANT_ID)}"}
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -110,14 +112,14 @@ class TestBillingFeatures:
     def test_returns_200(self, client):
         resp = client.get(
             "/api/v1/billing/features",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_returns_dict(self, client):
         resp = client.get(
             "/api/v1/billing/features",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert isinstance(resp.json(), dict)
 
@@ -139,7 +141,7 @@ class TestBillingPortal:
         resp = client.post(
             "/api/v1/billing/portal",
             json={"return_url": "https://app.greenconnect.cloud/settings"},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (400, 503, 500)
 
@@ -152,7 +154,7 @@ class TestBillingPortal:
             resp = client.post(
                 "/api/v1/billing/portal",
                 json={"return_url": "https://app.greenconnect.cloud/settings"},
-                headers={"Authorization": "Bearer test"},
+                headers=AUTH_HEADERS,
             )
         assert resp.status_code not in (401, 403)
 
@@ -172,7 +174,7 @@ class TestBillingCancel:
     def test_cancel_no_stripe_returns_error(self, client):
         resp = client.post(
             "/api/v1/billing/cancel",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code not in (401, 403)
 
@@ -181,7 +183,7 @@ class TestBillingCancel:
                    return_value={"status": "canceled"}):
             resp = client.post(
                 "/api/v1/billing/cancel",
-                headers={"Authorization": "Bearer test"},
+                headers=AUTH_HEADERS,
             )
         assert resp.status_code not in (401, 403)
 
@@ -201,7 +203,7 @@ class TestBillingReactivate:
     def test_reactivate_returns_non_401(self, client):
         resp = client.post(
             "/api/v1/billing/reactivate",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -210,7 +212,7 @@ class TestBillingReactivate:
                    return_value={"status": "active"}):
             resp = client.post(
                 "/api/v1/billing/reactivate",
-                headers={"Authorization": "Bearer test"},
+                headers=AUTH_HEADERS,
             )
         assert resp.status_code not in (401, 403)
 
@@ -223,7 +225,7 @@ class TestBillingChangePlan:
         resp = client.post(
             "/api/v1/billing/change-plan",
             json={},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         # Either 400 (bad input) or 503 (no Stripe key) — not 401/422
         assert resp.status_code not in (401, 403)
@@ -234,7 +236,7 @@ class TestBillingChangePlan:
             resp = client.post(
                 "/api/v1/billing/change-plan",
                 json={"plan": "starter", "billing_cycle": "monthly"},
-                headers={"Authorization": "Bearer test"},
+                headers=AUTH_HEADERS,
             )
         assert resp.status_code not in (401, 403)
 
@@ -254,7 +256,7 @@ class TestBillingRetryPayment:
     def test_retry_returns_non_401(self, client):
         resp = client.post(
             "/api/v1/billing/retry-payment",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -263,6 +265,6 @@ class TestBillingRetryPayment:
                    return_value={"status": "succeeded"}):
             resp = client.post(
                 "/api/v1/billing/retry-payment",
-                headers={"Authorization": "Bearer test"},
+                headers=AUTH_HEADERS,
             )
         assert resp.status_code not in (401, 403)

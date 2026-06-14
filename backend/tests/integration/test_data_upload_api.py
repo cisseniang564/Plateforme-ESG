@@ -14,12 +14,14 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 from datetime import datetime, timezone
+from tests.conftest import make_access_token
 
 pytestmark = pytest.mark.integration
 
 TENANT_ID = uuid4()
 USER_ID = uuid4()
 UPLOAD_ID = uuid4()
+AUTH_HEADERS = {"Authorization": f"Bearer {make_access_token(USER_ID, TENANT_ID)}"}
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -109,7 +111,7 @@ class TestUploadFile:
         resp = client.post(
             "/api/v1/data/upload",
             files={"file": ("test.csv", io.BytesIO(csv_content), "text/csv")},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -135,7 +137,7 @@ class TestUploadFile:
         resp = client.post(
             "/api/v1/data/upload",
             files={"file": ("data.txt", io.BytesIO(b"hello"), "text/plain")},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 400
 
@@ -145,7 +147,7 @@ class TestUploadFile:
         resp = client.post(
             "/api/v1/data/upload",
             files={"file": ("big.csv", io.BytesIO(large_content), "text/csv")},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 413
 
@@ -160,7 +162,7 @@ class TestUploadFile:
             resp = client.post(
                 "/api/v1/data/upload",
                 files={"file": ("esg.csv", io.BytesIO(csv_content), "text/csv")},
-                headers={"Authorization": "Bearer test"},
+                headers=AUTH_HEADERS,
             )
         assert resp.status_code in (200, 201, 202)
 
@@ -171,14 +173,14 @@ class TestListUploads:
     def test_list_returns_200(self, client):
         resp = client.get(
             "/api/v1/data/uploads",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_list_returns_array(self, client):
         resp = client.get(
             "/api/v1/data/uploads",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         body = resp.json()
         assert isinstance(body, (list, dict))
@@ -200,14 +202,14 @@ class TestGetUpload:
     def test_get_existing_upload_200(self, client):
         resp = client.get(
             f"/api/v1/data/uploads/{UPLOAD_ID}",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (200, 404)  # 404 if mock doesn't match query
 
     def test_get_upload_invalid_uuid_422(self, client):
         resp = client.get(
             "/api/v1/data/uploads/not-a-uuid",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 422
 
@@ -218,13 +220,13 @@ class TestDeleteUpload:
     def test_delete_not_401(self, client):
         resp = client.delete(
             f"/api/v1/data/uploads/{UPLOAD_ID}",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
     def test_delete_invalid_uuid_422(self, client):
         resp = client.delete(
             "/api/v1/data/uploads/bad-id",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 422

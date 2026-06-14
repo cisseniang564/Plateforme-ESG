@@ -14,12 +14,14 @@ Uses get_current_user from app.dependencies (except /test which is public).
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
+from tests.conftest import make_access_token
 
 pytestmark = pytest.mark.integration
 
 TENANT_ID    = uuid4()
 USER_ID      = uuid4()
 CONNECTOR_ID = "schneider"
+AUTH_HEADERS = {"Authorization": f"Bearer {make_access_token(USER_ID, TENANT_ID)}"}
 
 
 def _make_user():
@@ -59,14 +61,14 @@ class TestConnectorsCatalog:
     def test_catalog_returns_200(self, client):
         resp = client.get(
             "/api/v1/connectors/catalog",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_catalog_returns_list(self, client):
         resp = client.get(
             "/api/v1/connectors/catalog",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         if resp.status_code == 200:
             assert isinstance(resp.json(), list)
@@ -74,7 +76,7 @@ class TestConnectorsCatalog:
     def test_catalog_has_connectors(self, client):
         resp = client.get(
             "/api/v1/connectors/catalog",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         if resp.status_code == 200:
             text = resp.text.lower()
@@ -112,7 +114,7 @@ class TestConnectorStatus:
         resp = client.patch(
             f"/api/v1/connectors/{CONNECTOR_ID}/status",
             json={"status": "connected"},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -120,7 +122,7 @@ class TestConnectorStatus:
         resp = client.patch(
             "/api/v1/connectors/does_not_exist_xyz/status",
             json={"status": "connected"},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (404, 400, 200)
 
@@ -129,7 +131,7 @@ class TestConnectorSync:
     def test_sync_non_401(self, client):
         resp = client.post(
             f"/api/v1/connectors/{CONNECTOR_ID}/sync",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -144,7 +146,7 @@ class TestClimatiqEstimate:
                 "region": "FR",
                 "energy_kwh": 1000.0,
             },
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (200, 400, 503)
 
@@ -152,7 +154,7 @@ class TestClimatiqEstimate:
         resp = client.post(
             "/api/v1/connectors/climatiq/estimate",
             json={},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (400, 422)
 

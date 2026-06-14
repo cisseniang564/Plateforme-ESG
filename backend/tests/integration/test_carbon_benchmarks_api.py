@@ -19,12 +19,14 @@ Benchmarks has no auth.
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
+from tests.conftest import make_access_token
 
 pytestmark = pytest.mark.integration
 
 TENANT_ID  = uuid4()
 USER_ID    = uuid4()
 COMPANY_ID = uuid4()
+AUTH_HEADERS = {"Authorization": f"Bearer {make_access_token(USER_ID, TENANT_ID)}"}
 
 
 def _make_user():
@@ -72,14 +74,14 @@ class TestCarbonScopeSummary:
     def test_returns_200(self, client):
         resp = client.get(
             "/api/v1/carbon/scope-summary",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_returns_dict(self, client):
         resp = client.get(
             "/api/v1/carbon/scope-summary",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         if resp.status_code == 200:
             assert isinstance(resp.json(), dict)
@@ -87,7 +89,7 @@ class TestCarbonScopeSummary:
     def test_has_scope_keys(self, client):
         resp = client.get(
             "/api/v1/carbon/scope-summary",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         if resp.status_code == 200:
             text = resp.text.lower()
@@ -108,14 +110,14 @@ class TestCarbonCategories:
     def test_returns_200(self, client):
         resp = client.get(
             "/api/v1/carbon/categories",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_returns_list(self, client):
         resp = client.get(
             "/api/v1/carbon/categories",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         if resp.status_code == 200:
             assert isinstance(resp.json(), list)
@@ -127,14 +129,14 @@ class TestCarbonHistory:
     def test_returns_200(self, client):
         resp = client.get(
             "/api/v1/carbon/history",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_year_filter(self, client):
         resp = client.get(
             "/api/v1/carbon/history?year=2025",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (200, 422)
 
@@ -145,7 +147,7 @@ class TestCarbonPlan:
     def test_get_plan_non_401(self, client):
         resp = client.get(
             "/api/v1/carbon/plan",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -153,7 +155,7 @@ class TestCarbonPlan:
         resp = client.post(
             "/api/v1/carbon/plan",
             json={},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -165,7 +167,7 @@ class TestCarbonScope3:
         resp = client.post(
             "/api/v1/carbon/save-scope3",
             json={},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -176,7 +178,7 @@ class TestBenchmarksSector:
     def test_known_sector_returns_non_500(self, client):
         resp = client.get(
             "/api/v1/benchmarks/sector/energie",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         # No auth required for benchmarks; expect 200 or 404 (no data), not 500
         assert resp.status_code in (200, 404)
@@ -184,14 +186,14 @@ class TestBenchmarksSector:
     def test_invalid_sector_404(self, client):
         resp = client.get(
             "/api/v1/benchmarks/sector/completely_unknown_sector_xyz",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (404, 400)
 
     def test_with_year_filter(self, client):
         resp = client.get(
             "/api/v1/benchmarks/sector/transport?year=2025",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (200, 404)
 
@@ -202,13 +204,13 @@ class TestBenchmarksCompanyPosition:
     def test_company_position_non_500(self, client):
         resp = client.get(
             f"/api/v1/benchmarks/company/{COMPANY_ID}/position",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (200, 404, 422)
 
     def test_invalid_company_uuid_422(self, client):
         resp = client.get(
             "/api/v1/benchmarks/company/not-a-uuid/position",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 422

@@ -122,6 +122,7 @@ def valid_jwt_token(test_user_id, test_tenant_id):
     payload = {
         "sub": str(test_user_id),
         "tenant_id": str(test_tenant_id),
+        "user_id": str(test_user_id),
         "exp": 9_999_999_999,  # far-future expiry
         "type": "access",
     }
@@ -132,6 +133,26 @@ def valid_jwt_token(test_user_id, test_tenant_id):
 def auth_headers(valid_jwt_token):
     """Authorization header dict ready to be passed to httpx/TestClient."""
     return {"Authorization": f"Bearer {valid_jwt_token}"}
+
+
+def make_access_token(user_id, tenant_id, **extra_claims) -> str:
+    """
+    Build a signed access-token JWT for integration tests.
+
+    Unlike a plain placeholder string, this passes AuthMiddleware (which
+    requires ``user_id``/``tenant_id`` claims) so route-level
+    dependency_overrides are actually reached.
+    """
+    import jwt as _jwt
+    payload = {
+        "sub": str(user_id),
+        "user_id": str(user_id),
+        "tenant_id": str(tenant_id),
+        "exp": 9_999_999_999,  # far-future expiry
+        "type": "access",
+        **extra_claims,
+    }
+    return _jwt.encode(payload, os.environ["JWT_SECRET_KEY"], algorithm="HS256")
 
 
 # ── FastAPI async test client ──────────────────────────────────────────────────

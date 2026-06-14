@@ -11,12 +11,14 @@ import io
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
+from tests.conftest import make_access_token
 
 pytestmark = pytest.mark.integration
 
 TENANT_ID = uuid4()
 USER_ID   = uuid4()
 UPLOAD_ID = uuid4()
+AUTH_HEADERS = {"Authorization": f"Bearer {make_access_token(USER_ID, TENANT_ID)}"}
 
 
 def _make_user():
@@ -69,14 +71,14 @@ class TestESGImportPreview:
         resp = client.post(
             "/api/v1/esg-import/upload-preview",
             files={"file": ("data.csv", io.BytesIO(csv), "text/csv")},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
     def test_preview_no_file_422(self, client):
         resp = client.post(
             "/api/v1/esg-import/upload-preview",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 422
 
@@ -84,7 +86,7 @@ class TestESGImportPreview:
         resp = client.post(
             "/api/v1/esg-import/upload-preview",
             files={"file": ("bad.txt", io.BytesIO(b"hello"), "text/plain")},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (400, 422)
 
@@ -107,7 +109,7 @@ class TestESGImportExecute:
         resp = client.post(
             f"/api/v1/esg-import/uploads/{UPLOAD_ID}/import",
             json=mapping,
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -115,7 +117,7 @@ class TestESGImportExecute:
         resp = client.post(
             "/api/v1/esg-import/uploads/not-a-uuid/import",
             json={"metric_name": "co2", "value_numeric": "value"},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 422
 
@@ -123,7 +125,7 @@ class TestESGImportExecute:
         resp = client.post(
             f"/api/v1/esg-import/uploads/{UPLOAD_ID}/import",
             json={},   # metric_name and value_numeric are required
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 422
 

@@ -12,6 +12,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 from datetime import date, datetime, timezone
+from tests.conftest import make_access_token
 
 pytestmark = pytest.mark.integration
 
@@ -19,6 +20,7 @@ TENANT_ID     = uuid4()
 USER_ID       = uuid4()
 INDICATOR_ID  = uuid4()
 UPLOAD_ID     = uuid4()
+AUTH_HEADERS = {"Authorization": f"Bearer {make_access_token(USER_ID, TENANT_ID)}"}
 
 
 def _make_user():
@@ -86,7 +88,7 @@ class TestIndicatorDataCreate:
         resp = client.post(
             f"/api/v1/indicator-data/indicators/{INDICATOR_ID}/data",
             json={"date": "2025-06-01", "value": 500.0, "source": "manual"},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -94,7 +96,7 @@ class TestIndicatorDataCreate:
         resp = client.post(
             f"/api/v1/indicator-data/indicators/{INDICATOR_ID}/data",
             json={},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 422
 
@@ -112,21 +114,21 @@ class TestIndicatorDataList:
     def test_list_returns_200(self, client):
         resp = client.get(
             f"/api/v1/indicator-data/indicators/{INDICATOR_ID}/data",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_list_returns_array_or_dict(self, client):
         resp = client.get(
             f"/api/v1/indicator-data/indicators/{INDICATOR_ID}/data",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert isinstance(resp.json(), (list, dict))
 
     def test_invalid_indicator_uuid_422(self, client):
         resp = client.get(
             "/api/v1/indicator-data/indicators/not-a-uuid/data",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 422
 
@@ -135,7 +137,7 @@ class TestIndicatorDataStats:
     def test_stats_non_401(self, client):
         resp = client.get(
             f"/api/v1/indicator-data/indicators/{INDICATOR_ID}/stats",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -144,7 +146,7 @@ class TestPillarDashboard:
     def test_dashboard_non_401(self, client):
         resp = client.get(
             "/api/v1/indicator-data/dashboard/pillar-data",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 

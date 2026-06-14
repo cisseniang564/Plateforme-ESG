@@ -16,6 +16,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 from datetime import date, datetime, timezone
+from tests.conftest import make_access_token
 
 pytestmark = pytest.mark.integration
 
@@ -23,6 +24,7 @@ TENANT_ID = uuid4()
 USER_ID   = uuid4()
 ORG_ID    = uuid4()
 ENTRY_ID  = uuid4()
+AUTH_HEADERS = {"Authorization": f"Bearer {make_access_token(USER_ID, TENANT_ID)}"}
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -124,7 +126,7 @@ class TestCreateDataEntry:
                 "value_numeric": 1000.0,
                 "unit":         "tCO2e",
             },
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -132,7 +134,7 @@ class TestCreateDataEntry:
         resp = client.post(
             "/api/v1/data-entry/",
             json={"pillar": "env"},   # missing period_start, period_end, etc.
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 422
 
@@ -151,28 +153,28 @@ class TestListDataEntries:
     def test_list_returns_200(self, client):
         resp = client.get(
             "/api/v1/data-entry/",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_list_returns_array(self, client):
         resp = client.get(
             "/api/v1/data-entry/",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert isinstance(resp.json(), list)
 
     def test_filter_by_year(self, client):
         resp = client.get(
             "/api/v1/data-entry/?year=2025",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_filter_by_pillar(self, client):
         resp = client.get(
             "/api/v1/data-entry/?pillar=env",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
@@ -191,14 +193,14 @@ class TestMetricTemplates:
     def test_returns_200(self, client):
         resp = client.get(
             "/api/v1/data-entry/templates/metrics",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_returns_list_or_dict(self, client):
         resp = client.get(
             "/api/v1/data-entry/templates/metrics",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert isinstance(resp.json(), (list, dict))
 
@@ -206,7 +208,7 @@ class TestMetricTemplates:
         for pillar in ("env", "soc", "gov"):
             resp = client.get(
                 f"/api/v1/data-entry/templates/metrics?pillar={pillar}",
-                headers={"Authorization": "Bearer test"},
+                headers=AUTH_HEADERS,
             )
             assert resp.status_code == 200
 
@@ -217,14 +219,14 @@ class TestDataEntryStats:
     def test_returns_200(self, client):
         resp = client.get(
             "/api/v1/data-entry/stats",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_returns_dict(self, client):
         resp = client.get(
             "/api/v1/data-entry/stats",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert isinstance(resp.json(), dict)
 
@@ -235,14 +237,14 @@ class TestDataEntryExport:
     def test_export_non_401(self, client):
         resp = client.get(
             "/api/v1/data-entry/export",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
     def test_export_csv_format(self, client):
         resp = client.get(
             "/api/v1/data-entry/export?format=csv",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -254,7 +256,7 @@ class TestUpdateDataEntry:
         resp = client.put(
             f"/api/v1/data-entry/{ENTRY_ID}",
             json={"value_numeric": 1200.0, "notes": "Updated value"},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -262,7 +264,7 @@ class TestUpdateDataEntry:
         resp = client.put(
             "/api/v1/data-entry/not-a-uuid",
             json={"value_numeric": 100.0},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 422
 
@@ -273,13 +275,13 @@ class TestDeleteDataEntry:
     def test_delete_non_401(self, client):
         resp = client.delete(
             f"/api/v1/data-entry/{ENTRY_ID}",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
     def test_delete_invalid_uuid_422(self, client):
         resp = client.delete(
             "/api/v1/data-entry/bad-uuid",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 422

@@ -15,12 +15,14 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 from datetime import datetime, timezone
+from tests.conftest import make_access_token
 
 pytestmark = pytest.mark.integration
 
 TENANT_ID  = uuid4()
 USER_ID    = uuid4()
 WEBHOOK_ID = uuid4()
+AUTH_HEADERS = {"Authorization": f"Bearer {make_access_token(USER_ID, TENANT_ID)}"}
 
 
 def _make_user():
@@ -81,14 +83,14 @@ class TestWebhookEvents:
     def test_events_200(self, client):
         resp = client.get(
             "/api/v1/webhooks/events",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_events_returns_list(self, client):
         resp = client.get(
             "/api/v1/webhooks/events",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         if resp.status_code == 200:
             assert isinstance(resp.json(), (list, dict))
@@ -107,14 +109,14 @@ class TestWebhookList:
     def test_list_returns_200(self, client):
         resp = client.get(
             "/api/v1/webhooks/",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_list_returns_array(self, client):
         resp = client.get(
             "/api/v1/webhooks/",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert isinstance(resp.json(), (list, dict))
 
@@ -128,7 +130,7 @@ class TestWebhookCreate:
                 "url": "https://hooks.example.com/esg",
                 "events": ["score.calculated"],
             },
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -136,7 +138,7 @@ class TestWebhookCreate:
         resp = client.post(
             "/api/v1/webhooks/",
             json={"name": "Hook", "events": ["score.calculated"]},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 422
 
@@ -144,7 +146,7 @@ class TestWebhookCreate:
         resp = client.post(
             "/api/v1/webhooks/",
             json={"name": "Hook", "url": "not-a-url", "events": []},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 422
 
@@ -162,14 +164,14 @@ class TestWebhookDeliveries:
     def test_deliveries_non_401(self, client):
         resp = client.get(
             f"/api/v1/webhooks/{WEBHOOK_ID}/deliveries",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
     def test_invalid_uuid_422(self, client):
         resp = client.get(
             "/api/v1/webhooks/bad-uuid/deliveries",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 422
 
@@ -179,7 +181,7 @@ class TestWebhookUpdate:
         resp = client.patch(
             f"/api/v1/webhooks/{WEBHOOK_ID}",
             json={"name": "Updated Hook", "is_active": False},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -187,7 +189,7 @@ class TestWebhookUpdate:
         resp = client.patch(
             "/api/v1/webhooks/not-uuid",
             json={"name": "X"},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 422
 
@@ -196,13 +198,13 @@ class TestWebhookDelete:
     def test_delete_non_401(self, client):
         resp = client.delete(
             f"/api/v1/webhooks/{WEBHOOK_ID}",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
     def test_invalid_uuid_422(self, client):
         resp = client.delete(
             "/api/v1/webhooks/bad",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 422

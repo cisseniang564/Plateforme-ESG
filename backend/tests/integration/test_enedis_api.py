@@ -14,12 +14,14 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 from datetime import datetime, timezone
+from tests.conftest import make_access_token
 
 pytestmark = pytest.mark.integration
 
 TENANT_ID      = uuid4()
 USER_ID        = uuid4()
 INTEGRATION_ID = uuid4()
+AUTH_HEADERS = {"Authorization": f"Bearer {make_access_token(USER_ID, TENANT_ID)}"}
 
 
 def _make_user():
@@ -94,14 +96,14 @@ class TestEnedisStatus:
     def test_status_returns_200(self, client):
         resp = client.get(
             "/api/v1/connectors/enedis/status",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_status_returns_dict(self, client):
         resp = client.get(
             "/api/v1/connectors/enedis/status",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         if resp.status_code == 200:
             assert isinstance(resp.json(), dict)
@@ -109,7 +111,7 @@ class TestEnedisStatus:
     def test_status_has_connected_key(self, client):
         resp = client.get(
             "/api/v1/connectors/enedis/status",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         if resp.status_code == 200:
             assert "connected" in resp.json()
@@ -136,7 +138,7 @@ class TestEnedisAuthorize:
             mock_settings.APP_URL               = "http://localhost:3000"
             resp = client.get(
                 "/api/v1/connectors/enedis/authorize",
-                headers={"Authorization": "Bearer test"},
+                headers=AUTH_HEADERS,
                 allow_redirects=False,
             )
         assert resp.status_code in (503, 307, 302, 200)
@@ -151,7 +153,7 @@ class TestEnedisAuthorize:
             mock_settings.APP_URL               = "http://localhost:3000"
             resp = client.get(
                 "/api/v1/connectors/enedis/authorize",
-                headers={"Authorization": "Bearer test"},
+                headers=AUTH_HEADERS,
                 allow_redirects=False,
             )
         assert resp.status_code in (307, 302, 200, 503)
@@ -217,7 +219,7 @@ class TestEnedisSync:
         with patch("app.api.v1.endpoints.enedis._oauth_configured", return_value=False):
             resp = client.post(
                 "/api/v1/connectors/enedis/sync",
-                headers={"Authorization": "Bearer test"},
+                headers=AUTH_HEADERS,
             )
         assert resp.status_code == 503
 
@@ -226,7 +228,7 @@ class TestEnedisSync:
              patch("app.api.v1.endpoints.enedis._get_integration", new=AsyncMock(return_value=None)):
             resp = client.post(
                 "/api/v1/connectors/enedis/sync",
-                headers={"Authorization": "Bearer test"},
+                headers=AUTH_HEADERS,
             )
         assert resp.status_code == 400
 
@@ -234,7 +236,7 @@ class TestEnedisSync:
         """When OAuth is configured and integration exists, should not 401."""
         resp = client.post(
             "/api/v1/connectors/enedis/sync",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -253,7 +255,7 @@ class TestEnedisDisconnect:
     def test_disconnect_non_401(self, client):
         resp = client.delete(
             "/api/v1/connectors/enedis/disconnect",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -278,7 +280,7 @@ class TestEnedisDisconnect:
 
         resp = client.delete(
             "/api/v1/connectors/enedis/disconnect",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (404, 200)
 
@@ -297,7 +299,7 @@ class TestEnedisCsvImport:
     def test_import_no_file_422(self, client):
         resp = client.post(
             "/api/v1/connectors/enedis/import-csv",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 422
 
@@ -305,7 +307,7 @@ class TestEnedisCsvImport:
         resp = client.post(
             "/api/v1/connectors/enedis/import-csv",
             files={"file": ("data.txt", b"hello", "text/plain")},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 400
 
@@ -314,7 +316,7 @@ class TestEnedisCsvImport:
         resp = client.post(
             "/api/v1/connectors/enedis/import-csv",
             files={"file": ("enedis_export.csv", csv_data, "text/csv")},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (200, 400, 500)
 

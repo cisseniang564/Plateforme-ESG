@@ -14,12 +14,14 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 from datetime import datetime, timezone
+from tests.conftest import make_access_token
 
 pytestmark = pytest.mark.integration
 
 TENANT_ID = uuid4()
 USER_ID   = uuid4()
 NOTIF_ID  = str(uuid4())
+AUTH_HEADERS = {"Authorization": f"Bearer {make_access_token(USER_ID, TENANT_ID)}"}
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -87,14 +89,14 @@ class TestListNotifications:
     def test_returns_200(self, client):
         resp = client.get(
             "/api/v1/notifications",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_returns_list_or_dict(self, client):
         resp = client.get(
             "/api/v1/notifications",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert isinstance(resp.json(), (list, dict))
 
@@ -110,14 +112,14 @@ class TestListNotifications:
     def test_limit_param(self, client):
         resp = client.get(
             "/api/v1/notifications?limit=5",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_unread_only_param(self, client):
         resp = client.get(
             "/api/v1/notifications?unread_only=true",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
@@ -128,14 +130,14 @@ class TestMarkAllRead:
     def test_returns_non_401(self, client):
         resp = client.post(
             "/api/v1/notifications/read-all",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
     def test_returns_200_or_204(self, client):
         resp = client.post(
             "/api/v1/notifications/read-all",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (200, 204)
 
@@ -146,14 +148,14 @@ class TestMarkSingleRead:
     def test_returns_non_401(self, client):
         resp = client.post(
             f"/api/v1/notifications/{NOTIF_ID}/read",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
     def test_invalid_id_422_or_404(self, client):
         resp = client.post(
             "/api/v1/notifications/not-a-uuid/read",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (404, 422)
 
@@ -164,14 +166,14 @@ class TestGetPreferences:
     def test_returns_200(self, client):
         resp = client.get(
             "/api/v1/notifications/preferences",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_has_alerts_key(self, client):
         resp = client.get(
             "/api/v1/notifications/preferences",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         if resp.status_code == 200:
             body = resp.json()
@@ -193,7 +195,7 @@ class TestSavePreferences:
         resp = client.put(
             "/api/v1/notifications/preferences",
             json=payload,
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -201,6 +203,6 @@ class TestSavePreferences:
         resp = client.put(
             "/api/v1/notifications/preferences",
             json={"alerts": [], "email_enabled": False, "webhook_url": ""},
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code not in (401, 403, 500)

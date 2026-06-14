@@ -15,6 +15,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 from datetime import date, datetime, timezone
+from tests.conftest import make_access_token
 
 pytestmark = pytest.mark.integration
 
@@ -22,6 +23,7 @@ TENANT_ID = uuid4()
 USER_ID   = uuid4()
 ORG_ID    = uuid4()
 SCORE_ID  = uuid4()
+AUTH_HEADERS = {"Authorization": f"Bearer {make_access_token(USER_ID, TENANT_ID)}"}
 
 
 def _make_user():
@@ -80,14 +82,14 @@ class TestScoresCalculate:
     def test_calculate_non_401(self, client):
         resp = client.post(
             "/api/v1/scores/calculate",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
     def test_calculate_with_date(self, client):
         resp = client.post(
             "/api/v1/scores/calculate?calculation_date=2025-12-31",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -105,14 +107,14 @@ class TestScoresLatest:
     def test_latest_non_401(self, client):
         resp = client.get(
             "/api/v1/scores/latest",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
     def test_latest_returns_dict_or_null(self, client):
         resp = client.get(
             "/api/v1/scores/latest",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         if resp.status_code == 200:
             assert isinstance(resp.json(), (dict, type(None)))
@@ -122,21 +124,21 @@ class TestScoresHistory:
     def test_history_returns_200(self, client):
         resp = client.get(
             "/api/v1/scores/history",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_history_returns_list_or_dict(self, client):
         resp = client.get(
             "/api/v1/scores/history",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert isinstance(resp.json(), (list, dict))
 
     def test_history_with_year_filter(self, client):
         resp = client.get(
             "/api/v1/scores/history?year=2025",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (200, 422)
 
@@ -145,7 +147,7 @@ class TestScoresCompare:
     def test_compare_non_401(self, client):
         resp = client.get(
             "/api/v1/scores/compare-organizations",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
 
@@ -154,14 +156,14 @@ class TestScoresAlerts:
     def test_alerts_returns_200(self, client):
         resp = client.get(
             "/api/v1/scores/alerts",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
 
     def test_alerts_returns_list_or_dict(self, client):
         resp = client.get(
             "/api/v1/scores/alerts",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert isinstance(resp.json(), (list, dict))
 
@@ -170,6 +172,6 @@ class TestScoresTrends:
     def test_trends_non_401(self, client):
         resp = client.get(
             "/api/v1/scores/trends",
-            headers={"Authorization": "Bearer test"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code != 401
