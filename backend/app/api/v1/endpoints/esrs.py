@@ -5,7 +5,6 @@ and returns section-by-section coverage, missing disclosures, and priority actio
 import logging
 import csv
 import io
-import math
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -242,21 +241,41 @@ def _norm_pillar(pillar: str) -> str:
     return _PILLAR_ALIASES.get(key, key)
 
 
-def _covered_count(matching: int, n_disc: int) -> int:
-    """
-    Heuristic count of a section's disclosures considered 'covered' given the
-    number of matching data entries.
-
-    Monotonic and rounds half *up* so a single matching entry covers at least
-    one disclosure — Python's built-in round() uses banker's rounding, which
-    sent round(0.5) -> 0 (one entry => zero coverage) and round(2.5) -> 2.
-    Saturates at full coverage once entries are roughly twice the disclosures.
-    """
-    if matching <= 0 or n_disc <= 0:
-        return 0
-    if matching >= n_disc * 2:
-        return n_disc
-    return min(n_disc, math.ceil(matching / 2))
+# ── Disclosure-level datapoint mapping ───────────────────────────────────────
+# Maps each *quantitative* ESRS disclosure to the keywords its evidencing data
+# entries would carry. A disclosure listed here is "auto-detectable": it is
+# marked covered when at least one of the tenant's data entries (in the same
+# pillar) matches its keywords. Disclosures NOT listed are narrative — policies,
+# targets, actions, governance arrangements — that numeric data entries cannot
+# evidence; they are reported as "manual" (to be documented), never as a false
+# green check nor a misleading red gap.
+#
+# This replaces the previous positional heuristic ("the first N disclosures are
+# covered"), which claimed specific disclosures were done regardless of what the
+# data actually was (e.g. GHG-only data marked E1-1 covered and E1-6 missing).
+DISCLOSURE_KEYWORDS: Dict[str, List[str]] = {
+    # E1 — Changement climatique
+    "E1-5": ["energie", "energy", "consommation", "mix energetique", "renouvelable", "electricite", "kwh", "mwh", "gwh"],
+    "E1-6": ["emission", "ges", "ghg", "co2", "co2e", "scope", "carbone", "carbon", "tco2"],
+    "E1-7": ["absorption", "credit carbone", "sequestration", "puits de carbone", "compensation", "offset"],
+    # E2 — Pollution
+    "E2-4": ["pollution", "polluant", "nox", "sox", "particule", "rejet", "emission polluante"],
+    # E3 — Eau
+    "E3-4": ["eau", "water", "prelevement", "m3", "hydrique", "consommation eau"],
+    # E4 — Biodiversité
+    "E4-5": ["biodiversite", "biodiversity", "habitat", "espece", "artificialisation", "hectare"],
+    # E5 — Ressources / économie circulaire
+    "E5-4": ["matiere premiere", "ressource", "intrant", "matiere recyclee", "contenu recycle"],
+    "E5-5": ["dechet", "waste", "valorisation", "recyclage", "tonnage", "enfouissement"],
+    # S1 — Effectifs propres
+    "S1-6": ["effectif", "employe", "salarie", "headcount", "etp", "fte", "embauche", "turnover", "anciennete"],
+    "S1-8": ["convention collective", "accord collectif", "syndicale"],
+    "S1-14": ["accident", "frequence", "gravite", "sante", "securite", "maladie professionnelle"],
+    "S1-16": ["remuneration", "salaire", "ecart de remuneration", "ecart salarial", "pay gap", "index egalite"],
+    # G1 — Conduite des affaires
+    "G1-4": ["corruption", "incident", "pot-de-vin", "fraude", "condamnation"],
+    "G1-6": ["delai de paiement", "paiement fournisseur", "dso", "retard de paiement"],
+}
 
 
 def _section_matches_entry(section: Dict, pillar: str, category: str, metric: str) -> bool:
@@ -266,6 +285,28 @@ def _section_matches_entry(section: Dict, pillar: str, category: str, metric: st
     if _norm_pillar(section["pillar"]) != _norm_pillar(pillar):
         return False
     return any(_normalize(kw) in entry_text for kw in section["keywords"])
+
+
+def _disclosure_detection(section: Dict, disclosure_id: str, entry_tuples: List) -> str:
+    """
+    Per-disclosure coverage state from the actual data entries.
+
+    Returns one of:
+      * "manual"  — narrative disclosure, not evidenceable from numeric data
+      * "covered" — auto-detectable and at least one matching data entry exists
+      * "missing" — auto-detectable but no matching data entry yet
+    """
+    keywords = DISCLOSURE_KEYWORDS.get(disclosure_id)
+    if not keywords:
+        return "manual"
+    sec_pillar = _norm_pillar(section["pillar"])
+    for (p, c, m) in entry_tuples:
+        if _norm_pillar(p) != sec_pillar:
+            continue
+        entry_text = _normalize(f"{p} {c} {m}")
+        if any(_normalize(kw) in entry_text for kw in keywords):
+            return "covered"
+    return "missing"
 
 
 @router.get("/progress")
@@ -337,11 +378,13 @@ async def get_esrs_gap_analysis(
         pillar_counts[p] = pillar_counts.get(p, 0) + 1
 
     sections_out = []
-    total_disclosures = 0
-    covered_disclosures = 0
+    total_disclosures = 0      # all disclosures, every standard
+    total_auto = 0             # disclosures evidenceable from data
+    covered_disclosures = 0    # auto-detectable disclosures actually covered
+    manual_disclosures = 0     # narrative disclosures needing documentation
 
     for section in ESRS_SECTIONS:
-        # Count how many data entries match this section
+        # Count how many data entries are relevant to this section (display only)
         matching = sum(
             1 for (p, c, m) in entry_tuples
             if _section_matches_entry(section, p, c, m)
@@ -351,29 +394,42 @@ async def get_esrs_gap_analysis(
         n_disc = len(disclosures)
         total_disclosures += n_disc
 
-        # Heuristic coverage: more matching entries → more disclosures covered,
-        # capped at n_disc. See _covered_count for the exact (monotonic) rule.
-        covered = _covered_count(matching, n_disc)
+        # Resolve each disclosure to a real state from the data entries.
+        disc_out = []
+        sec_auto = sec_covered = sec_manual = 0
+        for d in disclosures:
+            detection = _disclosure_detection(section, d["id"], entry_tuples)
+            if detection == "manual":
+                sec_manual += 1
+            else:
+                sec_auto += 1
+                if detection == "covered":
+                    sec_covered += 1
+            disc_out.append({
+                "id": d["id"],
+                "label": d["label"],
+                # `detection` is the precise state; `covered` kept for back-compat
+                "detection": detection,
+                "covered": detection == "covered",
+            })
 
-        covered_disclosures += covered
-        coverage_pct = round((covered / n_disc) * 100) if n_disc else 0
+        total_auto += sec_auto
+        covered_disclosures += sec_covered
+        manual_disclosures += sec_manual
 
-        # Status
-        if coverage_pct >= 80:
+        # Coverage % is measured against the disclosures we can actually evidence
+        # from data (auto base), so it isn't dragged to ~0 by narrative items.
+        coverage_pct = round((sec_covered / sec_auto) * 100) if sec_auto else 0
+
+        # Status. Sections with no data-evidenceable disclosure are "manual".
+        if sec_auto == 0:
+            status = "manual"
+        elif coverage_pct >= 80:
             status = "ready"
         elif coverage_pct >= 30:
             status = "partial"
         else:
             status = "missing"
-
-        # Mark disclosures as covered/missing based on heuristic
-        disc_out = []
-        for i, d in enumerate(disclosures):
-            disc_out.append({
-                "id": d["id"],
-                "label": d["label"],
-                "covered": i < covered,
-            })
 
         sections_out.append({
             "code": section["code"],
@@ -386,16 +442,19 @@ async def get_esrs_gap_analysis(
             "status": status,
             "matching_entries": matching,
             "disclosures_total": n_disc,
-            "disclosures_covered": covered,
-            "disclosures_missing": n_disc - covered,
+            "disclosures_auto": sec_auto,
+            "disclosures_covered": sec_covered,
+            "disclosures_missing": sec_auto - sec_covered,
+            "disclosures_manual": sec_manual,
             "disclosures": disc_out,
         })
 
-    overall_pct = round((covered_disclosures / total_disclosures) * 100) if total_disclosures else 0
+    overall_pct = round((covered_disclosures / total_auto) * 100) if total_auto else 0
 
     ready_count = sum(1 for s in sections_out if s["status"] == "ready")
     partial_count = sum(1 for s in sections_out if s["status"] == "partial")
     missing_count = sum(1 for s in sections_out if s["status"] == "missing")
+    manual_count = sum(1 for s in sections_out if s["status"] == "manual")
 
     return {
         "overall_coverage_pct": overall_pct,
@@ -404,8 +463,11 @@ async def get_esrs_gap_analysis(
         "sections_ready": ready_count,
         "sections_partial": partial_count,
         "sections_missing": missing_count,
+        "sections_manual": manual_count,
         "total_disclosures": total_disclosures,
+        "total_auto_disclosures": total_auto,
         "covered_disclosures": covered_disclosures,
+        "manual_disclosures": manual_disclosures,
         "pillar_counts": pillar_counts,
         "sections": sections_out,
     }
@@ -426,14 +488,14 @@ async def export_gap_analysis(
     writer = csv.writer(output)
     writer.writerow(["Standard", "Pilier", "Code Disclosure", "Disclosure", "Statut"])
 
+    _status_label = {"covered": "Couvert", "missing": "Manquant", "manual": "À documenter"}
     for section in ESRS_SECTIONS:
-        matching = sum(1 for (p, c, m) in entry_tuples if _section_matches_entry(section, p, c, m))
-        n_disc = len(section["disclosures"])
-        covered = _covered_count(matching, n_disc)
-
-        for i, d in enumerate(section["disclosures"]):
-            status = "Couvert" if i < covered else "Manquant"
-            writer.writerow([section["label"], section["pillar"], d["id"], d["label"], status])
+        for d in section["disclosures"]:
+            detection = _disclosure_detection(section, d["id"], entry_tuples)
+            writer.writerow([
+                section["label"], section["pillar"], d["id"], d["label"],
+                _status_label[detection],
+            ])
 
     output.seek(0)
     return StreamingResponse(

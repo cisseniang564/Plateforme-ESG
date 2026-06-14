@@ -4,16 +4,20 @@ import type { TFunction } from 'i18next';
 import {
   CheckCircle2, XCircle, AlertCircle, Download, RefreshCw,
   ChevronDown, ChevronUp, Leaf, Users, Building2, Target,
-  BookOpen, Search, Filter,
+  BookOpen, Search, Filter, FileText,
 } from 'lucide-react';
 import api from '@/services/api';
 import toast from 'react-hot-toast';
 
 // ── Types API ─────────────────────────────────────────────────────────────────
+type DisclosureDetection = 'covered' | 'missing' | 'manual';
+
 interface Disclosure {
   id: string;
   label: string;
   covered: boolean;
+  // 'covered'/'missing' = data-evidenceable; 'manual' = narrative, to document
+  detection?: DisclosureDetection;
 }
 
 interface ESRSSection {
@@ -24,11 +28,13 @@ interface ESRSSection {
   pillar_color: string;
   description: string;
   coverage_pct: number;
-  status: 'ready' | 'partial' | 'missing';
+  status: 'ready' | 'partial' | 'missing' | 'manual';
   matching_entries: number;
   disclosures_total: number;
+  disclosures_auto?: number;     // data-evidenceable disclosures
   disclosures_covered: number;
   disclosures_missing: number;
+  disclosures_manual?: number;   // narrative disclosures to document
   disclosures: Disclosure[];
 }
 
@@ -39,8 +45,11 @@ interface GapAnalysis {
   sections_ready: number;
   sections_partial: number;
   sections_missing: number;
+  sections_manual?: number;
   total_disclosures: number;
+  total_auto_disclosures?: number;
   covered_disclosures: number;
+  manual_disclosures?: number;
   pillar_counts: Record<string, number>;
   sections: ESRSSection[];
 }
@@ -183,18 +192,21 @@ const PILLAR_STYLES = {
 };
 
 const STATUS_CONFIG = {
-  ready:   { label: 'Prêt',     color: 'text-emerald-600', bg: 'bg-emerald-100', icon: CheckCircle2 },
-  partial: { label: 'Partiel',  color: 'text-amber-600',   bg: 'bg-amber-100',   icon: AlertCircle },
-  missing: { label: 'Manquant', color: 'text-red-600',     bg: 'bg-red-100',     icon: XCircle },
+  ready:   { label: 'Prêt',         color: 'text-emerald-600', bg: 'bg-emerald-100', icon: CheckCircle2 },
+  partial: { label: 'Partiel',      color: 'text-amber-600',   bg: 'bg-amber-100',   icon: AlertCircle },
+  missing: { label: 'Manquant',     color: 'text-red-600',     bg: 'bg-red-100',     icon: XCircle },
+  manual:  { label: 'À documenter', color: 'text-slate-600',   bg: 'bg-slate-100',   icon: FileText },
 };
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 function PillarSummary({ pillar, sections, style }: { pillar: string; sections: ESRSSection[]; style: typeof PILLAR_STYLES['environmental'] }) {
   const { t } = useTranslation();
   const pillarSections = sections.filter(s => s.pillar === pillar);
-  const totalDisc   = pillarSections.reduce((a, s) => a + s.disclosures_total, 0);
+  // Coverage is measured against data-evidenceable (auto) disclosures so the
+  // ring isn't dragged down by narrative items that need manual documentation.
+  const autoDisc    = pillarSections.reduce((a, s) => a + (s.disclosures_auto ?? s.disclosures_total), 0);
   const coveredDisc = pillarSections.reduce((a, s) => a + s.disclosures_covered, 0);
-  const pct = totalDisc > 0 ? Math.round((coveredDisc / totalDisc) * 100) : 0;
+  const pct = autoDisc > 0 ? Math.round((coveredDisc / autoDisc) * 100) : 0;
   const Icon = style.icon;
   const r    = 28;
   const circ = 2 * Math.PI * r;
@@ -214,7 +226,7 @@ function PillarSummary({ pillar, sections, style }: { pillar: string; sections: 
       </div>
       <div className={`p-1.5 rounded-lg ${style.badge} mb-1`}><Icon className="h-4 w-4" /></div>
       <p className="text-sm font-semibold text-gray-700">{t(`compliance.esrsGap.pillar.${pillar}`, style.label)}</p>
-      <p className="text-xs text-gray-500">{t('compliance.esrsGap.disclosures', '{{covered}}/{{total}} disclosures', { covered: coveredDisc, total: totalDisc })}</p>
+      <p className="text-xs text-gray-500">{t('compliance.esrsGap.disclosures', '{{covered}}/{{total}} disclosures', { covered: coveredDisc, total: autoDisc })}</p>
     </div>
   );
 }
@@ -233,7 +245,12 @@ function SectionCard({ section, expanded, onToggle }: { section: ESRSSection; ex
             <span className={`flex-shrink-0 px-2 py-0.5 rounded-md text-xs font-bold ${style.badge}`}>{section.code}</span>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-800 truncate">{section.label}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{t('compliance.esrsGap.sectionCard.disclosuresCovered', '{{covered}}/{{total}} disclosures couverts', { covered: section.disclosures_covered, total: section.disclosures_total })}</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {t('compliance.esrsGap.sectionCard.disclosuresCovered', '{{covered}}/{{total}} disclosures couverts', { covered: section.disclosures_covered, total: section.disclosures_auto ?? section.disclosures_total })}
+                {(section.disclosures_manual ?? 0) > 0 && (
+                  <span className="text-slate-400"> · {t('compliance.esrsGap.sectionCard.toDocument', '{{count}} à documenter', { count: section.disclosures_manual })}</span>
+                )}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -258,17 +275,25 @@ function SectionCard({ section, expanded, onToggle }: { section: ESRSSection; ex
         <div className={`border-t border-gray-100 ${style.bg} p-4`}>
           <p className="text-xs text-gray-600 mb-3 italic">{section.description}</p>
           <div className="space-y-2">
-            {section.disclosures.map(d => (
-              <div key={d.id} className="flex items-start gap-2">
-                {d.covered
-                  ? <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                  : <XCircle className="h-4 w-4 text-red-400 flex-shrink-0 mt-0.5" />}
-                <div>
-                  <span className="text-xs font-semibold text-gray-500 mr-2">{d.id}</span>
-                  <span className="text-xs text-gray-700">{d.label}</span>
+            {section.disclosures.map(d => {
+              const detection: DisclosureDetection = d.detection ?? (d.covered ? 'covered' : 'missing');
+              return (
+                <div key={d.id} className="flex items-start gap-2">
+                  {detection === 'covered'
+                    ? <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                    : detection === 'manual'
+                      ? <FileText className="h-4 w-4 text-slate-400 flex-shrink-0 mt-0.5" />
+                      : <XCircle className="h-4 w-4 text-red-400 flex-shrink-0 mt-0.5" />}
+                  <div>
+                    <span className="text-xs font-semibold text-gray-500 mr-2">{d.id}</span>
+                    <span className="text-xs text-gray-700">{d.label}</span>
+                    {detection === 'manual' && (
+                      <span className="ml-2 text-[10px] font-medium text-slate-400 uppercase tracking-wide">{t('compliance.esrsGap.disclosure.manual', 'à documenter')}</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -460,6 +485,12 @@ export default function ESRSGapAnalysis() {
                 <div><p className="text-lg font-bold text-amber-600">{data.sections_partial}</p><p className="text-xs text-gray-500">{t('compliance.esrsGap.overview.partial', 'Partiels')}</p></div>
                 <div className="w-px bg-gray-200" />
                 <div><p className="text-lg font-bold text-red-500">{data.sections_missing}</p><p className="text-xs text-gray-500">{t('compliance.esrsGap.overview.missing', 'Manquants')}</p></div>
+                {(data.sections_manual ?? 0) > 0 && (
+                  <>
+                    <div className="w-px bg-gray-200" />
+                    <div><p className="text-lg font-bold text-slate-500">{data.sections_manual}</p><p className="text-xs text-gray-500">{t('compliance.esrsGap.overview.manual', 'À documenter')}</p></div>
+                  </>
+                )}
               </div>
             </div>
             {(['environmental', 'social', 'governance'] as const).map(p => (
