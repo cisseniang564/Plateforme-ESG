@@ -312,6 +312,18 @@ class ESGScoringEngine:
         )
         result = await self.db.execute(query)
         sector_weight = result.scalar_one_or_none()
+        indicator_weights = (sector_weight.indicator_weights if sector_weight else None) or {}
+
+        # Pondérations E/S/G personnalisées par le tenant (Paramètres > Méthodologie,
+        # PUT /esg-scoring/weights) : priment sur les pondérations sectorielles.
+        custom = self._load_custom_pillar_weights(tenant_id)
+        if custom:
+            return {
+                "environmental_weight": custom["env"] * 100,
+                "social_weight": custom["soc"] * 100,
+                "governance_weight": custom["gov"] * 100,
+                "indicator_weights": indicator_weights,
+            }
 
         if not sector_weight:
             default_weights = self._get_default_weights_for_sector(sector_code)
@@ -326,8 +338,23 @@ class ESGScoringEngine:
             "environmental_weight": sector_weight.environmental_weight,
             "social_weight": sector_weight.social_weight,
             "governance_weight": sector_weight.governance_weight,
-            "indicator_weights": sector_weight.indicator_weights or {},
+            "indicator_weights": indicator_weights,
         }
+
+    def _load_custom_pillar_weights(self, tenant_id: UUID) -> Optional[Dict[str, float]]:
+        """Pondérations E/S/G (0-1) définies via PUT /esg-scoring/weights, si présentes."""
+        import json
+        try:
+            import redis as _redis
+            from app.config import settings
+            redis_url = str(settings.REDIS_URL) if settings.REDIS_URL else "redis://redis:6379/0"
+            r = _redis.from_url(redis_url, decode_responses=True, socket_connect_timeout=2)
+            raw = r.get(f"esg_weights:{tenant_id}")
+            if raw:
+                return json.loads(raw)
+        except Exception:
+            pass
+        return None
 
     def _get_default_weights_for_sector(self, sector_code: str) -> Dict[str, float]:
         """Pondérations par défaut selon le secteur."""

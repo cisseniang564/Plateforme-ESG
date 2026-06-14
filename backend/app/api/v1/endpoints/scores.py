@@ -15,6 +15,7 @@ from app.models.user import User
 from app.models.esg_score import ESGScore
 from app.models.organization import Organization
 from app.services.score_calculation_service import ScoreCalculationService
+from app.services.esg_scoring_engine import ESGScoringEngine
 
 router = APIRouter()
 
@@ -99,13 +100,46 @@ async def get_latest_score(
     score = result.scalar_one_or_none()
 
     if not score:
-        service = ScoreCalculationService(db)
-        score = await service.calculate_score(
-            tenant_id=user.tenant_id,
-            calculation_date=date.today(),
-            organization_id=organization_id,
-        )
-    
+        # No score row for today yet — compute one on the fly using the
+        # canonical engine (same one used by POST /esg-scoring/calculate),
+        # so this passive GET never produces a number that diverges from
+        # the score the user gets by clicking "Calculer le score".
+        if organization_id:
+            engine = ESGScoringEngine(db)
+            try:
+                calc = await engine.calculate_organization_score(
+                    tenant_id=user.tenant_id,
+                    organization_id=organization_id,
+                    calculation_date=date.today(),
+                )
+                return {
+                    "id": calc["score_id"],
+                    "calculation_date": calc["calculation_date"],
+                    "overall_score": calc["overall_score"],
+                    "environmental_score": calc["environmental_score"],
+                    "social_score": calc["social_score"],
+                    "governance_score": calc["governance_score"],
+                    "grade": calc["rating"],
+                    "best_pillar": max(calc["pillar_scores"], key=calc["pillar_scores"].get),
+                    "worst_pillar": min(calc["pillar_scores"], key=calc["pillar_scores"].get),
+                }
+            except ValueError:
+                pass  # no organization or no indicator data yet
+
+        # Nothing to calculate from — return a neutral placeholder
+        # without persisting anything to esg_scores.
+        return {
+            "id": None,
+            "calculation_date": date.today().isoformat(),
+            "overall_score": 0.0,
+            "environmental_score": 0.0,
+            "social_score": 0.0,
+            "governance_score": 0.0,
+            "grade": "E",
+            "best_pillar": None,
+            "worst_pillar": None,
+        }
+
     return {
         "id": str(score.id),
         "calculation_date": score.calculation_date.isoformat(),

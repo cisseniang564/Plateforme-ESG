@@ -13,6 +13,7 @@ from app.models.indicator import Indicator
 from app.models.indicator_data import IndicatorData
 from app.models.esg_score import ESGScore
 from app.models.organization import Organization
+from app.services.esg_scoring_engine import ESGScoringEngine
 
 
 class ScoreCalculationService:
@@ -71,7 +72,8 @@ class ScoreCalculationService:
                 if latest_data:
                     normalized_value = self._normalize_value(
                         latest_data.value,
-                        ind.target_value
+                        ind.target_value,
+                        ind.code,
                     )
                     
                     weight = ind.weight or 1.0
@@ -84,7 +86,10 @@ class ScoreCalculationService:
             else:
                 pillar_scores[pillar] = 0.0
         
-        overall = sum(pillar_scores.values()) / 3 if pillar_scores else 0.0
+        overall = sum(pillar_scores.values()) / len(pillar_scores) if pillar_scores else 0.0
+
+        # Fraction of active indicators for which a data point was found.
+        data_completeness = round(total_data_points / len(indicators), 2) if indicators else 0.0
 
         # Derive letter rating from overall score
         if overall >= 80:   rating = "A"
@@ -116,7 +121,7 @@ class ScoreCalculationService:
             existing_score.social_score = pillar_scores.get('social', 0.0)
             existing_score.governance_score = pillar_scores.get('governance', 0.0)
             existing_score.rating = rating
-            existing_score.data_completeness = round(total_data_points / max(total_data_points, 1), 2)
+            existing_score.data_completeness = data_completeness
             score = existing_score
         else:
             score = ESGScore(
@@ -129,7 +134,7 @@ class ScoreCalculationService:
                 governance_score=pillar_scores.get('governance', 0.0),
                 rating=rating,
                 calculation_method='weighted_average',
-                data_completeness=round(total_data_points / max(total_data_points, 1), 2),
+                data_completeness=data_completeness,
             )
             self.db.add(score)
         
@@ -140,13 +145,19 @@ class ScoreCalculationService:
         # access. All score fields are already set Python-side above.
         return score
     
-    def _normalize_value(self, value: float, target: Optional[float]) -> float:
-        """Normalize indicator value to 0-100 scale."""
+    def _normalize_value(self, value: float, target: Optional[float], indicator_code: Optional[str] = None) -> float:
+        """Normalize indicator value to 0-100 scale, accounting for indicator direction."""
         if target and target > 0:
             normalized = (value / target) * 100
-            return min(100.0, max(0.0, normalized))
-        
-        return min(100.0, max(0.0, value))
+            normalized = min(100.0, max(0.0, normalized))
+        else:
+            normalized = min(100.0, max(0.0, value))
+
+        higher_is_better = ESGScoringEngine.INDICATOR_DIRECTION.get(indicator_code, True)
+        if not higher_is_better:
+            normalized = 100.0 - normalized
+
+        return normalized
     
     async def get_score_history(
         self,

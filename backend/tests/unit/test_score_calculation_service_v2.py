@@ -212,9 +212,10 @@ class TestCalculateScore:
 
         assert len(added) == 1
         new_score = added[0]
-        # Only environmental indicator — overall = sum([50.0]) / 3 ≈ 16.67
+        # Only environmental indicator — overall = sum([50.0]) / len(pillar_scores) = 50.0
         # pillar_scores["environmental"] = 50.0
         assert new_score.environmental_score == pytest.approx(50.0, abs=1e-6)
+        assert new_score.overall_score == pytest.approx(50.0, abs=1e-6)
 
     @pytest.mark.asyncio
     async def test_saves_score_to_database_when_no_existing_score(self, service, mock_db):
