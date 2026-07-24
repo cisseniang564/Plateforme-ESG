@@ -256,9 +256,23 @@ app = FastAPI(
 
 # ── MIDDLEWARES ──────────────────────────────────────────────────────────────
 # IMPORTANT: Starlette exécute les middlewares en ordre LIFO
-# (le dernier ajouté est le premier exécuté).
-# Ordre d'exécution voulu : SecurityHeaders → CORS → Auth → RateLimit → ApiUsage
+# (le dernier ajouté est le premier exécuté), donc on les déclare ici en ordre
+# INVERSE de l'ordre d'exécution voulu.
+# Ordre d'exécution voulu : Prometheus → SecurityHeaders → CORS → CSRF → Auth
+#                            → Billing → RateLimit → ApiUsage → routes
+#
+# CORS doit envelopper tous les middlewares susceptibles de court-circuiter une
+# requête avec une réponse directe (RateLimit, CSRF, Auth, ...), sinon ces
+# réponses (429/403/...) partent sans en-têtes Access-Control-Allow-*, ce que
+# le navigateur bloque et qui remonte côté frontend comme "Network Error".
 
+app.add_middleware(ApiUsageMiddleware, redis_url=str(settings.REDIS_URL) if settings.REDIS_URL else "redis://redis:6379/0")
+app.add_middleware(RateLimitMiddleware, redis_url=str(settings.REDIS_URL) if settings.REDIS_URL else "redis://redis:6379/0")
+app.add_middleware(BillingMiddleware)   # must run AFTER AuthMiddleware sets request.state.tenant_id
+app.add_middleware(AuthMiddleware)
+# CSRF: reject mutating cookie-auth requests whose Origin isn't in CORS_ORIGINS.
+# Bearer-token requests and webhook signatures are exempted inside the middleware.
+app.add_middleware(CSRFMiddleware, allowed_origins=list(settings.CORS_ORIGINS))
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -266,13 +280,6 @@ app.add_middleware(
     allow_methods=settings.CORS_ALLOW_METHODS,
     allow_headers=settings.CORS_ALLOW_HEADERS,
 )
-app.add_middleware(RateLimitMiddleware, redis_url=str(settings.REDIS_URL) if settings.REDIS_URL else "redis://redis:6379/0")
-app.add_middleware(ApiUsageMiddleware, redis_url=str(settings.REDIS_URL) if settings.REDIS_URL else "redis://redis:6379/0")
-app.add_middleware(BillingMiddleware)   # must run AFTER AuthMiddleware sets request.state.tenant_id
-app.add_middleware(AuthMiddleware)
-# CSRF: reject mutating cookie-auth requests whose Origin isn't in CORS_ORIGINS.
-# Bearer-token requests and webhook signatures are exempted inside the middleware.
-app.add_middleware(CSRFMiddleware, allowed_origins=list(settings.CORS_ORIGINS))
 # Security headers en dernier → s'exécute en premier (LIFO)
 app.add_middleware(SecurityHeadersMiddleware, environment=settings.APP_ENV)
 # Prometheus metrics — outermost so it captures all requests
