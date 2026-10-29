@@ -1,3 +1,4 @@
+import ConfirmDialog from '@/components/common/ConfirmDialog';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -69,24 +70,16 @@ function getPillarCfg(pillar: string): PillarCfg {
 }
 
 // ─── Sub-components ────────────────────────────────────────────────────────
-interface ConfirmModalProps { onConfirm: () => void; onCancel: () => void; label: string; }
-function ConfirmModal({ onConfirm, onCancel, label }: ConfirmModalProps) {
+function ConfirmModal({ onConfirm, onCancel, label }: { onConfirm: () => void; onCancel: () => void; label: string }) {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
-      <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="p-2.5 bg-red-100 rounded-xl"><Trash2 className="h-5 w-5 text-red-600" /></div>
-          <h3 className="text-lg font-bold text-gray-900">Supprimer cette entrée ?</h3>
-        </div>
-        <p className="text-gray-500 text-sm mb-6">
-          <span className="font-semibold text-gray-800">"{label}"</span> sera définitivement supprimée.
-        </p>
-        <div className="flex gap-3">
-          <button onClick={onCancel} className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">Annuler</button>
-          <button onClick={onConfirm} className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors">Supprimer</button>
-        </div>
-      </div>
-    </div>
+    <ConfirmDialog
+      isOpen
+      title="Supprimer cette entrée ?"
+      message={<><span className="font-semibold text-gray-800">"{label}"</span> sera définitivement supprimée.</>}
+      confirmLabel="Supprimer"
+      onConfirm={onConfirm}
+      onClose={onCancel}
+    />
   );
 }
 

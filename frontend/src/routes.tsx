@@ -33,6 +33,8 @@ const TaxonomiePage   = lazy(() => import('@/pages/Resources/TaxonomiePage'));
 const ResourcesIndex  = lazy(() => import('@/pages/Resources/ResourcesIndex'));
 
 const ContactPage = lazy(() => import('@/pages/Contact/ContactPage'));
+// Catalogue des composants (développement uniquement)
+const DesignSystemPage = lazy(() => import('@/pages/DesignSystem/DesignSystemPage'));
 
 // ── Lazy — Feature detail pages ─────────────────────────────────────────────
 const BilanCarboneFeature     = lazy(() => import('@/pages/Features/BilanCarbonePage'));
@@ -351,6 +353,7 @@ export default function AppRoutes() {
         <Route path="/compare/:slug"     element={<ComparisonPage />} />
         <Route path="/security"          element={<SecurityPage />} />
         <Route path="/status"                  element={<StatusPage />} />
+        {import.meta.env.DEV && <Route path="/design-system" element={<DesignSystemPage />} />}
         <Route path="/guide/csrd-pme"          element={<GuideCsrdPmePage />} />
         <Route path="/guide/bilan-carbone-entreprise" element={<GuideBilanCarbonePage />} />
         <Route path="/guide/csddd-supply-chain"       element={<GuideCsdddPage />} />

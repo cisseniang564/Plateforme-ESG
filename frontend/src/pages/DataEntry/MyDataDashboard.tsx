@@ -1,3 +1,4 @@
+import ConfirmDialog from '@/components/common/ConfirmDialog';
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import BackButton from '@/components/common/BackButton';
@@ -92,22 +93,18 @@ function CollectionChip({ method }: { method: string }) {
 }
 
 // ─── Confirm Modal ─────────────────────────────────────────────────────────
-function ConfirmModal({ label, onConfirm, onCancel }: { label: string; onConfirm: () => void; onCancel: () => void; }) {
+function ConfirmModal({ label, onConfirm, onCancel }: { label: string; onConfirm: () => void; onCancel: () => void }) {
   const { t } = useTranslation();
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
-      <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="p-2.5 bg-red-100 rounded-xl"><Trash2 className="h-5 w-5 text-red-600"/></div>
-          <h3 className="text-lg font-bold text-gray-900">{t('mydata.deleteTitle', 'Supprimer cette donnée ?')}</h3>
-        </div>
-        <p className="text-gray-500 text-sm mb-6"><span className="font-semibold text-gray-800">"{label}"</span>{t('mydata.deleteBody', ' sera définitivement supprimée.')}</p>
-        <div className="flex gap-3">
-          <button onClick={onCancel} className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">{t('mydata.cancel', 'Annuler')}</button>
-          <button onClick={onConfirm} className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors">{t('mydata.delete', 'Supprimer')}</button>
-        </div>
-      </div>
-    </div>
+    <ConfirmDialog
+      isOpen
+      title={t('mydata.deleteTitle', 'Supprimer cette donnée ?')}
+      message={<><span className="font-semibold text-gray-800">"{label}"</span>{t('mydata.deleteBody', ' sera définitivement supprimée.')}</>}
+      confirmLabel={t('mydata.delete', 'Supprimer')}
+      cancelLabel={t('mydata.cancel', 'Annuler')}
+      onConfirm={onConfirm}
+      onClose={onCancel}
+    />
   );
 }
 
