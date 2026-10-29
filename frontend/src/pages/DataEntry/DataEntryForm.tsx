@@ -1,4 +1,4 @@
-import ConfirmDialog from '@/components/common/ConfirmDialog';
+import { Button, ConfirmDialog, Modal } from '@/components/common';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -111,6 +111,8 @@ export default function DataEntryForm() {
     data_source: '',
     notes: '',
   });
+
+  const closeWizard = () => { setShowModal(false); resetForm(); };
 
   useEffect(() => { loadData(); }, []);
 
@@ -396,40 +398,55 @@ export default function DataEntryForm() {
       )}
 
       {/* ─── Add Entry Modal ─────────────────────────────────────────── */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-
-            {/* Modal header */}
-            <div className="flex items-center justify-between px-8 py-5 border-b border-gray-100">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">{t('dataEntry.modalTitle')}</h2>
-                <p className="text-sm text-gray-400 mt-0.5">Étape {step} sur 3</p>
-              </div>
-              <div className="flex items-center gap-4">
-                {/* Step dots */}
-                <div className="flex items-center gap-1.5">
-                  {[1, 2, 3].map(s => (
-                    <div
-                      key={s}
-                      className="h-2 rounded-full transition-all duration-300"
-                      style={{
-                        width: s === step ? 24 : 8,
-                        backgroundColor: s <= step ? '#059669' : '#e5e7eb',
-                      }}
-                    />
-                  ))}
-                </div>
-                <button
-                  onClick={() => { setShowModal(false); resetForm(); }}
-                  className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-                >
-                  <X className="h-5 w-5 text-gray-400" />
-                </button>
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit}>
+      {/* ─── Assistant d'ajout (3 étapes) ──────────────────────────── */}
+      <Modal
+        isOpen={showModal}
+        onClose={closeWizard}
+        title={t('dataEntry.modalTitle')}
+        subtitle={`Étape ${step} sur 3`}
+        size="lg"
+        closeOnBackdrop={false}
+        noPadding
+        headerExtra={
+          <div className="flex items-center gap-1.5" aria-hidden="true">
+            {[1, 2, 3].map(s => (
+              <div
+                key={s}
+                className={`h-2 rounded-full transition-all duration-300 ${s <= step ? 'bg-primary-600' : 'bg-gray-200'}`}
+                style={{ width: s === step ? 24 : 8 }}
+              />
+            ))}
+          </div>
+        }
+        footer={
+          <div className="flex w-full items-center gap-3">
+            {step > 1 && (
+              <Button variant="secondary" icon={<ChevronLeft className="h-4 w-4" />} onClick={() => setStep(s => s - 1)}>
+                Précédent
+              </Button>
+            )}
+            <div className="flex-1" />
+            <Button variant="secondary" onClick={closeWizard}>{t('dataEntry.cancel')}</Button>
+            {step < 3 ? (
+              <Button
+                disabled={
+                  (step === 1 && !selectedPillar) ||
+                  (step === 2 && (!selectedCategory || !selectedMetric))
+                }
+                onClick={() => setStep(s => s + 1)}
+              >
+                Suivant
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button type="submit" form="data-entry-form" loading={submitting} icon={<Save className="h-4 w-4" />}>
+                {submitting ? t('dataEntry.saving') : t('dataEntry.save')}
+              </Button>
+            )}
+          </div>
+        }
+      >
+        <form id="data-entry-form" onSubmit={handleSubmit}>
               <div className="px-8 py-6 space-y-6">
 
                 {/* ── Step 1: Pillar ── */}
@@ -637,56 +654,8 @@ export default function DataEntryForm() {
                 )}
               </div>
 
-              {/* Modal Footer Navigation */}
-              <div className="flex items-center gap-3 px-8 py-5 border-t border-gray-100">
-                {step > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => setStep(s => s - 1)}
-                    className="flex items-center gap-2 px-5 py-2.5 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition-colors text-sm"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Précédent
-                  </button>
-                )}
-                <div className="flex-1" />
-                <button
-                  type="button"
-                  onClick={() => { setShowModal(false); resetForm(); }}
-                  className="px-5 py-2.5 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition-colors text-sm"
-                >
-                  {t('dataEntry.cancel')}
-                </button>
-                {step < 3 ? (
-                  <button
-                    type="button"
-                    disabled={
-                      (step === 1 && !selectedPillar) ||
-                      (step === 2 && (!selectedCategory || !selectedMetric))
-                    }
-                    onClick={() => setStep(s => s + 1)}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: '#059669', color: 'white' }}
-                  >
-                    Suivant
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                ) : (
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-40 hover:-translate-y-px hover:shadow-btn-primary-hover"
-                    style={{ backgroundColor: '#059669', color: 'white' }}
-                  >
-                    {submitting ? <Spinner size="sm" /> : <Save className="h-4 w-4" />}
-                    {submitting ? t('dataEntry.saving') : t('dataEntry.save')}
-                  </button>
-                )}
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+        </form>
+      </Modal>
     </div>
   );
 }

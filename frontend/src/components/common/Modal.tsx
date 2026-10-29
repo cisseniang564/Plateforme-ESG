@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -11,6 +12,12 @@ interface ModalProps {
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   /** Fermer en cliquant à côté (désactiver pour les formulaires longs). */
   closeOnBackdrop?: boolean;
+  /** Élément affiché dans l'en-tête, avant la croix (ex. indicateur d'étapes). */
+  headerExtra?: ReactNode;
+  /** Pas de marge autour du contenu (le contenu gère son propre espacement). */
+  noPadding?: boolean;
+  /** Passe au-dessus des panneaux latéraux (z-index plus élevé). */
+  elevated?: boolean;
 }
 
 const SIZE_MAP = {
@@ -32,6 +39,9 @@ export default function Modal({
   footer,
   size = 'md',
   closeOnBackdrop = true,
+  headerExtra,
+  noPadding = false,
+  elevated = false,
 }: ModalProps) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -70,8 +80,8 @@ export default function Modal({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+  return createPortal(
+    <div className={`fixed inset-0 ${elevated ? 'z-[210]' : 'z-[60]'} flex items-center justify-center p-4`}>
       <div
         className="fixed inset-0 bg-black/40 backdrop-blur-sm modal-backdrop"
         onClick={closeOnBackdrop ? onClose : undefined}
@@ -91,6 +101,7 @@ export default function Modal({
             <h3 id={titleId} className="text-base font-semibold text-gray-900 leading-snug">{title}</h3>
             {subtitle && <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>}
           </div>
+          {headerExtra && <div className="mr-3 flex-shrink-0 self-center">{headerExtra}</div>}
           <button
             type="button"
             onClick={onClose}
@@ -101,7 +112,7 @@ export default function Modal({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-5 min-h-0">{children}</div>
+        <div className={`flex-1 overflow-y-auto min-h-0 ${noPadding ? '' : 'px-6 py-5'}`}>{children}</div>
 
         {footer && (
           <div className="flex items-center justify-end gap-2.5 px-6 py-4 border-t border-gray-100 flex-shrink-0 bg-gray-50/50 rounded-b-2xl">
@@ -109,6 +120,7 @@ export default function Modal({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
