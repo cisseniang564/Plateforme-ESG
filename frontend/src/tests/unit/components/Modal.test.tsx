@@ -38,8 +38,8 @@ describe('Modal', () => {
   it('calls onClose when backdrop is clicked', () => {
     const onClose = vi.fn();
     render(<Modal {...defaultProps} onClose={onClose} />);
-    // The fixed backdrop overlay (inset-0 bg-black)
-    const backdrop = document.querySelector('.fixed.inset-0.bg-black');
+    // Le fond assombri (classe modal-backdrop)
+    const backdrop = document.querySelector('.modal-backdrop');
     expect(backdrop).not.toBeNull();
     fireEvent.click(backdrop!);
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -48,7 +48,7 @@ describe('Modal', () => {
   it('calls onClose when close button (X) is clicked', () => {
     const onClose = vi.fn();
     render(<Modal {...defaultProps} onClose={onClose} />);
-    const closeBtn = screen.getByTitle('Close modal');
+    const closeBtn = screen.getByRole('button', { name: /fermer/i });
     fireEvent.click(closeBtn);
     expect(onClose).toHaveBeenCalledTimes(1);
   });

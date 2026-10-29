@@ -64,13 +64,13 @@ describe('authService', () => {
       expect(result).toEqual(loginResponse);
     });
 
-    it('stores access_token and refresh_token in localStorage on success', async () => {
+    it('does not store tokens in localStorage on success (httpOnly cookies are used)', async () => {
       mockedApi.post.mockResolvedValueOnce({ data: { user: mockUser, tokens: mockTokens } });
 
       await authService.login({ email: 'alice@example.com', password: 'Secret1!' });
 
-      expect(localStorage.getItem('access_token')).toBe('access-abc');
-      expect(localStorage.getItem('refresh_token')).toBe('refresh-xyz');
+      expect(localStorage.getItem('access_token')).toBeNull();
+      expect(localStorage.getItem('refresh_token')).toBeNull();
     });
 
     it('does not store tokens when response has no tokens field (2FA required)', async () => {
@@ -113,33 +113,19 @@ describe('authService', () => {
       expect(mockedApi.post).toHaveBeenCalledWith('/auth/logout');
     });
 
-    it('removes access_token from localStorage on success', async () => {
-      localStorage.setItem('access_token', 'old-token');
+    it('leaves localStorage untouched (tokens live in httpOnly cookies)', async () => {
+      localStorage.setItem('unrelated', 'keep-me');
       mockedApi.post.mockResolvedValueOnce({ data: {} });
 
       await authService.logout();
 
-      expect(localStorage.getItem('access_token')).toBeNull();
+      expect(localStorage.getItem('unrelated')).toBe('keep-me');
     });
 
-    it('removes refresh_token from localStorage on success', async () => {
-      localStorage.setItem('refresh_token', 'old-refresh');
-      mockedApi.post.mockResolvedValueOnce({ data: {} });
-
-      await authService.logout();
-
-      expect(localStorage.getItem('refresh_token')).toBeNull();
-    });
-
-    it('still clears localStorage even when API call fails', async () => {
-      localStorage.setItem('access_token', 'stale-token');
-      localStorage.setItem('refresh_token', 'stale-refresh');
+    it('does not throw when the API call fails (best-effort logout)', async () => {
       mockedApi.post.mockRejectedValueOnce(new Error('Server error'));
 
-      // logout uses try/finally so it should always clean up
-      await expect(authService.logout()).rejects.toThrow();
-      expect(localStorage.getItem('access_token')).toBeNull();
-      expect(localStorage.getItem('refresh_token')).toBeNull();
+      await expect(authService.logout()).resolves.toBeUndefined();
     });
   });
 
@@ -233,7 +219,7 @@ describe('authService', () => {
   // ── verify2FA ─────────────────────────────────────────────────────────────
 
   describe('verify2FA()', () => {
-    it('stores tokens after successful 2FA verification', async () => {
+    it('returns the LoginResponse and does not store tokens client-side', async () => {
       const loginResponse = { user: mockUser, tokens: mockTokens };
       mockedApi.post.mockResolvedValueOnce({ data: loginResponse });
 
@@ -243,8 +229,8 @@ describe('authService', () => {
         temp_token: 'tmp-token',
         totp_code: '123456',
       });
-      expect(localStorage.getItem('access_token')).toBe('access-abc');
-      expect(localStorage.getItem('refresh_token')).toBe('refresh-xyz');
+      expect(localStorage.getItem('access_token')).toBeNull();
+      expect(localStorage.getItem('refresh_token')).toBeNull();
       expect(result).toEqual(loginResponse);
     });
   });
