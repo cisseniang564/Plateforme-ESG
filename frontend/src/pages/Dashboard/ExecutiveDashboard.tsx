@@ -1,3 +1,4 @@
+import { Button, SegmentedControl } from '@/components/common';
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -510,20 +511,12 @@ export default function ExecutiveDashboard() {
           {t('dashboard.welcomeSubtitle')}
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
-          <button
-            onClick={() => navigate('/app/organizations')}
-            className="px-6 py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition-colors flex items-center gap-2"
-          >
-            <Building2 className="h-5 w-5" />
+          <Button size="lg" icon={<Building2 className="h-5 w-5" />} onClick={() => navigate('/app/organizations')}>
             {t('dashboard.createOrganization')}
-          </button>
-          <button
-            onClick={() => navigate('/app/data-entry')}
-            className="px-6 py-3 bg-white text-gray-700 border-2 border-gray-200 rounded-xl font-semibold hover:border-primary-300 transition-colors flex items-center gap-2"
-          >
-            <Zap className="h-5 w-5" />
+          </Button>
+          <Button size="lg" variant="secondary" icon={<Zap className="h-5 w-5" />} onClick={() => navigate('/app/data-entry')}>
             {t('dashboard.enterData')}
-          </button>
+          </Button>
         </div>
         <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl w-full">
           {[
@@ -566,18 +559,19 @@ export default function ExecutiveDashboard() {
               </div>
               <h1 className="text-xl md:text-2xl font-bold tracking-tight">{t('dashboard.executiveDashboard')}</h1>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="flex p-1 rounded-xl gap-0.5" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                {(['7d', '30d', '90d', '1y'] as const).map(p => (
-                  <button key={p} onClick={() => setSelectedPeriod(p)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
-                    style={selectedPeriod === p
-                      ? { background: 'rgba(16,185,129,0.25)', color: '#34d399', border: '1px solid rgba(16,185,129,0.3)' }
-                      : { color: 'rgba(255,255,255,0.4)', border: '1px solid transparent' }}>
-                    {p === '7d' ? '7J' : p === '30d' ? '30J' : p === '90d' ? '90J' : '1An'}
-                  </button>
-                ))}
-              </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <SegmentedControl
+                tone="dark"
+                aria-label={t('dashboard.period', 'Période')}
+                value={selectedPeriod}
+                onChange={setSelectedPeriod}
+                options={[
+                  { value: '7d', label: '7J' },
+                  { value: '30d', label: '30J' },
+                  { value: '90d', label: '90J' },
+                  { value: '1y', label: '1An' },
+                ]}
+              />
               <button onClick={loadDashboard}
                 className="flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-xl transition-all"
                 style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'white' }}>
@@ -773,14 +767,18 @@ export default function ExecutiveDashboard() {
               </div>
               {t('dashboard.scoreEvolution')}
             </h3>
-            <div className="flex gap-1 p-1 rounded-lg bg-gray-50">
-              {(['7d', '30d', '90d', '1y'] as const).map(period => (
-                <button key={period} onClick={() => setSelectedPeriod(period)}
-                  className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${selectedPeriod === period ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
-                  {period === '7d' ? t('dashboard.period7d') : period === '30d' ? t('dashboard.period30d') : period === '90d' ? t('dashboard.period90d') : t('dashboard.period1y')}
-                </button>
-              ))}
-            </div>
+            <SegmentedControl
+              size="sm"
+              aria-label={t('dashboard.period', 'Période')}
+              value={selectedPeriod}
+              onChange={setSelectedPeriod}
+              options={[
+                { value: '7d', label: t('dashboard.period7d') },
+                { value: '30d', label: t('dashboard.period30d') },
+                { value: '90d', label: t('dashboard.period90d') },
+                { value: '1y', label: t('dashboard.period1y') },
+              ]}
+            />
           </div>
           {evolutionData.length === 0 ? (
             <div className="h-[300px] flex flex-col items-center justify-center text-center px-6">

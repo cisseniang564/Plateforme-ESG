@@ -8,6 +8,7 @@ export { default as ConfirmDialog } from './ConfirmDialog';
 export { default as EmptyState } from './EmptyState';
 export { Field, Input, Select, Textarea } from './Field';
 export { default as Modal } from './Modal';
+export { default as SegmentedControl } from './SegmentedControl';
 export { default as Spinner } from './Spinner';
 export { default as StatCard } from './StatCard';
 export { default as Table } from './Table';

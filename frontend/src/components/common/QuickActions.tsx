@@ -174,10 +174,10 @@ export default function QuickActions() {
           transition-all duration-200 active:scale-95
           ${open
             ? 'bg-gray-700 hover:bg-gray-800 rotate-45'
-            : 'bg-indigo-600 hover:bg-indigo-700 rotate-0'
+            : 'bg-primary-600 hover:bg-primary-700 rotate-0'
           }
         `}
-        style={{ boxShadow: open ? '0 8px 24px rgba(0,0,0,0.25)' : '0 8px 24px rgba(99,102,241,0.4)' }}
+        style={{ boxShadow: open ? '0 8px 24px rgba(0,0,0,0.25)' : '0 8px 24px rgba(22,163,74,0.4)' }}
       >
         {open
           ? <X size={22} className="text-white transition-transform duration-200" />
