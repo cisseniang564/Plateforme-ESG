@@ -58,6 +58,8 @@ jobs:
           DATABASE_NAME: esgflow_test
           DATABASE_USER: test
           DATABASE_PASSWORD: test
+          # conftest.py impose sinon une base nommée « test » qui n'existe pas dans le service Postgres
+          DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/esgflow_test
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           # Settings exige APP_ENV in (development|staging|production) et des clés >= 32 caractères
