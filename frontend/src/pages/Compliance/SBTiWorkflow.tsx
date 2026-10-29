@@ -762,7 +762,7 @@ function Step4({ state }: { state: WorkflowState }) {
           href="https://sciencebasedtargets.org/companies-taking-action"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 transition-colors shadow-sm"
         >
           <ExternalLink size={14} />
           {t('compliance.sbti.step4.submitPortal', 'Soumettre sur le portail SBTi')}
@@ -1196,7 +1196,7 @@ export default function SBTiWorkflow() {
             <button
               onClick={() => setStep((s) => s + 1)}
               disabled={!canGoNext}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
             >
               {t('compliance.sbti.nav.next', 'Suivant')}
               <ChevronRight size={15} />

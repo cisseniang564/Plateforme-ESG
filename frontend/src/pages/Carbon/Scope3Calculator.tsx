@@ -585,7 +585,7 @@ function CommuteAutoCalculator() {
         <button
           onClick={compute}
           disabled={loading || headcount <= 0}
-          className="inline-flex items-center gap-1.5 px-4 h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold disabled:opacity-50 transition-colors"
+          className="inline-flex items-center gap-1.5 px-4 h-10 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-semibold disabled:opacity-50 transition-colors"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
           {t('scope3.calculate', 'Calculer')}

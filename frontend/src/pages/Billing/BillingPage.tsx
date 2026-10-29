@@ -654,7 +654,7 @@ export default function BillingPage() {
                     disabled={!!actionLoading}
                     className={`w-full py-2.5 text-xs font-semibold rounded-xl transition disabled:opacity-60 flex items-center justify-center gap-1 ${
                       plan.highlight
-                        ? 'bg-violet-600 hover:bg-violet-700 text-white'
+                        ? 'bg-primary-600 hover:bg-primary-700 text-white'
                         : plan.id === 'free'
                         ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                         : 'bg-gray-900 hover:bg-gray-800 text-white'

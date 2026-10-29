@@ -709,7 +709,7 @@ export default function MaterialityMatrix() {
                           <p className="text-gray-400 text-xs mb-4">{t('materiality.emptyMatrixLine2')}</p>
                           <div className="flex flex-wrap items-center justify-center gap-2">
                             <button type="button" onClick={() => setShowModal(true)}
-                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold shadow-sm transition-colors">
+                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold shadow-sm transition-colors">
                               <Plus className="h-4 w-4" /> {t('materiality.addIssue', 'Ajouter un enjeu')}
                             </button>
                           </div>
@@ -1084,7 +1084,7 @@ export default function MaterialityMatrix() {
                       </div>
                     ) : (
                       <button onClick={() => addSuggestion(s)}
-                        className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition-all shadow-sm shadow-indigo-200 hover:shadow-indigo-300">
+                        className="flex items-center gap-1.5 px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold rounded-xl transition-all shadow-sm shadow-primary-200 hover:shadow-primary-300">
                         <Plus className="h-3.5 w-3.5" /> {t('common.add')}
                       </button>
                     )}
@@ -1295,7 +1295,7 @@ export default function MaterialityMatrix() {
             <div className="bg-white border-2 border-gray-100 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-bold text-gray-900">{t('materiality.globalCsrdCoverage', 'Couverture CSRD globale')}</h3>
-                <button onClick={exportDMA} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
+                <button onClick={exportDMA} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white text-xs font-semibold rounded-lg hover:bg-primary-700 transition-colors">
                   <Download className="h-3.5 w-3.5" /> Export DMA CSV
                 </button>
               </div>
@@ -1399,7 +1399,7 @@ export default function MaterialityMatrix() {
                         <span className="text-sm font-medium text-gray-800">{tp.name}</span>
                       </div>
                       <button onClick={() => setActiveTab('suggestions')}
-                        className="flex items-center gap-1.5 px-3 py-1 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors opacity-0 group-hover:opacity-100">
+                        className="flex items-center gap-1.5 px-3 py-1 bg-primary-600 text-white text-xs font-semibold rounded-lg hover:bg-primary-700 transition-colors opacity-0 group-hover:opacity-100">
                         <Plus className="h-3 w-3" /> {t('materiality.suggestIssues', 'Suggérer des enjeux')}
                       </button>
                     </div>

@@ -359,7 +359,7 @@ export default function OrganizationScoring() {
               <button
                 onClick={handleCalculateScore}
                 disabled={calculating}
-                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg transition-all hover:bg-indigo-700 active:scale-95 disabled:opacity-60"
+                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg transition-all hover:bg-primary-700 active:scale-95 disabled:opacity-60"
               >
                 {calculating ? <Spinner size="sm" /> : <Calculator className="h-4 w-4" />}
                 {t('scores.calculateNow', 'Calculer maintenant')}

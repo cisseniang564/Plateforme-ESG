@@ -539,7 +539,7 @@ function CreateSurveyModal({ onClose, onCreate }: CreateModalProps) {
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-60"
+            className="flex items-center gap-2 px-5 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-60"
           >
             <Send size={14} />
             {saving ? t('sse.btn.creating', 'Création…') : t('sse.btn.create', 'Créer le sondage')}
@@ -929,7 +929,7 @@ export default function StakeholderSurveys() {
                 </p>
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="mt-4 flex items-center gap-2 mx-auto px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                  className="mt-4 flex items-center gap-2 mx-auto px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors"
                 >
                   <Plus size={14} /> {t('sse.btn.newSurvey', 'Nouveau sondage')}
                 </button>

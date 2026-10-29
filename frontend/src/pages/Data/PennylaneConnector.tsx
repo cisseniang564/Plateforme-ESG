@@ -128,7 +128,7 @@ export default function PennylaneConnector() {
               </div>
             )}
             <button type="button" onClick={handleSync} disabled={!apiKey.trim()}
-              className="w-full h-11 inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white text-sm font-semibold rounded-xl transition-colors">
+              className="w-full h-11 inline-flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-40 text-white text-sm font-semibold rounded-xl transition-colors">
               {t("penny.connect","Connecter Pennylane")}<ChevronRight className="h-4 w-4" />
             </button>
           </div>

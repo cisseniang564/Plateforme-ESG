@@ -921,7 +921,7 @@ export default function CSRDBuilder() {
                 </button>
                 <button
                   onClick={copyNarrative}
-                  className="inline-flex items-center gap-1.5 px-4 h-9 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-700 rounded-lg transition-colors"
+                  className="inline-flex items-center gap-1.5 px-4 h-9 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors"
                 >
                   {narrativeCopied
                     ? <><Check className="h-4 w-4" />{t('csrd.btn.copied', 'Copié !')}</>

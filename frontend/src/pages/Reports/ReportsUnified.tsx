@@ -729,7 +729,7 @@ export default function ReportsUnified() {
                 {t('reports.action.csvImport', 'Import CSV')}
               </a>
               <button onClick={() => { setTab('generate'); setGenStep(0) }}
-                className="text-[12px] font-medium text-white px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 transition-colors">
+                className="text-[12px] font-medium text-white px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-700 transition-colors">
                 {t('reports.csrd.generateAnyway', 'Générer quand même')}
               </button>
             </div>
@@ -878,7 +878,7 @@ export default function ReportsUnified() {
 
                 <button
                   onClick={() => setGenStep(2)}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-semibold text-[13px] transition-colors shadow-sm shadow-violet-200"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-semibold text-[13px] transition-colors shadow-sm shadow-primary-200"
                 >
                   {t('reports.gen.continue', 'Continuer')} <ArrowRight size={14} />
                 </button>

@@ -320,7 +320,7 @@ export default function PublicSurvey() {
         <button
           onClick={submit}
           disabled={submitting}
-          className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm transition-colors disabled:opacity-60 shadow-md"
+          className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-semibold text-sm transition-colors disabled:opacity-60 shadow-md"
         >
           {submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
           {t('survey.submit', 'Envoyer mes réponses')}
