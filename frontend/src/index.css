@@ -98,9 +98,14 @@
   ::selection { background-color: #bbf7d0; color: #14532d; }
 
   /* Typography scale */
-  h1 { @apply text-3xl font-bold text-gray-900 tracking-tight; }
-  h2 { @apply text-2xl font-semibold text-gray-900 tracking-tight; }
-  h3 { @apply text-lg font-semibold text-gray-900; }
+  /* Couleur des titres via une variable : claire en mode sombre, et héritée
+     dans les blocs « text-white » (bandeaux sombres) au lieu de rester grise. */
+  :root { --heading-color: #111827; }
+  html.dark { --heading-color: #f3f4f6; }
+  h1 { @apply text-3xl font-bold tracking-tight; color: var(--heading-color); }
+  h2 { @apply text-2xl font-semibold tracking-tight; color: var(--heading-color); }
+  h3 { @apply text-lg font-semibold; color: var(--heading-color); }
+  .text-white :is(h1, h2, h3, h4) { color: inherit; }
 
   /* Éléments natifs : comportement homogène sur toute la plateforme.
      (couche « base » : les classes Tailwind de chaque page restent prioritaires) */

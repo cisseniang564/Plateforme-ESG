@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Download, Plus, Trash2, Leaf } from 'lucide-react';
 import {
-  Alert, Badge, Button, Card, ConfirmDialog, EmptyState, Input, Modal, Select, StatCard, Table, Textarea,
+  Alert, Badge, Button, Card, ConfirmDialog, EmptyState, Input, Modal, SegmentedControl, Select, StatCard, Table, Textarea,
 } from '@/components/common';
 import type { Column, Tone } from '@/components/common';
 import { CHART_COLORS, PILLAR_COLORS } from '@/styles/tokens';
@@ -37,6 +37,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function DesignSystemPage() {
   const [modal, setModal] = useState(false);
   const [confirm, setConfirm] = useState(false);
+  const [period, setPeriod] = useState('30d');
 
   return (
     <div className="max-w-5xl mx-auto p-6 sm:p-10">
@@ -57,6 +58,15 @@ export default function DesignSystemPage() {
         <div className="flex flex-wrap items-center gap-3 mt-4">
           <Button size="xs">XS</Button><Button size="sm">SM</Button><Button size="md">MD</Button><Button size="lg">LG</Button>
         </div>
+      </Section>
+
+      <Section title="Sélecteur de période">
+        <SegmentedControl
+          aria-label="Période"
+          value={period}
+          onChange={setPeriod}
+          options={[{ value: '7d', label: '7 j' }, { value: '30d', label: '30 j' }, { value: '90d', label: '90 j' }, { value: '1y', label: '1 an' }]}
+        />
       </Section>
 
       <Section title="Chiffres clés">
