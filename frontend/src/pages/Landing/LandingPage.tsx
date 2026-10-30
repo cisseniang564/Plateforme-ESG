@@ -2366,6 +2366,8 @@ export default function LandingPage() {
               { value: 100, suffix: '%', label: t('landing.lp.impact.kpis.2.label', 'Traçabilité'), sub: t('landing.lp.impact.kpis.2.sub', "piste d'audit certifiable"), color: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-100' },
               { value: 40, suffix: '%', label: t('landing.lp.impact.kpis.3.label', 'Coûts réduits'), sub: t('landing.lp.impact.kpis.3.sub', 'vs prestation externe'), color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
             ].map((kpi, i) => {
+              // TODO : hook appelé dans un .map() — fonctionne car la liste est fixe (4 éléments) ; à extraire dans un composant <KpiCounter />.
+              // eslint-disable-next-line react-hooks/rules-of-hooks
               const animValue = useCounter(kpi.value, 1800, roiInView);
               return (
                 <div key={i} className={`text-center p-6 ${kpi.bg} rounded-2xl border ${kpi.border}`}>

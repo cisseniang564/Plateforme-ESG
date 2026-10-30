@@ -430,7 +430,7 @@ export default function OrganizationsList() {
     [organizations]);
 
   const filtered = useMemo(() => {
-    let r = organizations.filter(org => {
+    const r = organizations.filter(org => {
       const q = searchQuery.toLowerCase();
       const matchSearch = org.name.toLowerCase().includes(q) || org.external_id?.toLowerCase().includes(q);
       const matchIndustry = selectedIndustry === 'all' || org.industry === selectedIndustry;

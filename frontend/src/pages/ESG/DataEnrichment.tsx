@@ -177,7 +177,7 @@ export default function DataEnrichment() {
   };
 
   // ── Validation ──
-  const rawQuery = query.replace(/[\s\-]/g, '');
+  const rawQuery = query.replace(/[\s-]/g, '');
   const sirenValid = searchType === 'siren' && rawQuery.length === 9 && /^\d{9}$/.test(rawQuery);
   const siretValid = searchType === 'siret' && rawQuery.length === 14 && /^\d{14}$/.test(rawQuery);
   const canSearch = sirenValid || siretValid;

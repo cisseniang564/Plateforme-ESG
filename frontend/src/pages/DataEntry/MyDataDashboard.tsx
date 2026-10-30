@@ -231,8 +231,8 @@ export default function MyDataDashboard() {
 
   const sortedData = useMemo(() => {
     return [...data].sort((a, b) => {
-      let va = (a as any)[sortKey] ?? '';
-      let vb = (b as any)[sortKey] ?? '';
+      const va = (a as any)[sortKey] ?? '';
+      const vb = (b as any)[sortKey] ?? '';
       if (typeof va === 'number' && typeof vb === 'number') return sortDir === 'desc' ? vb - va : va - vb;
       return sortDir === 'desc' ? String(vb).localeCompare(String(va)) : String(va).localeCompare(String(vb));
     });
