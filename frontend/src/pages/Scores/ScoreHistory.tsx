@@ -460,7 +460,7 @@ export default function ScoreHistory() {
             <p className="text-lg font-semibold text-gray-900">{t('sch.loadError', 'Erreur de chargement')}</p>
             <p className="text-sm text-gray-500 mt-2">{t('sch.loadErrorDesc', "Impossible de charger l'historique des scores.")}</p>
             <button onClick={loadHistory}
-              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors">
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 transition-colors">
               <RefreshCw size={14} /> {t('sch.retry', 'Réessayer')}
             </button>
           </div>
@@ -476,7 +476,7 @@ export default function ScoreHistory() {
               {t('sch.noScoreDesc', "Calculez votre premier score ESG pour voir l'évolution dans le temps.")}
             </p>
             <button onClick={() => navigate('/app/scores/calculate')}
-              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200">
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 transition-colors shadow-lg shadow-primary-200">
               <Sparkles size={14} /> {t('sch.calcFirst', 'Calculer mon premier score')}
             </button>
           </div>
@@ -869,7 +869,7 @@ export default function ScoreHistory() {
               {t('sch.aiInsights', 'Insights IA')} <ArrowUpRight size={14} />
             </button>
             <button onClick={() => navigate('/app/scores/calculate')}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-indigo-200 active:scale-[.98]">
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-primary-200 active:scale-[.98]">
               <Sparkles size={14} /> {t('sch.newCalc', 'Nouveau calcul')}
             </button>
           </div>

@@ -745,7 +745,7 @@ export default function IntelligenceDashboard() {
               <button
                 onClick={() => { bustCache('/analytics/ml/'); loadML(); }}
                 disabled={mlLoading}
-                className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-50 transition"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50 transition"
               >
                 {mlLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                 {mlLoading ? 'Calcul en cours…' : 'Recalculer'}
@@ -1156,7 +1156,7 @@ export default function IntelligenceDashboard() {
                 <option value={12}>{t('ia.horizon12m')}</option>
                 <option value={24}>{t('ia.horizon12m')}</option>
               </select>
-              <button onClick={() => { bustCache('/analytics/predictions'); loadPredictions(); }} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 transition">
+              <button onClick={() => { bustCache('/analytics/predictions'); loadPredictions(); }} className="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition">
                 <Brain className="h-4 w-4" /> {t('ia.recalculate')}
               </button>
             </div>
@@ -1480,7 +1480,7 @@ export default function IntelligenceDashboard() {
                 <button
                   onClick={sendMessage}
                   disabled={!chatInput.trim() || chatLoading}
-                  className="px-4 py-3 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white rounded-xl transition flex items-center gap-2"
+                  className="px-4 py-3 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white rounded-xl transition flex items-center gap-2"
                 >
                   <Send className="h-4 w-4" />
                 </button>
@@ -1904,7 +1904,7 @@ export default function IntelligenceDashboard() {
                           toast.error('Erreur lors de l\'enregistrement. Réessayez.');
                         }
                       }}
-                      className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-xl transition"
+                      className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold rounded-xl transition"
                     >
                       {t('ia.saveToCarbone')}
                     </button>

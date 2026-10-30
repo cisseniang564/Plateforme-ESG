@@ -206,7 +206,7 @@ export default function AIMitigationModal({ riskId, riskTitle, currentScore, onC
                     placeholder={t('aimit.refinePlaceholder','Ex: PME industrielle 250 salariés, France, secteur chimie')} maxLength={1000}
                     className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-violet-300 focus:border-violet-400 outline-none" />
                   <button onClick={() => generate(true)} disabled={loading || !extraContext.trim()}
-                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors">
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors">
                     <RotateCcw className="h-4 w-4" />{t('aimit.regenerate', 'Régénérer')}
                   </button>
                 </div>

@@ -616,7 +616,7 @@ export default function OrganizationComparator() {
             <button
               onClick={() => setExportMenuOpen(v => !v)}
               disabled={!selected.length || exportLoading !== null}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-sm font-semibold text-white transition-colors shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-sm font-semibold text-white transition-colors shadow-sm"
             >
               {exportLoading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
               {exportLoading === 'pdf' ? 'Génération PDF…'

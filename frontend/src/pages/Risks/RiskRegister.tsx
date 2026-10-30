@@ -382,7 +382,7 @@ function RiskCard({ risk, onEdit, onDelete, onGenerateMitigation }: {
                   </div>
                   <button
                     onClick={() => onGenerateMitigation(risk)}
-                    className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors"
+                    className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors"
                   >
                     <Sparkles className="h-3.5 w-3.5" />
                     Générer

@@ -196,7 +196,7 @@ export default function SupplierPortal() {
             <ChevronLeft className="h-4 w-4" /> {t('suppl.prev','Précédent')}
           </button>
           {currentSection < SECTIONS.length - 1 ? (
-            <button onClick={() => setCurrentSection(s => s+1)} className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-medium transition">
+            <button onClick={() => setCurrentSection(s => s+1)} className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-medium transition">
               {t('suppl.next','Suivant')} <ChevronRight className="h-4 w-4" />
             </button>
           ) : (

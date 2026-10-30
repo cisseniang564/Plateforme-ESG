@@ -396,7 +396,7 @@ export default function ReportHistoryPanel() {
                     {t('rephist.cancel', 'Annuler')}
                   </button>
                   <button type="button" onClick={submitInvite} disabled={inviting || !auditorEmail.trim()}
-                    className="inline-flex items-center gap-2 px-4 h-10 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-700 rounded-lg transition-colors disabled:opacity-50">
+                    className="inline-flex items-center gap-2 px-4 h-10 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors disabled:opacity-50">
                     {inviting ? <Spinner size="sm" /> : <Send className="h-4 w-4" />}
                     {t('rephist.sendInvite', "Envoyer l'invitation")}
                   </button>

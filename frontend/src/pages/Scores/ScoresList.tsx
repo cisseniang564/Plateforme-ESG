@@ -289,7 +289,7 @@ export default function ScoresList() {
           <p className="mt-2 text-sm text-gray-500">Ajoutez des organisations pour calculer leurs scores ESG.</p>
           <button
             onClick={() => navigate('/app/organizations')}
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-violet-700"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-primary-700"
           >
             <Building2 className="h-4 w-4" />
             {t('slist.manageOrgs', 'Gérer les organisations')}
@@ -436,7 +436,7 @@ export default function ScoresList() {
             </div>
             <button
               onClick={() => navigate('/app/ai-insights')}
-              className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-violet-700"
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-primary-700"
             >
               <TrendingUp className="h-4 w-4" />
               Insights IA

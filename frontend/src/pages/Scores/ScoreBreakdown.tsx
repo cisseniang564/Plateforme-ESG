@@ -446,7 +446,7 @@ export default function ScoreBreakdown() {
           <div className="flex flex-wrap gap-3">
             <button
               onClick={() => navigate('/app/scores/calculate')}
-              className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700 active:scale-95"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-700 active:scale-95"
             >
               <Target className="h-4 w-4" />
               Recalculer le score
@@ -473,7 +473,7 @@ export default function ScoreBreakdown() {
           </p>
           <button
             onClick={() => navigate('/app/scores/calculate')}
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-700"
           >
             <Target className="h-4 w-4" />
             Calculer maintenant

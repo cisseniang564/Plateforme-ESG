@@ -446,7 +446,7 @@ export default function CabinetDashboard() {
             </p>
             <button
               onClick={() => navigator.clipboard.writeText(window.location.origin + '/register')}
-              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 transition-colors"
             >
               <ExternalLink size={14} />
               {t('cab.shareLink', "Partager le lien d'inscription")}

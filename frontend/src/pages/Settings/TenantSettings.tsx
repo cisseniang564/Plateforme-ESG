@@ -381,7 +381,7 @@ function SSOTab() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="inline-flex items-center gap-2 px-6 py-2 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+          className="inline-flex items-center gap-2 px-6 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
         >
           {saving
             ? <><div className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> {t('settings.tenant.sso.saving', 'Sauvegarde…')}</>
@@ -874,7 +874,7 @@ export default function TenantSettings() {
       <div className="pt-5">
         <button
           onClick={() => { toast.success(t('settings.tenant.notifications.saved', 'Préférences de notification sauvegardées')); }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 transition-colors"
         >
           <Save size={14} /> {t('settings.tenant.notifications.save', 'Sauvegarder')}
         </button>
@@ -993,7 +993,7 @@ export default function TenantSettings() {
               )}
               <button
                 onClick={() => navigate('/app/billing')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 rounded-lg text-xs font-medium text-white hover:bg-violet-700 transition-colors">
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 rounded-lg text-xs font-medium text-white hover:bg-primary-700 transition-colors">
                 {t('settings.tenant.billing.manage', 'Gérer')} <ArrowUpRight size={12} />
               </button>
             </div>
@@ -1120,7 +1120,7 @@ export default function TenantSettings() {
           ) : (
             <button
               onClick={() => setShow2FA(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors"
             >
               <Shield size={14} /> {t('settings.tenant.security.enable2FA', 'Activer la 2FA')}
             </button>
@@ -1167,7 +1167,7 @@ export default function TenantSettings() {
         </div>
         <button
           onClick={() => setShowNewKey(true)}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-700 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors"
         >
           <Plus size={14} /> {t('settings.tenant.apiKeys.newKey', 'Nouvelle clé')}
         </button>
