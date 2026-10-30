@@ -1,3 +1,4 @@
+import { Alert, Button, Input, Modal } from '@/components/common';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -1245,45 +1246,37 @@ export default function TenantSettings() {
         <p>{t('settings.tenant.apiKeys.securityWarning', 'Ne partagez jamais vos clés API. En cas de compromission, révoquez immédiatement et régénérez.')}</p>
       </div>
 
-      {/* New key modal */}
-      {showNewKey && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-semibold text-gray-900">{t('settings.tenant.apiKeys.newKeyTitle', 'Nouvelle clé API')}</h3>
-              <button type="button" onClick={() => setShowNewKey(false)} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400">
-                <X size={16} />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('settings.tenant.apiKeys.keyNameLabel', 'Nom de la clé')}</label>
-                <input
-                  type="text" value={newKeyName} onChange={e => setNewKeyName(e.target.value)}
-                  placeholder={t('settings.tenant.apiKeys.keyNamePlaceholder', 'ex. Mobile App, CI/CD Pipeline…')}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  autoFocus
-                  onKeyDown={e => e.key === 'Enter' && handleGenerateKey()}
-                />
-              </div>
-              <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-lg p-3 text-xs text-amber-700">
-                <AlertCircle size={13} className="flex-shrink-0 mt-0.5 text-amber-500" />
-                {t('settings.tenant.apiKeys.oneTimeWarning', 'La clé complète sera affichée une seule fois. Copiez-la immédiatement.')}
-              </div>
-              <div className="flex gap-2 pt-1">
-                <button onClick={() => { setShowNewKey(false); setNewKeyName(''); }}
-                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50">
-                  {t('settings.tenant.apiKeys.cancelKey', 'Annuler')}
-                </button>
-                <button onClick={handleGenerateKey}
-                  className="flex-1 px-4 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 transition-colors">
-                  {t('settings.tenant.apiKeys.generate', 'Générer la clé')}
-                </button>
-              </div>
-            </div>
-          </div>
+      {/* Nouvelle clé API */}
+      <Modal
+        isOpen={showNewKey}
+        onClose={() => { setShowNewKey(false); setNewKeyName(''); }}
+        title={t('settings.tenant.apiKeys.newKeyTitle', 'Nouvelle clé API')}
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => { setShowNewKey(false); setNewKeyName(''); }}>
+              {t('settings.tenant.apiKeys.cancelKey', 'Annuler')}
+            </Button>
+            <Button onClick={handleGenerateKey}>
+              {t('settings.tenant.apiKeys.generate', 'Générer la clé')}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Input
+            label={t('settings.tenant.apiKeys.keyNameLabel', 'Nom de la clé')}
+            value={newKeyName}
+            onChange={e => setNewKeyName(e.target.value)}
+            placeholder={t('settings.tenant.apiKeys.keyNamePlaceholder', 'ex. Mobile App, CI/CD Pipeline…')}
+            autoFocus
+            onKeyDown={e => e.key === 'Enter' && handleGenerateKey()}
+          />
+          <Alert tone="warning">
+            {t('settings.tenant.apiKeys.oneTimeWarning', 'La clé complète sera affichée une seule fois. Copiez-la immédiatement.')}
+          </Alert>
         </div>
-      )}
+      </Modal>
     </div>
   );
 

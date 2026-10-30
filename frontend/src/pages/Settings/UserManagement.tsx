@@ -1,3 +1,4 @@
+import { Alert, Button, Modal } from '@/components/common';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
@@ -286,45 +287,33 @@ function ToggleActiveModal({ user, onClose, onConfirm }: {
 }) {
   const { t } = useTranslation();
   const isDeactivating = user.is_active;
-  return createPortal(
-    <div className="fixed inset-0 z-[210] flex items-center justify-center p-4" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-modal w-full max-w-md p-6">
-        <div className="flex items-start gap-4 mb-5">
-          <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${isDeactivating ? 'bg-orange-100' : 'bg-emerald-100'}`}>
-            {isDeactivating
-              ? <UserX className="h-5 w-5 text-orange-600" aria-hidden />
-              : <UserCheck className="h-5 w-5 text-emerald-600" aria-hidden />}
-          </div>
-          <div className="flex-1">
-            <h3 className="text-base font-bold text-gray-900">
-              {isDeactivating
-                ? t('settings.userMgmt.deactivateUserTitle', 'Désactiver cet utilisateur ?')
-                : t('settings.userMgmt.reactivateUserTitle', 'Réactiver cet utilisateur ?')}
-            </h3>
-            <p className="text-sm text-gray-500 mt-1">
-              <strong>{user.first_name} {user.last_name}</strong> ({user.email})
-            </p>
-          </div>
-        </div>
-        <div className={`px-4 py-3 rounded-xl border mb-5 ${isDeactivating ? 'bg-orange-50 border-orange-100' : 'bg-emerald-50 border-emerald-100'}`}>
-          <p className={`text-xs font-medium ${isDeactivating ? 'text-orange-700' : 'text-emerald-700'}`}>
-            {isDeactivating
-              ? t('settings.userMgmt.deactivateWarning', "L'utilisateur ne pourra plus se connecter. Ses données seront conservées.")
-              : t('settings.userMgmt.reactivateWarning', "L'utilisateur pourra à nouveau accéder à la plateforme.")}
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <button className="flex-1" onClick={onClose}>{t('settings.userMgmt.cancel', 'Annuler')}</button>
-          <button className="flex-1" onClick={onConfirm}>
+  return (
+    <Modal
+      isOpen
+      elevated
+      size="sm"
+      onClose={onClose}
+      title={isDeactivating
+        ? t('settings.userMgmt.deactivateUserTitle', 'Désactiver cet utilisateur ?')
+        : t('settings.userMgmt.reactivateUserTitle', 'Réactiver cet utilisateur ?')}
+      subtitle={`${user.first_name} ${user.last_name} (${user.email})`}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>{t('settings.userMgmt.cancel', 'Annuler')}</Button>
+          <Button variant={isDeactivating ? 'danger' : 'success'} onClick={onConfirm}>
             {isDeactivating
               ? t('settings.userMgmt.deactivate', 'Désactiver')
               : t('settings.userMgmt.reactivate', 'Réactiver')}
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body
+          </Button>
+        </>
+      }
+    >
+      <Alert tone={isDeactivating ? 'warning' : 'success'}>
+        {isDeactivating
+          ? t('settings.userMgmt.deactivateWarning', "L'utilisateur ne pourra plus se connecter. Ses données seront conservées.")
+          : t('settings.userMgmt.reactivateWarning', "L'utilisateur pourra à nouveau accéder à la plateforme.")}
+      </Alert>
+    </Modal>
   );
 }
 
@@ -333,39 +322,36 @@ function DeleteConfirmModal({ user, onClose, onConfirm, loading }: {
   user: User; onClose: () => void; onConfirm: () => void; loading: boolean;
 }) {
   const { t } = useTranslation();
-  return createPortal(
-    <div className="fixed inset-0 z-[210] flex items-center justify-center p-4" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-modal w-full max-w-md p-6">
-        <div className="flex items-start gap-4 mb-5">
-          <div className="w-11 h-11 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
-            <AlertTriangle className="h-5 w-5 text-red-600" aria-hidden />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-base font-bold text-gray-900">{t('settings.userMgmt.deleteUserTitle', 'Supprimer cet utilisateur ?')}</h3>
-            <p className="text-sm text-gray-500 mt-1">
-              <Trans
-                i18nKey="settings.userMgmt.deleteUserDesc"
-                defaults="<0>{{name}}</0> ({{email}}) sera définitivement supprimé."
-                values={{ name: `${user.first_name} ${user.last_name}`, email: user.email }}
-                components={[<strong />]}
-              />
-            </p>
-          </div>
-        </div>
-        <div className="flex items-start gap-2.5 px-4 py-3 bg-red-50 border border-red-100 rounded-xl mb-5">
-          <XCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-px" aria-hidden />
-          <p className="text-xs text-red-700 font-medium">{t('settings.userMgmt.deleteUserIrreversible', 'Cette action est irréversible. Toutes les données associées seront perdues.')}</p>
-        </div>
-        <div className="flex gap-3">
-          <button className="flex-1" onClick={onClose} disabled={loading}>{t('settings.userMgmt.cancel', 'Annuler')}</button>
-          <button className="flex-1" onClick={onConfirm}>
+  return (
+    <Modal
+      isOpen
+      elevated
+      size="sm"
+      onClose={onClose}
+      title={t('settings.userMgmt.deleteUserTitle', 'Supprimer cet utilisateur ?')}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={loading}>{t('settings.userMgmt.cancel', 'Annuler')}</Button>
+          <Button variant="danger" onClick={onConfirm} loading={loading}>
             {t('settings.userMgmt.deletePermanently', 'Supprimer définitivement')}
-          </button>
-        </div>
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-gray-600">
+          <Trans
+            i18nKey="settings.userMgmt.deleteUserDesc"
+            defaults="<0>{{name}}</0> ({{email}}) sera définitivement supprimé."
+            values={{ name: `${user.first_name} ${user.last_name}`, email: user.email }}
+            components={[<strong />]}
+          />
+        </p>
+        <Alert tone="danger">
+          {t('settings.userMgmt.deleteUserIrreversible', 'Cette action est irréversible. Toutes les données associées seront perdues.')}
+        </Alert>
       </div>
-    </div>,
-    document.body
+    </Modal>
   );
 }
 
@@ -374,28 +360,24 @@ function BulkDeleteModal({ count, onClose, onConfirm, loading }: {
   count: number; onClose: () => void; onConfirm: () => void; loading: boolean;
 }) {
   const { t } = useTranslation();
-  return createPortal(
-    <div className="fixed inset-0 z-[210] flex items-center justify-center p-4" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-modal w-full max-w-md p-6">
-        <div className="flex items-start gap-4 mb-5">
-          <div className="w-11 h-11 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
-            <AlertTriangle className="h-5 w-5 text-red-600" aria-hidden />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-base font-bold text-gray-900">{t('settings.userMgmt.bulkDeleteTitle', { defaultValue: 'Supprimer {{count}} utilisateur ?', defaultValue_other: 'Supprimer {{count}} utilisateurs ?', count })}</h3>
-            <p className="text-sm text-gray-500 mt-1">{t('settings.userMgmt.bulkDeleteDesc', 'Cette suppression est définitive et irréversible.')}</p>
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <button className="flex-1" onClick={onClose} disabled={loading}>{t('settings.userMgmt.cancel', 'Annuler')}</button>
-          <button className="flex-1" onClick={onConfirm}>
+  return (
+    <Modal
+      isOpen
+      elevated
+      size="sm"
+      onClose={onClose}
+      title={t('settings.userMgmt.bulkDeleteTitle', { defaultValue: 'Supprimer {{count}} utilisateur ?', defaultValue_other: 'Supprimer {{count}} utilisateurs ?', count })}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={loading}>{t('settings.userMgmt.cancel', 'Annuler')}</Button>
+          <Button variant="danger" onClick={onConfirm} loading={loading}>
             {t('settings.userMgmt.bulkDeleteConfirm', { defaultValue: 'Supprimer {{count}} utilisateur', defaultValue_other: 'Supprimer {{count}} utilisateurs', count })}
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body
+          </Button>
+        </>
+      }
+    >
+      <Alert tone="danger">{t('settings.userMgmt.bulkDeleteDesc', 'Cette suppression est définitive et irréversible.')}</Alert>
+    </Modal>
   );
 }
 

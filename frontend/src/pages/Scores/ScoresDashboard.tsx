@@ -1,3 +1,4 @@
+import { ConfirmDialog } from '@/components/common';
 import { useEffect, useMemo, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -120,28 +121,17 @@ function ConfirmModal({
   open, message, onConfirm, onCancel,
 }: { open: boolean; message: string; onConfirm: () => void; onCancel: () => void }) {
   const { t } = useTranslation();
-  if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-        <h3 className="text-base font-semibold text-gray-900">{t('common.confirmation')}</h3>
-        <p className="mt-2 text-sm text-gray-600">{message}</p>
-        <div className="mt-5 flex justify-end gap-3">
-          <button
-            onClick={onCancel}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            {t('common.cancel')}
-          </button>
-          <button
-            onClick={onConfirm}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-          >
-            {t('common.confirm')}
-          </button>
-        </div>
-      </div>
-    </div>
+    <ConfirmDialog
+      isOpen={open}
+      title={t('common.confirmation')}
+      message={message}
+      confirmLabel={t('common.confirm')}
+      cancelLabel={t('common.cancel')}
+      variant="primary"
+      onConfirm={onConfirm}
+      onClose={onCancel}
+    />
   );
 }
 
