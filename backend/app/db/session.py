@@ -2,6 +2,7 @@
 Database session management.
 """
 import logging
+import os
 from typing import AsyncGenerator
 
 from fastapi import Request
@@ -172,9 +173,11 @@ async def init_db() -> None:
         "framework_assessments", "indicator_data", "indicator_formulas",
         "indicators", "integrations", "materiality_issues",
         "report_history", "sector_weights", "sso_configs",
-        "suppliers", "webhooks", "webhook_deliveries",
+        "suppliers", "webhooks",
     ]
-    _rls_using = "tenant_id = current_setting('app.current_tenant_id', true)::uuid"
+    # NULLIF: an unset/empty setting yields NULL (no rows) instead of a
+    # "invalid input syntax for type uuid" error.
+    _rls_using = "tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid"
 
     _migrations: list[str] = [
         # ── 2FA fields on users ───────────────────────────────────────────────
@@ -212,6 +215,11 @@ async def init_db() -> None:
     ]
 
     # ── RLS policy migrations (idempotent: DROP IF EXISTS then CREATE) ────────
+    # Kept apart from _migrations: they only run when ESG_ENABLE_RLS=1 so that
+    # enabling tenant isolation in production is an explicit, tested decision.
+    _rls_migrations: list[str] = []
+    _migrations_main = _migrations
+    _migrations = _rls_migrations
     for _tbl in _rls_tables:
         _migrations += [
             f"DROP POLICY IF EXISTS tenant_isolation ON {_tbl}",
@@ -229,11 +237,11 @@ async def init_db() -> None:
         CREATE POLICY tenant_isolation ON roles FOR ALL
             USING (
                 tenant_id IS NULL
-                OR tenant_id = current_setting('app.current_tenant_id', true)::uuid
+                OR tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
             )
             WITH CHECK (
                 tenant_id IS NULL
-                OR tenant_id = current_setting('app.current_tenant_id', true)::uuid
+                OR tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
             )
         """,
     ]
@@ -251,18 +259,38 @@ async def init_db() -> None:
             )
             WITH CHECK (true)
         """,
+        # webhook_deliveries has no tenant_id: isolate through its parent webhook
+        "DROP POLICY IF EXISTS tenant_isolation ON webhook_deliveries",
+        "ALTER TABLE webhook_deliveries ENABLE ROW LEVEL SECURITY",
+        "ALTER TABLE webhook_deliveries FORCE ROW LEVEL SECURITY",
+        """
+        CREATE POLICY tenant_isolation ON webhook_deliveries FOR ALL
+            USING (EXISTS (SELECT 1 FROM webhooks w WHERE w.id = webhook_deliveries.webhook_id))
+            WITH CHECK (EXISTS (SELECT 1 FROM webhooks w WHERE w.id = webhook_deliveries.webhook_id))
+        """,
     ]
+    _migrations = _migrations_main
+
+    async def _run_each(conn, statements: list[str]) -> None:
+        # One SAVEPOINT per statement: a failing statement (missing table...)
+        # no longer aborts the whole transaction and silently rolls back the
+        # others, which is what left every table without RLS in production.
+        for sql in statements:
+            try:
+                async with conn.begin_nested():
+                    await conn.execute(text(sql))
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("init_db: statement skipped (%s): %s",
+                               " ".join(sql.split())[:80], str(exc).splitlines()[0][:160])
 
     async with engine.begin() as conn:
         # create_all only in dev/test — Alembic owns production schema otherwise
         if settings.APP_ENV in {"development", "test"}:
             await conn.run_sync(Base.metadata.create_all)
 
-        for sql in _migrations:
-            try:
-                await conn.execute(text(sql))
-            except Exception:
-                pass  # already exists — safe to ignore
+        await _run_each(conn, _migrations)
+        if os.getenv("ESG_ENABLE_RLS") == "1":
+            await _run_each(conn, _rls_migrations)
 
 
 async def close_db() -> None:
