@@ -1,130 +1,65 @@
-name: Deploy to Production
+name: Deploy frontend
 
-# Deploy ONLY after CI passes on main — prevents broken code reaching production.
+# Déploiement du site (frontend) sur le serveur IONOS.
+# - automatique à chaque push sur main qui touche frontend/
+# - ou à la main : onglet Actions > "Deploy frontend" > Run workflow
+# Le serveur installe l'archive avec sauvegarde et retour arrière automatique.
 on:
-  workflow_run:
-    workflows: ["CI — Tests & Lint"]
-    types: [completed]
+  push:
     branches: [main]
+    paths: ["frontend/**", ".github/workflows/deploy.yml"]
+  workflow_dispatch:
 
 concurrency:
   group: deploy-prod
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Deploy to Production Server
     runs-on: ubuntu-latest
-    # Gate: CI must have succeeded (not cancelled or failed)
-    if: ${{ github.event.workflow_run.conclusion == 'success' && secrets.SSH_HOST != '' }}
-
     steps:
-      - name: Checkout at the commit that triggered CI
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/checkout@v4
 
-      # ── Build frontend ────────────────────────────────────────────────────────
-      - name: Set up Node.js 20
-        uses: actions/setup-node@v4
+      - name: Vérifier la configuration
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          [ -n "$SSH_HOST" ] && [ -n "$SSH_PRIVATE_KEY" ] || { echo "::error::Secrets SSH_HOST / SSH_PRIVATE_KEY manquants"; exit 1; }
+
+      - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
+          cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install frontend dependencies
+      - name: Tests et build
         working-directory: frontend
-        run: npm ci
-
-      - name: Build frontend
-        working-directory: frontend
-        run: npx vite build
         env:
           NODE_OPTIONS: --max-old-space-size=4096
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
-
-      # ── Setup SSH key ─────────────────────────────────────────────────────────
-      - name: Install SSH key
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          npm ci
+          npx vitest run
+          npx vite build
 
-      # ── Copy files to server ──────────────────────────────────────────────────
-      - name: Rsync backend source to server
+      - name: Préparer l'archive
+        run: tar czf site.tgz -C frontend dist
+
+      - name: Envoyer au serveur (déploiement)
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
         run: |
-          rsync -az --delete \
-            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-            --exclude="__pycache__" \
-            --exclude="*.pyc" \
-            --exclude=".pytest_cache" \
-            backend/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/esgflow/backend/
-
-      - name: Rsync frontend dist to server
-        run: |
-          rsync -az --delete \
-            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-            frontend/dist/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/esgflow/frontend/dist/
-
-      # ── Hotpatch containers ───────────────────────────────────────────────────
-      - name: Hotpatch backend + restart
-        run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
-              ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'ENDSSH'
-          set -e
-          COMMIT="${{ github.event.workflow_run.head_sha }}"
-          echo "=== Deploying commit ${COMMIT:0:8} ==="
-
-          BACKEND=$(docker ps --format '{{.Names}}' \
-            | grep -iE 'backend' | grep -viE 'celery|beat|worker' | head -1 || true)
-
-          if [ -n "$BACKEND" ]; then
-            echo "Hotpatching $BACKEND..."
-            docker cp /opt/esgflow/backend/app/. "$BACKEND":/app/app/
-            docker restart "$BACKEND"
-
-            # Copy frontend dist into nginx container
-            NGINX=$(docker ps --format '{{.Names}}' | grep -iE 'nginx' | head -1 || true)
-            if [ -n "$NGINX" ]; then
-              docker cp /opt/esgflow/frontend/dist/. "$NGINX":/usr/share/nginx/html/
-              echo "Frontend updated in $NGINX"
-            fi
-
-            # Update celery workers
-            for WORKER in $(docker ps --format '{{.Names}}' | grep -iE 'celery|beat' || true); do
-              echo "Patching worker: $WORKER"
-              docker cp /opt/esgflow/backend/app/. "$WORKER":/app/app/
-              docker restart "$WORKER"
-            done
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/ci_key && chmod 600 ~/.ssh/ci_key
+          if [ -n "$SSH_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$SSH_KNOWN_HOSTS" | sed "s/^HOTE/$SSH_HOST/" > ~/.ssh/known_hosts
+            OPTS="-o StrictHostKeyChecking=yes"
           else
-            echo "No backend container found — full compose up..."
-            cd /opt/esgflow
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            echo "::warning::SSH_KNOWN_HOSTS absent : empreinte du serveur non vérifiée"
+            OPTS="-o StrictHostKeyChecking=accept-new"
           fi
-
-          echo "=== Deploy finished: $(date) ==="
-          ENDSSH
-
-      # ── Health check & rollback guard ─────────────────────────────────────────
-      - name: Health check (30s window)
-        run: |
-          echo "Waiting for backend to come up..."
-          sleep 15
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            --max-time 10 \
-            https://${{ secrets.SSH_HOST }}/api/health || echo "000")
-          echo "Health check status: $STATUS"
-          if [ "$STATUS" != "200" ] && [ "$STATUS" != "307" ]; then
-            echo "::error::Health check failed (HTTP $STATUS). Manual rollback required."
-            exit 1
-          fi
-          echo "Backend healthy."
-
-      # ── Notify on success ─────────────────────────────────────────────────────
-      - name: Deployment summary
-        if: success()
-        run: |
-          echo "✅ Deployed commit ${{ github.event.workflow_run.head_sha }} to production"
-          echo "   Server: ${{ secrets.SSH_HOST }}"
-          echo "   Time:   $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          ssh -i ~/.ssh/ci_key $OPTS "${SSH_USER:-root}@$SSH_HOST" < site.tgz
