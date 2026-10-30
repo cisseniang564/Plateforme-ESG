@@ -1,0 +1,14 @@
+// Point d'entrée unique du design system : import { Button, Badge } from '@/components/common';
+export { default as Alert } from './Alert';
+export { default as Badge } from './Badge';
+export type { Tone } from './Badge';
+export { default as Button } from './Button';
+export { default as Card } from './Card';
+export { default as ConfirmDialog } from './ConfirmDialog';
+export { default as EmptyState } from './EmptyState';
+export { Field, Input, Select, Textarea } from './Field';
+export { default as Modal } from './Modal';
+export { default as Spinner } from './Spinner';
+export { default as StatCard } from './StatCard';
+export { default as Table } from './Table';
+export type { Column } from './Table';

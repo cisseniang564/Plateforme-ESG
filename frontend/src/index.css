@@ -101,6 +101,23 @@
   h1 { @apply text-3xl font-bold text-gray-900 tracking-tight; }
   h2 { @apply text-2xl font-semibold text-gray-900 tracking-tight; }
   h3 { @apply text-lg font-semibold text-gray-900; }
+
+  /* Éléments natifs : comportement homogène sur toute la plateforme.
+     (couche « base » : les classes Tailwind de chaque page restent prioritaires) */
+  button:not(:disabled), [role='button']:not([aria-disabled='true']) { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+  button { -webkit-tap-highlight-color: transparent; }
+
+  /* Chiffres alignés dans les tableaux : indispensable pour des données ESG */
+  table { font-variant-numeric: tabular-nums; }
+
+  /* Champs de formulaire : même focus partout */
+  input:not([type='checkbox']):not([type='radio']):focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(22 163 74 / 0.2);
+  }
 }
 
 /* ─── Components ───────────────────────────────────────────────────────────── */
