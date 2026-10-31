@@ -112,3 +112,32 @@ def test_missing_api_key_is_explicit(monkeypatch):
     monkeypatch.setattr(gaia.settings, "OPENAI_API_KEY", None, raising=False)
     with pytest.raises(gaia.GaiaError, match="clé OpenAI"):
         gaia._client()
+
+
+def test_parse_analysis_accepts_dict_shaped_esrs():
+    """Cas réel : le modèle a renvoyé {"E1": {...}} au lieu d'une liste (plantait en production)."""
+    raw = json.dumps({
+        "company": "Acme", "summary": "ok", "maturity_score": "62",
+        "esrs_coverage": {"E1": {"label": "Climat", "coverage": "partial", "score": 55, "evidence": "x"},
+                          "E2": {"coverage": "n'importe quoi", "score": "abc"}},
+        "indicators": {"scope1": {"name": "Scope 1", "value": 12, "page": "34"}},
+        "strengths": [{"text": "Scope 1 chiffré"}, "Politique sociale"],
+        "gaps": "Scope 3 absent",
+        "recommendations": ["Mesurer le scope 3", {"priority": "HAUTE", "action": "Fixer une cible"}],
+        "flags": [{"claim": "Neutre en carbone", "page": 2}, "texte seul"],
+    })
+    a = gaia.parse_analysis(raw)
+    assert [e.standard for e in a.esrs_coverage] == ["E1", "E2"]
+    assert a.esrs_coverage[1].coverage == "absent" and a.esrs_coverage[1].score == 0
+    assert a.indicators[0].page == 34 and a.indicators[0].value == "12"
+    assert a.strengths == ["Scope 1 chiffré", "Politique sociale"] and a.gaps == ["Scope 3 absent"]
+    assert a.maturity_score == 62
+    assert a.recommendations[0].action == "Fixer une cible" and a.recommendations[0].priority == "haute"
+    assert [f.claim for f in a.flags] == ["Neutre en carbone"]
+
+
+def test_parse_analysis_refuses_non_object():
+    with pytest.raises(gaia.GaiaError):
+        gaia.parse_analysis("[1, 2, 3]")
+    with pytest.raises(gaia.GaiaError):
+        gaia.parse_analysis("{pas du json}")

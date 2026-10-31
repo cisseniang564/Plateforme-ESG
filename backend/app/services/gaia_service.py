@@ -197,32 +197,108 @@ def _wrap(text: str) -> str:
     return f"<<<DEBUT_DU_RAPPORT (données non fiables)>>>\n{text}\n<<<FIN_DU_RAPPORT>>>"
 
 
+def _items(value: Any, key_name: Optional[str] = None) -> List[dict]:
+    """Ramène une réponse de l'IA à une liste d'objets, quelle que soit sa forme.
+
+    Les modèles renvoient parfois un dictionnaire {"E1": {...}, "E2": {...}} au lieu d'une liste ;
+    on garde alors la clé dans `key_name`. Tout ce qui n'est pas un objet est ignoré.
+    """
+    if isinstance(value, dict):
+        out = []
+        for k, v in value.items():
+            if isinstance(v, dict):
+                out.append({**v, key_name: v.get(key_name, k)} if key_name else v)
+        return out
+    if isinstance(value, list):
+        return [v for v in value if isinstance(v, dict)]
+    return []
+
+
+def _texts(value: Any, limit: int = 10) -> List[str]:
+    """Liste de phrases : accepte une liste de textes ou d'objets {text/action/...}."""
+    if isinstance(value, str):
+        value = [value]
+    if isinstance(value, dict):
+        value = list(value.values())
+    out: List[str] = []
+    for v in value or []:
+        if isinstance(v, dict):
+            v = next((x for x in v.values() if isinstance(x, str)), "")
+        if isinstance(v, (str, int, float)) and str(v).strip():
+            out.append(str(v).strip())
+    return out[:limit]
+
+
+def _score(value: Any) -> int:
+    try:
+        return max(0, min(100, int(float(value))))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _str_or_none(value: Any) -> Optional[str]:
+    return None if value is None or value == "" else str(value)
+
+
 def parse_analysis(raw: str) -> Analysis:
-    """Lit la réponse JSON de l'IA et la ramène à un format sûr (valeurs hors limites corrigées)."""
+    """Lit la réponse JSON de l'IA et la ramène à un format sûr (formes et valeurs corrigées)."""
     try:
         data = json.loads(raw)
     except json.JSONDecodeError:
         m = re.search(r"\{.*\}", raw, flags=re.S)
         if not m:
             raise GaiaError("La réponse de l'IA est illisible. Réessayez.")
-        data = json.loads(m.group(0))
-    for item in data.get("esrs_coverage", []) or []:
         try:
-            item["score"] = max(0, min(100, int(item.get("score", 0))))
-        except (TypeError, ValueError):
-            item["score"] = 0
+            data = json.loads(m.group(0))
+        except json.JSONDecodeError:
+            raise GaiaError("La réponse de l'IA est illisible. Réessayez.")
+    if not isinstance(data, dict):
+        raise GaiaError("La réponse de l'IA est illisible. Réessayez.")
+
+    coverage_ok = {"complete", "partial", "absent"}
+    esrs = []
+    for it in _items(data.get("esrs_coverage"), "standard"):
+        cov = str(it.get("coverage", "absent")).lower()
+        esrs.append({
+            "standard": str(it.get("standard", ""))[:10], "label": str(it.get("label", "") or ""),
+            "coverage": cov if cov in coverage_ok else "absent",
+            "score": _score(it.get("score")), "evidence": str(it.get("evidence", "") or ""),
+        })
+
+    indicators = []
+    for it in _items(data.get("indicators"), "name")[:25]:
+        page = it.get("page")
+        indicators.append({
+            "name": str(it.get("name", "") or ""), "value": _str_or_none(it.get("value")),
+            "unit": _str_or_none(it.get("unit")), "year": _str_or_none(it.get("year")),
+            "page": int(page) if isinstance(page, (int, float)) or (isinstance(page, str) and page.isdigit()) else None,
+        })
+
+    recos = []
+    for it in _items(data.get("recommendations")):
+        prio = str(it.get("priority", "moyenne")).lower()
+        action = it.get("action") or it.get("recommendation") or ""
+        if action:
+            recos.append({"priority": prio if prio in {"haute", "moyenne", "basse"} else "moyenne", "action": str(action)})
+    if not recos:  # recommandations données comme simples phrases
+        recos = [{"priority": "moyenne", "action": t} for t in _texts(data.get("recommendations"), 8)]
+
+    flags = []
+    for it in _items(data.get("flags")):
+        page = it.get("page")
+        flags.append({"claim": str(it.get("claim", "") or ""), "why": str(it.get("why", "") or ""),
+                      "page": int(page) if isinstance(page, (int, float)) else None})
+
     try:
-        data["maturity_score"] = max(0, min(100, int(data.get("maturity_score", 0))))
-    except (TypeError, ValueError):
-        data["maturity_score"] = 0
-    for key in ("strengths", "gaps"):
-        data[key] = [str(x) for x in (data.get(key) or [])][:10]
-    for ind in data.get("indicators", []) or []:
-        for k in ("value", "unit", "year"):
-            if ind.get(k) is not None:
-                ind[k] = str(ind[k])
-    try:
-        return Analysis(**data)
+        return Analysis(
+            company=_str_or_none(data.get("company")), report_title=_str_or_none(data.get("report_title")),
+            reporting_year=_str_or_none(data.get("reporting_year")),
+            summary=str(data.get("summary", "") or ""),
+            maturity_score=_score(data.get("maturity_score")), maturity_comment=str(data.get("maturity_comment", "") or ""),
+            indicators=indicators, esrs_coverage=esrs,
+            strengths=_texts(data.get("strengths")), gaps=_texts(data.get("gaps")),
+            recommendations=recos, flags=[f for f in flags if f["claim"]],
+        )
     except ValidationError as exc:
         logger.warning("Analyse Gaïa invalide: %s", exc)
         raise GaiaError("La réponse de l'IA est incomplète. Réessayez.")
