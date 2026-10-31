@@ -1,0 +1,45 @@
+
+{/* Footer - À ajouter avant la balise de fermeture </div> finale */}
+<footer className="bg-gray-900 text-white">
+  <div className="mx-auto max-w-7xl px-6 py-12">
+    <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+      <div>
+        <h3 className="text-lg font-bold">ESGFlow</h3>
+        <p className="mt-4 text-sm text-gray-400">
+          Plateforme SaaS de gestion ESG conforme CSRD, GRI et TCFD.
+        </p>
+      </div>
+
+      <div>
+        <h4 className="text-sm font-semibold">Produit</h4>
+        <ul className="mt-4 space-y-2 text-sm">
+          <li><a href="#features" className="text-gray-400 hover:text-white">Fonctionnalités</a></li>
+          <li><a href="#pricing" className="text-gray-400 hover:text-white">Tarifs</a></li>
+          <li><a href="/docs" className="text-gray-400 hover:text-white">Documentation</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 className="text-sm font-semibold">Entreprise</h4>
+        <ul className="mt-4 space-y-2 text-sm">
+          <li><a href="/about" className="text-gray-400 hover:text-white">À propos</a></li>
+          <li><a href="/contact" className="text-gray-400 hover:text-white">Contact</a></li>
+          <li><a href="/careers" className="text-gray-400 hover:text-white">Carrières</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 className="text-sm font-semibold">Légal</h4>
+        <ul className="mt-4 space-y-2 text-sm">
+          <li><a href="/legal-notice" className="text-gray-400 hover:text-white">Mentions légales</a></li>
+          <li><a href="/terms-of-service" className="text-gray-400 hover:text-white">CGU</a></li>
+          <li><a href="/privacy-policy" className="text-gray-400 hover:text-white">Confidentialité (RGPD)</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div className="mt-8 border-t border-gray-800 pt-8 text-center text-sm text-gray-400">
+      <p>© 2026 ESGFlow SAS. Tous droits réservés. | Conforme RGPD</p>
+    </div>
+  </div>
+</footer>
