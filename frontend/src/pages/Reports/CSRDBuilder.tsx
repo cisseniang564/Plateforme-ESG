@@ -216,7 +216,7 @@ export default function CSRDBuilder() {
     } catch (err: any) {
       const status = err?.response?.status;
       if (status === 402) {
-        setNarrativeError(t('csrd.err.aiPro', "La génération IA nécessite le plan Pro. Passez à un plan supérieur pour l'activer."));
+        setNarrativeError(t('csrd.err.aiPro', "La génération IA nécessite le plan ETI. Passez à un plan supérieur pour l'activer."));
       } else if (status === 404) {
         setNarrativeError(t('csrd.err.noTemplate', 'Aucun template disponible pour {{code}} pour le moment.', { code: sec.code }));
       } else {
@@ -268,7 +268,7 @@ export default function CSRDBuilder() {
     } catch (err: any) {
       const status = err?.response?.status;
       if (status === 402) {
-        setNarrativeError(t('csrd.err.exportStarter', "L'export CSRD nécessite le plan Starter ou supérieur."));
+        setNarrativeError(t('csrd.err.exportStarter', "L'export CSRD nécessite le plan PME ou supérieur."));
       } else {
         setNarrativeError(t('csrd.err.reportFailed', 'Échec de la génération du rapport.'));
       }

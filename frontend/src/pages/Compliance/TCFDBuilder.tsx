@@ -7,7 +7,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import BackButton from '@/components/common/BackButton';
-import api from '@/services/api';
+import { loadFramework, saveFramework } from '@/services/frameworkSync';
 import toast from 'react-hot-toast';
 
 const LS_KEY = 'esgflow_tcfd_responses_v1';
@@ -208,6 +208,19 @@ export default function TCFDBuilder() {
   const [activeFramework, setActiveFramework] = useState<'tcfd' | 'issb' | 'ifrs'>('tcfd');
   const [saving, setSaving] = useState(false);
 
+  // La version enregistrée sur le serveur (si elle existe) remplace la copie locale du navigateur.
+  useEffect(() => {
+    loadFramework<{ responses?: Record<string, string> }>('tcfd').then(saved => {
+      const responses = saved?.responses;
+      if (!responses) return;
+      setPillars(prev => prev.map(p => ({
+        ...p,
+        disclosures: p.disclosures.map(d =>
+          responses[d.id] !== undefined ? { ...d, response: responses[d.id], status: statusOf(responses[d.id]) } : d),
+      })));
+    });
+  }, []);
+
   // ── Derived stats ─────────────────────────────────────────────────────────
   const allDisclosures = useMemo(() => pillars.flatMap(p => p.disclosures), [pillars]);
   const totalCount = allDisclosures.length;
@@ -244,15 +257,9 @@ export default function TCFDBuilder() {
     try {
       const responses: Record<string, string> = {};
       pillars.forEach(p => p.disclosures.forEach(d => { responses[d.id] = d.response; }));
-      await api.post('/compliance/tcfd', {
-        framework: activeFramework,
-        year: new Date().getFullYear(),
-        responses,
-      });
-      toast.success(t('compliance.tcfd.toastSaved', 'Divulgations TCFD sauvegardées'));
-    } catch {
-      // Backend endpoint may not exist yet — silently fall back to localStorage
-      toast.success(t('compliance.tcfd.toastSavedLocal', 'Sauvegardé localement (synchronisation cloud bientôt disponible)'));
+      const ok = await saveFramework('tcfd', { framework: activeFramework, year: new Date().getFullYear(), responses });
+      if (ok) toast.success(t('compliance.tcfd.toastSaved', 'Divulgations TCFD sauvegardées'));
+      else toast.error(t('compliance.tcfd.toastSavedLocal', 'Serveur injoignable : copie conservée dans ce navigateur seulement. Réessayez.'));
     } finally {
       setSaving(false);
     }

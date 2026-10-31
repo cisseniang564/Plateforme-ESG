@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/framework-data", tags=["Framework Data"])
 
 # Allowed keys — security allowlist so clients can't write arbitrary keys
-_ALLOWED = frozenset({"climate_scenarios", "investor_relations", "ixbrl"})
+_ALLOWED = frozenset({"climate_scenarios", "investor_relations", "ixbrl", "tcfd", "bcorp", "dpef", "compliance_checks"})
 
 
 class FrameworkSaveRequest(BaseModel):

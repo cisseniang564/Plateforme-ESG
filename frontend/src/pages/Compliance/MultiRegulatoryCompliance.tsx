@@ -1,8 +1,9 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { useNavigate } from 'react-router-dom';
 import api from '@/services/api';
+import toast from 'react-hot-toast';
 // ⚡ Export libs loaded lazily (dynamic import) to avoid bundle-init crashes
 import {
   Shield, CheckCircle, XCircle, AlertTriangle, ChevronDown,
@@ -12,7 +13,7 @@ import {
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type Status = 'conforme' | 'partiel' | 'non_conforme' | 'na';
+type Status = 'conforme' | 'partiel' | 'non_conforme' | 'na' | 'a_evaluer';
 
 interface CheckItem {
   label: string;
@@ -38,12 +39,26 @@ interface Regulation {
   actions: string[];
 }
 
+/**
+ * Les étapes de chaque réglementation démarrent « À évaluer » : c'est l'utilisateur qui renseigne le statut
+ * de chaque étape (enregistré sur le serveur). Les statuts, scores et notes d'exemple du catalogue ne sont
+ * jamais affichés tels quels, car ils ne décrivent aucune entreprise réelle.
+ */
+const getRegulations = (t: TFunction): Regulation[] =>
+  getRawRegulations(t).map(reg => reg.globalStatus === 'na' ? reg : ({
+    ...reg,
+    score: 0,
+    globalStatus: 'a_evaluer' as Status,
+    checks: reg.checks.map(c => ({ label: c.label, status: 'a_evaluer' as Status })),
+  }));
+
 // ─── Status helpers ───────────────────────────────────────────────────────────
 const statusConfig: Record<Status, { label: string; color: string; bg: string; icon: any }> = {
   conforme:      { label: 'Conforme',       color: 'text-green-700',  bg: 'bg-green-100',  icon: CheckCircle },
   partiel:       { label: 'Partiel',        color: 'text-amber-700',  bg: 'bg-amber-100',  icon: AlertTriangle },
   non_conforme:  { label: 'Non conforme',   color: 'text-red-700',    bg: 'bg-red-100',    icon: XCircle },
   na:            { label: 'N/A',            color: 'text-gray-500',   bg: 'bg-gray-100',   icon: Info },
+  a_evaluer:     { label: 'À évaluer',      color: 'text-slate-500',  bg: 'bg-slate-100',  icon: Info },
 };
 
 function StatusBadge({ status }: { status: Status }) {
@@ -55,6 +70,7 @@ function StatusBadge({ status }: { status: Status }) {
     partiel: t('compliance.statusPartial'),
     non_conforme: t('compliance.statusNonCompliant'),
     na: t('compliance.statusNa'),
+    a_evaluer: 'À évaluer',
   };
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.bg} ${cfg.color}`}>
@@ -82,7 +98,7 @@ function ScoreRing({ score, color }: { score: number; color: string }) {
 }
 
 // ─── Regulations data ─────────────────────────────────────────────────────────
-const getRegulations = (t: TFunction): Regulation[] => [
+const getRawRegulations = (t: TFunction): Regulation[] => [
   {
     id: 'csrd',
     name: 'CSRD',
@@ -380,14 +396,15 @@ function computeGlobalStats(regs: Regulation[]) {
   const conforme = applicable.filter(r => r.globalStatus === 'conforme').length;
   const partiel = applicable.filter(r => r.globalStatus === 'partiel').length;
   const nonConforme = applicable.filter(r => r.globalStatus === 'non_conforme').length;
-  const avgScore = applicable.length > 0
-    ? Math.round(applicable.reduce((s, r) => s + r.score, 0) / applicable.length)
+  const evaluated = applicable.filter(r => r.globalStatus !== 'a_evaluer');
+  const avgScore = evaluated.length > 0
+    ? Math.round(evaluated.reduce((s, r) => s + r.score, 0) / evaluated.length)
     : 0;
-  return { applicable: applicable.length, conforme, partiel, nonConforme, avgScore };
+  return { applicable: applicable.length, conforme, partiel, nonConforme, avgScore, evaluated: evaluated.length };
 }
 
 // ─── Regulation card ──────────────────────────────────────────────────────────
-function RegulationCard({ reg }: { reg: Regulation }) {
+function RegulationCard({ reg, onCycle }: { reg: Regulation; onCycle: (regId: string, index: number) => void }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const Icon = reg.icon;
@@ -397,6 +414,7 @@ function RegulationCard({ reg }: { reg: Regulation }) {
     partiel: t('compliance.statusPartial'),
     non_conforme: t('compliance.statusNonCompliant'),
     na: t('compliance.statusNa'),
+    a_evaluer: 'À évaluer',
   };
 
   return (
@@ -418,7 +436,9 @@ function RegulationCard({ reg }: { reg: Regulation }) {
           </div>
           <div className="flex flex-col items-end gap-2 flex-shrink-0">
             <StatusBadge status={reg.globalStatus} />
-            {!isNA && <ScoreRing score={reg.score} color={reg.color} />}
+            {!isNA && (reg.globalStatus === 'a_evaluer'
+              ? <span className="text-xs text-slate-500">Non évalué</span>
+              : <ScoreRing score={reg.score} color={reg.color} />)}
           </div>
         </div>
       </div>
@@ -457,16 +477,23 @@ function RegulationCard({ reg }: { reg: Regulation }) {
             <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg border text-xs" style={{ background: '#fefce8', borderColor: '#fde047' }}>
               <span className="text-sm mt-0.5 flex-shrink-0">⚠️</span>
               <span className="text-yellow-800 leading-relaxed">
-                <strong>{t('compliance.multiReg.checklistDisclaimerTitle', 'Points de contrôle indicatifs')}</strong> — {t('compliance.multiReg.checklistDisclaimerBody', 'Ces statuts sont des points de départ basés sur les pratiques courantes. Vérifiez et mettez à jour chaque élément selon votre situation réelle avec votre équipe juridique / commissaires aux comptes.')}
+                <strong>{t('compliance.multiReg.checklistDisclaimerTitle', 'Points de contrôle à renseigner')}</strong> — {t('compliance.multiReg.checklistDisclaimerBody', 'Ces étapes sont des repères généraux, pas un avis juridique. Indiquez vous-même le statut de chacune : rien n\'est coché à votre place. Faites valider votre situation par votre équipe juridique ou vos commissaires aux comptes.')}
               </span>
             </div>
             {/* Checklist */}
             <div className="space-y-2">
+              <p className="text-xs text-gray-500">Cliquez sur une étape pour changer son statut. La progression est calculée à partir de vos réponses.</p>
               {reg.checks.map((check, i) => {
                 const cfg = statusConfig[check.status];
                 const Icon2 = cfg.icon;
                 return (
-                  <div key={i} className={`flex items-start gap-3 p-3 rounded-xl ${cfg.bg}`}>
+                  <button
+                    type="button"
+                    key={i}
+                    onClick={() => onCycle(reg.id, i)}
+                    aria-label={`${check.label} : ${statusLabels[check.status]}. Cliquer pour changer le statut.`}
+                    className={`flex w-full items-start gap-3 rounded-xl p-3 text-left transition hover:brightness-95 ${cfg.bg}`}
+                  >
                     <Icon2 className={`h-4 w-4 flex-shrink-0 mt-0.5 ${cfg.color}`} />
                     <div className="flex-1 min-w-0">
                       <span className={`text-sm font-medium ${cfg.color}`}>{check.label}</span>
@@ -475,7 +502,7 @@ function RegulationCard({ reg }: { reg: Regulation }) {
                       )}
                     </div>
                     <span className={`text-xs font-semibold flex-shrink-0 ${cfg.color}`}>{statusLabels[check.status]}</span>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -504,33 +531,23 @@ function RegulationCard({ reg }: { reg: Regulation }) {
   );
 }
 
-// ─── Live score computation from real ESG data ────────────────────────────────
-function computeLiveRegulations(base: Regulation[], esgData: any): Regulation[] {
-  if (!esgData) return base;
-  // /live-summary returns flat fields: esg_score, environmental_score, social_score, governance_score
-  const env   = Math.round(esgData.environmental_score ?? 0);
-  const soc   = Math.round(esgData.social_score        ?? 0);
-  const gov   = Math.round(esgData.governance_score    ?? 0);
-  const total = Math.round(esgData.esg_score           ?? 0);
+// ─── Progression calculée à partir des statuts renseignés par l'utilisateur ───
+const CYCLE: Status[] = ['a_evaluer', 'non_conforme', 'partiel', 'conforme'];
 
-  const scoreMap: Record<string, number> = {
-    csrd:             Math.min(100, Math.round(total * 0.90)),
-    taxonomie:        Math.min(100, Math.round(env   * 0.80)),
-    dpef:             Math.min(100, Math.round((env + soc) / 2 * 0.90)),
-    sapin2:           Math.min(100, Math.round(gov   * 0.75)),
-    devoir_vigilance: Math.min(100, Math.round((soc + gov) / 2 * 0.70)),
-    art29:            0,
-    sfdr:             0,
-    iso14001:         Math.min(100, Math.round(env   * 0.60)),
-    iso26000:         Math.min(100, Math.round(total * 0.75)),
-    lksg:             Math.min(100, Math.round((soc + gov) / 2 * 0.50)),
-  };
+/** Clé d'une réponse : identifiant de la réglementation et rang de l'étape. */
+const answerKey = (regId: string, index: number) => `${regId}:${index}`;
 
+function computeLiveRegulations(base: Regulation[], answers: Record<string, Status>): Regulation[] {
   return base.map(reg => {
     if (reg.globalStatus === 'na') return reg;
-    const score        = scoreMap[reg.id] ?? reg.score;
+    const checks = reg.checks.map((c, i) => ({ ...c, status: (answers[answerKey(reg.id, i)] ?? 'a_evaluer') as Status }));
+    const answered = checks.filter(c => c.status !== 'a_evaluer').length;
+    if (answered === 0) return { ...reg, checks, score: 0, globalStatus: 'a_evaluer' as Status };
+    // Les étapes non encore évaluées comptent comme non faites : la progression ne se gonfle pas.
+    const points = checks.reduce((sum, c) => sum + (c.status === 'conforme' ? 1 : c.status === 'partiel' ? 0.5 : 0), 0);
+    const score = Math.round((points / checks.length) * 100);
     const globalStatus: Status = score >= 75 ? 'conforme' : score >= 40 ? 'partiel' : 'non_conforme';
-    return { ...reg, score, globalStatus };
+    return { ...reg, checks, score, globalStatus };
   });
 }
 
@@ -581,7 +598,24 @@ export default function MultiRegulatoryCompliance() {
 
   useEffect(() => { fetchESGData(); }, [fetchESGData]);
 
-  const liveRegulations = computeLiveRegulations(regulations, esgData);
+  // Statuts d'étapes renseignés par l'utilisateur, enregistrés côté serveur (par utilisateur).
+  const [answers, setAnswers] = useState<Record<string, Status>>({});
+  useEffect(() => {
+    api.get('/framework-data/compliance_checks')
+      .then(r => { const d = r.data?.answers; if (d && typeof d === 'object') { answersRef.current = d; setAnswers(d); } })
+      .catch(() => { /* première utilisation ou hors ligne : tout est « À évaluer » */ });
+  }, []);
+  const answersRef = useRef<Record<string, Status>>({});
+  const cycleCheck = useCallback((regId: string, index: number) => {
+    const key = answerKey(regId, index);
+    const current = answersRef.current;
+    const next = { ...current, [key]: CYCLE[(CYCLE.indexOf(current[key] ?? 'a_evaluer') + 1) % CYCLE.length] };
+    answersRef.current = next;   // à jour tout de suite : deux clics rapprochés ne s'écrasent pas
+    setAnswers(next);
+    api.post('/framework-data/compliance_checks', { data: { answers: next } }).catch(() => toast.error('Enregistrement impossible, réessayez.'));
+  }, []);
+
+  const liveRegulations = computeLiveRegulations(regulations, answers);
   const stats = computeGlobalStats(liveRegulations);
 
   const handleRefresh = useCallback(async () => {
@@ -594,7 +628,7 @@ export default function MultiRegulatoryCompliance() {
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
 
   const STATUS_LABELS: Record<Status, string> = {
-    conforme: 'Conforme', partiel: 'Partiel', non_conforme: 'Non conforme', na: 'N/A',
+    conforme: 'Conforme', partiel: 'Partiel', non_conforme: 'Non conforme', na: 'N/A', a_evaluer: 'À évaluer',
   };
   const dateStr = new Date().toLocaleDateString('fr-FR');
   const fileDate = new Date().toISOString().slice(0, 10);
@@ -604,13 +638,13 @@ export default function MultiRegulatoryCompliance() {
     const lines: string[] = [
       `"RAPPORT CONFORMITÉ MULTI-RÉGLEMENTAIRE"`,
       `"Généré le : ${dateStr}"`,
-      `"Score global : ${stats.avgScore}%"`,
+      `"Progression moyenne (réglementations évaluées) : ${stats.evaluated > 0 ? stats.avgScore + '%' : '—'}"`,
       `"Conformes : ${stats.conforme} | Partiels : ${stats.partiel} | Non conformes : ${stats.nonConforme} | N/A : ${liveRegulations.length - stats.applicable}"`,
       `""`,
       `"Réglementation","Catégorie","Statut Global","Score","Périmètre","Échéance","Autorité","Points de contrôle","Actions requises"`,
     ];
     for (const reg of liveRegulations) {
-      lines.push(`"${reg.name}","${reg.category}","${STATUS_LABELS[reg.globalStatus]}","${reg.score}%","${reg.scope}","${reg.deadline}","${reg.authority}","${reg.checks.map(c => `${c.label}: ${STATUS_LABELS[c.status]}`).join(' | ')}","${reg.actions.join(' | ')}"`);
+      lines.push(`"${reg.name}","${reg.category}","${STATUS_LABELS[reg.globalStatus]}","${reg.globalStatus === 'a_evaluer' ? '—' : reg.score + '%'}","${reg.scope}","${reg.deadline}","${reg.authority}","${reg.checks.map(c => `${c.label}: ${STATUS_LABELS[c.status]}`).join(' | ')}","${reg.actions.join(' | ')}"`);
     }
     const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `conformite_${fileDate}.csv` });
@@ -629,7 +663,7 @@ export default function MultiRegulatoryCompliance() {
     doc.setFontSize(16); doc.setFont('helvetica', 'bold');
     doc.text('Rapport Conformité Multi-Réglementaire', 14, 11);
     doc.setFontSize(9); doc.setFont('helvetica', 'normal');
-    doc.text(`Généré le ${dateStr}  ·  Score global : ${stats.avgScore}%  ·  ${stats.conforme} conformes · ${stats.partiel} partiels · ${stats.nonConforme} non conformes`, 14, 20);
+    doc.text(`Généré le ${dateStr}  ·  Progression moyenne : ${stats.evaluated > 0 ? stats.avgScore + '%' : '—'}  ·  ${stats.conforme} conformes · ${stats.partiel} partiels · ${stats.nonConforme} non conformes`, 14, 20);
     // KPI boxes
     doc.setTextColor(0, 0, 0);
     const kpis = [
@@ -650,7 +684,7 @@ export default function MultiRegulatoryCompliance() {
     autoTable(doc, {
       startY: 50,
       head: [['Réglementation', 'Catégorie', 'Statut', 'Score', 'Périmètre', 'Échéance', 'Autorité']],
-      body: liveRegulations.map(r => [r.name, r.category, STATUS_LABELS[r.globalStatus], `${r.score}%`, r.scope, r.deadline, r.authority]),
+      body: liveRegulations.map(r => [r.name, r.category, STATUS_LABELS[r.globalStatus], r.globalStatus === 'a_evaluer' ? '—' : `${r.score}%`, r.scope, r.deadline, r.authority]),
       styles: { fontSize: 7.5, cellPadding: 2 },
       headStyles: { fillColor: [109, 40, 217], textColor: 255, fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [248, 245, 255] },
@@ -691,11 +725,11 @@ export default function MultiRegulatoryCompliance() {
     const synth = [
       ['RAPPORT CONFORMITÉ MULTI-RÉGLEMENTAIRE'],
       [`Généré le : ${dateStr}`],
-      [`Score global : ${stats.avgScore}%`],
+      [`Progression moyenne : ${stats.evaluated > 0 ? stats.avgScore + '%' : '—'}`],
       [`Conformes : ${stats.conforme}`, `Partiels : ${stats.partiel}`, `Non conformes : ${stats.nonConforme}`, `N/A : ${liveRegulations.length - stats.applicable}`],
       [],
       ['Réglementation', 'Catégorie', 'Statut Global', 'Score (%)', 'Périmètre', 'Échéance', 'Autorité'],
-      ...liveRegulations.map(r => [r.name, r.category, STATUS_LABELS[r.globalStatus], r.score, r.scope, r.deadline, r.authority]),
+      ...liveRegulations.map(r => [r.name, r.category, STATUS_LABELS[r.globalStatus], r.globalStatus === 'a_evaluer' ? '' : r.score, r.scope, r.deadline, r.authority]),
     ];
     const ws1 = XLSX.utils.aoa_to_sheet(synth);
     ws1['!cols'] = [{ wch: 20 }, { wch: 22 }, { wch: 14 }, { wch: 8 }, { wch: 45 }, { wch: 28 }, { wch: 30 }];
@@ -722,14 +756,14 @@ export default function MultiRegulatoryCompliance() {
   const handleExportWord = useCallback(async () => {
     setExportMenuOpen(false);
     const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, HeadingLevel, WidthType, AlignmentType } = await import('docx');
-    const statusColor: Record<Status, string> = { conforme: '16a34a', partiel: 'd97706', non_conforme: 'dc2626', na: '6b7280' };
+    const statusColor: Record<Status, string> = { conforme: '16a34a', partiel: 'd97706', non_conforme: 'dc2626', na: '6b7280', a_evaluer: '64748b' };
     const doc = new Document({
       sections: [{
         properties: {},
         children: [
           new Paragraph({ text: 'Rapport Conformité Multi-Réglementaire', heading: HeadingLevel.HEADING_1 }),
           new Paragraph({ children: [new TextRun({ text: `Généré le : ${dateStr}`, italics: true, color: '6b7280' })] }),
-          new Paragraph({ children: [new TextRun({ text: `Score global : ${stats.avgScore}%  ·  Conformes : ${stats.conforme}  ·  Partiels : ${stats.partiel}  ·  Non conformes : ${stats.nonConforme}`, bold: true })] }),
+          new Paragraph({ children: [new TextRun({ text: `Progression moyenne : ${stats.evaluated > 0 ? stats.avgScore + '%' : '—'}  ·  Conformes : ${stats.conforme}  ·  Partiels : ${stats.partiel}  ·  Non conformes : ${stats.nonConforme}`, bold: true })] }),
           new Paragraph({ text: '' }),
           new Table({
             width: { size: 100, type: WidthType.PERCENTAGE },
@@ -745,7 +779,7 @@ export default function MultiRegulatoryCompliance() {
                   new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.name, bold: true })] })] }),
                   new TableCell({ children: [new Paragraph({ text: r.category })] }),
                   new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: STATUS_LABELS[r.globalStatus], color: statusColor[r.globalStatus], bold: true })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${r.score}%`, bold: true })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: r.globalStatus === 'a_evaluer' ? '—' : `${r.score}%`, bold: true })] })] }),
                   new TableCell({ children: [new Paragraph({ text: r.scope })] }),
                   new TableCell({ children: [new Paragraph({ text: r.deadline })] }),
                 ],
@@ -789,7 +823,7 @@ export default function MultiRegulatoryCompliance() {
         <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800">
           <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
           <div>
-            <span className="font-bold">{t('compliance.multiReg.scoresFromRealData', 'Scores calculés depuis vos données réelles')}</span>
+            <span className="font-bold">{t('compliance.multiReg.scoresFromRealData', 'Votre score ESG actuel (données réelles)')}</span>
             {' — '}ESG : <span className="font-bold">{Math.round(esgData.esg_score ?? 0)}/100</span>
             {' · '}E : <span className="font-semibold">{Math.round(esgData.environmental_score ?? 0)}</span>
             {' · '}S : <span className="font-semibold">{Math.round(esgData.social_score ?? 0)}</span>
@@ -802,7 +836,7 @@ export default function MultiRegulatoryCompliance() {
       ) : (
         <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
           <AlertTriangle className="h-4 w-4" />
-          {t('compliance.multiReg.noEsgData', 'Données ESG non disponibles — les scores affichés sont indicatifs. Importez vos données pour obtenir une analyse personnalisée.')}
+          {t('compliance.multiReg.noEsgData', 'Données ESG non disponibles : importez vos données pour obtenir votre score ESG.')}
         </div>
       )}
 
@@ -865,7 +899,7 @@ export default function MultiRegulatoryCompliance() {
         {/* ── Global KPIs ── */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {[
-            { label: t('compliance.kpiGlobalScore'), value: `${stats.avgScore}%`, sub: t('compliance.kpiGlobalScoreSub'), color: 'text-violet-700', bg: 'bg-violet-50 border-violet-200' },
+            { label: t('compliance.kpiGlobalScore'), value: stats.evaluated > 0 ? `${stats.avgScore}%` : '—', sub: t('compliance.kpiGlobalScoreSub'), color: 'text-violet-700', bg: 'bg-violet-50 border-violet-200' },
             { label: t('compliance.kpiCompliant'), value: stats.conforme, sub: t('compliance.kpiCompliantSub', { count: stats.applicable }), color: 'text-green-700', bg: 'bg-green-50 border-green-200' },
             { label: t('compliance.kpiPartial'), value: stats.partiel, sub: t('compliance.kpiPartialSub'), color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
             { label: t('compliance.kpiNonCompliant'), value: stats.nonConforme, sub: t('compliance.kpiNonCompliantSub'), color: 'text-red-700', bg: 'bg-red-50 border-red-200' },
@@ -917,7 +951,7 @@ export default function MultiRegulatoryCompliance() {
         {/* ── Regulation cards ── */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {filtered.map(reg => (
-            <RegulationCard key={reg.id} reg={reg} />
+            <RegulationCard key={reg.id} reg={reg} onCycle={cycleCheck} />
           ))}
         </div>
 

@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Printer } from "lucide-react";
 import api from "@/services/api";
+import { loadFramework, saveFramework } from "@/services/frameworkSync";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 
@@ -307,6 +308,13 @@ export default function DPEFReport() {
 
   const [narratives, setNarratives] = useState<Narratives>(loadNarratives);
 
+  // La version enregistrée sur le serveur (si elle existe) remplace la copie locale du navigateur.
+  useEffect(() => {
+    loadFramework<{ narratives?: Partial<Narratives> }>('dpef').then(saved => {
+      if (saved?.narratives) setNarratives(prev => ({ ...prev, ...saved.narratives }));
+    });
+  }, []);
+
   // ─── Fetch data entries ──────────────────────────────────────────────────────
 
   const fetchData = useCallback(async () => {
@@ -351,13 +359,15 @@ export default function DPEFReport() {
 
   // ─── Save narratives ─────────────────────────────────────────────────────────
 
-  function handleSave() {
+  async function handleSave() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(narratives));
-      toast.success(t('dpef.toast.saved', "Narratifs sauvegardés localement"));
     } catch {
-      toast.error(t('dpef.toast.saveError', "Erreur lors de la sauvegarde"));
+      // le stockage local peut être refusé : le serveur reste la sauvegarde principale
     }
+    const ok = await saveFramework('dpef', { narratives });
+    if (ok) toast.success(t('dpef.toast.saved', "Narratifs sauvegardés"));
+    else toast.error(t('dpef.toast.saveError', "Serveur injoignable : copie conservée dans ce navigateur seulement. Réessayez."));
   }
 
   // ─── Export PDF — try backend ReportLab first, fallback to jsPDF ────────────
