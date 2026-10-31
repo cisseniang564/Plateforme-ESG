@@ -46,7 +46,7 @@ def send_trial_nurture_sequence() -> dict:
     sur J+3, J+7, J+11, J+13, ou J+15. Idempotent via tenant.settings.nurture_sent
     pour éviter les doublons en cas de double exécution du cron.
     """
-    from app.db.session import AsyncSessionLocal
+    from app.db.session import SystemSessionLocal
     from app.models.tenant import Tenant
     from app.models.user import User
     from app.services.email_service import EmailService
@@ -59,7 +59,7 @@ def send_trial_nurture_sequence() -> dict:
 
     async def _run():
         nonlocal sent, errors
-        async with AsyncSessionLocal() as db:
+        async with SystemSessionLocal() as db:
             result = await db.execute(
                 select(Tenant).where(
                     Tenant.created_at.isnot(None),
@@ -148,7 +148,7 @@ def downgrade_expired_trials() -> dict:
     and have no active Stripe subscription.
     Sets plan_tier='free', resets limits, sets stripe_subscription_status='expired'.
     """
-    from app.db.session import AsyncSessionLocal
+    from app.db.session import SystemSessionLocal
     from app.models.tenant import Tenant
     from sqlalchemy import select
 
@@ -158,7 +158,7 @@ def downgrade_expired_trials() -> dict:
 
     async def _run():
         nonlocal downgraded
-        async with AsyncSessionLocal() as db:
+        async with SystemSessionLocal() as db:
             result = await db.execute(
                 select(Tenant).where(
                     Tenant.trial_ends_at.isnot(None),

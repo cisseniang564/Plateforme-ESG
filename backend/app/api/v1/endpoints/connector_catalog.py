@@ -307,8 +307,8 @@ async def suggest_connector(
     """Record a user suggestion (best-effort, stored as audit log entry)."""
     try:
         from app.models.audit_log import AuditLog
-        from app.db.session import AsyncSessionLocal
-        async with AsyncSessionLocal() as session:
+        from app.db.session import SystemSessionLocal
+        async with SystemSessionLocal() as session:
             session.add(AuditLog(
                 tenant_id=current_user.tenant_id,
                 user_id=current_user.id,

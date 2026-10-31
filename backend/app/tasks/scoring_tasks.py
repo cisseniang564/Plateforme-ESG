@@ -37,14 +37,14 @@ def _run_async(coro):
 )
 def calculate_org_score(self, org_id: str, tenant_id: str) -> dict:
     """Recalculate ESG score for a single organisation."""
-    from app.db.session import AsyncSessionLocal
+    from app.db.session import SystemSessionLocal
     from app.services.esg_scoring_engine import ESGScoringEngine
     from uuid import UUID
 
     logger.info("Scoring org %s (tenant %s)", org_id, tenant_id)
 
     async def _run():
-        async with AsyncSessionLocal() as db:
+        async with SystemSessionLocal() as db:
             engine = ESGScoringEngine(db)
             result = await engine.calculate_score(
                 organization_id=UUID(org_id),
@@ -68,7 +68,7 @@ def calculate_org_score(self, org_id: str, tenant_id: str) -> dict:
 )
 def refresh_all_scores() -> dict:
     """Nightly: recalculate scores for all active organisations across all tenants."""
-    from app.db.session import AsyncSessionLocal
+    from app.db.session import SystemSessionLocal
     from app.services.esg_scoring_engine import ESGScoringEngine
     from app.models.organization import Organization
     from sqlalchemy import select
@@ -78,7 +78,7 @@ def refresh_all_scores() -> dict:
     async def _run():
         updated = 0
         errors = 0
-        async with AsyncSessionLocal() as db:
+        async with SystemSessionLocal() as db:
             result = await db.execute(select(Organization).where(Organization.is_active == True))  # noqa: E712
             orgs = result.scalars().all()
             engine = ESGScoringEngine(db)
@@ -102,7 +102,7 @@ def refresh_all_scores() -> dict:
 @shared_task(name="scoring.cleanup_stale_results")
 def cleanup_stale_results() -> int:
     """Weekly: delete ESGScore records older than 2 years to keep DB lean."""
-    from app.db.session import AsyncSessionLocal
+    from app.db.session import SystemSessionLocal
     from app.models.esg_score import ESGScore
     from sqlalchemy import delete
     from datetime import datetime, timedelta
@@ -110,7 +110,7 @@ def cleanup_stale_results() -> int:
     cutoff = datetime.utcnow() - timedelta(days=730)
 
     async def _run():
-        async with AsyncSessionLocal() as db:
+        async with SystemSessionLocal() as db:
             result = await db.execute(
                 delete(ESGScore).where(ESGScore.created_at < cutoff)
             )

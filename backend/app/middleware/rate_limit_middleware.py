@@ -59,9 +59,9 @@ async def _get_tenant_plan(tenant_id: str) -> str:
         return cached[0]
 
     try:
-        from app.db.session import AsyncSessionLocal
+        from app.db.session import SystemSessionLocal
         from sqlalchemy import text
-        async with AsyncSessionLocal() as session:
+        async with SystemSessionLocal() as session:
             result = await session.execute(
                 text("SELECT plan_tier FROM tenants WHERE id = :tid LIMIT 1"),
                 {"tid": tenant_id},

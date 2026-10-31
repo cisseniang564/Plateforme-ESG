@@ -11,7 +11,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy import select
 
-from app.db.session import AsyncSessionLocal
+from app.db.session import SystemSessionLocal
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ async def stripe_webhook(request: Request):
     # know our tenant_id). RLS is enforced by the handlers themselves once the
     # tenant is resolved via stripe_customer_id, so a context-manager-managed
     # session is sufficient and clean.
-    async with AsyncSessionLocal() as db:
+    async with SystemSessionLocal() as db:
         try:
             if event_type == "checkout.session.completed":
                 await _handle_checkout_completed(db, data, EmailService)

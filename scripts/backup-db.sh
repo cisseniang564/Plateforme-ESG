@@ -27,7 +27,9 @@ mkdir -p "$BACKUP_DIR"
 
 echo "[$(date)] Starting backup of database '${DB_NAME}'..."
 
-PGPASSWORD="${DATABASE_PASSWORD}" pg_dump \
+# Sauvegarde complète malgré la RLS : autorisation système limitée à cette connexion
+PGOPTIONS="-c app.bypass_rls=on" PGPASSWORD="${DATABASE_PASSWORD}" pg_dump \
+  --enable-row-security \
   -h "$DB_HOST" \
   -p "$DB_PORT" \
   -U "$DB_USER" \

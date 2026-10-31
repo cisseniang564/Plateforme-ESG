@@ -32,13 +32,13 @@ router = APIRouter()
 
 async def _check_db(timeout: float = 3.0) -> Dict[str, Any]:
     """Single-shot health probe against PostgreSQL."""
-    from app.db.session import AsyncSessionLocal
+    from app.db.session import SystemSessionLocal
     from sqlalchemy import text
 
     started = time.monotonic()
     try:
         async with asyncio.timeout(timeout):
-            async with AsyncSessionLocal() as db:
+            async with SystemSessionLocal() as db:
                 await db.execute(text("SELECT 1"))
         return {"status": "up", "latency_ms": round((time.monotonic() - started) * 1000, 1)}
     except asyncio.TimeoutError:

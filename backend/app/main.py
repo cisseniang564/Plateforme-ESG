@@ -36,7 +36,7 @@ from app.api.v1.endpoints import data_entry
 from app.api.v1.endpoints import data_validation
 from app.api.v1.endpoints import esg_import
 from app.config import settings
-from app.db.session import close_db, init_db, AsyncSessionLocal
+from app.db.session import close_db, init_db, SystemSessionLocal
 from app.middleware.auth_middleware import AuthMiddleware
 from app.middleware.billing_middleware import BillingMiddleware
 from app.middleware.rate_limit_middleware import RateLimitMiddleware
@@ -113,7 +113,7 @@ async def _ensure_system_roles_and_assignments() -> None:
     """
     from sqlalchemy import text
     try:
-        async with AsyncSessionLocal() as db:
+        async with SystemSessionLocal() as db:
             # 1. Seed system roles (safe: name uniqueness checked with WHERE NOT EXISTS)
             system_roles = [
                 ("tenant_admin",  "Administrateur tenant — accès complet"),
@@ -318,7 +318,7 @@ async def readiness():
 
     # DB check
     try:
-        async with AsyncSessionLocal() as session:
+        async with SystemSessionLocal() as session:
             await asyncio.wait_for(session.execute(text("SELECT 1")), timeout=2.0)
         checks["database"] = "ok"
     except Exception as e:
