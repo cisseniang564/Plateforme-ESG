@@ -6394,6 +6394,154 @@
     "rejectSuccessPlural": "rejected"
   },
   "landing": {
+    "v2": {
+      "nav": {
+        "features": "Features",
+        "how": "How it works",
+        "pricing": "Pricing",
+        "faq": "FAQ",
+        "login": "Log in",
+        "cta": "Free trial"
+      },
+      "hero": {
+        "badge": "CSRD · Carbon footprint · Supply chain",
+        "title": "Steer your ESG performance, without the complexity.",
+        "subtitle": "From data collection to publishing your CSRD report, ESGFlow brings carbon, compliance and reporting together in one platform.",
+        "cta1": "14-day free trial",
+        "cta2": "Watch the demo",
+        "note": "No credit card · No commitment · GDPR compliant"
+      },
+      "standards": {
+        "title": "Frameworks and standards covered"
+      },
+      "features": {
+        "eyebrow": "Features",
+        "title": "Everything you need for a credible ESG programme",
+        "subtitle": "Tools built for sustainability, finance and compliance teams.",
+        "items": {
+          "0": {
+            "title": "Scope 1, 2 and 3 carbon footprint",
+            "desc": "Import your accounting file (Sage, Cegid, Pennylane), ADEME emission factors, trajectory and decarbonisation plan."
+          },
+          "1": {
+            "title": "CSRD / ESRS reporting",
+            "desc": "Gap analysis against ESRS requirements and export in the format auditors expect."
+          },
+          "2": {
+            "title": "Double materiality",
+            "desc": "Assess your impacts, risks and opportunities with your stakeholders."
+          },
+          "3": {
+            "title": "Supply chain & due diligence",
+            "desc": "Supplier questionnaires, due diligence and follow-up of your vigilance plan."
+          },
+          "4": {
+            "title": "AI for your reports",
+            "desc": "Draft narratives and recommendations, always reviewed and approved by you."
+          },
+          "5": {
+            "title": "Audit trail",
+            "desc": "Every entry is validated, time-stamped and traced with a SHA-256 fingerprint."
+          }
+        }
+      },
+      "how": {
+        "eyebrow": "How it works",
+        "title": "Up and running in a few days",
+        "steps": {
+          "0": {
+            "title": "Connect your data",
+            "desc": "Excel, CSV, accounting files or ERP connectors. Your indicators are matched automatically."
+          },
+          "1": {
+            "title": "Calculate and steer",
+            "desc": "Emissions, ESG scores and compliance gaps update as data comes in."
+          },
+          "2": {
+            "title": "Publish with confidence",
+            "desc": "Generate your reports, have each data point validated and share them with your auditors."
+          }
+        }
+      },
+      "trust": {
+        "eyebrow": "Security and compliance",
+        "title": "ESG data your auditors can verify",
+        "subtitle": "Every published figure stays traceable to its source, and your data stays isolated from other customers'.",
+        "items": {
+          "0": {
+            "title": "Full traceability",
+            "desc": "Time-stamped audit log with SHA-256 fingerprint."
+          },
+          "1": {
+            "title": "Controlled access",
+            "desc": "Roles, two-factor authentication and SSO / SAML (Group plan)."
+          },
+          "2": {
+            "title": "Protected data",
+            "desc": "Encryption and GDPR compliance, hosted in Europe."
+          },
+          "3": {
+            "title": "Validation workflow",
+            "desc": "Draft, review, approval: every entry is checked."
+          }
+        }
+      },
+      "pricing": {
+        "eyebrow": "Pricing",
+        "title": "Simple pricing, no commitment",
+        "annual": "Annual (−15%)",
+        "monthly": "Monthly",
+        "popular": "Most popular",
+        "perMonth": "/ month excl. VAT",
+        "custom": "Need a tailored setup?",
+        "contact": "Let's talk"
+      },
+      "faq": {
+        "title": "Frequently asked questions",
+        "items": {
+          "0": {
+            "q": "How long does it take to deploy the platform?",
+            "a": "Go-live takes 2 to 3 working days. Our team handles onboarding, indicator configuration and training."
+          },
+          "1": {
+            "q": "Is the platform really CSRD compliant?",
+            "a": "ESGFlow covers the main ESRS standards (E1-E5, S1-S4, G1) and generates the iXBRL/ESEF format required by ESMA. The detailed audit log with SHA-256 fingerprints and auditor export supports your internal and external reviews."
+          },
+          "2": {
+            "q": "Can we import our data from Excel or an ERP?",
+            "a": "Yes. The platform accepts CSV/Excel imports and offers connectors to the main ERPs (SAP, Oracle, Sage). Our REST API allows custom integrations."
+          },
+          "3": {
+            "q": "Where is the data hosted?",
+            "a": "All data is hosted in France, in ISO 27001-certified data centres. We use no US cloud. GDPR compliance is contractually guaranteed."
+          },
+          "4": {
+            "q": "What does the Supply Chain ESG module cover?",
+            "a": "It covers supplier assessment across 6 ESG dimensions, automated questionnaires, due diligence management and follow-up of the vigilance plan under French Law 2017-399."
+          },
+          "5": {
+            "q": "Is there a minimum commitment?",
+            "a": "No. The SME, mid-cap and Group plans have no commitment and can be cancelled at any time. Annual contracts get a 15% discount."
+          }
+        }
+      },
+      "cta": {
+        "title": "Ready to structure your ESG programme?",
+        "subtitle": "Start your 14-day trial or explore the platform with the interactive demo."
+      },
+      "footer": {
+        "tagline": "The ESG platform to steer your CSRD compliance and carbon footprint.",
+        "product": "Product",
+        "standards": "Standards",
+        "help": "Help",
+        "resources": "Resources",
+        "helpCenter": "Help centre",
+        "rights": "All rights reserved.",
+        "legal": "Legal notice",
+        "privacy": "Privacy",
+        "terms": "Terms"
+      }
+    },
     "lp": {
       "nav": {
         "sol1Title": "SMBs & Mid-Market",
