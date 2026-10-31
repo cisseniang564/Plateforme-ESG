@@ -1,5 +1,5 @@
 /**
- * Sidebar — Rail 68px + Contextual Panel 216px
+ * Sidebar — Rail 76px (tuiles colorées) + Contextual Panel 248px
  * Pattern: Linear / Figma / Vercel
  * Colors: Rail #0f1117 · Panel #141720 · Accent emerald
  */
@@ -14,7 +14,7 @@ import {
   CreditCard, Briefcase, FileCode2, ClipboardList, CheckSquare,
   PackageSearch, History, RefreshCw, List, Calendar, GitMerge,
   TrendingDown, Users, Code2, X, PanelRightClose, LogOut,
-  Package, Sliders, UserCog, FlaskConical, Zap, User, ChevronUp,
+  Package, Sliders, UserCog, FlaskConical, Zap, User, ChevronUp, Lock,
   type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
@@ -294,7 +294,57 @@ function ScoreRing({ score }: { score: number }) {
   );
 }
 
+// ─── Accents par section ───────────────────────────────────────────────────────
+// Une couleur par univers : on repère où l'on est d'un coup d'œil.
+
+const ACCENT: Record<string, string> = {
+  home:       '16,185,129',   // émeraude
+  gaia:       '167,139,250',  // violet (IA)
+  donnees:    '56,189,248',   // ciel
+  analyses:   '129,140,248',  // indigo
+  carbone:    '251,146,60',   // orange
+  conformite: '45,212,191',   // turquoise
+  rapports:   '251,191,36',   // ambre
+  engagement: '244,114,182',  // rose
+  settings:   '148,163,184',  // ardoise
+};
+const accentOf = (id: string) => ACCENT[id] ?? ACCENT.home;
+
 // ─── Rail Item ────────────────────────────────────────────────────────────────
+
+function RailTile({ icon: Icon, label, active, rgb, small }: {
+  icon: LucideIcon; label: string; active: boolean; rgb: string; small?: boolean;
+}) {
+  const box = small ? 'h-8 w-8 rounded-xl' : 'h-10 w-10 rounded-2xl';
+  return (
+    <>
+      <span
+        className={`relative flex items-center justify-center ${box} transition-all duration-200
+          group-hover:-translate-y-px group-active:scale-95`}
+        style={{
+          background: active
+            ? `linear-gradient(135deg, rgba(${rgb},0.30), rgba(${rgb},0.10))`
+            : 'rgba(255,255,255,0.03)',
+          boxShadow: active ? `0 0 0 1px rgba(${rgb},0.35), 0 6px 18px -6px rgba(${rgb},0.55)` : undefined,
+        }}
+      >
+        <Icon
+          size={small ? 15 : 18}
+          strokeWidth={active ? 2.2 : 1.8}
+          style={{ color: active ? `rgb(${rgb})` : undefined }}
+          className={active ? '' : 'text-slate-400 group-hover:text-white transition-colors'}
+        />
+      </span>
+      <span
+        className={`mt-1 text-[10px] font-semibold leading-none tracking-wide transition-colors ${
+          active ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'
+        }`}
+      >
+        {label}
+      </span>
+    </>
+  );
+}
 
 function RailItem({ section, isActive, isOpen, onClick }: {
   section: RailSection;
@@ -302,70 +352,57 @@ function RailItem({ section, isActive, isOpen, onClick }: {
   isOpen: boolean;
   onClick: () => void;
 }) {
-  const Icon = section.icon;
-  const active = isActive || isOpen;
+  const rgb = accentOf(section.id);
+  const cls = 'group flex flex-col items-center justify-center w-full py-1.5 select-none outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 rounded-2xl';
 
   if (section.href) {
     return (
-      <NavLink
-        to={section.href}
-        end={section.href === '/app'}
-        className="group relative flex flex-col items-center justify-center w-full py-2.5 rounded-xl mx-auto transition-all duration-100 select-none outline-none"
-        style={({ isActive: na }) => ({
-          background: na ? 'rgba(16,185,129,0.08)' : undefined,
-        })}
-      >
-        {({ isActive: na }) => (
-          <>
-            {na && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[2px] rounded-r-full bg-emerald-400" />}
-            <Icon size={17} className={na ? 'text-emerald-400' : 'text-slate-500 group-hover:text-slate-300'} />
-            <span className={`mt-1.5 text-[10px] font-semibold leading-none ${na ? 'text-emerald-400' : 'text-slate-600 group-hover:text-slate-400'}`}>
-              {section.label}
-            </span>
-          </>
-        )}
+      <NavLink to={section.href} end={section.href === '/app'} className={cls} title={section.label}>
+        {({ isActive: na }) => <RailTile icon={section.icon} label={section.label} active={na} rgb={rgb} />}
       </NavLink>
     );
   }
 
   return (
-    <button
-      onClick={onClick}
-      className="group relative flex flex-col items-center justify-center w-full py-2.5 rounded-xl transition-all duration-100 select-none outline-none"
-      style={{ background: active ? 'rgba(16,185,129,0.08)' : undefined }}
-    >
-      {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[2px] rounded-r-full bg-emerald-400" />}
-      <Icon size={17} className={active ? 'text-emerald-400' : 'text-slate-500 group-hover:text-slate-300'} />
-      <span className={`mt-1.5 text-[10px] font-semibold leading-none ${active ? 'text-emerald-400' : 'text-slate-600 group-hover:text-slate-400'}`}>
-        {section.label}
-      </span>
+    <button onClick={onClick} className={cls} title={section.label} aria-expanded={isOpen}>
+      <RailTile icon={section.icon} label={section.label} active={isActive || isOpen} rgb={rgb} />
     </button>
   );
 }
 
 // ─── Panel Item ───────────────────────────────────────────────────────────────
 
-function PanelNavItem({ item, locked, lockLabel }: { item: PanelItem; locked: boolean; lockLabel?: string }) {
+function PanelNavItem({ item, locked, lockLabel, rgb }: {
+  item: PanelItem; locked: boolean; lockLabel?: string; rgb: string;
+}) {
   const Icon = item.icon;
+  const isAI = item.badgeVariant === 'violet' || /gaia|gaïa/i.test(item.name);
+  const tint = isAI ? ACCENT.gaia : rgb;
   return (
     <NavLink
       to={item.href}
-      className={({ isActive }) => `
-        group relative flex items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[12.5px] font-medium
-        transition-all duration-100 select-none outline-none
-        ${isActive
-          ? 'bg-white/[0.05] text-white'
-          : locked
-            ? 'text-slate-600 hover:text-slate-400'
-            : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'
-        }
-      `}
+      className="group relative block rounded-xl select-none outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
     >
       {({ isActive }) => (
-        <>
-          {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-3.5 w-[2px] rounded-r-full bg-emerald-400" />}
+        <span
+          className={`flex items-center gap-2.5 rounded-xl px-2 py-1.5 text-[13px] font-medium transition-all duration-150
+            ${isActive ? 'text-white' : locked ? 'text-slate-500 hover:text-slate-300' : 'text-slate-300 hover:text-white hover:translate-x-0.5'}`}
+          style={{
+            background: isActive ? `linear-gradient(90deg, rgba(${tint},0.20), rgba(${tint},0.04))` : undefined,
+            boxShadow: isActive ? `inset 0 0 0 1px rgba(${tint},0.22)` : undefined,
+          }}
+        >
           {Icon && (
-            <Icon size={13} className={`flex-shrink-0 ${isActive ? 'text-emerald-400' : 'text-slate-600 group-hover:text-slate-400'}`} />
+            <span
+              className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg transition-colors"
+              style={{ background: isActive ? `rgba(${tint},0.22)` : isAI ? `rgba(${ACCENT.gaia},0.12)` : 'rgba(255,255,255,0.04)' }}
+            >
+              <Icon
+                size={14}
+                style={{ color: isActive || isAI ? `rgb(${tint})` : undefined }}
+                className={isActive || isAI ? '' : locked ? 'text-slate-600' : 'text-slate-400 group-hover:text-slate-200'}
+              />
+            </span>
           )}
           <span className="flex-1 truncate">{item.name}</span>
           {item.badge && !locked && (
@@ -373,8 +410,12 @@ function PanelNavItem({ item, locked, lockLabel }: { item: PanelItem; locked: bo
               {item.badge}
             </span>
           )}
-          {locked && <span className="text-[9px] text-amber-500/70">{lockLabel ?? 'Pro'}</span>}
-        </>
+          {locked && (
+            <span className="flex items-center gap-1 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase text-amber-400/90">
+              <Lock size={8} aria-hidden="true" />{lockLabel ?? 'Pro'}
+            </span>
+          )}
+        </span>
       )}
     </NavLink>
   );
@@ -496,19 +537,19 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
         {/* ── Rail ──────────────────────────────────────────────────────────── */}
         <div
           data-rail
-          className="flex flex-col h-full w-[68px] flex-shrink-0 bg-[#0f1117] border-r border-white/[0.05]"
+          className="flex flex-col h-full w-[76px] flex-shrink-0 bg-[#0c0e14] border-r border-white/[0.05]"
         >
           {/* Logo */}
-          <div className="flex items-center justify-center h-[52px] flex-shrink-0 border-b border-white/[0.05]">
+          <div className="flex items-center justify-center h-[56px] flex-shrink-0">
             <Link to="/app" aria-label={t('sidebar.a11y.logoHome')}>
-              <LogoMark size={26} />
+              <LogoMark size={28} />
             </Link>
           </div>
 
           {/* Main rail items */}
           <nav
             aria-label={t('sidebar.a11y.mainNav')}
-            className="flex-1 overflow-y-auto overflow-x-hidden py-2 px-2 space-y-0.5
+            className="flex-1 overflow-y-auto overflow-x-hidden py-1 px-2 space-y-1
             [&::-webkit-scrollbar]:w-0"
           >
             {RAIL.map(section => (
@@ -522,29 +563,26 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
             ))}
           </nav>
 
-          {/* Bottom rail */}
-          <div className="flex-shrink-0 border-t border-white/[0.05] py-2 px-2 space-y-0.5">
+          {/* Bottom rail — icônes compactes en grille 2×2 (libellé au survol) */}
+          <div className="flex-shrink-0 mx-3 border-t border-white/[0.06] pt-2 pb-1 grid grid-cols-2 gap-1 justify-items-center">
             {BOTTOM_RAIL.map(item => {
               const Icon = item.icon;
               const active = location.pathname.startsWith(item.href);
               return (
-                <NavLink
-                  key={item.id}
-                  to={item.href}
-                  className="group flex flex-col items-center justify-center w-full py-2.5 rounded-xl transition-all duration-100"
-                  style={{ background: active ? 'rgba(16,185,129,0.08)' : undefined }}
-                >
-                  <Icon size={16} className={active ? 'text-emerald-400' : 'text-slate-600 group-hover:text-slate-400'} />
-                  <span className={`mt-1.5 text-[9.5px] font-semibold ${active ? 'text-emerald-400' : 'text-slate-700 group-hover:text-slate-500'}`}>
-                    {item.label}
-                  </span>
+                <NavLink key={item.id} to={item.href} title={item.label} aria-label={item.label}
+                  className="group flex h-8 w-8 items-center justify-center rounded-xl outline-none transition-all focus-visible:ring-2 focus-visible:ring-emerald-400/60"
+                  style={{
+                    background: active ? `rgba(${ACCENT.settings},0.22)` : 'rgba(255,255,255,0.03)',
+                    boxShadow: active ? `0 0 0 1px rgba(${ACCENT.settings},0.35)` : undefined,
+                  }}>
+                  <Icon size={15} className={active ? 'text-white' : 'text-slate-400 group-hover:text-white transition-colors'} />
                 </NavLink>
               );
             })}
           </div>
 
           {/* User menu */}
-          <div ref={userMenuRef} className="flex-shrink-0 border-t border-white/[0.05] py-3 flex flex-col items-center relative">
+          <div ref={userMenuRef} className="flex-shrink-0 py-3 flex flex-col items-center relative">
             <button
               type="button"
               onClick={() => setUserMenuOpen(o => !o)}
@@ -635,39 +673,47 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
         <div
           ref={panelRef}
           className={`
-            flex flex-col h-full bg-[#141720] border-r border-white/[0.05]
+            flex flex-col h-full bg-gradient-to-b from-[#12151d] to-[#0e1017] border-r border-white/[0.05]
             transition-[width,opacity] duration-200 ease-in-out overflow-hidden
-            ${panelSection ? 'w-[216px] opacity-100' : 'w-0 opacity-0'}
+            ${panelSection ? 'w-[248px] opacity-100' : 'w-0 opacity-0'}
           `}
         >
           {panelSection && (
             <>
               {/* Panel header */}
-              <div className="flex items-center justify-between px-4 h-[52px] flex-shrink-0 border-b border-white/[0.05]">
-                <span className="text-[11px] font-bold text-slate-300 tracking-wide">
+              <div className="flex items-center gap-3 px-4 h-[56px] flex-shrink-0">
+                <span
+                  className="flex h-8 w-8 items-center justify-center rounded-xl"
+                  style={{ background: `linear-gradient(135deg, rgba(${accentOf(panelSection.id)},0.32), rgba(${accentOf(panelSection.id)},0.08))` }}
+                >
+                  <panelSection.icon size={16} style={{ color: `rgb(${accentOf(panelSection.id)})` }} />
+                </span>
+                <span className="flex-1 truncate text-[14px] font-bold tracking-tight text-white">
                   {panelSection.label}
                 </span>
                 <button
                   type="button"
                   onClick={() => setOpenSection(null)}
-                  className="p-1 rounded-md hover:bg-white/[0.06] text-slate-600 hover:text-slate-400 transition-colors"
+                  className="p-1.5 rounded-lg hover:bg-white/[0.07] text-slate-500 hover:text-slate-200 transition-colors"
                   aria-label={t('sidebar.a11y.closePanel')}
                 >
-                  <PanelRightClose size={13} aria-hidden="true" />
+                  <PanelRightClose size={14} aria-hidden="true" />
                 </button>
               </div>
 
               {/* Panel nav */}
-              <nav className="flex-1 overflow-y-auto px-2 py-2
+              <nav className="flex-1 overflow-y-auto px-3 py-2
                 [&::-webkit-scrollbar]:w-[2px]
                 [&::-webkit-scrollbar-thumb]:bg-white/10
                 [&::-webkit-scrollbar-thumb]:rounded-full">
-                <div className="space-y-4">
+                <div className="space-y-5">
                   {panelSection.groups?.map((group, gi) => (
                     <div key={gi}>
                       {group.title && (
-                        <p className="px-2.5 mb-1 text-[9.5px] font-bold uppercase tracking-[0.12em] text-slate-600">
+                        <p className="flex items-center gap-2 px-2 mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                          <span className="h-1 w-1 rounded-full" style={{ background: `rgb(${accentOf(panelSection.id)})` }} />
                           {group.title}
+                          <span className="h-px flex-1 bg-white/[0.06]" />
                         </p>
                       )}
                       <div className="space-y-0.5">
@@ -677,6 +723,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                             item={item}
                             locked={isLocked(item)}
                             lockLabel={item.feature ? minPlanFor(item.feature) : undefined}
+                            rgb={accentOf(panelSection.id)}
                           />
                         ))}
                       </div>
@@ -687,37 +734,39 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
 
               {/* Plan CTA */}
               {planTier === 'free' && (
-                <div className="flex-shrink-0 p-3 border-t border-white/[0.05]">
+                <div className="flex-shrink-0 px-3 pb-2">
                   <Link
                     to="/app/billing"
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl
-                      bg-gradient-to-r from-violet-600/10 to-indigo-600/10
-                      border border-violet-500/15 hover:border-violet-500/25
-                      transition-all duration-150 group"
+                    className="flex items-center gap-2.5 rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-500/20 via-indigo-500/10 to-transparent p-3 transition-all hover:border-violet-400/40 hover:shadow-[0_8px_24px_-10px_rgba(139,92,246,0.6)]"
                   >
-                    <div className="w-5 h-5 rounded-md bg-violet-500/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-[10px]">⚡</span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[10px] font-bold text-violet-300 leading-tight">{t('sidebar.cta.upgradePro')}</p>
-                      <p className="text-[9px] text-violet-500/70 leading-tight">{t('sidebar.cta.unlockAll')}</p>
-                    </div>
+                    <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-violet-500/25">
+                      <Zap size={14} className="text-violet-300" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[12px] font-bold leading-tight text-violet-100">{t('sidebar.cta.upgradePro')}</span>
+                      <span className="block text-[10px] leading-tight text-violet-300/70">{t('sidebar.cta.unlockAll')}</span>
+                    </span>
                   </Link>
                 </div>
               )}
 
-              {/* User info strip */}
-              <div className="flex-shrink-0 px-3 py-2.5 border-t border-white/[0.05] flex items-center gap-2.5">
-                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0">
-                  <span className="text-[9px] font-bold text-white">{initials}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-semibold text-slate-300 truncate leading-tight">
-                    {user?.first_name} {user?.last_name}
-                  </p>
-                  <p className="text-[9px] truncate leading-tight" style={{ color: plan.color }}>
-                    {plan.label}
-                  </p>
+              {/* Carte utilisateur */}
+              <div className="flex-shrink-0 px-3 pb-3">
+                <div className="flex items-center gap-2.5 rounded-2xl bg-white/[0.04] p-2.5 ring-1 ring-white/[0.06]">
+                  <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-[11px] font-bold text-white">
+                    {initials}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[12px] font-semibold leading-tight text-slate-100">
+                      {user?.first_name} {user?.last_name}
+                    </span>
+                    <span
+                      className="mt-0.5 inline-block rounded-md px-1.5 py-px text-[9px] font-bold leading-tight"
+                      style={{ background: plan.color + '22', color: plan.color }}
+                    >
+                      {plan.label}
+                    </span>
+                  </span>
                 </div>
               </div>
             </>
