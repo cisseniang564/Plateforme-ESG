@@ -37,10 +37,22 @@ export interface GaiaAnalysisDetail extends GaiaAnalysisSummary {
   model?: string | null;
 }
 
-/** Message lisible à partir d'une erreur d'API. */
+/** Message lisible à partir d'une erreur d'API (même quand le serveur ne renvoie pas de JSON). */
 export function gaiaErrorMessage(e: unknown, fallback: string): string {
-  const detail = (e as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
-  return typeof detail === 'string' ? detail : fallback;
+  const err = e as { response?: { status?: number; data?: { detail?: unknown } }; code?: string };
+  const detail = err?.response?.data?.detail;
+  if (typeof detail === 'string') return detail;
+  switch (err?.response?.status) {
+    case 413: return 'Fichier trop volumineux pour le serveur (25 Mo maximum).';
+    case 401: return 'Session expirée : reconnectez-vous.';
+    case 404: return 'Gaïa n\'est pas encore disponible sur ce serveur.';
+    case 502:
+    case 503:
+    case 504: return 'Le serveur est momentanément indisponible. Réessayez dans une minute.';
+    default: break;
+  }
+  if (err?.code === 'ECONNABORTED') return 'Le serveur met trop de temps à répondre. Réessayez.';
+  return fallback;
 }
 
 export async function listAnalyses(): Promise<GaiaAnalysisSummary[]> {
