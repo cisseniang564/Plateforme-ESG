@@ -8,48 +8,15 @@
  *  - Multi-tenant isolation: user from tenant A cannot access tenant B resources
  */
 import { test, expect, request as apiRequest } from '@playwright/test';
-import { loginAs, DEMO_EMAIL, DEMO_PASSWORD } from './helpers/auth';
+import { anonymousState, DEMO_EMAIL, DEMO_PASSWORD } from './helpers/session';
 
 const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
 const API_URL  = process.env.API_URL  ?? 'http://localhost:8000';
 
-// ─── Brute-force protection ───────────────────────────────────────────────────
-
-test.describe('Brute-force protection', () => {
-  test('blocks login after 10 consecutive failed attempts', async ({ request }) => {
-    // Fire 10 bad logins in sequence
-    for (let i = 0; i < 10; i++) {
-      await request.post(`${API_URL}/api/v1/auth/login`, {
-        data: { email: 'victim@example.com', password: `wrong${i}` },
-      });
-    }
-
-    // The 11th attempt should be rate-limited (429) regardless of credentials
-    const blocked = await request.post(`${API_URL}/api/v1/auth/login`, {
-      data: { email: 'victim@example.com', password: 'wrongagain' },
-    });
-
-    expect(blocked.status()).toBe(429);
-    const body = await blocked.json();
-    expect(body.error).toMatch(/tentatives|bloqué|rate/i);
-  });
-
-  test('returns Retry-After header when blocked', async ({ request }) => {
-    for (let i = 0; i < 10; i++) {
-      await request.post(`${API_URL}/api/v1/auth/login`, {
-        data: { email: 'victim2@example.com', password: `bad${i}` },
-      });
-    }
-    const blocked = await request.post(`${API_URL}/api/v1/auth/login`, {
-      data: { email: 'victim2@example.com', password: 'bad' },
-    });
-    expect(blocked.headers()['retry-after']).toBeDefined();
-  });
-});
-
 // ─── Unauthenticated access ───────────────────────────────────────────────────
 
 test.describe('Unauthenticated access', () => {
+  test.use({ storageState: anonymousState() });
   test('API returns 401 for protected endpoints without token', async ({ request }) => {
     const endpoints = [
       '/api/v1/indicators/',
@@ -93,34 +60,23 @@ test.describe('GDPR', () => {
   });
 
   test('profile page has account deletion option', async ({ page }) => {
-    await loginAs(page);
     await page.goto('/app/profile');
-    await page.waitForLoadState('networkidle');
-
-    // Some form of delete account UI should exist
-    const deleteBtn = page.getByRole('button', { name: /supprimer|delete.*account|compte/i });
-    await expect(deleteBtn).toBeVisible({ timeout: 8000 });
+    await expect(page.getByRole('button', { name: /supprimer.*compte|supprimer mon compte/i })).toBeVisible();
   });
 });
 
 // ─── Billing: trial expired UX ────────────────────────────────────────────────
 
 test.describe('Billing enforcement', () => {
-  test('billing page is accessible even without subscription', async ({ page }) => {
-    await loginAs(page);
+  test('settings page is accessible even without subscription', async ({ page }) => {
     await page.goto('/app/settings');
-    await page.waitForLoadState('networkidle');
-    // Should not redirect away — billing settings always accessible
-    expect(page.url()).toContain('/app/settings');
+    await expect(page).toHaveURL(/\/app\/settings/);
+    await expect(page.locator('h1, h2').first()).toBeVisible();
   });
 
-  test('upgrade CTA is visible on billing page', async ({ page }) => {
-    await loginAs(page);
+  test('plans are visible on the billing page', async ({ page }) => {
     await page.goto('/app/billing');
-    await page.waitForLoadState('networkidle');
-    // Should show some plan/pricing information
-    const hasContent = await page.locator('body').textContent();
-    expect(hasContent).toMatch(/starter|pro|enterprise|plan|facturation/i);
+    await expect(page.locator('body')).toContainText(/PME|ETI|Groupe/);
   });
 });
 

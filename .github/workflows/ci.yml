@@ -194,17 +194,23 @@ jobs:
           DATABASE_PASSWORD: test
           REDIS_HOST: localhost
           REDIS_PORT: 6379
+          # Sans REDIS_URL, l'API cherche Redis sur l'hôte « redis » (valeur de la prod) : limitation de débit et blocage inactifs
+          REDIS_URL: redis://localhost:6379/0
           SECRET_KEY: e2e-ci-secret-key-32-chars-min!!
           JWT_SECRET_KEY: e2e-ci-jwt-secret-key-32-chars!!
           ENCRYPTION_KEY: e2e-ci-encryption-key-32-chars-min!!
           S3_ACCESS_KEY_ID: ci
           S3_SECRET_ACCESS_KEY: ci
           APP_ENV: development
-          APP_URL: http://localhost:3000
+          APP_URL: http://127.0.0.1:3000
         run: |
-          uvicorn app.main:app --host 0.0.0.0 --port 8000 &
-          sleep 5
-          curl -f http://localhost:8000/health || exit 1
+          nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 > /tmp/api.log 2>&1 &
+          # Attend que l'API réponde (jusqu'à 90 s) au lieu d'un « sleep 5 » : le démarrage crée toutes les tables
+          for i in $(seq 1 90); do
+            curl -sf http://127.0.0.1:8000/health && exit 0
+            sleep 1
+          done
+          echo "L'API n'a pas démarré :"; tail -50 /tmp/api.log; exit 1
 
       - name: Set up Node.js 20
         uses: actions/setup-node@v4
@@ -219,13 +225,17 @@ jobs:
 
       - name: Build frontend
         working-directory: frontend
-        env:
-          VITE_API_URL: http://localhost:8000
         run: npm run build
 
-      - name: Serve frontend
+      - name: Serve frontend (relais /api vers l'API)
         working-directory: frontend
-        run: npx serve dist -l 3000 &
+        run: |
+          nohup npx vite preview --host 127.0.0.1 --port 3000 --strictPort > /tmp/front.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:3000/ > /dev/null && exit 0
+            sleep 1
+          done
+          echo "Le site n'a pas démarré :"; cat /tmp/front.log; exit 1
 
       - name: Install Playwright browsers
         working-directory: e2e
@@ -236,10 +246,11 @@ jobs:
       - name: Run E2E tests
         working-directory: e2e
         env:
-          BASE_URL: http://localhost:3000
-          API_URL: http://localhost:8000
+          BASE_URL: http://127.0.0.1:3000
+          API_URL: http://127.0.0.1:8000
           CI: true
-        run: npx playwright test --project=chromium
+        # Le projet « bruteforce » dépend du projet « chromium » : tout est exécuté, les tests de blocage en dernier
+        run: npx playwright test --project=bruteforce
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4

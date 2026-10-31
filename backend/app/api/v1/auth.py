@@ -142,12 +142,23 @@ async def invite_user(
 async def login(
     request: UserLoginRequest,
     response: Response,
+    http_request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> LoginResponse:
     """Login with email and password."""
+    from app.api.v1.endpoints.auth import _clear_failed_logins, _record_failed_login
+
     auth_service = AuthService(db)
-    result = await auth_service.login(request)
+    try:
+        result = await auth_service.login(request)
+    except HTTPException as exc:
+        # Échec d'identifiants : alimente le compteur anti-force-brute (par IP, 15 min),
+        # lu par le middleware de limitation qui bloque à 10 échecs.
+        if exc.status_code == status.HTTP_401_UNAUTHORIZED:
+            await _record_failed_login(http_request)
+        raise
     if result.tokens:
+        await _clear_failed_logins(http_request)
         _set_auth_cookies(response, result.tokens)
     return result
 

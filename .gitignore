@@ -100,3 +100,8 @@ backend/populate_*.py
 backend/create_*.py
 backend/calculate_*.py
 backend/insert_*.sql
+
+# E2E : état du navigateur du compte de démonstration (contient des cookies de session)
+e2e/.auth/
+e2e/test-results/
+dump.rdb

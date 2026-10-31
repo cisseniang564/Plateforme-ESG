@@ -310,6 +310,16 @@ async def init_db() -> None:
         if settings.APP_ENV in {"development", "test"}:
             await conn.run_sync(Base.metadata.create_all)
 
+        # Tables de modèles récents, absentes d'une base créée avant eux (ou d'une installation neuve en production,
+        # où create_all n'est pas lancé) : création seulement, jamais de modification d'une table existante.
+        from app.models.notification import Notification  # noqa: PLC0415
+        from app.models.supplier import Supplier  # noqa: PLC0415
+        await conn.run_sync(
+            lambda sync_conn: Base.metadata.create_all(
+                sync_conn, tables=[Notification.__table__, Supplier.__table__], checkfirst=True
+            )
+        )
+
         await _run_each(conn, _migrations)
         if os.getenv("ESG_ENABLE_RLS") == "1":
             await _run_each(conn, _rls_migrations)
