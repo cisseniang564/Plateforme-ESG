@@ -173,7 +173,7 @@ async def init_db() -> None:
         "framework_assessments", "indicator_data", "indicator_formulas",
         "indicators", "integrations", "materiality_issues",
         "report_history", "sector_weights", "sso_configs",
-        "suppliers", "webhooks",
+        "suppliers", "webhooks", "report_analyses",
     ]
     # NULLIF: an unset/empty setting yields NULL (no rows) instead of a
     # "invalid input syntax for type uuid" error.
@@ -212,6 +212,28 @@ async def init_db() -> None:
         "CREATE INDEX IF NOT EXISTS ix_framework_assessments_tenant_id ON framework_assessments (tenant_id)",
         "CREATE INDEX IF NOT EXISTS ix_framework_assessments_user_id   ON framework_assessments (user_id)",
         "CREATE INDEX IF NOT EXISTS ix_framework_assessments_framework  ON framework_assessments (framework)",
+
+        # ── Gaïa : analyses de rapports existants ─────────────────────────────
+        """
+        CREATE TABLE IF NOT EXISTS report_analyses (
+            id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id    UUID        NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+            user_id      UUID                 REFERENCES users(id)   ON DELETE SET NULL,
+            filename     VARCHAR(255) NOT NULL,
+            file_size    INTEGER     NOT NULL DEFAULT 0,
+            content_hash VARCHAR(64),
+            page_count   INTEGER,
+            status       VARCHAR(20) NOT NULL DEFAULT 'processing',
+            error        TEXT,
+            result       JSON,
+            text_excerpt TEXT,
+            model        VARCHAR(60),
+            created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_report_analyses_tenant_id ON report_analyses (tenant_id)",
+        "CREATE INDEX IF NOT EXISTS ix_report_analyses_content_hash ON report_analyses (content_hash)",
     ]
 
     # ── RLS policy migrations (idempotent: DROP IF EXISTS then CREATE) ────────

@@ -19,6 +19,7 @@ from app.models.materiality import MaterialityIssue, ESGRisk
 from app.models.api_key import ApiKey
 from app.models.sso_config import SSOConfig
 from app.models.report_history import ReportHistory
+from app.models.report_analysis import ReportAnalysis
 from app.models.auditor_review import AuditorReview, AuditorComment
 from app.models.framework_assessment import FrameworkAssessment
 from app.models.stakeholder_survey import (
@@ -50,6 +51,7 @@ __all__ = [
     "ApiKey",
     "SSOConfig",
     "ReportHistory",
+    "ReportAnalysis",
     "AuditorReview",
     "AuditorComment",
     "FrameworkAssessment",

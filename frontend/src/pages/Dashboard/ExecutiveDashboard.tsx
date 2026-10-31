@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Award, Building2, Database, Shield, Plug, Brain, Leaf, Users, Scale,
-  RefreshCw, ArrowUpRight, ChevronRight, AlertTriangle, CheckCircle2, Target, CalendarClock, Bell,
+  RefreshCw, Sparkles, ArrowUpRight, ChevronRight, AlertTriangle, CheckCircle2, Target, CalendarClock, Bell,
 } from 'lucide-react';
 import {
   Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -361,6 +361,7 @@ export default function ExecutiveDashboard() {
     { label: t('dashboard.quickAccessEntry'),      route: '/app/data-entry',           icon: Database, tint: 'bg-emerald-50 text-emerald-700' },
     { label: t('dashboard.quickAccessCsrd'),       route: '/app/reports/csrd-builder', icon: Shield,   tint: 'bg-violet-50 text-violet-700' },
     { label: t('dashboard.quickAccessConnectors'), route: '/app/data/connectors',      icon: Plug,     tint: 'bg-cyan-50 text-cyan-700' },
+    { label: t('dashboard.quickAccessGaia', 'Analyser un rapport avec Gaïa'), route: '/app/gaia', icon: Sparkles, tint: 'bg-teal-50 text-teal-700' },
     { label: t('dashboard.quickAccessAI'),         route: '/app/intelligence',         icon: Brain,    tint: 'bg-rose-50 text-rose-700' },
   ];
 
@@ -620,7 +621,7 @@ export default function ExecutiveDashboard() {
       {/* ── Accès rapide ── */}
       <section aria-label={t('dashboard.quickAccessTitle')}>
         <h2 className="mb-3 text-sm font-medium text-gray-500">{t('dashboard.quickAccessTitle')}</h2>
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
           {quick.map(q => (
             <button key={q.route} type="button" onClick={() => navigate(q.route)} className={`${card} group flex items-center gap-3 p-4 text-left transition hover:border-gray-300 hover:shadow-md`}>
               <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl ${q.tint}`}><q.icon className="h-5 w-5" aria-hidden="true" /></span>
