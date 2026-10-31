@@ -176,6 +176,9 @@ const EmailVerification = lazy(() => import('@/pages/Auth/EmailVerification'));
 const ResetPassword     = lazy(() => import('@/pages/Auth/ResetPassword'));
 const FirstTimeSetup    = lazy(() => import('@/pages/Setup/FirstTimeSetup'));
 const HelpCenter        = lazy(() => import('@/pages/Help/HelpCenter'));
+const DocsLayout        = lazy(() => import('@/pages/Docs/DocsLayout'));
+const DocsHome          = lazy(() => import('@/pages/Docs/DocsHome'));
+const DocsArticlePage   = lazy(() => import('@/pages/Docs/DocsArticlePage'));
 const DemoPage          = lazy(() => import('@/pages/Demo/DemoPage'));
 const Support           = lazy(() => import('@/pages/Support/Support'));
 const SupplierPortal    = lazy(() => import('@/pages/SupplyChain/SupplierPortal'));
@@ -351,6 +354,10 @@ export default function AppRoutes() {
         <Route path="/support"           element={<Support />} />
         <Route path="/demo"              element={<DemoPage />} />
         <Route path="/help"              element={<HelpCenter />} />
+        <Route path="/documentation"     element={<DocsLayout />}>
+          <Route index                   element={<DocsHome />} />
+          <Route path=":slug"            element={<DocsArticlePage />} />
+        </Route>
         <Route path="/compare/:slug"     element={<ComparisonPage />} />
         <Route path="/security"          element={<SecurityPage />} />
         <Route path="/status"                  element={<StatusPage />} />
