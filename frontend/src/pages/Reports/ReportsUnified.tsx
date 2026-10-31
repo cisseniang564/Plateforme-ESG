@@ -300,7 +300,7 @@ export default function ReportsUnified() {
     setLoading(true)
     try {
       const [entriesRes, dashRes, orgsRes] = await Promise.allSettled([
-        api.get('/data-entry', { params: { limit: 500 } }),
+        api.get('/data-entry/', { params: { limit: 500 } }),
         api.get('/esg-scoring/dashboard'),
         api.get('/organizations'),
       ])
