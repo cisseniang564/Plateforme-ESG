@@ -419,9 +419,11 @@ _ALL_FEATURES = {k: True for k in _FREE_FEATURES}
 
 PLAN_LIMITS: Dict[str, Dict] = {
     "free":     {"max_users": 3,   "max_orgs": 5,    "max_monthly_api_calls": 1_000,     "features": _FREE_FEATURES},
-    "pme":      {"max_users": 15,  "max_orgs": 30,   "max_monthly_api_calls": 50_000,    "features": _PME_FEATURES},
-    "eti":      {"max_users": 75,  "max_orgs": 150,  "max_monthly_api_calls": 500_000,   "features": _ETI_FEATURES},
-    "groupe":   {"max_users": 300, "max_orgs": 9999, "max_monthly_api_calls": 2_000_000, "features": {**_ETI_FEATURES, "sso_saml": True}},
+    # Quotas identiques à app/core/plan_limits.py (source de vérité, celle qui est appliquée aux abonnements
+    # et affichée sur les pages Abonnement et Tarifs). 9999 = « illimité » pour l'affichage.
+    "pme":      {"max_users": 25,  "max_orgs": 50,   "max_monthly_api_calls": 100_000,   "features": _PME_FEATURES},
+    "eti":      {"max_users": 100, "max_orgs": 250,  "max_monthly_api_calls": 1_000_000, "features": _ETI_FEATURES},
+    "groupe":   {"max_users": 500, "max_orgs": 9999, "max_monthly_api_calls": 5_000_000, "features": {**_ETI_FEATURES, "sso_saml": True}},
     "enterprise": {"max_users": 9999, "max_orgs": 9999, "max_monthly_api_calls": 9_999_999, "features": _ALL_FEATURES},
     # Legacy tiers (existing subscribers — same feature shape as new equivalents)
     "starter":  {"max_users": 10,  "max_orgs": 25,  "max_monthly_api_calls": 10_000,    "features": _PME_FEATURES},

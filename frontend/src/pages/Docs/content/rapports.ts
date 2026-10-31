@@ -124,7 +124,7 @@ export const rapports: DocArticle[] = [
       { title: 'Rédiger les commentaires', text: 'Décrivez la politique, les actions et les objectifs de chaque thème.' },
       { title: 'Sauvegarder et exporter', text: 'Enregistrez puis exportez le PDF.' },
     ],
-    tips: ['Les textes narratifs sont sauvegardés dans votre navigateur : exportez le PDF pour conserver votre travail.'],
+    tips: ['Le bouton « Sauvegarder » enregistre vos textes narratifs sur le serveur : vous les retrouvez d\'un poste à l\'autre.'],
     related: ['constructeur-csrd', 'conformite-multi', 'esrs-social'],
     keywords: ['DPEF', 'extra-financier', 'Code de commerce', 'Egapro'],
   },

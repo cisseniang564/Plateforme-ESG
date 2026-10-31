@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import {
@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import BackButton from '@/components/common/BackButton';
 import toast from 'react-hot-toast';
+import { loadFramework, saveFramework } from '@/services/frameworkSync';
 
 const LS_KEY = 'bcorp_assessment';
 
@@ -597,7 +598,11 @@ export default function BCorp() {
       const stored = localStorage.getItem(LS_KEY);
       if (stored) setAnswers(JSON.parse(stored));
     } catch {/* ignore */}
+    // La version du serveur (si elle existe) remplace la copie locale.
+    loadFramework<{ answers?: Answers }>('bcorp').then(saved => { if (saved?.answers) setAnswers(saved.answers); });
   }, []);
+
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Persist answers on every change
   const handleAnswer = useCallback((qId: string, val: number) => {
@@ -606,6 +611,9 @@ export default function BCorp() {
       try {
         localStorage.setItem(LS_KEY, JSON.stringify(next));
       } catch {/* ignore */}
+      // Envoi au serveur 1 seconde après la dernière réponse (évite un appel par clic)
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => { void saveFramework('bcorp', { answers: next }); }, 1000);
       return next;
     });
   }, []);
