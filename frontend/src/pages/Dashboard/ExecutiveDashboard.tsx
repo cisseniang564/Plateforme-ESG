@@ -1,60 +1,20 @@
-import { Button, SegmentedControl } from '@/components/common';
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  TrendingUp,
-  TrendingDown,
-  Award,
-  Leaf,
-  Users,
-  Scale,
-  AlertCircle,
-  CheckCircle,
-  Building2,
-  Calendar,
-  BarChart3,
-  Target,
-  Zap,
-  Activity,
-  Filter,
-  Download,
-  RefreshCw,
-  ChevronRight,
-  ArrowUpRight,
-  ArrowDownRight,
-  Sparkles,
-  Shield,
-  Plug,
-  Brain,
-  Database,
+  Award, Building2, Database, Shield, Plug, Brain, Leaf, Users, Scale,
+  RefreshCw, ArrowUpRight, ChevronRight, AlertTriangle, CheckCircle2, Target, CalendarClock, Bell,
 } from 'lucide-react';
 import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
-  ComposedChart
+  Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  PieChart, Pie, Cell,
 } from 'recharts';
-import { format, subDays, subMonths } from 'date-fns';
+import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Button, SegmentedControl, StatCard, Badge, EmptyState } from '@/components/common';
 import Spinner from '@/components/common/Spinner';
+import { useAuth } from '@/hooks/useAuth';
+import { PILLAR_COLORS } from '@/styles/tokens';
 import api from '@/services/api';
 import { getBatchOrgScores, getScoringDashboard, getOrgScores, type OrgScore } from '@/services/esgScoringService';
 import toast from 'react-hot-toast';
@@ -122,15 +82,12 @@ interface ActivityItem {
 export default function ExecutiveDashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
-  const [dateRange, setDateRange] = useState({
-    start: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
-    end: format(new Date(), 'yyyy-MM-dd')
-  });
   const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
   const [esrsSections, setEsrsSections] = useState<{ code: string; label: string; pct: number }[] | null>(null);
   // Aggregated time series of historical scores across ALL orgs.
@@ -299,8 +256,10 @@ export default function ExecutiveDashboard() {
                  selectedPeriod === '30d' ? 30 :
                  selectedPeriod === '90d' ? 90 : 365;
     const cutoff = new Date(today.getTime() - days * 86_400_000);
-    return scoreHistory
-      .filter(p => new Date(p.date + '-01') >= cutoff)
+    const inWindow = scoreHistory.filter(p => new Date(p.date + '-01') >= cutoff);
+    // Les scores sont mensuels : une fenêtre de 7 ou 30 jours contient au plus 1 point.
+    // On retombe alors sur les 6 derniers mois pour toujours montrer une tendance.
+    return (inWindow.length >= 2 ? inWindow : scoreHistory.slice(-6))
       .map(p => ({
         // Keys used by the recharts ComposedChart below
         month:         p.label,
@@ -310,16 +269,6 @@ export default function ExecutiveDashboard() {
         governance:    p.gov,
       }));
   }, [scoreHistory, selectedPeriod]);
-
-  // Top 5 organisations
-  const topOrganizations = [...organizations]
-    .sort((a, b) => (b.overall_score || 0) - (a.overall_score || 0))
-    .slice(0, 5);
-
-  // Bottom 5 organisations
-  const improvementNeeded = [...organizations]
-    .sort((a, b) => (a.overall_score || 0) - (b.overall_score || 0))
-    .slice(0, 5);
 
   // Répartition par rating — couvre TOUS les buckets (AAA → D) et masque les vides
   const RATING_COLORS: Record<string, string> = {
@@ -365,102 +314,6 @@ export default function ExecutiveDashboard() {
     }
   ];
 
-  // Distribution des scores
-  const scoreDistribution = [
-    {
-      name: t('dashboard.scoreExcellent'),
-      value: organizations.filter(o => (o.overall_score || 0) >= 75).length,
-      color: '#10b981'
-    },
-    {
-      name: t('dashboard.scoreGood'),
-      value: organizations.filter(o => (o.overall_score || 0) >= 60 && (o.overall_score || 0) < 75).length,
-      color: '#3b82f6'
-    },
-    {
-      name: t('dashboard.scoreAverage'),
-      value: organizations.filter(o => (o.overall_score || 0) >= 45 && (o.overall_score || 0) < 60).length,
-      color: '#f59e0b'
-    },
-    {
-      name: t('dashboard.scoreLow'),
-      value: organizations.filter(o => (o.overall_score || 0) < 45).length,
-      color: '#ef4444'
-    }
-  ].filter(d => d.value > 0);
-
-  // Répartition par secteur
-  const sectorData = organizations.reduce((acc: any, org) => {
-    const sector = org.industry || t('dashboard.otherSector');
-    if (!acc[sector]) {
-      acc[sector] = { count: 0, totalScore: 0 };
-    }
-    acc[sector].count++;
-    acc[sector].totalScore += org.overall_score || 0;
-    return acc;
-  }, {});
-
-  const sectorPerformance = Object.entries(sectorData)
-    .map(([sector, data]: [string, any]) => ({
-      sector,
-      organizations: data.count,
-      avgScore: Math.round(data.totalScore / data.count)
-    }))
-    .sort((a, b) => b.avgScore - a.avgScore)
-    .slice(0, 6);
-
-  const kpis = [
-    {
-      label: t('dashboard.organizations'),
-      value: stats?.total_organizations || 0,
-      change: '+4',
-      icon: Building2,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-200',
-      subtext: t('dashboard.totalActive')
-    },
-    {
-      label: t('dashboard.avgScore'),
-      value: Math.round(stats?.average_score || 0),
-      change: '+2.3%',
-      icon: Award,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-200',
-      subtext: t('dashboard.outOf100')
-    },
-    {
-      label: t('dashboard.leaders'),
-      value: stats?.top_performers || 0,
-      change: '+3',
-      icon: TrendingUp,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-      borderColor: 'border-purple-200',
-      subtext: t('dashboard.excellentPerformances')
-    },
-    {
-      label: t('dashboard.improving'),
-      value: Number(stats?.improving_orgs) || 0,
-      change: '+8',
-      icon: Zap,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
-      borderColor: 'border-orange-200',
-      subtext: t('dashboard.positiveTrend')
-    }
-  ];
-
-  const getRatingColor = (rating: string) => {
-    if (!rating) return 'bg-gray-100 text-gray-800';
-    if (rating === 'AA') return 'bg-green-600 text-white';
-    if (rating === 'A') return 'bg-green-500 text-white';
-    if (rating === 'BBB') return 'bg-blue-500 text-white';
-    if (rating === 'BB') return 'bg-orange-500 text-white';
-    return 'bg-red-500 text-white';
-  };
-
   const getPeriodLabel = () => {
     switch (selectedPeriod) {
       case '7d': return t('dashboard.last7days');
@@ -470,761 +323,313 @@ export default function ExecutiveDashboard() {
     }
   };
 
+  // ── Valeurs dérivées (toutes calculées à partir des vraies données) ──────────
+  const avg = Math.round(stats?.average_score || 0);
+  const scored = organizations.filter(o => o.overall_score != null);
+  const needAttention = scored.filter(o => (o.overall_score || 0) < 45);
+  const unscored = organizations.filter(o => o.overall_score == null);
+  const esrsAvg = esrsSections && esrsSections.length
+    ? Math.round(esrsSections.reduce((a, s) => a + s.pct, 0) / esrsSections.length)
+    : null;
+  const lowEsrs = (esrsSections ?? []).filter(s => s.pct < 50);
+
+  // Évolution du score moyen : dernier point vs. point précédent de l'historique réel
+  const trendPts = scoreHistory.length >= 2
+    ? scoreHistory[scoreHistory.length - 1].global - scoreHistory[scoreHistory.length - 2].global
+    : null;
+
+  const scoreTone = (n: number) => (n >= 75 ? 'success' : n >= 60 ? 'info' : n >= 45 ? 'warning' : 'danger') as 'success' | 'info' | 'warning' | 'danger';
+  const greeting = () => {
+    const h = new Date().getHours();
+    return h < 6 ? t('dashboard.greetNight', 'Bonsoir') : h < 18 ? t('dashboard.greetDay', 'Bonjour') : t('dashboard.greetEvening', 'Bonsoir');
+  };
+  const firstName = (user as any)?.first_name || '';
+  const deadlines = buildDeadlines(t);
+
+  const attention: { tone: 'danger' | 'warning' | 'info'; text: string; to: string }[] = [];
+  if (unscored.length > 0) attention.push({ tone: 'info', text: t('dashboard.attnUnscored', { n: unscored.length, defaultValue: '{{n}} organisation(s) sans score calculé' }), to: '/app/data-entry' });
+  if (needAttention.length > 0) attention.push({ tone: 'danger', text: t('dashboard.attnLow', { n: needAttention.length, defaultValue: '{{n}} organisation(s) sous le seuil de 45/100' }), to: '/app/organizations' });
+  lowEsrs.slice(0, 3).forEach(s => attention.push({ tone: 'warning', text: t('dashboard.attnEsrs', { code: s.code, pct: s.pct, defaultValue: 'ESRS {{code}} : couverture à {{pct}} %' }), to: '/app/esrs-gap' }));
+
+  const pillars = [
+    { key: 'env', name: t('dashboard.environmental'), icon: Leaf,  color: PILLAR_COLORS.environmental.main, value: pillarAverages[0].score },
+    { key: 'soc', name: t('dashboard.social'),        icon: Users, color: PILLAR_COLORS.social.main,        value: pillarAverages[1].score },
+    { key: 'gov', name: t('dashboard.governance'),    icon: Scale, color: PILLAR_COLORS.governance.main,    value: pillarAverages[2].score },
+  ];
+
+  const quick = [
+    { label: t('dashboard.quickAccessEntry'),      route: '/app/data-entry',           icon: Database, tint: 'bg-emerald-50 text-emerald-700' },
+    { label: t('dashboard.quickAccessCsrd'),       route: '/app/reports/csrd-builder', icon: Shield,   tint: 'bg-violet-50 text-violet-700' },
+    { label: t('dashboard.quickAccessConnectors'), route: '/app/data/connectors',      icon: Plug,     tint: 'bg-cyan-50 text-cyan-700' },
+    { label: t('dashboard.quickAccessAI'),         route: '/app/intelligence',         icon: Brain,    tint: 'bg-rose-50 text-rose-700' },
+  ];
+
+  const card = 'rounded-2xl border border-gray-200 bg-white shadow-kpi';
+  const ringR = 52;
+  const ringC = 2 * Math.PI * ringR;
+
   if (loading) {
     return (
-      <div className="space-y-6 animate-fade-in">
-        {/* Header skeleton */}
-        <div className="h-48 bg-gradient-to-br from-primary-600 to-primary-800 rounded-2xl animate-pulse-soft" />
-        {/* KPI skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-gray-100 p-6 space-y-3">
-              <div className="flex justify-between items-start">
-                <div className="w-10 h-10 skeleton rounded-xl" />
-                <div className="w-14 h-6 skeleton rounded-full" />
-              </div>
-              <div className="w-24 h-4 skeleton" />
-              <div className="w-16 h-8 skeleton" />
-              <div className="w-32 h-3 skeleton" />
-            </div>
-          ))}
-        </div>
-        {/* Charts skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 h-72 skeleton rounded-2xl" />
-          <div className="h-72 skeleton rounded-2xl" />
-        </div>
+      <div className="flex items-center justify-center py-32" role="status" aria-live="polite">
+        <Spinner />
       </div>
     );
   }
 
-  if (!loading && organizations.length === 0) {
+  if (organizations.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[60vh] text-center p-8">
-        <div className="w-20 h-20 bg-primary-100 rounded-2xl flex items-center justify-center mb-6">
-          <Building2 className="h-10 w-10 text-primary-600" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-3">
-          {t('dashboard.welcome')}
-        </h2>
-        <p className="text-gray-500 max-w-md mb-8">
-          {t('dashboard.welcomeSubtitle')}
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button size="lg" icon={<Building2 className="h-5 w-5" />} onClick={() => navigate('/app/organizations')}>
-            {t('dashboard.createOrganization')}
-          </Button>
-          <Button size="lg" variant="secondary" icon={<Zap className="h-5 w-5" />} onClick={() => navigate('/app/data-entry')}>
-            {t('dashboard.enterData')}
-          </Button>
-        </div>
-        <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl w-full">
-          {[
-            { step: '1', title: t('dashboard.createOrganization'), desc: t('dashboard.step1Desc'), icon: Building2 },
-            { step: '2', title: t('dashboard.enterYourData'), desc: t('dashboard.step2Desc'), icon: Activity },
-            { step: '3', title: t('dashboard.analyzeScores'), desc: t('dashboard.step3Desc'), icon: BarChart3 },
-          ].map(({ step, title, desc, icon: Icon }) => (
-            <div key={step} className="bg-white rounded-xl border border-gray-200 p-4 text-left">
-              <div className="w-8 h-8 bg-primary-600 text-white rounded-lg flex items-center justify-center text-sm font-bold mb-3">
-                {step}
-              </div>
-              <Icon className="h-5 w-5 text-primary-500 mb-2" />
-              <h4 className="font-semibold text-gray-900 text-sm">{title}</h4>
-              <p className="text-xs text-gray-500 mt-1">{desc}</p>
-            </div>
-          ))}
-        </div>
+      <div className={card}>
+        <EmptyState
+          icon={Building2}
+          title={t('dashboard.emptyTitle', 'Bienvenue sur ESGFlow')}
+          description={t('dashboard.emptyDesc', 'Ajoutez votre première organisation pour voir apparaître vos scores, vos tendances et vos priorités.')}
+          action={<Button onClick={() => navigate('/app/organizations')}>{t('dashboard.emptyCta', 'Ajouter une organisation')}</Button>}
+        />
       </div>
     );
   }
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
+      {/* ── En-tête ── */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm text-gray-500 capitalize">{format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}</p>
+          <h2 className="mt-1 text-2xl sm:text-3xl font-semibold tracking-tight text-gray-900">
+            {greeting()}{firstName ? `, ${firstName}` : ''}
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
+            {t('dashboard.subtitleNew', 'Voici où en est votre performance ESG.')}
+            {latestPeriodMonths ? <span className="ml-1 text-gray-400">· {t('dashboard.dataWindow', 'Données sur')} {humanizePeriod(latestPeriodMonths, t)}</span> : null}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <SegmentedControl
+            aria-label={t('dashboard.period', 'Période')}
+            value={selectedPeriod}
+            onChange={setSelectedPeriod}
+            options={[
+              { value: '7d', label: '7 j' }, { value: '30d', label: '30 j' },
+              { value: '90d', label: '90 j' }, { value: '1y', label: '1 an' },
+            ]}
+          />
+          <Button variant="secondary" icon={<RefreshCw className="h-4 w-4" />} onClick={() => { loadDashboard(); loadActivity(); loadEsrsCoverage(); }}>
+            {t('dashboard.refresh', 'Actualiser')}
+          </Button>
+        </div>
+      </header>
 
-      {/* ── Hero header ───────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-3xl text-white shadow-2xl" style={{ background: 'linear-gradient(135deg, #020b18 0%, #06101f 45%, #051a10 90%, #020b18 100%)' }}>
-        {/* Grid dots */}
-        <div className="absolute inset-0 pointer-events-none opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '24px 24px' }} />
-        {/* Aurora glows */}
-        <div className="absolute pointer-events-none" style={{ top: '-15%', right: '18%', width: 480, height: 480, borderRadius: '50%', filter: 'blur(80px)', background: 'radial-gradient(ellipse, rgba(16,185,129,0.22) 0%, transparent 65%)' }} />
-        <div className="absolute pointer-events-none" style={{ bottom: '-20%', left: '25%', width: 380, height: 380, borderRadius: '50%', filter: 'blur(70px)', background: 'radial-gradient(ellipse, rgba(99,102,241,0.14) 0%, transparent 65%)' }} />
-
-        <div className="relative p-6 md:p-8">
-          {/* Top row */}
-          <div className="flex items-center justify-between flex-wrap gap-3 mb-7">
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold" style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', color: '#6ee7b7' }}>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                {format(new Date(), 'dd MMMM yyyy', { locale: fr })}
-              </div>
-              <h1 className="text-xl md:text-2xl font-bold tracking-tight">{t('dashboard.executiveDashboard')}</h1>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <SegmentedControl
-                tone="dark"
-                aria-label={t('dashboard.period', 'Période')}
-                value={selectedPeriod}
-                onChange={setSelectedPeriod}
-                options={[
-                  { value: '7d', label: '7J' },
-                  { value: '30d', label: '30J' },
-                  { value: '90d', label: '90J' },
-                  { value: '1y', label: '1An' },
-                ]}
-              />
-              <button onClick={loadDashboard}
-                className="flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-xl transition-all"
-                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'white' }}>
-                <RefreshCw className="h-3.5 w-3.5" />
-                {t('dashboard.refresh')}
-              </button>
-            </div>
+      {/* ── Score + indicateurs clés ── */}
+      <section className="grid grid-cols-1 gap-5 lg:grid-cols-12" aria-label={t('dashboard.keyFigures', 'Chiffres clés')}>
+        <div className={`${card} p-6 lg:col-span-5`}>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-medium text-gray-500">{t('dashboard.avgScore')}</h2>
+            <Badge tone={scoreTone(avg)} dot>{avg >= 75 ? t('dashboard.scoreExcellent') : avg >= 60 ? t('dashboard.scoreGood') : avg >= 45 ? t('dashboard.scoreAverage') : t('dashboard.scoreLow')}</Badge>
           </div>
-
-          {/* Main score row */}
-          <div className="flex items-center gap-8 lg:gap-12 flex-wrap">
-            {/* Big score */}
-            <div className="flex-shrink-0">
-              <p className="text-slate-400 text-[10px] uppercase tracking-widest font-bold mb-2">{t('dashboard.avgEsgScore')}</p>
-              <div className="flex items-end gap-2.5">
-                <span className="text-6xl md:text-7xl font-extrabold tabular-nums tracking-tighter leading-none">{Math.round(stats?.average_score || 0)}</span>
-                <span className="text-2xl text-slate-500 mb-2 font-medium">/100</span>
-              </div>
-              <div className="flex items-center gap-2 mt-3 flex-wrap">
-                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-bold" style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.25)', color: '#34d399' }}>
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  +2.3%
-                </div>
-                <span className="text-xs text-slate-400">{t('dashboard.vsPreviousPeriod')}</span>
-                {latestPeriodMonths && (
-                  <span className="text-xs text-slate-500">· {t('dashboard.window')} {humanizePeriod(latestPeriodMonths, t)}</span>
-                )}
+          <div className="mt-4 flex items-center gap-6">
+            <div className="relative h-32 w-32 flex-none" role="img" aria-label={`${avg} / 100`}>
+              <svg viewBox="0 0 128 128" className="h-full w-full -rotate-90">
+                <circle cx="64" cy="64" r={ringR} fill="none" stroke="#e5e7eb" strokeWidth="11" />
+                <circle cx="64" cy="64" r={ringR} fill="none" stroke={PILLAR_COLORS.environmental.main} strokeWidth="11" strokeLinecap="round"
+                  strokeDasharray={`${(ringC * Math.min(avg, 100)) / 100} ${ringC}`} />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-4xl font-semibold tracking-tight text-gray-900 tabular-nums">{avg}</span>
+                <span className="text-xs text-gray-400">/ 100</span>
               </div>
             </div>
-
-            {/* Divider */}
-            <div className="hidden lg:block h-24 w-px flex-shrink-0" style={{ background: 'rgba(255,255,255,0.1)' }} />
-
-            {/* E/S/G circular rings */}
-            <div className="flex gap-5 flex-shrink-0">
-              {pillarAverages.map((p) => {
-                const r = 28;
-                const circ = 2 * Math.PI * r;
-                const PIcon = p.icon;
-                return (
-                  <div key={p.name} className="flex flex-col items-center gap-2">
-                    <div className="relative">
-                      <svg width="72" height="72" viewBox="0 0 72 72" style={{ transform: 'rotate(-90deg)' }}>
-                        <circle cx="36" cy="36" r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5.5" />
-                        <circle cx="36" cy="36" r={r} fill="none" stroke={p.color} strokeWidth="5.5"
-                          strokeDasharray={`${circ * (p.score / 100)} ${circ * (1 - p.score / 100)}`}
-                          strokeLinecap="round" />
-                      </svg>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <PIcon className="h-3.5 w-3.5 mb-0.5" style={{ color: p.color }} />
-                        <span className="text-sm font-extrabold text-white leading-none">{p.score}</span>
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: p.color }}>{p.name.slice(0, 4)}</span>
+            <div className="min-w-0 flex-1 space-y-3">
+              {pillars.map(p => (
+                <div key={p.key}>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1.5 text-gray-600"><p.icon className="h-3.5 w-3.5" style={{ color: p.color }} aria-hidden="true" />{p.name}</span>
+                    <span className="font-semibold tabular-nums text-gray-900">{p.value}</span>
                   </div>
-                );
-              })}
-            </div>
-
-            {/* Divider */}
-            <div className="hidden lg:block h-24 w-px flex-shrink-0" style={{ background: 'rgba(255,255,255,0.1)' }} />
-
-            {/* Mini stats grid */}
-            <div className="grid grid-cols-2 gap-2.5 flex-1 min-w-[190px]">
-              {[
-                { l: t('dashboard.organizations'),  v: stats?.total_organizations ?? 0,   c: '#60a5fa' },
-                { l: 'Leaders ≥75',                  v: stats?.top_performers ?? 0,        c: '#34d399' },
-                { l: t('dashboard.improving'),       v: stats?.improving_orgs ?? 0,        c: '#fbbf24' },
-                { l: 'Complétude',                   v: `${stats?.completion_rate ?? 0}%`, c: '#a78bfa' },
-              ].map((s, i) => (
-                <div key={i} className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div className="text-xl font-extrabold leading-none" style={{ color: s.c }}>{s.v}</div>
-                  <div className="text-[10px] text-slate-400 mt-1 leading-tight">{s.l}</div>
+                  <div className="mt-1 h-1.5 rounded-full bg-gray-100"><div className="h-1.5 rounded-full" style={{ width: `${Math.min(p.value, 100)}%`, background: p.color }} /></div>
                 </div>
               ))}
             </div>
           </div>
+          {trendPts !== null && (
+            <p className={`mt-5 text-sm font-medium ${trendPts >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+              {trendPts >= 0 ? '▲ +' : '▼ '}{trendPts.toFixed(1)} {t('dashboard.ptsVsPrev', 'pts vs. période précédente')}
+            </p>
+          )}
         </div>
-      </div>
 
-      {/* ── KPI Cards ─────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {kpis.map((kpi) => {
-          const Icon = kpi.icon;
-          const isPositive = kpi.change.includes('+');
-          const colorKey = kpi.borderColor.includes('emerald') || kpi.borderColor.includes('green') ? 'green'
-            : kpi.borderColor.includes('blue') ? 'blue'
-            : kpi.borderColor.includes('purple') || kpi.borderColor.includes('violet') ? 'purple'
-            : 'amber';
-          const accentMap: Record<string, { hex: string; bg: string }> = {
-            blue:   { hex: '#2563eb', bg: 'rgba(37,99,235,0.07)' },
-            green:  { hex: '#059669', bg: 'rgba(5,150,105,0.07)' },
-            purple: { hex: '#7c3aed', bg: 'rgba(124,58,237,0.07)' },
-            amber:  { hex: '#d97706', bg: 'rgba(217,119,6,0.07)' },
-          };
-          const { hex, bg } = accentMap[colorKey];
-          return (
-            <div key={kpi.label}
-              className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all group cursor-default overflow-hidden relative"
-              style={{ borderLeftColor: hex, borderLeftWidth: 3 }}>
-              <div className="absolute top-0 right-0 w-28 h-28 rounded-full pointer-events-none" style={{ background: `radial-gradient(ellipse, ${bg} 0%, transparent 70%)`, filter: 'blur(20px)' }} />
-              <div className="relative">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-11 h-11 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-200" style={{ background: `${hex}16` }}>
-                    <Icon className="h-5 w-5" style={{ color: hex }} />
-                  </div>
-                  <span className={`flex items-center gap-0.5 text-xs font-bold px-2 py-1 rounded-full ${isPositive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
-                    {isPositive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                    {kpi.change}
-                  </span>
-                </div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{kpi.label}</p>
-                <p className="text-4xl font-extrabold tabular-nums leading-none mb-2 text-gray-900">{kpi.value}</p>
-                <p className="text-xs text-gray-400">{kpi.subtext}</p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+        <div className="grid grid-cols-2 gap-5 lg:col-span-7">
+          <StatCard label={t('dashboard.organizations')} value={stats?.total_organizations ?? 0} hint={t('dashboard.totalActive')} icon={<Building2 className="h-5 w-5" />} />
+          <StatCard label={t('dashboard.esrsCoverageLabel', 'Couverture ESRS')} value={esrsAvg !== null ? `${esrsAvg} %` : '—'} hint={esrsAvg !== null ? t('dashboard.esrsCoverageHint', 'Moyenne des normes analysées') : t('dashboard.noEsrs', 'Analyse non disponible')} icon={<Shield className="h-5 w-5" />} />
+          <StatCard label={t('dashboard.leaders')} value={stats?.top_performers ?? 0} hint={t('dashboard.excellentPerformances')} icon={<Award className="h-5 w-5" />} />
+          <StatCard label={t('dashboard.attnLabel', 'À renforcer')} value={needAttention.length} hint={t('dashboard.attnHint', 'Score inférieur à 45')} icon={<Target className="h-5 w-5" />} />
+        </div>
+      </section>
 
-      {/* ── AI Insights + CSRD Progress ───────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* AI Insights */}
-        <div className="lg:col-span-2 rounded-2xl p-6 text-white relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #020b18 0%, #06101f 60%, #0d1f10 100%)' }}>
-          <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.035) 1px, transparent 0)', backgroundSize: '20px 20px' }} />
-          <div className="absolute top-0 right-0 w-72 h-72 rounded-full pointer-events-none" style={{ background: 'radial-gradient(ellipse, rgba(16,185,129,0.16) 0%, transparent 70%)', filter: 'blur(50px)' }} />
-          <div className="relative">
-            <div className="flex items-center gap-2.5 mb-5">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(251,191,36,0.2)', border: '1px solid rgba(251,191,36,0.3)' }}>
-                <Sparkles className="h-4 w-4 text-yellow-400" />
-              </div>
-              <div className="flex-1">
-                <p className="font-bold text-sm text-white">{t('dashboard.aiInsightsTitle')}</p>
-                <p className="text-[11px] text-slate-400">{format(new Date(), 'dd MMMM yyyy', { locale: fr })}</p>
-              </div>
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold flex-shrink-0" style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.25)', color: '#34d399' }}>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                IA Active
-              </div>
+      {/* ── Évolution + points d'attention ── */}
+      <section className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+        <div className={`${card} p-6 lg:col-span-8`}>
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-gray-900">{t('dashboard.evolutionTitle', 'Évolution du score ESG')}</h2>
+            <span className="text-xs text-gray-400">{getPeriodLabel()}</span>
+          </div>
+          {evolutionData.length > 1 ? (
+            <div className="mt-4 h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={evolutionData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="gOverall" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={PILLAR_COLORS.environmental.main} stopOpacity={0.28} />
+                      <stop offset="100%" stopColor={PILLAR_COLORS.environmental.main} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid vertical={false} stroke="rgba(148,163,184,0.2)" />
+                  <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
+                  <YAxis domain={[(m: number) => Math.max(0, Math.floor(m - 8)), (m: number) => Math.min(100, Math.ceil(m + 8))]} allowDecimals={false} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
+                  <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e5e7eb', boxShadow: '0 8px 24px rgba(15,23,42,.08)', fontSize: 12 }} />
+                  <Area type="monotone" dataKey="overall" name={t('dashboard.overall', 'Global')} stroke={PILLAR_COLORS.environmental.main} strokeWidth={2.5} fill="url(#gOverall)" />
+                  <Area type="monotone" dataKey="social" name={t('dashboard.social')} stroke={PILLAR_COLORS.social.main} strokeWidth={1.5} fill="none" strokeDasharray="4 4" />
+                  <Area type="monotone" dataKey="governance" name={t('dashboard.governance')} stroke={PILLAR_COLORS.governance.main} strokeWidth={1.5} fill="none" strokeDasharray="4 4" />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
-            <ul className="space-y-3 mb-5">
-              {[t('dashboard.aiInsight1'), t('dashboard.aiInsight2'), t('dashboard.aiInsight3')].map((insight, i) => (
-                <li key={i} className="flex items-start gap-3 text-sm" style={{ color: 'rgba(255,255,255,0.78)' }}>
-                  <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-[10px] font-extrabold" style={{ background: 'rgba(16,185,129,0.2)', color: '#34d399' }}>{i + 1}</div>
-                  {insight}
+          ) : (
+            <EmptyState icon={Target} title={t('dashboard.noHistoryTitle', 'Pas encore assez d\'historique')} description={t('dashboard.noHistoryDesc', 'La courbe apparaît dès que deux périodes de score sont calculées.')} />
+          )}
+        </div>
+
+        <div className={`${card} p-6 lg:col-span-4`}>
+          <h2 className="text-base font-semibold text-gray-900">{t('dashboard.attentionTitle', 'Points d\'attention')}</h2>
+          {attention.length === 0 ? (
+            <p className="mt-4 flex items-start gap-2 text-sm text-gray-600">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none text-emerald-600" aria-hidden="true" />
+              {t('dashboard.attentionNone', 'Rien d\'urgent : toutes vos organisations sont au-dessus des seuils.')}
+            </p>
+          ) : (
+            <ul className="mt-4 space-y-2.5">
+              {attention.map((a, i) => (
+                <li key={i}>
+                  <button type="button" onClick={() => navigate(a.to)} className="group flex w-full items-start gap-3 rounded-xl border border-gray-100 p-3 text-left transition hover:border-gray-200 hover:bg-gray-50">
+                    <AlertTriangle className={`mt-0.5 h-4 w-4 flex-none ${a.tone === 'danger' ? 'text-red-500' : a.tone === 'warning' ? 'text-amber-500' : 'text-blue-500'}`} aria-hidden="true" />
+                    <span className="flex-1 text-sm text-gray-700">{a.text}</span>
+                    <ChevronRight className="mt-0.5 h-4 w-4 flex-none text-gray-300 transition group-hover:text-gray-500" aria-hidden="true" />
+                  </button>
                 </li>
               ))}
             </ul>
-            <button onClick={() => navigate('/app/intelligence')}
-              className="flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl transition-all hover:opacity-90"
-              style={{ background: 'rgba(251,191,36,0.18)', border: '1px solid rgba(251,191,36,0.3)', color: '#fbbf24' }}>
-              {t('dashboard.aiInsightsCTA')} <ArrowUpRight className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        </div>
-
-        {/* CSRD Progress — gauge circulaire */}
-        <div className="rounded-2xl p-6 bg-white shadow-sm border flex flex-col" style={{ borderColor: 'rgba(245,158,11,0.25)' }}>
-          <div className="mb-4">
-            <p className="text-[10px] font-bold text-amber-700 uppercase tracking-widest mb-0.5">{t('dashboard.csrdProgressLabel')}</p>
-            <p className="text-xs text-gray-400">{t('dashboard.csrdProgressHint')}</p>
-          </div>
-          <div className="flex-1 flex flex-col items-center justify-center py-1">
-            <div className="relative w-28 h-28 mb-4">
-              <svg width="112" height="112" viewBox="0 0 112 112" style={{ transform: 'rotate(-90deg)' }}>
-                <circle cx="56" cy="56" r="44" fill="none" stroke="#fef3c7" strokeWidth="9" />
-                <circle cx="56" cy="56" r="44" fill="none" stroke="#f59e0b" strokeWidth="9"
-                  strokeDasharray={`${2 * Math.PI * 44 * 0.61} ${2 * Math.PI * 44 * 0.39}`}
-                  strokeLinecap="round" />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-3xl font-extrabold text-amber-700 leading-none">61%</span>
-                <span className="text-[10px] text-amber-500 font-semibold mt-0.5">{t('dashboard.csrdProgressSub')}</span>
-              </div>
-            </div>
-          </div>
-          <button onClick={() => navigate('/app/reports/csrd-builder')}
-            className="mt-3 flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-xs font-bold transition-all hover:opacity-90"
-            style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', color: '#92400e' }}>
-            {t('dashboard.csrdProgressCTA')} <ChevronRight className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </div>
-
-      {/* ── Graphiques Principaux ─────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Évolution — span 2 */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm lg:col-span-2 overflow-hidden">
-          <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-50">
-            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
-                <TrendingUp className="h-4 w-4 text-indigo-600" />
-              </div>
-              {t('dashboard.scoreEvolution')}
-            </h3>
-            <SegmentedControl
-              size="sm"
-              aria-label={t('dashboard.period', 'Période')}
-              value={selectedPeriod}
-              onChange={setSelectedPeriod}
-              options={[
-                { value: '7d', label: t('dashboard.period7d') },
-                { value: '30d', label: t('dashboard.period30d') },
-                { value: '90d', label: t('dashboard.period90d') },
-                { value: '1y', label: t('dashboard.period1y') },
-              ]}
-            />
-          </div>
-          {evolutionData.length === 0 ? (
-            <div className="h-[300px] flex flex-col items-center justify-center text-center px-6">
-              <div className="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center mb-3">
-                <Activity className="w-7 h-7 text-indigo-400" />
-              </div>
-              <p className="text-sm font-semibold text-gray-700">{t('dashboard.noHistoryTitle')}</p>
-              <p className="text-xs text-gray-400 mt-1 max-w-xs">{t('dashboard.noHistoryDesc')}</p>
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <ComposedChart data={evolutionData} margin={{ top: 16, right: 24, left: 0, bottom: 8 }}>
-                <defs>
-                  <linearGradient id="colorOverall" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.25}/>
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
-                <XAxis dataKey="month" stroke="#d1d5db" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis stroke="#d1d5db" tick={{ fill: '#9ca3af', fontSize: 11 }} domain={[0, 100]} axisLine={false} tickLine={false} width={32} />
-                <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '10px 14px', boxShadow: '0 10px 25px rgba(0,0,0,0.08)', fontSize: 12 }} />
-                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
-                <Area type="monotone" dataKey="overall" stroke="#6366f1" strokeWidth={2.5} fillOpacity={1} fill="url(#colorOverall)" name={t('dashboard.globalScore')} />
-                <Line type="monotone" dataKey="environmental" stroke="#10b981" strokeWidth={2} dot={false} name={t('dashboard.environmental')} />
-                <Line type="monotone" dataKey="social" stroke="#3b82f6" strokeWidth={2} dot={false} name={t('dashboard.social')} />
-                <Line type="monotone" dataKey="governance" stroke="#8b5cf6" strokeWidth={2} dot={false} name={t('dashboard.governance')} />
-              </ComposedChart>
-            </ResponsiveContainer>
           )}
         </div>
+      </section>
 
-        {/* Distribution par Rating */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-6 pt-5 pb-4 border-b border-gray-50">
-            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
-                <BarChart3 className="h-4 w-4 text-blue-600" />
-              </div>
-              {t('dashboard.ratingDistribution')}
-            </h3>
+      {/* ── Organisations + échéances / activité ── */}
+      <section className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+        <div className={`${card} overflow-hidden lg:col-span-7`}>
+          <div className="flex items-center justify-between p-6 pb-3">
+            <h2 className="text-base font-semibold text-gray-900">{t('dashboard.orgsTitle', 'Vos organisations')}</h2>
+            <button type="button" onClick={() => navigate('/app/organizations')} className="inline-flex items-center gap-1 text-sm font-medium text-primary-700 hover:underline">
+              {t('dashboard.seeAll', 'Tout voir')} <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
           </div>
-          {ratingDistribution.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie data={ratingDistribution} cx="50%" cy="50%" labelLine={false}
-                  label={({ name, value, percent }) => `${name}: ${value} (${Number.isFinite(percent) ? (percent * 100).toFixed(0) : 0}%)`}
-                  outerRadius={95} innerRadius={38} fill="#8884d8" dataKey="value">
-                  {ratingDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: 10, fontSize: 12 }} />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center h-64 text-gray-400 text-sm">{t('dashboard.noRatingData')}</div>
+          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+            {[...organizations].sort((a, b) => (b.overall_score ?? -1) - (a.overall_score ?? -1)).slice(0, 6).map(o => (
+              <li key={o.id}>
+                <button type="button" onClick={() => navigate(`/app/organizations/${o.id}`)} className="flex w-full items-center gap-4 px-6 py-3.5 text-left transition hover:bg-gray-50">
+                  <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-primary-50 text-sm font-semibold text-primary-700">{(o.name || '?').slice(0, 1).toUpperCase()}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-gray-900">{o.name}</span>
+                    <span className="mt-1.5 block h-1.5 rounded-full bg-gray-100">
+                      <span className="block h-1.5 rounded-full" style={{ width: `${Math.min(o.overall_score ?? 0, 100)}%`, background: PILLAR_COLORS.environmental.main }} />
+                    </span>
+                  </span>
+                  <span className="w-10 text-right text-sm font-semibold tabular-nums text-gray-900">{o.overall_score != null ? Math.round(o.overall_score) : '—'}</span>
+                  {o.rating ? <Badge tone={scoreTone(o.overall_score ?? 0)}>{o.rating}</Badge> : <span className="w-12" />}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="space-y-5 lg:col-span-5">
+          <div className={`${card} p-6`}>
+            <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900"><CalendarClock className="h-4 w-4 text-gray-400" aria-hidden="true" />{t('dashboard.deadlinesTitle', 'Prochaines échéances')}</h2>
+            <ul className="mt-4 space-y-3">
+              {deadlines.map(d => (
+                <li key={d.label} className="flex items-center justify-between gap-3">
+                  <span className="min-w-0"><span className="block truncate text-sm font-medium text-gray-800">{d.label}</span><span className="text-xs text-gray-400">{d.dateStr}</span></span>
+                  <Badge tone={d.urgent ? 'danger' : 'neutral'}>{t('dashboard.daysLeft', { n: d.daysLeft, defaultValue: 'J-{{n}}' })}</Badge>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {recentActivity.length > 0 && (
+            <div className={`${card} p-6`}>
+              <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900"><Bell className="h-4 w-4 text-gray-400" aria-hidden="true" />{t('dashboard.activityTitle', 'Activité récente')}</h2>
+              <ul className="mt-4 space-y-3">
+                {recentActivity.map((a, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm"><span aria-hidden="true">{a.icon}</span><span className="flex-1 text-gray-700">{a.label}</span><span className="flex-none text-xs text-gray-400">{a.time}</span></li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
-      </div>
+      </section>
 
-      {/* ── Pillar Performance ────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h3 className="text-base font-bold text-gray-900 mb-5 flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-violet-50 flex items-center justify-center">
-            <Target className="h-4 w-4 text-violet-600" />
-          </div>
-          {t('dashboard.pillarPerformance')}
-        </h3>
-        <div className="space-y-5">
-          {pillarAverages.map((pillar) => {
-            const PIcon = pillar.icon;
-            const isOnTrack = pillar.score >= pillar.target;
-            return (
-              <div key={pillar.name}>
-                <div className="flex items-center justify-between mb-2.5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${pillar.color}16` }}>
-                      <PIcon className="h-5 w-5" style={{ color: pillar.color }} />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900 text-sm">{pillar.name}</p>
-                      <p className="text-xs text-gray-400">{t('dashboard.target')}: {pillar.target}/100</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className={`text-xs font-semibold px-2.5 py-1 rounded-full ${isOnTrack ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-                      {isOnTrack ? `✓ ${t('dashboard.targetReached')}` : `${pillar.target - pillar.score} pts`}
-                    </div>
-                    <p className="text-3xl font-extrabold w-12 text-right" style={{ color: pillar.color }}>{pillar.score}</p>
-                  </div>
+      {/* ── Répartition par note + couverture ESRS ── */}
+      {(ratingDistribution.length > 0 || (esrsSections && esrsSections.length > 0)) && (
+        <section className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+          {ratingDistribution.length > 0 && (
+            <div className={`${card} p-6 lg:col-span-5`}>
+              <h2 className="text-base font-semibold text-gray-900">{t('dashboard.ratingDistTitle', 'Répartition par note')}</h2>
+              <div className="mt-2 flex items-center gap-6">
+                <div className="h-40 w-40 flex-none">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={ratingDistribution} dataKey="value" nameKey="name" innerRadius={44} outerRadius={70} paddingAngle={2} stroke="none">
+                        {ratingDistribution.map(r => <Cell key={r.name} fill={r.color} />)}
+                      </Pie>
+                      <Tooltip contentStyle={{ borderRadius: 12, fontSize: 12 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
-                <div className="relative h-2.5 bg-gray-100 rounded-full overflow-visible">
-                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.min((pillar.score / 100) * 100, 100)}%`, background: `linear-gradient(90deg, ${pillar.color}cc, ${pillar.color})` }} />
-                  <div className="absolute h-full top-0 w-0.5 bg-gray-400/40 rounded-full" style={{ left: `${pillar.target}%` }} />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── Top/Bottom tables ─────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Top 5 */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-50">
-            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
-                <Award className="h-4 w-4 text-emerald-600" />
-              </div>
-              {t('dashboard.top5Performances')}
-            </h3>
-            <button onClick={() => navigate('/app/organizations')} className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1">
-              {t('dashboard.seeAll')} <ChevronRight className="h-3.5 w-3.5" />
-            </button>
-          </div>
-          <div className="p-4 space-y-1.5">
-            {topOrganizations.map((org, index) => (
-              <div key={org.id}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer hover:bg-emerald-50/60"
-                onClick={() => navigate(`/app/organizations/${org.id}`)}>
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold flex-shrink-0 ${
-                  index === 0 ? 'bg-amber-400 text-amber-900' :
-                  index === 1 ? 'bg-slate-300 text-slate-700' :
-                  index === 2 ? 'bg-orange-400 text-orange-900' : 'bg-gray-100 text-gray-500'}`}>
-                  {index + 1}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 text-sm truncate">{org.name}</p>
-                  {org.industry && <p className="text-xs text-gray-400 truncate">{org.industry}</p>}
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${getRatingColor(org.rating || '')}`}>{org.rating}</span>
-                  <p className="text-lg font-extrabold text-emerald-600 w-8 text-right">{Math.round(org.overall_score ?? 0)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Bottom 5 */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-50">
-            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-orange-50 flex items-center justify-center">
-                <AlertCircle className="h-4 w-4 text-orange-600" />
-              </div>
-              {t('dashboard.improvementPriorities')}
-            </h3>
-            <button onClick={() => navigate('/app/organizations')} className="text-xs text-orange-600 hover:text-orange-700 font-semibold flex items-center gap-1">
-              {t('dashboard.seeAll')} <ChevronRight className="h-3.5 w-3.5" />
-            </button>
-          </div>
-          <div className="p-4 space-y-1.5">
-            {improvementNeeded.map((org, index) => (
-              <div key={org.id}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer hover:bg-orange-50/60"
-                onClick={() => navigate(`/app/organizations/${org.id}`)}>
-                <div className="w-7 h-7 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xs font-extrabold flex-shrink-0">
-                  {index + 1}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 text-sm truncate">{org.name}</p>
-                  {org.industry && <p className="text-xs text-gray-400 truncate">{org.industry}</p>}
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${getRatingColor(org.rating || '')}`}>{org.rating}</span>
-                  <p className="text-lg font-extrabold text-orange-600 w-8 text-right">{Math.round(org.overall_score ?? 0)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Sector Performance ─────────────────────────────────────────────────── */}
-      {sectorPerformance.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-6 pt-5 pb-4 border-b border-gray-50">
-            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-sky-50 flex items-center justify-center">
-                <BarChart3 className="h-4 w-4 text-sky-600" />
-              </div>
-              {t('dashboard.sectorPerformance')}
-            </h3>
-          </div>
-          <div className="p-2">
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={sectorPerformance} layout="vertical" margin={{ top: 8, right: 20, left: 0, bottom: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" horizontal={false} />
-                <XAxis type="number" domain={[0, 100]} tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis dataKey="sector" type="category" width={140} tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: 10, fontSize: 12 }} />
-                <Bar dataKey="avgScore" radius={[0, 6, 6, 0]}>
-                  {sectorPerformance.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.avgScore >= 70 ? '#10b981' : entry.avgScore >= 50 ? '#3b82f6' : '#f59e0b'} />
+                <ul className="flex-1 space-y-2 text-sm">
+                  {ratingDistribution.map(r => (
+                    <li key={r.name} className="flex items-center justify-between"><span className="flex items-center gap-2 text-gray-700"><span className="h-2.5 w-2.5 rounded-full" style={{ background: r.color }} />{r.name}</span><span className="font-semibold tabular-nums text-gray-900">{r.value}</span></li>
                   ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
-
-      {/* ── Alerte score faible ───────────────────────────────────────────────── */}
-      {stats && stats.average_score < 60 && (
-        <div className="rounded-2xl p-5 flex items-start gap-4" style={{ background: 'linear-gradient(135deg, #fff7ed, #fef2f2)', border: '1px solid rgba(234,88,12,0.2)' }}>
-          <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
-            <AlertCircle className="h-5 w-5 text-orange-600" />
-          </div>
-          <div className="flex-1">
-            <h4 className="font-bold text-orange-900 mb-1">{t('dashboard.alertTitle')}</h4>
-            <p className="text-sm text-orange-800 mb-3">{t('dashboard.alertDesc', { score: Math.round(stats.average_score), count: improvementNeeded.length })}</p>
-            <div className="flex gap-2 flex-wrap">
-              <button onClick={() => navigate('/app/organizations')}
-                className="text-xs font-bold px-4 py-2 rounded-xl transition-all hover:opacity-90"
-                style={{ background: 'rgba(234,88,12,0.15)', color: '#c2410c', border: '1px solid rgba(234,88,12,0.25)' }}>
-                {t('dashboard.seeOrganizations')}
-              </button>
-              <button onClick={() => navigate('/app/reports/generate')}
-                className="text-xs font-bold px-4 py-2 rounded-xl transition-all hover:opacity-90"
-                style={{ background: 'rgba(234,88,12,0.08)', color: '#c2410c', border: '1px solid rgba(234,88,12,0.15)' }}>
-                {t('dashboard.generateReport')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Accès rapide ──────────────────────────────────────────────────────── */}
-      <div>
-        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">{t('dashboard.quickAccessTitle')}</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {[
-            { label: t('dashboard.quickAccessEntry'),      route: '/app/data-entry',           icon: Database, grad: 'linear-gradient(135deg, #064e3b, #059669)', glow: 'rgba(5,150,105,0.28)' },
-            { label: t('dashboard.quickAccessCsrd'),       route: '/app/reports/csrd-builder', icon: Shield,   grad: 'linear-gradient(135deg, #2e1065, #7c3aed)', glow: 'rgba(124,58,237,0.28)' },
-            { label: t('dashboard.quickAccessConnectors'), route: '/app/data/connectors',      icon: Plug,     grad: 'linear-gradient(135deg, #083344, #0891b2)', glow: 'rgba(8,145,178,0.28)' },
-            { label: t('dashboard.quickAccessAI'),         route: '/app/intelligence',          icon: Brain,    grad: 'linear-gradient(135deg, #500724, #db2777)', glow: 'rgba(219,39,119,0.28)' },
-          ].map(({ label, route, icon: QIcon, grad, glow }) => (
-            <button key={route} onClick={() => navigate(route)}
-              className="relative overflow-hidden rounded-2xl p-4 text-left group transition-all hover:-translate-y-0.5"
-              style={{ background: grad, boxShadow: `0 4px 18px ${glow}` }}>
-              <div className="absolute inset-0 opacity-[0.06] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '18px 18px' }} />
-              <div className="relative">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: 'rgba(255,255,255,0.2)' }}>
-                  <QIcon className="h-5 w-5 text-white" />
-                </div>
-                <p className="text-sm font-bold text-white leading-tight">{label}</p>
-                <div className="mt-2 flex items-center gap-1 text-white/50 text-xs font-medium group-hover:text-white/85 transition-colors">
-                  {t('dashboard.goTo')} <ArrowUpRight className="h-3.5 w-3.5" />
-                </div>
+                </ul>
               </div>
+            </div>
+          )}
+          {esrsSections && esrsSections.length > 0 && (
+            <div className={`${card} p-6 ${ratingDistribution.length > 0 ? 'lg:col-span-7' : 'lg:col-span-12'}`}>
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-semibold text-gray-900">{t('dashboard.esrsTitle', 'Couverture des normes ESRS')}</h2>
+                <button type="button" onClick={() => navigate('/app/esrs-gap')} className="inline-flex items-center gap-1 text-sm font-medium text-primary-700 hover:underline">{t('dashboard.esrsLink', 'Analyse détaillée')} <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" /></button>
+              </div>
+              <ul className="mt-4 grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
+                {esrsSections.map(s => (
+                  <li key={s.code}>
+                    <div className="flex items-center justify-between text-sm"><span className="truncate text-gray-700"><span className="font-semibold text-gray-900">{s.code}</span> · {s.label}</span><span className="tabular-nums text-gray-500">{s.pct} %</span></div>
+                    <div className="mt-1.5 h-1.5 rounded-full bg-gray-100"><div className="h-1.5 rounded-full" style={{ width: `${Math.min(s.pct, 100)}%`, background: s.pct >= 70 ? '#16a34a' : s.pct >= 50 ? '#d97706' : '#dc2626' }} /></div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ── Accès rapide ── */}
+      <section aria-label={t('dashboard.quickAccessTitle')}>
+        <h2 className="mb-3 text-sm font-medium text-gray-500">{t('dashboard.quickAccessTitle')}</h2>
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {quick.map(q => (
+            <button key={q.route} type="button" onClick={() => navigate(q.route)} className={`${card} group flex items-center gap-3 p-4 text-left transition hover:border-gray-300 hover:shadow-md`}>
+              <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl ${q.tint}`}><q.icon className="h-5 w-5" aria-hidden="true" /></span>
+              <span className="flex-1 text-sm font-medium text-gray-900">{q.label}</span>
+              <ArrowUpRight className="h-4 w-4 text-gray-300 transition group-hover:text-gray-500" aria-hidden="true" />
             </button>
           ))}
         </div>
-      </div>
-
-      {/* ── Deadlines + Activity ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Deadlines */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-50">
-            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center">
-                <Calendar className="h-4 w-4 text-amber-500" />
-              </div>
-              {t('dashboard.upcomingDeadlines')}
-            </h3>
-            <span className="text-[10px] text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded-full">{t('dashboard.euOfficialCalendar')}</span>
-          </div>
-          <div className="p-5 space-y-2.5">
-            {buildDeadlines(t).map(d => (
-              <div key={d.label} className="flex items-center justify-between gap-3 p-3 rounded-xl" style={{ background: d.urgent ? 'rgba(239,68,68,0.05)' : '#f9fafb' }}>
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${d.color}`} />
-                  <span className="text-sm text-gray-700 font-medium truncate">{d.label}</span>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-xs text-gray-400">{d.dateStr}</span>
-                  <span className={`text-xs font-extrabold px-2.5 py-1 rounded-full ${d.urgent ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'}`}>
-                    J-{d.daysLeft}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Activity */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-50">
-            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
-                <CheckCircle className="h-4 w-4 text-emerald-500" />
-              </div>
-              {t('dashboard.recentActivity')}
-            </h3>
-            <button onClick={() => navigate('/app/notifications')} className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1">
-              {t('dashboard.viewAll')} <ChevronRight className="h-3.5 w-3.5" />
-            </button>
-          </div>
-          <div className="p-5 space-y-2">
-            {(recentActivity.length > 0 ? recentActivity : [
-              { label: t('dashboard.activityCsrd'), time: t('dashboard.activityTimeToday'), icon: '📄' },
-              { label: t('dashboard.activityScope1'), time: t('dashboard.activityTimeYesterday'), icon: '🌿' },
-              { label: t('dashboard.activityAudit'), time: t('dashboard.activityTime2days'), icon: '✅' },
-            ]).map((a, i) => (
-              <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors">
-                <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-base flex-shrink-0">{a.icon}</div>
-                <span className="flex-1 text-sm text-gray-700 truncate">{a.label}</span>
-                <span className="text-xs text-gray-400 flex-shrink-0 bg-gray-50 px-2 py-1 rounded-full">{a.time}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── ESRS Coverage ─────────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-50">
-          <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-violet-50 flex items-center justify-center">
-              <Target className="h-4 w-4 text-violet-600" />
-            </div>
-            {t('dashboard.esrsCoverageTitle')}
-          </h3>
-          <button onClick={() => navigate('/app/esrs-gap')} className="text-xs text-violet-600 hover:text-violet-700 font-semibold flex items-center gap-1">
-            {t('dashboard.detailedAnalysis')} <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="p-5">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5">
-            {(esrsSections ?? [
-              { code: 'E1', label: t('dashboard.esrsE1'), pct: 0 },
-              { code: 'E2', label: t('dashboard.esrsE2'), pct: 0 },
-              { code: 'E3', label: t('dashboard.esrsE3'), pct: 0 },
-              { code: 'E4', label: t('dashboard.esrsE4'), pct: 0 },
-              { code: 'E5', label: t('dashboard.esrsE5'), pct: 0 },
-              { code: 'S1', label: t('dashboard.esrsS1'), pct: 0 },
-              { code: 'S2', label: t('dashboard.esrsS2'), pct: 0 },
-              { code: 'S3', label: t('dashboard.esrsS3'), pct: 0 },
-              { code: 'S4', label: t('dashboard.esrsS4'), pct: 0 },
-              { code: 'G1', label: t('dashboard.esrsG1'), pct: 0 },
-            ]).map(({ code, label, pct }) => {
-              const isEnv = code.startsWith('E');
-              const isSoc = code.startsWith('S');
-              const accent = isEnv ? '#059669' : isSoc ? '#2563eb' : '#7c3aed';
-              const trackBg = isEnv ? 'rgba(5,150,105,0.06)' : isSoc ? 'rgba(37,99,235,0.06)' : 'rgba(124,58,237,0.06)';
-              const statusColor = pct >= 70 ? '#059669' : pct >= 40 ? '#d97706' : '#dc2626';
-              return (
-                <div key={code} className="p-3 rounded-xl" style={{ background: trackBg, border: `1px solid ${accent}18` }}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-extrabold" style={{ color: accent }}>{code}</span>
-                    <span className="text-xs font-bold" style={{ color: statusColor }}>{pct}%</span>
-                  </div>
-                  <div className="w-full bg-white rounded-full h-1.5 mb-1.5">
-                    <div className="h-1.5 rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${accent}99, ${accent})` }} />
-                  </div>
-                  <p className="text-[10px] text-gray-400 leading-tight truncate" title={label}>{label}</p>
-                </div>
-              );
-            })}
-          </div>
-          {esrsSections && (
-            <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between text-xs text-gray-400">
-              <span>{esrsSections.filter(s => s.pct >= 70).length}/{esrsSections.length} {t('dashboard.sectionsCovered')}</span>
-              <span className="font-bold text-violet-600">{t('dashboard.globalCoverage')} : {Math.round(esrsSections.reduce((s, x) => s + x.pct, 0) / esrsSections.length)}%</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Climate & Compliance quick-access */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          {
-            icon: Shield,
-            label: t('dashboard.cardTcfd'),
-            sub: t('dashboard.cardTcfdSub'),
-            href: '/app/tcfd',
-            grad: 'linear-gradient(135deg, #0c4a6e, #0284c7)',
-            badge: t('dashboard.badgeNew'),
-          },
-          {
-            icon: Leaf,
-            label: t('dashboard.cardDecarb'),
-            sub: t('dashboard.cardDecarbSub'),
-            href: '/app/decarbonation',
-            grad: 'linear-gradient(135deg, #064e3b, #059669)',
-            badge: null,
-          },
-          {
-            icon: BarChart3,
-            label: t('dashboard.cardCarbon'),
-            sub: t('dashboard.cardCarbonSub'),
-            href: '/app/carbon',
-            grad: 'linear-gradient(135deg, #1e3a5f, #2563eb)',
-            badge: null,
-          },
-          {
-            icon: Target,
-            label: t('dashboard.cardMateriality'),
-            sub: t('dashboard.cardMaterialitySub'),
-            href: '/app/materiality',
-            grad: 'linear-gradient(135deg, #4a1d96, #7c3aed)',
-            badge: null,
-          },
-        ].map(card => {
-          const Icon = card.icon;
-          return (
-            <button key={card.href}
-              onClick={() => navigate(card.href)}
-              className="relative overflow-hidden rounded-2xl p-5 text-left group hover:shadow-lg transition-all duration-200"
-              style={{ background: card.grad }}>
-              <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
-                <svg width="100%" height="100%">
-                  <defs>
-                    <pattern id={`dot-${card.href}`} width="20" height="20" patternUnits="userSpaceOnUse">
-                      <circle cx="10" cy="10" r="1.2" fill="white" />
-                    </pattern>
-                  </defs>
-                  <rect width="100%" height="100%" fill={`url(#dot-${card.href})`} />
-                </svg>
-              </div>
-              <div className="relative">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
-                    <Icon className="h-5 w-5 text-white" />
-                  </div>
-                  {card.badge && (
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.25)', color: 'white' }}>
-                      {card.badge}
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm font-bold text-white leading-tight">{card.label}</p>
-                <p className="text-xs text-white/70 mt-0.5 leading-relaxed">{card.sub}</p>
-                <div className="mt-3 flex items-center gap-1 text-white/60 text-xs font-medium group-hover:text-white/90 transition-colors">
-                  {t('dashboard.goTo')} <ArrowUpRight className="h-3.5 w-3.5" />
-                </div>
-              </div>
-            </button>
-          );
-        })}
-      </div>
+      </section>
     </div>
   );
 }
