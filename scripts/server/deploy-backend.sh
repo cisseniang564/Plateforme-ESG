@@ -30,7 +30,7 @@ if [ -z "$KEY" ]; then echo "   ⚠ OPENAI_API_KEY absente : Gaïa répondra « 
 echo "3/6 Sauvegardes -> $SAVE"
 mkdir -p "$SAVE"; chmod 700 "$SAVE"
 [ -x scripts/backup.sh ] && scripts/backup.sh >/dev/null && echo "   base sauvegardée"
-tar czf "$SAVE/backend-sources.tgz" backend --exclude=__pycache__
+tar czf "$SAVE/backend-sources.tgz" --exclude=__pycache__ backend
 OLD_IMAGE="$(docker inspect "$CONTAINER" --format '{{.Image}}')"
 IMAGE_NAME="$(docker inspect "$CONTAINER" --format '{{.Config.Image}}')"
 docker tag "$OLD_IMAGE" "esgflow-backend-rollback:$STAMP"
@@ -49,7 +49,8 @@ trap 'echo "!! Erreur ligne $LINENO"; [ "$REPLACED" = 1 ] && rollback; exit 1' E
 echo "4/6 Remplacement du code et reconstruction (quelques minutes)"
 REPLACED=1
 # on copie le nouveau code SANS écraser les fichiers de configuration locaux (.env…)
-rsync -a --delete --exclude='.env*' --exclude='__pycache__' --exclude='logs' --exclude='uploads' "$NEW/backend/" backend/
+# et SANS rien supprimer : des fichiers présents seulement sur le serveur peuvent servir à l'API.
+rsync -a --exclude='.env*' --exclude='__pycache__' --exclude='logs' --exclude='uploads' "$NEW/backend/" backend/
 "${COMPOSE[@]}" build backend
 "${COMPOSE[@]}" up -d --no-deps backend
 
