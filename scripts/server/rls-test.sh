@@ -27,7 +27,7 @@ echo "   tables avec RLS : $(docker exec $DB psql -At -U "$U" -d "$T" -c "select
 echo "3/4 Lignes visibles par client (doit : somme des clients = total ; sans client = 0)"
 docker exec -i $DB psql -q -U "$U" -d "$T" <<'SQL'
 DO $$
-DECLARE r record; tid uuid; tids uuid[]; total bigint; sumt bigint; v bigint; nul bigint; bad int := 0;
+DECLARE r record; tid uuid; tids uuid[]; total bigint; sumt bigint; v bigint; nul bigint; exp_sum bigint; exp_v bigint; bad int := 0;
 BEGIN
   SET LOCAL row_security = on;
   SELECT array_agg(id) INTO tids FROM tenants;   -- lu avant toute sélection de client
@@ -47,9 +47,15 @@ BEGIN
     PERFORM set_config('app.current_tenant_id', '', true);
     -- les tenants ont leur propre règle ; ici table sous FORCE sans contexte
     EXECUTE format('SELECT count(*) FROM %I', r.relname) INTO v;
-    IF sumt <> total - nul OR v <> 0 THEN bad := bad + 1; END IF;
+    -- roles : les rôles système (tenant_id vide) sont partagés par tous les clients, voulu
+    IF r.relname = 'roles' THEN
+      exp_sum := (total - nul) + nul * array_length(tids, 1); exp_v := nul;
+    ELSE
+      exp_sum := total - nul; exp_v := 0;
+    END IF;
+    IF sumt <> exp_sum OR v <> exp_v THEN bad := bad + 1; END IF;
     RAISE NOTICE '% %  total=% (sans client=%)  somme_par_client=%  sans_contexte=%',
-      CASE WHEN sumt = total - nul AND v = 0 THEN 'OK ' ELSE 'KO ' END, rpad(r.relname,24), total, nul, sumt, v;
+      CASE WHEN sumt = exp_sum AND v = exp_v THEN 'OK ' ELSE 'KO ' END, rpad(r.relname,24), total, nul, sumt, v;
   END LOOP;
   RAISE NOTICE 'Tables en anomalie : %', bad;
 END $$;
