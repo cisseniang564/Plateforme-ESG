@@ -19,6 +19,7 @@ from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models.indicator import Indicator
 from app.models.indicator_data import IndicatorData
@@ -270,6 +271,7 @@ class ForecastingService:
         q = (
             select(IndicatorData)
             .join(Indicator, IndicatorData.indicator_id == Indicator.id)
+            .options(selectinload(IndicatorData.indicator))   # sinon d.indicator déclenche MissingGreenlet
             .where(IndicatorData.tenant_id == tenant_id)
             .order_by(Indicator.code, IndicatorData.date)
         )

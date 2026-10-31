@@ -73,6 +73,12 @@ function buildRail(t: TFn): RailSection[] {
       href: '/app',
     },
     {
+      id: 'gaia',
+      label: 'Gaïa',
+      icon: Sparkles,
+      href: '/app/gaia',
+    },
+    {
       id: 'donnees',
       label: t('sidebar.rail.data'),
       icon: Database,

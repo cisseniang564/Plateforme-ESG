@@ -420,6 +420,24 @@ export default function ExecutiveDashboard() {
         </div>
       </header>
 
+      {/* ── Gaïa ── */}
+      <button
+        type="button"
+        onClick={() => navigate('/app/gaia')}
+        className="group flex w-full items-center gap-4 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 p-4 text-left transition hover:border-emerald-300 hover:shadow-md"
+      >
+        <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white shadow-md shadow-emerald-600/25" aria-hidden="true">
+          <Sparkles className="h-5 w-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+            Gaïa <Badge tone="brand">{t('dashboard.gaiaNew', 'Nouveau')}</Badge>
+          </span>
+          <span className="block text-sm text-gray-600">{t('dashboard.gaiaPitch', 'Déposez le rapport d\'une entreprise : Gaïa le résume, relève les chiffres et repère ce qui manque.')}</span>
+        </span>
+        <ArrowUpRight className="h-5 w-5 flex-none text-emerald-600 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden="true" />
+      </button>
+
       {/* ── Score + indicateurs clés ── */}
       <section className="grid grid-cols-1 gap-5 lg:grid-cols-12" aria-label={t('dashboard.keyFigures', 'Chiffres clés')}>
         <div className={`${card} p-6 lg:col-span-5`}>
