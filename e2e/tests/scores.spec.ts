@@ -1,29 +1,21 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Scores', () => {
-  test.beforeEach(async ({ page }) => {
-    // Login first
-    await page.goto('/login');
-    await page.fill('input[type="email"]', 'admin@demo.esgflow.com');
-    await page.fill('input[type="password"]', 'Admin123!');
-    await page.click('button[type="submit"]');
-    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10000 });
+test.describe('Scores et organisations', () => {
+  test('le tableau de bord des scores s\'affiche', async ({ page }) => {
+    await page.goto('/app/scores');
+    await expect(page.locator('h1').first()).toBeVisible();
+    await expect(page.getByText(/une erreur est survenue/i)).toHaveCount(0);
   });
 
-  test('scores page loads', async ({ page }) => {
-    await page.goto('/scores');
-    await expect(page.locator('h1, h2').first()).toBeVisible();
-  });
-
-  test('score calculation page shows form', async ({ page }) => {
-    await page.goto('/scores/calculate');
-    await expect(page.getByText(/calcul/i).first()).toBeVisible();
+  test('la page de calcul propose un formulaire', async ({ page }) => {
+    await page.goto('/app/scores/calculate');
+    await expect(page.getByRole('heading', { name: /calcul de score/i })).toBeVisible();
     await expect(page.locator('input[type="date"]')).toBeVisible();
-    await expect(page.getByRole('button', { name: /calculer/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /calculer le score/i })).toBeVisible();
   });
 
-  test('organizations page loads', async ({ page }) => {
-    await page.goto('/organizations');
-    await expect(page.getByText(/organisation/i).first()).toBeVisible();
+  test('la liste des organisations s\'affiche', async ({ page }) => {
+    await page.goto('/app/organizations');
+    await expect(page.getByRole('heading', { name: /organisations/i }).first()).toBeVisible();
   });
 });

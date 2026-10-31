@@ -1,33 +1,35 @@
 import { test, expect } from '@playwright/test';
+import { anonymousState, fillStable, DEMO_EMAIL, DEMO_PASSWORD } from './helpers/session';
 
-const DEMO_EMAIL = 'admin@demo.esgflow.com';
-const DEMO_PASSWORD = 'Admin123!';
+test.describe('Authentification', () => {
+  test.use({ storageState: anonymousState() });
 
-test.describe('Authentication', () => {
-  test('login page loads correctly', async ({ page }) => {
+  test('la page de connexion s\'affiche', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.getByText('ESGFlow')).toBeVisible();
-    await expect(page.getByRole('button', { name: /connexion/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /bienvenue/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /se connecter/i })).toBeVisible();
   });
 
-  test('shows error with wrong credentials', async ({ page }) => {
+  test('des identifiants incorrects affichent une erreur', async ({ page }) => {
     await page.goto('/login');
-    await page.fill('input[type="email"]', 'wrong@email.com');
-    await page.fill('input[type="password"]', 'wrongpass');
+    await fillStable(page.locator('input[type="email"]'), 'inconnu@example.com');
+    await fillStable(page.locator('input[type="password"]'), 'MauvaisMotDePasse1');
     await page.click('button[type="submit"]');
-    await expect(page.locator('.bg-red-50')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('.bg-red-50')).toBeVisible();
+    await expect(page).toHaveURL(/login/);
   });
 
-  test('redirects to login when not authenticated', async ({ page }) => {
-    await page.goto('/');
-    await expect(page).toHaveURL(/.*login/);
+  test('une page protégée renvoie vers la connexion', async ({ page }) => {
+    await page.goto('/app');
+    await expect(page).toHaveURL(/login/);
   });
 
-  test('successful login redirects to dashboard', async ({ page }) => {
+  test('une connexion réussie ouvre le tableau de bord', async ({ page }) => {
     await page.goto('/login');
-    await page.fill('input[type="email"]', DEMO_EMAIL);
-    await page.fill('input[type="password"]', DEMO_PASSWORD);
+    await fillStable(page.locator('input[type="email"]'), DEMO_EMAIL);
+    await fillStable(page.locator('input[type="password"]'), DEMO_PASSWORD);
     await page.click('button[type="submit"]');
-    await expect(page).not.toHaveURL(/.*login/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/app/);
+    await expect(page.getByText(/Bienvenue sur ESGFlow|Bonjour|Bonsoir/i).first()).toBeVisible();
   });
 });

@@ -62,9 +62,15 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
     db.add(tenant)
     await db.flush()
 
+    # Le créateur du compte est administrateur de son organisation.
+    from app.models.role import Role
+    admin_role_id = (await db.execute(
+        select(Role.id).where(Role.name == "tenant_admin", Role.tenant_id.is_(None))
+    )).scalar_one_or_none()
+
     user_id = uuid4()
     user = User(
-        id=user_id, tenant_id=tenant.id, email=data.email,
+        id=user_id, tenant_id=tenant.id, email=data.email, role_id=admin_role_id,
         password_hash=pwd_context.hash(data.password),
         first_name=data.first_name, last_name=data.last_name,
         is_active=True, auth_provider='local', locale='fr', timezone='Europe/Paris'

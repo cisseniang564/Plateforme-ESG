@@ -1,71 +1,29 @@
-/**
- * E2E — Onboarding flow (inscription d'une nouvelle entreprise)
- * Couvre : affichage de la page → remplissage du formulaire → soumission.
- * Ne crée pas réellement de compte (intercepte la requête réseau).
- */
+/** Inscription d'une entreprise : on vérifie le formulaire sans créer de compte. */
 import { test, expect } from '@playwright/test';
+import { anonymousState, fillStable } from './helpers/session';
 
-test.describe('Onboarding — Inscription entreprise', () => {
-  test('la page inscription est accessible', async ({ page }) => {
-    await page.goto('/register');
-    await page.waitForLoadState('networkidle');
-    await expect(page).not.toHaveURL(/login/, { timeout: 5_000 });
+test.describe('Inscription', () => {
+  test.use({ storageState: anonymousState() });
+
+  test('la page d\'inscription s\'affiche avec ses champs', async ({ page }) => {
+    const res = await page.goto('/register');
+    expect(res?.status()).toBe(200);
+    await expect(page).not.toHaveURL(/login/);
+    await expect(page.locator('input[type="email"]').first()).toBeVisible();
+    await expect(page.locator('input[type="password"]').first()).toBeVisible();
   });
 
-  test('le formulaire affiche les champs requis', async ({ page }) => {
+  test('un e-mail invalide empêche l\'envoi', async ({ page }) => {
     await page.goto('/register');
-    await page.waitForLoadState('networkidle');
-
-    // Les champs essentiels doivent être présents
-    const emailField = page.locator('input[type="email"]').first();
-    await expect(emailField).toBeVisible({ timeout: 8_000 });
+    await fillStable(page.locator('input[type="email"]').first(), 'pas-un-email');
+    await page.locator('button[type="submit"], input[type="submit"]').first().click();
+    await expect(page).toHaveURL(/register/);
+    const invalid = await page.locator('input[type="email"]').first().evaluate(el => !(el as { validity: { valid: boolean } }).validity.valid);
+    expect(invalid).toBe(true);
   });
 
-  test('erreur de validation si email invalide', async ({ page }) => {
+  test('un lien mène à la connexion', async ({ page }) => {
     await page.goto('/register');
-    await page.waitForLoadState('networkidle');
-
-    const emailField = page.locator('input[type="email"]').first();
-    if (await emailField.isVisible()) {
-      await emailField.fill('not-an-email');
-      // Trigger validation
-      const submit = page.locator('button[type="submit"]').first();
-      if (await submit.isVisible()) {
-        await submit.click();
-        // Should show an error (validation message or red border)
-        const hasError = await page.locator(
-          '[class*="error"], [class*="invalid"], input:invalid, .text-red'
-        ).first().isVisible({ timeout: 3_000 }).catch(() => false);
-        // HTML5 validation or custom validation — either is fine
-        expect(typeof hasError).toBe('boolean');
-      }
-    }
-  });
-
-  test('erreur si mot de passe trop court', async ({ page }) => {
-    await page.goto('/register');
-    await page.waitForLoadState('networkidle');
-
-    const passField = page.locator('input[type="password"]').first();
-    if (await passField.isVisible()) {
-      await passField.fill('abc');
-      const submit = page.locator('button[type="submit"]').first();
-      if (await submit.isVisible()) {
-        await submit.click();
-        // Wait briefly for any validation message
-        await page.waitForTimeout(1_000);
-      }
-    }
-  });
-
-  test('lien vers la page de connexion présent', async ({ page }) => {
-    await page.goto('/register');
-    await page.waitForLoadState('networkidle');
-
-    // Should have a "login" / "connexion" link
-    const loginLink = page.locator('a[href*="login"], a[href*="connexion"]').first();
-    if (await loginLink.isVisible({ timeout: 3_000 }).catch(() => false)) {
-      await expect(loginLink).toBeVisible();
-    }
+    await expect(page.locator('a[href*="login"]').first()).toBeVisible();
   });
 });

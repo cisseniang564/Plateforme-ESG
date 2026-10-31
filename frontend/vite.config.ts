@@ -18,6 +18,18 @@ export default defineConfig({
       },
     },
   },
+  // `vite preview` sert le site construit ; même relais /api que le serveur de développement
+  // (utilisé par les tests de bout en bout : un seul site, pas de CORS à configurer).
+  preview: {
+    port: 3000,
+    proxy: {
+      '/api': {
+        // 127.0.0.1 et non « localhost » : Node 20 peut résoudre localhost en IPv6 alors que l'API écoute en IPv4
+        target: process.env.API_PROXY_TARGET || 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+    },
+  },
   build: {
     outDir: 'dist',
     sourcemap: false, // Ne pas exposer le code source TypeScript en production
