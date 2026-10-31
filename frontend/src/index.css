@@ -47,6 +47,8 @@
      swap background + text colors, not gradients or images. */
   html.dark .bg-white                            { background-color: #111827; color-scheme: dark; }
   html.dark .bg-gray-50                          { background-color: #1f2937; }
+  /* Fond de l'application (Layout) : sans cette règle il restait clair en mode sombre. */
+  html.dark .bg-\[\#eef0f3\]                    { background-color: #0b1220; }
   html.dark .bg-gray-100                         { background-color: #1f2937; }
   html.dark .text-gray-900                       { color: #f3f4f6; }
   html.dark .text-gray-800                       { color: #e5e7eb; }
