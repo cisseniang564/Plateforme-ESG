@@ -31,6 +31,8 @@ const OmnibusCsrdPage = lazy(() => import('@/pages/Resources/OmnibusCsrdPage'));
 const Scope3FecPage   = lazy(() => import('@/pages/Resources/Scope3FecPage'));
 const TaxonomiePage   = lazy(() => import('@/pages/Resources/TaxonomiePage'));
 const ResourcesIndex  = lazy(() => import('@/pages/Resources/ResourcesIndex'));
+const EligibilityPage = lazy(() => import('@/pages/Resources/EligibilityPage'));
+const DictionaryPage  = lazy(() => import('@/pages/Resources/DictionaryPage'));
 
 const ContactPage = lazy(() => import('@/pages/Contact/ContactPage'));
 // Catalogue des composants (développement uniquement)
@@ -372,6 +374,8 @@ export default function AppRoutes() {
         <Route path="/guide/scope3-fec"  element={<Scope3FecPage />} />
         <Route path="/guide/taxonomie"   element={<TaxonomiePage />} />
         <Route path="/resources"         element={<ResourcesIndex />} />
+        <Route path="/ressources/suis-je-concerne" element={<EligibilityPage />} />
+        <Route path="/ressources/dictionnaire"     element={<DictionaryPage />} />
 
         <Route path="/contact"            element={<ContactPage />} />
 
