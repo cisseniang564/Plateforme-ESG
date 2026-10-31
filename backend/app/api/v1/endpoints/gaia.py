@@ -19,7 +19,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.db.session import AsyncSessionLocal, get_db
+from app.db.session import SystemSessionLocal, get_db
 from app.dependencies import get_current_user, require_feature
 from app.models.report_analysis import ReportAnalysis
 from app.models.user import User
@@ -61,7 +61,7 @@ async def _get_owned(db: AsyncSession, analysis_id: UUID, user: User) -> ReportA
 
 async def _run_analysis(analysis_id: UUID, tenant_id: UUID) -> None:
     """Tâche d'arrière-plan : appelle l'IA puis enregistre le résultat (ou l'erreur)."""
-    async with AsyncSessionLocal() as db:
+    async with SystemSessionLocal() as db:
         await db.execute(text("SELECT set_config('app.current_tenant_id', :t, false)"), {"t": str(tenant_id)})
         row = (await db.execute(select(ReportAnalysis).where(ReportAnalysis.id == analysis_id))).scalar_one_or_none()
         if not row:

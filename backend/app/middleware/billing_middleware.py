@@ -97,10 +97,10 @@ async def _tenant_is_blocked(tenant_id: str) -> bool:
 
     blocked = False
     try:
-        from app.db.session import AsyncSessionLocal
+        from app.db.session import SystemSessionLocal
         from sqlalchemy import text
 
-        async with AsyncSessionLocal() as session:
+        async with SystemSessionLocal() as session:
             result = await session.execute(
                 text(
                     "SELECT plan_tier, stripe_subscription_status, trial_ends_at "

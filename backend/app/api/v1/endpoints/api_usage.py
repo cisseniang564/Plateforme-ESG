@@ -99,12 +99,12 @@ async def get_usage_summary(
 
     # Get plan limit from tenant
     from sqlalchemy import select
-    from app.db.session import AsyncSessionLocal
+    from app.db.session import SystemSessionLocal
     from app.models.tenant import Tenant
 
     plan_limit = None
     try:
-        async with AsyncSessionLocal() as db:
+        async with SystemSessionLocal() as db:
             tenant = (await db.execute(select(Tenant).where(Tenant.id == current_user.tenant_id))).scalar_one_or_none()
             if tenant:
                 plan_limit = tenant.max_monthly_api_calls

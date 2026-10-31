@@ -7,7 +7,7 @@ from uuid import UUID
 from fastapi import HTTPException, Request, status
 from sqlalchemy import text
 
-from app.db.session import AsyncSessionLocal
+from app.db.session import SystemSessionLocal
 
 
 class TenantMiddleware:

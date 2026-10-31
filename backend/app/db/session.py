@@ -6,7 +6,8 @@ import os
 from typing import AsyncGenerator
 
 from fastapi import Request
-from sqlalchemy import inspect as sa_inspect, text
+from sqlalchemy import event, inspect as sa_inspect, text
+from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
@@ -84,6 +85,35 @@ AsyncSessionLocal = async_sessionmaker(
 )
 
 
+# ── Sessions « système » (RLS) ───────────────────────────────────────────────
+# Les politiques RLS filtrent par client (app.current_tenant_id). Certains accès n'ont
+# légitimement pas de client : tâches Celery, webhooks Stripe, liens publics à jeton
+# (fournisseurs, enquêtes, auditeurs), inscription, démarrage, middlewares.
+# Ces accès utilisent SystemSessionLocal : chaque transaction y active
+# app.bypass_rls = 'on' (set_config local → disparaît au COMMIT/ROLLBACK, ne fuit
+# jamais dans le pool). Les requêtes d'un client connecté n'utilisent JAMAIS ce chemin.
+class _SystemSyncSession(Session):
+    pass
+
+
+@event.listens_for(_SystemSyncSession, "after_begin")
+def _enable_rls_bypass(session, transaction, connection):  # noqa: ARG001
+    connection.exec_driver_sql("SELECT set_config('app.bypass_rls', 'on', true)")
+
+
+class SystemSession(SafeAsyncSession):
+    sync_session_class = _SystemSyncSession
+
+
+SystemSessionLocal = async_sessionmaker(
+    engine,
+    class_=SystemSession,
+    expire_on_commit=False,
+    autocommit=False,
+    autoflush=False,
+)
+
+
 async def get_db(request: Request) -> AsyncGenerator[AsyncSession, None]:
     """
     FastAPI dependency — yields an async database session.
@@ -112,11 +142,14 @@ async def get_db(request: Request) -> AsyncGenerator[AsyncSession, None]:
             result = await db.execute(select(Item))
             return result.scalars().all()
     """
-    async with AsyncSessionLocal() as session:
+    tenant_id = getattr(request.state, "tenant_id", None)
+    user_id = getattr(request.state, "user_id", None)
+    # Requête sans client identifié (route publique, jeton, inscription, connexion) :
+    # session système ; avec client : session filtrée par RLS.
+    factory = AsyncSessionLocal if tenant_id else SystemSessionLocal
+    async with factory() as session:
         try:
             # Set RLS context variables in the same connection used by the query
-            tenant_id = getattr(request.state, "tenant_id", None)
-            user_id = getattr(request.state, "user_id", None)
 
             if tenant_id:
                 await session.execute(
@@ -177,7 +210,10 @@ async def init_db() -> None:
     ]
     # NULLIF: an unset/empty setting yields NULL (no rows) instead of a
     # "invalid input syntax for type uuid" error.
-    _rls_using = "tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid"
+    _rls_using = (
+        "(tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid"
+        " OR current_setting('app.bypass_rls', true) = 'on')"
+    )
 
     _migrations: list[str] = [
         # ── 2FA fields on users ───────────────────────────────────────────────
@@ -260,10 +296,12 @@ async def init_db() -> None:
             USING (
                 tenant_id IS NULL
                 OR tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
+                OR current_setting('app.bypass_rls', true) = 'on'
             )
             WITH CHECK (
                 tenant_id IS NULL
                 OR tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
+                OR current_setting('app.bypass_rls', true) = 'on'
             )
         """,
     ]
@@ -278,6 +316,7 @@ async def init_db() -> None:
             USING (
                 id = (NULLIF(current_setting('app.current_tenant_id', true), ''))::uuid
                 OR NULLIF(current_setting('app.current_tenant_id', true), '') IS NULL
+                OR current_setting('app.bypass_rls', true) = 'on'
             )
             WITH CHECK (true)
         """,

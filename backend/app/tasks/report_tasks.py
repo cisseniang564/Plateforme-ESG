@@ -39,7 +39,7 @@ def generate_report_async(
     """
     import io
     import asyncio
-    from app.db.session import AsyncSessionLocal
+    from app.db.session import SystemSessionLocal
     from app.services.report_service import ReportService
 
     logger.info(
@@ -48,7 +48,7 @@ def generate_report_async(
     )
 
     async def _run():
-        async with AsyncSessionLocal() as db:
+        async with SystemSessionLocal() as db:
             svc = ReportService(db)
             buf: io.BytesIO = await svc.generate(
                 report_type=report_type,

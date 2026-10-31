@@ -277,10 +277,10 @@ async def submit_checklist_lead(
 
     # Log the lead (best-effort — DB optional)
     try:
-        from app.db.session import AsyncSessionLocal
+        from app.db.session import SystemSessionLocal
         from sqlalchemy import text as _t
         ip = request.client.host if request.client else "?"
-        async with AsyncSessionLocal() as db:
+        async with SystemSessionLocal() as db:
             # Best-effort insert into audit_logs (already RLS-aware) as a generic event store
             await db.execute(
                 _t("""
@@ -327,10 +327,10 @@ async def submit_newsletter(
     """
     # Log the lead — best-effort, RLS-safe
     try:
-        from app.db.session import AsyncSessionLocal
+        from app.db.session import SystemSessionLocal
         from sqlalchemy import text as _t
         ip = request.client.host if request.client else "?"
-        async with AsyncSessionLocal() as db:
+        async with SystemSessionLocal() as db:
             await db.execute(
                 _t("""
                 INSERT INTO audit_logs (id, tenant_id, action, resource_type, details, created_at)

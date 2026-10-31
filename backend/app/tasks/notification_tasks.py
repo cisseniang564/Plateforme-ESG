@@ -21,14 +21,14 @@ logger = logging.getLogger(__name__)
 
 async def _async_scan_deadlines() -> dict:
     """Iterate all active tenants and create deadline notifications."""
-    from app.db.session import AsyncSessionLocal
+    from app.db.session import SystemSessionLocal
     from app.models.tenant import Tenant
     from app.services.notification_service import generate_deadline_notifications
 
     total_created = 0
     tenants_scanned = 0
 
-    async with AsyncSessionLocal() as db:
+    async with SystemSessionLocal() as db:
         result = await db.execute(
             select(Tenant.id).where(Tenant.status == "active")
         )
@@ -36,7 +36,7 @@ async def _async_scan_deadlines() -> dict:
 
     for tenant_id in tenant_ids:
         try:
-            async with AsyncSessionLocal() as db:
+            async with SystemSessionLocal() as db:
                 created = await generate_deadline_notifications(db, tenant_id)
                 total_created += created
                 tenants_scanned += 1
@@ -50,14 +50,14 @@ async def _async_scan_deadlines() -> dict:
 
 async def _async_scan_missing_data() -> dict:
     """Create one rolling missing-data notification per active tenant."""
-    from app.db.session import AsyncSessionLocal
+    from app.db.session import SystemSessionLocal
     from app.models.tenant import Tenant
     from app.services.notification_service import generate_missing_data_notifications
 
     total_created = 0
     tenants_scanned = 0
 
-    async with AsyncSessionLocal() as db:
+    async with SystemSessionLocal() as db:
         result = await db.execute(
             select(Tenant.id).where(Tenant.status == "active")
         )
@@ -65,7 +65,7 @@ async def _async_scan_missing_data() -> dict:
 
     for tenant_id in tenant_ids:
         try:
-            async with AsyncSessionLocal() as db:
+            async with SystemSessionLocal() as db:
                 created = await generate_missing_data_notifications(db, tenant_id)
                 total_created += created
                 tenants_scanned += 1
@@ -96,9 +96,9 @@ def scan_missing_data() -> dict:
 def test_notification(tenant_id: str) -> dict:
     """Smoke-test: create a notification for the given tenant_id."""
     async def _run():
-        from app.db.session import AsyncSessionLocal
+        from app.db.session import SystemSessionLocal
         from app.services.notification_service import NotificationService
-        async with AsyncSessionLocal() as db:
+        async with SystemSessionLocal() as db:
             service = NotificationService(db)
             n = await service.create(
                 tenant_id=UUID(tenant_id),
