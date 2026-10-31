@@ -2,7 +2,8 @@
  * Section « Notre objectif » — trois illustrations originales (SVG) qui racontent
  * ce que fait la plateforme : rassembler les données, les mesurer, en rendre compte.
  */
-import { ArrowRight } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowRight, Wind, Sun, Hammer, Users, Briefcase, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const G = '#10b981';   // émeraude
@@ -119,6 +120,91 @@ function IllustrationReport() {
   );
 }
 
+/** Photo avec visuel de remplacement : si le fichier est absent, rien ne casse. */
+function Photo({ src, alt, icon: Icon, className = '' }: { src: string; alt: string; icon: LucideIcon; className?: string }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <div className={`relative overflow-hidden bg-gradient-to-br from-emerald-100 via-teal-50 to-slate-100 ${className}`}>
+      {failed ? (
+        <div className="absolute inset-0 flex items-center justify-center" role="img" aria-label={alt}>
+          <Icon className="h-1/3 w-1/3 text-emerald-600/40" strokeWidth={1.2} />
+        </div>
+      ) : (
+        <img src={src} alt={alt} loading="lazy" decoding="async" onError={() => setFailed(true)}
+          className="absolute inset-0 h-full w-full object-cover" />
+      )}
+    </div>
+  );
+}
+
+/** Bandeau photos + chiffres (clés de la plateforme) en cercles, façon magazine. */
+function PhotoBand() {
+  const { t } = useTranslation();
+  const facts = [
+    { v: '22', l: t('landing.lp.photos.f1', 'modules intégrés dans une seule plateforme') },
+    { v: '100+', l: t('landing.lp.photos.f2', 'indicateurs ESRS suivis') },
+    { v: '10', l: t('landing.lp.photos.f3', 'référentiels couverts') },
+  ];
+  return (
+    <div className="mt-20 grid items-center gap-8 lg:grid-cols-12">
+      <div className="lg:col-span-3 order-2 lg:order-1">
+        <p className="text-6xl font-extralight text-slate-900">{facts[0].v}</p>
+        <p className="mt-2 text-gray-500">{facts[0].l}</p>
+        <p className="mt-10 text-6xl font-extralight text-slate-900">{facts[1].v}</p>
+        <p className="mt-2 text-gray-500">{facts[1].l}</p>
+      </div>
+      <div className="lg:col-span-6 order-1 lg:order-2 flex items-center justify-center gap-4 sm:gap-6">
+        <Photo src="/landing/eolien.jpg" alt={t('landing.lp.photos.wind', 'Parc éolien en mer')} icon={Wind}
+          className="h-40 w-40 sm:h-56 sm:w-56 rounded-full shadow-xl ring-8 ring-white" />
+        <Photo src="/landing/solaire.jpg" alt={t('landing.lp.photos.solar', 'Champ de panneaux solaires')} icon={Sun}
+          className="mt-16 h-32 w-32 sm:h-44 sm:w-44 rounded-full shadow-xl ring-8 ring-white" />
+        <span className="hidden sm:block h-16 w-16 rounded-full bg-emerald-600/90" aria-hidden="true" />
+      </div>
+      <div className="lg:col-span-3 order-3">
+        <p className="text-6xl font-extralight text-slate-900">{facts[2].v}</p>
+        <p className="mt-2 text-gray-500">{facts[2].l}</p>
+      </div>
+    </div>
+  );
+}
+
+/** Trois profils d'entreprise : la plateforme s'adapte à chacun. */
+function ProfileCards() {
+  const { t } = useTranslation();
+  const profiles = [
+    { src: '/landing/atelier.jpg', icon: Hammer, tag: 'PME',
+      title: t('landing.lp.profiles.p1.title', 'PME sous pression de sa chaîne de valeur'),
+      text: t('landing.lp.profiles.p1.text', 'Un grand client demande votre questionnaire de durabilité. Vous répondez une fois, avec des données que vous pouvez prouver.') },
+    { src: '/landing/equipe.jpg', icon: Users, tag: 'ETI',
+      title: t('landing.lp.profiles.p2.title', 'ETI qui doit publier en CSRD'),
+      text: t('landing.lp.profiles.p2.text', 'Matérialité, ESRS, trajectoire carbone et rapport : une équipe réduite pilote tout au même endroit.') },
+    { src: '/landing/cabinet.jpg', icon: Briefcase, tag: t('landing.lp.profiles.p3.tag', 'Cabinets'),
+      title: t('landing.lp.profiles.p3.title', 'Cabinets qui accompagnent plusieurs clients'),
+      text: t('landing.lp.profiles.p3.text', 'Un espace par client, des modèles de rapport réutilisables et une piste d’audit partagée avec les auditeurs.') },
+  ];
+  return (
+    <div className="mt-24">
+      <h3 className="mb-8 text-center text-2xl font-bold text-gray-900">
+        {t('landing.lp.profiles.title', 'Conçu pour la réalité de chaque entreprise')}
+      </h3>
+      <div className="grid gap-6 md:grid-cols-3">
+        {profiles.map(p => (
+          <article key={p.tag} className="group overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl">
+            <div className="relative">
+              <Photo src={p.src} alt={p.title} icon={p.icon} className="aspect-[4/3] w-full" />
+              <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-gray-800 backdrop-blur">{p.tag}</span>
+            </div>
+            <div className="p-6">
+              <h4 className="mb-2 text-lg font-bold text-gray-900">{p.title}</h4>
+              <p className="text-gray-500 leading-relaxed">{p.text}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function MissionIllustrated() {
   const { t } = useTranslation();
   const steps = [
@@ -180,6 +266,9 @@ export default function MissionIllustrated() {
             </div>
           ))}
         </div>
+
+        <PhotoBand />
+        <ProfileCards />
       </div>
     </section>
   );

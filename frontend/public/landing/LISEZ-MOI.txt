@@ -1,0 +1,13 @@
+Photos de la landing page (section « Notre objectif »)
+
+Déposez ici des photos LIBRES DE DROITS (Unsplash, Pexels — licence commerciale gratuite),
+en JPG, ~1600 px de large, < 300 Ko chacune. Noms attendus :
+
+  eolien.jpg     parc éolien (cercle)
+  solaire.jpg    champ de panneaux solaires (cercle)
+  atelier.jpg    artisan / PME au travail (carte « PME »)
+  equipe.jpg     équipe en réunion (carte « ETI »)
+  cabinet.jpg    consultante / auditeur (carte « Cabinets »)
+
+Tant qu'un fichier est absent, un visuel de remplacement (dégradé + icône) s'affiche : rien ne casse.
+Ne réutilisez pas les photos d'un autre site (droits d'auteur).
