@@ -8,6 +8,10 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     networks: [esgflow]
+    # Le site déployé (scripts/deploy-frontend.sh) vit dans ce volume : il survit
+    # au redémarrage / à la recréation du conteneur (il était vidé avant).
+    volumes:
+      - frontend_html:/usr/share/nginx/html
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
       interval: 30s
@@ -156,6 +160,7 @@ volumes:
   postgres_data:
   redis_data:
   nginx_logs:
+  frontend_html:
 
 networks:
   esgflow:
