@@ -121,7 +121,7 @@ function IllustrationReport() {
 }
 
 /** Photo avec visuel de remplacement : si le fichier est absent, rien ne casse. */
-function Photo({ src, alt, icon: Icon, className = '' }: { src: string; alt: string; icon: LucideIcon; className?: string }) {
+function Photo({ src, alt, icon: Icon, className = '', position = 'center' }: { src: string; alt: string; icon: LucideIcon; className?: string; position?: string }) {
   const [failed, setFailed] = useState(false);
   return (
     <div className={`relative overflow-hidden bg-gradient-to-br from-emerald-100 via-teal-50 to-slate-100 ${className}`}>
@@ -131,7 +131,7 @@ function Photo({ src, alt, icon: Icon, className = '' }: { src: string; alt: str
         </div>
       ) : (
         <img src={src} alt={alt} loading="lazy" decoding="async" onError={() => setFailed(true)}
-          className="absolute inset-0 h-full w-full object-cover" />
+          style={{ objectPosition: position }} className="absolute inset-0 h-full w-full object-cover" />
       )}
     </div>
   );
@@ -156,7 +156,7 @@ function PhotoBand() {
       <div className="lg:col-span-6 order-1 lg:order-2 flex items-center justify-center gap-4 sm:gap-6">
         <Photo src="/landing/eolien.jpg" alt={t('landing.lp.photos.wind', 'Parc éolien en mer')} icon={Wind}
           className="h-40 w-40 sm:h-56 sm:w-56 rounded-full shadow-xl ring-8 ring-white" />
-        <Photo src="/landing/solaire.jpg" alt={t('landing.lp.photos.solar', 'Champ de panneaux solaires')} icon={Sun}
+        <Photo src="/landing/solaire.jpg" alt={t('landing.lp.photos.solar', 'Champ de panneaux solaires')} icon={Sun} position="30% 90%"
           className="mt-16 h-32 w-32 sm:h-44 sm:w-44 rounded-full shadow-xl ring-8 ring-white" />
         <span className="hidden sm:block h-16 w-16 rounded-full bg-emerald-600/90" aria-hidden="true" />
       </div>
