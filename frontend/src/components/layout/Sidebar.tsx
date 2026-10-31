@@ -263,6 +263,7 @@ function buildBottomRail(t: TFn) {
     { id: 'cabinet',       label: t('sidebar.bottom.cabinet'),       icon: Building2,  href: '/app/cabinet' },
     { id: 'notifications', label: t('sidebar.bottom.notifications'), icon: Bell,       href: '/app/notifications' },
     { id: 'help',          label: t('sidebar.bottom.help'),          icon: HelpCircle, href: '/help' },
+    { id: 'docs',          label: 'Docs',                            icon: BookOpen,   href: '/documentation' },
   ];
 }
 

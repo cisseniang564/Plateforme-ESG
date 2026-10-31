@@ -1,0 +1,105 @@
+import type { DocArticle } from '../types';
+
+export const demarrer: DocArticle[] = [
+  {
+    slug: 'tableau-de-bord',
+    section: 'demarrer',
+    title: 'Tableau de bord (Accueil)',
+    summary: 'Votre vue d\'ensemble : score ESG, tendances, points d\'attention et accès rapides.',
+    routes: [{ label: 'Accueil', to: '/app' }],
+    about: 'C\'est la première page après la connexion. Elle résume la performance ESG de toutes vos organisations à partir de vos données réelles : rien n\'y est saisi, tout est calculé.',
+    shows: [
+      'Un bonjour personnalisé, la date et le sélecteur de période (7 jours, 30 jours, 90 jours, 1 an).',
+      'Le score ESG moyen sur 100 avec le détail des trois piliers : Environnement, Social, Gouvernance, et sa variation par rapport à la période précédente.',
+      'Quatre chiffres clés : nombre d\'organisations, couverture moyenne des normes ESRS, nombre de « leaders » (score d\'au moins 75) et organisations à renforcer (score sous 45).',
+      'La courbe d\'évolution du score ESG et les « points d\'attention » (organisations sans score, sous le seuil, normes ESRS peu couvertes).',
+      'Le classement de vos organisations, les prochaines échéances réglementaires, l\'activité récente, la répartition par note et la couverture des normes ESRS.',
+      'Des accès rapides : saisir des données, générer le rapport CSRD, voir les connecteurs, Gaïa et l\'analyse IA.',
+    ],
+    steps: [
+      { title: 'Choisir la période', text: 'Utilisez le sélecteur en haut à droite pour changer la fenêtre de la courbe d\'évolution.' },
+      { title: 'Actualiser', text: 'Le bouton « Actualiser » recharge les scores, l\'activité et la couverture ESRS.' },
+      { title: 'Traiter les points d\'attention', text: 'Cliquez sur une ligne de « Points d\'attention » pour aller directement à la page qui permet de corriger le problème.' },
+    ],
+    tips: [
+      'Si le tableau de bord est vide, ajoutez d\'abord une organisation, puis saisissez ou importez des données et calculez un score.',
+      'La courbe a besoin d\'au moins deux périodes de score calculées pour apparaître.',
+    ],
+    related: ['premiers-pas', 'calculer-score', 'organisations'],
+    keywords: ['accueil', 'dashboard', 'score', 'indicateurs clés', 'vue d\'ensemble'],
+  },
+  {
+    slug: 'tableaux-par-pilier',
+    section: 'demarrer',
+    title: 'Tableaux de bord par pilier',
+    summary: 'Le détail d\'un pilier ESG (Environnement, Social ou Gouvernance) : score, objectifs et indicateurs.',
+    routes: [
+      { label: 'Pilier Environnement', to: '/app/dashboard/pillar/environmental' },
+      { label: 'Pilier Social', to: '/app/dashboard/pillar/social' },
+      { label: 'Pilier Gouvernance', to: '/app/dashboard/pillar/governance' },
+    ],
+    about: 'Chaque pilier dispose de sa propre page, avec le même format : un score, la comparaison à l\'objectif et la liste des indicateurs qui le composent.',
+    shows: [
+      'Le score du pilier et la comparaison « Performance vs objectif » (valeur actuelle contre cible).',
+      'La répartition des pondérations des indicateurs dans le score (« Indicators Breakdown »).',
+      'La liste des indicateurs ESG du pilier avec leur nom, leur unité et leur dernière mise à jour.',
+      'L\'activité récente du pilier.',
+    ],
+    steps: [
+      { title: 'Ouvrir un pilier', text: 'Depuis le tableau de bord, cliquez sur le pilier voulu, ou ouvrez directement l\'une des trois pages ci-dessus.' },
+      { title: 'Calculer le score si besoin', text: 'Si la page indique « Aucun score calculé », utilisez le bouton « Calculer le score » pour lancer le calcul.' },
+    ],
+    related: ['tableau-de-bord', 'catalogue-indicateurs', 'calculer-score'],
+    keywords: ['environnement', 'social', 'gouvernance', 'pilier', 'ESG'],
+  },
+  {
+    slug: 'premiers-pas',
+    section: 'demarrer',
+    title: 'Premiers pas : configurer votre espace',
+    summary: 'L\'assistant de démarrage en 5 étapes pour préparer votre espace de travail.',
+    routes: [{ label: 'Assistant de configuration', to: '/app/setup' }],
+    about: 'À la première connexion, un assistant « Configurez votre espace » vous guide en 5 étapes. Vous pouvez revenir en arrière à tout moment.',
+    shows: [
+      'Cinq étapes : Profil, Réglementations, Indicateurs, Premier import, Équipe, avec une barre de progression.',
+      'À l\'étape Profil : nom de l\'entreprise (obligatoire), secteur d\'activité, effectif, chiffre d\'affaires, pays et case « cotée en bourse ».',
+      'À l\'étape Réglementations : la liste de ce qui s\'applique à votre profil, classée Obligatoire, Recommandé ou Optionnel.',
+    ],
+    steps: [
+      { title: 'Profil', text: 'Renseignez les informations de votre entreprise : elles déterminent les réglementations qui s\'appliquent.' },
+      { title: 'Réglementations', text: 'Vérifiez la liste proposée selon votre profil et décochez ce qui ne vous concerne pas.' },
+      { title: 'Indicateurs', text: 'Choisissez vos indicateurs prioritaires (boutons « Tout sélectionner » et « Tout désélectionner »).' },
+      { title: 'Premier import', text: 'Au choix : pré-remplir avec un template sectoriel (le plus rapide), importer votre FEC, importer un CSV ou commencer par une saisie manuelle.' },
+      { title: 'Équipe', text: 'Invitez vos collaborateurs par e-mail. Cette étape est facultative.' },
+    ],
+    tips: [
+      'Vous pourrez ajouter des données à tout moment : le choix du premier import ne vous engage pas.',
+      'Si aucune obligation majeure n\'est détectée, vous pouvez quand même structurer votre démarche ESG de façon volontaire.',
+    ],
+    related: ['catalogue-indicateurs', 'utilisateurs-roles', 'organisations', 'templates-sectoriels'],
+    keywords: ['onboarding', 'configuration', 'démarrage', 'setup'],
+  },
+  {
+    slug: 'templates-sectoriels',
+    section: 'demarrer',
+    title: 'Templates sectoriels',
+    summary: 'Pré-remplir votre reporting en un clic avec des valeurs typiques de votre secteur.',
+    routes: [{ label: 'Templates sectoriels', to: '/app/templates' }],
+    about: 'Un template crée des saisies ESG de départ à partir de moyennes sectorielles (ADEME, INSEE). Toutes les valeurs sont estimées et signalées comme telles : vous devez les remplacer par vos vraies données avant toute publication.',
+    shows: [
+      'Un catalogue de templates par secteur, organisés en Environnement (E), Social (S) et Gouvernance (G).',
+      'Pour chaque template, le nombre d\'entrées et d\'indicateurs qui seront créés.',
+      'Après application : un récapitulatif et des liens vers le tableau de bord CSRD et l\'édition des données.',
+    ],
+    steps: [
+      { title: 'Choisir le template', text: 'Sélectionnez celui qui correspond à votre secteur et lisez ce qu\'il crée.' },
+      { title: 'L\'appliquer', text: 'Validez : les entrées sont créées en une fois, marquées comme estimées.' },
+      { title: 'Corriger', text: 'Ouvrez « Éditer les données » et remplacez chaque valeur par votre donnée réelle.' },
+    ],
+    tips: [
+      'Un template sert à passer d\'un reporting vide à une base de travail réaliste : ce n\'est pas une donnée publiable.',
+      'Un template appliqué peut être annulé à tout moment avec la fonction « Revert ».',
+    ],
+    related: ['mes-donnees', 'progression-csrd', 'premiers-pas'],
+    keywords: ['template', 'pré-remplir', 'secteur', 'estimé'],
+  },
+];
