@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, FileText, Flame, Layers, Newspaper, Shield } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookMarked, BookOpen, ClipboardCheck, FileText, Flame, Layers, Newspaper, Play, Shield, Compass } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 
@@ -90,6 +90,34 @@ export default function ResourcesIndex() {
           <p className="text-lg text-slate-300 max-w-2xl mx-auto">
             {t('resources.index.hero.subtitle', 'Guides pratiques, décryptages réglementaires et bonnes pratiques — rédigés par les experts ESG de GreenConnect.')}
           </p>
+        </div>
+      </section>
+
+
+      {/* Outils gratuits */}
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-14">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">
+          {t('resources.index.tools.eyebrow', 'Outils gratuits, sans inscription')}
+        </p>
+        <h2 className="text-2xl font-extrabold text-gray-900 mb-6">
+          {t('resources.index.tools.title', 'Savoir où vous en êtes, avant de décider')}
+        </h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[
+            { to: '/ressources/suis-je-concerne', icon: Compass, title: t('resources.index.tools.0.title', 'Suis-je concerné par la CSRD ?'), text: t('resources.index.tools.0.text', 'Quelques questions : obligé ou non, à quelle date, et ce que cela change pour vous.') },
+            { to: '/ressources/dictionnaire', icon: BookMarked, title: t('resources.index.tools.1.title', 'Le dictionnaire des indicateurs'), text: t('resources.index.tools.1.text', 'Chaque indicateur ESG, sa définition et son code ESRS, GRI et VSME.') },
+            { to: '/ressources/checklist-csrd', icon: ClipboardCheck, title: t('resources.index.tools.2.title', 'La checklist CSRD'), text: t('resources.index.tools.2.text', 'Les étapes à cocher pour préparer votre premier rapport.') },
+            { to: '/demo', icon: Play, title: t('resources.index.tools.3.title', 'La démonstration'), text: t('resources.index.tools.3.text', 'Parcourez la plateforme avec des données fictives.') },
+            { to: '/documentation', icon: BookOpen, title: t('resources.index.tools.4.title', 'La documentation'), text: t('resources.index.tools.4.text', 'Chaque page de la plateforme expliquée pas à pas.') },
+          ].map(({ to, icon: Icon, title, text }) => (
+            <Link key={to} to={to} className="group flex items-start gap-4 rounded-2xl border border-gray-200 bg-white p-5 transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg">
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100"><Icon className="h-5 w-5" /></span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center justify-between gap-2 font-bold text-gray-900">{title}<ArrowRight className="h-4 w-4 flex-shrink-0 text-gray-300 transition-all group-hover:translate-x-0.5 group-hover:text-emerald-600" /></span>
+                <span className="mt-1 block text-sm text-gray-500">{text}</span>
+              </span>
+            </Link>
+          ))}
         </div>
       </section>
 

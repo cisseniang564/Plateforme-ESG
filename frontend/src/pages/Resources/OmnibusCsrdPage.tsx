@@ -81,9 +81,9 @@ export default function OmnibusCsrdPage() {
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 mb-6">
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/20 border border-amber-500/30 rounded-full text-amber-300 text-xs font-semibold">
-              <AlertTriangle className="h-3.5 w-3.5" /> {t('resources.omnibus.hero.badge', 'Réglementation · Décembre 2025')}
+              <AlertTriangle className="h-3.5 w-3.5" /> {t('resources.omnibus.hero.badge', "Réglementation · Omnibus I adopté")}
             </span>
-            <span className="text-slate-500 text-xs">{t('resources.omnibus.hero.updated', 'Mis à jour le 17 mai 2026')}</span>
+            <span className="text-slate-500 text-xs">{t('resources.omnibus.hero.updated', "Mis à jour le 31 octobre 2026")}</span>
           </div>
 
           <h1 className="text-4xl lg:text-5xl font-extrabold text-white mb-5 leading-tight">
@@ -91,7 +91,7 @@ export default function OmnibusCsrdPage() {
             <span className="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">{t('resources.omnibus.hero.titleLine2', 'et ce que vous devez faire maintenant')}</span>
           </h1>
           <p className="text-xl text-slate-300 max-w-3xl leading-relaxed mb-8">
-            {t('resources.omnibus.hero.subtitle', 'Le paquet Omnibus I adopté en décembre 2025 a profondément modifié le périmètre de la CSRD. Voici ce qui a changé, qui est encore concerné, et comment les PME doivent se positionner.')}
+            {t('resources.omnibus.hero.subtitle', "Le paquet Omnibus I, adopté fin 2025 et approuvé par le Conseil le 24 février 2026, a profondément modifié le périmètre de la CSRD. Voici ce qui a changé, qui est encore concerné, et comment les PME doivent se positionner.")}
           </p>
 
           <div className="flex flex-wrap gap-3">
@@ -147,7 +147,7 @@ export default function OmnibusCsrdPage() {
               </div>
               <ul className="space-y-2.5 text-sm text-gray-700">
                 <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />{t('resources.omnibus.scope.before.items.0', 'Grandes entreprises cotées dès 2024')}</li>
-                <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />{t('resources.omnibus.scope.before.items.1', '+250 salariés ou +50 M€ CA ou +25 M€ bilan dès 2026 (vague 2)')}</li>
+                <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />{t('resources.omnibus.scope.before.items.1', "Deux critères sur trois : +250 salariés, +50 M€ de CA, +25 M€ de bilan (vague 2)")}</li>
                 <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />{t('resources.omnibus.scope.before.items.2', 'PME cotées dès 2027 (vague 3)')}</li>
                 <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />{t('resources.omnibus.scope.before.items.3', 'Périmètre : ~50 000 entreprises en UE')}</li>
                 <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />{t('resources.omnibus.scope.before.items.4', '1 100+ points de données ESRS')}</li>
@@ -160,14 +160,14 @@ export default function OmnibusCsrdPage() {
                 <div className="w-7 h-7 bg-emerald-100 rounded-xl flex items-center justify-center">
                   <span className="text-emerald-600 font-bold text-xs">✓</span>
                 </div>
-                <span className="font-bold text-gray-900 text-sm">{t('resources.omnibus.scope.after.label', 'Après Omnibus I (décembre 2025)')}</span>
+                <span className="font-bold text-gray-900 text-sm">{t('resources.omnibus.scope.after.label', "Après Omnibus I (adopté fin 2025, en vigueur en 2026)")}</span>
               </div>
               <ul className="space-y-2.5 text-sm text-gray-700">
                 <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" /><strong>{t('resources.omnibus.scope.after.items.0', 'Seuil relevé : +1 000 salariés ET +450 M€ CA')}</strong></li>
-                <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />{t('resources.omnibus.scope.after.items.1', 'Vague 2 reportée à 2028–2029')}</li>
-                <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />{t('resources.omnibus.scope.after.items.2', 'PME cotées : exemption prolongée')}</li>
-                <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />{t('resources.omnibus.scope.after.items.3', 'Périmètre réduit : ~5 000–10 000 entreprises en UE')}</li>
-                <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />{t('resources.omnibus.scope.after.items.4', 'ESRS allégés : ~400–500 points de données')}</li>
+                <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />{t('resources.omnibus.scope.after.items.1', "Vague 2 : premier rapport en 2028 (exercice 2027)")}</li>
+                <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />{t('resources.omnibus.scope.after.items.2', "PME cotées : sorties du champ obligatoire (VSME volontaire)")}</li>
+                <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />{t('resources.omnibus.scope.after.items.3', "Périmètre réduit d'environ 80 à 90 % selon les estimations")}</li>
+                <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />{t('resources.omnibus.scope.after.items.4', "ESRS simplifiés : application prévue dès l'exercice 2027")}</li>
               </ul>
             </div>
           </div>
@@ -181,7 +181,7 @@ export default function OmnibusCsrdPage() {
               {[
                 { label: t('resources.omnibus.scope.check.0.label', 'Salariés'), threshold: t('resources.omnibus.scope.check.0.threshold', '≥ 1 000 ETP'), icon: Users, color: 'blue' },
                 { label: t('resources.omnibus.scope.check.1.label', "Chiffre d'affaires"), threshold: t('resources.omnibus.scope.check.1.threshold', '≥ 450 M€'), icon: TrendingDown, color: 'emerald' },
-                { label: t('resources.omnibus.scope.check.2.label', 'Critère supplémentaire'), threshold: t('resources.omnibus.scope.check.2.threshold', 'Ou titres cotés sur marché réglementé'), icon: Globe, color: 'violet' },
+                { label: t('resources.omnibus.scope.check.2.label', "Vague 1 déjà déclarante"), threshold: t('resources.omnibus.scope.check.2.threshold', "Selon la transposition nationale"), icon: Globe, color: 'violet' },
               ].map(c => (
                 <div key={c.label} className="text-center">
                   <div className={`w-10 h-10 bg-${c.color}-100 rounded-xl flex items-center justify-center mx-auto mb-2`}>
@@ -193,7 +193,7 @@ export default function OmnibusCsrdPage() {
               ))}
             </div>
             <p className="text-xs text-gray-500 mt-4 text-center">
-              {t('resources.omnibus.scope.check.note', "Les deux premiers critères sont cumulatifs (ET, pas OU) selon l'Omnibus I. Les entreprises cotées sur un marché réglementé peuvent être soumises indépendamment.")}
+              {t('resources.omnibus.scope.check.note', "Les deux premiers critères sont cumulatifs (ET, pas OU). Une société cotée qui reste sous ces seuils n'est plus obligée. Les entreprises qui déclarent déjà (vague 1) dépendent de la transposition nationale de chaque État membre.")}
             </p>
           </div>
         </section>
@@ -208,33 +208,33 @@ export default function OmnibusCsrdPage() {
           <div className="relative">
             <TimelineItem
               date="2024"
-              title={t('resources.omnibus.timeline.0.title', 'Vague 1 — Grandes entreprises cotées (NFID existantes)')}
-              desc={t('resources.omnibus.timeline.0.desc', "Entreprises déjà soumises à la NFID (déclaration non financière) : maintien des obligations. Premier rapport CSRD pour l'exercice 2024.")}
+              title={t('resources.omnibus.timeline.0.title', "Vague 1 — Grandes entreprises déjà soumises à la NFRD")}
+              desc={t('resources.omnibus.timeline.0.desc', "Entreprises déjà soumises à la NFRD (déclaration non financière) : premier rapport CSRD pour l'exercice 2024, publié en 2025.")}
               color="gray"
             />
             <TimelineItem
-              date="2025"
-              title={t('resources.omnibus.timeline.1.title', 'Omnibus I adopté — Révision majeure du périmètre')}
-              desc={t('resources.omnibus.timeline.1.desc', "Décembre 2025 : la Commission adopte l'Omnibus Simplification Package I. Le seuil passe de 250 à 1 000 salariés + 450 M€ CA. Les vagues 2 et 3 sont reportées.")}
+              date="2025–26"
+              title={t('resources.omnibus.timeline.1.title', "Omnibus I adopté — révision majeure du périmètre")}
+              desc={t('resources.omnibus.timeline.1.desc', "Le Parlement européen adopte l'accord le 16 décembre 2025 et le Conseil l'approuve le 24 février 2026. Seuil : plus de 1 000 salariés ET plus de 450 M€ de chiffre d'affaires net.")}
               highlight
               color="emerald"
             />
             <TimelineItem
               date="2027"
-              title={t('resources.omnibus.timeline.2.title', 'Vague 1 étendue — Grandes entreprises non cotées >1 000 sal.')}
-              desc={t('resources.omnibus.timeline.2.desc', "Entreprises de plus de 1 000 salariés et 450 M€ de CA non cotées : premier exercice CSRD pour l'exercice 2026, rapport en 2027.")}
+              title={t('resources.omnibus.timeline.2.title', "Exercice 2027 — les nouveaux seuils s'appliquent")}
+              desc={t('resources.omnibus.timeline.2.desc', "Les nouveaux seuils s'appliquent aux exercices ouverts à partir du 1er janvier 2027. Les ESRS simplifiés s'appliquent aussi dès l'exercice 2027 (application anticipée possible pour 2026).")}
               color="blue"
             />
             <TimelineItem
               date="2028"
-              title={t('resources.omnibus.timeline.3.title', 'Vague 2 — Extension (anciennement 2026)')}
-              desc={t('resources.omnibus.timeline.3.desc', "ETI cotées et autres entreprises atteignant les nouveaux seuils : premier exercice CSRD pour l'exercice 2027.")}
+              title={t('resources.omnibus.timeline.3.title', "Vague 2 — premier rapport (exercice 2027)")}
+              desc={t('resources.omnibus.timeline.3.desc', "Entreprises de plus de 1 000 salariés et 450 M€ de CA qui ne déclaraient pas encore : premier rapport en 2028 sur l'exercice 2027 (report de deux ans par le « stop-the-clock »).")}
               color="violet"
             />
             <TimelineItem
               date="2029"
-              title={t('resources.omnibus.timeline.4.title', 'Vague 3 — PME cotées (anciennement 2027)')}
-              desc={t('resources.omnibus.timeline.4.desc', "PME cotées sur marchés réglementés avec possibilité de standard VSME allégé. Standard ESRS PME en cours d'élaboration par l'EFRAG.")}
+              title={t('resources.omnibus.timeline.4.title', "Groupes hors UE — premier rapport (exercice 2028)")}
+              desc={t('resources.omnibus.timeline.4.desc', "Groupes hors UE avec plus de 450 M€ de CA dans l'UE et une filiale ou succursale de plus de 200 M€ : premier rapport en 2029 sur l'exercice 2028. Les PME cotées (ancienne vague 3) sont sorties du champ ; elles peuvent publier volontairement selon le standard VSME.")}
               color="amber"
             />
           </div>
@@ -281,7 +281,7 @@ export default function OmnibusCsrdPage() {
               {
                 n: '05',
                 title: t('resources.omnibus.pme.items.4.title', 'Standard VSME (préparation)'),
-                desc: t('resources.omnibus.pme.items.4.desc', "L'EFRAG travaille sur un standard VSME (Voluntary Sustainability Reporting Standard for SMEs). Se préparer maintenant avec une plateforme structurée permet d'adopter le VSME sans effort supplémentaire quand il sera finalisé."),
+                desc: t('resources.omnibus.pme.items.4.desc', "Le VSME est le standard volontaire publié par l'EFRAG (recommandation de la Commission en 2025). Il sert aussi de plafond : une entreprise de moins de 1 000 salariés peut refuser les demandes d'information qui vont au-delà. Le préparer aujourd'hui évite de répondre dans l'urgence."),
                 color: 'emerald',
               },
             ].map(item => (
@@ -349,7 +349,7 @@ export default function OmnibusCsrdPage() {
               {
                 step: 1, urgency: t('resources.omnibus.actions.items.0.urgency', 'Immédiat'),
                 title: t('resources.omnibus.actions.items.0.title', 'Identifiez si vous êtes dans le périmètre direct'),
-                desc: t('resources.omnibus.actions.items.0.desc', "Vérifiez vos effectifs et votre CA. Si vous dépassez 1 000 salariés ET 450 M€, vous serez soumis dès l'exercice 2026 (rapport 2027). Lancez immédiatement votre gap analysis ESRS."),
+                desc: t('resources.omnibus.actions.items.0.desc', "Vérifiez vos effectifs moyens et votre chiffre d'affaires net. Si vous dépassez 1 000 salariés ET 450 M€, votre premier rapport portera sur l'exercice 2027 (publié en 2028), sauf si vous déclarez déjà. Lancez votre analyse d'écart ESRS."),
                 color: 'red',
               },
               {
@@ -400,7 +400,7 @@ export default function OmnibusCsrdPage() {
             {[
               {
                 q: t('resources.omnibus.faq.items.0.q', 'Mon entreprise de 300 salariés était en vague 2 — est-elle exemptée ?'),
-                a: t('resources.omnibus.faq.items.0.a', "Oui. Avec l'Omnibus I, le seuil est passé à 1 000 salariés ET 450 M€ de CA. Une entreprise de 300 salariés n'est plus directement soumise à la CSRD, sauf si elle est cotée sur un marché réglementé européen. En revanche, elle reste exposée aux pressions supply chain de ses clients."),
+                a: t('resources.omnibus.faq.items.0.a', "Oui : le seuil est de 1 000 salariés ET 450 M€ de CA, et une société cotée qui reste en dessous n'est plus obligée non plus. Si elle déclarait déjà (vague 1), la suite dépend de la transposition nationale. Elle reste exposée aux demandes de ses clients, mais celles-ci sont plafonnées par le standard volontaire VSME pour les entreprises de moins de 1 000 salariés."),
               },
               {
                 q: t('resources.omnibus.faq.items.1.q', 'Les obligations DPEF (article L.225-102-1) sont-elles maintenues ?'),
@@ -408,11 +408,11 @@ export default function OmnibusCsrdPage() {
               },
               {
                 q: t('resources.omnibus.faq.items.2.q', "Qu'est-ce que le VSME et pour qui s'applique-t-il ?"),
-                a: t('resources.omnibus.faq.items.2.a', "Le VSME (Voluntary Sustainability Reporting Standard for SMEs) est un standard en cours d'élaboration par l'EFRAG, conçu pour les PME non cotées. Il est volontaire et allégé par rapport aux ESRS complets. Son adoption est fortement recommandée pour les PME qui répondent à des questionnaires de donneurs d'ordres ou d'investisseurs. ESG Flow est conçu pour être compatible avec le VSME dès sa finalisation."),
+                a: t('resources.omnibus.faq.items.2.a', "Le VSME (Voluntary Sustainability Reporting Standard for SMEs) est un standard volontaire publié par l'EFRAG, allégé par rapport aux ESRS complets. Depuis l'Omnibus I, il sert de plafond aux demandes d'information des grandes entreprises envers leurs partenaires de moins de 1 000 salariés. Il est donc le bon socle pour répondre aux questionnaires de donneurs d'ordres, de banques ou d'investisseurs."),
               },
               {
                 q: t('resources.omnibus.faq.items.3.q', 'Les délais pour les entreprises déjà en vague 1 ont-ils changé ?'),
-                a: t('resources.omnibus.faq.items.3.a', "Non. Les entreprises déjà soumises à la CSRD (grandes entreprises cotées, ex-NFID) restent dans leurs calendriers initiaux. L'Omnibus I a uniquement reporté les vagues 2 et 3 et relevé le seuil. La vague 1 étendue (>1 000 sal. + 450 M€ CA) démarre pour l'exercice 2026."),
+                a: t('resources.omnibus.faq.items.3.a', "Pas pour celles qui déclarent déjà (exercice 2024, publié en 2025) : elles continuent. Celles de moins de 1 000 salariés ou de 450 M€ de CA ou moins peuvent être dispensées, selon l'option retenue par chaque État membre dans sa transposition. Les ESRS simplifiés s'appliqueront dès l'exercice 2027."),
               },
               {
                 q: t('resources.omnibus.faq.items.4.q', "La Taxonomie UE est-elle aussi allégée par l'Omnibus ?"),

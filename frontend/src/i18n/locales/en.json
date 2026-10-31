@@ -10604,11 +10604,11 @@
         "freeTrial": "Free trial"
       },
       "hero": {
-        "badge": "Regulation · December 2025",
-        "updated": "Updated May 17, 2026",
+        "badge": "Regulation · Omnibus I adopted",
+        "updated": "Updated on 31 October 2026",
         "titleLine1": "CSRD Omnibus: what's changing",
         "titleLine2": "and what you need to do now",
-        "subtitle": "The Omnibus I package adopted in December 2025 deeply changed the scope of the CSRD. Here is what changed, who is still concerned, and how SMEs should position themselves.",
+        "subtitle": "The Omnibus I package, adopted in late 2025 and approved by the Council on 24 February 2026, significantly changed the scope of the CSRD. Here is what changed, who is still covered, and how SMEs should position themselves.",
         "jumpScope": "New scope",
         "jumpPme": "SME impact",
         "jumpActions": "What to do now"
@@ -10624,20 +10624,20 @@
           "label": "Original CSRD (2022)",
           "items": {
             "0": "Large listed companies from 2024",
-            "1": "250+ employees or €50M+ revenue or €25M+ balance sheet from 2026 (wave 2)",
+            "1": "Two of three criteria: 250+ employees, €50M+ revenue, €25M+ balance sheet (wave 2)",
             "2": "Listed SMEs from 2027 (wave 3)",
             "3": "Scope: ~50,000 companies in the EU",
             "4": "1,100+ ESRS data points"
           }
         },
         "after": {
-          "label": "After Omnibus I (December 2025)",
+          "label": "After Omnibus I (adopted late 2025, in force in 2026)",
           "items": {
             "0": "Threshold raised: 1,000+ employees AND €450M+ revenue",
-            "1": "Wave 2 postponed to 2028–2029",
-            "2": "Listed SMEs: extended exemption",
-            "3": "Reduced scope: ~5,000–10,000 companies in the EU",
-            "4": "Streamlined ESRS: ~400–500 data points"
+            "1": "Wave 2: first report in 2028 (FY 2027)",
+            "2": "Listed SMEs: removed from mandatory scope (voluntary VSME)",
+            "3": "Scope reduced by roughly 80–90% according to estimates",
+            "4": "Simplified ESRS: expected to apply from FY 2027"
           }
         },
         "check": {
@@ -10650,33 +10650,33 @@
             "threshold": "≥ €450M"
           },
           "2": {
-            "label": "Additional criterion",
-            "threshold": "Or securities listed on a regulated market"
+            "label": "Already reporting (wave 1)",
+            "threshold": "Depends on national transposition"
           },
           "title": "Are you in scope?",
-          "note": "The first two criteria are cumulative (AND, not OR) under Omnibus I. Companies listed on a regulated market may be subject independently."
+          "note": "The first two criteria are cumulative (AND, not OR). A listed company below these thresholds is no longer required to report. Companies already reporting (wave 1) depend on each Member State's national transposition."
         }
       },
       "timeline": {
         "0": {
-          "title": "Wave 1 — Large listed companies (existing NFRD)",
-          "desc": "Companies already subject to the NFRD (non-financial reporting): obligations maintained. First CSRD report for FY 2024."
+          "title": "Wave 1 — Large companies already under the NFRD",
+          "desc": "Companies already subject to the NFRD (non-financial reporting): first CSRD report for FY 2024, published in 2025."
         },
         "1": {
-          "title": "Omnibus I adopted — Major scope revision",
-          "desc": "December 2025: the Commission adopts the Omnibus Simplification Package I. The threshold rises from 250 to 1,000 employees + €450M revenue. Waves 2 and 3 are postponed."
+          "title": "Omnibus I adopted — major scope revision",
+          "desc": "The European Parliament adopted the agreement on 16 December 2025 and the Council approved it on 24 February 2026. Threshold: more than 1,000 employees AND more than €450M net turnover."
         },
         "2": {
-          "title": "Extended wave 1 — Large unlisted companies >1,000 emp.",
-          "desc": "Companies with more than 1,000 employees and €450M revenue that are unlisted: first CSRD financial year for FY 2026, reporting in 2027."
+          "title": "FY 2027 — the new thresholds apply",
+          "desc": "The new thresholds apply to financial years starting on or after 1 January 2027. The simplified ESRS also apply from FY 2027 (early application allowed for 2026)."
         },
         "3": {
-          "title": "Wave 2 — Extension (formerly 2026)",
-          "desc": "Listed mid-caps and other companies reaching the new thresholds: first CSRD financial year for FY 2027."
+          "title": "Wave 2 — first report (FY 2027)",
+          "desc": "Companies with more than 1,000 employees and €450M turnover not yet reporting: first report in 2028 on FY 2027 (two-year delay via the “stop-the-clock”)."
         },
         "4": {
-          "title": "Wave 3 — Listed SMEs (formerly 2027)",
-          "desc": "SMEs listed on regulated markets, with the option of a streamlined VSME standard. The ESRS standard for SMEs is being developed by EFRAG."
+          "title": "Non-EU groups — first report (FY 2028)",
+          "desc": "Non-EU groups with more than €450M turnover in the EU and an EU subsidiary or branch above €200M: first report in 2029 on FY 2028. Listed SMEs (former wave 3) are out of scope; they may report voluntarily under the VSME standard."
         },
         "badge": "Post-Omnibus timeline",
         "heading": "New deadlines"
@@ -10704,7 +10704,7 @@
           },
           "4": {
             "title": "VSME standard (preparation)",
-            "desc": "EFRAG is working on a VSME standard (Voluntary Sustainability Reporting Standard for SMEs). Preparing now with a structured platform makes it possible to adopt the VSME with no extra effort once it is finalized."
+            "desc": "The VSME is the voluntary standard published by EFRAG (Commission recommendation in 2025). It also acts as a cap: a company with fewer than 1,000 employees may refuse information requests that go beyond it. Preparing it now avoids answering in a rush."
           }
         }
       },
@@ -10742,7 +10742,7 @@
           "0": {
             "urgency": "Immediate",
             "title": "Identify whether you are in direct scope",
-            "desc": "Check your headcount and revenue. If you exceed 1,000 employees AND €450M, you will be subject from FY 2026 (2027 report). Launch your ESRS gap analysis immediately."
+            "desc": "Check your average headcount and net turnover. If you exceed 1,000 employees AND €450M, your first report will cover FY 2027 (published in 2028), unless you already report. Launch your ESRS gap analysis."
           },
           "1": {
             "urgency": "This quarter",
@@ -10771,7 +10771,7 @@
         "items": {
           "0": {
             "q": "My 300-employee company was in wave 2 — is it exempt?",
-            "a": "Yes. With Omnibus I, the threshold rose to 1,000 employees AND €450M revenue. A 300-employee company is no longer directly subject to the CSRD, unless it is listed on a European regulated market. However, it remains exposed to supply-chain pressure from its clients."
+            "a": "Yes: the threshold is 1,000 employees AND €450M turnover, and a listed company staying below is no longer required either. If it already reported (wave 1), what follows depends on national transposition. It remains exposed to client requests, but these are capped at the voluntary VSME standard for companies under 1,000 employees."
           },
           "1": {
             "q": "Are the DPEF obligations (article L.225-102-1) maintained?",
@@ -10779,11 +10779,11 @@
           },
           "2": {
             "q": "What is the VSME and who does it apply to?",
-            "a": "The VSME (Voluntary Sustainability Reporting Standard for SMEs) is a standard being developed by EFRAG, designed for unlisted SMEs. It is voluntary and streamlined compared to the full ESRS. Its adoption is strongly recommended for SMEs that answer questionnaires from clients or investors. ESG Flow is designed to be compatible with the VSME as soon as it is finalized."
+            "a": "The VSME (Voluntary Sustainability Reporting Standard for SMEs) is a voluntary standard published by EFRAG, lighter than the full ESRS. Since Omnibus I it caps the information large companies can request from partners with fewer than 1,000 employees. It is therefore the right basis for answering questionnaires from clients, banks or investors."
           },
           "3": {
             "q": "Have the deadlines for companies already in wave 1 changed?",
-            "a": "No. Companies already subject to the CSRD (large listed companies, former NFRD) keep their initial timelines. Omnibus I only postponed waves 2 and 3 and raised the threshold. The extended wave 1 (>1,000 emp. + €450M revenue) starts for FY 2026."
+            "a": "Not for those already reporting (FY 2024, published in 2025): they continue. Those with fewer than 1,000 employees or €450M turnover or less may be relieved, depending on the option each Member State takes in its transposition. The simplified ESRS will apply from FY 2027."
           },
           "4": {
             "q": "Is the EU Taxonomy also streamlined by the Omnibus?",
