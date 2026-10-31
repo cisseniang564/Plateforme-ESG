@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_, extract
 from typing import List, Optional
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from uuid import UUID
 from pydantic import BaseModel
 import hashlib
@@ -504,7 +504,10 @@ async def get_quality_issues(
     )
     
     for entry in stale_entries.scalars():
-        days_old = (datetime.utcnow() - entry.created_at).days
+        created = entry.created_at
+        if created.tzinfo is None:  # colonne timestamptz : aware ; anciennes lignes : naive
+            created = created.replace(tzinfo=timezone.utc)
+        days_old = (datetime.now(timezone.utc) - created).days
         issues.append(QualityIssue(
             id=entry.id,
             metric_name=entry.metric_name,

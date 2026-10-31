@@ -673,7 +673,7 @@ export default function GRIDisclosure() {
 
     // Numeric fields from API
     api
-      .get('/data-entry', { params: { category: GRI_CATEGORY } })
+      .get('/data-entry/', { params: { category: GRI_CATEGORY } })
       .then((res) => {
         if (!isMounted.current) return;
         const data = res.data;

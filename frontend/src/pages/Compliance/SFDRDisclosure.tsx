@@ -172,7 +172,7 @@ export default function SFDRDisclosure() {
 
       // Pre-fill from data-entry (non-blocking)
       try {
-        const deRes = await api.get('/data-entry', { params: { limit: 200 } });
+        const deRes = await api.get('/data-entry/', { params: { limit: 200 } });
         const entries: ExistingEntry[] = deRes.data?.items ?? deRes.data ?? [];
         for (const entry of entries) {
           const numeric = entry.value_numeric != null ? String(entry.value_numeric) : '';
