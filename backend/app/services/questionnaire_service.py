@@ -152,6 +152,15 @@ async def extract_questions(text: str) -> Dict[str, Any]:
 
 # ─── 3. Faits (données déjà saisies) ────────────────────────────────────
 
+def _readable_label(metric_name: str) -> str:
+    """Code technique (s1_turnover_rate, ENV-001…) → libellé lisible du moteur de score, sinon tel quel."""
+    try:
+        from app.services.esg_scoring_engine import ESGScoringEngine
+        return ESGScoringEngine.BENCHMARK_RANGES.get(metric_name, {}).get("name") or metric_name
+    except Exception:  # noqa: BLE001
+        return metric_name
+
+
 async def build_facts(db, tenant_id: UUID) -> List[Dict[str, Any]]:
     """Données de l'entreprise utilisables comme preuves : profil de l'organisation + dernières saisies."""
     from sqlalchemy import desc, select
@@ -188,7 +197,7 @@ async def build_facts(db, tenant_id: UUID) -> List[Dict[str, Any]]:
         if value in (None, ""):
             continue
         facts.append({
-            "label": e.metric_name, "value": f"{value:g}" if isinstance(value, float) else str(value), "unit": e.unit,
+            "label": _readable_label(e.metric_name), "value": f"{value:g}" if isinstance(value, float) else str(value), "unit": e.unit,
             "period": str(e.period_start.year) if e.period_start else None,
             "verified": (e.verification_status or "") == "verified", "origin": "Saisie ESGFlow",
         })
@@ -197,6 +206,118 @@ async def build_facts(db, tenant_id: UUID) -> List[Dict[str, Any]]:
     for i, f in enumerate(facts, start=1):
         f["id"] = f"F{i}"
     return facts
+
+
+
+# ─── 3 bis. Pertinence d'une source pour une question (garde-fous déterministes) ──────────
+
+# Thèmes : une source n'est retenue que si elle parle du même sujet que la question.
+TOPICS = {
+    "eau": r"\beau\b|prél[eè]v|m3|m³", "energie": r"énergie|energie|mwh|kwh|renouvelable", "dechets": r"déchet|dechet|recycl|valoris",
+    "ges": r"scope|gaz à effet|ges\b|carbone|émission|emission|tco2", "accidents": r"accident|sécurité|securite",
+    "rotation": r"rotation|turnover", "effectif": r"effectif|salari", "parite": r"femme|parit|rémunér|remuner|écart|ecart",
+    "formation": r"formation", "corruption": r"corruption|alerte|éthique|ethique",
+    "ca": r"chiffre d'affaires|chiffre d.affaires|\bca\b",
+}
+
+
+def _topics(text: str) -> set:
+    t = (text or "").lower()
+    return {k for k, rx in TOPICS.items() if re.search(rx, t)}
+
+
+def _scopes(text: str) -> set:
+    return set(re.findall(r"scope\s*([123])", (text or "").lower()))
+
+
+def _unit_class(u: str) -> str:
+    x = (u or "").lower().replace(" ", "").replace("³", "3").replace("₂", "2")
+    if x in {"m€", "m€.", "meur", "millionsd'euros", "millionseuros"}:
+        return "MEUR"
+    if x in {"k€", "keur"}:
+        return "KEUR"
+    if x in {"€", "eur", "euro", "euros"}:
+        return "EUR"
+    if x in {"t", "tonne", "tonnes"}:
+        return "t"
+    if x in {"%", "pourcent", "pourcentage", "pourcentages"}:
+        return "%"
+    return x
+
+
+def _asked_unit(question: str) -> Optional[str]:
+    m = re.search(r"\(en ([^)]+)\)", question or "", flags=re.I) or re.search(r"\ben (tCO2e|MWh|kWh|m³|m3|%|euros?|€|tonnes?|jours?|heures?)\b", question or "", flags=re.I)
+    return m.group(1).strip() if m else None
+
+
+def _fmt_number(x: float) -> str:
+    return f"{x:,.0f}".replace(",", "\u202f") if abs(x - round(x)) < 1e-9 else f"{x:,.2f}".replace(",", "\u202f").replace(".", ",")
+
+
+def _first_number(text: str) -> Optional[float]:
+    nums = sorted(_numbers(text))
+    return nums[0] if nums else None
+
+
+CONCEPT_CONFUSIONS = (   # (motif de la question, motif de la source, message)
+    (r"prél[eè]v", r"consomm", "Prélèvement et consommation d'eau sont deux notions différentes : la donnée citée est une consommation."),
+    (r"consomm", r"prél[eè]v", "Prélèvement et consommation d'eau sont deux notions différentes : la donnée citée est un prélèvement."),
+)
+
+
+def refine_answer(question: str, answer: str, cited: List[Dict[str, Any]], confidence: str):
+    """Contrôles déterministes après l'IA. Retourne (answer, confidence, note, cited) ; answer None = à compléter.
+
+    1. une source d'un autre thème ou d'un autre scope que la question est écartée ;
+    2. l'unité est toujours indiquée (les euros en M€ sont convertis) ; une unité différente de celle demandée est signalée ;
+    3. une réponse sans chiffre alors que la source en a un est complétée par la valeur ;
+    4. toute confusion de notion connue (prélèvement/consommation) ou réponse « oui » sans donnée est signalée.
+    """
+    notes: List[str] = []
+    q_topics, q_scopes = _topics(question), _scopes(question)
+
+    kept = []
+    for f in cited:
+        f_topics, f_scopes = _topics(f["label"]), _scopes(f["label"])
+        if q_topics and f_topics and not (q_topics & f_topics):
+            continue
+        if len(q_scopes) == 1 and f_scopes and not (q_scopes & f_scopes):
+            continue
+        kept.append(f)
+    if not kept:
+        return None, confidence, None, []
+    cited = kept
+
+    low_q = (question or "").lower()
+    for q_stem, f_stem, msg in CONCEPT_CONFUSIONS:
+        if re.search(q_stem, low_q) and any(re.search(f_stem, f["label"].lower()) and not re.search(q_stem, f["label"].lower()) for f in cited):
+            notes.append(msg + " À vérifier avant de valider.")
+            confidence = "low"
+
+    numeric = [f for f in cited if _first_number(f["value"]) is not None]
+    main = numeric[0] if numeric else None
+    if main is not None:
+        unit = (main.get("unit") or "").strip()
+        value_txt = main["value"]
+        asked = _asked_unit(question)
+        bare = re.fullmatch(r"[\d\s\u202f.,]+", answer.strip()) is not None
+        if bare and unit:
+            answer = f"{answer.strip()} {unit}"
+        if not _numbers(answer):          # « oui » alors que la source donne la valeur demandée : on la joint
+            answer = f"{answer} — {main['label']} : {value_txt}{(' ' + unit) if unit else ''}"
+        if asked and unit and _unit_class(asked) != _unit_class(unit):
+            n = _first_number(value_txt)
+            if _unit_class(asked) == "EUR" and _unit_class(unit) in {"MEUR", "KEUR"} and n is not None:
+                euros = n * (1_000_000 if _unit_class(unit) == "MEUR" else 1_000)
+                answer = f"{value_txt} {unit} (soit {_fmt_number(euros)} €)"
+            else:
+                notes.append(f"La question demande « {asked} », la donnée est en « {unit} » : vérifiez l'unité.")
+                confidence = "low"
+    elif re.fullmatch(r"(oui|non)\.?", answer.strip().lower()):
+        notes.append("Aucune valeur ne prouve cette réponse : à confirmer par vous.")
+        confidence = "low"
+
+    return answer, confidence, " ".join(notes) or None, cited
 
 
 # ─── 4. Pré-remplissage ────────────────────────────────────────────────
@@ -260,11 +381,16 @@ def merge_prefill(questions: List[Dict[str, Any]], ai: Dict[str, Dict[str, Any]]
         conf = conf if conf in CONFIDENCE else "low"
         if conf == "high" and not all(f["verified"] for f in cited):
             conf = "medium"   # une source non vérifiée plafonne la confiance
+        answer, conf, extra_note, cited = refine_answer(q["text"], answer, cited, conf)
+        if answer is None:    # source hors sujet : on retire la réponse
+            out.append({**q, "answer": None, "status": "to_complete", "confidence": None, "sources": [], "note": None})
+            continue
+        note = " ".join(x for x in (gaia._str_or_none(item.get("note")), extra_note) if x) or None
         out.append({
             **q, "answer": answer, "status": "prefilled", "confidence": conf,
             "sources": [{"label": f["label"], "value": f["value"], "unit": f.get("unit"), "period": f.get("period"),
                          "verified": f["verified"]} for f in cited],
-            "note": gaia._str_or_none(item.get("note")),
+            "note": note,
         })
     return out
 
