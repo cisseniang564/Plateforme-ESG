@@ -98,6 +98,11 @@ class Organization(Base, UUIDMixin, TenantMixin, TimestampMixin):
 
     # ── Business metrics (used for materiality thresholds and roll-up) ──────
     employee_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    # Score adapté à la taille : les plages des indicateurs en valeur absolue (émissions, énergie, eau)
+    # sont mises à l'échelle de l'effectif. Désactivé par défaut : les scores existants ne changent pas.
+    score_size_adjusted: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
     revenue_eur: Mapped[Optional[Decimal]] = mapped_column(
         Numeric(15, 2), nullable=True,
         comment="Annual revenue in EUR (informational; CSRD vague triggers)"

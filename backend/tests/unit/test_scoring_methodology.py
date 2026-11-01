@@ -30,3 +30,40 @@ def test_provenance_flags_pillars_without_data():
     p = ESGScoringEngine._build_provenance(details)
     assert p["unmeasured_pillars"] == ["social"]
     assert p["indicators_per_pillar"] == {"environmental": 2, "social": 0, "governance": 1}
+
+
+# ── Option « score adapté à la taille » ──────────────────────────────────────
+from types import SimpleNamespace
+
+
+def _engine(factor=1.0):
+    e = ESGScoringEngine.__new__(ESGScoringEngine)
+    e._size_factor = factor
+    return e
+
+
+def test_size_adjustment_is_off_by_default_and_does_not_change_scores():
+    org = SimpleNamespace(score_size_adjusted=False, employee_count=5000)
+    adj = ESGScoringEngine._size_adjustment_for(org)
+    assert adj["applied"] is False and adj["factor"] == 1.0
+    # 1 000 tCO2e sur la plage 0–2000 → 50 (le plus bas est meilleur), comme avant
+    assert _engine(adj["factor"])._normalize_value(1000, "ENV-001", higher_is_better=False) == pytest.approx(50.0)
+
+
+def test_size_adjustment_scales_absolute_indicators_with_headcount():
+    org = SimpleNamespace(score_size_adjusted=True, employee_count=1000)
+    adj = ESGScoringEngine._size_adjustment_for(org)
+    assert adj == {"applied": True, "reason": None, "employees": 1000, "factor": 10.0, "reference_employees": 100}
+    # même valeur, plage ×10 (0–20000) : 1 000 tCO2e devient très bon au lieu de moyen
+    assert _engine(adj["factor"])._normalize_value(1000, "ENV-001", higher_is_better=False) == pytest.approx(95.0)
+
+
+def test_size_adjustment_never_touches_percentage_indicators():
+    e = _engine(10.0)
+    assert e._normalize_value(50, "ENV-004", higher_is_better=True) == pytest.approx(50.0)  # % d'énergie renouvelable
+
+
+def test_size_adjustment_without_headcount_is_reported_not_silently_applied():
+    org = SimpleNamespace(score_size_adjusted=True, employee_count=None)
+    adj = ESGScoringEngine._size_adjustment_for(org)
+    assert adj["applied"] is False and adj["reason"] == "missing_employee_count" and adj["factor"] == 1.0

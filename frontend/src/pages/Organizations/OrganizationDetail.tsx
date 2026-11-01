@@ -25,6 +25,8 @@ interface Organization {
   industry?: string;
   type?: string;
   created_at?: string;
+  employee_count?: number | null;
+  score_size_adjusted?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -93,6 +95,46 @@ function PillarCard({ label, score, icon: Icon, color }: { label: string; score:
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
+/** Interrupteur « Adapter le score à la taille » : désactivé par défaut, ne change aucun score existant. */
+function SizeAdjustCard({ org, onChange }: { org: Organization; onChange: (v: boolean) => void }) {
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const on = !!org.score_size_adjusted;
+  const missing = !org.employee_count;
+
+  const toggle = async () => {
+    setSaving(true);
+    setMessage(null);
+    try {
+      await api.put(`/organizations/${org.id}`, { score_size_adjusted: !on });
+      onChange(!on);
+      setMessage('Enregistré. Recalculez le score pour appliquer ce réglage.');
+    } catch {
+      setMessage("Impossible d'enregistrer ce réglage. Réessayez.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white p-5">
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold text-gray-900">Adapter le score à la taille</p>
+        <p className="mt-1 text-sm text-gray-500">
+          Met à l'échelle de l'effectif les plages des indicateurs en valeur absolue (émissions, énergie, eau).
+          {missing && <span className="font-medium text-amber-700"> Renseignez l'effectif de l'organisation pour que ce réglage s'applique.</span>}
+          {!missing && <span> Effectif : {org.employee_count}.</span>}
+        </p>
+        {message && <p role="status" className="mt-2 text-sm text-emerald-700">{message}</p>}
+      </div>
+      <button type="button" role="switch" aria-checked={on} aria-label="Adapter le score à la taille" disabled={saving} onClick={toggle}
+        className={`relative inline-flex h-7 w-12 flex-shrink-0 items-center rounded-full transition-colors disabled:opacity-60 ${on ? 'bg-emerald-600' : 'bg-gray-300'}`}>
+        <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${on ? 'translate-x-6' : 'translate-x-1'}`} />
+      </button>
+    </div>
+  );
+}
+
 export default function OrganizationDetail() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
@@ -250,6 +292,8 @@ export default function OrganizationDetail() {
           </div>
         </div>
       </div>
+
+      <SizeAdjustCard org={organization} onChange={v => setOrganization({ ...organization, score_size_adjusted: v })} />
 
       {/* ── No scores state ── */}
       {noScores && (

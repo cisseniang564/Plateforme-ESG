@@ -9,6 +9,7 @@ interface Methodology {
   rating_thresholds: { rating: string; min_score: number }[];
   default_sector_weights: Record<string, Record<string, number>>;
   indicators: { code: string; name: string; unit: string; range_min: number; range_max: number; higher_is_better: boolean }[];
+  size_adjustment?: { scaled_indicators: string[]; reference_employees: number; description: string };
   completeness_definition: string;
   confidence_rules: string;
   benchmark_definition: string;
@@ -65,6 +66,14 @@ export default function ScoreMethodology({ className = '' }: { className?: strin
                   <p className="mb-2 flex items-center gap-2 font-bold"><AlertTriangle className="h-4 w-4" /> Limites à connaître</p>
                   <ul className="list-disc space-y-1.5 pl-5">{data.limitations.map(l => <li key={l}>{l}</li>)}</ul>
                 </div>
+
+                {data.size_adjustment && (
+                  <section>
+                    <h3 className="mb-2 font-bold text-slate-900">Adapter le score à la taille (option)</h3>
+                    <p>{data.size_adjustment.description}</p>
+                    <p className="mt-2 text-xs text-slate-500">Indicateurs concernés : {data.size_adjustment.scaled_indicators.join(', ')}. Réglage dans la fiche de chaque organisation.</p>
+                  </section>
+                )}
 
                 <section>
                   <h3 className="mb-2 font-bold text-slate-900">Ce que veulent dire les chiffres</h3>
