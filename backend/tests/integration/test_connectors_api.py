@@ -109,6 +109,7 @@ class TestConnectorTest:
         resp = client.post(
             "/api/v1/connectors/test",
             json={"connector_id": "climatiq"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (200, 400, 503)
 
