@@ -185,10 +185,10 @@ const DocsArticlePage   = lazy(() => import('@/pages/Docs/DocsArticlePage'));
 const DemoPage          = lazy(() => import('@/pages/Demo/DemoPage'));
 const Support           = lazy(() => import('@/pages/Support/Support'));
 const SupplierPortal    = lazy(() => import('@/pages/SupplyChain/SupplierPortal'));
-const TermsOfService    = lazy(() => import('@/pages/Legal/TermsOfService'));
+const TermsOfService    = lazy(() => import('@/pages/Legal/Terms'));
 const PrivacyPolicy     = lazy(() => import('@/pages/Legal/PrivacyPolicy'));
 const LegalNotice       = lazy(() => import('@/pages/Legal/LegalNotice'));
-const CGV               = lazy(() => import('@/pages/Legal/CGV'));
+const CGV               = lazy(() => import('@/pages/Legal/Terms'));
 
 // ── Fallback de chargement ───────────────────────────────────────────────────
 function PageLoader() {
