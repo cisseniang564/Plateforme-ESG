@@ -92,9 +92,11 @@ export default function QuestionnairesPage() {
     finally { setBusy(false); }
   };
 
+  // « Tout valider » ne touche pas aux réponses à confiance faible ni à celles qui portent une alerte : il faut les relire une par une.
   const validateAllPrefilled = () => {
     if (!detail) return;
-    setDrafts(d => Object.fromEntries(Object.entries(d).map(([id, v]) => [id, v.status === 'prefilled' && v.answer ? { ...v, status: 'validated' as QStatus } : v])));
+    const safe = new Set(detail.questions.filter(q => q.confidence !== 'low' && !q.note).map(q => q.id));
+    setDrafts(d => Object.fromEntries(Object.entries(d).map(([id, v]) => [id, safe.has(id) && v.status === 'prefilled' && v.answer ? { ...v, status: 'validated' as QStatus } : v])));
   };
 
   const remove = async (id: string) => {
@@ -162,7 +164,7 @@ export default function QuestionnairesPage() {
               </div>
               {counts.prefilled > 0 && (
                 <button type="button" onClick={validateAllPrefilled} className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700 hover:underline">
-                  <Check className="h-4 w-4" /> Valider les réponses pré-remplies
+                  <Check className="h-4 w-4" /> Valider les réponses fiables (hors alertes)
                 </button>
               )}
             </div>
@@ -193,6 +195,12 @@ export default function QuestionnairesPage() {
                       placeholder="Aucune donnée disponible : saisissez votre réponse"
                       className="mt-3 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100"
                     />
+                    {(q.note || q.confidence === 'low') && d.status !== 'to_complete' && (
+                      <p className="mt-2 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" role="note">
+                        <AlertCircle className="mt-0.5 h-4 w-4 flex-none" />
+                        <span>{q.confidence === 'low' && <strong>Confiance faible. </strong>}{q.note ?? 'Relisez cette réponse avec attention.'}</span>
+                      </p>
+                    )}
                     <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                       <ul className="flex flex-wrap gap-1.5">
                         {q.sources.map((src, i) => (

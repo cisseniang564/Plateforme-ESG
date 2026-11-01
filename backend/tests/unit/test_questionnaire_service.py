@@ -113,3 +113,58 @@ def test_excel_questionnaire_is_read_row_by_row_and_exported_back():
 def test_unsupported_format_is_refused_with_a_clear_message():
     with pytest.raises(gaia.GaiaError):
         qs.extract_questionnaire_text("malware.exe", b"MZ")
+
+
+# ── Cas relevés sur de vraies pré-remplissages (revue utilisateur) ───────────────────────
+
+def fact(i, label, value, unit, verified=True, period="2025"):
+    return {"id": f"F{i}", "label": label, "value": value, "unit": unit, "period": period, "verified": verified, "origin": "Saisie ESGFlow"}
+
+
+def run(question, answer, *facts, conf="high"):
+    f_by = list(facts)
+    ai = {"q1": {"answer": answer, "fact_ids": [f["id"] for f in f_by], "confidence": conf}}
+    return qs.merge_prefill(questions(question), ai, f_by)[0]
+
+
+def test_revenue_in_million_euros_is_converted_when_euros_are_asked():
+    out = run("Quel est votre chiffre d'affaires annuel (en euros) ?", "30", fact(1, "Chiffre d'affaires", "30", "M€"))
+    assert out["answer"].replace("\u202f", " ") == "30 M€ (soit 30 000 000 €)"
+
+
+def test_bare_numbers_get_their_unit():
+    assert run("Consommation totale d'énergie (en MWh) ?", "450", fact(1, "Consommation totale d'énergie", "450", "MWh"))["answer"] == "450 MWh"
+    assert run("Quelle part est renouvelable (en %) ?", "30", fact(1, "Part d'énergie renouvelable", "30", "%"))["answer"] == "30 %"
+
+
+def test_yes_answer_to_a_compound_question_carries_the_value_asked():
+    out = run("Avez-vous réalisé un bilan d'émissions ? Si oui, indiquez les émissions de scope 1 en tCO2e.", "oui",
+              fact(1, "Scope 1", "25000", "tCO2e", verified=False))
+    assert "25000" in out["answer"] and "tCO2e" in out["answer"]
+    assert out["confidence"] == "medium"          # source non vérifiée : plafonné
+
+
+def test_water_withdrawal_answered_with_water_consumption_is_flagged():
+    out = run("Quel volume d'eau avez-vous prélevé sur l'exercice (en m³) ?", "4200", fact(1, "Consommation d'eau", "4200", "m3"))
+    assert out["status"] == "prefilled" and out["confidence"] == "low"
+    assert "prélèvement" in out["note"].lower() and "consommation" in out["note"].lower()
+
+
+def test_source_about_another_scope_or_topic_is_dropped():
+    assert run("Quelles sont vos émissions de scope 2 en tCO2e ?", "25000", fact(1, "Scope 1", "25000", "tCO2e"))["status"] == "to_complete"
+    assert run("Quelle est votre consommation d'énergie (en MWh) ?", "4200", fact(1, "Consommation d'eau", "4200", "m3"))["status"] == "to_complete"
+
+
+def test_unit_mismatch_other_than_euros_is_flagged_not_converted():
+    out = run("Quantité de déchets produite (en tonnes) ?", "12", fact(1, "Déchets produits", "12", "kg"))
+    assert out["confidence"] == "low" and "unité" in out["note"].lower()
+
+
+def test_bare_yes_without_a_value_is_flagged_for_confirmation():
+    out = run("Disposez-vous d'une politique de formation ?", "Oui", fact(1, "Formation", "Programme existant", None))
+    assert out["confidence"] == "low" and "confirmer" in out["note"].lower()
+
+
+def test_technical_metric_codes_get_a_readable_label():
+    assert qs._readable_label("s1_turnover_rate") != "s1_turnover_rate"
+    assert qs._readable_label("Libellé libre") == "Libellé libre"
