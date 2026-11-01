@@ -105,8 +105,7 @@ const CONNECTORS: Connector[] = [
   {
     id: 'schneider', name: 'Schneider Electric', category: 'Energy',
     description: 'EcoStruxure & ION — consommation électrique, efficacité énergétique bâtiments',
-    status: 'connected', backendStatus: 'live', color: '#059669', authType: 'oauth2',
-    lastSync: 'il y a 15min', records: 4200,
+    status: 'available', backendStatus: 'demo', color: '#059669', authType: 'oauth2',
     coverage: { emissions: true, energy: true, hr: false, finance: false, waste: false, water: true },
     version: 'EcoStruxure v3', endpoint: 'https://api.exchange.se.com/ecostruxure/v3'
   },
@@ -126,9 +125,8 @@ const CONNECTORS: Connector[] = [
   },
   {
     id: 'climatiq', name: 'Climatiq API', category: 'Carbon',
-    description: "Base de facteurs d'émission — 40 000+ facteurs GHG Protocol certifiés",
-    status: 'connected', backendStatus: 'live', color: '#16a34a', authType: 'apikey',
-    lastSync: 'il y a 30min', records: 156,
+    description: "Facteurs d'émission : calcule vos émissions Scope 2 à partir de la consommation d'énergie que vous avez saisie",
+    status: 'available', backendStatus: 'live', color: '#16a34a', authType: 'apikey',
     coverage: { emissions: true, energy: false, hr: false, finance: false, waste: true, water: false },
     version: 'v3', endpoint: 'https://api.climatiq.io/v3'
   },
@@ -169,41 +167,28 @@ const CONNECTORS: Connector[] = [
   },
 ]
 
-const SYNC_VOLUME = [
-  { day: 'Lun', value: 420 },
-  { day: 'Mar', value: 680 },
-  { day: 'Mer', value: 510 },
-  { day: 'Jeu', value: 790 },
-  { day: 'Ven', value: 620 },
-  { day: 'Sam', value: 280 },
-  { day: 'Dim', value: 340 },
-]
+// Journal réel d'un client : GET /connectors/sync-log (aucune donnée de démonstration).
+interface SyncLogItem {
+  id: string; connector_id: string; status: 'ok' | 'error' | 'no_data' | 'not_configured' | 'simulated'
+  records: number; message: string | null; duration_ms: number | null; created_at: string | null
+}
+const connectorName = (id: string) => CONNECTORS.find(c => c.id === id)?.name ?? id
+const logTone = (status: SyncLogItem['status']) =>
+  status === 'ok' ? { cls: 'success', color: '#16a34a' } : status === 'error' ? { cls: 'error', color: '#dc2626' } : { cls: 'warning', color: '#d97706' }
+const fmtDuration = (ms: number | null) => (ms == null ? '—' : ms < 1000 ? `${ms} ms` : `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`)
+const fmtWhen = (iso: string | null) => (iso ? new Date(iso).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'medium' }) : '—')
 
-const RECENT_ACTIVITY = [
-  { id: 1, connector: 'Schneider Electric', action: 'Synchronisation réussie — 4 200 points de mesure', time: 'il y a 15min', color: '#16a34a' },
-  { id: 2, connector: 'Climatiq API', action: 'Facteurs d\'émission mis à jour (156 facteurs)', time: 'il y a 30min', color: '#16a34a' },
-  { id: 3, connector: 'Schneider Electric', action: 'Synchronisation réussie', time: 'il y a 2h', color: '#16a34a' },
-  { id: 4, connector: 'Climatiq API', action: 'Synchronisation réussie', time: 'il y a 4h', color: '#16a34a' },
-  { id: 5, connector: 'Schneider Electric', action: 'Alerte : pic de consommation détecté (site B)', time: 'il y a 6h', color: '#d97706' },
-  { id: 6, connector: 'Schneider Electric', action: 'Synchronisation réussie', time: 'il y a 8h', color: '#16a34a' },
-  { id: 7, connector: 'Climatiq API', action: 'Synchronisation réussie', time: 'il y a 1j', color: '#16a34a' },
-  { id: 8, connector: 'Schneider Electric', action: 'Synchronisation réussie', time: 'il y a 1j', color: '#16a34a' },
-]
-
-const MOCK_LOGS = [
-  { id: 1,  connector: 'Schneider Electric', ts: '2026-05-01 10:15:22', status: 'success', records: 4200, duration: '2m 04s', message: 'Synchronisation complète — consommation énergie' },
-  { id: 2,  connector: 'Climatiq API',        ts: '2026-05-01 09:30:45', status: 'success', records: 156,  duration: '0m 22s', message: 'Facteurs d\'émission mis à jour (GHG Protocol)' },
-  { id: 3,  connector: 'Schneider Electric', ts: '2026-05-01 08:15:22', status: 'success', records: 4200, duration: '2m 01s', message: 'Synchronisation complète' },
-  { id: 4,  connector: 'Climatiq API',        ts: '2026-05-01 07:30:45', status: 'success', records: 156,  duration: '0m 19s', message: 'Facteurs d\'émission mis à jour' },
-  { id: 5,  connector: 'Schneider Electric', ts: '2026-05-01 06:15:22', status: 'warning', records: 4187, duration: '2m 12s', message: '13 capteurs hors ligne — données partielles (Site B)' },
-  { id: 6,  connector: 'Schneider Electric', ts: '2026-05-01 04:15:22', status: 'success', records: 4200, duration: '1m 58s', message: 'Synchronisation complète' },
-  { id: 7,  connector: 'Climatiq API',        ts: '2026-05-01 03:30:45', status: 'success', records: 156,  duration: '0m 21s', message: 'Facteurs d\'émission mis à jour' },
-  { id: 8,  connector: 'Schneider Electric', ts: '2026-05-01 02:15:22', status: 'success', records: 4200, duration: '2m 03s', message: 'Synchronisation complète' },
-  { id: 9,  connector: 'Schneider Electric', ts: '2026-05-01 00:15:22', status: 'success', records: 4200, duration: '1m 59s', message: 'Synchronisation complète' },
-  { id: 10, connector: 'Climatiq API',        ts: '2026-04-30 21:30:45', status: 'success', records: 156,  duration: '0m 20s', message: 'Facteurs d\'émission mis à jour' },
-  { id: 11, connector: 'Schneider Electric', ts: '2026-04-30 18:15:22', status: 'success', records: 4200, duration: '2m 06s', message: 'Synchronisation complète' },
-  { id: 12, connector: 'Climatiq API',        ts: '2026-04-30 15:30:45', status: 'success', records: 156,  duration: '0m 18s', message: 'Facteurs d\'émission mis à jour' },
-]
+function useSyncLog(days: number, limit: number) {
+  const [logs, setLogs] = useState<SyncLogItem[] | null>(null)
+  useEffect(() => {
+    let alive = true
+    api.get(`/connectors/sync-log?days=${days}&limit=${limit}`)
+      .then(res => { if (alive) setLogs(res.data?.items ?? []) })
+      .catch(() => { if (alive) setLogs([]) })
+    return () => { alive = false }
+  }, [days, limit])
+  return logs
+}
 
 const ESG_MAPPING_ROWS = [
   { source: 'CO2_EMISSION_KG', target: 'ghg.scope1.direct', enabled: true },
@@ -308,32 +293,25 @@ function ConnectorInitials({ name, color }: { name: string; color: string }) {
 
 function TabOverview({ connectors = CONNECTORS }: { connectors?: Connector[] }) {
   const { t } = useTranslation()
-  const maxVolume = Math.max(...SYNC_VOLUME.map(d => d.value))
+  const logs = useSyncLog(7, 200)
 
-  // Compute stats dynamically from live connector catalog
   const kpiTotal = connectors.length
   const kpiConnected = connectors.filter(c => c.status === 'connected').length
   const kpiErrors = connectors.filter(c => c.status === 'error').length
-  const kpiRecords = connectors.filter(c => c.status === 'connected')
-    .reduce((sum, c) => sum + (c.records ?? 0), 0)
-  const kpiVolumeGB = (kpiRecords * 0.0012).toFixed(1)  // ~1.2 KB per record estimate
+  const todayKey = new Date().toDateString()
+  const syncsToday = (logs ?? []).filter(l => l.created_at && new Date(l.created_at).toDateString() === todayKey).length
+  const records7d = (logs ?? []).filter(l => l.status === 'ok').reduce((sum, l) => sum + l.records, 0)
 
-  const [recentActivity, setRecentActivity] = useState(RECENT_ACTIVITY)
-
-  useEffect(() => {
-    api.get('/notifications?limit=10').then(res => {
-      const items = res.data?.items ?? []
-      if (items.length > 0) {
-        setRecentActivity(items.map((n: any) => ({
-          id: n.id,
-          connector: n.title,
-          action: n.body,
-          time: n.time,
-          color: n.type === 'success' ? '#16a34a' : n.type === 'error' ? '#dc2626' : n.type === 'warning' ? '#d97706' : '#0891b2',
-        })))
-      }
-    }).catch(() => {})
-  }, [])
+  // Synchronisations par jour sur les 7 derniers jours (zéro si aucune)
+  const volume = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - (6 - i))
+    return {
+      day: d.toLocaleDateString('fr-FR', { weekday: 'short' }),
+      value: (logs ?? []).filter(l => l.created_at && new Date(l.created_at).toDateString() === d.toDateString()).length,
+    }
+  })
+  const maxVolume = Math.max(1, ...volume.map(d => d.value))
+  const recentActivity = (logs ?? []).slice(0, 8)
 
   return (
     <div className="space-y-6">
@@ -343,8 +321,8 @@ function TabOverview({ connectors = CONNECTORS }: { connectors?: Connector[] }) 
           { icon: <Plug size={20} />, label: t('connectors.kpiTotal'), value: String(kpiTotal), color: 'text-gray-700', bg: 'bg-gray-100' },
           { icon: <CheckCircle size={20} />, label: t('connectors.kpiConnected'), value: String(kpiConnected), color: 'text-green-600', bg: 'bg-green-50' },
           { icon: <AlertCircle size={20} />, label: t('connectors.kpiErrors'), value: String(kpiErrors), color: 'text-red-600', bg: 'bg-red-50' },
-          { icon: <Activity size={20} />, label: t('connectors.kpiSyncsToday'), value: String(kpiConnected * 9 + kpiErrors * 2), color: 'text-blue-600', bg: 'bg-blue-50' },
-          { icon: <Database size={20} />, label: t('connectors.kpiDataVolume'), value: kpiVolumeGB + ' GB', color: 'text-purple-600', bg: 'bg-purple-50' },
+          { icon: <Activity size={20} />, label: t('connectors.kpiSyncsToday'), value: logs === null ? '…' : String(syncsToday), color: 'text-blue-600', bg: 'bg-blue-50' },
+          { icon: <Database size={20} />, label: t('connectors.kpiRecords7d', 'Lignes importées (7 j)'), value: logs === null ? '…' : records7d.toLocaleString('fr-FR'), color: 'text-purple-600', bg: 'bg-purple-50' },
         ].map((kpi, i) => (
           <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
             <div className="flex items-center gap-3">
@@ -367,37 +345,37 @@ function TabOverview({ connectors = CONNECTORS }: { connectors?: Connector[] }) 
             <BarChart3 size={18} className="text-blue-600" />
             <h3 className="font-semibold text-gray-800">{t('connectors.syncVolumeChart')}</h3>
           </div>
-          <div className="flex items-end gap-3 h-40">
-            {SYNC_VOLUME.map((d, i) => {
-              const pct = (d.value / maxVolume) * 100
-              return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1">
+          {logs !== null && logs.length === 0 ? (
+            <p className="h-40 flex items-center justify-center text-sm text-gray-400 text-center px-6">
+              {t('connectors.noSyncYet', 'Aucune synchronisation sur les 7 derniers jours.')}
+            </p>
+          ) : (
+            <div className="flex items-end gap-3 h-40">
+              {volume.map((d, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1 justify-end h-full">
                   <span className="text-xs text-gray-500">{d.value}</span>
-                  <div className="w-full rounded-t-sm bg-blue-500" style={{ height: `${pct}%` }} />
+                  <div className="w-full rounded-t-sm bg-blue-500" style={{ height: `${(d.value / maxVolume) * 100}%`, minHeight: d.value ? 4 : 0 }} />
                   <span className="text-xs text-gray-500 font-medium">{d.day}</span>
                 </div>
-              )
-            })}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Roadmap */}
+        {/* Ce qui est disponible aujourd'hui */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <div className="flex items-center gap-2 mb-4">
             <Calendar size={18} className="text-indigo-600" />
-            <h3 className="font-semibold text-gray-800">Feuille de route d&apos;integration</h3>
+            <h3 className="font-semibold text-gray-800">{t('connectors.todayTitle', "Ce qui fonctionne aujourd'hui")}</h3>
           </div>
           <div className="space-y-3">
             {[
-              { label: 'ERP / Finance', detail: 'SAP, Oracle, NetSuite', status: 'En cours', statusCls: 'bg-amber-100 text-amber-700' },
-              { label: 'RH', detail: 'Workday, BambooHR, SuccessFactors', status: 'Planifie Q2 2026', statusCls: 'bg-blue-100 text-blue-700' },
-              { label: 'Energie', detail: 'Schneider, Enedis, EDF', status: 'Planifie Q3 2026', statusCls: 'bg-gray-100 text-gray-600' },
-              { label: 'Carbone', detail: 'Climatiq, Carbon Interface', status: 'Planifie Q4 2026', statusCls: 'bg-gray-100 text-gray-600' },
+              { label: 'Imports de fichiers', detail: 'FEC (Sage, Cegid, Pennylane…), exports RH (Silae, Lucca, PayFit), CSV', status: 'Disponible', statusCls: 'bg-green-100 text-green-700' },
+              { label: 'Calcul Scope 2', detail: 'Climatiq, à partir de la consommation d’énergie saisie', status: 'Disponible', statusCls: 'bg-green-100 text-green-700' },
+              { label: 'Pennylane, Qonto, Enedis', detail: 'Code prêt, pas encore validé avec un compte réel (Enedis : habilitation requise)', status: 'Bêta', statusCls: 'bg-amber-100 text-amber-700' },
+              { label: 'ERP et SIRH (SAP, Oracle, Workday…)', detail: 'Démonstration uniquement : dites-nous lesquels vous voulez', status: 'Sur demande', statusCls: 'bg-gray-100 text-gray-600' },
             ].map((p, i) => (
               <div key={i} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
-                  {i + 1}
-                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium text-sm text-gray-800">{p.label}</span>
@@ -418,14 +396,17 @@ function TabOverview({ connectors = CONNECTORS }: { connectors?: Connector[] }) 
           <h3 className="font-semibold text-gray-800">{t('connectors.recentActivity')}</h3>
         </div>
         <div className="divide-y divide-gray-100">
+          {logs !== null && recentActivity.length === 0 && (
+            <p className="py-6 text-center text-sm text-gray-400">{t('connectors.noActivity', 'Aucune activité pour le moment. Lancez une synchronisation depuis l’onglet Connecteurs.')}</p>
+          )}
           {recentActivity.map(item => (
             <div key={item.id} className="flex items-center gap-3 py-2.5">
-              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
+              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: logTone(item.status).color }} />
               <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium text-gray-800">{item.connector}</span>
-                <span className="text-sm text-gray-500"> — {item.action}</span>
+                <span className="text-sm font-medium text-gray-800">{connectorName(item.connector_id)}</span>
+                <span className="text-sm text-gray-500"> — {item.message ?? item.status}</span>
               </div>
-              <span className="text-xs text-gray-400 flex-shrink-0">{item.time}</span>
+              <span className="text-xs text-gray-400 flex-shrink-0">{fmtWhen(item.created_at)}</span>
             </div>
           ))}
         </div>
@@ -649,38 +630,23 @@ function TabMonitoring({ connectors = CONNECTORS }: { connectors?: Connector[] }
   const { t } = useTranslation()
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterConnector, setFilterConnector] = useState('all')
-  const [logs, setLogs] = useState(MOCK_LOGS)
-
-  useEffect(() => {
-    // Charger les vraies entrées d'audit trail comme logs de synchronisation
-    api.get('/audit-trail?limit=50').then(res => {
-      const entries: any[] = res.data?.items ?? res.data?.logs ?? res.data ?? []
-      if (entries.length > 0) {
-        const mapped = entries.map((e: any, i: number) => ({
-          id: e.id ?? i + 1,
-          connector: e.entity_type ?? e.resource ?? e.action_type ?? 'Système',
-          ts: e.created_at
-            ? new Date(e.created_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'medium' })
-            : '—',
-          status: e.status === 'error' || e.success === false ? 'error'
-            : e.status === 'warning' ? 'warning'
-            : 'success',
-          records: e.records_affected ?? e.count ?? 0,
-          duration: e.duration_ms ? `${Math.floor(e.duration_ms / 60000)}m ${Math.floor((e.duration_ms % 60000) / 1000)}s` : '—',
-          message: e.description ?? e.message ?? e.action ?? 'Opération effectuée',
-        }))
-        setLogs(mapped)
-      }
-    }).catch(() => {
-      // Fallback silencieux sur MOCK_LOGS déjà dans le state
-    })
-  }, [])
+  const raw = useSyncLog(30, 200)
+  const logs = (raw ?? []).map(l => ({
+    id: l.id,
+    connector: connectorName(l.connector_id),
+    ts: fmtWhen(l.created_at),
+    status: logTone(l.status).cls,
+    records: l.records,
+    duration: fmtDuration(l.duration_ms),
+    message: l.message ?? l.status,
+  }))
 
   const successCount = logs.filter(l => l.status === 'success').length
-  const successRate = logs.length > 0 ? ((successCount / logs.length) * 100).toFixed(1) + '%' : '—'
-  const totalRecords = logs.reduce((s, l) => s + l.records, 0)
-  const volumeGB = (totalRecords * 0.0012).toFixed(1) + ' GB'
-  const kpiErrors = connectors.filter(c => c.status === 'error').length
+  const successRate = logs.length > 0 ? ((successCount / logs.length) * 100).toFixed(0) + ' %' : '—'
+  const durations = (raw ?? []).filter(l => l.duration_ms != null).map(l => l.duration_ms as number)
+  const avgDuration = durations.length ? fmtDuration(Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)) : '—'
+  const totalRecords = (raw ?? []).filter(l => l.status === 'ok').reduce((sum, l) => sum + l.records, 0)
+  const errorLogs = logs.filter(l => l.status === 'error')
 
   const connectorNames = Array.from(new Set(logs.map(l => l.connector)))
 
@@ -689,6 +655,16 @@ function TabMonitoring({ connectors = CONNECTORS }: { connectors?: Connector[] }
     const matchConnector = filterConnector === 'all' || l.connector === filterConnector
     return matchStatus && matchConnector
   })
+
+  const exportLogs = () => {
+    const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const head = ['Connecteur', 'Date', 'Statut', 'Lignes', 'Durée', 'Message'].map(esc).join(',')
+    const rows = filtered.map(l => [l.connector, l.ts, l.status, l.records, l.duration, l.message].map(esc).join(',')).join('\n')
+    const blob = new Blob(['\uFEFF' + head + '\n' + rows], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = 'journal-synchronisations.csv'; a.click()
+    URL.revokeObjectURL(url)
+  }
 
   return (
     <div className="space-y-5">
@@ -713,31 +689,28 @@ function TabMonitoring({ connectors = CONNECTORS }: { connectors?: Connector[] }
           {connectorNames.map(n => <option key={n} value={n}>{n}</option>)}
         </select>
         <div className="flex-1" />
-        <button className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+        <button type="button" onClick={exportLogs} disabled={filtered.length === 0} className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors">
           <Download size={15} />
           {t('connectors.exportLogs')}
         </button>
       </div>
 
-      {/* Alert banner */}
-      <div className="flex items-center justify-between gap-3 bg-orange-50 border border-orange-200 rounded-lg px-4 py-3">
-        <div className="flex items-center gap-2">
-          <AlertCircle size={18} className="text-orange-600 flex-shrink-0" />
-          <p className="text-sm text-orange-700 font-medium">
-            {kpiErrors > 0 ? `${kpiErrors} ${t('connectors.alertErrorTitle')}` : `0 ${t('connectors.alertErrorTitle')}`} — SAP SuccessFactors · Token OAuth expire
+      {/* Alerte : uniquement si une synchronisation a réellement échoué */}
+      {errorLogs.length > 0 && (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+          <AlertCircle size={18} className="text-red-600 flex-shrink-0" />
+          <p className="text-sm text-red-700 font-medium">
+            {errorLogs.length} synchronisation{errorLogs.length > 1 ? 's' : ''} en erreur sur 30 jours — dernière : {errorLogs[0].connector}, {errorLogs[0].message}
           </p>
         </div>
-        <button className="flex-shrink-0 px-3 py-1.5 bg-orange-600 text-white text-xs font-medium rounded-lg hover:bg-orange-700 transition-colors">
-          {t('connectors.alertReconfigure')}
-        </button>
-      </div>
+      )}
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: t('connectors.successRate'), value: successRate, color: 'text-green-600' },
-          { label: t('connectors.avgSyncTime'), value: '1m 23s', color: 'text-blue-600' },
-          { label: t('connectors.totalVolume'), value: volumeGB, color: 'text-purple-600' },
+          { label: t('connectors.avgSyncTime'), value: avgDuration, color: 'text-blue-600' },
+          { label: t('connectors.kpiRecords30d', 'Lignes importées (30 j)'), value: totalRecords.toLocaleString('fr-FR'), color: 'text-purple-600' },
         ].map((s, i) => (
           <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
@@ -765,6 +738,9 @@ function TabMonitoring({ connectors = CONNECTORS }: { connectors?: Connector[] }
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
+              {raw !== null && filtered.length === 0 && (
+                <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-400">{t('connectors.noSyncYet30', 'Aucune synchronisation enregistrée sur 30 jours.')}</td></tr>
+              )}
               {filtered.map(log => (
                 <tr key={log.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3 font-medium text-gray-800">{log.connector}</td>

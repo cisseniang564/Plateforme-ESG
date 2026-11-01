@@ -234,10 +234,10 @@ const MODULES = [
     bg: 'bg-cyan-500',
     lightBg: 'bg-cyan-50',
     lightText: 'text-cyan-700',
-    name: 'Connecteurs Data',
-    tagline: 'SAP · Oracle · Workday · Schneider · Climatiq',
-    desc: 'Ingestion automatisée depuis vos systèmes : 25 connecteurs natifs ERP, RH, Énergie, CRM, Comptabilité et Carbone. OAuth2, API keys, certificats. Fini la saisie manuelle Excel.',
-    badges: ['25 connecteurs natifs', 'OAuth2 & API keys', 'Sync temps reel', 'Monitoring flux'],
+    name: 'Connecteurs et imports',
+    tagline: 'Import FEC · RH · Climatiq · APIs en bêta',
+    desc: 'Alimentez la plateforme sans ressaisie : import FEC (Sage, Cegid, Pennylane…), exports RH (Silae, Lucca, PayFit), CSV et Excel, et calcul de votre Scope 2 via Climatiq. Connexions API Pennylane, Qonto et Enedis en bêta ; SAP, Oracle ou Workday sur demande.',
+    badges: ['Import FEC · CSV · Excel', 'Exports RH (Silae, Lucca, PayFit)', 'Scope 2 via Climatiq', 'Journal des synchronisations'],
     preview: 'connectors',
   },
   {
@@ -666,55 +666,35 @@ function PreviewAudit() {
 }
 
 function PreviewConnectors() {
-  const connectors = [
-    { name: 'SAP S/4HANA', cat: 'ERP', status: 'connected', color: '#1e40af', records: '1 250' },
-    { name: 'Workday', cat: 'RH', status: 'connected', color: '#0891b2', records: '890' },
-    { name: 'Schneider Electric', cat: 'Energie', status: 'connected', color: '#059669', records: '4 200' },
-    { name: 'SAP SuccessFactors', cat: 'RH', status: 'error', color: '#9333ea', records: '-' },
-    { name: 'Climatiq API', cat: 'Carbone', status: 'connected', color: '#16a34a', records: '156' },
-    { name: 'Enedis', cat: 'Energie', status: 'available', color: '#0284c7', records: '-' },
+  const sources = [
+    { name: 'Import FEC', cat: 'Comptabilité', state: 'Disponible', tone: 'text-green-400', color: '#f97316' },
+    { name: 'Exports RH', cat: 'Silae · Lucca · PayFit', state: 'Disponible', tone: 'text-green-400', color: '#0891b2' },
+    { name: 'Climatiq', cat: 'Scope 2', state: 'Disponible', tone: 'text-green-400', color: '#16a34a' },
+    { name: 'Pennylane', cat: 'Comptabilité', state: 'Bêta', tone: 'text-amber-400', color: '#7c3aed' },
+    { name: 'Qonto', cat: 'Banque', state: 'Bêta', tone: 'text-amber-400', color: '#0f766e' },
+    { name: 'ERP · SIRH', cat: 'SAP, Oracle, Workday', state: 'Sur demande', tone: 'text-slate-400', color: '#1e40af' },
   ];
   return (
     <div className="p-5 space-y-3">
       <div className="flex items-center justify-between mb-2">
-        <div className="text-white font-bold text-sm">Hub Connecteurs Data</div>
-        <div className="flex gap-1.5">
-          <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded-full">5 actifs</span>
-          <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs rounded-full">1 erreur</span>
-        </div>
+        <div className="text-white font-bold text-sm">Connecteurs et imports</div>
+        <span className="px-2 py-0.5 bg-white/10 text-slate-300 text-xs rounded-full">État réel</span>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        {connectors.map((c) => (
+        {sources.map((c) => (
           <div key={c.name} className="bg-white/5 rounded-xl p-2.5 border border-white/10">
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-1.5">
-                <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: c.color }}>
-                  {c.name[0]}
-                </div>
-                <span className="text-white text-xs font-medium truncate max-w-[70px]">{c.name}</span>
-              </div>
-              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${c.status === 'connected' ? 'bg-green-400' : c.status === 'error' ? 'bg-red-400' : 'bg-slate-400'}`} />
+            <div className="flex items-center gap-1.5 mb-1">
+              <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: c.color }}>{c.name[0]}</div>
+              <span className="text-white text-xs font-medium truncate">{c.name}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-400 text-xs">{c.cat}</span>
-              {c.status === 'connected' && <span className="text-cyan-400 text-xs">{c.records} entrees</span>}
-              {c.status === 'error' && <span className="text-red-400 text-xs">Erreur auth</span>}
-              {c.status === 'available' && <span className="text-slate-400 text-xs">Disponible</span>}
+              <span className="text-slate-400 text-xs truncate">{c.cat}</span>
+              <span className={`${c.tone} text-xs flex-shrink-0 ml-1`}>{c.state}</span>
             </div>
           </div>
         ))}
       </div>
-      <div className="mt-2 bg-white/5 rounded-xl p-2.5 border border-white/10">
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-slate-400">Syncs aujourd'hui</span>
-          <span className="text-cyan-400 font-bold">47 syncs · 8.4 GB</span>
-        </div>
-        <div className="mt-1.5 flex gap-1">
-          {[40, 55, 35, 60, 45, 70, 47].map((v, i) => (
-            <div key={i} className="flex-1 bg-white/10 rounded-sm" style={{ height: `${v * 0.4}px`, alignSelf: 'flex-end', backgroundColor: `rgba(6,182,212,${v/100})` }} />
-          ))}
-        </div>
-      </div>
+      <p className="text-slate-400 text-[11px]">Chaque synchronisation est enregistrée dans un journal : date, statut, lignes importées.</p>
     </div>
   );
 }
@@ -1316,8 +1296,8 @@ const WHY_PILLARS = [
     lightText: 'text-cyan-700',
     border: 'border-cyan-100',
     title: 'Intégré à votre écosystème dès le J+1',
-    desc: '25 connecteurs natifs (SAP, Oracle, Workday, Salesforce, Qonto, Microsoft 365, Enedis…), API REST complète, webhooks temps réel et import FEC/CSV. Fini la double saisie.',
-    points: ['25 connecteurs ERP/CRM/Compta', 'API REST + OAuth2', 'Webhooks HMAC-SHA256', 'Import FEC · Scope 3 comptable'],
+    desc: 'Import FEC et CSV, API REST et webhooks signés ; connexions Pennylane, Qonto et Enedis en bêta, ERP et SIRH sur demande. Fini la double saisie.',
+    points: ['Import FEC · CSV · Excel', 'API REST + clés API', 'Webhooks HMAC-SHA256', 'Pennylane · Qonto · Enedis (bêta)'],
   },
 ];
 
@@ -1390,7 +1370,7 @@ export default function LandingPage() {
         '1 000 000 appels API / mois',
         'Tout PME inclus',
         'IA narrative & recommandations',
-        'Connecteurs ERP avancés',
+        'Connecteurs avancés (Pennylane, Qonto, Enedis — bêta)',
         'SFDR & multi-réglementaire',
         'Benchmarking sectoriel',
         'Webhooks & intégrations',
@@ -1423,7 +1403,7 @@ export default function LandingPage() {
   const faqs = [
     { q: 'Combien de temps pour déployer la plateforme ?', a: 'La mise en service prend 2 à 3 jours ouvrés. Nos équipes assurent l\'onboarding, la configuration des indicateurs et la formation de vos équipes.' },
     { q: 'La plateforme est-elle vraiment conforme CSRD ?', a: 'ESGFlow couvre les standards ESRS principaux (E1-E5, S1-S4, G1) et génère le format iXBRL/ESEF exigé par l\'ESMA. Notre journal d\'audit détaillé avec empreintes SHA-256 et export pour auditeurs facilite vos revues internes et externes.' },
-    { q: 'Peut-on importer nos données depuis Excel ou ERP ?', a: 'Absolument. La plateforme accepte les imports CSV/Excel et propose des connecteurs vers les principaux ERP (SAP, Oracle, Sage). Notre API RESTful permet des intégrations sur mesure.' },
+    { q: 'Peut-on importer nos données depuis Excel ou ERP ?', a: 'Oui. La plateforme accepte les imports CSV, Excel et FEC (Sage, Cegid, Pennylane) ainsi que les exports RH de Silae, Lucca ou PayFit. Les connexions API Pennylane, Qonto et Enedis sont en bêta. Pour SAP, Oracle ou Workday, dites-nous votre besoin : ils ne sont pas disponibles en standard. Notre API REST permet des intégrations sur mesure.' },
     { q: 'Où sont hébergées les données ?', a: 'Toutes les données sont hébergées en France, dans des datacenters certifiés ISO 27001. Nous n\'utilisons aucun cloud américain. La conformité RGPD est garantie contractuellement.' },
     { q: 'Que couvre le module Supply Chain ESG ?', a: 'Le module couvre l\'évaluation des fournisseurs sur 6 dimensions ESG, l\'envoi de questionnaires automatisés, la gestion de la due diligence et le suivi du plan de vigilance conformément à la Loi 2017-399.' },
     { q: 'Y a-t-il un engagement de durée ?', a: 'Non. Les plans PME, ETI et Groupe sont sans engagement, résiliables à tout moment. Les contrats annuels bénéficient de 15% de réduction.' },
@@ -2283,9 +2263,9 @@ export default function LandingPage() {
             {[
               {
                 num: '01', title: 'Connectez vos sources',
-                desc: 'Branchez vos ERP, importez vos CSV ou FEC, ou saisissez manuellement. 100+ indicateurs ESRS pré-configurés vous guident dès le premier jour.',
+                desc: 'Importez vos fichiers FEC, CSV ou Excel, ou saisissez à la main. 100+ indicateurs ESRS pré-configurés vous guident dès le premier jour.',
                 icon: Database, color: 'from-emerald-500 to-green-600',
-                detail: ['25 connecteurs natifs', 'Import CSV · FEC · Excel', '100+ indicateurs ESRS'],
+                detail: ['Import CSV · FEC · Excel', 'Exports RH', '100+ indicateurs ESRS'],
               },
               {
                 num: '02', title: "L'IA analyse et calcule",

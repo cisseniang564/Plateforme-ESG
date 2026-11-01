@@ -6645,14 +6645,14 @@
           ]
         },
         "connectors": {
-          "name": "Data Connectors",
-          "tagline": "SAP · Oracle · Workday · Schneider · Climatiq",
-          "desc": "Automated ingestion from your systems: 25 native connectors across ERP, HR, Energy, CRM, Accounting and Carbon. OAuth2, API keys, certificates. No more manual Excel entry.",
+          "name": "Connectors and imports",
+          "tagline": "FEC import · HR exports · Climatiq · beta APIs",
+          "desc": "Feed the platform without re-keying: FEC import (Sage, Cegid, Pennylane…), HR exports (Silae, Lucca, PayFit), CSV and Excel, and Scope 2 calculation via Climatiq. Pennylane, Qonto and Enedis API connections are in beta; SAP, Oracle or Workday on request.",
           "badges": [
-            "25 native connectors",
-            "OAuth2 & API keys",
-            "Real-time sync",
-            "Flow monitoring"
+            "FEC · CSV · Excel import",
+            "HR exports (Silae, Lucca, PayFit)",
+            "Scope 2 via Climatiq",
+            "Sync log"
           ]
         },
         "insee": {
@@ -6837,12 +6837,12 @@
           },
           {
             "title": "Integrated into your ecosystem from day one",
-            "desc": "25 native connectors (SAP, Oracle, Workday, Salesforce, Qonto, Microsoft 365, Enedis…), a full REST API, real-time webhooks and FEC/CSV import. No more double entry.",
+            "desc": "FEC and CSV import, REST API and signed webhooks; Pennylane, Qonto and Enedis connections in beta, ERP and HRIS on request. No more double entry.",
             "points": [
-              "25 ERP/CRM/Accounting connectors",
-              "REST API + OAuth2",
+              "FEC · CSV · Excel import",
+              "REST API + API keys",
               "HMAC-SHA256 webhooks",
-              "FEC import · accounting-based Scope 3"
+              "Pennylane · Qonto · Enedis (beta)"
             ]
           }
         ]
@@ -6924,10 +6924,10 @@
         "steps": [
           {
             "title": "Connect your sources",
-            "desc": "Plug in your ERPs, import your CSV or FEC files, or enter data manually. 100+ pre-configured ESRS indicators guide you from day one.",
+            "desc": "Import your FEC, CSV or Excel files, or enter data by hand. 100+ pre-configured ESRS indicators guide you from day one.",
             "detail": [
-              "25 native connectors",
               "CSV · FEC · Excel import",
+              "HR exports",
               "100+ ESRS indicators"
             ]
           },
@@ -7179,7 +7179,7 @@
               "1,000,000 API calls / month",
               "Everything in PME",
               "Narrative AI & recommendations",
-              "Advanced ERP connectors",
+              "Advanced connectors (Pennylane, Qonto, Enedis — beta)",
               "SFDR & multi-regulatory",
               "Sector benchmarking",
               "Webhooks & integrations",
@@ -7346,7 +7346,7 @@
           },
           {
             "q": "Can we import our data from Excel or an ERP?",
-            "a": "Absolutely. The platform accepts CSV/Excel imports and offers connectors to the main ERPs (SAP, Oracle, Sage). Our RESTful API enables custom integrations."
+            "a": "Yes. The platform accepts CSV, Excel and FEC imports (Sage, Cegid, Pennylane) as well as HR exports from Silae, Lucca or PayFit. Pennylane, Qonto and Enedis API connections are in beta. For SAP, Oracle or Workday, tell us your need: they are not available out of the box. Our REST API allows custom integrations."
           },
           {
             "q": "Where is the data hosted?",
@@ -7617,7 +7617,7 @@
       "features": {
         "connectors": {
           "title": "Data collection and connectors",
-          "desc": "Guided entry, CSV imports and connectors: all your ESG data in one place."
+          "desc": "Guided entry, FEC and CSV imports, HR exports, with a log of every synchronisation."
         },
         "dataquality": {
           "title": "Data quality",

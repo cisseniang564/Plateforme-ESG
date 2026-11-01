@@ -18,6 +18,10 @@ router = APIRouter()
 
 # ─── Catalog definition ──────────────────────────────────────────────────────
 # `status` values: available | beta | coming_soon
+#   available   : fonctionne de bout en bout avec les données du client (imports de fichiers : FEC, CSV RH…)
+#   beta        : le code existe mais n'a pas été validé avec un compte réel (Pennylane, Qonto) ou exige une
+#                 habilitation du fournisseur (Enedis) ou ne lit que des sites fictifs (Schneider)
+#   coming_soon : pas encore développé
 # `category` values: energy | accounting | erp | hr | scope3 | banking | crm | other
 
 CONNECTOR_CATALOG: List[Dict] = [
@@ -28,7 +32,7 @@ CONNECTOR_CATALOG: List[Dict] = [
         "category": "energy",
         "description": "Récupération automatique des consommations électriques quart-horaires depuis Enedis.",
         "data_provided": ["scope2_electricity", "consumption_kwh_monthly"],
-        "status": "available",
+        "status": "beta",
         "logo_emoji": "⚡",
         "color": "#fbbf24",
         "auth_type": "oauth2",
@@ -42,7 +46,7 @@ CONNECTOR_CATALOG: List[Dict] = [
         "category": "energy",
         "description": "Données de consommation site par site depuis EcoStruxure Building Advisor.",
         "data_provided": ["scope2_electricity", "scope1_gas", "site_consumption"],
-        "status": "available",
+        "status": "beta",
         "logo_emoji": "🏭",
         "color": "#3eb949",
         "auth_type": "api_key",
@@ -107,7 +111,7 @@ CONNECTOR_CATALOG: List[Dict] = [
         "category": "accounting",
         "description": "Logiciel comptable nouvelle génération — synchronisation automatique des factures fournisseurs pour calcul Scope 3 spend-based.",
         "data_provided": ["scope3_spend_based", "supplier_list", "capex_opex_split"],
-        "status": "available",
+        "status": "beta",
         "logo_emoji": "🔷",
         "color": "#6366f1",
         "country": "FR",
@@ -213,7 +217,7 @@ CONNECTOR_CATALOG: List[Dict] = [
         "category": "banking",
         "description": "Néobanque pro — synchronisation automatique des transactions bancaires pour calcul Scope 3 spend-based.",
         "data_provided": ["scope3_spend_based", "supplier_list"],
-        "status": "available",
+        "status": "beta",
         "logo_emoji": "🏦",
         "color": "#0a1f44",
         "country": "FR",

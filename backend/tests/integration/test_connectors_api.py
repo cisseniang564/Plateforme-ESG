@@ -5,7 +5,7 @@ Routes covered:
   GET  /api/v1/connectors/catalog              — list available connectors
   PATCH /api/v1/connectors/{id}/status         — update connector status
   POST /api/v1/connectors/{id}/sync            — trigger sync
-  POST /api/v1/connectors/test                 — test external connectivity (public)
+  POST /api/v1/connectors/test                 — test external connectivity (authentifié)
   POST /api/v1/connectors/climatiq/estimate    — Climatiq CO2 estimate
   POST /api/v1/connectors/carbon-interface/estimate — Carbon Interface estimate
 
@@ -94,19 +94,22 @@ class TestConnectorsCatalog:
 
 
 class TestConnectorTest:
-    def test_public_test_endpoint_no_auth(self, client):
-        """POST /connectors/test is in PUBLIC_PATHS — no auth required."""
-        resp = client.post(
-            "/api/v1/connectors/test",
-            json={"provider": "climatiq"},
-        )
-        # Should not be 401 (it's public)
-        assert resp.status_code != 401
+    def test_test_endpoint_requires_auth(self, client):
+        """POST /connectors/test utilise les clés de la plateforme : il n'est plus public."""
+        from app.main import app
+        from app.dependencies import get_current_user
+        del app.dependency_overrides[get_current_user]
+        try:
+            resp = client.post("/api/v1/connectors/test", json={"connector_id": "climatiq"})
+        finally:
+            app.dependency_overrides[get_current_user] = lambda: _make_user()
+        assert resp.status_code == 401
 
     def test_test_endpoint_returns_result(self, client):
         resp = client.post(
             "/api/v1/connectors/test",
             json={"connector_id": "climatiq"},
+            headers=AUTH_HEADERS,
         )
         assert resp.status_code in (200, 400, 503)
 

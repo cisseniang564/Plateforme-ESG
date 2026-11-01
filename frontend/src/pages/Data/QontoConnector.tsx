@@ -11,7 +11,15 @@ import i18n from "@/i18n/config";
 
 type Step = "form" | "syncing" | "success" | "error";
 
-interface SyncResult { synced: number; total_spend: number; year: number; source: "api" | "mock"; }
+interface SyncResult { synced: number; total_spend: number; categories: Record<string, number>; conflicts: string[]; transactions_read: number; message: string | null; year: number; source: "api"; }
+
+const CATEGORY_LABELS: Record<string, string> = {
+  scope3_cat6_travel: "Cat. 6 — Déplacements professionnels",
+  scope3_cat6_meals: "Cat. 6 — Repas professionnels",
+  scope3_cat1_it: "Cat. 1 — Achats IT / Cloud",
+  scope3_cat1_office: "Cat. 1 — Fournitures de bureau",
+  scope3_cat3_energy: "Cat. 3 — Énergie et combustibles",
+};
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 6 }, (_, i) => CURRENT_YEAR - i);
@@ -59,7 +67,7 @@ export default function QontoConnector() {
         <div className="flex items-center gap-4 mb-2">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ background: "#0a1f4415" }}>🏦</div>
           <div>
-            <h1 className="text-xl font-black text-gray-900">{t("qonto.title", "Connecteur Qonto")}</h1>
+            <h1 className="text-xl font-black text-gray-900">{t("qonto.title", "Connecteur Qonto")} <span className="ml-1 align-middle px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold uppercase">{t("common.beta","Bêta")}</span></h1>
             <p className="text-sm text-gray-500">{t("qonto.desc", "Synchronisation automatique de vos transactions bancaires vers les catégories Scope 3")}</p>
           </div>
         </div>
@@ -159,7 +167,6 @@ export default function QontoConnector() {
                 <p className="font-bold text-gray-900">{t("qonto.successTitle","Synchronisation réussie")}</p>
                 <p className="text-sm text-gray-500">
                   {t("qonto.syncedCats","{{n}} catégorie{{s}} Scope 3 importée{{s}} pour {{year}}",{n:result.synced,s:result.synced!==1?"s":"",year:result.year})}
-                  {result.source==="mock" && <span className="ml-2 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold uppercase">{t("qonto.demoData","Données démo")}</span>}
                 </p>
               </div>
             </div>
@@ -169,25 +176,19 @@ export default function QontoConnector() {
             </div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">{t("qonto.breakdown","Répartition par catégorie Scope 3")}</p>
             <div className="divide-y divide-gray-100">
-              <div className="flex items-center justify-between py-2.5">
-                <span className="text-sm text-gray-600">{t("qonto.cat6","Cat. 6 — Déplacements professionnels")}</span>
-                <span className="text-sm font-semibold text-gray-800 tabular-nums">{formatEur(result.total_spend*0.25)}</span>
-              </div>
-              <div className="flex items-center justify-between py-2.5">
-                <span className="text-sm text-gray-600">{t("qonto.cat1","Cat. 1 — Achats IT / Cloud")}</span>
-                <span className="text-sm font-semibold text-gray-800 tabular-nums">{formatEur(result.total_spend*0.4)}</span>
-              </div>
-              <div className="flex items-center justify-between py-2.5">
-                <span className="text-sm text-gray-600">{t("qonto.cat3","Cat. 3 — Énergie et combustibles")}</span>
-                <span className="text-sm font-semibold text-gray-800 tabular-nums">{formatEur(result.total_spend*0.22)}</span>
-              </div>
-              <div className="flex items-center justify-between py-2.5">
-                <span className="text-sm text-gray-600">{t("qonto.catOther","Autres catégories")}</span>
-                <span className="text-sm font-semibold text-gray-800 tabular-nums">{formatEur(result.total_spend*0.13)}</span>
-              </div>
+              {Object.entries(result.categories ?? {}).map(([key, value]) => (
+                <div key={key} className="flex items-center justify-between py-2.5">
+                  <span className="text-sm text-gray-600">{CATEGORY_LABELS[key] ?? key}</span>
+                  <span className="text-sm font-semibold text-gray-800 tabular-nums">{formatEur(value)}</span>
+                </div>
+              ))}
             </div>
-            {result.source==="mock" && (
-              <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mt-4">{t("qonto.mockWarning","Les identifiants fournis n'ont pas pu être authentifiés. Les données ci-dessus sont représentatives mais simulées. Vérifiez vos identifiants dans Qonto et resynchronisez.")}</p>
+            <p className="text-xs text-gray-400 mt-3">{t("qonto.read","{{n}} transaction(s) lue(s) ; seules celles reconnues comme Scope 3 sont comptées.",{n:result.transactions_read})}</p>
+            {result.message && <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mt-3">{result.message}</p>}
+            {result.conflicts?.length > 0 && (
+              <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mt-3">
+                {t("qonto.conflicts","{{n}} catégorie(s) non importée(s) : vous avez déjà saisi une valeur pour cette période, elle n'a pas été remplacée.",{n:result.conflicts.length})}
+              </p>
             )}
           </div>
           <div className="flex gap-3">

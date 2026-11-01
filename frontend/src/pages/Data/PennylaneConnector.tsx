@@ -11,7 +11,7 @@ import type { TFunction } from "i18next";
 import i18n from "@/i18n/config";
 
 type Step = "form" | "syncing" | "success" | "error";
-interface SyncResult { synced: number; categories: Record<string, number>; year: number; source: "api" | "mock"; }
+interface SyncResult { synced: number; categories: Record<string, number>; conflicts: string[]; invoices_read: number; message: string | null; year: number; source: "api"; }
 
 function getCATEGORY_LABELS(t: TFunction): Record<string, string> {
   return {
@@ -67,8 +67,8 @@ export default function PennylaneConnector() {
         <div className="flex items-center gap-4 mb-2">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ background: "#6366f115" }}>🔷</div>
           <div>
-            <h1 className="text-xl font-black text-gray-900">{t("penny.title","Connecteur Pennylane")}</h1>
-            <p className="text-sm text-gray-500">{t("penny.desc","Synchronisation automatique de vos factures fournisseurs vers les catégories Scope 3")}</p>
+            <h1 className="text-xl font-black text-gray-900">{t("penny.title","Connecteur Pennylane")} <span className="ml-1 align-middle px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold uppercase">{t("common.beta","Bêta")}</span></h1>
+            <p className="text-sm text-gray-500">{t("penny.desc","Lecture de vos factures Pennylane et rattachement aux catégories Scope 3. Bêta : pas encore validé avec un compte réel, vérifiez les montants avant de les utiliser.")}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 mt-4">
@@ -160,7 +160,6 @@ export default function PennylaneConnector() {
                 <p className="font-bold text-gray-900">{t("penny.successTitle","Synchronisation réussie")}</p>
                 <p className="text-sm text-gray-500">
                   {t("penny.syncedIndicators","{{n}} indicateur{{s}} Scope 3 importé{{s}} pour {{year}}",{n:result.synced,s:result.synced!==1?"s":"",year:result.year})}
-                  {result.source==="mock" && <span className="ml-2 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold uppercase">{t("penny.demoData","Données démo")}</span>}
                 </p>
               </div>
             </div>
@@ -175,8 +174,12 @@ export default function PennylaneConnector() {
                 </div>
               ))}
             </div>
-            {result.source==="mock" && (
-              <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mt-4">{t("penny.mockWarning","La clé API fournie n'a pas pu être authentifiée. Les données ci-dessus sont représentatives mais simulées. Vérifiez votre clé dans Pennylane et resynchronisez.")}</p>
+            <p className="text-xs text-gray-400 mt-3">{t("penny.read","{{n}} facture(s) lue(s) ; seules celles reconnues comme Scope 3 sont comptées.",{n:result.invoices_read})}</p>
+            {result.message && <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mt-3">{result.message}</p>}
+            {result.conflicts?.length > 0 && (
+              <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mt-3">
+                {t("penny.conflicts","{{n}} catégorie(s) non importée(s) : vous avez déjà saisi une valeur pour cette période, elle n'a pas été remplacée.",{n:result.conflicts.length})}
+              </p>
             )}
           </div>
           <div className="flex gap-3">

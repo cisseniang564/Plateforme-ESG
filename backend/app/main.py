@@ -401,6 +401,10 @@ app.include_router(audit_trail.router, prefix="/api/v1", tags=["Audit Trail"])
 app.include_router(schneider.router, prefix="/api/v1/connectors/schneider", tags=["Schneider-Climatiq"])
 app.include_router(sage_cegid.router, prefix="/api/v1/connectors/sage-cegid", tags=["Sage-Cegid FEC"])
 app.include_router(enedis.router, prefix="/api/v1")
+# Connecteurs dédiés : à enregistrer AVANT le routeur générique (/{connector_id}/sync), sinon ce dernier
+# capte « pennylane » et « qonto » et renvoie une synchronisation simulée à leur place.
+app.include_router(pennylane.router,         prefix="/api/v1/connectors/pennylane", tags=["Connectors"])
+app.include_router(qonto.router,             prefix="/api/v1/connectors/qonto",     tags=["Connectors"])
 app.include_router(connectors.router, prefix="/api/v1/connectors", tags=["Connectors"])
 app.include_router(billing.router, prefix="/api/v1/billing", tags=["Billing"])
 app.include_router(scores.router, prefix="/api/v1/scores", tags=["Scores"])
@@ -453,8 +457,6 @@ app.include_router(hr_import.router,         prefix="/api/v1/hr-import",        
 app.include_router(cabinet.router,           prefix="/api/v1/cabinet",           tags=["Cabinet"])
 app.include_router(sector_templates.router,  prefix="/api/v1",                   tags=["Sector Templates"])
 app.include_router(import_templates.router,  prefix="/api/v1",                   tags=["Import Templates"])
-app.include_router(pennylane.router,         prefix="/api/v1/connectors/pennylane", tags=["Connectors"])
-app.include_router(qonto.router,             prefix="/api/v1/connectors/qonto",     tags=["Connectors"])
 
 
 if __name__ == "__main__":

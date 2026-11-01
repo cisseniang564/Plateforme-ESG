@@ -14,7 +14,6 @@ OAuth2 flow (Authorization Code):
 """
 import hashlib
 import logging
-import secrets
 import urllib.parse
 from datetime import datetime, timezone, timedelta
 from typing import Optional
@@ -28,6 +27,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.services import oauth_state, secret_vault
+from app.services.connector_sync_service import _get_redis as _redis
 from app.dependencies import get_db, get_current_user
 from app.models.data_entry import DataEntry
 from app.models.integration import Integration, IntegrationType
@@ -105,17 +106,17 @@ async def _ensure_fresh_token(integration: Integration, db: AsyncSession) -> str
     if expires_at_str:
         expires_at = datetime.fromisoformat(expires_at_str)
         if datetime.now(timezone.utc) >= expires_at - timedelta(minutes=5):
-            token_data = await _refresh_token(cfg["refresh_token"])
-            cfg["access_token"] = token_data["access_token"]
+            token_data = await _refresh_token(secret_vault.decrypt(cfg["refresh_token"]))
+            cfg["access_token"] = secret_vault.encrypt(token_data["access_token"])
             cfg["expires_at"] = (
                 datetime.now(timezone.utc) + timedelta(seconds=token_data.get("expires_in", 3600))
             ).isoformat()
             if "refresh_token" in token_data:
-                cfg["refresh_token"] = token_data["refresh_token"]
+                cfg["refresh_token"] = secret_vault.encrypt(token_data["refresh_token"])
             integration.config = cfg
             integration.updated_at = datetime.now(timezone.utc)
             await db.commit()
-    return cfg["access_token"]
+    return secret_vault.decrypt(cfg["access_token"])
 
 
 # ─── OAuth2 endpoints ─────────────────────────────────────────────────────────
@@ -137,8 +138,11 @@ async def enedis_authorize(
 
     redirect_uri = settings.ENEDIS_REDIRECT_URI or f"{settings.APP_URL}/api/v1/connectors/enedis/callback"
 
-    # state = tenant_id + random nonce (hex) — verified in callback
-    state = f"{current_user.tenant_id}:{secrets.token_hex(16)}"
+    # state = valeur aléatoire à usage unique, conservée côté serveur et liée à ce client
+    try:
+        state = oauth_state.issue_state(_redis(), "enedis", current_user.tenant_id, current_user.id)
+    except RuntimeError:
+        raise HTTPException(status_code=503, detail="Service temporairement indisponible, réessayez dans un instant.")
 
     params = {
         "response_type": "code",
@@ -175,13 +179,10 @@ async def enedis_callback(
     if not code or not state:
         raise HTTPException(status_code=400, detail="Paramètres manquants (code ou state)")
 
-    # Extract tenant_id from state
-    try:
-        tenant_id_str, _ = state.split(":", 1)
-        from uuid import UUID as _UUID
-        tenant_id = _UUID(tenant_id_str)
-    except (ValueError, AttributeError):
-        raise HTTPException(status_code=400, detail="State invalide")
+    # Le client est retrouvé grâce au state enregistré par /authorize (usage unique, 10 min), pas dans l'URL.
+    tenant_id = oauth_state.consume_state(_redis(), "enedis", state)
+    if tenant_id is None:
+        raise HTTPException(status_code=400, detail="State invalide ou expiré : relancez la connexion Enedis.")
 
     redirect_uri = settings.ENEDIS_REDIRECT_URI or f"{settings.APP_URL}/api/v1/connectors/enedis/callback"
 
@@ -193,8 +194,8 @@ async def enedis_callback(
     ).isoformat()
 
     config = {
-        "access_token":  token_data["access_token"],
-        "refresh_token": token_data.get("refresh_token", ""),
+        "access_token":  secret_vault.encrypt(token_data["access_token"]),
+        "refresh_token": secret_vault.encrypt(token_data.get("refresh_token", "")),
         "token_type":    token_data.get("token_type", "Bearer"),
         "expires_at":    expires_at,
         "scope":         token_data.get("scope", _ENEDIS_SCOPE),

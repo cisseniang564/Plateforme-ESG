@@ -181,35 +181,60 @@ class TestEnedisCallback:
         assert resp.status_code in (400, 502, 307, 302)
 
     def test_callback_valid_flow(self, client):
-        """Simulate a valid callback with mocked token exchange."""
-        valid_state = f"{TENANT_ID}:deadbeef1234"
+        """Callback valide : le state vient de /authorize (usage unique), les jetons sont stockés chiffrés."""
+        from app.services import oauth_state, secret_vault
+        fake = _FakeRedis()
+        state = oauth_state.issue_state(fake, "enedis", TENANT_ID)
+        saved = {}
 
-        mock_token_resp = MagicMock()
-        mock_token_resp.status_code = 200
-        mock_token_resp.json.return_value = {
-            "access_token":  "new_access",
-            "refresh_token": "new_refresh",
-            "expires_in":    3600,
-            "token_type":    "Bearer",
-        }
+        class _DB:                       # session minimale : on capte l'enregistrement créé
+            def add(self, obj): saved["integration"] = obj
+            async def commit(self): pass
+            async def refresh(self, obj): pass
+            async def flush(self): pass
 
-        with patch(
-            "app.api.v1.endpoints.enedis._exchange_code",
-            new=AsyncMock(return_value={
-                "access_token":  "new_access",
-                "refresh_token": "new_refresh",
-                "expires_in":    3600,
-                "token_type":    "Bearer",
-            }),
-        ), patch(
-            "app.api.v1.endpoints.enedis._get_integration",
-            new=AsyncMock(return_value=None),
-        ):
-            resp = client.get(
-                f"/api/v1/connectors/enedis/callback?code=mycode&state={valid_state}",
-                allow_redirects=False,
-            )
+        from app.main import app
+        from app.db.session import get_db
+        previous = app.dependency_overrides.get(get_db)
+        app.dependency_overrides[get_db] = lambda: _DB()
+        try:
+            with patch("app.api.v1.endpoints.enedis._redis", return_value=fake), patch(
+                "app.api.v1.endpoints.enedis._exchange_code",
+                new=AsyncMock(return_value={"access_token": "new_access", "refresh_token": "new_refresh", "expires_in": 3600, "token_type": "Bearer"}),
+            ), patch("app.api.v1.endpoints.enedis._get_integration", new=AsyncMock(return_value=None)):
+                resp = client.get(f"/api/v1/connectors/enedis/callback?code=mycode&state={state}", allow_redirects=False)
+        finally:
+            app.dependency_overrides[get_db] = previous
         assert resp.status_code in (307, 302, 200)
+        cfg = saved["integration"].config
+        assert secret_vault.is_encrypted(cfg["access_token"]) and "new_access" not in cfg["access_token"]
+        assert secret_vault.decrypt(cfg["access_token"]) == "new_access"
+        assert secret_vault.decrypt(cfg["refresh_token"]) == "new_refresh"
+
+    def test_callback_refuses_a_state_forged_from_a_tenant_id(self, client):
+        """Ancien format « tenant_id:nonce » : n'importe qui pouvait cibler un autre client."""
+        with patch("app.api.v1.endpoints.enedis._redis", return_value=_FakeRedis()), patch(
+            "app.api.v1.endpoints.enedis._exchange_code", new=AsyncMock(return_value={"access_token": "x"})
+        ) as exchange:
+            resp = client.get(f"/api/v1/connectors/enedis/callback?code=mycode&state={TENANT_ID}:deadbeef1234", allow_redirects=False)
+        assert resp.status_code == 400
+        exchange.assert_not_called()                 # le code n'est même pas échangé
+
+    def test_callback_state_is_single_use(self, client):
+        from app.services import oauth_state
+        fake = _FakeRedis()
+        state = oauth_state.issue_state(fake, "enedis", TENANT_ID)
+        with patch("app.api.v1.endpoints.enedis._redis", return_value=fake):
+            assert oauth_state.consume_state(fake, "enedis", state) == TENANT_ID
+            resp = client.get(f"/api/v1/connectors/enedis/callback?code=mycode&state={state}", allow_redirects=False)
+        assert resp.status_code == 400
+
+
+class _FakeRedis:
+    def __init__(self): self.data = {}
+    def setex(self, key, ttl, value): self.data[key] = value
+    def get(self, key): return self.data.get(key)
+    def delete(self, key): self.data.pop(key, None)
 
 
 # ─── /sync ────────────────────────────────────────────────────────────────────

@@ -19,7 +19,6 @@ PUBLIC_PATHS = frozenset([
     "/api/v1/auth/forgot-password",  # Password reset request — no auth
     "/api/v1/auth/reset-password",   # Password reset confirmation — no auth
     "/api/v1/webhooks/stripe",  # Stripe webhook — signature-verified, no JWT
-    "/api/v1/connectors/test",  # External API connectivity test — no user data
     "/api/v1/reports/verify",   # Public report hash verification — no PII returned
     "/api/v1/unsubscribe",      # Email unsubscribe — must work without JWT (RFC 8058)
     "/api/v1/status",           # Public status page — must work without JWT (DSI/operator)
