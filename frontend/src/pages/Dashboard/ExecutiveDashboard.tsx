@@ -13,6 +13,7 @@ import { fr } from 'date-fns/locale';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, SegmentedControl, StatCard, Badge, EmptyState } from '@/components/common';
 import Spinner from '@/components/common/Spinner';
+import GettingStarted from './GettingStarted';
 import { useAuth } from '@/hooks/useAuth';
 import { PILLAR_COLORS } from '@/styles/tokens';
 import api from '@/services/api';
@@ -378,16 +379,7 @@ export default function ExecutiveDashboard() {
   }
 
   if (organizations.length === 0) {
-    return (
-      <div className={card}>
-        <EmptyState
-          icon={Building2}
-          title={t('dashboard.emptyTitle', 'Bienvenue sur ESGFlow')}
-          description={t('dashboard.emptyDesc', 'Ajoutez votre première organisation pour voir apparaître vos scores, vos tendances et vos priorités.')}
-          action={<Button onClick={() => navigate('/app/organizations')}>{t('dashboard.emptyCta', 'Ajouter une organisation')}</Button>}
-        />
-      </div>
-    );
+    return <GettingStarted />;
   }
 
   return (

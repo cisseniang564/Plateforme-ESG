@@ -32,5 +32,8 @@ test.describe('Authentification', () => {
     // Premier test de la CI : le serveur démarre à froid, la connexion peut dépasser 10 s.
     await expect(page).toHaveURL(/\/app/, { timeout: 25_000 });
     await expect(page.getByText(/Bienvenue sur ESGFlow|Bonjour|Bonsoir/i).first()).toBeVisible();
+    // Compte neuf : le parcours des premières minutes propose les trois étapes
+    await expect(page.getByRole('heading', { name: 'Apportez vos données' })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Importer un fichier/ })).toBeVisible();
   });
 });
