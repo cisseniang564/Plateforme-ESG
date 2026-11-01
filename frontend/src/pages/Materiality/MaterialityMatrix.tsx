@@ -9,6 +9,7 @@ import {
 import Spinner from '@/components/common/Spinner';
 import api from '@/services/api';
 import toast from 'react-hot-toast';
+import { HORIZON_LABELS, VALUE_CHAIN_LABELS, catOf, missingDocumentation, normCatKey } from './materialityHelpers';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type IROType = 'impact' | 'risk' | 'opportunity';
@@ -21,6 +22,10 @@ interface MaterialityIssue {
   iro_type?: IROType;           // Impact / Risque / Opportunité
   esrs_topic?: string;          // 'E1' | 'E2' | … | 'G1'
   iro_actual_or_potential?: 'actual' | 'potential'; // for impacts
+  // Traçabilité de l'évaluation
+  rationale?: string | null;
+  time_horizon?: 'short' | 'medium' | 'long' | null;
+  value_chain?: 'own' | 'upstream' | 'downstream' | null;
 }
 interface ESGRisk {
   id: string; title: string; description?: string; category: string;
@@ -120,14 +125,7 @@ const ESRS_TOPIC_LABELS: Record<string, string> = {
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-// Normalize stored category to CAT keys (handles French 'Environnement', 'Gouvernance', etc.)
-const normCatKey = (c: string): string => {
-  const lower = (c || '').toLowerCase().trim();
-  if (lower.startsWith('env')) return 'environmental';
-  if (lower.startsWith('soc')) return 'social';
-  if (lower.startsWith('gov') || lower.startsWith('gou')) return 'governance';
-  return lower;
-};
+// (normCatKey, catOf et les libellés d'horizon / chaîne de valeur sont dans materialityHelpers.ts)
 const catDot   = (c: string) => (CAT as any)[normCatKey(c)]?.dot   ?? 'bg-gray-400';
 const catBadge = (c: string) => (CAT as any)[normCatKey(c)]?.color ?? 'bg-gray-100 text-gray-600';
 const quadrant = (x: number, y: number) => {
@@ -142,7 +140,7 @@ export default function MaterialityMatrix() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const normCat = normCatKey; // alias for use inside component JSX
-  const catLabel = (c: string) => t((CAT as any)[normCat(c)]?.labelKey ?? c);
+  const catLabel = (c: string) => (CAT as any)[normCat(c)]?.labelKey ? t((CAT as any)[normCat(c)].labelKey) : (c === 'other' ? t('materiality.catOther', 'Non classé') : c);
   const iroLabel = (type: IROType) => ({
     impact:      t('materiality.iroImpactLabel',      'Impact'),
     risk:        t('materiality.iroRiskLabel',         'Risque'),
@@ -157,11 +155,16 @@ export default function MaterialityMatrix() {
   // tabs: 'matrix' | 'questionnaire' | 'suggestions' | 'risks' | 'esrs' | 'iros'
   const [activeTab, setActiveTab] = useState<'matrix' | 'questionnaire' | 'suggestions' | 'risks' | 'esrs' | 'iros'>('matrix');
   const [viewMode, setViewMode] = useState<'matrix' | 'list'>('matrix');
+  // Filtres de la vue matrice / liste
+  const [search, setSearch] = useState('');
+  const [catFilter, setCatFilter] = useState<'all' | 'environmental' | 'social' | 'governance' | 'other'>('all');
+  const [onlyMaterial, setOnlyMaterial] = useState(false);
+  const [showMedians, setShowMedians] = useState(false);
 
   // Issue modal
   const [showModal, setShowModal] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<MaterialityIssue | null>(null);
-  const [formData, setFormData] = useState({ name: '', description: '', category: 'environmental', financial_impact: 50, esg_impact: 50, stakeholders: '', iro_type: '' as IROType | '', esrs_topic: '', iro_actual_or_potential: 'potential' as 'actual' | 'potential' });
+  const [formData, setFormData] = useState({ name: '', description: '', category: 'environmental', financial_impact: 50, esg_impact: 50, stakeholders: '', iro_type: '' as IROType | '', esrs_topic: '', iro_actual_or_potential: 'potential' as 'actual' | 'potential', rationale: '', time_horizon: '', value_chain: '' });
 
   // Risk modal
   const [showRiskModal, setShowRiskModal] = useState(false);
@@ -208,13 +211,13 @@ export default function MaterialityMatrix() {
     finally { setSubmitting(false); }
   };
 
-  const handleEdit   = (issue: MaterialityIssue) => { setSelectedIssue(issue); setFormData({ name: issue.name, description: issue.description || '', category: issue.category, financial_impact: issue.financial_impact, esg_impact: issue.esg_impact, stakeholders: issue.stakeholders || '', iro_type: issue.iro_type || '', esrs_topic: issue.esrs_topic || '', iro_actual_or_potential: issue.iro_actual_or_potential || 'potential' }); setShowModal(true); };
+  const handleEdit   = (issue: MaterialityIssue) => { setSelectedIssue(issue); setFormData({ name: issue.name, description: issue.description || '', category: catOf(issue) === 'other' ? issue.category : catOf(issue), financial_impact: issue.financial_impact, esg_impact: issue.esg_impact, stakeholders: issue.stakeholders || '', iro_type: issue.iro_type || '', esrs_topic: issue.esrs_topic || '', iro_actual_or_potential: issue.iro_actual_or_potential || 'potential', rationale: issue.rationale || '', time_horizon: issue.time_horizon || '', value_chain: issue.value_chain || '' }); setShowModal(true); };
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(t('materiality.confirmDeleteIssue', { name }))) return;
     try { await api.delete(`/materiality/issues/${id}`); toast.success(t('materiality.toastIssueDeleted')); await loadAll(); }
     catch (err: any) { toast.error(err.response?.data?.detail || t('common.error')); }
   };
-  const closeIssueModal = () => { setShowModal(false); setSelectedIssue(null); setFormData({ name: '', description: '', category: 'environmental', financial_impact: 50, esg_impact: 50, stakeholders: '', iro_type: '', esrs_topic: '', iro_actual_or_potential: 'potential' }); };
+  const closeIssueModal = () => { setShowModal(false); setSelectedIssue(null); setFormData({ name: '', description: '', category: 'environmental', financial_impact: 50, esg_impact: 50, stakeholders: '', iro_type: '', esrs_topic: '', iro_actual_or_potential: 'potential', rationale: '', time_horizon: '', value_chain: '' }); };
 
   // ── Risk CRUD ────────────────────────────────────────────────────────────────
   const handleRiskSubmit = async (e: React.FormEvent) => {
@@ -298,14 +301,24 @@ export default function MaterialityMatrix() {
 
   // ── Export ───────────────────────────────────────────────────────────────────
   const exportCSV = () => {
-    const header = `${t('materiality.csvHeaderIssue')},${t('materiality.csvHeaderCategory')},${t('materiality.csvHeaderFinancial')},${t('materiality.csvHeaderEsg')},${t('materiality.csvHeaderQuadrant')},${t('materiality.csvHeaderMaterial')},${t('materiality.csvHeaderPriority')},${t('materiality.csvHeaderStakeholders')}\n`;
-    const rows = issues.map(i => {
+    const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const header = [
+      t('materiality.csvHeaderIssue'), t('materiality.csvHeaderCategory'), t('materiality.csvHeaderFinancial'), t('materiality.csvHeaderEsg'),
+      t('materiality.csvHeaderQuadrant'), t('materiality.csvHeaderMaterial'), t('materiality.csvHeaderPriority'), t('materiality.csvHeaderStakeholders'),
+      'Sujet ESRS', 'Type (impact/risque/opportunité)', 'Horizon de temps', 'Chaîne de valeur', 'Justification',
+    ].map(esc).join(',');
+    const rows = ranked.map(i => {
       const q = quadrant(i.financial_impact, i.esg_impact);
-      return `"${i.name}","${catLabel(i.category)}",${i.financial_impact},${i.esg_impact},"${t(q.labelKey)}",${i.is_material ? t('materiality.csvYes') : t('materiality.csvNo')},"${i.priority}","${i.stakeholders || ''}"`;
+      return [
+        i.name, catLabel(catOf(i)), i.financial_impact, i.esg_impact, t(q.labelKey), i.is_material ? t('materiality.csvYes') : t('materiality.csvNo'),
+        i.priority, i.stakeholders || '', i.esrs_topic || '', i.iro_type ? iroLabel(i.iro_type) : '',
+        i.time_horizon ? HORIZON_LABELS[i.time_horizon] : '', i.value_chain ? VALUE_CHAIN_LABELS[i.value_chain] : '', i.rationale || '',
+      ].map(esc).join(',');
     }).join('\n');
-    const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
+    // BOM : Excel ouvre alors les accents correctement
+    const blob = new Blob(['\uFEFF' + header + '\n' + rows], { type: 'text/csv;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a'); a.href = url; a.download = 'matrice-materialite.csv'; a.click();
+    const a    = document.createElement('a'); a.href = url; a.download = 'registre-materialite.csv'; a.click();
     URL.revokeObjectURL(url); toast.success(t('materiality.toastExportCsv'));
   };
 
@@ -314,7 +327,7 @@ export default function MaterialityMatrix() {
     total:         issues.length,
     material:      issues.filter(i => i.is_material).length,
     highPriority:  issues.filter(i => i.priority === 'high').length,
-    env:           issues.filter(i => i.category === 'environmental').length,
+    env:           issues.filter(i => catOf(i) === 'environmental').length,
     criticalRisks: risks.filter(r => r.severity === 'critical' || r.severity === 'high').length,
     // IRO stats
     impacts:       issues.filter(i => i.iro_type === 'impact').length,
@@ -322,6 +335,27 @@ export default function MaterialityMatrix() {
     opportunities: issues.filter(i => i.iro_type === 'opportunity').length,
     esrsLinked:    issues.filter(i => i.esrs_topic).length,
   };
+
+  // Rang commun à la matrice et au tableau : le point n°3 du graphique est la ligne n°3 de la liste.
+  const ranked = [...issues].sort((a, b) => (b.financial_impact + b.esg_impact) - (a.financial_impact + a.esg_impact));
+  const rankOf = new Map(ranked.map((i, n) => [i.id, n + 1] as const));
+  const matches = (i: MaterialityIssue) =>
+    (catFilter === 'all' || catOf(i) === catFilter) &&
+    (!onlyMaterial || i.is_material) &&
+    (!search.trim() || `${i.name} ${i.description || ''}`.toLowerCase().includes(search.trim().toLowerCase()));
+  const visibleIssues = ranked.filter(matches);
+  const filtersActive = catFilter !== 'all' || onlyMaterial || search.trim() !== '';
+  const materialIssues = issues.filter(i => i.is_material);
+  const completeness = [
+    { key: 'rationale', label: 'Notes justifiées', ok: materialIssues.filter(i => (i.rationale || '').trim()).length },
+    { key: 'esrs', label: 'Sujet ESRS rattaché', ok: materialIssues.filter(i => i.esrs_topic).length },
+    { key: 'iro', label: 'Impact, risque ou opportunité', ok: materialIssues.filter(i => i.iro_type).length },
+    { key: 'horizon', label: 'Horizon de temps', ok: materialIssues.filter(i => i.time_horizon).length },
+    { key: 'stakeholders', label: 'Parties prenantes consultées', ok: materialIssues.filter(i => (i.stakeholders || '').trim()).length },
+  ];
+  const esrsTopicsToReport = ESRS_TOPICS_LIST
+    .map(code => ({ code, n: materialIssues.filter(i => i.esrs_topic === code).length }))
+    .filter(x => x.n > 0);
 
   if (loading) return <div className="flex items-center justify-center h-96"><Spinner /></div>;
 
@@ -423,19 +457,62 @@ export default function MaterialityMatrix() {
             </div>
           </div>
 
+          {/* Filtres */}
+          {issues.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3">
+              <input type="search" value={search} onChange={e => setSearch(e.target.value)} placeholder={t('materiality.filterSearch', 'Rechercher un enjeu…')}
+                aria-label={t('materiality.filterSearch', 'Rechercher un enjeu…')}
+                className="w-56 px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+              <div className="flex gap-1" role="group" aria-label={t('materiality.filterCategory', 'Filtrer par pilier')}>
+                {([
+                  ['all', t('materiality.filterAll', 'Tous')],
+                  ['environmental', t('materiality.catEnvironmental')],
+                  ['social', t('materiality.catSocial')],
+                  ['governance', t('materiality.catGovernance')],
+                  ...(issues.some(i => catOf(i) === 'other') ? [['other', t('materiality.catOther', 'Non classé')]] : []),
+                ] as [typeof catFilter, string][]).map(([key, label]) => (
+                  <button key={key} type="button" onClick={() => setCatFilter(key)} aria-pressed={catFilter === key}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${catFilter === key ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer">
+                <input type="checkbox" checked={onlyMaterial} onChange={e => setOnlyMaterial(e.target.checked)} className="rounded border-gray-300 text-indigo-600" />
+                {t('materiality.filterOnlyMaterial', 'Enjeux matériels uniquement')}
+              </label>
+              {viewMode === 'matrix' && (
+                <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer" title={t('materiality.medianHint', 'Les médianes situent vos enjeux les uns par rapport aux autres ; elles ne servent pas à décider de la matérialité.')}>
+                  <input type="checkbox" checked={showMedians} onChange={e => setShowMedians(e.target.checked)} className="rounded border-gray-300 text-indigo-600" />
+                  {t('materiality.showMedians', 'Afficher les médianes')}
+                </label>
+              )}
+              {filtersActive && (
+                <>
+                  <span className="text-xs text-gray-500 ml-auto">{visibleIssues.length} / {issues.length}</span>
+                  <button type="button" onClick={() => { setSearch(''); setCatFilter('all'); setOnlyMaterial(false); }} className="text-xs font-semibold text-indigo-600 hover:underline">
+                    {t('materiality.filterReset', 'Réinitialiser')}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
           {/* List view */}
           {viewMode === 'list' && (
             <div className="space-y-3">
               {issues.length === 0 ? (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-16 text-center"><Grid className="mx-auto h-12 w-12 text-gray-300 mb-3" /><p className="font-semibold text-gray-700">{t('materiality.noIssues')}</p></div>
-              ) : issues.map(issue => {
+              ) : visibleIssues.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-12 text-center text-sm text-gray-500">{t('materiality.filterNoResult', 'Aucun enjeu ne correspond aux filtres.')}</div>
+              ) : visibleIssues.map(issue => {
                 const q = quadrant(issue.financial_impact, issue.esg_impact);
                 return (
                   <div key={issue.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex flex-wrap items-center gap-2 mb-2">
-                          <div className={`w-2.5 h-2.5 rounded-full ${catDot(issue.category)}`} />
+                          <div className={`w-2.5 h-2.5 rounded-full ${catDot(catOf(issue))}`} />
                           <h3 className="text-base font-semibold text-gray-900">{issue.name}</h3>
                           <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${q.bg} ${q.border} ${q.text}`}>{t(q.labelKey)}</span>
                           {issue.iro_type && (
@@ -453,6 +530,18 @@ export default function MaterialityMatrix() {
                           )}
                         </div>
                         {issue.description && <p className="text-sm text-gray-500 mb-3">{issue.description}</p>}
+                        {issue.rationale && <p className="text-xs text-gray-600 bg-gray-50 border-l-2 border-indigo-300 rounded px-3 py-2 mb-3"><span className="font-semibold">{t('materiality.rationaleShort', 'Justification')} :</span> {issue.rationale}</p>}
+                        {issue.is_material && missingDocumentation(issue).length > 0 && (
+                          <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5 mb-3">
+                            {t('materiality.toDocument', 'À documenter')} : {missingDocumentation(issue).join(', ')}
+                          </p>
+                        )}
+                        {(issue.time_horizon || issue.value_chain) && (
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {issue.time_horizon && <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">⏱ {HORIZON_LABELS[issue.time_horizon]}</span>}
+                            {issue.value_chain && <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">🔗 {VALUE_CHAIN_LABELS[issue.value_chain]}</span>}
+                          </div>
+                        )}
                         <div className="flex flex-wrap gap-3">
                           <div className="flex items-center gap-2 bg-orange-50 rounded-lg px-3 py-1.5">
                             <span className="text-xs text-gray-600">{t('materiality.listFinancialImpact')}</span>
@@ -462,7 +551,7 @@ export default function MaterialityMatrix() {
                             <span className="text-xs text-gray-600">{t('materiality.listEsgImpact')}</span>
                             <span className="text-sm font-bold text-blue-600">{issue.esg_impact}/100</span>
                           </div>
-                          <span className={`text-xs px-2.5 py-1.5 rounded-lg font-medium ${catBadge(issue.category)}`}>{catLabel(issue.category)}</span>
+                          <span className={`text-xs px-2.5 py-1.5 rounded-lg font-medium ${catBadge(catOf(issue))}`}>{catLabel(catOf(issue))}</span>
                         </div>
                         {issue.stakeholders && <p className="mt-2 text-xs text-gray-400">{t('materiality.listStakeholdersFull')} {issue.stakeholders}</p>}
                       </div>
@@ -507,6 +596,42 @@ export default function MaterialityMatrix() {
                   </div>
                 </div>
 
+                {/* Complétude de l'évaluation : ce qu'il manque pour pouvoir justifier la matrice */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                  <h3 className="text-sm font-bold text-gray-900 mb-1">{t('materiality.completenessTitle', "Complétude de l'évaluation")}</h3>
+                  <p className="text-[11px] text-gray-500 mb-3">{t('materiality.completenessHint', 'Pour les enjeux matériels uniquement : ce qu\'il faut documenter pour défendre la matrice devant un auditeur.')}</p>
+                  {materialIssues.length === 0 ? (
+                    <p className="text-xs text-gray-400">{t('materiality.completenessNone', 'Aucun enjeu matériel pour le moment.')}</p>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {completeness.map(c => {
+                        const pct = Math.round((c.ok / materialIssues.length) * 100);
+                        return (
+                          <div key={c.key}>
+                            <div className="flex justify-between text-[11px] mb-1">
+                              <span className="text-gray-600">{c.label}</span>
+                              <span className={`font-semibold ${pct === 100 ? 'text-green-600' : 'text-gray-700'}`}>{c.ok}/{materialIssues.length}</span>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden" role="progressbar" aria-label={c.label} aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+                              <div className={`h-full rounded-full ${pct === 100 ? 'bg-green-500' : 'bg-indigo-500'}`} style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {esrsTopicsToReport.length > 0 && (
+                    <div className="mt-4 pt-3 border-t border-gray-100">
+                      <p className="text-[11px] font-semibold text-gray-500 mb-2">{t('materiality.esrsToReport', 'Sujets ESRS à publier')}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {esrsTopicsToReport.map(x => (
+                          <span key={x.code} title={esrsTopicLabel(x.code)} className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 border border-indigo-200 text-indigo-700">{x.code} · {x.n}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* Category breakdown table */}
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                   <h3 className="text-sm font-bold text-gray-900 mb-3">{t('materiality.topicsByCategory', 'Enjeux par catégorie et matérialité')}</h3>
@@ -524,8 +649,9 @@ export default function MaterialityMatrix() {
                         { key: 'environmental', label: t('materiality.catEnvironmental'), color: 'bg-emerald-500', textColor: 'text-emerald-700' },
                         { key: 'social',        label: t('materiality.catSocial'),        color: 'bg-blue-500',    textColor: 'text-blue-700'    },
                         { key: 'governance',    label: t('materiality.catGovernance'),    color: 'bg-purple-500',  textColor: 'text-purple-700'  },
+                        ...(issues.some(i => catOf(i) === 'other') ? [{ key: 'other', label: t('materiality.catOther', 'Non classé'), color: 'bg-gray-400', textColor: 'text-gray-600' }] : []),
                       ].map(cat => {
-                        const all = issues.filter(i => normCat(i.category) === cat.key);
+                        const all = issues.filter(i => catOf(i) === cat.key);
                         const mat = all.filter(i => i.is_material);
                         return (
                           <tr key={cat.key} className="hover:bg-gray-50/50">
@@ -569,18 +695,16 @@ export default function MaterialityMatrix() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
-                        {[...issues]
-                          .sort((a, b) => (b.financial_impact + b.esg_impact) - (a.financial_impact + a.esg_impact))
-                          .map((issue, idx) => {
+                        {visibleIssues.map((issue) => {
                           const catColors: Record<string, string> = { environmental: 'bg-emerald-500', social: 'bg-blue-500', governance: 'bg-purple-500' };
-                          const dotColor = catColors[normCat(issue.category)] ?? 'bg-gray-400';
+                          const dotColor = catColors[catOf(issue)] ?? 'bg-gray-400';
                           return (
                             <tr
                               key={issue.id}
                               className={`hover:bg-indigo-50/40 cursor-pointer transition-colors ${issue.is_material ? 'bg-indigo-50/20' : ''}`}
                               onClick={() => handleEdit(issue)}
                             >
-                              <td className="py-2 pl-1 text-gray-400 font-mono">{idx + 1}</td>
+                              <td className="py-2 pl-1 text-gray-400 font-mono">{rankOf.get(issue.id)}</td>
                               <td className="py-2 pr-2">
                                 <div className="flex items-center gap-1.5">
                                   <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColor}`} />
@@ -663,7 +787,7 @@ export default function MaterialityMatrix() {
                   </div>
 
                   {/* Median reference lines */}
-                  {issues.length > 1 && (() => {
+                  {showMedians && issues.length > 1 && (() => {
                     const medFin = [...issues].sort((a, b) => a.financial_impact - b.financial_impact)[Math.floor(issues.length / 2)]?.financial_impact ?? 50;
                     const medEsg = [...issues].sort((a, b) => a.esg_impact - b.esg_impact)[Math.floor(issues.length / 2)]?.esg_impact ?? 50;
                     return (
@@ -715,9 +839,9 @@ export default function MaterialityMatrix() {
                           </div>
                         </div>
                       </div>
-                    ) : issues.map((issue, idx) => {
+                    ) : issues.map((issue) => {
                       const catDotColors: Record<string, string> = { environmental: '#10b981', social: '#3b82f6', governance: '#8b5cf6' };
-                      const dotColor = catDotColors[normCat(issue.category)] ?? '#6b7280';
+                      const dotColor = catDotColors[catOf(issue)] ?? '#6b7280';
                       const bubbleSize = Math.max(18, Math.min(38, 14 + Math.sqrt((issue.financial_impact + issue.esg_impact)) * 1.4));
                       return (
                         <div
@@ -739,7 +863,7 @@ export default function MaterialityMatrix() {
                               width: bubbleSize,
                               height: bubbleSize,
                               backgroundColor: dotColor,
-                              opacity: issue.is_material ? 0.9 : 0.45,
+                              opacity: !matches(issue) ? 0.12 : issue.is_material ? 0.9 : 0.45,
                               boxShadow: issue.is_material
                                 ? `0 0 0 3px white, 0 0 0 5px ${dotColor}55, 0 4px 12px ${dotColor}40`
                                 : `0 2px 8px ${dotColor}30`,
@@ -750,7 +874,7 @@ export default function MaterialityMatrix() {
                           {/* Number label on bubble */}
                           {bubbleSize >= 24 && (
                             <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white pointer-events-none select-none">
-                              {idx + 1}
+                              {rankOf.get(issue.id)}
                             </span>
                           )}
 
@@ -771,7 +895,7 @@ export default function MaterialityMatrix() {
                               <div className="flex items-center justify-between text-xs">
                                 <div className="flex items-center gap-1.5">
                                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: dotColor }} />
-                                  <span className="text-gray-500 capitalize">{catLabel(issue.category)}</span>
+                                  <span className="text-gray-500 capitalize">{catLabel(catOf(issue))}</span>
                                 </div>
                                 {issue.is_material && (
                                   <span className="px-1.5 py-0.5 bg-red-50 text-red-600 rounded font-bold text-[10px] border border-red-200">● Matériel</span>
@@ -908,9 +1032,9 @@ export default function MaterialityMatrix() {
                       <input type="checkbox" checked={selectedIssueIds.includes(issue.id)}
                         onChange={e => setSelectedIssueIds(p => e.target.checked ? [...p, issue.id] : p.filter(id => id !== issue.id))}
                         className="w-4 h-4 rounded text-indigo-600 flex-shrink-0" />
-                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${catDot(issue.category)}`} />
+                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${catDot(catOf(issue))}`} />
                       <span className="text-sm text-gray-800 font-medium">{issue.name}</span>
-                      <span className={`ml-auto text-xs px-2 py-0.5 rounded-full ${catBadge(issue.category)}`}>{catLabel(issue.category)}</span>
+                      <span className={`ml-auto text-xs px-2 py-0.5 rounded-full ${catBadge(catOf(issue))}`}>{catLabel(catOf(issue))}</span>
                     </label>
                   ))}
                 </div>
@@ -944,7 +1068,7 @@ export default function MaterialityMatrix() {
                       return (
                         <div key={iId} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center p-3 bg-gray-50 rounded-xl">
                           <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${catDot(issue.category)}`} />
+                            <div className={`w-2 h-2 rounded-full ${catDot(catOf(issue))}`} />
                             <span className="text-sm font-medium text-gray-800">{issue.name}</span>
                           </div>
                           <div>
@@ -988,7 +1112,7 @@ export default function MaterialityMatrix() {
                     const q = quadrant(avgFin, avgEsg);
                     return (
                       <div key={iId} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${catDot(issue.category)}`} />
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${catDot(catOf(issue))}`} />
                         <div className="flex-1">
                           <p className="text-sm font-semibold text-gray-900">{issue.name}</p>
                           <p className={`text-xs mt-0.5 font-medium ${q.text}`}>{t(q.labelKey)}</p>
@@ -1231,9 +1355,9 @@ export default function MaterialityMatrix() {
         const covered = ESRS_TOPICS.map(topic => {
           const matchingIssues = issues.filter(issue => {
             const text = ((issue.name || '') + ' ' + (issue.description || '')).toLowerCase();
-            const catMatch = issue.category === topic.pillar;
+            const catMatch = catOf(issue) === topic.pillar;
             const kwMatch = topic.kws.some(kw => text.includes(kw));
-            return catMatch && (kwMatch || issues.filter(i => i.category === topic.pillar).some(i => topic.kws.some(kw => ((i.name || '') + ' ' + (i.description || '')).toLowerCase().includes(kw))));
+            return catMatch && (kwMatch || issues.filter(i => catOf(i) === topic.pillar).some(i => topic.kws.some(kw => ((i.name || '') + ' ' + (i.description || '')).toLowerCase().includes(kw))));
           });
           const directMatch = issues.filter(issue => {
             const text = ((issue.name || '') + ' ' + (issue.description || '')).toLowerCase();
@@ -1471,7 +1595,7 @@ export default function MaterialityMatrix() {
                     {topicIssues.map(issue => (
                       <div key={issue.id} className="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors">
                         <div className="flex items-center gap-3 flex-wrap">
-                          <div className={`w-2 h-2 rounded-full ${catDot(issue.category)}`} />
+                          <div className={`w-2 h-2 rounded-full ${catDot(catOf(issue))}`} />
                           <span className="text-sm font-medium text-gray-900">{issue.name}</span>
                           {issue.iro_type && (
                             <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${IRO_CFG[issue.iro_type].bg} ${IRO_CFG[issue.iro_type].border} ${IRO_CFG[issue.iro_type].color}`}>
@@ -1504,7 +1628,7 @@ export default function MaterialityMatrix() {
                 {issues.filter(i => !i.esrs_topic).map(issue => (
                   <div key={issue.id} className="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <div className={`w-2 h-2 rounded-full ${catDot(issue.category)}`} />
+                      <div className={`w-2 h-2 rounded-full ${catDot(catOf(issue))}`} />
                       <span className="text-sm font-medium text-gray-900">{issue.name}</span>
                       <span className="px-2 py-0.5 rounded-full text-xs bg-orange-50 border border-orange-200 text-orange-600 font-medium">⚠ {t('materiality.esrsTopicMissing', 'Topic ESRS manquant')}</span>
                     </div>
@@ -1559,6 +1683,32 @@ export default function MaterialityMatrix() {
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('materiality.issueModalStakeholders')}</label>
                 <input type="text" value={formData.stakeholders} onChange={e => setFormData({ ...formData, stakeholders: e.target.value })}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm" placeholder={t('materiality.issueStakeholdersPlaceholder')} disabled={submitting} />
+              </div>
+
+              {/* ── Justification de l'évaluation ── */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('materiality.rationaleLabel', 'Justification des notes')} <span className="text-gray-400 font-normal">({t('materiality.optional', 'optionnel')})</span></label>
+                <textarea rows={3} value={formData.rationale} onChange={e => setFormData({ ...formData, rationale: e.target.value })} maxLength={4000}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm resize-none" disabled={submitting}
+                  placeholder={t('materiality.rationalePlaceholder', "Pourquoi ces notes ? Sources, consultations, données utilisées…")} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('materiality.timeHorizonLabel', 'Horizon de temps')}</label>
+                  <select value={formData.time_horizon} onChange={e => setFormData({ ...formData, time_horizon: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm" disabled={submitting}>
+                    <option value="">—</option>
+                    {Object.entries(HORIZON_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('materiality.valueChainLabel', 'Chaîne de valeur')}</label>
+                  <select value={formData.value_chain} onChange={e => setFormData({ ...formData, value_chain: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm" disabled={submitting}>
+                    <option value="">—</option>
+                    {Object.entries(VALUE_CHAIN_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  </select>
+                </div>
               </div>
 
               {/* ── IRO Classification (CSRD required) ── */}
