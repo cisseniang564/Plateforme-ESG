@@ -350,7 +350,7 @@ export default function ExecutiveDashboard() {
   const attention: { tone: 'danger' | 'warning' | 'info'; text: string; to: string }[] = [];
   if (unscored.length > 0) attention.push({ tone: 'info', text: t('dashboard.attnUnscored', { n: unscored.length, defaultValue: '{{n}} organisation(s) sans score calculé' }), to: '/app/data-entry' });
   if (needAttention.length > 0) attention.push({ tone: 'danger', text: t('dashboard.attnLow', { n: needAttention.length, defaultValue: '{{n}} organisation(s) sous le seuil de 45/100' }), to: '/app/organizations' });
-  lowEsrs.slice(0, 3).forEach(s => attention.push({ tone: 'warning', text: t('dashboard.attnEsrs', { code: s.code, pct: s.pct, defaultValue: 'ESRS {{code}} : couverture à {{pct}} %' }), to: '/app/esrs-gap' }));
+  lowEsrs.slice(0, 3).forEach(s => attention.push({ tone: 'warning', text: t('dashboard.attnEsrs', { code: String(s.code).replace(/^ESRS\s*/i, ''), pct: s.pct, defaultValue: 'ESRS {{code}} : couverture à {{pct}} %' }), to: '/app/esrs-gap' }));
 
   const pillars = [
     { key: 'env', name: t('dashboard.environmental'), icon: Leaf,  color: PILLAR_COLORS.environmental.main, value: pillarAverages[0].score },
@@ -590,6 +590,19 @@ export default function ExecutiveDashboard() {
           {ratingDistribution.length > 0 && (
             <div className={`${card} p-6 lg:col-span-5`}>
               <h2 className="text-base font-semibold text-gray-900">{t('dashboard.ratingDistTitle', 'Répartition par note')}</h2>
+              {ratingDistribution.length === 1 ? (
+                <div className="mt-4 flex items-center gap-5">
+                  <span className="inline-flex h-20 w-20 flex-none items-center justify-center rounded-2xl text-2xl font-black text-white" style={{ background: ratingDistribution[0].color }}>
+                    {ratingDistribution[0].name}
+                  </span>
+                  <p className="text-sm text-gray-600">
+                    {t('dashboard.ratingSingle', {
+                      n: ratingDistribution[0].value, rating: ratingDistribution[0].name,
+                      defaultValue: '{{n}} organisation notée {{rating}}. La répartition apparaît dès que plusieurs organisations ont un score.',
+                    })}
+                  </p>
+                </div>
+              ) : (
               <div className="mt-2 flex items-center gap-6">
                 <div className="h-40 w-40 flex-none">
                   <ResponsiveContainer width="100%" height="100%">
@@ -607,6 +620,7 @@ export default function ExecutiveDashboard() {
                   ))}
                 </ul>
               </div>
+              )}
             </div>
           )}
           {esrsSections && esrsSections.length > 0 && (

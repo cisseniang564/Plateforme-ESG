@@ -150,6 +150,8 @@ export default function ScoresDashboard() {
   const [skippedCount, setSkippedCount] = useState(0);
   const [sectorRank, setSectorRank] = useState<number | null>(null);
   const [sectorTotal, setSectorTotal] = useState<number | null>(null);
+  // loading | ready | no-sector (organisation sans secteur) | unavailable (pas de classement calculable)
+  const [sectorState, setSectorState] = useState<'loading' | 'ready' | 'no-sector' | 'unavailable'>('loading');
   const [sparklinePoints, setSparklinePoints] = useState<number[]>([]);
   const [confirmModal, setConfirmModal] = useState<{
     open: boolean; message: string; onConfirm: () => void;
@@ -163,7 +165,7 @@ export default function ScoresDashboard() {
       api.get('/organizations?limit=1').then((orgRes: any) => {
         const orgs: any[] = orgRes.data?.items ?? orgRes.data ?? [];
         const sector: string = orgs[0]?.sector ?? orgs[0]?.industry ?? '';
-        if (!sector) return null;
+        if (!sector) { setSectorState('no-sector'); return null; }
         return api.get(`/benchmarks/sector/${encodeURIComponent(sector)}`);
       }).then((res: any) => {
         if (!res) return;
@@ -173,8 +175,11 @@ export default function ScoresDashboard() {
         if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
           setSectorRank(parts[0]);
           setSectorTotal(parts[1]);
+          setSectorState('ready');
+        } else {
+          setSectorState('unavailable');
         }
-      }).catch(() => {});
+      }).catch(() => setSectorState('unavailable'));
 
       api.get('/scores/history').then((res: any) => {
         const scores: any[] = res.data?.scores ?? res.data ?? [];
@@ -717,7 +722,7 @@ export default function ScoresDashboard() {
             {/* Sector rank — 1/3 */}
             <div
               className="rounded-2xl border border-gray-100 bg-white shadow-sm p-6 cursor-pointer transition-shadow hover:shadow-md"
-              onClick={() => navigate('/app/benchmarking')}
+              onClick={() => navigate(sectorState === 'no-sector' ? '/app/organizations' : '/app/benchmarking')}
             >
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="flex items-center gap-2 text-base font-semibold text-gray-800">
@@ -727,14 +732,12 @@ export default function ScoresDashboard() {
                 <ExternalLink className="h-4 w-4 text-gray-300" />
               </div>
 
-              <div className="mb-4 flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-green-700">
-                  {sectorRank !== null ? sectorRank : '—'}
-                </span>
-                <span className="text-sm text-gray-500">
-                  {sectorTotal !== null ? `/ ${sectorTotal}` : t('scores.companies')}
-                </span>
-              </div>
+              {sectorRank !== null && sectorTotal !== null && (
+                <div className="mb-4 flex items-baseline gap-2">
+                  <span className="text-4xl font-bold text-green-700">{sectorRank}</span>
+                  <span className="text-sm text-gray-500">/ {sectorTotal} {t('scores.companies')}</span>
+                </div>
+              )}
 
               {sectorRank !== null && sectorTotal !== null ? (
                 <>
@@ -754,9 +757,20 @@ export default function ScoresDashboard() {
                       ? '🏆 ' + t('scores.sectorTop10', 'Top 10% du secteur')
                       : sectorRank <= Math.ceil(sectorTotal * 0.25)
                         ? '🥈 ' + t('scores.sectorTop25', 'Top 25% du secteur')
-                        : '📈 ' + t('scores.sectorAboveAvg', 'Au-dessus de la moyenne')}
+                        : sectorRank <= Math.ceil(sectorTotal * 0.5)
+                          ? '📈 ' + t('scores.sectorUpperHalf', 'Dans la première moitié du secteur')
+                          : t('scores.sectorLowerHalf', 'Dans la seconde moitié du secteur : des marges de progrès')}
                   </p>
                 </>
+              ) : sectorState === 'no-sector' ? (
+                <p className="text-sm text-gray-500">
+                  {t('scores.sectorMissing', 'Renseignez le secteur de votre organisation pour voir votre rang.')}{' '}
+                  <span className="font-semibold text-green-700">{t('scores.sectorMissingCta', 'Compléter')}</span>
+                </p>
+              ) : sectorState === 'unavailable' ? (
+                <p className="text-sm text-gray-500">
+                  {t('scores.sectorUnavailable', 'Classement indisponible : pas assez d’entreprises comparables dans ce secteur pour le moment.')}
+                </p>
               ) : (
                 <div className="space-y-2">
                   <div className="h-2.5 animate-pulse rounded-full bg-gray-100" />
@@ -767,7 +781,7 @@ export default function ScoresDashboard() {
           </div>
 
           {/* ── Rating distribution + Quick diagnostic ────────────────── */}
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3 xl:items-start">
             {/* Rating distribution — 2/3 */}
             <div className="xl:col-span-2 rounded-2xl border border-gray-100 bg-white shadow-sm p-6">
               <h2 className="flex items-center gap-2 text-base font-semibold text-gray-800">
@@ -821,19 +835,19 @@ export default function ScoresDashboard() {
                 {t('scores.quickDiagnostic', 'Diagnostic rapide')}
               </h2>
               <div className="space-y-4">
-                {/* Score global */}
+                {/* Complétude des données : indicateur propre au diagnostic (le score global est déjà en tête de page) */}
                 <div className="rounded-2xl border border-purple-100 bg-gradient-to-br from-purple-50 to-indigo-50 p-4">
                   <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-purple-600">
-                    {t('scores.avgGlobalScoreDiag', 'Score global moyen')}
+                    {t('scores.completenessDiag', 'Complétude des données')}
                   </p>
                   <div className="flex items-end gap-2">
-                    <p className="text-3xl font-black tabular-nums leading-none text-purple-900">{statistics?.average_score?.toFixed(1) || '0'}</p>
-                    <p className="pb-1 text-sm text-purple-400">/100</p>
+                    <p className="text-3xl font-black tabular-nums leading-none text-purple-900">{Math.round(statistics?.average_completeness ?? 0)}</p>
+                    <p className="pb-1 text-sm text-purple-400">%</p>
                   </div>
-                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-purple-100">
+                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-purple-100" role="progressbar" aria-label={t('scores.completenessDiag', 'Complétude des données')} aria-valuenow={Math.round(statistics?.average_completeness ?? 0)} aria-valuemin={0} aria-valuemax={100}>
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-purple-400 to-indigo-500 transition-all duration-700"
-                      style={{ width: `${statistics?.average_score || 0}%` }}
+                      style={{ width: `${Math.min(100, statistics?.average_completeness || 0)}%` }}
                     />
                   </div>
                 </div>
@@ -884,7 +898,7 @@ export default function ScoresDashboard() {
                   {t('scores.evolution12mTitle', 'Évolution sur 12 mois')}
                 </h3>
                 <p className="mt-0.5 text-sm text-gray-500">
-                  {t('scores.evolution12mSub', 'Score global moyen — historique des calculs')}
+                  {t('scores.evolution12mSubtitle', 'Score global moyen : un point par calcul de score')}
                 </p>
               </div>
               {sparklinePoints.length >= 2 && (() => {
@@ -897,9 +911,15 @@ export default function ScoresDashboard() {
               })()}
             </div>
             {(() => {
-              const points = sparklinePoints.length >= 2
-                ? sparklinePoints
-                : [58, 59, 60, 59, 61, 62, 63, 64, 64, 65, 67, 69];
+              if (sparklinePoints.length < 2) {
+                return (
+                  <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-6 py-10 text-center">
+                    <p className="text-sm font-semibold text-gray-700">{t('scores.evolutionEmptyTitle', 'Pas encore d’évolution à montrer')}</p>
+                    <p className="mt-1 text-sm text-gray-500">{t('scores.evolutionEmptyBody', 'La courbe apparaît dès que vous avez calculé votre score à au moins deux dates. Relancez un calcul après avoir mis à jour vos données.')}</p>
+                  </div>
+                );
+              }
+              const points = sparklinePoints;
               const w = 700, h = 90, pad = 14;
               const minV = Math.min(...points) - 3;
               const maxV = Math.max(...points) + 3;

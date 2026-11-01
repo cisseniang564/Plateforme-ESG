@@ -970,7 +970,6 @@
     "sectorRankOf47": "/ 47 companies in sector",
     "sectorTop10": "You are in the top 10% of your sector",
     "evolution12mTitle": "Evolution over 12 months",
-    "evolution12mSub": "Score trend: 58 → 65 → 69 (current)",
     "historySubtitle": "Evolution of your scores over time",
     "currentScore": "Current score",
     "periods": "periods",
@@ -997,7 +996,8 @@
     "csvRank": "Rank",
     "csvOrg": "Organisation",
     "csvGlobalScore": "Global Score",
-    "csvExported": "CSV export downloaded"
+    "csvExported": "CSV export downloaded",
+    "evolution12mSubtitle": "Average global score: one point per score calculation"
   },
   "reports": {
     "title": "Reports",
