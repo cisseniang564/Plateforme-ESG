@@ -138,8 +138,12 @@ async def create_questionnaire(
         text_excerpt=body[: qs.MAX_TEXT_CHARS],
     )
     db.add(row)
-    await db.commit()
+    # flush + refresh AVANT le commit : même transaction, donc même connexion et même client RLS.
+    # Après le commit, la connexion peut changer et l'isolation par client masquer la ligne
+    # (created_at, rempli par la base, restait alors non chargé → erreur 500).
+    await db.flush()
     await db.refresh(row)
+    await db.commit()
     background.add_task(_run, row.id, user.tenant_id)
     return _summary(row)
 
