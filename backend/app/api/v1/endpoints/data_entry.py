@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, extract, func, and_, or_
 from typing import List, Optional
@@ -209,12 +209,15 @@ async def get_data_entries(
     verification_status: Optional[str] = None,
     collection_method: Optional[str] = None,
     search: Optional[str] = None,
+    sort_by: str = Query("created_at", pattern="^(created_at|metric_name|pillar|period_start|value_numeric|verification_status)$"),
+    order: str = Query("desc", pattern="^(asc|desc)$"),
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
+    response: Response = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """List data entries with advanced filters"""
+    """List data entries with filters, sorting and pagination (total in X-Total-Count)."""
     
     query = select(DataEntry).where(DataEntry.tenant_id == current_user.tenant_id)
     
@@ -240,9 +243,18 @@ async def get_data_entries(
             )
         )
     
-    query = query.order_by(DataEntry.created_at.desc())
+    total = (await db.execute(
+        select(func.count()).select_from(query.subquery())
+    )).scalar() or 0
+    if response is not None:
+        response.headers["X-Total-Count"] = str(total)
+        response.headers["Access-Control-Expose-Headers"] = "X-Total-Count"
+
+    col = getattr(DataEntry, sort_by)
+    primary = col.asc() if order == "asc" else col.desc()
+    query = query.order_by(primary, DataEntry.id)
     query = query.offset(offset).limit(limit)
-    
+
     result = await db.execute(query)
     return result.scalars().all()
 
