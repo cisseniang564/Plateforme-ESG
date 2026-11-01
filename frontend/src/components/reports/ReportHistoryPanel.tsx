@@ -52,7 +52,7 @@ function getTypeLabelMap(t: TFunction): Record<string, string> {
     ghg: 'GHG',
     executive: t('rephist.typeExec', 'Exécutif'),
     detailed: t('rephist.typeDetailed', 'Détaillé'),
-    gri: 'GRI', tcfd: 'TCFD',
+    gri: 'GRI', tcfd: 'TCFD', vsme: 'VSME',
   };
 }
 

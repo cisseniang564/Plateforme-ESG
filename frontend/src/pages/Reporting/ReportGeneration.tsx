@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  FileText, Download, Building2, CheckCircle, Loader2,
+  FileText, Download, Building2, CheckCircle, Loader2, ClipboardList,
   Sparkles, BarChart3, TrendingUp, Award, Globe,
   FileSpreadsheet, FileType, Braces, ChevronRight,
   Leaf, Users, Landmark, AlertTriangle, Target,
@@ -21,7 +21,7 @@ import toast from 'react-hot-toast';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Organization { id: string; name: string; industry?: string; }
-type ReportType = 'executive' | 'detailed' | 'csrd' | 'dpef' | 'carbon' | 'tcfd' | 'gri';
+type ReportType = 'executive' | 'detailed' | 'csrd' | 'dpef' | 'carbon' | 'tcfd' | 'gri' | 'vsme';
 type ReportFormat = 'pdf' | 'excel' | 'word';
 
 interface LiveData {
@@ -55,6 +55,12 @@ const REPORT_TYPES: Array<{
     desc: 'Tableau de bord 1 page pour COMEX et investisseurs — scores E/S/G, tendance, points clés.',
     icon: Award, gradient: 'from-purple-600 to-violet-700', pages: '8-12 pages',
     formats: ['pdf', 'excel', 'word'],
+  },
+  {
+    id: 'vsme', name: 'Rapport VSME', badge: 'PME · volontaire',
+    desc: 'Standard volontaire pour les PME (modules B1–B11) : la réponse structurée aux demandes de vos clients, banques et investisseurs.',
+    icon: ClipboardList, gradient: 'from-lime-600 to-green-700', pages: '8-14 pages',
+    formats: ['pdf'],
   },
   {
     id: 'dpef', name: 'DPEF', badge: 'Réglementaire',

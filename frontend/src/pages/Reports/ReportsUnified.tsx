@@ -21,7 +21,7 @@ import DataChecksPanel from '@/components/reports/DataChecksPanel'
 
 type TabId = 'overview' | 'csrd' | 'generate'
 type ExportFormat = 'pdf' | 'excel' | 'word' | 'json'
-type ReportType = 'csrd' | 'executive' | 'detailed' | 'gri' | 'tcfd'
+type ReportType = 'csrd' | 'executive' | 'detailed' | 'gri' | 'tcfd' | 'vsme'
 
 interface KPI { label: string; value: string; sub?: string; color: string; icon: React.ElementType }
 interface ESRSEntry {
@@ -132,6 +132,20 @@ const getTemplates = (t: TFunction) => [
     badgeColor: '',
     pages: '50-80 pages',
     time: '~30s',
+  },
+  {
+    type: 'vsme' as ReportType,
+    label: 'VSME',
+    sub: t('reports.tpl.vsme.sub', 'Standard volontaire PME'),
+    desc: t('reports.tpl.vsme.desc', 'Modules B1–B11 : la réponse structurée aux demandes de vos clients, banques et investisseurs.'),
+    icon: FileText,
+    gradient: 'from-lime-500 to-green-600',
+    lightBg: '#f7fee7',
+    color: '#65a30d',
+    badge: t('reports.tpl.vsme.badge', 'PME'),
+    badgeColor: 'bg-lime-100 text-lime-700',
+    pages: '8-14 pages',
+    time: '~10s',
   },
   {
     type: 'tcfd' as ReportType,
@@ -349,16 +363,19 @@ export default function ReportsUnified() {
 
   const handleGenerate = async () => {
     setGenerating(true)
+    // Le rapport VSME n'existe qu'en PDF : Excel et Word ne suivent pas sa structure B1–B11.
+    const effectiveFormat: ExportFormat = selectedTemplate === 'vsme' && selectedFormat !== 'pdf' && selectedFormat !== 'json' ? 'pdf' : selectedFormat
+    if (effectiveFormat !== selectedFormat) toast(t('reports.vsmePdfOnly', 'Le rapport VSME est généré en PDF.'))
     try {
       const resp = await api.post('/reports/generate', {
         report_type: selectedTemplate,
         period: 'annual',
         year: selectedYear,
-        format: selectedFormat,
+        format: effectiveFormat,
         organization_id: orgId,
       }, { responseType: 'blob' })
 
-      const ext = selectedFormat === 'excel' ? 'xlsx' : selectedFormat === 'json' ? 'json' : selectedFormat
+      const ext = effectiveFormat === 'excel' ? 'xlsx' : effectiveFormat === 'json' ? 'json' : effectiveFormat
       const url = URL.createObjectURL(new Blob([resp.data]))
       const a = document.createElement('a')
       a.href = url
