@@ -3,10 +3,11 @@
  */
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Leaf, Users, Shield, CheckCircle, AlertTriangle, ChevronRight, ChevronLeft, Loader2, Send, Info } from 'lucide-react';
+import { Users, Shield, CheckCircle, AlertTriangle, ChevronRight, ChevronLeft, Loader2, Send, Info, Leaf } from 'lucide-react';
 import api from '@/services/api';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
+import { LogoMark, Wordmark } from '@/components/common/Logo';
 
 interface Question { id: string; section: string; question: string; type: 'number' | 'boolean' | 'select'; unit: string; required: boolean; help: string; options?: string[]; }
 interface PortalData { supplier_name: string; supplier_id: string; already_completed: boolean; questions: Question[]; token: string; }
@@ -116,8 +117,8 @@ export default function SupplierPortal() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50">
       <header className="bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-lg flex items-center justify-center"><Leaf className="h-4 w-4 text-white" /></div>
-          <div><p className="font-bold text-gray-900 text-sm">ESG Flow</p><p className="text-xs text-gray-400">{t('suppl.questionnaire','Questionnaire ESG fournisseur')}</p></div>
+          <LogoMark size={32} decorative />
+          <div><Wordmark className="text-sm" /><p className="text-xs text-gray-400">{t('suppl.questionnaire','Questionnaire ESG fournisseur')}</p></div>
         </div>
       </header>
 

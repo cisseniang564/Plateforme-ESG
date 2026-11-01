@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { BookOpen, Leaf, Menu, Search, X } from 'lucide-react';
+import { BookOpen, Menu, Search, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { ARTICLES, SECTIONS, inSection, searchArticles } from './content';
+import { LogoMark, Wordmark } from '@/components/common/Logo';
 
 /** Champ de recherche avec résultats en liste déroulante (clavier : ↑ ↓ Entrée Échap). */
 function SearchBox({ autoFocus = false, onPick }: { autoFocus?: boolean; onPick?: () => void }) {
@@ -100,8 +101,8 @@ export default function DocsLayout() {
             {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
           <Link to="/" className="flex flex-none items-center gap-2 font-semibold text-slate-900">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white"><Leaf className="h-4 w-4" /></span>
-            <span className="hidden sm:inline">ESGFlow</span>
+            <LogoMark size={28} decorative />
+            <Wordmark className="hidden text-base sm:inline" />
           </Link>
           <Link to="/documentation" className="hidden items-center gap-1.5 border-l border-slate-200 pl-4 text-sm font-medium text-slate-600 hover:text-slate-900 sm:flex">
             <BookOpen className="h-4 w-4" aria-hidden="true" /> Documentation

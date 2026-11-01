@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
+import { LogoMark, Wordmark } from '@/components/common/Logo';
 
 export default function NotFound() {
   const { t } = useTranslation();
@@ -18,9 +19,9 @@ export default function NotFound() {
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="bg-white rounded-2xl shadow-xl px-8 py-5 border border-slate-100">
               <div className="flex items-center gap-3">
-                <span className="text-3xl" aria-hidden="true">🌿</span>
+                <LogoMark size={40} decorative />
                 <div className="text-left">
-                  <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest">ESG Flow</p>
+                  <Wordmark className="text-sm" />
                   <p className="text-lg font-bold text-slate-800">{t('notFoundPage.title')}</p>
                 </div>
               </div>

@@ -6,13 +6,14 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  Search, Leaf, BookOpen, BarChart3, Shield, Zap, FileText,
+  Search, BookOpen, BarChart3, Shield, Zap, FileText,
   Settings, ChevronRight, HelpCircle, Mail,
   MessageSquare, ExternalLink, Play, CheckCircle, ArrowLeft,
   Globe, Lock, Users, Database, Truck, TrendingUp,
   Sparkles, Clock, ThumbsUp, ThumbsDown, Hash, ArrowRight,
   LifeBuoy, Rocket, Star, ChevronDown,
 } from 'lucide-react';
+import { LogoMark, Wordmark } from '@/components/common/Logo';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Article {
@@ -398,13 +399,8 @@ export default function HelpCenter() {
               }}
               className="flex items-center gap-2.5 group"
             >
-              <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center shadow-sm"
-                style={{ background: 'linear-gradient(135deg, #10b981 0%, #0d9488 100%)' }}
-              >
-                <Leaf className="h-3.5 w-3.5 text-white" />
-              </div>
-              <span className="font-bold text-gray-900 text-sm hidden sm:block">ESG Flow</span>
+              <LogoMark size={28} decorative />
+              <Wordmark className="text-sm hidden sm:block" />
               <span className="text-gray-300 hidden sm:block">·</span>
               <span className="text-sm text-gray-500 hidden sm:block">{t('help.helpCenter')}</span>
             </button>

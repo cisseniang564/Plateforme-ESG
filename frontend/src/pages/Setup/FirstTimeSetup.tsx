@@ -13,12 +13,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Leaf, Building2, ChevronRight, ChevronLeft, Check, Loader2,
+  Building2, ChevronRight, ChevronLeft, Check, Loader2,
   ShieldCheck, BarChart3, Upload, UserPlus, X, AlertCircle, Mail,
 } from 'lucide-react';
 import api from '@/services/api';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
+import { LogoMark, Wordmark } from '@/components/common/Logo';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 interface Sector { id: string; label: string; icon: string }
@@ -223,10 +224,8 @@ export default function FirstTimeSetup() {
       <div className="max-w-3xl mx-auto px-4">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center">
-              <Leaf className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-extrabold text-gray-900">ESG Flow</span>
+            <LogoMark size={40} decorative />
+            <Wordmark className="text-2xl" />
           </div>
           <h1 className="text-2xl font-extrabold text-gray-900 mb-1">{t('setup.title', 'Configurez votre espace')}</h1>
           <p className="text-sm text-gray-500">{t('setup.subtitle', '5 étapes pour démarrer · vous pouvez revenir en arrière à tout moment')}</p>

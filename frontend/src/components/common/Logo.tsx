@@ -1,130 +1,96 @@
 /**
- * ESG Flow — Composants logo officiels.
+ * ESGFlow — composants logo.
  *
- * LogoMark   : icône seule (F-feuille avec flux de données).
- * LogoBrand  : icône + wordmark "ESG FLOW" (variantes claire/sombre).
+ * Le logo : trois flux aux couleurs des piliers de l'application (vert = environnement,
+ * bleu = social, violet = gouvernance). Il montre ce que fait le produit : trois piliers, un seul flux de données.
  *
- * Tous les assets résident dans /public/brand/.
+ *   LogoMark  : l'icône seule (sans fond, ou sur tuile sombre pour les petits formats).
+ *   Wordmark  : le nom « ESGFlow » (ESG en gras, Flow en léger).
+ *   LogoBrand : icône + nom, pour les en-têtes.
+ *
+ * Fichiers d'icône : /public/icon-esgflow-v5.svg (favicon) et /public/brand/icon-esgflow-v5-*.png.
  */
+
+export const BRAND_COLORS = { environment: '#10b981', social: '#3b82f6', governance: '#8b5cf6', tile: '#0f172a' } as const;
 
 interface LogoMarkProps {
   size?: number;
   className?: string;
-  rounded?: boolean;
+  /** Sur une tuile sombre arrondie (icône d'application, fonds clairs ou chargés). */
+  tile?: boolean;
+  /** Icône décorative : le nom est déjà lu à côté (évite une double annonce par les lecteurs d'écran). */
+  decorative?: boolean;
 }
 
-/**
- * Icône seule — image PNG du logo (feuille verte/cyan + flux de données).
- * Sélectionne automatiquement la version la plus proche de la taille demandée
- * pour éviter les artefacts d'upscale.
- */
-export function LogoMark({ size = 32, className = '', rounded = false }: LogoMarkProps) {
-  // SVG source — crisp at any resolution, no PNG needed.
-  // v4 filename = clean fetch across all browsers (query strings are unreliable
-  // for icon/favicon caches).
-  const src = `/icon-esgflow-v4.svg`;
-
+function Waves() {
   return (
-    <img
-      src={src}
-      alt="ESG Flow"
-      width={size}
-      height={size}
-      className={`${className} ${rounded ? 'rounded-xl' : ''}`.trim()}
-      style={{ objectFit: 'contain', display: 'block', flexShrink: 0 }}
-      draggable={false}
-      onError={(e) => {
-        // Fallback propre si le SVG ne charge pas
-        const t = e.currentTarget;
-        t.onerror = null;
-        t.style.display = 'none';
-        const el = document.createElement('div');
-        el.style.cssText = `width:${size}px;height:${size}px;border-radius:${Math.round(size * 0.25)}px;background:linear-gradient(135deg,#10b981,#0891b2);display:flex;align-items:center;justify-content:center;font-size:${Math.round(size * 0.38)}px;font-weight:900;color:white;font-family:system-ui,sans-serif;flex-shrink:0;letter-spacing:-0.5px;`;
-        el.textContent = 'G';
-        t.parentNode?.insertBefore(el, t);
-      }}
-    />
+    <>
+      <path d="M8 14 C18 6 28 22 48 14" fill="none" stroke={BRAND_COLORS.environment} strokeWidth="7" strokeLinecap="round" />
+      <path d="M8 28 C18 20 28 36 48 28" fill="none" stroke={BRAND_COLORS.social} strokeWidth="7" strokeLinecap="round" />
+      <path d="M8 42 C18 34 28 50 48 42" fill="none" stroke={BRAND_COLORS.governance} strokeWidth="7" strokeLinecap="round" />
+    </>
   );
 }
 
-/* ─────────────────────────────────────────────────────────────────────────── */
+export function LogoMark({ size = 32, className = '', tile = false, decorative = false }: LogoMarkProps) {
+  const a11y = decorative ? { 'aria-hidden': true as const } : { role: 'img' as const, 'aria-label': 'ESGFlow' };
+  return tile ? (
+    <svg width={size} height={size} viewBox="0 0 64 64" className={className} style={{ display: 'block', flexShrink: 0 }} {...a11y}>
+      <rect width="64" height="64" rx="16" fill={BRAND_COLORS.tile} />
+      <g transform="translate(4,4)"><Waves /></g>
+    </svg>
+  ) : (
+    <svg width={size} height={size} viewBox="0 0 56 56" className={className} style={{ display: 'block', flexShrink: 0 }} {...a11y}>
+      <Waves />
+    </svg>
+  );
+}
+
+interface WordmarkProps {
+  /** Taille et couleur du texte via Tailwind (ex. « text-xl »). */
+  className?: string;
+  /** « light » = texte clair pour fond sombre ; « dark » = texte sombre pour fond clair. */
+  tone?: 'light' | 'dark';
+}
+
+export function Wordmark({ className = 'text-xl', tone = 'dark' }: WordmarkProps) {
+  const base = tone === 'light' ? 'text-white' : 'text-gray-900';
+  const accent = tone === 'light' ? 'text-emerald-400' : 'text-emerald-600';
+  return (
+    <span className={`font-semibold tracking-tight leading-none select-none ${base} ${className}`}>
+      ESG<span className={`font-normal ${accent}`}>Flow</span>
+    </span>
+  );
+}
 
 type LogoBrandVariant = 'light' | 'dark';
-type LogoBrandSize    = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+type LogoBrandSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 interface LogoBrandProps {
-  size?:    LogoBrandSize;
+  size?: LogoBrandSize;
   variant?: LogoBrandVariant;   // 'light' = texte blanc (fond sombre) | 'dark' = texte gris (fond clair)
   className?: string;
-  showTagline?: boolean;        // affiche "Plateforme ESG intelligente" en dessous
+  showTagline?: boolean;
 }
 
 const SIZE_CONFIG: Record<LogoBrandSize, { iconPx: number; name: string; tag: string; gap: string }> = {
-  xs: { iconPx: 22, name: 'text-xs',   tag: 'text-[8px]',  gap: 'gap-1.5' },
-  sm: { iconPx: 28, name: 'text-sm',   tag: 'text-[9px]',  gap: 'gap-2'   },
-  md: { iconPx: 36, name: 'text-base', tag: 'text-[10px]', gap: 'gap-2.5' },
-  lg: { iconPx: 44, name: 'text-lg',   tag: 'text-xs',     gap: 'gap-3'   },
-  xl: { iconPx: 56, name: 'text-2xl',  tag: 'text-sm',     gap: 'gap-3.5' },
+  xs: { iconPx: 20, name: 'text-sm',   tag: 'text-[8px]',  gap: 'gap-1.5' },
+  sm: { iconPx: 24, name: 'text-base', tag: 'text-[9px]',  gap: 'gap-2'   },
+  md: { iconPx: 32, name: 'text-lg',   tag: 'text-[10px]', gap: 'gap-2.5' },
+  lg: { iconPx: 40, name: 'text-xl',   tag: 'text-xs',     gap: 'gap-3'   },
+  xl: { iconPx: 52, name: 'text-3xl',  tag: 'text-sm',     gap: 'gap-3.5' },
 };
 
-/**
- * Logo complet : icône + wordmark "ESG FLOW".
- *
- * variant="light"  → wordmark blanc + accent cyan/vert  (fond sombre)
- * variant="dark"   → wordmark gris foncé + accent vert  (fond clair)
- */
-export function LogoBrand({
-  size = 'md',
-  variant = 'light',
-  className = '',
-  showTagline = true,
-}: LogoBrandProps) {
+export function LogoBrand({ size = 'md', variant = 'light', className = '', showTagline = false }: LogoBrandProps) {
   const cfg = SIZE_CONFIG[size];
-
-  const nameColor   = variant === 'light' ? 'text-white'        : 'text-gray-900';
-  const accentColor = variant === 'light' ? 'text-emerald-400'  : 'text-emerald-600';
-  const tagColor    = variant === 'light' ? 'text-white/60'     : 'text-gray-400';
-
+  const tagColor = variant === 'light' ? 'text-white/60' : 'text-gray-400';
   return (
     <div className={`flex items-center ${cfg.gap} ${className}`}>
-      <LogoMark size={cfg.iconPx} />
-      <div className="flex flex-col leading-none select-none">
-        <span className={`${cfg.name} font-extrabold tracking-tight leading-none ${nameColor}`}>
-          ESG<span className={accentColor}> FLOW</span>
-        </span>
-        {showTagline && (
-          <span className={`${cfg.tag} font-medium mt-1 tracking-wider uppercase ${tagColor}`}>
-            Data · Carbon · Impact
-          </span>
-        )}
+      <LogoMark size={cfg.iconPx} decorative />
+      <div className="flex flex-col">
+        <Wordmark className={cfg.name} tone={variant} />
+        {showTagline && <span className={`${cfg.tag} font-medium mt-1 tracking-wider uppercase ${tagColor}`}>Data · Carbon · Impact</span>}
       </div>
     </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────────────────── */
-
-interface LogoFullProps {
-  width?: number | string;
-  className?: string;
-}
-
-/**
- * Logo "hero" complet (icône + ESG FLOW + tagline + sous-titre),
- * idéal pour pages marketing, splash screens, hero sections,
- * pages d'authentification.
- *
- * Image officielle 1254x1254 sur fond navy — peut être superposé sur
- * un fond sombre OU laissé tel quel (le fond est intégré au PNG).
- */
-export function LogoFull({ width = 280, className = '' }: LogoFullProps) {
-  return (
-    <img
-      src="/brand/logo-full.png"
-      alt="ESG Flow — Plateforme ESG intelligente"
-      style={{ width, height: 'auto', display: 'block' }}
-      className={className}
-      draggable={false}
-    />
   );
 }
