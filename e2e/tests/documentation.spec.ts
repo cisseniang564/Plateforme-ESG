@@ -11,11 +11,16 @@ test.describe('Documentation (publique)', () => {
 
   test('la recherche mène à un article', async ({ page }) => {
     await page.goto('/documentation');
-    await fillStable(page.getByRole('combobox').first(), 'bilan carbone');
+    const search = page.getByRole('combobox').first();
+    // L'index de recherche se charge à la demande : on ressaisit jusqu'à voir des résultats.
+    await expect(async () => {
+      await fillStable(search, 'bilan carbone');
+      await expect(page.getByRole('option').first()).toBeVisible({ timeout: 3000 });
+    }).toPass({ timeout: 25_000 });
     await page.getByRole('option').first().click();
     await expect(page).toHaveURL(/\/documentation\/.+/);
-    // Titre de l'article (la page contient aussi un titre statique de référencement : ne pas cibler tous les h1)
-    await expect(page.getByRole('heading', { level: 1, name: /bilan carbone/i })).toBeVisible();
+    // Titre de l'article : la page contient aussi un titre statique de référencement (qui cite « Bilan Carbone »)
+    await expect(page.getByRole('heading', { level: 1, name: /Scopes 1, 2 et 3/ })).toBeVisible();
   });
 
   test('un article inconnu renvoie à l\'accueil de la documentation', async ({ page }) => {

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 from datetime import datetime
 
-from sqlalchemy import String, Integer, JSON, ForeignKey, Text
+from sqlalchemy import DateTime, String, Integer, JSON, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -48,7 +48,9 @@ class ReportHistory(Base, UUIDMixin, TenantMixin, TimestampMixin):
         String(64), nullable=True, unique=True, index=True,
         comment="Random URL-safe token for public download",
     )
-    share_expires_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    # timezone=True : aligné sur la migration 005 (production) ; sans cela create_all (dev/test) crée une
+    # colonne naïve et le partage échoue avec des dates à fuseau.
+    share_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 

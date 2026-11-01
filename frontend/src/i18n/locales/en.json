@@ -459,6 +459,7 @@
       "generateReport": "Generate a report",
       "scheduledReports": "Scheduled reports",
       "multiStandards": "Multi-standards",
+      "templates": "Sector templates",
       "settings": "Settings",
       "settingsUsers": "Users",
       "settingsMethodology": "Methodology",
@@ -13587,10 +13588,10 @@
       "generate": "Generate report"
     },
     "cal": {
-      "2025": "Large companies (>500 employees)",
-      "2026": "Large companies (>250 employees or >€40M revenue)",
-      "2027": "Listed SMEs (with relief measures)",
-      "2029": "Third-country companies (>€150M EU)"
+      "2025": "Wave 1: already under the NFRD (FY 2024, published in 2025)",
+      "2026": "Wave 2: more than 1,000 employees AND more than \u20ac450M turnover (FY 2027, published in 2028)",
+      "2027": "Listed SMEs: out of mandatory scope (voluntary VSME)",
+      "2029": "Non-EU groups: more than \u20ac450M turnover in the EU (FY 2028)"
     },
     "ds": {
       "complete": "Complete",
@@ -15289,7 +15290,7 @@
     "errPreview": "Unable to load preview.",
     "exercice": "FY {{y}}",
     "heroDescA": "Pre-fill your ESG report in 1 click with typical data for your sector. All values are ",
-    "heroDescB": " — the goal is to give you a realistic working base to go from 1% to ~50% CSRD coverage immediately.",
+    "heroDescB": " — the goal is to start from a realistic working base rather than a blank page. Replace them with your real data before any report.",
     "heroDescEmph": "estimated and editable",
     "heroTitle": "Sectoral templates",
     "nEntries": "{{n}} entries",

@@ -556,7 +556,7 @@ export default function DPEFReport() {
         }
       `}</style>
 
-      <div className="min-h-screen bg-slate-900 text-white p-4 md:p-6 space-y-6">
+      <div className="dpef-light min-h-screen bg-slate-900 text-white p-4 md:p-6 space-y-6">
 
         {/* ── Header ──────────────────────────────────────────────────────────── */}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
@@ -595,8 +595,8 @@ export default function DPEFReport() {
         </div>
 
         {/* ── Info banner ─────────────────────────────────────────────────────── */}
-        <div className="bg-blue-950 border border-blue-800 rounded-lg px-4 py-3 text-sm text-blue-200">
-          {t('dpef.banner', 'Obligatoire pour les sociétés > 500 salariés et CA > 100 M€ ou total bilan > 100 M€')}
+        <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
+          {t('dpef.banner2', "La DPEF (art. L.225-102-1) est progressivement remplacée par la déclaration de durabilité CSRD. Vérifiez si elle s'applique encore à votre entreprise.")}
         </div>
 
         {loading && (
