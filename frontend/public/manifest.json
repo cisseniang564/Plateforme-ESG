@@ -1,6 +1,6 @@
 {
-  "name": "ESG Flow — Plateforme ESG intelligente",
-  "short_name": "ESG Flow",
+  "name": "ESGFlow — Plateforme ESG intelligente",
+  "short_name": "ESGFlow",
   "description": "Pilotez vos données ESG, calculez vos scores et générez vos rapports CSRD/ESRS conformes en quelques clics.",
   "start_url": "/app",
   "scope": "/",

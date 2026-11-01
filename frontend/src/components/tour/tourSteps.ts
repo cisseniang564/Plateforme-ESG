@@ -15,7 +15,7 @@ export interface TourChapter {
 
 export function getTourChapters(t: TFunction): TourChapter[] {
   return [
-    { id: 'welcome',    title: t('tsteps.chWelcome', 'Bienvenue'),               emoji: '🌿',  color: 'text-emerald-700', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', stepStart: 0,  stepCount: 1, description: t('tsteps.chWelcomeDesc', 'Introduction à ESG Flow') },
+    { id: 'welcome',    title: t('tsteps.chWelcome', 'Bienvenue'),               emoji: '🌿',  color: 'text-emerald-700', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', stepStart: 0,  stepCount: 1, description: t('tsteps.chWelcomeDesc', 'Introduction à ESGFlow') },
     { id: 'dashboard',  title: t('tsteps.chDashboard', 'Tableau de bord'),        emoji: '📊',  color: 'text-blue-700',    bgColor: 'bg-blue-50',    borderColor: 'border-blue-200',    stepStart: 1,  stepCount: 1, description: t('tsteps.chDashboardDesc', "Vue d'ensemble de vos scores ESG") },
     { id: 'collecte',   title: t('tsteps.chCollect', 'Collecte de données'),      emoji: '📥',  color: 'text-violet-700',  bgColor: 'bg-violet-50',  borderColor: 'border-violet-200',  stepStart: 2,  stepCount: 5, description: t('tsteps.chCollectDesc', 'Saisie, import et connecteurs') },
     { id: 'pilotage',   title: t('tsteps.chPilot', 'Pilotage ESG'),               emoji: '⚙️',  color: 'text-orange-700',  bgColor: 'bg-orange-50',  borderColor: 'border-orange-200',  stepStart: 7,  stepCount: 7, description: t('tsteps.chPilotDesc', 'Indicateurs, risques, audit') },
@@ -37,7 +37,7 @@ export function getTourSteps(t: TFunction): Step[] {
   return [
     {
       target: 'body',
-      title: t('tsteps.s0Title', '🌿 Bienvenue sur ESG Flow'),
+      title: t('tsteps.s0Title', '🌿 Bienvenue sur ESGFlow'),
       content: t('tsteps.s0Content', 'Ce tour interactif (≈ 3 min) vous présente toutes les fonctionnalités de la plateforme. Naviguez avec Suivant / Précédent, sautez une étape ou relancez le tour à tout moment.'),
       placement: 'center', disableBeacon: true,
       data: { chapter: 'welcome', stepInChapter: 1, totalInChapter: 1 },
@@ -206,14 +206,14 @@ export function getTourSteps(t: TFunction): Step[] {
     {
       target: '[data-tour="sidebar-api"]',
       title: t('tsteps.s24Title', '🔗 API Publique'),
-      content: t('tsteps.s24Content', "Accédez à la documentation Swagger de l'API REST ESG Flow. Intégrez vos outils BI (Power BI, Tableau) ou vos systèmes internes via des webhooks sécurisés."),
+      content: t('tsteps.s24Content', "Accédez à la documentation Swagger de l'API REST ESGFlow. Intégrez vos outils BI (Power BI, Tableau) ou vos systèmes internes via des webhooks sécurisés."),
       placement: 'right', disableBeacon: true,
       data: { chapter: 'settings', stepInChapter: 1, totalInChapter: 2 },
     },
     {
       target: '[data-tour="sidebar-settings"]',
       title: t('tsteps.s25Title', '⚙️ Paramètres'),
-      content: t('tsteps.s25Content', "Configurez votre profil, les préférences de notification, les droits d'accès des utilisateurs et les paramètres de votre tenant. Vous êtes prêt — bonne navigation sur ESG Flow ! 🎉"),
+      content: t('tsteps.s25Content', "Configurez votre profil, les préférences de notification, les droits d'accès des utilisateurs et les paramètres de votre tenant. Vous êtes prêt — bonne navigation sur ESGFlow ! 🎉"),
       placement: 'right', disableBeacon: true,
       data: { chapter: 'settings', stepInChapter: 2, totalInChapter: 2 },
     },

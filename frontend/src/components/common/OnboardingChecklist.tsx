@@ -100,7 +100,7 @@ export default function OnboardingChecklist() {
       <div className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none" style={{ background: allDone ? 'linear-gradient(135deg, #059669, #10b981)' : 'linear-gradient(135deg, #0ea5e9, #6366f1)' }} onClick={toggleCollapsed}>
         <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}><Sparkles className="h-4 w-4 text-white" /></div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-white leading-tight">{allDone ? t('onb.allDone','Configuration terminée') : t('onb.title','Démarrez avec ESG Flow')}</p>
+          <p className="text-sm font-bold text-white leading-tight">{allDone ? t('onb.allDone','Configuration terminée') : t('onb.title','Démarrez avec ESGFlow')}</p>
           <p className="text-xs text-white/75 mt-0.5">{t('onb.progress','{{done}}/{{total}} étapes · {{pct}}%',{done:doneCount,total:totalCount,pct})}</p>
         </div>
         <div className="flex-shrink-0 relative w-8 h-8">

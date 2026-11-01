@@ -818,7 +818,7 @@ function Step4({ state }: { state: WorkflowState }) {
               doc.setFont('helvetica', 'normal');
               doc.setFontSize(7);
               doc.setTextColor(150, 150, 150);
-              doc.text(`SBTi Dossier  ·  ESG Flow  ·  ${new Date().toLocaleDateString('fr-FR')}`, pageW / 2, 292, { align: 'center' });
+              doc.text(`SBTi Dossier  ·  ESGFlow  ·  ${new Date().toLocaleDateString('fr-FR')}`, pageW / 2, 292, { align: 'center' });
               doc.save(`SBTi_Dossier_${CURRENT_YEAR}.pdf`);
               toast.success(t('compliance.sbti.step4.toast.pdfDownloaded', 'PDF téléchargé'));
             } catch {

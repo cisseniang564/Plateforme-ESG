@@ -1,5 +1,5 @@
 /**
- * ESG Flow Service Worker — offline shell + smart caching.
+ * ESGFlow Service Worker — offline shell + smart caching.
  *
  * Strategy:
  *  - Static assets (JS, CSS, fonts, SVG): cache-first with versioned cache name.

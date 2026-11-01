@@ -23,7 +23,7 @@ const getTOC = (t: TFunction) => [
   { id: 'ruissellement', title: t('resources.guideCsddd.toc.ruissellement', "L'effet sur les PME") },
   { id: 'sanctions',     title: t('resources.guideCsddd.toc.sanctions', 'Sanctions & responsabilité civile') },
   { id: 'methode',       title: t('resources.guideCsddd.toc.methode', 'Méthode en 7 étapes') },
-  { id: 'esgflow',       title: t('resources.guideCsddd.toc.esgflow', 'Mettre en place avec ESG Flow') },
+  { id: 'esgflow',       title: t('resources.guideCsddd.toc.esgflow', 'Mettre en place avec ESGFlow') },
   { id: 'faq',           title: t('resources.guideCsddd.toc.faq', 'FAQ') },
 ];
 
@@ -36,7 +36,7 @@ export default function GuideCsdddPage() {
 
   usePageSeo({
     id: 'guide-csddd',
-    title: t('resources.guideCsddd.seo.title', 'CSDDD — guide complet du devoir de vigilance fournisseurs · ESG Flow'),
+    title: t('resources.guideCsddd.seo.title', 'CSDDD — guide complet du devoir de vigilance fournisseurs · ESGFlow'),
     description: desc,
     keywords: t('resources.guideCsddd.seo.keywords', 'CSDDD, devoir de vigilance, directive 2024/1760, supply chain, audit fournisseurs, ESRS S2, droits humains, due diligence, loi vigilance, PME ETI'),
     url,
@@ -57,7 +57,7 @@ export default function GuideCsdddPage() {
       "image": [img],
       "datePublished": "2026-05-20T08:00:00+02:00",
       "dateModified": "2026-05-20T08:00:00+02:00",
-      "author":    { "@type": "Organization", "name": "ESG Flow", "url": "https://greenconnect.cloud" },
+      "author":    { "@type": "Organization", "name": "ESGFlow", "url": "https://greenconnect.cloud" },
       "publisher": { "@type": "Organization", "name": "GreenConnect SAS",
                      "logo": { "@type": "ImageObject", "url": "https://greenconnect.cloud/brand/icon-esgflow-v5-256.png", "width": 256, "height": 256 } },
       "mainEntityOfPage": { "@type": "WebPage", "@id": url },
@@ -78,7 +78,7 @@ export default function GuideCsdddPage() {
           "acceptedAnswer": { "@type": "Answer", "text": "Vague 1 (5 000+ sal., 1,5 Md€ CA) : 26 juillet 2027. Vague 2 (3 000+ sal., 900 M€) : 26 juillet 2028. Vague 3 (1 000+ sal., 450 M€) : 26 juillet 2029." } },
         { "@type": "Question", "name": "Quelles sanctions en cas de manquement à la CSDDD ?",
           "acceptedAnswer": { "@type": "Answer", "text": "Amendes administratives jusqu'à 5 % du chiffre d'affaires mondial net. Naming and shaming public obligatoire. Responsabilité civile élargie : actions en réparation possibles par les victimes du préjudice." } },
-        { "@type": "Question", "name": "Comment ESG Flow aide à se conformer à la CSDDD ?",
+        { "@type": "Question", "name": "Comment ESGFlow aide à se conformer à la CSDDD ?",
           "acceptedAnswer": { "@type": "Answer", "text": "Module Supply Chain ESG inclus dès le plan PME (249 €/mois) : cartographie fournisseurs, questionnaires d'audit social et environnemental, suivi des plans d'action, registre de plaintes. Conforme ESRS S2." } },
       ]
     },
@@ -88,7 +88,7 @@ export default function GuideCsdddPage() {
     <div className="min-h-screen bg-white">
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-xl border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link to="/" aria-label={t('resources.guideCsddd.nav.homeAria', 'ESG Flow — Accueil')}><LogoBrand size="sm" variant="dark" showTagline={false} /></Link>
+          <Link to="/" aria-label={t('resources.guideCsddd.nav.homeAria', 'ESGFlow — Accueil')}><LogoBrand size="sm" variant="dark" showTagline={false} /></Link>
           <Link to="/register" className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold">{t('resources.guideCsddd.nav.freeTrial', 'Essai gratuit')} →</Link>
         </div>
       </header>
@@ -335,8 +335,8 @@ export default function GuideCsdddPage() {
           </section>
 
           <section id="esgflow" className="scroll-mt-24 mt-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('resources.guideCsddd.esgflow.heading', 'Mettre en place la CSDDD avec ESG Flow')}</h2>
-            <p><Trans i18nKey="resources.guideCsddd.esgflow.intro">Le module <strong>Supply Chain ESG</strong> d'ESG Flow couvre les obligations CSDDD + ESRS S2 dans un seul outil :</Trans></p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('resources.guideCsddd.esgflow.heading', 'Mettre en place la CSDDD avec ESGFlow')}</h2>
+            <p><Trans i18nKey="resources.guideCsddd.esgflow.intro">Le module <strong>Supply Chain ESG</strong> d'ESGFlow couvre les obligations CSDDD + ESRS S2 dans un seul outil :</Trans></p>
             <div className="grid md:grid-cols-2 gap-4 my-8">
               {[
                 { icon: Users,       t: t('resources.guideCsddd.esgflow.features.0.t', 'Cartographie fournisseurs'),  d: t('resources.guideCsddd.esgflow.features.0.d', 'Importation Excel ou CSV de votre annuaire fournisseurs, scoring automatique par pays × secteur.') },
@@ -375,9 +375,9 @@ export default function GuideCsdddPage() {
                 { q: t('resources.guideCsddd.faq.1.q', 'Quelle différence entre CSDDD et loi française devoir de vigilance ?'), a: t('resources.guideCsddd.faq.1.a', "La loi française 2017 cible ~250 entreprises FR. La CSDDD étend à ~6 000 entreprises UE avec cadre harmonisé, sanctions plus fortes (5 % CA mondial) et responsabilité civile élargie. Les deux coexistent jusqu'à fin 2027.") },
                 { q: t('resources.guideCsddd.faq.2.q', "Quel calendrier d'application de la CSDDD ?"), a: t('resources.guideCsddd.faq.2.a', 'Vague 1 (5 000+ sal., 1,5 Md€ CA) : 26 juillet 2027. Vague 2 (3 000+ sal., 900 M€) : 26 juillet 2028. Vague 3 (1 000+ sal., 450 M€) : 26 juillet 2029.') },
                 { q: t('resources.guideCsddd.faq.3.q', 'Quelles sanctions en cas de manquement ?'), a: t('resources.guideCsddd.faq.3.a', "Amendes jusqu'à 5 % du CA mondial net. Naming and shaming public obligatoire. Responsabilité civile élargie : victimes peuvent agir directement contre l'entreprise française même pour préjudice à l'étranger.") },
-                { q: t('resources.guideCsddd.faq.4.q', 'Comment ESG Flow aide à se conformer ?'), a: t('resources.guideCsddd.faq.4.a', "Module Supply Chain ESG inclus dès le plan ETI : cartographie fournisseurs, questionnaires d'audit, suivi plans d'action, registre plaintes. Conforme ESRS S2 et CSDDD.") },
+                { q: t('resources.guideCsddd.faq.4.q', 'Comment ESGFlow aide à se conformer ?'), a: t('resources.guideCsddd.faq.4.a', "Module Supply Chain ESG inclus dès le plan ETI : cartographie fournisseurs, questionnaires d'audit, suivi plans d'action, registre plaintes. Conforme ESRS S2 et CSDDD.") },
                 { q: t('resources.guideCsddd.faq.5.q', 'La CSDDD remplace-t-elle la loi française de 2017 ?'), a: t('resources.guideCsddd.faq.5.a', "Elle s'y substituera après transposition complète (~juillet 2026 en théorie). En pratique, les 2 régimes coexistent et il faut respecter le plus exigeant des deux pendant la période transitoire.") },
-                { q: t('resources.guideCsddd.faq.6.q', 'Quels documents préparer pour répondre à un questionnaire CSDDD client ?'), a: t('resources.guideCsddd.faq.6.a', "Code de conduite fournisseurs signé, politique droits humains, cartographie risques, résultats d'audits récents, mécanisme de plainte, plan d'action correctif. ESG Flow fournit les templates de tous ces documents.") },
+                { q: t('resources.guideCsddd.faq.6.q', 'Quels documents préparer pour répondre à un questionnaire CSDDD client ?'), a: t('resources.guideCsddd.faq.6.a', "Code de conduite fournisseurs signé, politique droits humains, cartographie risques, résultats d'audits récents, mécanisme de plainte, plan d'action correctif. ESGFlow fournit les templates de tous ces documents.") },
               ].map((item, i) => (
                 <details key={i} className="group border border-gray-200 rounded-xl overflow-hidden hover:border-violet-300 transition-colors">
                   <summary className="flex items-start justify-between cursor-pointer p-5 hover:bg-gray-50 transition-colors">
@@ -420,7 +420,7 @@ export default function GuideCsdddPage() {
             <Link to="/status" className="hover:text-violet-600">{t('resources.guideCsddd.footer.status', 'Statut')}</Link>
             <Link to="/privacy-policy" className="hover:text-violet-600">{t('resources.guideCsddd.footer.privacy', 'Confidentialité')}</Link>
           </div>
-          <p className="text-xs text-gray-400 mt-6">{t('resources.guideCsddd.footer.copyright', '© 2026 GreenConnect SAS — ESG Flow')}</p>
+          <p className="text-xs text-gray-400 mt-6">{t('resources.guideCsddd.footer.copyright', '© 2026 GreenConnect SAS — ESGFlow')}</p>
         </div>
       </footer>
     </div>

@@ -82,13 +82,13 @@ export default function RoadmapPage() {
 
   usePageSeo({
     id: 'roadmap',
-    title: t('resources.roadmap.seo.title', 'Roadmap publique — ESG Flow'),
-    description: t('resources.roadmap.seo.description', "Découvrez la roadmap produit ESG Flow : ce qui est livré, en cours et prévu. Transparence totale sur notre direction CSRD/ESG."),
-    keywords: t('resources.roadmap.seo.keywords', 'roadmap ESG Flow, produit, fonctionnalités, planning, CSRD, transparence'),
+    title: t('resources.roadmap.seo.title', 'Roadmap publique — ESGFlow'),
+    description: t('resources.roadmap.seo.description', "Découvrez la roadmap produit ESGFlow : ce qui est livré, en cours et prévu. Transparence totale sur notre direction CSRD/ESG."),
+    keywords: t('resources.roadmap.seo.keywords', 'roadmap ESGFlow, produit, fonctionnalités, planning, CSRD, transparence'),
     url,
-    ogTitle: t('resources.roadmap.seo.ogTitle', 'Roadmap publique ESG Flow'),
+    ogTitle: t('resources.roadmap.seo.ogTitle', 'Roadmap publique ESGFlow'),
     ogImage: img,
-    ogImageAlt: t('resources.roadmap.seo.ogImageAlt', 'Roadmap publique ESG Flow — livré, en cours, planifié'),
+    ogImageAlt: t('resources.roadmap.seo.ogImageAlt', 'Roadmap publique ESGFlow — livré, en cours, planifié'),
     breadcrumb: [
       { name: t('resources.roadmap.breadcrumb.home', 'Accueil'),    url: 'https://greenconnect.cloud/' },
       { name: t('resources.roadmap.breadcrumb.company', 'Entreprise'), url: 'https://greenconnect.cloud/' },
@@ -108,7 +108,7 @@ export default function RoadmapPage() {
     <div className="min-h-screen bg-white">
       <header className="bg-white/95 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link to="/" aria-label={t('resources.roadmap.nav.homeAria', 'ESG Flow — Accueil')}>
+          <Link to="/" aria-label={t('resources.roadmap.nav.homeAria', 'ESGFlow — Accueil')}>
             <LogoBrand size="sm" variant="dark" showTagline={false} />
           </Link>
           <Link to="/register" className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold">

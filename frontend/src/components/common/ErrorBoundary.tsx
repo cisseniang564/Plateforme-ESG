@@ -59,7 +59,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   <div className="flex items-center gap-3">
                     <span className="text-3xl" aria-hidden="true">⚠️</span>
                     <div className="text-left">
-                      <p className="text-sm font-semibold text-red-400 uppercase tracking-widest">ESG Flow</p>
+                      <p className="text-sm font-semibold text-red-400 uppercase tracking-widest">ESGFlow</p>
                       <p className="text-lg font-bold text-slate-800">{t('errorBoundary.title')}</p>
                     </div>
                   </div>

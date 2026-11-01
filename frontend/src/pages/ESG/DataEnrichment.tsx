@@ -750,7 +750,7 @@ export default function DataEnrichment() {
 
               {/* Org linking */}
               <div className="mb-5">
-                <p className="text-sm font-semibold text-gray-700 mb-3">{t('enrich.confirm.linkLabel', 'Lier à une organisation ESG Flow')}</p>
+                <p className="text-sm font-semibold text-gray-700 mb-3">{t('enrich.confirm.linkLabel', 'Lier à une organisation ESGFlow')}</p>
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <button
                     onClick={() => setOrgMode('new')}

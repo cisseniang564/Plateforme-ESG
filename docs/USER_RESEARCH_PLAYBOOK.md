@@ -1,5 +1,5 @@
 ---
-title: "Playbook de recherche utilisateur — ESG Flow"
+title: "Playbook de recherche utilisateur — ESGFlow"
 subtitle: "Méthodologie pour 15-20 entretiens prospects ciblés"
 date: "27 mai 2026"
 ---
@@ -48,7 +48,7 @@ Valider ou invalider, avec des **prospects réels**, les hypothèses de douleurs
 
 > Bonjour [Prénom],
 >
-> Je travaille sur ESG Flow, une plateforme française qui automatise le reporting CSRD / bilan carbone pour les ETI. Avant de finaliser nos premières fonctionnalités, je cherche à comprendre comment se déroule concrètement votre reporting ESG actuel — quels sont vos blocages, quels outils vous utilisez.
+> Je travaille sur ESGFlow, une plateforme française qui automatise le reporting CSRD / bilan carbone pour les ETI. Avant de finaliser nos premières fonctionnalités, je cherche à comprendre comment se déroule concrètement votre reporting ESG actuel — quels sont vos blocages, quels outils vous utilisez.
 >
 > Auriez-vous 30 minutes la semaine prochaine pour échanger ? Pas de pitch produit, juste de l'écoute pour comprendre votre quotidien.
 >

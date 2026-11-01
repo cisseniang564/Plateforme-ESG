@@ -157,7 +157,7 @@ export default function OrganizationComparator() {
     if (!selected.length) return;
     const dateStr = new Date().toLocaleDateString('fr-FR');
     const rows = [
-      [`Comparaison ESG — Généré le ${dateStr} — ESG Flow`],
+      [`Comparaison ESG — Généré le ${dateStr} — ESGFlow`],
       [],
       ['Organisation', 'Score Global (/100)', 'Environnement (/100)', 'Social (/100)', 'Gouvernance (/100)', 'Rating ESG', 'Secteur'],
       ...selected.map(o => [
@@ -214,7 +214,7 @@ export default function OrganizationComparator() {
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
-      doc.text(`Généré le ${dateStr}  ·  ESG Flow`, pageW - 12, 14, { align: 'right' });
+      doc.text(`Généré le ${dateStr}  ·  ESGFlow`, pageW - 12, 14, { align: 'right' });
 
       // ── Orgs colour legend ─────────────────────────────────────────────────
       let cx = 12;
@@ -348,7 +348,7 @@ export default function OrganizationComparator() {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
       doc.setTextColor(156, 163, 175);
-      doc.text(`© ${new Date().getFullYear()} ESG Flow · Document confidentiel · ${selected.length} organisation(s) comparée(s)`, 12, pageH - 4);
+      doc.text(`© ${new Date().getFullYear()} ESGFlow · Document confidentiel · ${selected.length} organisation(s) comparée(s)`, 12, pageH - 4);
       doc.text('Page 1 / 1', pageW - 12, pageH - 4, { align: 'right' });
 
       doc.save(`comparaison-esg-${new Date().toISOString().slice(0, 10)}.pdf`);
@@ -485,7 +485,7 @@ export default function OrganizationComparator() {
               children: [
                 new Paragraph({
                   children: [
-                    new TextRun({ text: 'ESG Flow', bold: true, size: 18, color: '4F46E5' }),
+                    new TextRun({ text: 'ESGFlow', bold: true, size: 18, color: '4F46E5' }),
                     new TextRun({ text: '  ·  Comparaison ESG des Organisations', size: 18, color: GRAY }),
                   ],
                   border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: 'E5E7EB' } },
@@ -499,7 +499,7 @@ export default function OrganizationComparator() {
               children: [
                 new Paragraph({
                   children: [
-                    new TextRun({ text: `© ${new Date().getFullYear()} ESG Flow · Généré le ${dateStr}  ·  `, size: 16, color: GRAY }),
+                    new TextRun({ text: `© ${new Date().getFullYear()} ESGFlow · Généré le ${dateStr}  ·  `, size: 16, color: GRAY }),
                     new TextRun({ children: [PageNumber.CURRENT], size: 16, color: GRAY }),
                   ],
                   alignment: AlignmentType.CENTER,

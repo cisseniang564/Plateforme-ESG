@@ -71,10 +71,10 @@ const getCOMPETITORS = (t: TFunction): Record<string, CompetitorData> => ({
     slug: 'greenly', name: 'Greenly', logoText: 'GR', logoColor: '#16a34a',
     tagline: t('compare.greenly.tagline', 'Plateforme carbone & ESG pour PME/ETI'),
     description: t('compare.greenly.description', 'Greenly est une scale-up française fondée en 2019, spécialisée dans le bilan carbone et le reporting climat. Levée totale ~$72M, plus de 2 000 clients revendiqués sur le segment PME/ETI.'),
-    targetMarket: t('compare.greenly.targetMarket', 'PME et ETI (cible similaire à ESG Flow)'),
+    targetMarket: t('compare.greenly.targetMarket', 'PME et ETI (cible similaire à ESGFlow)'),
     pricingLabel: t('compare.greenly.pricingLabel', 'À partir de ~500 €/mois (estimé*)'),
     pricingNote: t('compare.greenly.pricingNote', "Prix non publiés sur leur site, plans Climate/Climate+ négociés au cas par cas. Add-ons CSRD et Supply Chain facturés séparément."),
-    verdict: t('compare.greenly.verdict', "Greenly est une bonne référence pour les PME qui veulent un accompagnement carbone clé-en-main. Mais pour la conformité CSRD complète, la souveraineté française et un budget maîtrisé, ESG Flow offre 2× plus de modules ESG pour environ la moitié du prix, avec un essai gratuit immédiat."),
+    verdict: t('compare.greenly.verdict', "Greenly est une bonne référence pour les PME qui veulent un accompagnement carbone clé-en-main. Mais pour la conformité CSRD complète, la souveraineté française et un budget maîtrisé, ESGFlow offre 2× plus de modules ESG pour environ la moitié du prix, avec un essai gratuit immédiat."),
     strengths: [
       t('compare.greenly.s0', 'Forte notoriété sur le marché PME français'),
       t('compare.greenly.s1', 'Onboarding accompagné avec consultant dédié'),
@@ -256,14 +256,14 @@ export default function ComparisonPage() {
   usePageSeo({
     id: `compare-${slug ?? 'unknown'}`,
     title: competitor
-      ? t('compare.seoTitle', 'ESG Flow vs {{name}} — Comparatif plateforme ESG', { name: competitor.name })
-      : t('compare.seoTitleDefault', 'Comparatif ESG — ESG Flow'),
+      ? t('compare.seoTitle', 'ESGFlow vs {{name}} — Comparatif plateforme ESG', { name: competitor.name })
+      : t('compare.seoTitleDefault', 'Comparatif ESG — ESGFlow'),
     description: competitor
-      ? t('compare.seoDesc', "Comparez ESG Flow et {{name}} : fonctionnalités, tarifs, conformité CSRD. Découvrez pourquoi ESG Flow est l'alternative européenne.", { name: competitor.name })
+      ? t('compare.seoDesc', "Comparez ESGFlow et {{name}} : fonctionnalités, tarifs, conformité CSRD. Découvrez pourquoi ESGFlow est l'alternative européenne.", { name: competitor.name })
       : t('compare.seoDescDefault', 'Comparatif des plateformes ESG.'),
     url: `https://greenconnect.cloud/compare/${slug ?? ''}`,
     keywords: competitor
-      ? t('compare.seoKw', 'ESG Flow vs {{name}}, comparatif ESG, alternative {{name}}', { name: competitor.name })
+      ? t('compare.seoKw', 'ESGFlow vs {{name}}, comparatif ESG, alternative {{name}}', { name: competitor.name })
       : undefined,
     ogImage: 'https://greenconnect.cloud/og/compare.png',
   });
@@ -287,7 +287,7 @@ export default function ComparisonPage() {
             {t('compare.back', 'Retour')}
           </Link>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-gray-900">ESG Flow</span>
+            <span className="text-sm font-bold text-gray-900">ESGFlow</span>
             <span className="text-gray-300">vs</span>
             <span className="text-sm font-bold" style={{ color: competitor.logoColor }}>{competitor.name}</span>
           </div>
@@ -309,12 +309,12 @@ export default function ComparisonPage() {
           </div>
 
           <div className="flex items-center justify-center gap-6 mb-8">
-            {/* ESG Flow */}
+            {/* ESGFlow */}
             <div className="flex flex-col items-center gap-2">
               <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-xl shadow-emerald-500/30">
                 <span className="text-white font-extrabold text-xl">E</span>
               </div>
-              <span className="text-white font-bold text-sm">ESG Flow</span>
+              <span className="text-white font-bold text-sm">ESGFlow</span>
             </div>
             <div className="text-4xl font-extrabold text-white/40">vs</div>
             {/* Competitor */}
@@ -327,7 +327,7 @@ export default function ComparisonPage() {
           </div>
 
           <h1 className="text-4xl lg:text-5xl font-extrabold text-white mb-4 leading-tight">
-            ESG Flow vs {competitor.name}
+            ESGFlow vs {competitor.name}
           </h1>
           <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed mb-10">
             {t('compare.heroTagline', '{{tagline}} — comparatif complet des fonctionnalités, prix et couverture réglementaire française.', { tagline: competitor.tagline })}
@@ -394,7 +394,7 @@ export default function ComparisonPage() {
                 <div className="w-5 h-5 bg-emerald-500 rounded-md flex items-center justify-center">
                   <span className="text-white text-[10px] font-extrabold">E</span>
                 </div>
-                <span className="text-xs font-bold text-gray-900">ESG Flow</span>
+                <span className="text-xs font-bold text-gray-900">ESGFlow</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ backgroundColor: competitor.logoColor + '20' }}>
@@ -413,16 +413,16 @@ export default function ComparisonPage() {
         {/* ── Pricing comparison ─────────────────────────────────────────────── */}
         <section>
           <h2 className="text-2xl font-extrabold text-gray-900 mb-2">{t('compare.pricingTitle','Comparatif tarifaire')}</h2>
-          <p className="text-gray-500 mb-6 text-sm">{t('compare.pricingSubtitle','Tous les prix ESG Flow sont publics et disponibles sans devis.')}</p>
+          <p className="text-gray-500 mb-6 text-sm">{t('compare.pricingSubtitle','Tous les prix ESGFlow sont publics et disponibles sans devis.')}</p>
 
           <div className="grid md:grid-cols-2 gap-6">
-            {/* ESG Flow plans */}
+            {/* ESGFlow plans */}
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-6 h-6 bg-emerald-500 rounded-lg flex items-center justify-center">
                   <span className="text-white text-xs font-extrabold">E</span>
                 </div>
-                <span className="font-bold text-gray-900">{t('compare.esgPlans','Plans ESG Flow')}</span>
+                <span className="font-bold text-gray-900">{t('compare.esgPlans','Plans ESGFlow')}</span>
                 <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">{t('compare.publicPrices','Prix publics')}</span>
               </div>
               <div className="space-y-3">
@@ -496,9 +496,9 @@ export default function ComparisonPage() {
           </div>
         </section>
 
-        {/* ── ESG Flow strengths ─────────────────────────────────────────────── */}
+        {/* ── ESGFlow strengths ─────────────────────────────────────────────── */}
         <section>
-          <h2 className="text-2xl font-extrabold text-gray-900 mb-8">{t('compare.whyTitle','Pourquoi choisir ESG Flow')}</h2>
+          <h2 className="text-2xl font-extrabold text-gray-900 mb-8">{t('compare.whyTitle','Pourquoi choisir ESGFlow')}</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
               { icon: Shield,    color: 'emerald', title: t('compare.adv0title','Hébergé en France'),        desc: t('compare.adv0desc','Données souveraines, RGPD natif. Aucun cloud américain.') },
@@ -524,7 +524,7 @@ export default function ComparisonPage() {
           <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.06) 1px, transparent 0)', backgroundSize: '32px 32px' }} />
           <div className="relative">
             <div className="text-4xl font-extrabold text-white mb-3">
-              {t('compare.ctaTitle','Essayez ESG Flow gratuitement')}
+              {t('compare.ctaTitle','Essayez ESGFlow gratuitement')}
             </div>
             <p className="text-slate-300 mb-8 max-w-xl mx-auto text-lg">
               {t('compare.ctaDescA','14 jours, sans carte bancaire. Toutes les fonctionnalités Pro incluses.')}
@@ -560,7 +560,7 @@ export default function ComparisonPage() {
                   to={`/compare/${c.slug}`}
                   className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-700 rounded-xl hover:border-emerald-300 hover:text-emerald-700 hover:bg-emerald-50 transition-all text-sm font-medium"
                 >
-                  ESG Flow vs {c.name} <ChevronRight className="h-3.5 w-3.5" />
+                  ESGFlow vs {c.name} <ChevronRight className="h-3.5 w-3.5" />
                 </Link>
               ))}
           </div>

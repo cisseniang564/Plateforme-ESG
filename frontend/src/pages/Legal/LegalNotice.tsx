@@ -6,7 +6,7 @@ import { usePageSeo } from '@/hooks/usePageSeo';
 export default function LegalNotice() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  usePageSeo({ id: 'legal', title: 'Mentions Légales — ESG Flow', description: 'Mentions légales de la plateforme ESG Flow — éditeur, hébergement, responsabilité, propriété intellectuelle.', url: 'https://greenconnect.cloud/legal-notice', ogImage: 'https://greenconnect.cloud/og/legal-notice.png' });
+  usePageSeo({ id: 'legal', title: 'Mentions Légales — ESGFlow', description: 'Mentions légales de la plateforme ESGFlow — éditeur, hébergement, responsabilité, propriété intellectuelle.', url: 'https://greenconnect.cloud/legal-notice', ogImage: 'https://greenconnect.cloud/og/legal-notice.png' });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -60,7 +60,7 @@ export default function LegalNotice() {
 
             <h2>3. Propriété Intellectuelle</h2>
             <p>
-              L'ensemble du site ESG Flow (structure, graphismes, textes, images, logos, icônes, etc.)
+              L'ensemble du site ESGFlow (structure, graphismes, textes, images, logos, icônes, etc.)
               est la propriété exclusive de GreenConnect SAS, sauf mentions particulières.
             </p>
             <p>
@@ -71,7 +71,7 @@ export default function LegalNotice() {
 
             <h3>Marques</h3>
             <p>
-              Les marques "GreenConnect" et "ESG Flow" ainsi que les logos associés sont des marques
+              Les marques "GreenConnect" et "ESGFlow" ainsi que les logos associés sont des marques
               déposées. Toute utilisation non autorisée constitue une contrefaçon sanctionnée par les
               articles L.335-2 et suivants du Code de la Propriété Intellectuelle.
             </p>

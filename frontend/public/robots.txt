@@ -1,4 +1,4 @@
-# ESG Flow — greenconnect.cloud
+# ESGFlow — greenconnect.cloud
 # Search engines crawl the marketing surface; everything behind /app/ requires auth.
 
 User-agent: *

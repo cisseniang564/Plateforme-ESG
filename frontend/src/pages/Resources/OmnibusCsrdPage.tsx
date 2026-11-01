@@ -331,7 +331,7 @@ export default function OmnibusCsrdPage() {
               </Trans>
             </p>
             <p className="text-sm text-blue-800 leading-relaxed">
-              {t('resources.omnibus.esrs.mnd.body2', 'ESG Flow intègre déjà cette distinction : chaque indicateur est marqué MND ou optionnel dans le module ESRS Gap Analysis et le CSRD Report Builder.')}
+              {t('resources.omnibus.esrs.mnd.body2', 'ESGFlow intègre déjà cette distinction : chaque indicateur est marqué MND ou optionnel dans le module ESRS Gap Analysis et le CSRD Report Builder.')}
             </p>
           </div>
         </section>
@@ -416,7 +416,7 @@ export default function OmnibusCsrdPage() {
               },
               {
                 q: t('resources.omnibus.faq.items.4.q', "La Taxonomie UE est-elle aussi allégée par l'Omnibus ?"),
-                a: t('resources.omnibus.faq.items.4.a', "L'Omnibus I contient également des simplifications pour le reporting Taxonomie UE (règlement 2020/852), notamment en réduisant les obligations de reporting quantitatif pour certaines activités. Les entreprises soumises à la Taxonomie doivent consulter les textes amendés pour leur périmètre spécifique. ESG Flow met à jour ses modules Taxonomie en temps réel selon les textes officiels."),
+                a: t('resources.omnibus.faq.items.4.a', "L'Omnibus I contient également des simplifications pour le reporting Taxonomie UE (règlement 2020/852), notamment en réduisant les obligations de reporting quantitatif pour certaines activités. Les entreprises soumises à la Taxonomie doivent consulter les textes amendés pour leur périmètre spécifique. ESGFlow met à jour ses modules Taxonomie en temps réel selon les textes officiels."),
               },
             ].map((faq, i) => (
               <Faq key={i} q={faq.q} a={faq.a} />
@@ -431,7 +431,7 @@ export default function OmnibusCsrdPage() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles className="h-5 w-5 text-emerald-400" />
-                <span className="text-emerald-300 text-sm font-semibold">{t('resources.omnibus.cta.badge', 'ESG Flow — Prêt pour post-Omnibus')}</span>
+                <span className="text-emerald-300 text-sm font-semibold">{t('resources.omnibus.cta.badge', 'ESGFlow — Prêt pour post-Omnibus')}</span>
               </div>
               <h2 className="text-2xl font-extrabold text-white mb-3">
                 {t('resources.omnibus.cta.title', 'Préparez votre ESG avant que vos clients vous le demandent')}
