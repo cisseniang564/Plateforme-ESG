@@ -140,6 +140,23 @@ class TestCreateDataEntry:
         )
         assert resp.status_code == 422
 
+    def test_list_exposes_total_count_header(self, client):
+        resp = client.get("/api/v1/data-entry/?limit=25&offset=0", headers=AUTH_HEADERS)
+        assert resp.status_code == 200
+        assert resp.headers["x-total-count"] == "1"
+        assert "x-total-count" in resp.headers["access-control-expose-headers"].lower()
+
+    def test_list_accepts_sort_params(self, client):
+        for col in ("created_at", "metric_name", "pillar", "period_start", "value_numeric", "verification_status"):
+            for order in ("asc", "desc"):
+                resp = client.get(f"/api/v1/data-entry/?sort_by={col}&order={order}", headers=AUTH_HEADERS)
+                assert resp.status_code == 200, (col, order)
+
+    def test_list_rejects_unknown_sort_column(self, client):
+        # Liste blanche : jamais de colonne arbitraire dans ORDER BY.
+        assert client.get("/api/v1/data-entry/?sort_by=tenant_id", headers=AUTH_HEADERS).status_code == 422
+        assert client.get("/api/v1/data-entry/?order=sideways", headers=AUTH_HEADERS).status_code == 422
+
     def test_no_auth_401(self, client):
         from app.main import app
         from app.dependencies import get_current_user

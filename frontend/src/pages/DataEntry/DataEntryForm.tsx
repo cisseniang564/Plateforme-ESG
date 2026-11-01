@@ -1,28 +1,17 @@
 import { Button, ConfirmDialog, Modal } from '@/components/common';
-import { useState, useEffect } from 'react';
-import { countByPillar, entriesToCsv, filterEntries, type PillarFilter, type VerifFilter } from './dataEntryHelpers';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  buildListParams, displayName, formatValue, looksLikeYear, totalPages, verifiedRate,
+  type PillarFilter, type SortKey, type SortOrder, type VerifFilter,
+} from './dataEntryHelpers';
 import { useTranslation } from 'react-i18next';
 import {
-  Database,
-  Plus,
-  Save,
-  Calendar,
-  Leaf,
-  Users,
-  Scale,
-  FileText,
-  CheckCircle,
-  AlertCircle,
-  Trash2,
-  Download,
-  X,
-  ChevronRight,
-  ChevronLeft,
-  RefreshCw,
-  Sparkles,
-  Search,
+  Database, Plus, Save, Leaf, Users, Scale, AlertCircle, Trash2, Download,
+  ChevronRight, ChevronLeft, RefreshCw, Search, Lock, ArrowUp, ArrowDown, ArrowUpDown,
+  Upload, AlertTriangle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Spinner from '@/components/common/Spinner';
 import api from '@/services/api';
 import toast from 'react-hot-toast';
@@ -40,24 +29,20 @@ interface DataEntry {
   pillar: string;
   category: string;
   metric_name: string;
-  value_numeric?: number;
-  value_text?: string;
-  unit?: string;
-  data_source?: string;
+  value_numeric?: number | null;
+  value_text?: string | null;
+  unit?: string | null;
+  data_source?: string | null;
+  collection_method?: string | null;
   verification_status: string;
-  notes?: string;
+  notes?: string | null;
 }
 interface MetricTemplate { name: string; unit: string; description?: string; }
+interface Stats { total: number; by_pillar: Record<string, number>; by_verification_status: Record<string, number>; by_period: Record<string, number>; }
 
 // ─── Pillar config (NO dynamic Tailwind classes) ───────────────────────────
 interface PillarCfg {
-  label: string;
-  icon: LucideIcon;
-  color: string;
-  softBg: string;
-  strip: string;
-  topColor: string;
-  iconBg: string;
+  label: string; icon: LucideIcon; color: string; softBg: string; strip: string; topColor: string; iconBg: string;
 }
 const PILLAR_CFG: Record<string, PillarCfg> = {
   environmental: { label: 'Environnemental', icon: Leaf,  color: '#16a34a', softBg: '#f0fdf4', strip: '#22c55e', topColor: '#22c55e', iconBg: '#dcfce7' },
@@ -71,17 +56,54 @@ function getPillarCfg(pillar: string): PillarCfg {
   };
 }
 
+const PAGE_SIZES = [25, 50, 100];
+const SOURCE_LABEL: Record<string, string> = { manual: 'Saisie', csv_import: 'Import CSV', api: 'API', connector: 'Connecteur' };
+
 // ─── Sub-components ────────────────────────────────────────────────────────
-function ConfirmModal({ onConfirm, onCancel, label }: { onConfirm: () => void; onCancel: () => void; label: string }) {
+function PillarBadge({ pillar }: { pillar: string }) {
+  const cfg = getPillarCfg(pillar);
+  const Icon = cfg.icon;
   return (
-    <ConfirmDialog
-      isOpen
-      title="Supprimer cette entrée ?"
-      message={<><span className="font-semibold text-gray-800">"{label}"</span> sera définitivement supprimée.</>}
-      confirmLabel="Supprimer"
-      onConfirm={onConfirm}
-      onClose={onCancel}
-    />
+    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium" style={{ backgroundColor: cfg.softBg, color: cfg.color }}>
+      <Icon className="h-3 w-3" aria-hidden="true" />{cfg.label}
+    </span>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const verified = status === 'verified';
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium ${verified ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+      {verified ? <Lock className="h-3 w-3" aria-hidden="true" /> : <AlertCircle className="h-3 w-3" aria-hidden="true" />}
+      {verified ? 'Vérifiée' : 'À vérifier'}
+    </span>
+  );
+}
+
+function SortHeader({ label, k, sortBy, order, onSort, align = 'left' }: {
+  label: string; k: SortKey; sortBy: SortKey; order: SortOrder; onSort: (k: SortKey) => void; align?: 'left' | 'right';
+}) {
+  const active = sortBy === k;
+  const Icon = !active ? ArrowUpDown : order === 'asc' ? ArrowUp : ArrowDown;
+  return (
+    <th scope="col" aria-sort={active ? (order === 'asc' ? 'ascending' : 'descending') : 'none'}
+      className={`px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500 ${align === 'right' ? 'text-right' : 'text-left'}`}>
+      <button type="button" onClick={() => onSort(k)} className={`inline-flex items-center gap-1 hover:text-gray-900 ${active ? 'text-gray-900' : ''}`}>
+        {label}<Icon className={`h-3 w-3 ${active ? '' : 'opacity-40'}`} aria-hidden="true" />
+      </button>
+    </th>
+  );
+}
+
+function Kpi({ label, value, hint, color }: { label: string; value: string | number; hint?: string; color: string }) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 px-4 py-3">
+      <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
+        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />{label}
+      </div>
+      <p className="mt-1 text-2xl font-semibold text-gray-900 tabular-nums">{value}</p>
+      {hint && <p className="text-xs text-gray-400 mt-0.5">{hint}</p>}
+    </div>
   );
 }
 
@@ -90,15 +112,30 @@ export default function DataEntryForm() {
   const { t } = useTranslation();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [entries, setEntries] = useState<DataEntry[]>([]);
+  const [total, setTotal] = useState(0);
+  const [stats, setStats] = useState<Stats | null>(null);
   const [templates, setTemplates] = useState<any>({});
   const [loading, setLoading] = useState(true);
+  const [listLoading, setListLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<DataEntry | null>(null);
+  const [deleteTargets, setDeleteTargets] = useState<DataEntry[]>([]);
+  const [detail, setDetail] = useState<DataEntry | null>(null);
+  const [edit, setEdit] = useState({ value_numeric: '', unit: '', data_source: '', notes: '' });
+  const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [step, setStep] = useState(1);
+
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [pillarFilter, setPillarFilter] = useState<PillarFilter>('all');
   const [verifFilter, setVerifFilter] = useState<VerifFilter>('all');
+  const [year, setYear] = useState('');
+  const [sortBy, setSortBy] = useState<SortKey>('created_at');
+  const [order, setOrder] = useState<SortOrder>('desc');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
   const [selectedPillar, setSelectedPillar] = useState<string>('environmental');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedMetric, setSelectedMetric] = useState<MetricTemplate | null>(null);
@@ -119,30 +156,63 @@ export default function DataEntryForm() {
 
   const closeWizard = () => { setShowModal(false); resetForm(); };
 
-  useEffect(() => { loadData(); }, []);
+  // Recherche : on attend la fin de la frappe avant d'interroger l'API.
+  useEffect(() => {
+    const id = setTimeout(() => { setSearch(searchInput); setPage(1); }, 300);
+    return () => clearTimeout(id);
+  }, [searchInput]);
 
-  const loadData = async () => {
+  const reqId = useRef(0);
+  const loadEntries = useCallback(async () => {
+    const my = ++reqId.current;
+    setListLoading(true);
     try {
-      setLoading(true);
-      const [orgsRes, templatesRes] = await Promise.all([
-        api.get('/organizations'),
-        api.get('/data-entry/templates/metrics'),
-      ]);
-      setOrganizations(orgsRes.data.items || []);
-      setTemplates(templatesRes.data);
-      await loadEntries();
+      const res = await api.get('/data-entry/', {
+        params: buildListParams({ search, pillar: pillarFilter, verif: verifFilter, year, sortBy, order, page, pageSize }),
+      });
+      if (my !== reqId.current) return;
+      const rows: DataEntry[] = res.data || [];
+      const header = Number(res.headers?.['x-total-count']);
+      setEntries(rows);
+      setTotal(Number.isFinite(header) && header >= 0 && res.headers?.['x-total-count'] !== undefined ? header : rows.length);
     } catch {
-      toast.error(t('dataEntry.loadingError'));
+      if (my === reqId.current) toast.error(t('dataEntry.loadingError'));
     } finally {
-      setLoading(false);
+      if (my === reqId.current) setListLoading(false);
     }
-  };
+  }, [search, pillarFilter, verifFilter, year, sortBy, order, page, pageSize, t]);
 
-  const loadEntries = async () => {
-    try {
-      const res = await api.get('/data-entry/');
-      setEntries(res.data || []);
-    } catch {}
+  const loadStats = useCallback(async () => {
+    try { setStats((await api.get('/data-entry/stats')).data); } catch { /* KPI facultatifs */ }
+  }, []);
+
+  useEffect(() => { loadEntries(); }, [loadEntries]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [orgsRes, templatesRes] = await Promise.all([
+          api.get('/organizations'),
+          api.get('/data-entry/templates/metrics'),
+        ]);
+        setOrganizations(orgsRes.data.items || []);
+        setTemplates(templatesRes.data);
+      } catch {
+        toast.error(t('dataEntry.loadingError'));
+      } finally {
+        setLoading(false);
+      }
+      loadStats();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const refreshAll = async () => { await Promise.all([loadEntries(), loadStats()]); };
+
+  const handleSort = (k: SortKey) => {
+    if (k === sortBy) setOrder(o => (o === 'asc' ? 'desc' : 'asc'));
+    else { setSortBy(k); setOrder(k === 'metric_name' || k === 'pillar' ? 'asc' : 'desc'); }
+    setPage(1);
   };
 
   const handlePillarChange = (pillar: string) => {
@@ -175,7 +245,8 @@ export default function DataEntryForm() {
       toast.success(t('dataEntry.savedSuccess'));
       setShowModal(false);
       resetForm();
-      await loadEntries();
+      setSortBy('created_at'); setOrder('desc'); setPage(1);
+      await refreshAll();
     } catch (error: any) {
       toast.error(error.response?.data?.detail || t('dataEntry.saveError'));
     } finally {
@@ -184,14 +255,55 @@ export default function DataEntryForm() {
   };
 
   const handleDelete = async () => {
-    if (!deleteTarget) return;
+    if (deleteTargets.length === 0) return;
+    const results = await Promise.allSettled(deleteTargets.map(d => api.delete(`/data-entry/${d.id}`)));
+    const failed = results.filter(r => r.status === 'rejected').length;
+    if (failed === 0) toast.success(deleteTargets.length > 1 ? `${deleteTargets.length} saisies supprimées` : t('dataEntry.entryDeleted'));
+    else toast.error(`${failed} suppression(s) refusée(s) — les saisies vérifiées sont verrouillées.`);
+    setDeleteTargets([]);
+    setSelected(new Set());
+    setDetail(null);
+    if (entries.length === deleteTargets.length && page > 1) setPage(p => p - 1);
+    await refreshAll();
+  };
+
+  const openDetail = (e: DataEntry) => {
+    setDetail(e);
+    setEdit({ value_numeric: e.value_numeric != null ? String(e.value_numeric) : '', unit: e.unit ?? '', data_source: e.data_source ?? '', notes: e.notes ?? '' });
+  };
+
+  const handleSaveDetail = async () => {
+    if (!detail) return;
+    setSaving(true);
     try {
-      await api.delete(`/data-entry/${deleteTarget.id}`);
-      toast.success(t('dataEntry.entryDeleted'));
-      setDeleteTarget(null);
-      await loadEntries();
+      await api.put(`/data-entry/${detail.id}`, {
+        value_numeric: edit.value_numeric === '' ? null : parseFloat(edit.value_numeric),
+        unit: edit.unit || null,
+        data_source: edit.data_source || null,
+        notes: edit.notes || null,
+      });
+      toast.success('Saisie mise à jour');
+      setDetail(null);
+      await refreshAll();
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || t('dataEntry.saveError'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const params: Record<string, string> = { format: 'csv' };
+      if (pillarFilter !== 'all') params.pillar = pillarFilter;
+      if (verifFilter !== 'all') params.verification_status = verifFilter;
+      if (year) params.year = year;
+      const res = await api.get('/data-entry/export', { params, responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a'); a.href = url; a.download = 'saisies-esg.csv'; a.click();
+      URL.revokeObjectURL(url);
     } catch {
-      toast.error(t('dataEntry.deleteError'));
+      toast.error('Export impossible pour le moment.');
     }
   };
 
@@ -208,231 +320,300 @@ export default function DataEntryForm() {
     setStep(1);
   };
 
-  const stats = {
-    total: entries.length,
-    env:   entries.filter(e => e.pillar === 'environmental').length,
-    social: entries.filter(e => e.pillar === 'social').length,
-    gov:   entries.filter(e => e.pillar === 'governance').length,
-    thisYear: entries.filter(e => e.period_start?.startsWith(String(new Date().getFullYear()))).length,
-  };
-
   if (loading) {
     return <div className="flex items-center justify-center h-96"><Spinner size="lg" /></div>;
   }
 
-  const STAT_CARDS = [
-    { label: t('dataEntry.totalEntries'), value: stats.total,  topColor: '#6366f1', iconBg: '#eef2ff', iconColor: '#4f46e5', icon: Database },
-    { label: t('dashboard.environmental'), value: stats.env,   topColor: '#22c55e', iconBg: '#dcfce7', iconColor: '#16a34a', icon: Leaf },
-    { label: t('dashboard.social'),        value: stats.social, topColor: '#3b82f6', iconBg: '#dbeafe', iconColor: '#2563eb', icon: Users },
-    { label: t('dashboard.governance'),    value: stats.gov,   topColor: '#8b5cf6', iconBg: '#ede9fe', iconColor: '#7c3aed', icon: Scale },
-  ];
-
-  const visibleEntries = filterEntries(entries, { search, pillar: pillarFilter, verif: verifFilter });
-  const pillarCounts = countByPillar(entries);
-  const filtersActive = search.trim() !== '' || pillarFilter !== 'all' || verifFilter !== 'all';
-  const handleExportCsv = () => {
-    const blob = new Blob([entriesToCsv(visibleEntries)], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'saisies-esg.csv'; a.click();
-    URL.revokeObjectURL(url);
-  };
+  const grandTotal = stats?.total ?? 0;
+  const pending = Math.max(grandTotal - (stats?.by_verification_status?.verified ?? 0), 0);
+  const years = Object.keys(stats?.by_period ?? {}).sort().reverse();
+  const pages = totalPages(total, pageSize);
+  const filtersActive = search.trim() !== '' || pillarFilter !== 'all' || verifFilter !== 'all' || year !== '';
+  const resetFilters = () => { setSearchInput(''); setSearch(''); setPillarFilter('all'); setVerifFilter('all'); setYear(''); setPage(1); };
+  const selectable = entries.filter(e => e.verification_status !== 'verified');
+  const allSelected = selectable.length > 0 && selectable.every(e => selected.has(e.id));
+  const toggleAll = () => setSelected(allSelected ? new Set() : new Set(selectable.map(e => e.id)));
+  const toggleOne = (id: string) => setSelected(s => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const suspicious = entries.filter(looksLikeYear).length;
+  const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const to = Math.min(page * pageSize, total);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
 
-      {/* ─── Hero ──────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl shadow-xl" style={{ background: 'linear-gradient(135deg, #059669 0%, #0d9488 50%, #0891b2 100%)' }}>
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 85% 10%, rgba(255,255,255,0.12) 0%, transparent 55%)' }} />
-        <div className="relative px-8 py-8 flex items-start justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.2)' }}>
-                <Database className="h-6 w-6 text-white" />
-              </div>
-              <h1 className="text-3xl font-bold text-white">{t('dataEntry.title')}</h1>
-            </div>
-            <p className="text-white/75 text-sm ml-1 mb-5">{t('dataEntry.subtitle')}</p>
-            <div className="flex items-center gap-3 flex-wrap">
-              {[
-                { icon: Database, label: `${stats.total} entrées` },
-                { icon: Calendar, label: `${stats.thisYear} cette année` },
-                { icon: Sparkles, label: `${Math.round((entries.filter(e=>e.verification_status==='verified').length / Math.max(stats.total,1))*100)}% vérifiées` },
-              ].map(({ icon: Icon, label }) => (
-                <div key={label} className="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-medium text-white" style={{ background: 'rgba(255,255,255,0.15)' }}>
-                  <Icon className="h-3.5 w-3.5" />
-                  {label}
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="flex flex-col gap-2 shrink-0">
-            <button
-              onClick={() => { setShowModal(true); setStep(1); }}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md transition-colors"
-              style={{ background: 'white', color: '#059669' }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#f0fdf4')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'white')}
-            >
-              <Plus className="h-4 w-4" />
-              {t('dataEntry.newEntry')}
-            </button>
-            <button
-              onClick={loadEntries}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-colors"
-              style={{ background: 'rgba(255,255,255,0.15)' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.25)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.15)')}
-            >
-              <RefreshCw className="h-4 w-4" />
-              {t('dataEntry.refresh')}
-            </button>
-          </div>
+      {/* ─── En-tête ───────────────────────────────────────────────────── */}
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">{t('dataEntry.title')}</h1>
+          <p className="text-sm text-gray-500 mt-1">{t('dataEntry.subtitle')}</p>
         </div>
-      </div>
-
-      {/* ─── Stat Cards ────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {STAT_CARDS.map(card => {
-          const Icon = card.icon;
-          return (
-            <div key={card.label} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="h-1" style={{ backgroundColor: card.topColor }} />
-              <div className="p-5 flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">{card.label}</p>
-                  <p className="text-3xl font-bold text-gray-900">{card.value}</p>
-                </div>
-                <div className="p-3 rounded-xl" style={{ backgroundColor: card.iconBg }}>
-                  <Icon className="h-6 w-6" style={{ color: card.iconColor }} />
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* ─── Entries List ───────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">{t('dataEntry.entriesTitle')}</h2>
-          <button type="button" onClick={handleExportCsv} disabled={visibleEntries.length === 0}
-            className="flex items-center gap-2 px-4 py-2 text-sm border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors">
-            <Download className="h-4 w-4" />
-            {t('dataEntry.exportCsv')}
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={refreshAll} aria-label={t('dataEntry.refresh')} title={t('dataEntry.refresh')}
+            className="p-2.5 rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-gray-900 hover:bg-gray-50">
+            <RefreshCw className={`h-4 w-4 ${listLoading ? 'animate-spin' : ''}`} />
+          </button>
+          <Link to="/app/import-csv" className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+            <Upload className="h-4 w-4" aria-hidden="true" />Importer un CSV
+          </Link>
+          <button type="button" onClick={() => { setShowModal(true); setStep(1); }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-sm font-semibold text-white hover:bg-emerald-700 shadow-sm">
+            <Plus className="h-4 w-4" aria-hidden="true" />{t('dataEntry.newEntry')}
           </button>
         </div>
+      </header>
 
-        {entries.length > 0 && (
-          <div className="flex flex-wrap items-center gap-3 px-6 py-3 border-b border-gray-100 bg-gray-50/50">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" aria-hidden="true" />
-              <input type="search" value={search} onChange={e => setSearch(e.target.value)}
-                placeholder={t('dataEntry.filterSearch', 'Rechercher un indicateur…')} aria-label={t('dataEntry.filterSearch', 'Rechercher un indicateur…')}
-                className="w-64 pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
-            </div>
-            <div className="flex gap-1.5" role="group" aria-label={t('dataEntry.filterPillar', 'Filtrer par pilier')}>
-              {([['all', t('dataEntry.filterAll', 'Tous')], ['environmental', 'Environnemental'], ['social', 'Social'], ['governance', 'Gouvernance']] as [PillarFilter, string][]).map(([key, label]) => (
-                <button key={key} type="button" onClick={() => setPillarFilter(key)} aria-pressed={pillarFilter === key}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${pillarFilter === key ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-                  {label} <span className={pillarFilter === key ? 'text-white/80' : 'text-gray-400'}>{pillarCounts[key]}</span>
-                </button>
-              ))}
-            </div>
-            <select value={verifFilter} onChange={e => setVerifFilter(e.target.value as VerifFilter)} aria-label={t('dataEntry.filterStatus', 'Filtrer par statut')}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500">
-              <option value="all">{t('dataEntry.statusAll', 'Tous les statuts')}</option>
-              <option value="verified">{t('dataEntry.verified')}</option>
-              <option value="pending">{t('dataEntry.pending')}</option>
+      {/* ─── KPI (calculés sur toutes les saisies, pas sur la page affichée) ─── */}
+      <section aria-label="Indicateurs clés" className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <Kpi label={t('dataEntry.totalEntries')} value={grandTotal} color="#64748b" />
+        <Kpi label={t('dashboard.environmental')} value={stats?.by_pillar?.environmental ?? 0} color={PILLAR_CFG.environmental.strip} />
+        <Kpi label={t('dashboard.social')} value={stats?.by_pillar?.social ?? 0} color={PILLAR_CFG.social.strip} />
+        <Kpi label={t('dashboard.governance')} value={stats?.by_pillar?.governance ?? 0} color={PILLAR_CFG.governance.strip} />
+        <Kpi label="Vérifiées" value={`${verifiedRate(stats?.by_verification_status, grandTotal)} %`} hint={`${pending} à vérifier`} color="#10b981" />
+      </section>
+
+      {/* ─── Table ─────────────────────────────────────────────────────── */}
+      <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-gray-200">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" aria-hidden="true" />
+            <input type="search" value={searchInput} onChange={e => setSearchInput(e.target.value)}
+              placeholder={t('dataEntry.filterSearch', 'Rechercher un indicateur…')} aria-label={t('dataEntry.filterSearch', 'Rechercher un indicateur…')}
+              className="w-64 pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
+          </div>
+          <div className="flex gap-1.5" role="group" aria-label={t('dataEntry.filterPillar', 'Filtrer par pilier')}>
+            {([['all', t('dataEntry.filterAll', 'Tous'), grandTotal], ['environmental', 'Environnemental', stats?.by_pillar?.environmental], ['social', 'Social', stats?.by_pillar?.social], ['governance', 'Gouvernance', stats?.by_pillar?.governance]] as [PillarFilter, string, number | undefined][]).map(([key, label, count]) => (
+              <button key={key} type="button" onClick={() => { setPillarFilter(key); setPage(1); }} aria-pressed={pillarFilter === key}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${pillarFilter === key ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                {label} {count !== undefined && <span className={pillarFilter === key ? 'text-white/70' : 'text-gray-400'}>{count}</span>}
+              </button>
+            ))}
+          </div>
+          <select value={verifFilter} onChange={e => { setVerifFilter(e.target.value as VerifFilter); setPage(1); }} aria-label={t('dataEntry.filterStatus', 'Filtrer par statut')}
+            className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500">
+            <option value="all">{t('dataEntry.statusAll', 'Tous les statuts')}</option>
+            <option value="verified">{t('dataEntry.verified')}</option>
+            <option value="pending">{t('dataEntry.pending')}</option>
+          </select>
+          {years.length > 0 && (
+            <select value={year} onChange={e => { setYear(e.target.value); setPage(1); }} aria-label="Filtrer par année"
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500">
+              <option value="">Toutes les années</option>
+              {years.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
+          )}
+          <div className="ml-auto flex items-center gap-3">
             {filtersActive && (
-              <>
-                <span className="text-xs text-gray-500 ml-auto">{visibleEntries.length} / {entries.length}</span>
-                <button type="button" onClick={() => { setSearch(''); setPillarFilter('all'); setVerifFilter('all'); }} className="text-xs font-semibold text-emerald-700 hover:underline">
-                  {t('dataEntry.filterReset', 'Réinitialiser')}
-                </button>
-              </>
+              <button type="button" onClick={resetFilters} className="text-xs font-semibold text-emerald-700 hover:underline">
+                {t('dataEntry.filterReset', 'Réinitialiser')}
+              </button>
             )}
+            <button type="button" onClick={handleExport} disabled={total === 0}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50">
+              <Download className="h-4 w-4" aria-hidden="true" />{t('dataEntry.exportCsv')}
+            </button>
+          </div>
+        </div>
+
+        {selected.size > 0 && (
+          <div className="flex items-center gap-3 px-4 py-2 bg-slate-900 text-white text-sm" role="status">
+            <span>{selected.size} sélectionnée{selected.size > 1 ? 's' : ''}</span>
+            <button type="button" onClick={() => setDeleteTargets(entries.filter(e => selected.has(e.id)))}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/10 hover:bg-white/20">
+              <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />Supprimer
+            </button>
+            <button type="button" onClick={() => setSelected(new Set())} className="ml-auto text-white/70 hover:text-white">Annuler</button>
           </div>
         )}
 
-        {entries.length === 0 ? (
+        {suspicious > 0 && (
+          <div className="flex items-start gap-2 px-4 py-2.5 bg-amber-50 border-b border-amber-100 text-xs text-amber-800">
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-px" aria-hidden="true" />
+            <p>{suspicious} valeur{suspicious > 1 ? 's' : ''} de cette page ressemble{suspicious > 1 ? 'nt' : ''} à une année (ex. 2022) : vérifiez l'association des colonnes de votre import CSV. Les données ne sont jamais modifiées automatiquement.</p>
+          </div>
+        )}
+
+        {grandTotal === 0 && total === 0 && !listLoading ? (
           <div className="text-center py-20">
-            <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-gray-50 flex items-center justify-center">
-              <Database className="h-10 w-10 text-gray-300" />
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-50 flex items-center justify-center">
+              <Database className="h-8 w-8 text-gray-300" />
             </div>
-            <p className="text-xl font-semibold text-gray-900 mb-2">{t('dataEntry.emptyTitle')}</p>
+            <p className="text-lg font-semibold text-gray-900 mb-1">{t('dataEntry.emptyTitle')}</p>
             <p className="text-gray-500 mb-6 max-w-xs mx-auto text-sm">{t('dataEntry.emptySubtitle')}</p>
-            <button
-              onClick={() => { setShowModal(true); setStep(1); }}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition-colors shadow-sm"
-            >
-              <Plus className="h-5 w-5" />
-              {t('dataEntry.newEntry')}
+            <button type="button" onClick={() => { setShowModal(true); setStep(1); }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 shadow-sm">
+              <Plus className="h-4 w-4" aria-hidden="true" />{t('dataEntry.newEntry')}
             </button>
           </div>
         ) : (
-          <div className="divide-y divide-gray-50">
-            {visibleEntries.length === 0 && (
-              <p className="px-6 py-12 text-center text-sm text-gray-500">{t('dataEntry.filterNoResult', 'Aucune saisie ne correspond aux filtres.')}</p>
-            )}
-            {visibleEntries.map(entry => {
-              const cfg = getPillarCfg(entry.pillar);
-              const Icon = cfg.icon;
-              const isVerified = entry.verification_status === 'verified';
-              const value = entry.value_numeric !== null && entry.value_numeric !== undefined
-                ? entry.value_numeric.toLocaleString('fr-FR')
-                : entry.value_text || '—';
-              return (
-                <div key={entry.id} className="group relative flex items-center gap-4 px-6 py-3 hover:bg-gray-50/60 transition-colors">
-                  {/* Left color strip */}
-                  <div className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full" style={{ backgroundColor: cfg.strip }} />
-                  {/* Pillar icon */}
-                  <div className="p-2 rounded-xl shrink-0" style={{ backgroundColor: cfg.softBg }}>
-                    <Icon className="h-5 w-5" style={{ color: cfg.color }} />
-                  </div>
-                  {/* Libellé + méta */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 truncate">{entry.metric_name}</h3>
-                    <p className="text-xs text-gray-500 mt-0.5 truncate">
-                      {entry.category}
-                      {entry.period_start && <span className="text-gray-400"> · {format(new Date(entry.period_start), 'dd MMM yyyy', { locale: fr })}</span>}
-                      {entry.data_source && <span className="text-gray-400"> · {entry.data_source}</span>}
-                    </p>
-                  </div>
-                  {/* Valeur : alignée à droite pour comparer d'un coup d'œil */}
-                  <div className="text-right shrink-0 w-40">
-                    <span className="text-lg font-bold text-gray-900 tabular-nums">{value}</span>
-                    {entry.unit && <span className="ml-1.5 text-sm text-gray-400">{entry.unit}</span>}
-                  </div>
-                  <span className={`hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium shrink-0 ${
-                    isVerified ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                  }`}>
-                    {isVerified ? <CheckCircle className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
-                    {isVerified ? t('dataEntry.verified') : t('dataEntry.pending')}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setDeleteTarget(entry)}
-                    aria-label={`${t('dataEntry.delete', 'Supprimer')} ${entry.metric_name}`}
-                    className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-1.5 rounded-lg text-gray-300 hover:bg-red-50 hover:text-red-500 transition-all shrink-0"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              );
-            })}
+          <div className={`overflow-x-auto transition-opacity ${listLoading ? 'opacity-60' : ''}`} aria-busy={listLoading}>
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th scope="col" className="w-10 pl-4 py-2.5">
+                    <input type="checkbox" checked={allSelected} onChange={toggleAll} disabled={selectable.length === 0} aria-label="Tout sélectionner (hors saisies vérifiées)"
+                      className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" />
+                  </th>
+                  <SortHeader label="Indicateur" k="metric_name" sortBy={sortBy} order={order} onSort={handleSort} />
+                  <SortHeader label="Pilier" k="pillar" sortBy={sortBy} order={order} onSort={handleSort} />
+                  <SortHeader label="Période" k="period_start" sortBy={sortBy} order={order} onSort={handleSort} />
+                  <SortHeader label="Valeur" k="value_numeric" sortBy={sortBy} order={order} onSort={handleSort} align="right" />
+                  <th scope="col" className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Source</th>
+                  <SortHeader label="Statut" k="verification_status" sortBy={sortBy} order={order} onSort={handleSort} />
+                  <th scope="col" className="w-10" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {entries.length === 0 && (
+                  <tr><td colSpan={8} className="px-6 py-12 text-center text-sm text-gray-500">{t('dataEntry.filterNoResult', 'Aucune saisie ne correspond aux filtres.')}</td></tr>
+                )}
+                {entries.map(entry => {
+                  const { title, code } = displayName(entry);
+                  const verified = entry.verification_status === 'verified';
+                  const yearLike = looksLikeYear(entry);
+                  return (
+                    <tr key={entry.id} className="group hover:bg-gray-50/70 cursor-pointer" onClick={() => openDetail(entry)}>
+                      <td className="pl-4 py-2.5" onClick={ev => ev.stopPropagation()}>
+                        <input type="checkbox" checked={selected.has(entry.id)} onChange={() => toggleOne(entry.id)} disabled={verified}
+                          aria-label={`Sélectionner ${title}`} title={verified ? 'Saisie vérifiée : verrouillée' : undefined}
+                          className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 disabled:opacity-30" />
+                      </td>
+                      <td className="px-3 py-2.5 max-w-xs">
+                        <button type="button" onClick={ev => { ev.stopPropagation(); openDetail(entry); }} className="text-left w-full">
+                          <span className="flex items-center gap-2">
+                            <span className="font-medium text-gray-900 truncate">{title}</span>
+                            {code && <code className="px-1.5 py-0.5 rounded bg-gray-100 text-[11px] text-gray-500">{code}</code>}
+                          </span>
+                          {entry.category && title !== entry.category.charAt(0).toUpperCase() + entry.category.slice(1) && (
+                            <span className="block text-xs text-gray-400 truncate">{entry.category}</span>
+                          )}
+                        </button>
+                      </td>
+                      <td className="px-3 py-2.5"><PillarBadge pillar={entry.pillar} /></td>
+                      <td className="px-3 py-2.5 text-gray-600 whitespace-nowrap">
+                        {entry.period_start ? format(new Date(entry.period_start), entry.period_type === 'annual' ? 'yyyy' : 'MMM yyyy', { locale: fr }) : '—'}
+                      </td>
+                      <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1.5 justify-end">
+                          {yearLike && <span title="Valeur proche d'une année : à vérifier" aria-label="Valeur proche d'une année : à vérifier"><AlertTriangle className="h-3.5 w-3.5 text-amber-500" /></span>}
+                          <span className="font-semibold text-gray-900 tabular-nums">{formatValue(entry)}</span>
+                          {entry.unit && <span className="text-xs text-gray-400">{entry.unit}</span>}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-xs text-gray-500 whitespace-nowrap">
+                        {SOURCE_LABEL[entry.collection_method ?? ''] ?? entry.collection_method ?? '—'}
+                        {entry.data_source && <span className="block text-gray-400 max-w-[10rem] truncate">{entry.data_source}</span>}
+                      </td>
+                      <td className="px-3 py-2.5"><StatusBadge status={entry.verification_status} /></td>
+                      <td className="pr-3" onClick={ev => ev.stopPropagation()}>
+                        {!verified && (
+                          <button type="button" onClick={() => setDeleteTargets([entry])} aria-label={`${t('dataEntry.delete', 'Supprimer')} ${title}`}
+                            className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-1.5 rounded-md text-gray-300 hover:bg-red-50 hover:text-red-500">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
-      </div>
 
-      {/* ─── Delete Confirm Modal ─────────────────────────────────────── */}
-      {deleteTarget && (
-        <ConfirmModal
-          label={deleteTarget.metric_name}
+        {/* Pagination */}
+        {total > 0 && (
+          <nav aria-label="Pagination" className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-gray-200 text-sm text-gray-600">
+            <span>{from}–{to} sur {total.toLocaleString('fr-FR')}{filtersActive && grandTotal > total ? ` (filtré sur ${grandTotal.toLocaleString('fr-FR')})` : ''}</span>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-xs">Lignes
+                <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }} className="px-2 py-1 border border-gray-200 rounded-md bg-white text-sm">
+                  {PAGE_SIZES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </label>
+              <button type="button" onClick={() => setPage(p => p - 1)} disabled={page <= 1} aria-label="Page précédente"
+                className="p-1.5 rounded-md border border-gray-200 disabled:opacity-40 hover:bg-gray-50"><ChevronLeft className="h-4 w-4" /></button>
+              <span className="tabular-nums">Page {page} / {pages}</span>
+              <button type="button" onClick={() => setPage(p => p + 1)} disabled={page >= pages} aria-label="Page suivante"
+                className="p-1.5 rounded-md border border-gray-200 disabled:opacity-40 hover:bg-gray-50"><ChevronRight className="h-4 w-4" /></button>
+            </div>
+          </nav>
+        )}
+      </section>
+
+      {/* ─── Confirmation de suppression ───────────────────────────────── */}
+      {deleteTargets.length > 0 && (
+        <ConfirmDialog
+          isOpen
+          title={deleteTargets.length > 1 ? `Supprimer ${deleteTargets.length} saisies ?` : 'Supprimer cette entrée ?'}
+          message={deleteTargets.length > 1
+            ? <>Ces {deleteTargets.length} saisies seront définitivement supprimées.</>
+            : <><span className="font-semibold text-gray-800">"{displayName(deleteTargets[0]).title}"</span> sera définitivement supprimée.</>}
+          confirmLabel="Supprimer"
           onConfirm={handleDelete}
-          onCancel={() => setDeleteTarget(null)}
+          onClose={() => setDeleteTargets([])}
         />
       )}
+
+      {/* ─── Détail / édition d'une saisie ─────────────────────────────── */}
+      {detail && (() => {
+        const locked = detail.verification_status === 'verified';
+        const { title, code } = displayName(detail);
+        const fieldCls = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 disabled:bg-gray-50 disabled:text-gray-500';
+        return (
+          <Modal isOpen onClose={() => setDetail(null)} title={title} subtitle={code ? `Code ${code}` : detail.category}
+            size="md"
+            footer={
+              <div className="flex w-full items-center gap-3">
+                {!locked && (
+                  <Button variant="secondary" icon={<Trash2 className="h-4 w-4" />} onClick={() => setDeleteTargets([detail])}>Supprimer</Button>
+                )}
+                <div className="flex-1" />
+                <Button variant="secondary" onClick={() => setDetail(null)}>{locked ? 'Fermer' : t('dataEntry.cancel')}</Button>
+                {!locked && <Button loading={saving} icon={<Save className="h-4 w-4" />} onClick={handleSaveDetail}>Enregistrer</Button>}
+              </div>
+            }>
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <PillarBadge pillar={detail.pillar} /><StatusBadge status={detail.verification_status} />
+                <span className="text-xs text-gray-500">
+                  {format(new Date(detail.period_start), 'dd MMM yyyy', { locale: fr })} → {format(new Date(detail.period_end), 'dd MMM yyyy', { locale: fr })}
+                </span>
+              </div>
+              {locked && (
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-emerald-50 text-sm text-emerald-800">
+                  <Lock className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
+                  Cette saisie a été vérifiée : elle est verrouillée pour préserver la piste d'audit.
+                </div>
+              )}
+              {looksLikeYear(detail) && (
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 text-sm text-amber-800">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
+                  Cette valeur ressemble à une année : elle provient peut-être d'une colonne mal associée à l'import.
+                </div>
+              )}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2">
+                  <label htmlFor="de-value" className="block text-sm font-medium text-gray-700 mb-1">{t('dataEntry.valueLabel')}</label>
+                  <input id="de-value" type="number" step="any" value={edit.value_numeric} disabled={locked}
+                    onChange={e => setEdit({ ...edit, value_numeric: e.target.value })} className={fieldCls} />
+                </div>
+                <div>
+                  <label htmlFor="de-unit" className="block text-sm font-medium text-gray-700 mb-1">Unité</label>
+                  <input id="de-unit" type="text" value={edit.unit} disabled={locked} onChange={e => setEdit({ ...edit, unit: e.target.value })} className={fieldCls} />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="de-source" className="block text-sm font-medium text-gray-700 mb-1">{t('dataEntry.dataSource')}</label>
+                <input id="de-source" type="text" value={edit.data_source} disabled={locked} onChange={e => setEdit({ ...edit, data_source: e.target.value })} className={fieldCls} />
+              </div>
+              <div>
+                <label htmlFor="de-notes" className="block text-sm font-medium text-gray-700 mb-1">{t('dataEntry.notes')}</label>
+                <textarea id="de-notes" rows={3} value={edit.notes} disabled={locked} onChange={e => setEdit({ ...edit, notes: e.target.value })} className={`${fieldCls} resize-none`} />
+              </div>
+            </div>
+          </Modal>
+        );
+      })()}
 
       {/* ─── Add Entry Modal ─────────────────────────────────────────── */}
       {/* ─── Assistant d'ajout (3 étapes) ──────────────────────────── */}
