@@ -1,5 +1,6 @@
 import { Button, ConfirmDialog, Modal } from '@/components/common';
 import { useState, useEffect } from 'react';
+import { countByPillar, entriesToCsv, filterEntries, type PillarFilter, type VerifFilter } from './dataEntryHelpers';
 import { useTranslation } from 'react-i18next';
 import {
   Database,
@@ -19,6 +20,7 @@ import {
   ChevronLeft,
   RefreshCw,
   Sparkles,
+  Search,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Spinner from '@/components/common/Spinner';
@@ -94,6 +96,9 @@ export default function DataEntryForm() {
   const [showModal, setShowModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<DataEntry | null>(null);
   const [step, setStep] = useState(1);
+  const [search, setSearch] = useState('');
+  const [pillarFilter, setPillarFilter] = useState<PillarFilter>('all');
+  const [verifFilter, setVerifFilter] = useState<VerifFilter>('all');
   const [selectedPillar, setSelectedPillar] = useState<string>('environmental');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedMetric, setSelectedMetric] = useState<MetricTemplate | null>(null);
@@ -222,6 +227,16 @@ export default function DataEntryForm() {
     { label: t('dashboard.governance'),    value: stats.gov,   topColor: '#8b5cf6', iconBg: '#ede9fe', iconColor: '#7c3aed', icon: Scale },
   ];
 
+  const visibleEntries = filterEntries(entries, { search, pillar: pillarFilter, verif: verifFilter });
+  const pillarCounts = countByPillar(entries);
+  const filtersActive = search.trim() !== '' || pillarFilter !== 'all' || verifFilter !== 'all';
+  const handleExportCsv = () => {
+    const blob = new Blob([entriesToCsv(visibleEntries)], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'saisies-esg.csv'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
 
@@ -300,11 +315,45 @@ export default function DataEntryForm() {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-900">{t('dataEntry.entriesTitle')}</h2>
-          <button className="flex items-center gap-2 px-4 py-2 text-sm border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">
+          <button type="button" onClick={handleExportCsv} disabled={visibleEntries.length === 0}
+            className="flex items-center gap-2 px-4 py-2 text-sm border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors">
             <Download className="h-4 w-4" />
             {t('dataEntry.exportCsv')}
           </button>
         </div>
+
+        {entries.length > 0 && (
+          <div className="flex flex-wrap items-center gap-3 px-6 py-3 border-b border-gray-100 bg-gray-50/50">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" aria-hidden="true" />
+              <input type="search" value={search} onChange={e => setSearch(e.target.value)}
+                placeholder={t('dataEntry.filterSearch', 'Rechercher un indicateur…')} aria-label={t('dataEntry.filterSearch', 'Rechercher un indicateur…')}
+                className="w-64 pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
+            </div>
+            <div className="flex gap-1.5" role="group" aria-label={t('dataEntry.filterPillar', 'Filtrer par pilier')}>
+              {([['all', t('dataEntry.filterAll', 'Tous')], ['environmental', 'Environnemental'], ['social', 'Social'], ['governance', 'Gouvernance']] as [PillarFilter, string][]).map(([key, label]) => (
+                <button key={key} type="button" onClick={() => setPillarFilter(key)} aria-pressed={pillarFilter === key}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${pillarFilter === key ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                  {label} <span className={pillarFilter === key ? 'text-white/80' : 'text-gray-400'}>{pillarCounts[key]}</span>
+                </button>
+              ))}
+            </div>
+            <select value={verifFilter} onChange={e => setVerifFilter(e.target.value as VerifFilter)} aria-label={t('dataEntry.filterStatus', 'Filtrer par statut')}
+              className="px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500">
+              <option value="all">{t('dataEntry.statusAll', 'Tous les statuts')}</option>
+              <option value="verified">{t('dataEntry.verified')}</option>
+              <option value="pending">{t('dataEntry.pending')}</option>
+            </select>
+            {filtersActive && (
+              <>
+                <span className="text-xs text-gray-500 ml-auto">{visibleEntries.length} / {entries.length}</span>
+                <button type="button" onClick={() => { setSearch(''); setPillarFilter('all'); setVerifFilter('all'); }} className="text-xs font-semibold text-emerald-700 hover:underline">
+                  {t('dataEntry.filterReset', 'Réinitialiser')}
+                </button>
+              </>
+            )}
+          </div>
+        )}
 
         {entries.length === 0 ? (
           <div className="text-center py-20">
@@ -323,64 +372,52 @@ export default function DataEntryForm() {
           </div>
         ) : (
           <div className="divide-y divide-gray-50">
-            {entries.map(entry => {
+            {visibleEntries.length === 0 && (
+              <p className="px-6 py-12 text-center text-sm text-gray-500">{t('dataEntry.filterNoResult', 'Aucune saisie ne correspond aux filtres.')}</p>
+            )}
+            {visibleEntries.map(entry => {
               const cfg = getPillarCfg(entry.pillar);
               const Icon = cfg.icon;
               const isVerified = entry.verification_status === 'verified';
+              const value = entry.value_numeric !== null && entry.value_numeric !== undefined
+                ? entry.value_numeric.toLocaleString('fr-FR')
+                : entry.value_text || '—';
               return (
-                <div key={entry.id} className="group relative flex items-start gap-4 px-6 py-4 hover:bg-gray-50/60 transition-colors">
+                <div key={entry.id} className="group relative flex items-center gap-4 px-6 py-3 hover:bg-gray-50/60 transition-colors">
                   {/* Left color strip */}
                   <div className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full" style={{ backgroundColor: cfg.strip }} />
                   {/* Pillar icon */}
-                  <div className="p-2.5 rounded-xl shrink-0 mt-0.5" style={{ backgroundColor: cfg.softBg }}>
+                  <div className="p-2 rounded-xl shrink-0" style={{ backgroundColor: cfg.softBg }}>
                     <Icon className="h-5 w-5" style={{ color: cfg.color }} />
                   </div>
-                  {/* Content */}
+                  {/* Libellé + méta */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h3 className="font-semibold text-gray-900 truncate">{entry.metric_name}</h3>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {entry.category}
-                          {entry.period_start && (
-                            <span className="ml-2 text-gray-400">
-                              · {format(new Date(entry.period_start), 'dd MMM yyyy', { locale: fr })}
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
-                          isVerified ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                        }`}>
-                          {isVerified ? <CheckCircle className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
-                          {isVerified ? t('dataEntry.verified') : t('dataEntry.pending')}
-                        </span>
-                        <button
-                          onClick={() => setDeleteTarget(entry)}
-                          className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-gray-300 hover:bg-red-50 hover:text-red-500 transition-all"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-6 mt-1.5">
-                      <div>
-                        <span className="text-lg font-bold text-gray-900">
-                          {entry.value_numeric !== null && entry.value_numeric !== undefined
-                            ? entry.value_numeric.toLocaleString('fr-FR')
-                            : entry.value_text || '—'}
-                        </span>
-                        {entry.unit && <span className="ml-1.5 text-sm text-gray-400">{entry.unit}</span>}
-                      </div>
-                      {entry.data_source && (
-                        <span className="text-xs text-gray-400 flex items-center gap-1">
-                          <FileText className="h-3 w-3" />
-                          {entry.data_source}
-                        </span>
-                      )}
-                    </div>
+                    <h3 className="font-semibold text-gray-900 truncate">{entry.metric_name}</h3>
+                    <p className="text-xs text-gray-500 mt-0.5 truncate">
+                      {entry.category}
+                      {entry.period_start && <span className="text-gray-400"> · {format(new Date(entry.period_start), 'dd MMM yyyy', { locale: fr })}</span>}
+                      {entry.data_source && <span className="text-gray-400"> · {entry.data_source}</span>}
+                    </p>
                   </div>
+                  {/* Valeur : alignée à droite pour comparer d'un coup d'œil */}
+                  <div className="text-right shrink-0 w-40">
+                    <span className="text-lg font-bold text-gray-900 tabular-nums">{value}</span>
+                    {entry.unit && <span className="ml-1.5 text-sm text-gray-400">{entry.unit}</span>}
+                  </div>
+                  <span className={`hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium shrink-0 ${
+                    isVerified ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                  }`}>
+                    {isVerified ? <CheckCircle className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
+                    {isVerified ? t('dataEntry.verified') : t('dataEntry.pending')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setDeleteTarget(entry)}
+                    aria-label={`${t('dataEntry.delete', 'Supprimer')} ${entry.metric_name}`}
+                    className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-1.5 rounded-lg text-gray-300 hover:bg-red-50 hover:text-red-500 transition-all shrink-0"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
               );
             })}
