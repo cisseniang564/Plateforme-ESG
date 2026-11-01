@@ -38,6 +38,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models.data_entry import DataEntry
+from app.services import secret_vault
 
 logger = logging.getLogger(__name__)
 
@@ -58,15 +59,24 @@ def _creds_key(tenant_id: UUID) -> str:
     return f"connectors:creds:{tenant_id}"
 
 
+def _load_all(r, tenant_id: UUID) -> Dict[str, Dict[str, str]]:
+    """Lit et déchiffre tous les identifiants du tenant (les anciennes valeurs en clair restent lisibles)."""
+    raw = r.get(_creds_key(tenant_id))
+    return json.loads(secret_vault.decrypt(raw)) if raw else {}
+
+
+def _save_all(r, tenant_id: UUID, all_creds: Dict[str, Dict[str, str]]) -> None:
+    """Enregistre les identifiants chiffrés. Toute écriture rechiffre aussi les anciennes valeurs en clair."""
+    r.setex(_creds_key(tenant_id), 365 * 24 * 3600, secret_vault.encrypt(json.dumps(all_creds)))
+
+
 def get_credentials(tenant_id: UUID, connector_id: str) -> Dict[str, str]:
     """Retourne les identifiants stockés par le tenant pour ce connecteur (ou {})."""
     r = _get_redis()
     if not r:
         return {}
     try:
-        raw = r.get(_creds_key(tenant_id))
-        all_creds: Dict[str, Dict[str, str]] = json.loads(raw) if raw else {}
-        return all_creds.get(connector_id, {})
+        return _load_all(r, tenant_id).get(connector_id, {})
     except Exception as e:
         logger.warning("ConnectorSync: credential read error — %s", e)
         return {}
@@ -77,26 +87,24 @@ def set_credentials(tenant_id: UUID, connector_id: str, creds: Dict[str, str]) -
     r = _get_redis()
     if not r:
         raise RuntimeError("Service temporairement indisponible (Redis)")
-    raw = r.get(_creds_key(tenant_id))
-    all_creds: Dict[str, Dict[str, str]] = json.loads(raw) if raw else {}
+    all_creds = _load_all(r, tenant_id)
     # On ne stocke que des valeurs non vides
     cleaned = {k: v for k, v in creds.items() if v}
     if cleaned:
         all_creds[connector_id] = cleaned
     else:
         all_creds.pop(connector_id, None)
-    r.setex(_creds_key(tenant_id), 365 * 24 * 3600, json.dumps(all_creds))
+    _save_all(r, tenant_id, all_creds)
 
 
 def delete_credentials(tenant_id: UUID, connector_id: str) -> None:
     r = _get_redis()
     if not r:
         raise RuntimeError("Service temporairement indisponible (Redis)")
-    raw = r.get(_creds_key(tenant_id))
-    all_creds: Dict[str, Dict[str, str]] = json.loads(raw) if raw else {}
+    all_creds = _load_all(r, tenant_id)
     if connector_id in all_creds:
         del all_creds[connector_id]
-        r.setex(_creds_key(tenant_id), 365 * 24 * 3600, json.dumps(all_creds))
+        _save_all(r, tenant_id, all_creds)
 
 
 # ─── Clés API "plateforme" (fallback .env, partagées par défaut) ────────────

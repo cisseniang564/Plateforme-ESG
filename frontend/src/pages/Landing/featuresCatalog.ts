@@ -25,7 +25,7 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
     title: 'Collecter et fiabiliser',
     items: [
       { id: 'connectors', icon: PlugZap, title: 'Collecte et connecteurs', module: 'connectors',
-        desc: 'Saisie guidée, imports CSV et connecteurs : vos données ESG réunies au même endroit.' },
+        desc: 'Saisie guidée, imports FEC et CSV, exports RH, avec un journal de chaque synchronisation.' },
       { id: 'dataquality', icon: DatabaseZap, title: 'Qualité des données', module: 'dataquality',
         desc: 'Complétude par pilier, anomalies et données manquantes repérées avant le reporting.' },
       { id: 'audit', icon: History, title: 'Piste d’audit et preuves', to: '/features/audit-trail',

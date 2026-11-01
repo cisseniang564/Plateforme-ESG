@@ -7,18 +7,18 @@ POST /api/v1/connectors/qonto/sync
   returns: { synced: int, total_spend: float, year: int }
 """
 import logging
-import random
-from datetime import date
+import time
 from typing import Dict, List, Optional
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_db, get_current_user
-from app.models.data_entry import DataEntry
+from app.services import accounting_sync
+from app.services.accounting_sync import ConnectorFetchError
+from app.services import connector_log
 from app.models.user import User
 
 logger = logging.getLogger(__name__)
@@ -66,15 +66,6 @@ SCOPE3_RULES: List[tuple] = [
     ),
 ]
 
-_MOCK_AMOUNTS: Dict[str, float] = {
-    "scope3_cat6_travel": 22_400.0,
-    "scope3_cat1_it": 38_600.0,
-    "scope3_cat1_office": 7_800.0,
-    "scope3_cat3_energy": 19_500.0,
-    "scope3_cat6_meals": 11_200.0,
-}
-
-
 def _classify_transaction(label: str, amount: float) -> Optional[tuple]:
     """Return the first matching Scope 3 rule for a transaction label."""
     label_lower = label.lower()
@@ -84,47 +75,10 @@ def _classify_transaction(label: str, amount: float) -> Optional[tuple]:
     return None
 
 
-def _generate_mock_transactions(year: int) -> List[Dict]:
+async def _fetch_qonto_transactions(login: str, secret_key: str, year: int) -> List[Dict]:
     """
-    Produce realistic mock Qonto transaction data when the API is unavailable.
-    """
-    rng = random.Random(year + 1)
-    transactions = []
-    templates = [
-        ("SNCF — billet Paris-Bordeaux", "scope3_cat6_travel", 180),
-        ("Air France — vol client", "scope3_cat6_travel", 650),
-        ("Uber Business", "scope3_cat6_travel", 38),
-        ("AWS Europe — cloud infrastructure", "scope3_cat1_it", 3100),
-        ("GitHub Enterprise — licences", "scope3_cat1_it", 2200),
-        ("OVHcloud — hébergement serveurs", "scope3_cat1_it", 900),
-        ("Bureau Vallée — fournitures", "scope3_cat1_office", 280),
-        ("Amazon Business — consommables", "scope3_cat1_office", 450),
-        ("EDF Pro — électricité bureaux", "scope3_cat3_energy", 4200),
-        ("Engie Pro — gaz chauffage", "scope3_cat3_energy", 1900),
-        ("Restaurant Le Comptoir — déjeuner client", "scope3_cat6_meals", 95),
-        ("Traiteur Événement — réunion équipe", "scope3_cat6_meals", 340),
-    ]
-    for month in range(1, 13):
-        count = rng.randint(4, 8)
-        sample = rng.choices(templates, k=count)
-        for label, _category, base_amount in sample:
-            variance = rng.uniform(0.80, 1.20)
-            transactions.append({
-                "label": label,
-                "amount": -round(base_amount * variance, 2),  # Qonto debits are negative
-                "local_amount": round(base_amount * variance, 2),
-                "settled_at": f"{year}-{month:02d}-{rng.randint(1, 28):02d}T12:00:00.000Z",
-                "currency": "EUR",
-                "side": "debit",
-            })
-    return transactions
-
-
-async def _fetch_qonto_transactions(login: str, secret_key: str, year: int) -> tuple[List[Dict], bool]:
-    """
-    Try to fetch transactions from Qonto API.
-    Returns (transactions, is_real_data).
-    Falls back to mock data on any error.
+    Récupère les transactions depuis l'API Qonto. Ne renvoie JAMAIS de donnée inventée :
+    en cas de refus d'identifiants ou d'indisponibilité, lève ConnectorFetchError.
     """
     params = {
         "filters[settled_at_from]": f"{year}-01-01T00:00:00.000Z",
@@ -134,23 +88,20 @@ async def _fetch_qonto_transactions(login: str, secret_key: str, year: int) -> t
     }
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.get(
-                QONTO_API_URL,
-                headers={"Authorization": f"{login}:{secret_key}"},
-                params=params,
-            )
-        if resp.status_code in (401, 403):
-            logger.warning("Qonto API: authentication failed (status %d) — using mock data", resp.status_code)
-            return _generate_mock_transactions(year), False
-        resp.raise_for_status()
+            resp = await client.get(QONTO_API_URL, headers={"Authorization": f"{login}:{secret_key}"}, params=params)
+    except httpx.HTTPError as exc:
+        logger.warning("Qonto API unreachable: %s", exc)
+        raise ConnectorFetchError("unavailable", "Qonto est injoignable pour le moment. Réessayez dans quelques minutes.")
+    if resp.status_code in (401, 403):
+        raise ConnectorFetchError("auth", "Qonto a refusé les identifiants. Vérifiez le login et la clé secrète.")
+    if resp.status_code >= 400:
+        logger.warning("Qonto API error: status %d", resp.status_code)
+        raise ConnectorFetchError("unavailable", f"Qonto a répondu une erreur ({resp.status_code}).")
+    try:
         data = resp.json()
-        transactions = data.get("transactions", data.get("data", []))
-        if not transactions:
-            return _generate_mock_transactions(year), False
-        return transactions, True
-    except Exception as exc:
-        logger.warning("Qonto API unreachable: %s — falling back to mock data", exc)
-        return _generate_mock_transactions(year), False
+    except ValueError:
+        raise ConnectorFetchError("unavailable", "Réponse illisible de Qonto.")
+    return data.get("transactions", data.get("data", [])) if isinstance(data, dict) else []
 
 
 class QontoSyncRequest(BaseModel):
@@ -166,102 +117,40 @@ async def qonto_sync(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Fetch Qonto transactions and map them to ESG Scope 3 categories.
-    Falls back to realistic mock data when credentials are invalid or API is unreachable.
+    Récupère les transactions Qonto et les range dans les catégories Scope 3.
+    N'écrit que des données réellement reçues ; ne remplace jamais une saisie du client.
     """
     if body.year < 2000 or body.year > 2100:
         raise HTTPException(status_code=400, detail="Année invalide")
 
-    transactions, is_real = await _fetch_qonto_transactions(body.login, body.secret_key, body.year)
+    started = time.monotonic()
+    try:
+        transactions = await _fetch_qonto_transactions(body.login, body.secret_key, body.year)
+    except ConnectorFetchError as exc:
+        await connector_log.log_sync(db, current_user.tenant_id, "qonto", "error", 0, exc.message, int((time.monotonic() - started) * 1000))
+        await db.commit()
+        raise HTTPException(status_code=400 if exc.kind == "auth" else 502, detail=exc.message)
 
-    aggregated: Dict[str, Dict] = {}
-    for txn in transactions:
-        label = txn.get("label") or txn.get("reference") or txn.get("description") or ""
-        # Qonto debits are negative; we want absolute spend amounts
-        raw_amount = float(txn.get("local_amount") or abs(txn.get("amount") or 0.0))
-        if raw_amount <= 0:
-            continue
-        match = _classify_transaction(label, raw_amount)
-        if match is None:
-            continue
-        metric_name, category_label, pillar, category_code, amt = match
-        if metric_name not in aggregated:
-            aggregated[metric_name] = {
-                "amount": 0.0,
-                "label": category_label,
-                "pillar": pillar,
-                "category_code": category_code,
-                "count": 0,
-            }
-        aggregated[metric_name]["amount"] += amt
-        aggregated[metric_name]["count"] += 1
-
-    # Fallback: no transactions matched — use baseline mock totals
-    if not aggregated:
-        for metric_name, amount in _MOCK_AMOUNTS.items():
-            rule = next((r for r in SCOPE3_RULES if r[1] == metric_name), None)
-            if rule is None:
-                continue
-            category_label = rule[2]
-            pillar = rule[3]
-            category_code = rule[4]
-            aggregated[metric_name] = {
-                "amount": amount,
-                "label": category_label,
-                "pillar": pillar,
-                "category_code": category_code,
-                "count": 1,
-            }
-
-    period_start = date(body.year, 1, 1)
-    period_end = date(body.year, 12, 31)
-    data_source = "api_qonto" if is_real else "mock_qonto"
-
-    synced = 0
-    total_spend = 0.0
-
-    for metric_name, info in aggregated.items():
-        amount = round(info["amount"], 2)
-        total_spend += amount
-
-        existing_result = await db.execute(
-            select(DataEntry).where(
-                and_(
-                    DataEntry.tenant_id == current_user.tenant_id,
-                    DataEntry.metric_name == metric_name,
-                    DataEntry.period_start == period_start,
-                )
-            )
-        )
-        existing = existing_result.scalar_one_or_none()
-
-        if existing:
-            existing.value_numeric = amount
-            existing.unit = "EUR"
-            existing.data_source = data_source
-            existing.notes = info["label"]
-        else:
-            entry = DataEntry(
-                tenant_id=current_user.tenant_id,
-                pillar=info["pillar"],
-                category=info["category_code"],
-                metric_name=metric_name,
-                value_numeric=amount,
-                unit="EUR",
-                period_start=period_start,
-                period_end=period_end,
-                data_source=data_source,
-                notes=info["label"],
-                created_by=current_user.id,
-            )
-            db.add(entry)
-        synced += 1
-
+    # Les débits Qonto sont négatifs : on additionne les montants absolus
+    aggregated = accounting_sync.aggregate(
+        transactions, SCOPE3_RULES,
+        label_of=lambda t: t.get("label") or t.get("reference") or t.get("description") or "",
+        amount_of=lambda t: abs(float(t.get("local_amount") or t.get("amount") or 0.0)),
+    )
+    report = await accounting_sync.write_entries(db, current_user.tenant_id, current_user.id, aggregated, body.year, "api_qonto")
+    msg = None if aggregated else "Aucune ligne rattachable à une catégorie Scope 3."
+    if report.conflicts:
+        msg = f"{len(report.conflicts)} catégorie(s) ignorée(s) : une saisie existe déjà."
+    await connector_log.log_sync(db, current_user.tenant_id, "qonto", "ok" if report.written else "no_data", report.written, msg, int((time.monotonic() - started) * 1000))
     await db.commit()
 
     return {
-        "synced": synced,
-        "total_spend": round(total_spend, 2),
+        "synced": report.written,
+        "total_spend": round(sum(i["amount"] for m, i in aggregated.items() if m not in report.conflicts), 2),
+        "categories": {m: round(i["amount"], 2) for m, i in aggregated.items() if m not in report.conflicts},
+        "conflicts": report.conflicts,
+        "transactions_read": len(transactions),
         "year": body.year,
-        "source": "api" if is_real else "mock",
+        "source": "api",
+        "message": None if aggregated else "Aucune transaction n'a pu être rattachée à une catégorie Scope 3 : rien n'a été enregistré.",
     }

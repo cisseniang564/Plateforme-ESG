@@ -6,6 +6,7 @@ import os
 import re
 import json
 import logging
+import time
 import httpx
 from pathlib import Path
 from fastapi import APIRouter, HTTPException, Depends
@@ -17,6 +18,7 @@ from app.dependencies import get_current_user
 from app.db.session import get_db
 from app.models.user import User
 from app.config import settings
+from app.services import connector_log
 
 logger = logging.getLogger(__name__)
 
@@ -240,10 +242,10 @@ async def get_connector_catalog(
     for item in CONNECTOR_CATALOG:
         merged = dict(item)
         # "live" = ce connecteur dispose d'un adaptateur de synchronisation réel
-        # (cf. connector_sync_service.ADAPTERS) ou d'une intégration historique
-        # (Schneider). Ajouter un connecteur à ADAPTERS le fait basculer en "live"
-        # automatiquement, sans aucune autre modification de l'API ou du frontend.
-        merged["backendStatus"] = "live" if (item["id"] in connector_sync_service.ADAPTERS or item["id"] == "schneider") else "demo"
+        # (cf. connector_sync_service.ADAPTERS). Ajouter un connecteur à ADAPTERS le fait
+        # basculer en "live" automatiquement. Schneider reste "demo" : ses sites sont
+        # fictifs tant qu'aucun compte EcoStruxure n'est relié.
+        merged["backendStatus"] = "live" if item["id"] in connector_sync_service.ADAPTERS else "demo"
         merged["credentialsConfigured"] = bool(connector_sync_service.get_credentials(current_user.tenant_id, item["id"]).get("api_key"))
         merged["platformKeyAvailable"] = connector_sync_service.has_platform_key(item["id"])
         if item["id"] in tenant_overrides:
@@ -251,6 +253,15 @@ async def get_connector_catalog(
         result.append(merged)
 
     return {"connectors": result, "count": len(result)}
+
+
+@router.get("/sync-log")
+async def get_sync_log(
+    days: int = 30, limit: int = 100,
+    current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db),
+):
+    """Journal réel des synchronisations de ce client (aucune donnée de démonstration)."""
+    return {"items": await connector_log.recent(db, current_user.tenant_id, days, limit)}
 
 
 @router.patch("/{connector_id}/status")
@@ -299,42 +310,26 @@ async def trigger_connector_sync(
     - Connecteurs avec adaptateur réel (cf. connector_sync_service.ADAPTERS,
       ex: Climatiq) : récupère les données, les normalise et les écrit dans
       `data_entries` — alimentant immédiatement le calcul du score ESG.
-    - Schneider : appel temps réel historique (legacy, non encore migré vers
-      data_entries).
     - Autres connecteurs : simulation (aucune écriture), en attendant que
       l'entreprise fournisse de vrais identifiants API — à ce moment-là, il
       suffira d'enregistrer un nouvel adaptateur dans ADAPTERS, sans toucher
       à cet endpoint.
     """
-    from datetime import datetime
     from app.services import connector_sync_service
 
     catalog_ids = {c["id"] for c in CONNECTOR_CATALOG}
     if connector_id not in catalog_ids:
         raise HTTPException(status_code=404, detail=f"Connecteur inconnu: {connector_id}")
 
-    # Pour Schneider, on appelle le connecteur temps réel historique
-    if connector_id == "schneider":
-        last_sync = datetime.utcnow().strftime("%d/%m/%Y %H:%M")
-        try:
-            from app.api.v1.endpoints.schneider import get_schneider_emissions
-            data = await get_schneider_emissions()
-            records = data.get("summary", {}).get("n_sites", 0) * 100
-        except Exception:
-            records = 0
-        return {
-            "ok": True,
-            "connector_id": connector_id,
-            "status": "ok",
-            "last_sync": last_sync,
-            "records_synced": records,
-            "message": f"Synchronisation déclenchée pour {connector_id}",
-            "details": {},
-        }
-
+    started = time.monotonic()
     result = await connector_sync_service.sync_connector(
         db=db, tenant_id=current_user.tenant_id, connector_id=connector_id,
     )
+    await connector_log.log_sync(
+        db, current_user.tenant_id, connector_id, result.status, result.records_written,
+        result.message, int((time.monotonic() - started) * 1000),
+    )
+    await db.commit()
 
     # Si la synchro a réellement écrit des données, on met à jour le statut
     # affiché dans le catalogue (Redis) pour ce tenant.
@@ -356,7 +351,8 @@ async def trigger_connector_sync(
                 logger.warning("Connectors sync: status update failed — %s", e)
 
     return {
-        "ok": result.status in ("ok", "simulated"),
+        # « ok » = des données réelles ont été écrites ; « simulated » n'est pas un succès
+        "ok": result.status == "ok",
         "connector_id": connector_id,
         "status": result.status,
         "last_sync": result.last_sync,
@@ -495,8 +491,8 @@ class CarbonInterfaceEstimateRequest(BaseModel):
 # ─── Climatiq ─────────────────────────────────────────────────────────────────
 
 @router.post("/test")
-async def test_connector(req: ConnectorTestRequest):
-    """Test la connexion à un connecteur externe."""
+async def test_connector(req: ConnectorTestRequest, current_user: User = Depends(get_current_user)):
+    """Test la connexion à un connecteur externe (réservé aux utilisateurs connectés : il utilise les clés de la plateforme)."""
     connector = req.connector_id.lower()
     api_key = req.api_key  # user-provided key (optional override)
 
@@ -663,6 +659,13 @@ async def _test_schneider():
     from app.api.v1.endpoints.schneider import get_schneider_emissions, _climatiq_key
     try:
         data = await get_schneider_emissions()
+        if data.get("is_demo"):
+            return {
+                "status": "demo",
+                "connector": "Schneider Electric",
+                "message": "Données de démonstration : aucun compte EcoStruxure n'est relié, aucune donnée réelle n'est lue.",
+                "details": {"is_demo": True},
+            }
         summary = data.get("summary", {})
         n = summary.get("n_sites", 0)
         co2e_t = summary.get("total_co2e_t", 0)

@@ -206,7 +206,7 @@ async def init_db() -> None:
         "framework_assessments", "indicator_data", "indicator_formulas",
         "indicators", "integrations", "materiality_issues",
         "report_history", "sector_weights", "sso_configs",
-        "suppliers", "webhooks", "report_analyses", "client_questionnaires", "materiality_validations",
+        "suppliers", "webhooks", "report_analyses", "client_questionnaires", "materiality_validations", "connector_sync_logs",
     ]
     # NULLIF: an unset/empty setting yields NULL (no rows) instead of a
     # "invalid input syntax for type uuid" error.
@@ -319,6 +319,23 @@ async def init_db() -> None:
         )
         """,
         "CREATE INDEX IF NOT EXISTS ix_materiality_validations_tenant_id ON materiality_validations (tenant_id)",
+
+        # ── Journal des synchronisations de connecteurs ──────────────────────
+        """
+        CREATE TABLE IF NOT EXISTS connector_sync_logs (
+            id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id    UUID        NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+            connector_id VARCHAR(60) NOT NULL,
+            status       VARCHAR(20) NOT NULL,
+            records      INTEGER     NOT NULL DEFAULT 0,
+            message      TEXT,
+            duration_ms  INTEGER,
+            created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_connector_sync_logs_tenant_created ON connector_sync_logs (tenant_id, created_at DESC)",
+        "CREATE INDEX IF NOT EXISTS ix_connector_sync_logs_connector_id ON connector_sync_logs (connector_id)",
     ]
 
     # ── RLS policy migrations (idempotent: DROP IF EXISTS then CREATE) ────────
