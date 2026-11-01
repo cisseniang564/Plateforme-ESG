@@ -104,6 +104,12 @@ class ESGScoringEngine:
         "s1_permanent_contracts": True,        # plus de CDI = stabilité de l'emploi
     }
 
+    # Indicateurs en valeur absolue : leur plage de référence est mise à l'échelle de l'effectif quand
+    # l'option « score adapté à la taille » est active. Convention : les plages ci-dessus valent pour
+    # une organisation de SIZE_REFERENCE_EMPLOYEES salariés ; pour 1 000 salariés elles sont multipliées par 10.
+    SIZE_SCALED_INDICATORS = {"ENV-001", "ENV-002", "ENV-003", "ENV-005"}
+    SIZE_REFERENCE_EMPLOYEES = 100
+
     # Métriques "contextuelles" (effectifs, embauches…) : pas de benchmark 0-100
     # pertinent → exclues du calcul du score (mais restent visibles dans les
     # statistiques de la page Import / Mes données).
@@ -139,6 +145,10 @@ class ESGScoringEngine:
         organization = org_result.scalar_one_or_none()
         if not organization:
             raise ValueError(f"Organization {organization_id} not found")
+
+        # Adaptation à la taille (optionnelle, désactivée par défaut)
+        self._size_adjustment = self._size_adjustment_for(organization)
+        self._size_factor = self._size_adjustment["factor"]
 
         # 2) Secteur
         sector_code = await self._determine_sector(organization)
@@ -274,8 +284,23 @@ class ESGScoringEngine:
             "benchmarks": benchmarks,
             "indicators_used": len(indicator_data),
             "trend": trend_analysis,
-            "provenance": self._build_provenance(pillar_details),
+            "provenance": {**self._build_provenance(pillar_details), "size_adjustment": self._size_adjustment},
         }
+
+    @classmethod
+    def _size_adjustment_for(cls, organization: Any) -> Dict[str, Any]:
+        """Facteur d'échelle de taille ; 1.0 (aucun effet) si l'option est désactivée ou l'effectif inconnu."""
+        enabled = bool(getattr(organization, "score_size_adjusted", False))
+        employees = getattr(organization, "employee_count", None)
+        if not enabled:
+            return {"applied": False, "reason": "disabled", "employees": employees, "factor": 1.0,
+                    "reference_employees": cls.SIZE_REFERENCE_EMPLOYEES}
+        if not employees or employees <= 0:
+            return {"applied": False, "reason": "missing_employee_count", "employees": employees, "factor": 1.0,
+                    "reference_employees": cls.SIZE_REFERENCE_EMPLOYEES}
+        return {"applied": True, "reason": None, "employees": int(employees),
+                "factor": round(int(employees) / cls.SIZE_REFERENCE_EMPLOYEES, 4),
+                "reference_employees": cls.SIZE_REFERENCE_EMPLOYEES}
 
     @staticmethod
     def _build_provenance(pillar_details: Dict[str, Any]) -> Dict[str, Any]:
@@ -315,6 +340,16 @@ class ESGScoringEngine:
             "rating_thresholds": [{"rating": r, "min_score": t} for r, t in cls.RATING_THRESHOLDS.items()],
             "default_sector_weights": cls._default_weights_all(),
             "indicators": indicators,
+            "size_adjustment": {
+                "scaled_indicators": sorted(cls.SIZE_SCALED_INDICATORS),
+                "reference_employees": cls.SIZE_REFERENCE_EMPLOYEES,
+                "description": (
+                    "Option par organisation, désactivée par défaut. Activée et avec un effectif renseigné, les plages de "
+                    "référence des indicateurs en valeur absolue (émissions, énergie, eau) sont multipliées par "
+                    f"effectif ÷ {cls.SIZE_REFERENCE_EMPLOYEES}. C'est une convention de proportionnalité, pas un standard : "
+                    "elle suppose que les valeurs croissent linéairement avec l'effectif."
+                ),
+            },
             "completeness_definition": (
                 "Points de données reçus ÷ (indicateurs renseignés × 12 mois). Elle mesure la régularité de saisie "
                 "des indicateurs que vous avez renseignés, PAS la couverture d'un référentiel (ESRS, GRI…)."
@@ -325,7 +360,7 @@ class ESGScoringEngine:
                 "Ce n'est pas un benchmark de marché. Le benchmark inter-comptes anonymisé est dans la page Benchmarking."
             ),
             "limitations": [
-                "Les plages de référence (minimum/maximum) sont des repères fixes, identiques pour toutes les entreprises : elles ne tiennent pas compte de la taille (effectif, chiffre d'affaires). Un indicateur en valeur absolue, comme les émissions en tCO₂e, favorise donc les petites structures.",
+                "Les plages de référence (minimum/maximum) sont des repères fixes, identiques pour toutes les entreprises : elles ne tiennent pas compte de la taille (effectif, chiffre d'affaires). Un indicateur en valeur absolue, comme les émissions en tCO₂e, favorise donc les petites structures, sauf si l'option « adapter le score à la taille » est activée pour l'organisation.",
                 "Un pilier sans aucun indicateur vaut 0 dans le score global ; il est signalé comme « non renseigné ».",
                 "Ces repères sont des conventions de scoring internes, pas des seuils réglementaires : ils ne remplacent ni les ESRS ni un avis d'auditeur.",
             ],
@@ -839,6 +874,9 @@ class ESGScoringEngine:
         """Normaliser une valeur sur 0-100."""
         benchmark = self.BENCHMARK_RANGES.get(indicator_code, {"min": 0, "max": 100})
         min_val, max_val = benchmark["min"], benchmark["max"]
+        if indicator_code in self.SIZE_SCALED_INDICATORS:
+            factor = getattr(self, "_size_factor", 1.0)
+            min_val, max_val = min_val * factor, max_val * factor
 
         if value < min_val:
             normalized = 100.0 if higher_is_better else 0.0

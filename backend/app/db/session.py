@@ -221,6 +221,9 @@ async def init_db() -> None:
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret VARCHAR(64)",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_backup_codes JSONB",
 
+        # ── Score adapté à la taille (désactivé par défaut) ───────────────────
+        "ALTER TABLE organizations ADD COLUMN IF NOT EXISTS score_size_adjusted BOOLEAN NOT NULL DEFAULT FALSE",
+
         # ── Score data window (6m/1y/3y/5y) persisted on each ESG score row ─
         "ALTER TABLE esg_scores ADD COLUMN IF NOT EXISTS period_months INTEGER DEFAULT 12",
 

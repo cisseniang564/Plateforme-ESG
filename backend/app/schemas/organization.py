@@ -38,6 +38,7 @@ class OrganizationResponse(BaseModel):
     employee_count: Optional[int] = None
     revenue_eur: Optional[Decimal] = None
     surface_m2: Optional[Decimal] = None
+    score_size_adjusted: Optional[bool] = None
 
     # Hierarchy / consolidation
     parent_org_id: Optional[UUID] = None
@@ -114,6 +115,7 @@ class OrganizationUpdateRequest(BaseModel):
     employee_count: Optional[int] = None
     revenue_eur: Optional[Decimal] = None
     surface_m2: Optional[Decimal] = None
+    score_size_adjusted: Optional[bool] = None
 
     parent_org_id: Optional[UUID] = None
     consolidation_method: Optional[Literal["full", "proportional", "equity", "none"]] = None
