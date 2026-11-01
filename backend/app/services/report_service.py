@@ -136,7 +136,28 @@ class ReportService:
         'sfdr':      {'name': 'Rapport SFDR',      'description': 'Produits financiers durables — données PAI & taxonomie UE'},
         'carbon':    {'name': 'Bilan Carbone ADEME', 'description': 'Émissions GES Scopes 1, 2, 3 selon méthode ADEME/GHG Protocol'},
         'dpef':      {'name': 'DPEF',              'description': 'Déclaration de performance extra-financière — Art. L.225-102-1'},
+        'vsme':      {'name': 'Rapport VSME',      'description': 'Standard volontaire pour les PME (module de base B1–B11) — réponse aux demandes de clients, banques et investisseurs'},
     }
+
+    # Structure du module de base du VSME (EFRAG) : code → (titre, ce que le module demande).
+    # B1 et B2 sont narratifs (base d'établissement, pratiques) : ils sont présentés, jamais inventés.
+    VSME_MODULES = {
+        'B3':  ('Énergie et émissions de gaz à effet de serre', "Consommation d'énergie et émissions de GES (scopes 1 et 2 ; scope 3 facultatif)."),
+        'B4':  ('Pollution de l\'air, de l\'eau et des sols', 'Rejets de polluants réglementés.'),
+        'B5':  ('Biodiversité', 'Sites proches de zones sensibles et surfaces occupées.'),
+        'B6':  ('Eau', "Prélèvements et consommation d'eau."),
+        'B7':  ('Utilisation des ressources, économie circulaire et déchets', 'Déchets produits, part valorisée.'),
+        'B8':  ('Effectif — caractéristiques générales', "Effectif, types de contrats, répartition par genre et par pays."),
+        'B9':  ('Effectif — santé et sécurité', "Accidents du travail, taux et décès liés au travail."),
+        'B10': ('Effectif — rémunération, négociation collective et formation', "Écart de rémunération, couverture conventionnelle, heures de formation."),
+        'B11': ('Condamnations et amendes pour corruption', 'Condamnations et amendes pour violation des lois anticorruption.'),
+    }
+    # Section ESRS (déjà attribuée à chaque saisie) → module VSME. S1 est réparti par mots-clés.
+    _VSME_FROM_ESRS = {'E1': 'B3', 'E2': 'B4', 'E4': 'B5', 'E3': 'B6', 'E5': 'B7', 'G1': 'B11'}
+    _VSME_S1_KEYWORDS = (
+        ('B9',  ('accident', 'sécurité', 'securite', 'santé', 'sante', 'décès', 'deces', 'absent')),
+        ('B10', ('rémunér', 'remuner', 'salaire', 'écart', 'ecart', 'pay gap', 'formation', 'convention', 'syndic')),
+    )
 
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -152,6 +173,9 @@ class ReportService:
     ) -> bytes:
         if report_type not in self.REPORT_TYPES:
             raise ValueError(f"Unknown report type: {report_type}")
+
+        if report_type == 'vsme' and format not in ('pdf', 'json'):
+            raise ValueError("Le rapport VSME est disponible en PDF (et en JSON) : Excel et Word ne suivent pas sa structure B1–B11.")
 
         _year = year or datetime.now().year
         data = await self._collect_data(tenant_id, organization_id, _year)
@@ -1146,6 +1170,10 @@ class ReportService:
         if report_type == 'dpef':
             return await self._generate_dpef_pdf(data, year)
 
+        # Dispatch VSME to dedicated generator
+        if report_type == 'vsme':
+            return self._generate_vsme_pdf(data, year)
+
         story = []
 
         # Cover page
@@ -1440,6 +1468,118 @@ class ReportService:
             topMargin=22*mm,
             bottomMargin=22*mm,
         )
+        doc.build(story, onFirstPage=first_page_cb, onLaterPages=later_pages_cb)
+        buffer.seek(0)
+        return buffer.read()
+
+    @classmethod
+    def _vsme_module_for(cls, esrs_code: str, metric_name: str) -> Optional[str]:
+        """Module VSME d'une saisie : correspondance ESRS directe, S1 réparti par mots-clés (B8 par défaut)."""
+        if esrs_code in cls._VSME_FROM_ESRS:
+            return cls._VSME_FROM_ESRS[esrs_code]
+        if esrs_code == 'S1':
+            text = (metric_name or '').lower()
+            for module, keywords in cls._VSME_S1_KEYWORDS:
+                if any(k in text for k in keywords):
+                    return module
+            return 'B8'
+        return None  # S2–S4, G (hors G1) : pas de module de base VSME
+
+    def _group_entries_by_vsme(self, by_section: Dict[str, list]) -> Dict[str, list]:
+        grouped: Dict[str, list] = {code: [] for code in self.VSME_MODULES}
+        for esrs_code, entries in (by_section or {}).items():
+            for e in entries:
+                module = self._vsme_module_for(esrs_code, e.get('metric_name', ''))
+                if module:
+                    grouped[module].append(e)
+        return grouped
+
+    def _generate_vsme_pdf(self, data: Dict[str, Any], year: int) -> bytes:
+        """Rapport VSME (module de base B1–B11) construit à partir des saisies existantes."""
+        buffer = io.BytesIO()
+        stats = data['stats']
+        org_name = data.get('org_name', 'Organisation')
+        grouped = self._group_entries_by_vsme(data.get('by_section', {}))
+        covered = sum(1 for v in grouped.values() if v)
+        total = len(self.VSME_MODULES)
+        body = ParagraphStyle('vsme_body', fontSize=9, textColor=C_NAVY, leading=13)
+        note = ParagraphStyle('vsme_note', fontSize=8, textColor=C_GRAY, leading=11)
+        story = []
+
+        story += self._make_cover('Rapport VSME — module de base', year, stats, org_name, data=data)
+        story.append(PageBreak())
+
+        # B1 — base d'établissement (narratif : ce que la plateforme sait, sans rien inventer)
+        story += self._section_header('B1 — Base d\'établissement du rapport', C_GREEN)
+        story.append(Paragraph(
+            f'<b>Organisation :</b> {org_name}<br/><b>Exercice :</b> {year}<br/>'
+            f'<b>Option retenue :</b> module de base du VSME (B1 à B11)<br/>'
+            f'<b>Périmètre de consolidation :</b> à préciser par l\'entreprise.', body))
+        story.append(Spacer(1, 4*mm))
+        story.append(Paragraph(
+            "Le VSME est le standard volontaire de reporting de durabilité pour les PME publié par l'EFRAG. "
+            "Ce document structure les données saisies dans ESGFlow selon ses modules.", note))
+        story.append(Spacer(1, 6*mm))
+
+        # Synthèse de couverture
+        story += self._section_header('Couverture des modules', C_NAVY, size=13)
+        rows = [['Module', 'Thème', 'Indicateurs', 'Statut']]
+        for code, (title, _desc) in self.VSME_MODULES.items():
+            n = len(grouped[code])
+            rows.append([code, Paragraph(title, ParagraphStyle('vt', fontSize=8, leading=10)), str(n), 'Renseigné' if n else 'À compléter'])
+        t = Table(rows, colWidths=[16*mm, 100*mm, 24*mm, 30*mm])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), C_NAVY), ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'), ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [C_WHITE, C_LGRAY]), ('GRID', (0, 0), (-1, -1), 0.25, C_MGRAY),
+            ('ALIGN', (2, 0), (3, -1), 'CENTER'), ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 4), ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ]))
+        story.append(t)
+        story.append(Spacer(1, 3*mm))
+        story.append(Paragraph(f'<b>{covered}/{total}</b> modules documentés. B2 (pratiques et politiques) est narratif et reste à rédiger par l\'entreprise.', body))
+        story.append(PageBreak())
+
+        # B3–B11
+        for code, (title, desc) in self.VSME_MODULES.items():
+            entries = grouped[code]
+            story += self._section_header(f'{code} — {title}', C_GREEN, size=13)
+            story.append(Paragraph(desc, note))
+            story.append(Spacer(1, 2*mm))
+            if not entries:
+                story.append(Paragraph('Aucune donnée saisie pour ce module. À compléter avant diffusion.', ParagraphStyle('vsme_todo', fontSize=9, textColor=C_AMBER, backColor=C_AMBER2, borderPadding=6)))
+            else:
+                rows = [['Indicateur', 'Valeur', 'Unité', 'Vérification']]
+                for e in entries[:40]:
+                    rows.append([
+                        Paragraph(str(e.get('metric_name', '—')), ParagraphStyle('vm', fontSize=8, leading=10)),
+                        str(e.get('value', '—')), str(e.get('unit', '') or ''), str(e.get('verification_status', 'pending')),
+                    ])
+                tb = Table(rows, colWidths=[78*mm, 30*mm, 24*mm, 38*mm])
+                tb.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), C_GREEN), ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'), ('FONTSIZE', (0, 0), (-1, -1), 8),
+                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [C_WHITE, C_LGRAY]), ('GRID', (0, 0), (-1, -1), 0.25, C_MGRAY),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), ('TOPPADDING', (0, 0), (-1, -1), 3), ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+                ]))
+                story.append(tb)
+                if len(entries) > 40:
+                    story.append(Paragraph(f'… et {len(entries) - 40} autre(s) indicateur(s), disponibles dans l\'export Excel.', note))
+            story.append(Spacer(1, 8*mm))
+
+        # Avertissement
+        story.append(PageBreak())
+        story += self._section_header('Méthodologie et limites', C_NAVY, size=13)
+        for line in (
+            "Ce rapport est établi à partir des données saisies ou importées dans ESGFlow ; les valeurs ne sont pas auditées sauf mention « vérifié ».",
+            "La répartition des indicateurs entre les modules B8, B9 et B10 repose sur le nom de l'indicateur ; vérifiez-la avant diffusion.",
+            "Ce document suit la structure du module de base du VSME. Il ne constitue pas une attestation de conformité.",
+        ):
+            story.append(Paragraph('• ' + line, body))
+            story.append(Spacer(1, 2*mm))
+
+        first_page_cb, later_pages_cb = _make_header_footer('Rapport VSME', year)
+        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=20*mm, leftMargin=20*mm, topMargin=22*mm, bottomMargin=22*mm)
         doc.build(story, onFirstPage=first_page_cb, onLaterPages=later_pages_cb)
         buffer.seek(0)
         return buffer.read()
