@@ -39,4 +39,38 @@ test.describe('Rapports', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Rapports générés' })).toBeVisible();
     await expect(page.getByText('VSME').first()).toBeVisible();
   });
+
+  test('un rapport peut être partagé par lien public puis téléchargé', async ({ request }) => {
+    const headers = { Authorization: `Bearer ${await apiToken(request)}` };
+    const gen = await request.post('/api/v1/reports/generate', {
+      headers, data: { report_type: 'vsme', period: 'annual', year: 2026, format: 'pdf' },
+    });
+    const historyId = gen.headers()['x-report-history-id'];
+    expect(historyId).toBeTruthy();
+
+    const share = await request.post(`/api/v1/reports/history/${historyId}/share`, { headers, data: { expires_in_hours: 24 } });
+    expect(share.status(), await share.text()).toBe(200);
+    const { public_path } = await share.json();
+
+    // Lien public : aucune authentification
+    const pub = await request.get(public_path);
+    expect(pub.status()).toBe(200);
+    expect(pub.headers()['content-type']).toContain('application/pdf');
+  });
+
+  test('un rapport planifié se crée, apparaît dans la liste et se supprime', async ({ request }) => {
+    const headers = { Authorization: `Bearer ${await apiToken(request)}` };
+    const created = await request.post('/api/v1/reports/scheduled', {
+      headers, data: { title: 'Mensuel VSME', report_type: 'vsme', frequency: 'monthly', format: 'pdf', recipients: ['direction@example.com'] },
+    });
+    expect(created.status()).toBe(201);
+    const { id, next_run } = await created.json();
+    expect(next_run).toBeTruthy();
+
+    const list = await (await request.get('/api/v1/reports/scheduled', { headers })).json();
+    expect(list.schedules.some((s: any) => s.id === id)).toBe(true);
+
+    const del = await request.delete(`/api/v1/reports/scheduled/${id}`, { headers });
+    expect(del.status()).toBe(204);
+  });
 });

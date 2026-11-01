@@ -97,7 +97,7 @@ export default function SectoralTemplates() {
           <div className="flex-1">
             <h1 className="text-2xl font-extrabold text-gray-900 mb-1">{t('tmpl.heroTitle','Templates sectoriels')}</h1>
             <p className="text-sm text-gray-600 max-w-xl">
-              {t('tmpl.heroDescA',"Pré-remplissez votre rapport ESG en 1 clic avec des données typiques de votre secteur. Toutes les valeurs sont ")}<strong>{t('tmpl.heroDescEmph','estimées et modifiables')}</strong>{t('tmpl.heroDescB'," — l'objectif est de vous donner une base de travail réaliste pour passer de 1% à ~50% de couverture CSRD immédiatement.")}
+              {t('tmpl.heroDescA',"Pré-remplissez votre rapport ESG en 1 clic avec des données typiques de votre secteur. Toutes les valeurs sont ")}<strong>{t('tmpl.heroDescEmph','estimées et modifiables')}</strong>{t('tmpl.heroDescB'," — l'objectif est de partir d'une base de travail réaliste plutôt que d'une page blanche. À remplacer par vos données réelles avant tout rapport.")}
             </p>
           </div>
           <div className="flex items-center gap-2">

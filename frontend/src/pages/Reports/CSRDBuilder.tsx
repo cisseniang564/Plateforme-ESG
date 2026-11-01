@@ -453,10 +453,10 @@ export default function CSRDBuilder() {
               <h2 className="text-base font-bold text-gray-900 mb-4">{t('csrd.s1.calendar', "Calendrier d'entrée en vigueur CSRD")}</h2>
               <div className="space-y-2">
                 {[
-                  { year: '2025', label: t('csrd.cal.2025', 'Grandes entreprises (>500 salariés)'), active: true,  badge: 'bg-green-100 text-green-700' },
-                  { year: '2026', label: t('csrd.cal.2026', 'Grandes entreprises (>250 salariés ou >40M€ CA)'),  active: false, badge: 'bg-blue-100 text-blue-700' },
-                  { year: '2027', label: t('csrd.cal.2027', 'PME cotées (avec allègements)'),        active: false, badge: 'bg-gray-100 text-gray-600' },
-                  { year: '2029', label: t('csrd.cal.2029', 'Entreprises pays tiers (>150M€ UE)'),   active: false, badge: 'bg-gray-100 text-gray-600' },
+                  { year: '2025', label: t('csrd.cal.2025', "Vague 1 : déjà soumises à la NFRD (exercice 2024, publié en 2025)"), active: true,  badge: 'bg-green-100 text-green-700' },
+                  { year: '2028', label: t('csrd.cal.2026', "Vague 2 : plus de 1 000 salariés ET plus de 450 M€ de CA (exercice 2027, publié en 2028)"),  active: false, badge: 'bg-blue-100 text-blue-700' },
+                  { year: '2029', label: t('csrd.cal.2029', "Groupes hors UE : plus de 450 M€ de CA dans l'UE (exercice 2028)"),   active: false, badge: 'bg-gray-100 text-gray-600' },
+                  { year: 'Hors champ', label: t('csrd.cal.2027', "PME cotées : sorties du champ obligatoire (VSME volontaire)"),        active: false, badge: 'bg-gray-100 text-gray-600' },
                 ].map(r => (
                   <div key={r.year} className={`flex items-center gap-3 p-3 rounded-xl ${r.active ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}`}>
                     <span className={`text-sm font-bold px-2.5 py-0.5 rounded-full ${r.badge}`}>{r.year}</span>

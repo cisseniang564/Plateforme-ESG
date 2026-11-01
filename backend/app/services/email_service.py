@@ -191,6 +191,20 @@ class EmailService:
             logger.warning("Email send failed (%s): %s", subject, exc)
             return False
 
+    # ── Rapport planifié ──────────────────────────────────────────────────────
+
+    @classmethod
+    def send_scheduled_report(cls, email: str, title: str, link: str, valid_days: int) -> bool:
+        body = f"""
+{_badge("Rapport planifié")}
+{_h1(f"Votre rapport « {title} » est prêt")}
+{_p(f"Le rapport a été généré automatiquement à partir de vos données ESG. Le lien ci-dessous reste valable <strong>{valid_days} jours</strong>.")}
+{_btn("Télécharger le rapport", link)}
+{_divider()}
+{_p("Vous recevez ce message car votre adresse figure parmi les destinataires d'un rapport planifié dans ESG Flow.", "#64748b", "13px")}
+"""
+        return cls._send(email, f"Votre rapport « {title} » est prêt", _base_html("Rapport planifié", "Votre rapport planifié est prêt", body, email))
+
     # ── Welcome ───────────────────────────────────────────────────────────────
 
     @classmethod

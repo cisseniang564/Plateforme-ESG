@@ -43,6 +43,7 @@ celery_app = Celery(
         "app.tasks.scoring_tasks",
         "app.tasks.billing_tasks",
         "app.tasks.notification_tasks",
+        "app.tasks.report_schedule_tasks",
     ],
 )
 
@@ -102,6 +103,12 @@ celery_app.conf.update(
             "task": "billing.downgrade_expired_trials",
             "schedule": crontab(hour=8, minute=30),
             "options": {"queue": "default"},
+        },
+        # Génère et envoie les rapports planifiés échus (toutes les heures, à la minute 5)
+        "hourly-scheduled-reports": {
+            "task": "reports.dispatch_scheduled",
+            "schedule": crontab(minute=5),
+            "options": {"queue": "reports"},
         },
         # Scan compliance deadlines daily at 07:00 UTC
         "daily-deadline-scan": {
