@@ -6453,7 +6453,9 @@
         "resources": "Resources",
         "closeMenu": "Close menu",
         "openMenu": "Open menu",
-        "contact": "Contact"
+        "contact": "Contact",
+        "featuresLabel": "Features",
+        "featuresAll": "See all features"
       },
       "hero": {
         "badge": "22 modules · CSRD · Scope 3 · Generative AI",
@@ -7605,6 +7607,97 @@
           "desc": "Ready-to-use template covering the 11 Basic Module requirements (B1–B11): answer ESG requests from your banks and CSRD-bound clients without the cost of a full CSRD report. And your data exports to GRI, CDP and TCFD — 46 mapped indicators, 24 GRI series.",
           "cta": "See covered standards"
         }
+      },
+      "featuresNew": "New",
+      "featureGroups": {
+        "collect": "Collect and make reliable",
+        "analyze": "Analyse and steer",
+        "report": "Report and respond"
+      },
+      "features": {
+        "connectors": {
+          "title": "Data collection and connectors",
+          "desc": "Guided entry, CSV imports and connectors: all your ESG data in one place."
+        },
+        "dataquality": {
+          "title": "Data quality",
+          "desc": "Completeness by pillar, anomalies and missing data spotted before reporting."
+        },
+        "audit": {
+          "title": "Audit trail and evidence",
+          "desc": "Who changed what, when and why, with supporting documents and an export for your auditors."
+        },
+        "validation": {
+          "title": "Validation workflow",
+          "desc": "Draft, review, approval: every validated data point is traced."
+        },
+        "insee": {
+          "title": "INSEE enrichment",
+          "desc": "Retrieve a company’s legal data from its SIREN number."
+        },
+        "scores": {
+          "title": "Traceable ESG scores",
+          "desc": "A score per pillar where every point can be explained: method, data and version are viewable."
+        },
+        "materiality": {
+          "title": "Double materiality",
+          "desc": "Interactive matrix, justified ratings and dated sign-off by management."
+        },
+        "carbon": {
+          "title": "Scope 3 carbon footprint",
+          "desc": "Indirect emissions by GHG Protocol category, with ADEME emission factors."
+        },
+        "decarb": {
+          "title": "Decarbonisation plan",
+          "desc": "SBTi-aligned pathway, costed actions and scenarios."
+        },
+        "benchmark": {
+          "title": "Sector benchmark",
+          "desc": "See how you compare with other companies in your sector."
+        },
+        "risks": {
+          "title": "Risk register",
+          "desc": "ESG risks rated by likelihood and impact, with their action plans."
+        },
+        "reports": {
+          "title": "CSRD, VSME and DPEF reports",
+          "desc": "Section-by-section report, PDF export, scheduled email delivery and a share link."
+        },
+        "questionnaires": {
+          "title": "Customer questionnaires",
+          "desc": "Upload a customer’s ESG questionnaire: answers pre-filled from your data, sources cited."
+        },
+        "taxonomy": {
+          "title": "EU Taxonomy",
+          "desc": "Eligibility and alignment across the 6 objectives, DNSH criteria and minimum safeguards."
+        },
+        "supply": {
+          "title": "Supply chain",
+          "desc": "Assess your suppliers, send them questionnaires and prepare for the CSDDD."
+        },
+        "gaia": {
+          "title": "Gaïa, AI assistant",
+          "desc": "Analysis of an existing report and answers to your questions, always with human review."
+        },
+        "cabinet": {
+          "title": "Firm workspace",
+          "desc": "A multi-client workspace for accounting and consulting firms, white-labelled."
+        }
+      },
+      "featuresPromo": {
+        "badge": "Free",
+        "title": "Does the CSRD apply to you?",
+        "desc": "Answer a few questions and find out whether your company is in scope, using the thresholds in force after the omnibus.",
+        "cta": "Check my eligibility",
+        "more": {
+          "/ressources/dictionnaire": "ESG glossary",
+          "/resources": "All resources"
+        }
+      },
+      "featuresSection": {
+        "eyebrow": "Features",
+        "title": "From data to report, without changing tools",
+        "subtitle": "Collect, make reliable, analyse, then report and respond to your customers: every step relies on the same data."
       }
     },
     "hero": {
@@ -13590,9 +13683,9 @@
     },
     "cal": {
       "2025": "Wave 1: already under the NFRD (FY 2024, published in 2025)",
-      "2026": "Wave 2: more than 1,000 employees AND more than \u20ac450M turnover (FY 2027, published in 2028)",
+      "2026": "Wave 2: more than 1,000 employees AND more than €450M turnover (FY 2027, published in 2028)",
       "2027": "Listed SMEs: out of mandatory scope (voluntary VSME)",
-      "2029": "Non-EU groups: more than \u20ac450M turnover in the EU (FY 2028)"
+      "2029": "Non-EU groups: more than €450M turnover in the EU (FY 2028)"
     },
     "ds": {
       "complete": "Complete",
