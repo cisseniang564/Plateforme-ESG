@@ -54,6 +54,12 @@ class ESGWeightsPayload(BaseModel):
     gov: float
 
 
+@router.get("/methodology")
+async def get_scoring_methodology(user_id: UUID = Depends(get_current_user_id)):
+    """Description du calcul du score ESG : étapes, plages de référence, seuils, limites connues."""
+    return ESGScoringEngine.methodology()
+
+
 @router.get("/weights")
 async def get_esg_weights(
     user_id: UUID = Depends(get_current_user_id),

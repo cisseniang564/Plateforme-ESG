@@ -19,3 +19,12 @@ test.describe('Scores et organisations', () => {
     await expect(page.getByRole('heading', { name: /organisations/i }).first()).toBeVisible();
   });
 });
+
+test('le panneau « Comment ce score est calculé » affiche la méthode et ses limites', async ({ page }) => {
+  await page.goto('/app/scores');
+  await page.getByRole('button', { name: 'Comment ce score est calculé' }).first().click();
+  const dialog = page.getByRole('dialog', { name: 'Méthodologie du score ESG' });
+  await expect(dialog.getByText('Limites à connaître')).toBeVisible();
+  await expect(dialog.getByText(/ne tiennent pas compte de la taille/)).toBeVisible();
+  await expect(dialog.getByText('AAA ≥ 85')).toBeVisible();
+});

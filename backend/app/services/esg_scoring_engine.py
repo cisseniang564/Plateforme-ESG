@@ -18,6 +18,9 @@ from app.models.sector_weight import SectorWeight
 from app.models.data_entry import DataEntry
 
 
+METHOD_VERSION = "2026-11"
+
+
 class ESGScoringEngine:
     """
     Moteur de calcul des scores ESG.
@@ -220,6 +223,7 @@ class ESGScoringEngine:
             sector_code=sector_code,
             organization_score=overall_score,
             calculation_date=calculation_date,
+            organization_id=organization_id,
         )
 
         # 11) Sauvegarde en base
@@ -270,7 +274,67 @@ class ESGScoringEngine:
             "benchmarks": benchmarks,
             "indicators_used": len(indicator_data),
             "trend": trend_analysis,
+            "provenance": self._build_provenance(pillar_details),
         }
+
+    @staticmethod
+    def _build_provenance(pillar_details: Dict[str, Any]) -> Dict[str, Any]:
+        """Ce qui a réellement servi au calcul : indicateurs par pilier, piliers sans donnée."""
+        per_pillar = {p: len(d["indicators"]) for p, d in pillar_details.items()}
+        return {
+            "method_version": METHOD_VERSION,
+            "indicators_per_pillar": per_pillar,
+            # Un pilier sans indicateur vaut 0 dans le score global : on le dit au lieu de le cacher.
+            "unmeasured_pillars": [p for p, n in per_pillar.items() if n == 0],
+            "benchmark_basis": "your_organizations",
+        }
+
+    @classmethod
+    def methodology(cls) -> Dict[str, Any]:
+        """Description complète et vérifiable du calcul, construite à partir des constantes du moteur."""
+        indicators = [
+            {
+                "code": code,
+                "name": rng["name"],
+                "unit": rng["unit"],
+                "range_min": rng["min"],
+                "range_max": rng["max"],
+                "higher_is_better": cls.INDICATOR_DIRECTION.get(code, True),
+            }
+            for code, rng in cls.BENCHMARK_RANGES.items()
+        ]
+        return {
+            "method_version": METHOD_VERSION,
+            "steps": [
+                "Chaque indicateur est moyenné sur la période choisie (valeurs aberrantes écartées).",
+                "La valeur est ramenée sur 0–100 par interpolation linéaire entre le minimum et le maximum de référence de l'indicateur (inversée quand « plus bas est meilleur »).",
+                "Les indicateurs d'un pilier sont combinés par moyenne pondérée (poids 1 par défaut).",
+                "Le score global est la moyenne des piliers E, S et G pondérée par les poids du secteur.",
+                "Le rating (AAA à C) découle du score global selon les seuils ci-dessous.",
+            ],
+            "rating_thresholds": [{"rating": r, "min_score": t} for r, t in cls.RATING_THRESHOLDS.items()],
+            "default_sector_weights": cls._default_weights_all(),
+            "indicators": indicators,
+            "completeness_definition": (
+                "Points de données reçus ÷ (indicateurs renseignés × 12 mois). Elle mesure la régularité de saisie "
+                "des indicateurs que vous avez renseignés, PAS la couverture d'un référentiel (ESRS, GRI…)."
+            ),
+            "confidence_rules": "Élevée : complétude ≥ 80 % et ≥ 5 indicateurs ; moyenne : ≥ 50 % et ≥ 3 ; faible : ≥ 20 % ; sinon très faible.",
+            "benchmark_definition": (
+                "« Parmi vos organisations » : dernier score de chacune de vos autres organisations du même secteur. "
+                "Ce n'est pas un benchmark de marché. Le benchmark inter-comptes anonymisé est dans la page Benchmarking."
+            ),
+            "limitations": [
+                "Les plages de référence (minimum/maximum) sont des repères fixes, identiques pour toutes les entreprises : elles ne tiennent pas compte de la taille (effectif, chiffre d'affaires). Un indicateur en valeur absolue, comme les émissions en tCO₂e, favorise donc les petites structures.",
+                "Un pilier sans aucun indicateur vaut 0 dans le score global ; il est signalé comme « non renseigné ».",
+                "Ces repères sont des conventions de scoring internes, pas des seuils réglementaires : ils ne remplacent ni les ESRS ni un avis d'auditeur.",
+            ],
+        }
+
+    @classmethod
+    def _default_weights_all(cls) -> Dict[str, Dict[str, float]]:
+        return {k: cls._get_default_weights_for_sector(k) for k in (
+            "energie", "industrie", "finance", "tech", "agriculture", "commerce", "services", "default")}
 
     async def _determine_sector(self, organization: Organization) -> str:
         """Déterminer le secteur d'activité de l'organisation."""
@@ -356,7 +420,8 @@ class ESGScoringEngine:
             pass
         return None
 
-    def _get_default_weights_for_sector(self, sector_code: str) -> Dict[str, float]:
+    @staticmethod
+    def _get_default_weights_for_sector(sector_code: str) -> Dict[str, float]:
         """Pondérations par défaut selon le secteur."""
         sector_weights = {
             "energie": {"E": 45.0, "S": 30.0, "G": 25.0},
@@ -922,8 +987,14 @@ class ESGScoringEngine:
         sector_code: str,
         organization_score: float,
         calculation_date: date,
+        organization_id: Optional[UUID] = None,
     ) -> Dict[str, Any]:
-        """Benchmarks sectoriels."""
+        """Comparaison avec les AUTRES organisations de ce compte (même secteur).
+
+        Ce n'est pas un benchmark de marché : seuls comptent le dernier score de chaque autre
+        organisation du compte, jamais l'historique de l'organisation évaluée elle-même.
+        Le vrai benchmark inter-comptes (anonymisé, k-anonymat) est servi par /benchmarks/sector.
+        """
         start_date = calculation_date - timedelta(days=365)
 
         query = (
@@ -941,7 +1012,13 @@ class ESGScoringEngine:
         )
 
         result = await self.db.execute(query)
-        scores = result.scalars().all()
+        # Dernier score de chaque organisation (liste triée par date décroissante), hors organisation évaluée.
+        latest: Dict[Any, Any] = {}
+        for sc in result.scalars().all():
+            if organization_id is not None and sc.organization_id == organization_id:
+                continue
+            latest.setdefault(sc.organization_id, sc)
+        scores = list(latest.values())
 
         if len(scores) < 2:
             return {
