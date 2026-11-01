@@ -6,12 +6,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { Leaf, Loader2, Play, Shield, BarChart3, Zap, ArrowRight, AlertCircle } from 'lucide-react';
+import { Loader2, Play, Shield, BarChart3, Zap, ArrowRight, AlertCircle } from 'lucide-react';
 import api from '@/services/api';
 import { setUser } from '@/store/slices/authSlice';
 import { PROSPECT_DEMO_FLAG } from '@/components/tour/TourContext';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
+import { LogoMark, Wordmark } from '@/components/common/Logo';
 
 type Status = 'idle' | 'loading' | 'error';
 
@@ -75,10 +76,8 @@ export default function DemoPage() {
         {/* Logo */}
         <div className="flex justify-center mb-8">
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/30">
-              <Leaf className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-white">ESGFlow</span>
+            <LogoMark size={40} decorative />
+            <Wordmark className="text-2xl" tone="light" />
           </Link>
         </div>
 

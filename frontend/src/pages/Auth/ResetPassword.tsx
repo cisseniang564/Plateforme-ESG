@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Leaf, Lock, Eye, EyeOff, Loader2, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import { Lock, Eye, EyeOff, Loader2, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import api from '@/services/api';
+import { LogoMark, Wordmark } from '@/components/common/Logo';
 
 export default function ResetPassword() {
   const { t } = useTranslation();
@@ -60,10 +61,8 @@ export default function ResetPassword() {
         {/* Logo */}
         <div className="flex justify-center mb-8">
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/30">
-              <Leaf className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-white">ESG Flow</span>
+            <LogoMark size={40} decorative />
+            <Wordmark className="text-2xl" tone="light" />
           </Link>
         </div>
 

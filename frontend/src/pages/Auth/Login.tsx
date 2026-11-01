@@ -5,9 +5,10 @@ import { useDispatch } from 'react-redux';
 import { useAuth } from '@/hooks/useAuth';
 import Button from '@/components/common/Button';
 import LanguageSelector from '@/components/LanguageSelector';
-import { UserPlus, Shield, Loader2, Lock, CheckCircle, ArrowRight, BarChart3, Leaf, Globe } from 'lucide-react';
+import { UserPlus, Shield, Loader2, Lock, CheckCircle, ArrowRight, BarChart3, Globe } from 'lucide-react';
 import { authService } from '@/services/authService';
 import { setUser } from '@/store/slices/authSlice';
+import { LogoMark, Wordmark } from '@/components/common/Logo';
 
 export default function Login() {
   const { t } = useTranslation();
@@ -72,12 +73,9 @@ export default function Login() {
           {/* Logo */}
           <div>
             <Link to="/" className="inline-flex items-center gap-3 group">
-              <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-green-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                <Leaf className="h-5 w-5 text-white" />
-              </div>
+              <LogoMark size={40} decorative />
               <div>
-                <span className="text-xl font-extrabold text-white tracking-tight">ESG</span>
-                <span className="text-xl font-extrabold text-emerald-400 tracking-tight"> FLOW</span>
+                <Wordmark className="text-2xl" tone="light" />
               </div>
             </Link>
           </div>
@@ -142,10 +140,8 @@ export default function Login() {
         <div className="flex items-center justify-between p-6">
           {/* Mobile logo */}
           <Link to="/" className="lg:hidden inline-flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg flex items-center justify-center">
-              <Leaf className="h-4 w-4 text-white" />
-            </div>
-            <span className="font-extrabold text-gray-900">ESG<span className="text-emerald-600"> FLOW</span></span>
+            <LogoMark size={32} decorative />
+            <Wordmark className="text-lg" />
           </Link>
           <div className="lg:block" />
           <LanguageSelector />

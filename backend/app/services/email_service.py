@@ -81,7 +81,7 @@ def _base_html(title: str, preheader: str, body_html: str, recipient_email: str 
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr>
             <td align="center">
-              <img src="{_app_url()}/brand/icon-esgflow-v3-128.png" alt="ESG Flow" width="56" height="56" style="display:block;margin:0 auto 12px auto;border-radius:12px;"/>
+              <img src="{_app_url()}/brand/icon-esgflow-v5-128.png" alt="ESG Flow" width="56" height="56" style="display:block;margin:0 auto 12px auto;border-radius:12px;"/>
               <div style="font-size:24px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;line-height:1;">
                 ESG<span style="color:#10b981;"> FLOW</span>
               </div>

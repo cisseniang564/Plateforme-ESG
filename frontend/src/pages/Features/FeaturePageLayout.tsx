@@ -10,11 +10,12 @@
  *   6. CTA section
  */
 import { Link, useLocation } from 'react-router-dom';
-import { ArrowRight, CheckCircle, ChevronDown, Leaf, Play } from 'lucide-react';
+import { ArrowRight, CheckCircle, ChevronDown, Play } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 import { usePageSeo } from '@/hooks/usePageSeo';
 import { useTranslation } from 'react-i18next';
+import { LogoMark, Wordmark } from '@/components/common/Logo';
 
 export interface FeatureBenefit {
   icon: LucideIcon;
@@ -123,10 +124,8 @@ export default function FeaturePageLayout({
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
-              <Leaf className="h-4.5 w-4.5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900">ESG Flow</span>
+            <LogoMark size={36} decorative />
+            <Wordmark className="text-xl" />
           </Link>
           <div className="flex items-center gap-3">
             <Link to="/demo" className="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-emerald-700 transition-colors">
@@ -367,10 +366,8 @@ export default function FeaturePageLayout({
       <footer className="py-10 bg-gray-900 text-gray-400">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-emerald-600 rounded-lg flex items-center justify-center">
-              <Leaf className="h-3.5 w-3.5 text-white" />
-            </div>
-            <span className="text-sm font-semibold text-white">ESG Flow</span>
+            <LogoMark size={28} decorative />
+            <Wordmark className="text-sm" tone="light" />
           </div>
           <div className="flex flex-wrap gap-6 text-xs">
             <Link to="/" className="hover:text-white transition-colors">{t('features.layout.footer.home', 'Accueil')}</Link>
