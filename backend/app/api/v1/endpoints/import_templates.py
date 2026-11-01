@@ -235,7 +235,7 @@ def _build_workbook(sector: Optional[str] = None) -> bytes:
     sector_profile = _SECTOR_PROFILES.get(sector or "") if sector else None
     sector_suffix = f" — secteur {sector_profile['label']}" if sector_profile else ""
 
-    cover["A1"] = f"ESG Flow — Template d'import tout-en-un{sector_suffix}"
+    cover["A1"] = f"ESGFlow — Template d'import tout-en-un{sector_suffix}"
     cover["A1"].font = Font(size=18, bold=True, color="0F766E")
     cover["A2"] = (
         f"Généré le {datetime.now().strftime('%d/%m/%Y')} · "

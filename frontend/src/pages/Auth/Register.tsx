@@ -169,7 +169,7 @@ export default function Register() {
 
           <div className="relative mt-10 p-5 bg-white/5 rounded-xl border border-white/10">
             <p className="text-sm text-slate-200 italic leading-relaxed">
-              "ESG Flow a transformé notre approche ESG. En 3 mois, nous avons amélioré notre score de 40%."
+              "ESGFlow a transformé notre approche ESG. En 3 mois, nous avons amélioré notre score de 40%."
             </p>
             <div className="flex items-center gap-3 mt-3">
               <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center text-white text-xs font-bold">MD</div>

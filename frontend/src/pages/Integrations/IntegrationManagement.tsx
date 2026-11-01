@@ -267,7 +267,7 @@ export default function IntegrationManagement() {
                 <h1 className="text-3xl font-bold">{t('integ.title', 'Intégrations')}</h1>
               </div>
               <p className="text-cyan-100 max-w-xl">
-                {t('integ.heroDesc', 'Connectez ESG Flow à vos outils préférés et synchronisez vos données ESG en temps réel')}
+                {t('integ.heroDesc', 'Connectez ESGFlow à vos outils préférés et synchronisez vos données ESG en temps réel')}
               </p>
             </div>
 

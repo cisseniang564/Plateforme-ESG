@@ -6,7 +6,7 @@ import { usePageSeo } from '@/hooks/usePageSeo';
 export default function PrivacyPolicy() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  usePageSeo({ id: 'privacy', title: 'Politique de Confidentialité — ESG Flow', description: 'Politique de confidentialité et protection des données personnelles de la plateforme ESG Flow. Hébergement France, RGPD.', url: 'https://greenconnect.cloud/privacy-policy', ogImage: 'https://greenconnect.cloud/og/privacy-policy.png' });
+  usePageSeo({ id: 'privacy', title: 'Politique de Confidentialité — ESGFlow', description: 'Politique de confidentialité et protection des données personnelles de la plateforme ESGFlow. Hébergement France, RGPD.', url: 'https://greenconnect.cloud/privacy-policy', ogImage: 'https://greenconnect.cloud/og/privacy-policy.png' });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -78,7 +78,7 @@ export default function PrivacyPolicy() {
             <p>Vos données sont collectées et traitées pour :</p>
             <ul>
               <li>Gestion des comptes utilisateurs et authentification</li>
-              <li>Fourniture des services de la plateforme ESG Flow</li>
+              <li>Fourniture des services de la plateforme ESGFlow</li>
               <li>Génération de rapports ESG conformes aux réglementations</li>
               <li>Calcul automatique d'indicateurs et scores ESG</li>
               <li>Support client et assistance technique</li>
@@ -223,7 +223,7 @@ export default function PrivacyPolicy() {
             </ul>
 
             <h2>10. Cookies et Traceurs</h2>
-            <p>ESG Flow utilise les cookies suivants :</p>
+            <p>ESGFlow utilise les cookies suivants :</p>
             
             <h3>Cookies strictement nécessaires (pas de consentement requis)</h3>
             <ul>

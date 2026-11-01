@@ -149,7 +149,7 @@ class BEGESExportService:
             ("Méthode de calcul", "Facteurs d'émission Base Carbone ADEME v23"),
             ("", ""),
             ("Date de soumission", date.today().isoformat()),
-            ("Outil utilisé", "ESG Flow — greenconnect.cloud"),
+            ("Outil utilisé", "ESGFlow — greenconnect.cloud"),
         ]
         self._write_kv_block(ws, start_row=4, rows=rows)
         self._autosize(ws, [2, 5])

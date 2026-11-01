@@ -1415,12 +1415,12 @@ export default function LandingPage() {
 
   usePageSeo({
     id: 'landing',
-    title: 'ESG Flow — Plateforme ESG tout-en-un pour la conformité CSRD, Taxonomie UE & Bilan Carbone',
-    description: 'ESG Flow centralise votre conformité ESG en une seule plateforme : CSRD, Taxonomie UE, SFDR, SBTi, Bilan Carbone, Vigilance. 22 modules, hébergé en France, RGPD. Essai gratuit 14 jours.',
+    title: 'ESGFlow — Plateforme ESG tout-en-un pour la conformité CSRD, Taxonomie UE & Bilan Carbone',
+    description: 'ESGFlow centralise votre conformité ESG en une seule plateforme : CSRD, Taxonomie UE, SFDR, SBTi, Bilan Carbone, Vigilance. 22 modules, hébergé en France, RGPD. Essai gratuit 14 jours.',
     keywords: 'ESG, CSRD, Taxonomie UE, SFDR, SBTi, bilan carbone, RSE, conformité ESG, plateforme ESG, reporting durabilité, ESRS, GHG Protocol, ADEME, devoir de vigilance, CSDDD',
     url: 'https://greenconnect.cloud/',
     ogImage: 'https://greenconnect.cloud/og/landing.png',
-    ogTitle: 'ESG Flow — Conformité ESG simplifiée',
+    ogTitle: 'ESGFlow — Conformité ESG simplifiée',
     ogDescription: '22 modules ESG dans une seule plateforme. CSRD, Taxonomie UE, SFDR, Bilan Carbone, SBTi. Hébergé en France. Essai gratuit.',
     faqJsonLd: {
       '@context': 'https://schema.org',

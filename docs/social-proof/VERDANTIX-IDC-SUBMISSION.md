@@ -1,4 +1,4 @@
-# ESG Flow — Analyst Briefing & Inclusion Kit
+# ESGFlow — Analyst Briefing & Inclusion Kit
 ## Verdantix Green Quadrant + IDC MarketScape Submission
 
 ---
@@ -88,7 +88,7 @@
 ### Company Information
 ```
 Legal Name: GreenConnect SAS
-Trade Name: ESG Flow
+Trade Name: ESGFlow
 Year Founded: 2024
 HQ: Paris, France
 Employees: 5-10
@@ -99,7 +99,7 @@ Countries: France (expanding EU)
 
 ### Product Information
 ```
-Product Name: ESG Flow
+Product Name: ESGFlow
 First GA Release: 2024
 Latest Version: continuous deployment
 Deployment: SaaS (cloud), Private cloud (Enterprise)

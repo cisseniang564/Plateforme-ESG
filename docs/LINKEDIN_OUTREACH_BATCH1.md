@@ -1,5 +1,5 @@
 ---
-title: "Batch 1 — Outreach LinkedIn ESG Flow"
+title: "Batch 1 — Outreach LinkedIn ESGFlow"
 subtitle: "30 messages prêts à envoyer · 4 personas × triggers × relances"
 date: "27 mai 2026"
 ---
@@ -60,7 +60,7 @@ Avant de copier-coller un template, vérifier que **3 éléments minimum** sont 
 - 0 lien dans la note de connexion (LinkedIn pénalise)
 - Tutoiement uniquement si l'interlocuteur tutoie en premier (vous par défaut)
 - Longueur DM < 800 caractères (= 4-5 lignes max sur mobile)
-- Signature simple : prénom + nom + "Fondateur ESG Flow" (PAS "CEO" ni titre gonflé)
+- Signature simple : prénom + nom + "Fondateur ESGFlow" (PAS "CEO" ni titre gonflé)
 
 \newpage
 
@@ -132,7 +132,7 @@ Voici mon Calendly : [LIEN_CALENDLY]
 Au plaisir d'échanger.
 
 [PRÉNOM_VOUS]
-Fondateur ESG Flow
+Fondateur ESGFlow
 ```
 
 ## 3.2 Template DM — DAF / CFO
@@ -156,7 +156,7 @@ Calendly : [LIEN_CALENDLY]
 Au plaisir,
 
 [PRÉNOM_VOUS]
-Fondateur ESG Flow
+Fondateur ESGFlow
 ```
 
 ## 3.3 Template DM — Risk Manager / Conformité
@@ -180,7 +180,7 @@ En retour, vous recevez la synthèse anonymisée des 15 Risk Managers interview�
 Calendly : [LIEN_CALENDLY]
 
 [PRÉNOM_VOUS]
-Fondateur ESG Flow
+Fondateur ESGFlow
 ```
 
 ## 3.4 Template DM — Direction Générale
@@ -203,7 +203,7 @@ Calendly : [LIEN_CALENDLY]
 Au plaisir,
 
 [PRÉNOM_VOUS]
-Fondateur ESG Flow
+Fondateur ESGFlow
 ```
 
 \newpage
@@ -368,7 +368,7 @@ Concrètement, en 30 minutes je vous poserai 5-6 questions ouvertes sur votre d�
 
 L'engagement de mon côté : vous envoyer la synthèse anonymisée des 15-20 entretiens (vous gardez la propriété de cette synthèse).
 
-Si malgré tout vous préférez avoir un descriptif d'ESG Flow, je peux vous envoyer un lien vers notre site — mais je vous suggère vraiment de garder ça pour APRÈS notre échange, ça polluera moins votre regard.
+Si malgré tout vous préférez avoir un descriptif d'ESGFlow, je peux vous envoyer un lien vers notre site — mais je vous suggère vraiment de garder ça pour APRÈS notre échange, ça polluera moins votre regard.
 
 [LIEN_CALENDLY] si vous voulez réserver un créneau.
 
@@ -690,7 +690,7 @@ Colonnes minimales pour ton tracker :
 7. **Ne pas tenir la promesse de la synthèse** — si vous ne livrez pas après les 15 entretiens, vous brûlez votre réputation et perdez les prospects futurs.
 8. **Envoyer 50 messages le même jour** — LinkedIn flagge comme spam. Étaler sur 5 jours.
 9. **Émojis dans le 1er message** — perception spam en FR B2B. À éviter.
-10. **Signer "CEO d'ESG Flow"** — gonflé pour une pré-lancement. "Fondateur" suffit, plus crédible.
+10. **Signer "CEO d'ESGFlow"** — gonflé pour une pré-lancement. "Fondateur" suffit, plus crédible.
 
 \newpage
 

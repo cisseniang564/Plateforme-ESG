@@ -662,7 +662,7 @@ export default function TenantSettings() {
           </div>
           <div>
             <p className="text-sm font-semibold text-violet-900">{t('settings.tenant.workspace.orgName', "Nom de l'organisation")}</p>
-            <p className="text-xs text-violet-500">{t('settings.tenant.workspace.orgNameSynced', 'Synchronisé avec votre tenant ESG Flow')}</p>
+            <p className="text-xs text-violet-500">{t('settings.tenant.workspace.orgNameSynced', 'Synchronisé avec votre tenant ESGFlow')}</p>
           </div>
           {tenantData && (
             <span className="ml-auto flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full" style={{ background: '#d1fae5', color: '#065f46' }}>
@@ -710,7 +710,7 @@ export default function TenantSettings() {
           </div>
           {form.billingEmail === DEFAULT_EMAIL && (
             <p className="text-xs text-emerald-600 flex items-center gap-1">
-              <CheckCircle size={11} /> {t('settings.tenant.workspace.officialEmail', 'Email ESG Flow officiel')}
+              <CheckCircle size={11} /> {t('settings.tenant.workspace.officialEmail', 'Email ESGFlow officiel')}
             </p>
           )}
         </div>
@@ -1163,7 +1163,7 @@ export default function TenantSettings() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-base font-semibold text-gray-900">{t('settings.tenant.apiKeys.title', 'Clés API')}</h2>
-          <p className="text-sm text-gray-500 mt-0.5">{t('settings.tenant.apiKeys.desc', "Accès programmatique à l'API ESG Flow.")}</p>
+          <p className="text-sm text-gray-500 mt-0.5">{t('settings.tenant.apiKeys.desc', "Accès programmatique à l'API ESGFlow.")}</p>
         </div>
         <button
           onClick={() => setShowNewKey(true)}
@@ -1305,7 +1305,7 @@ export default function TenantSettings() {
                 <p className="text-sm font-medium text-gray-900">{t('settings.tenant.sessions.current', 'Session actuelle')}</p>
                 <span className="text-[10px] font-bold bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">{t('settings.tenant.sessions.active', 'En cours')}</span>
               </div>
-              <p className="text-xs text-gray-400 mt-0.5">{t('settings.tenant.sessions.browserInfo', 'Navigateur actif · Authentifié via ESG Flow')}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{t('settings.tenant.sessions.browserInfo', 'Navigateur actif · Authentifié via ESGFlow')}</p>
             </div>
           </div>
         </div>

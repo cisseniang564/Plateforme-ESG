@@ -122,7 +122,7 @@ function usePageTitle() {
   for (const key of Object.keys(labels)) {
     if (location.pathname.startsWith(key) && key.length > best.length) best = key;
   }
-  return labels[best] ?? 'ESG Flow';
+  return labels[best] ?? 'ESGFlow';
 }
 
 // ─── Header ───────────────────────────────────────────────────────────────────

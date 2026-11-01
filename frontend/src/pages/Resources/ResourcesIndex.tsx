@@ -164,7 +164,7 @@ export default function ResourcesIndex() {
         <div style={{ background: 'linear-gradient(135deg, #064e3b 0%, #134e4a 50%, #1e3a5f 100%)' }} className="rounded-3xl p-8 text-center">
           <h2 className="text-2xl font-extrabold text-white mb-3">{t('resources.index.cta.title', "Prêt à passer à l'action ?")}</h2>
           <p className="text-slate-300 mb-6 text-sm max-w-md mx-auto">
-            {t('resources.index.cta.subtitle', 'ESG Flow met en pratique tout ce que ces guides expliquent — CSRD, Scope 3, Taxonomie — dans une seule plateforme à partir de 249 €/mois.')}
+            {t('resources.index.cta.subtitle', 'ESGFlow met en pratique tout ce que ces guides expliquent — CSRD, Scope 3, Taxonomie — dans une seule plateforme à partir de 249 €/mois.')}
           </p>
           <Link
             to="/register"

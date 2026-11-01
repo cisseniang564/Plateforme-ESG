@@ -141,7 +141,7 @@
     "passwordStrengthGood": "Bon",
     "passwordStrengthExcellent": "Excellent",
     "joinEsgflow": "Rejoignez ESGFlow",
-    "platformTagline": "ESG Flow — Plateforme de reporting ESG professionnelle",
+    "platformTagline": "ESGFlow — Plateforme de reporting ESG professionnelle",
     "featureMaxSecurity": "Sécurité maximale",
     "featureMaxSecurityDesc": "Vos données protégées par cryptage de bout en bout",
     "featureAI": "IA intégrée",
@@ -366,7 +366,7 @@
       "logout": "Se déconnecter",
       "mainNav": "Sections principales",
       "platformNav": "Navigation principale de la plateforme",
-      "logoHome": "ESG Flow — Accueil",
+      "logoHome": "ESGFlow — Accueil",
       "profile": "Voir le profil"
     },
     "cta": {
@@ -3467,7 +3467,7 @@
     "navReports": "Rapports",
     "navWebhooks": "Webhooks",
     "authTitle": "Authentification",
-    "authDesc": "L'API ESG Flow utilise JWT (JSON Web Token) pour sécuriser les échanges. Obtenez un token via l'endpoint de login et transmettez-le dans l'en-tête Authorization de chaque requête.",
+    "authDesc": "L'API ESGFlow utilise JWT (JSON Web Token) pour sécuriser les échanges. Obtenez un token via l'endpoint de login et transmettez-le dans l'en-tête Authorization de chaque requête.",
     "authLogin": "Obtenir un token JWT",
     "authRefresh": "Rafraîchir le token",
     "authLogout": "Révoquer le token",
@@ -3871,7 +3871,7 @@
     "saving": "Sauvegarde…",
     "errorUpdate": "Erreur lors de la mise à jour.",
     "changePassword": "Changer de mot de passe",
-    "changePasswordDesc": "Utilisez un mot de passe fort unique à ESG Flow.",
+    "changePasswordDesc": "Utilisez un mot de passe fort unique à ESGFlow.",
     "currentPassword": "Mot de passe actuel",
     "newPassword": "Nouveau mot de passe",
     "confirmNewPassword": "Confirmer le nouveau mot de passe",
@@ -3917,7 +3917,7 @@
     "heroBadge": "Centre d'aide · {{articles}} articles · {{categories}} catégories",
     "heroTitle1": "Comment pouvons-nous",
     "heroTitle2": "vous aider ?",
-    "heroSubtitle": "Guides pas-à-pas, tutoriels et réponses à vos questions sur ESG Flow.",
+    "heroSubtitle": "Guides pas-à-pas, tutoriels et réponses à vos questions sur ESGFlow.",
     "searchPlaceholder": "Rechercher un article, une fonctionnalité…",
     "noResults": "Aucun résultat pour « {{query}} » — essayez un autre terme.",
     "popular": "Populaire",
@@ -3963,7 +3963,7 @@
       },
       "api": {
         "title": "API & Intégrations",
-        "desc": "Connectez ESG Flow à vos outils via l'API REST."
+        "desc": "Connectez ESGFlow à vos outils via l'API REST."
       }
     },
     "art": {
@@ -3985,17 +3985,17 @@
       "c1": {
         "title": "Différence entre Scope 1, 2 et 3",
         "tags": "scope1,scope2,scope3,ghg,carbone",
-        "content": "## Les trois périmètres d'émissions\n\n**Scope 1 — Émissions directes** : combustion dans vos propres installations et véhicules.\n\n**Scope 2 — Émissions indirectes liées à l'énergie** : électricité, vapeur, chaleur achetées.\n\n**Scope 3 — Autres émissions indirectes** (15 catégories GHG Protocol) :\n- *En amont* : achats de biens & services, capital goods, déplacements professionnels…\n- *En aval* : utilisation des produits vendus, fin de vie, franchises…\n\n> **Attention CSRD** : la directive impose la déclaration des Scopes 1, 2 et des catégories Scope 3 pertinentes.\n\n## Facteurs d'émission intégrés\n\nESG Flow embarque la base ADEME (France) et les facteurs IEA pour 80+ pays. Ils sont mis à jour automatiquement chaque trimestre."
+        "content": "## Les trois périmètres d'émissions\n\n**Scope 1 — Émissions directes** : combustion dans vos propres installations et véhicules.\n\n**Scope 2 — Émissions indirectes liées à l'énergie** : électricité, vapeur, chaleur achetées.\n\n**Scope 3 — Autres émissions indirectes** (15 catégories GHG Protocol) :\n- *En amont* : achats de biens & services, capital goods, déplacements professionnels…\n- *En aval* : utilisation des produits vendus, fin de vie, franchises…\n\n> **Attention CSRD** : la directive impose la déclaration des Scopes 1, 2 et des catégories Scope 3 pertinentes.\n\n## Facteurs d'émission intégrés\n\nESGFlow embarque la base ADEME (France) et les facteurs IEA pour 80+ pays. Ils sont mis à jour automatiquement chaque trimestre."
       },
       "c2": {
         "title": "Configurer votre plan de décarbonation SBTi",
         "tags": "sbti,décarbonation,trajectoire,1.5°C",
-        "content": "## Qu'est-ce que SBTi ?\n\nL'initiative *Science Based Targets* (SBTi) permet aux entreprises de définir des objectifs de réduction d'émissions alignés sur une trajectoire +1,5 °C ou +2 °C.\n\n## Dans ESG Flow\n\n1. Accédez à **Décarbonation › Plan SBTi**.\n2. Définissez votre **année de référence** et votre **horizon cible** (2030, 2050).\n3. L'outil calcule automatiquement la trajectoire annuelle requise.\n4. Ajoutez vos **actions** (efficacité énergétique, achats verts, mobilité…) avec leur impact estimé.\n5. Suivez l'avancement en temps réel sur le graphique de convergence."
+        "content": "## Qu'est-ce que SBTi ?\n\nL'initiative *Science Based Targets* (SBTi) permet aux entreprises de définir des objectifs de réduction d'émissions alignés sur une trajectoire +1,5 °C ou +2 °C.\n\n## Dans ESGFlow\n\n1. Accédez à **Décarbonation › Plan SBTi**.\n2. Définissez votre **année de référence** et votre **horizon cible** (2030, 2050).\n3. L'outil calcule automatiquement la trajectoire annuelle requise.\n4. Ajoutez vos **actions** (efficacité énergétique, achats verts, mobilité…) avec leur impact estimé.\n5. Suivez l'avancement en temps réel sur le graphique de convergence."
       },
       "r1": {
         "title": "Générer votre rapport CSRD / ESRS",
         "tags": "csrd,esrs,rapport,conformité",
-        "content": "## La CSRD en bref\n\nLa Corporate Sustainability Reporting Directive (CSRD) s'applique progressivement à partir de 2024. Elle impose la publication d'informations de durabilité selon les normes ESRS.\n\n## Dans ESG Flow — CSRD Report Builder\n\n1. Allez dans **Rapports › Constructeur CSRD**.\n2. Sélectionnez vos **ESRS applicables** (auto-détectés selon votre secteur et taille).\n3. Les données déjà saisies sont **pré-remplies** automatiquement.\n4. Complétez les champs manquants (signalés en orange).\n5. Cliquez sur **Générer le rapport** — format Word, PDF ou iXBRL/ESEF (XHTML EFRAG).\n\n## Journal d'audit détaillé\n\nChaque donnée porte un horodatage UTC et une empreinte SHA-256, avec traçabilité source → calcul → rapport pour faciliter les travaux de votre auditeur externe."
+        "content": "## La CSRD en bref\n\nLa Corporate Sustainability Reporting Directive (CSRD) s'applique progressivement à partir de 2024. Elle impose la publication d'informations de durabilité selon les normes ESRS.\n\n## Dans ESGFlow — CSRD Report Builder\n\n1. Allez dans **Rapports › Constructeur CSRD**.\n2. Sélectionnez vos **ESRS applicables** (auto-détectés selon votre secteur et taille).\n3. Les données déjà saisies sont **pré-remplies** automatiquement.\n4. Complétez les champs manquants (signalés en orange).\n5. Cliquez sur **Générer le rapport** — format Word, PDF ou iXBRL/ESEF (XHTML EFRAG).\n\n## Journal d'audit détaillé\n\nChaque donnée porte un horodatage UTC et une empreinte SHA-256, avec traçabilité source → calcul → rapport pour faciliter les travaux de votre auditeur externe."
       },
       "r2": {
         "title": "Programmer des rapports automatiques",
@@ -4005,7 +4005,7 @@
       "sc1": {
         "title": "Envoyer des questionnaires à vos fournisseurs",
         "tags": "fournisseur,questionnaire,supply chain,due diligence",
-        "content": "## Module Supply Chain\n\nESG Flow permet d'évaluer vos fournisseurs sur 6 dimensions ESG : environnement, droit du travail, éthique, diversité, gouvernance, chaîne d'approvisionnement.\n\n## Envoyer un questionnaire\n\n1. Accédez à **Supply Chain › Fournisseurs**.\n2. Ajoutez vos fournisseurs (import CSV ou saisie manuelle).\n3. Sélectionnez le **template** de questionnaire (CSRD Tier 1, Devoir de Vigilance, personnalisé).\n4. Cliquez sur **Envoyer** — le fournisseur reçoit un lien unique sécurisé.\n5. Suivez les réponses et les scores dans le tableau de bord Supply Chain.\n\n## Plan de vigilance\n\nConformément à la loi 2017-399 (Devoir de Vigilance), le module génère automatiquement le plan de vigilance avec les actions correctives identifiées."
+        "content": "## Module Supply Chain\n\nESGFlow permet d'évaluer vos fournisseurs sur 6 dimensions ESG : environnement, droit du travail, éthique, diversité, gouvernance, chaîne d'approvisionnement.\n\n## Envoyer un questionnaire\n\n1. Accédez à **Supply Chain › Fournisseurs**.\n2. Ajoutez vos fournisseurs (import CSV ou saisie manuelle).\n3. Sélectionnez le **template** de questionnaire (CSRD Tier 1, Devoir de Vigilance, personnalisé).\n4. Cliquez sur **Envoyer** — le fournisseur reçoit un lien unique sécurisé.\n5. Suivez les réponses et les scores dans le tableau de bord Supply Chain.\n\n## Plan de vigilance\n\nConformément à la loi 2017-399 (Devoir de Vigilance), le module génère automatiquement le plan de vigilance avec les actions correctives identifiées."
       },
       "sec1": {
         "title": "Activer l'authentification à deux facteurs (2FA)",
@@ -4025,7 +4025,7 @@
       "api2": {
         "title": "Configurer un webhook",
         "tags": "webhook,notification,intégration",
-        "content": "## À quoi servent les webhooks ?\n\nLes webhooks permettent à ESG Flow de notifier votre système en temps réel lors d'événements : nouveau score calculé, rapport généré, alerte déclenchée, etc.\n\n## Configuration\n\n1. Accédez à **Paramètres › Webhooks**.\n2. Cliquez sur **Ajouter un endpoint**.\n3. Renseignez votre URL HTTPS (obligatoire).\n4. Sélectionnez les événements à écouter.\n5. Sauvegardez — un secret de signature est généré.\n\n## Vérification de signature\n\nChaque appel inclut l'en-tête `X-ESGFlow-Signature: sha256=<hmac>`. Vérifiez-le côté serveur pour sécuriser votre endpoint."
+        "content": "## À quoi servent les webhooks ?\n\nLes webhooks permettent à ESGFlow de notifier votre système en temps réel lors d'événements : nouveau score calculé, rapport généré, alerte déclenchée, etc.\n\n## Configuration\n\n1. Accédez à **Paramètres › Webhooks**.\n2. Cliquez sur **Ajouter un endpoint**.\n3. Renseignez votre URL HTTPS (obligatoire).\n4. Sélectionnez les événements à écouter.\n5. Sauvegardez — un secret de signature est généré.\n\n## Vérification de signature\n\nChaque appel inclut l'en-tête `X-ESGFlow-Signature: sha256=<hmac>`. Vérifiez-le côté serveur pour sécuriser votre endpoint."
       }
     }
   },

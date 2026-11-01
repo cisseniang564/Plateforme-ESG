@@ -20,7 +20,7 @@ const getTiers = (t: TFunction) => [
     duration: t('resources.partners.tiers.0.duration', 'sur 12 mois'),
     benefits: [
       t('resources.partners.tiers.0.benefits.0', 'Formation gratuite (3 h en ligne)'),
-      t('resources.partners.tiers.0.benefits.1', "Compte ESG Flow démo offert (jusqu'à 3 organisations)"),
+      t('resources.partners.tiers.0.benefits.1', "Compte ESGFlow démo offert (jusqu'à 3 organisations)"),
       t('resources.partners.tiers.0.benefits.2', 'Référencement dans notre annuaire public'),
       t('resources.partners.tiers.0.benefits.3', 'Co-rédaction de cas clients'),
     ],
@@ -66,17 +66,17 @@ const getPartnerTypes = (t: TFunction) => [
   {
     icon: Briefcase,
     title: t('resources.partners.types.0.title', 'Cabinets de conseil RSE'),
-    desc: t('resources.partners.types.0.desc', 'Vous accompagnez vos clients dans leur démarche CSRD ? ESG Flow devient votre outil opérationnel, vous gardez la relation conseil à forte valeur ajoutée.'),
+    desc: t('resources.partners.types.0.desc', 'Vous accompagnez vos clients dans leur démarche CSRD ? ESGFlow devient votre outil opérationnel, vous gardez la relation conseil à forte valeur ajoutée.'),
   },
   {
     icon: Award,
     title: t('resources.partners.types.1.title', 'Experts-comptables'),
-    desc: t('resources.partners.types.1.desc', 'Vos clients vous interrogent sur la CSRD ? Devenez prescripteur ESG Flow et générez un revenu récurrent en restant focus sur votre métier comptable.'),
+    desc: t('resources.partners.types.1.desc', 'Vos clients vous interrogent sur la CSRD ? Devenez prescripteur ESGFlow et générez un revenu récurrent en restant focus sur votre métier comptable.'),
   },
   {
     icon: Building2,
     title: t('resources.partners.types.2.title', 'ESN et intégrateurs'),
-    desc: t('resources.partners.types.2.desc', 'Vous déployez du logiciel chez vos clients PME/ETI ? Intégrez ESG Flow à votre offre cloud, avec marque blanche possible et API documentée.'),
+    desc: t('resources.partners.types.2.desc', 'Vous déployez du logiciel chez vos clients PME/ETI ? Intégrez ESGFlow à votre offre cloud, avec marque blanche possible et API documentée.'),
   },
   {
     icon: Users,
@@ -92,17 +92,17 @@ export default function PartnersPage() {
 
   const url = 'https://greenconnect.cloud/partenaires';
   const img = 'https://greenconnect.cloud/api/v1/og/partenaires.png';
-  const desc = t('resources.partners.seo.description', "Devenez partenaire ESG Flow : commission jusqu'à 20% récurrente, formation gratuite, annuaire public. Pour cabinets RSE, experts-comptables, ESN.");
+  const desc = t('resources.partners.seo.description', "Devenez partenaire ESGFlow : commission jusqu'à 20% récurrente, formation gratuite, annuaire public. Pour cabinets RSE, experts-comptables, ESN.");
 
   usePageSeo({
     id: 'partenaires',
-    title: t('resources.partners.seo.title', 'Programme Partenaires — ESG Flow'),
+    title: t('resources.partners.seo.title', 'Programme Partenaires — ESGFlow'),
     description: desc,
     keywords: t('resources.partners.seo.keywords', 'partenaires ESG, cabinet RSE, expert-comptable, programme affiliation, white label CSRD, commission récurrente'),
     url,
-    ogTitle: t('resources.partners.seo.ogTitle', "Programme Partenaires ESG Flow — jusqu'à 20% de commission"),
+    ogTitle: t('resources.partners.seo.ogTitle', "Programme Partenaires ESGFlow — jusqu'à 20% de commission"),
     ogImage: img,
-    ogImageAlt: t('resources.partners.seo.ogImageAlt', 'Programme Partenaires ESG Flow — Référent, Premium, Intégrateur'),
+    ogImageAlt: t('resources.partners.seo.ogImageAlt', 'Programme Partenaires ESGFlow — Référent, Premium, Intégrateur'),
     breadcrumb: [
       { name: t('resources.partners.breadcrumb.home', 'Accueil'),    url: 'https://greenconnect.cloud/' },
       { name: t('resources.partners.breadcrumb.company', 'Entreprise'), url: 'https://greenconnect.cloud/' },
@@ -115,7 +115,7 @@ export default function PartnersPage() {
       {/* Header */}
       <header className="bg-white/95 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link to="/" aria-label={t('resources.partners.nav.homeAria', 'ESG Flow — Accueil')}>
+          <Link to="/" aria-label={t('resources.partners.nav.homeAria', 'ESGFlow — Accueil')}>
             <LogoBrand size="sm" variant="dark" showTagline={false} />
           </Link>
           <Link to="/register" className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold">
@@ -135,7 +135,7 @@ export default function PartnersPage() {
           </h1>
           <p className="text-xl text-gray-600 leading-relaxed mb-8 max-w-2xl mx-auto">
             <Trans i18nKey="resources.partners.hero.subtitle">
-              Cabinet de conseil RSE, expert-comptable ou ESN : devenez partenaire ESG Flow et touchez
+              Cabinet de conseil RSE, expert-comptable ou ESN : devenez partenaire ESGFlow et touchez
               jusqu'à <strong>20 % de commission récurrente</strong> sur chaque client référé.
             </Trans>
           </p>
@@ -245,8 +245,8 @@ export default function PartnersPage() {
           <div className="grid sm:grid-cols-4 gap-6">
             {[
               { n: 1, title: t('resources.partners.how.0.title', 'Postulez'), desc: t('resources.partners.how.0.desc', 'Remplissez le formulaire (3 min). Nous validons sous 5 jours ouvrés.') },
-              { n: 2, title: t('resources.partners.how.1.title', 'Formez-vous'), desc: t('resources.partners.how.1.desc', 'Formation 3h en ligne sur ESG Flow + ressources commerciales.') },
-              { n: 3, title: t('resources.partners.how.2.title', 'Référez'), desc: t('resources.partners.how.2.desc', 'Partagez votre lien partenaire ou vendez ESG Flow comme outil de mission.') },
+              { n: 2, title: t('resources.partners.how.1.title', 'Formez-vous'), desc: t('resources.partners.how.1.desc', 'Formation 3h en ligne sur ESGFlow + ressources commerciales.') },
+              { n: 3, title: t('resources.partners.how.2.title', 'Référez'), desc: t('resources.partners.how.2.desc', 'Partagez votre lien partenaire ou vendez ESGFlow comme outil de mission.') },
               { n: 4, title: t('resources.partners.how.3.title', 'Touchez'), desc: t('resources.partners.how.3.desc', 'Commission versée trimestriellement pendant 12-24 mois par client.') },
             ].map((s, i) => (
               <div key={i} className="text-center">
@@ -264,7 +264,7 @@ export default function PartnersPage() {
       {/* Why us */}
       <section className="py-20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">{t('resources.partners.why.heading', 'Pourquoi recommander ESG Flow ?')}</h2>
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">{t('resources.partners.why.heading', 'Pourquoi recommander ESGFlow ?')}</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {[
               { icon: Coins, title: t('resources.partners.why.0.title', 'Tarif accessible'), desc: t('resources.partners.why.0.desc', 'À partir de 249 €/mois — sans cabinet à 30 k€.') },

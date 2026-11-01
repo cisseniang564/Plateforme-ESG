@@ -106,7 +106,7 @@ export function usePageSeo(opts: UsePageSeoOptions) {
     setMeta('og:url',            url,                          true);
     setMeta('og:title',          ogTitle,                      true);
     setMeta('og:description',    ogDescription,                true);
-    setMeta('og:site_name',      'ESG Flow',                   true);
+    setMeta('og:site_name',      'ESGFlow',                   true);
     setMeta('og:locale',         'fr_FR',                      true);
     setMeta('og:image',          ogImage,                      true);
     setMeta('og:image:width',    String(ogImageWidth),         true);

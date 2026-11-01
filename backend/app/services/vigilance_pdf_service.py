@@ -374,7 +374,7 @@ def generate_vigilance_pdf(
     # ── Footer note ─────────────────────────────────────────────────────────
     story.append(Spacer(1, 1 * cm))
     story.append(Paragraph(
-        "Document généré automatiquement par ESG Flow. "
+        "Document généré automatiquement par ESGFlow. "
         "Conforme aux exigences de l'Article L225-102-4 du Code de commerce. "
         "Doit être intégré au rapport de gestion annuel et publié sur le site internet de la société.",
         styles["Small"],

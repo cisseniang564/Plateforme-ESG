@@ -141,7 +141,7 @@ export default function TaxonomiePage() {
             <div>
               <div className="font-bold text-amber-900 mb-1">{t('resources.taxonomie.intro.warningTitle', 'Objectifs 1 et 2 uniquement opérationnels à ce stade')}</div>
               <p className="text-sm text-amber-800 leading-relaxed">
-                {t('resources.taxonomie.intro.warningBody', 'Seuls les objectifs 1 (atténuation) et 2 (adaptation) disposent de critères techniques détaillés et opposables. Les objectifs 3 à 6 ont reçu leurs premiers actes délégués en 2023, mais leurs critères restent moins exhaustifs. ESG Flow les intègre progressivement au fil de la publication des textes officiels.')}
+                {t('resources.taxonomie.intro.warningBody', 'Seuls les objectifs 1 (atténuation) et 2 (adaptation) disposent de critères techniques détaillés et opposables. Les objectifs 3 à 6 ont reçu leurs premiers actes délégués en 2023, mais leurs critères restent moins exhaustifs. ESGFlow les intègre progressivement au fil de la publication des textes officiels.')}
               </p>
             </div>
           </div>
@@ -313,7 +313,7 @@ export default function TaxonomiePage() {
               {
                 n: '05',
                 title: t('resources.taxonomie.pitfalls.4.title', 'Ne pas documenter les preuves'),
-                desc: t('resources.taxonomie.pitfalls.4.desc', "L'alignement doit être justifié par des preuves concrètes (certifications, bilans énergie, attestations fournisseurs, contrats). Sans trail documentaire, l'auditeur rejettera l'alignement. ESG Flow lie chaque déclaration Taxonomie à ses pièces justificatives."),
+                desc: t('resources.taxonomie.pitfalls.4.desc', "L'alignement doit être justifié par des preuves concrètes (certifications, bilans énergie, attestations fournisseurs, contrats). Sans trail documentaire, l'auditeur rejettera l'alignement. ESGFlow lie chaque déclaration Taxonomie à ses pièces justificatives."),
                 color: 'violet',
               },
             ].map(item => (
@@ -394,13 +394,13 @@ export default function TaxonomiePage() {
           </div>
         </section>
 
-        {/* ── Section 5 — ESG Flow ──────────────────────────────────────────── */}
+        {/* ── Section 5 — ESGFlow ──────────────────────────────────────────── */}
         <section id="esgflow">
           <div className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-full border border-emerald-100 mb-4">
             <Sparkles className="h-3.5 w-3.5" /> {t('resources.taxonomie.esgflow.badge', 'Solution')}
           </div>
           <h2 className="text-3xl font-extrabold text-gray-900 mb-4">
-            {t('resources.taxonomie.esgflow.heading', 'Comment ESG Flow simplifie votre reporting Taxonomie')}
+            {t('resources.taxonomie.esgflow.heading', 'Comment ESGFlow simplifie votre reporting Taxonomie')}
           </h2>
           <p className="text-gray-600 text-lg leading-relaxed mb-8">
             {t('resources.taxonomie.esgflow.intro', "Un module Taxonomie guidé, de la qualification NACE jusqu'à l'export réglementaire final.")}
@@ -417,13 +417,13 @@ export default function TaxonomiePage() {
               {
                 icon: CheckCircle,
                 title: t('resources.taxonomie.esgflow.features.1.title', 'Check-list SC + DNSH + MinSafeguards par objectif'),
-                desc: t('resources.taxonomie.esgflow.features.1.desc', 'Pour chaque activité, ESG Flow vérifie les 3 conditions cumulatives avec des critères mis à jour en temps réel selon les textes officiels.'),
+                desc: t('resources.taxonomie.esgflow.features.1.desc', 'Pour chaque activité, ESGFlow vérifie les 3 conditions cumulatives avec des critères mis à jour en temps réel selon les textes officiels.'),
                 color: 'emerald',
               },
               {
                 icon: Globe,
                 title: t('resources.taxonomie.esgflow.features.2.title', 'Calcul automatique des 3 KPIs (CA, CapEx, OpEx)'),
-                desc: t('resources.taxonomie.esgflow.features.2.desc', 'Conformément au règlement délégué 2021/2178/UE. ESG Flow calcule et ventile automatiquement vos KPIs par activité et par objectif.'),
+                desc: t('resources.taxonomie.esgflow.features.2.desc', 'Conformément au règlement délégué 2021/2178/UE. ESGFlow calcule et ventile automatiquement vos KPIs par activité et par objectif.'),
                 color: 'violet',
               },
               {
@@ -463,7 +463,7 @@ export default function TaxonomiePage() {
               },
               {
                 q: t('resources.taxonomie.faq.3.q', 'Les objectifs 3 à 6 sont-ils déjà applicables ?'),
-                a: t('resources.taxonomie.faq.3.a', "Les objectifs Eau (3), Économie circulaire (4), Pollution (5) et Biodiversité (6) ont reçu leurs premiers actes délégués en 2023. Ils sont applicables mais encore moins détaillés par rapport aux objectifs 1 et 2, dont les critères couvrent la grande majorité des secteurs. ESG Flow les intègre au fur et à mesure de la publication des textes techniques officiels."),
+                a: t('resources.taxonomie.faq.3.a', "Les objectifs Eau (3), Économie circulaire (4), Pollution (5) et Biodiversité (6) ont reçu leurs premiers actes délégués en 2023. Ils sont applicables mais encore moins détaillés par rapport aux objectifs 1 et 2, dont les critères couvrent la grande majorité des secteurs. ESGFlow les intègre au fur et à mesure de la publication des textes techniques officiels."),
               },
               {
                 q: t('resources.taxonomie.faq.4.q', "Comment l'Omnibus I a-t-il modifié le reporting Taxonomie ?"),
@@ -482,7 +482,7 @@ export default function TaxonomiePage() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles className="h-5 w-5 text-emerald-400" />
-                <span className="text-emerald-300 text-sm font-semibold">{t('resources.taxonomie.cta.label', 'ESG Flow — Module Taxonomie UE')}</span>
+                <span className="text-emerald-300 text-sm font-semibold">{t('resources.taxonomie.cta.label', 'ESGFlow — Module Taxonomie UE')}</span>
               </div>
               <h2 className="text-2xl font-extrabold text-white mb-3">
                 {t('resources.taxonomie.cta.title', 'Votre reporting Taxonomie, sans confusion entre éligibilité et alignement')}
