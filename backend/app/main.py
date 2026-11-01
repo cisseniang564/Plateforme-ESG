@@ -73,7 +73,7 @@ from app.api.v1.endpoints import carbon
 from app.api.v1.endpoints import supply_chain
 from app.api.v1.endpoints import esrs
 from app.api.v1.endpoints import ai_insights
-from app.api.v1.endpoints import gaia
+from app.api.v1.endpoints import gaia, questionnaires
 from app.api.v1.endpoints import smart_alerts
 from app.api.v1.endpoints import api_keys
 from app.api.v1.endpoints import sso
@@ -445,6 +445,7 @@ app.include_router(supply_chain.router, prefix="/api/v1/supply-chain", tags=["Su
 app.include_router(esrs.router, prefix="/api/v1/esrs", tags=["ESRS"])
 app.include_router(ai_insights.router, prefix="/api/v1/ai-insights", tags=["AI Insights"])
 app.include_router(gaia.router, prefix="/api/v1/gaia", tags=["Gaia"])
+app.include_router(questionnaires.router, prefix="/api/v1/questionnaires", tags=["Questionnaires"])
 app.include_router(smart_alerts.router, prefix="/api/v1/smart-alerts", tags=["Smart Alerts"])
 app.include_router(api_keys.router, prefix="/api/v1")
 app.include_router(sso.router, prefix="/api/v1")

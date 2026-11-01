@@ -9,7 +9,7 @@ export const conformite: DocArticle[] = [
     routes: [{ label: 'Conformité réglementaire', to: '/app/compliance' }],
     about: 'La page présente chaque réglementation (CSRD, Taxonomie UE, DPEF, loi Sapin II, etc.) : à qui elle s\'applique, qui la contrôle, la liste des étapes de conformité et les actions recommandées. C\'est vous qui indiquez où vous en êtes sur chaque étape.',
     shows: [
-      'Une carte par réglementation avec le périmètre d\'application (par exemple « entreprises de plus de 250 salariés ou plus de 40 M€ de chiffre d\'affaires » pour la CSRD), l\'autorité concernée et l\'échéance.',
+      'Une carte par réglementation avec le périmètre d\'application (par exemple « plus de 1 000 salariés et plus de 450 M€ de chiffre d\'affaires » pour la CSRD depuis l\'Omnibus), l\'autorité concernée et l\'échéance.',
       'La liste des étapes de conformité. Toutes démarrent « À évaluer » : cliquez sur une étape pour passer successivement à Non conforme, Partiel puis Conforme.',
       'Un pourcentage de progression par réglementation, calculé à partir de vos réponses (une étape conforme compte 1, partielle 0,5, non conforme ou non évaluée 0), et une progression moyenne en haut de page.',
       'Un rappel de votre score ESG actuel, issu de vos données réelles.',
@@ -308,5 +308,34 @@ export const conformite: DocArticle[] = [
     ],
     related: ['cdp', 'taxonomie-ue', 'scores-esg'],
     keywords: ['investisseurs', 'notation', 'MSCI', 'data room', 'questionnaire'],
+  },
+  {
+    slug: 'questionnaires-clients',
+    section: 'conformite',
+    title: 'Questionnaires clients',
+    summary: 'Déposer le questionnaire RSE d\'un client et le pré-remplir avec vos données déjà saisies.',
+    routes: [{ label: 'Questionnaires clients', to: '/app/questionnaires' }],
+    about: 'Vos clients (grands groupes, banques) vous envoient des questionnaires RSE. Vous déposez le questionnaire (Excel, Word, PDF, CSV) ou vous collez ses questions ; ESGFlow en extrait les questions et propose des réponses uniquement à partir des données que vous avez déjà saisies. Vous relisez, complétez, validez et exportez en Excel.',
+    shows: [
+      'La liste des questions extraites, regroupées par rubrique, avec un statut : « Pré-rempli · à relire », « À compléter » ou « Validé ».',
+      'Pour chaque réponse pré-remplie, les données utilisées comme source (indicateur, valeur, unité, année) ; une source non vérifiée est signalée.',
+      'Une barre de progression : questions validées, à relire et à compléter.',
+      'Un export Excel (question, réponse, statut, sources) à renvoyer à votre client.',
+    ],
+    steps: [
+      { title: 'Déposer le questionnaire', text: 'Glissez le fichier ou collez les questions, puis indiquez éventuellement le nom du client.' },
+      { title: 'Patienter', text: 'La lecture et le pré-remplissage prennent de 20 à 60 secondes.' },
+      { title: 'Relire', text: 'Filtrez sur « À relire », corrigez si besoin, puis validez les réponses justes.' },
+      { title: 'Compléter', text: 'Les questions sans donnée restent vides : saisissez la réponse ou ajoutez la donnée dans ESGFlow.' },
+      { title: 'Exporter', text: 'Enregistrez, puis exportez en Excel.' },
+    ],
+    tips: [
+      'ESGFlow ne répond jamais à partir de suppositions : sans donnée saisie, la question reste « à compléter ».',
+      'Plus vos indicateurs sont saisis et vérifiés, plus il y a de réponses pré-remplies.',
+      'Le texte du questionnaire et vos données saisies sont envoyés à OpenAI pour le traitement ; le fichier n\'est pas conservé. Ne déposez pas de document confidentiel que vous ne pouvez pas partager avec un prestataire d\'IA.',
+      'Limite : 10 questionnaires par jour et par compte.',
+    ],
+    related: ['gaia', 'saisie-manuelle'],
+    keywords: ['questionnaire', 'client', 'fournisseur', 'EcoVadis', 'VSME', 'banque', 'donneur d\'ordre', 'pré-remplissage'],
   },
 ];

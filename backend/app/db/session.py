@@ -206,7 +206,7 @@ async def init_db() -> None:
         "framework_assessments", "indicator_data", "indicator_formulas",
         "indicators", "integrations", "materiality_issues",
         "report_history", "sector_weights", "sso_configs",
-        "suppliers", "webhooks", "report_analyses",
+        "suppliers", "webhooks", "report_analyses", "client_questionnaires",
     ]
     # NULLIF: an unset/empty setting yields NULL (no rows) instead of a
     # "invalid input syntax for type uuid" error.
@@ -273,6 +273,26 @@ async def init_db() -> None:
         """,
         "CREATE INDEX IF NOT EXISTS ix_report_analyses_tenant_id ON report_analyses (tenant_id)",
         "CREATE INDEX IF NOT EXISTS ix_report_analyses_content_hash ON report_analyses (content_hash)",
+
+        # ── Questionnaires RSE reçus des clients (pré-remplissage) ────────────
+        """
+        CREATE TABLE IF NOT EXISTS client_questionnaires (
+            id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id    UUID        NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+            user_id      UUID                 REFERENCES users(id)   ON DELETE SET NULL,
+            title        VARCHAR(255) NOT NULL,
+            client_name  VARCHAR(200),
+            file_size    INTEGER     NOT NULL DEFAULT 0,
+            status       VARCHAR(20) NOT NULL DEFAULT 'processing',
+            error        TEXT,
+            questions    JSON,
+            text_excerpt TEXT,
+            model        VARCHAR(60),
+            created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_client_questionnaires_tenant_id ON client_questionnaires (tenant_id)",
     ]
 
     # ── RLS policy migrations (idempotent: DROP IF EXISTS then CREATE) ────────
