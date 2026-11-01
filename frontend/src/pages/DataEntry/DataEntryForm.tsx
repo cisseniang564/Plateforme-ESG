@@ -6,7 +6,7 @@ import {
 } from './dataEntryHelpers';
 import { useTranslation } from 'react-i18next';
 import {
-  Database, Plus, Save, Leaf, Users, Scale, CheckCircle, AlertCircle, Trash2, Download, X,
+  Database, Plus, Save, Leaf, Users, Scale, AlertCircle, Trash2, Download,
   ChevronRight, ChevronLeft, RefreshCw, Search, Lock, ArrowUp, ArrowDown, ArrowUpDown,
   Upload, AlertTriangle,
 } from 'lucide-react';
