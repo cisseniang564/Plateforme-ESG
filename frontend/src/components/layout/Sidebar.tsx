@@ -172,6 +172,12 @@ function buildRail(t: TFn): RailSection[] {
           ],
         },
         {
+          title: 'Répondre à vos clients',
+          items: [
+            { name: 'Questionnaires clients', href: '/app/questionnaires', icon: ClipboardList, badge: 'IA', badgeVariant: 'violet' },
+          ],
+        },
+        {
           title: t('sidebar.groups.intlVoluntary'),
           items: [
             { name: t('sidebar.nav.tcfdBuilder'), href: '/app/tcfd',               icon: ShieldCheck },

@@ -97,6 +97,7 @@ function buildRouteLabels(t: TFn): Record<string, string> {
     '/app/reports/scheduled':             t('header.routes.scheduledReports'),
     '/app/reports/multi-standards':       t('header.routes.multiStandards'),
     '/app/templates':                     t('header.routes.templates'),
+    '/app/questionnaires':                t('header.routes.questionnaires'),
     '/app/settings':                      t('header.routes.settings'),
     '/app/settings/users':                t('header.routes.settingsUsers'),
     '/app/settings/methodology':          t('header.routes.settingsMethodology'),

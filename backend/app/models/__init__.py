@@ -20,6 +20,7 @@ from app.models.api_key import ApiKey
 from app.models.sso_config import SSOConfig
 from app.models.report_history import ReportHistory
 from app.models.report_analysis import ReportAnalysis
+from app.models.client_questionnaire import ClientQuestionnaire
 from app.models.notification import Notification
 from app.models.supplier import Supplier
 from app.models.auditor_review import AuditorReview, AuditorComment
@@ -54,6 +55,7 @@ __all__ = [
     "SSOConfig",
     "ReportHistory",
     "ReportAnalysis",
+    "ClientQuestionnaire",
     "Notification",
     "Supplier",
     "AuditorReview",
