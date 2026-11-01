@@ -23,8 +23,10 @@ mkdir -p "$INBOX"; chmod 700 "$INBOX"
 F="$INBOX/frontend-$(date +%F-%H%M%S).tgz"
 head -c 200000000 > "$F"                       # 200 Mo maximum
 [ "$(stat -c %s "$F")" -gt 100000 ] || { echo "Archive trop petite"; rm -f "$F"; exit 1; }
-tar tzf "$F" | grep -q '^dist/index.html$' || tar tzf "$F" | grep -q '^\./dist/index.html$' \
-  || { echo "dist/index.html absent"; rm -f "$F"; exit 1; }
+# Liste d'abord, cherche ensuite : « tar | grep -q » + pipefail échoue (SIGPIPE) dès que la liste dépasse
+# la taille du tube (64 Ko), ce qui rejetait à tort des archives valides.
+LIST="$(tar tzf "$F")"
+grep -qxE '(\./)?dist/index\.html' <<<"$LIST" || { echo "dist/index.html absent"; rm -f "$F"; exit 1; }
 /usr/local/bin/esgflow-deploy-frontend "$F"
 ls -1t "$INBOX"/frontend-*.tgz | tail -n +6 | xargs -r rm -f   # garde les 5 dernières
 RECV
