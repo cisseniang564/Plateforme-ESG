@@ -39,6 +39,11 @@ class MaterialityIssue(Base, UUIDMixin, TenantMixin, TimestampMixin):
     iro_actual_or_potential: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)  # 'actual' | 'potential' (impacts only)
     esrs_topic: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)          # 'E1'..'E5' | 'S1'..'S4' | 'G1'
 
+    # Traçabilité de l'évaluation : la méthode et les hypothèses doivent pouvoir être expliquées
+    rationale: Mapped[Optional[str]] = mapped_column(Text, nullable=True)                 # justification des deux notes
+    time_horizon: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)        # 'short' | 'medium' | 'long'
+    value_chain: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)         # 'own' | 'upstream' | 'downstream'
+
     # Relationships
     tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="materiality_issues")
     risks: Mapped[list["ESGRisk"]] = relationship(

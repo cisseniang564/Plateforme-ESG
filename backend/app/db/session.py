@@ -231,6 +231,9 @@ async def init_db() -> None:
         "ALTER TABLE materiality_issues ADD COLUMN IF NOT EXISTS iro_type VARCHAR(20)",
         "ALTER TABLE materiality_issues ADD COLUMN IF NOT EXISTS iro_actual_or_potential VARCHAR(20)",
         "ALTER TABLE materiality_issues ADD COLUMN IF NOT EXISTS esrs_topic VARCHAR(10)",
+        "ALTER TABLE materiality_issues ADD COLUMN IF NOT EXISTS rationale TEXT",
+        "ALTER TABLE materiality_issues ADD COLUMN IF NOT EXISTS time_horizon VARCHAR(20)",
+        "ALTER TABLE materiality_issues ADD COLUMN IF NOT EXISTS value_chain VARCHAR(20)",
 
         # ── Framework assessments (CDP, CSDDD, climate, investor, iXBRL) ─────
         """

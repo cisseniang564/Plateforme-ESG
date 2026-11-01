@@ -30,6 +30,24 @@ def _empty_to_none(v: Any) -> Optional[str]:
     return v
 
 
+# Évaluation : horizon de temps et position dans la chaîne de valeur.
+TIME_HORIZONS = {"short", "medium", "long"}
+VALUE_CHAIN_POSITIONS = {"own", "upstream", "downstream"}
+_ASSESSMENT_FIELDS = ("rationale", "time_horizon", "value_chain")
+
+
+def _check_assessment(field: str, v: Any) -> Optional[str]:
+    v = _empty_to_none(v)
+    if v is None:
+        return None
+    allowed = {"time_horizon": TIME_HORIZONS, "value_chain": VALUE_CHAIN_POSITIONS}.get(field)
+    if allowed is not None and v not in allowed:
+        raise ValueError(f"valeur inconnue : {v!r} (attendu : {', '.join(sorted(allowed))})")
+    if field == "rationale":
+        return str(v).strip()[:4000]
+    return v
+
+
 class MaterialityIssueCreate(BaseModel):
     name: str
     description: Optional[str] = None
@@ -41,11 +59,19 @@ class MaterialityIssueCreate(BaseModel):
     iro_type: Optional[str] = None
     iro_actual_or_potential: Optional[str] = None
     esrs_topic: Optional[str] = None
+    rationale: Optional[str] = None
+    time_horizon: Optional[str] = None
+    value_chain: Optional[str] = None
 
     @field_validator(*_IRO_FIELDS, mode="before")
     @classmethod
     def _norm_iro(cls, v: Any) -> Optional[str]:
         return _empty_to_none(v)
+
+    @field_validator(*_ASSESSMENT_FIELDS, mode="before")
+    @classmethod
+    def _norm_assessment(cls, v: Any, info) -> Optional[str]:
+        return _check_assessment(info.field_name, v)
 
 class MaterialityIssueUpdate(BaseModel):
     name: Optional[str] = None
@@ -58,11 +84,19 @@ class MaterialityIssueUpdate(BaseModel):
     iro_type: Optional[str] = None
     iro_actual_or_potential: Optional[str] = None
     esrs_topic: Optional[str] = None
+    rationale: Optional[str] = None
+    time_horizon: Optional[str] = None
+    value_chain: Optional[str] = None
 
     @field_validator(*_IRO_FIELDS, mode="before")
     @classmethod
     def _norm_iro(cls, v: Any) -> Optional[str]:
         return _empty_to_none(v)
+
+    @field_validator(*_ASSESSMENT_FIELDS, mode="before")
+    @classmethod
+    def _norm_assessment(cls, v: Any, info) -> Optional[str]:
+        return _check_assessment(info.field_name, v)
 
 class MaterialityIssueResponse(BaseModel):
     id: str | UUID
@@ -78,6 +112,9 @@ class MaterialityIssueResponse(BaseModel):
     iro_type: Optional[str] = None
     iro_actual_or_potential: Optional[str] = None
     esrs_topic: Optional[str] = None
+    rationale: Optional[str] = None
+    time_horizon: Optional[str] = None
+    value_chain: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
