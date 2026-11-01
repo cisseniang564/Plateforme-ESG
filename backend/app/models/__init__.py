@@ -15,7 +15,7 @@ from app.models.audit_log import AuditLog
 from app.models.integration import Integration
 from app.models.webhook import Webhook
 from app.models.sector_weight import SectorWeight
-from app.models.materiality import MaterialityIssue, ESGRisk
+from app.models.materiality import MaterialityIssue, MaterialityValidation, ESGRisk
 from app.models.api_key import ApiKey
 from app.models.sso_config import SSOConfig
 from app.models.report_history import ReportHistory
@@ -50,6 +50,7 @@ __all__ = [
     "Webhook",
     "SectorWeight",
     "MaterialityIssue",
+    "MaterialityValidation",
     "ESGRisk",
     "ApiKey",
     "SSOConfig",

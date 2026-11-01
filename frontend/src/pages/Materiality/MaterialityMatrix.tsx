@@ -9,6 +9,7 @@ import {
 import Spinner from '@/components/common/Spinner';
 import api from '@/services/api';
 import toast from 'react-hot-toast';
+import ValidationCard from './ValidationCard';
 import { HORIZON_LABELS, VALUE_CHAIN_LABELS, catOf, missingDocumentation, normCatKey } from './materialityHelpers';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -631,6 +632,9 @@ export default function MaterialityMatrix() {
                     </div>
                   )}
                 </div>
+
+                {/* Validation datée par la direction */}
+                <ValidationCard issues={issues} issueCount={issues.length} incompleteMaterial={materialIssues.filter(i => missingDocumentation(i).length > 0).length} />
 
                 {/* Category breakdown table */}
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
