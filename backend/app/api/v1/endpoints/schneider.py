@@ -149,11 +149,3 @@ async def get_schneider_emissions(
             "climatiq_used": any(s.get("via_climatiq") for s in results),
         },
     }
-
-
-@router.post("/sync")
-async def sync_schneider(
-    period: Optional[str] = Query(default="2026-02"),
-):
-    """Trigger a manual re-sync of Schneider → Climatiq data."""
-    return await get_schneider_emissions(period=period)
