@@ -3,7 +3,7 @@ Materiality and Risk models for ESG assessment.
 """
 from typing import TYPE_CHECKING, Optional
 from datetime import datetime
-from sqlalchemy import String, Float, Integer, Boolean, Text, ForeignKey
+from sqlalchemy import String, Float, Integer, Boolean, Text, ForeignKey, DateTime, JSON
 from uuid import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -85,3 +85,25 @@ class ESGRisk(Base, UUIDMixin, TenantMixin, TimestampMixin):
     materiality_issue: Mapped[Optional["MaterialityIssue"]] = relationship(
         "MaterialityIssue", back_populates="risks"
     )
+
+
+class MaterialityValidation(Base, UUIDMixin, TenantMixin, TimestampMixin):
+    """
+    Validation datée de la matrice par la direction : copie figée des enjeux + empreinte.
+    Journal en ajout seul : aucune route ne modifie ni ne supprime une validation.
+    """
+    __tablename__ = "materiality_validations"
+
+    version: Mapped[int] = mapped_column(Integer, nullable=False)                       # n-ième validation du client
+    validated_by_user_id: Mapped[Optional[UUID]] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    validator_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    validator_role: Mapped[str] = mapped_column(String(200), nullable=False)
+    validated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    comment: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    threshold: Mapped[float] = mapped_column(Float, nullable=False, default=60.0)
+    issue_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    material_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    snapshot: Mapped[list] = mapped_column(JSON, nullable=False)
+    snapshot_hash: Mapped[str] = mapped_column(String(64), nullable=False)

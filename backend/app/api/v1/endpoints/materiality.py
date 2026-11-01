@@ -3,15 +3,16 @@ import logging
 import re
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import func, select
 from typing import Any, Dict, List, Optional
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from uuid import UUID
 from pydantic import BaseModel, Field, field_validator
 
 from app.config import settings
 from app.dependencies import get_db, get_current_user
-from app.models.materiality import MaterialityIssue, ESGRisk
+from app.models.materiality import MaterialityIssue, MaterialityValidation, ESGRisk
+from app.services import materiality_validation as mv
 from app.models.user import User
 
 logger = logging.getLogger(__name__)
@@ -766,3 +767,103 @@ async def generate_risk_mitigation(
         source=source,
         saved=saved,
     )
+
+# ============= VALIDATION DATÉE DE LA MATRICE =============
+# Journal en ajout seul : on peut valider et consulter, jamais modifier ni supprimer une validation.
+
+class ValidationCreate(BaseModel):
+    validator_name: Optional[str] = Field(None, max_length=200)
+    validator_role: str = Field(..., min_length=1, max_length=200)
+    comment: Optional[str] = Field(None, max_length=2000)
+    attestation: bool = False
+
+    @field_validator("validator_name", "validator_role", "comment", mode="before")
+    @classmethod
+    def _strip(cls, v: Any) -> Any:
+        return v.strip() if isinstance(v, str) else v
+
+
+def _validation_summary(v: MaterialityValidation) -> Dict[str, Any]:
+    return {
+        "id": str(v.id), "version": v.version, "validated_at": v.validated_at.isoformat(),
+        "validator_name": v.validator_name, "validator_role": v.validator_role, "comment": v.comment,
+        "threshold": v.threshold, "issue_count": v.issue_count, "material_count": v.material_count,
+        "snapshot_hash": v.snapshot_hash,
+    }
+
+
+async def _current_snapshot(db: AsyncSession, tenant_id: Any) -> List[Dict[str, Any]]:
+    rows = (await db.execute(select(MaterialityIssue).where(MaterialityIssue.tenant_id == tenant_id))).scalars().all()
+    return mv.snapshot_issues(rows)
+
+
+@router.post("/validations", status_code=201)
+async def validate_matrix(
+    body: ValidationCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """La direction valide la matrice : copie figée des enjeux, date, valideur, empreinte."""
+    if not body.attestation:
+        raise HTTPException(422, "La validation doit être attestée (case à cocher).")
+    snapshot = await _current_snapshot(db, current_user.tenant_id)
+    if not snapshot:
+        raise HTTPException(409, "Aucun enjeu à valider : ajoutez d'abord des enjeux à la matrice.")
+
+    last_version = (await db.execute(
+        select(func.max(MaterialityValidation.version)).where(MaterialityValidation.tenant_id == current_user.tenant_id)
+    )).scalar() or 0
+    row = MaterialityValidation(
+        tenant_id=current_user.tenant_id,
+        version=last_version + 1,
+        validated_by_user_id=current_user.id,
+        validator_name=body.validator_name or getattr(current_user, "full_name", None) or current_user.email,
+        validator_role=body.validator_role,
+        validated_at=datetime.now(timezone.utc),
+        comment=body.comment or None,
+        threshold=mv.MATERIALITY_THRESHOLD,
+        issue_count=len(snapshot),
+        material_count=sum(1 for r in snapshot if r["is_material"]),
+        snapshot=snapshot,
+        snapshot_hash=mv.snapshot_hash(snapshot),
+    )
+    db.add(row)
+    # flush + refresh avant le commit : même transaction (même connexion, même client RLS)
+    await db.flush()
+    await db.refresh(row)
+    await db.commit()
+    return _validation_summary(row)
+
+
+@router.get("/validations")
+async def list_validations(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    rows = (await db.execute(
+        select(MaterialityValidation).where(MaterialityValidation.tenant_id == current_user.tenant_id)
+        .order_by(MaterialityValidation.version.desc())
+    )).scalars().all()
+    return {"items": [_validation_summary(r) for r in rows]}
+
+
+@router.get("/validations/status")
+async def validation_status(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Dernière validation et ce qui a changé depuis."""
+    last = (await db.execute(
+        select(MaterialityValidation).where(MaterialityValidation.tenant_id == current_user.tenant_id)
+        .order_by(MaterialityValidation.version.desc()).limit(1)
+    )).scalar_one_or_none()
+    if not last:
+        return {"last": None, "changes": None, "up_to_date": False}
+    changes = mv.diff_snapshots(last.snapshot, await _current_snapshot(db, current_user.tenant_id))
+    return {"last": _validation_summary(last), "changes": changes, "up_to_date": changes["total"] == 0}
+
+
+@router.get("/validations/{validation_id}")
+async def get_validation(validation_id: UUID, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    row = (await db.execute(
+        select(MaterialityValidation).where(
+            MaterialityValidation.id == validation_id, MaterialityValidation.tenant_id == current_user.tenant_id
+        )
+    )).scalar_one_or_none()
+    if not row:
+        raise HTTPException(404, "Validation introuvable.")
+    return {**_validation_summary(row), "snapshot": row.snapshot}

@@ -80,3 +80,20 @@ describe('Matrice de matérialité', () => {
     expect(screen.getByText(/À documenter/)).toHaveTextContent('justification');
   });
 });
+
+describe('Validation par la direction', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('propose de valider une matrice jamais validée, et exige l\'attestation et la fonction', async () => {
+    await renderPage();
+    expect(screen.getByText(/n'a pas encore été validée/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Valider la matrice' }));
+    const dialog = screen.getByRole('dialog', { name: 'Valider la matrice' });
+    const submit = within(dialog).getByRole('button', { name: 'Valider' });
+    expect(submit).toBeDisabled();
+    fireEvent.change(within(dialog).getByLabelText('Fonction'), { target: { value: 'Direction générale' } });
+    expect(submit).toBeDisabled();                                   // il manque l'attestation
+    fireEvent.click(within(dialog).getByLabelText(/J'atteste/));
+    expect(submit).toBeEnabled();
+  });
+});

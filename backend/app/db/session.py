@@ -206,7 +206,7 @@ async def init_db() -> None:
         "framework_assessments", "indicator_data", "indicator_formulas",
         "indicators", "integrations", "materiality_issues",
         "report_history", "sector_weights", "sso_configs",
-        "suppliers", "webhooks", "report_analyses", "client_questionnaires",
+        "suppliers", "webhooks", "report_analyses", "client_questionnaires", "materiality_validations",
     ]
     # NULLIF: an unset/empty setting yields NULL (no rows) instead of a
     # "invalid input syntax for type uuid" error.
@@ -296,6 +296,29 @@ async def init_db() -> None:
         )
         """,
         "CREATE INDEX IF NOT EXISTS ix_client_questionnaires_tenant_id ON client_questionnaires (tenant_id)",
+
+        # ── Validation datée de la matrice de matérialité (journal en ajout seul) ─
+        """
+        CREATE TABLE IF NOT EXISTS materiality_validations (
+            id                  UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id           UUID        NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+            version             INTEGER     NOT NULL,
+            validated_by_user_id UUID                REFERENCES users(id) ON DELETE SET NULL,
+            validator_name      VARCHAR(200) NOT NULL,
+            validator_role      VARCHAR(200) NOT NULL,
+            validated_at        TIMESTAMPTZ NOT NULL,
+            comment             TEXT,
+            threshold           DOUBLE PRECISION NOT NULL DEFAULT 60,
+            issue_count         INTEGER     NOT NULL DEFAULT 0,
+            material_count      INTEGER     NOT NULL DEFAULT 0,
+            snapshot            JSON        NOT NULL,
+            snapshot_hash       VARCHAR(64) NOT NULL,
+            created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE (tenant_id, version)
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_materiality_validations_tenant_id ON materiality_validations (tenant_id)",
     ]
 
     # ── RLS policy migrations (idempotent: DROP IF EXISTS then CREATE) ────────
