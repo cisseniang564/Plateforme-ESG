@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { anonymousState } from './helpers/session';
+import { anonymousState, fillStable } from './helpers/session';
 
 test.describe('Ressources (publiques)', () => {
   test.use({ storageState: anonymousState() });
@@ -18,9 +18,9 @@ test.describe('Ressources (publiques)', () => {
   test('le dictionnaire filtre par recherche', async ({ page }) => {
     await page.goto('/ressources/dictionnaire');
     await expect(page.getByRole('heading', { name: 'Le dictionnaire des indicateurs ESG' })).toBeVisible();
-    await page.getByPlaceholder(/Scope 1/).fill('E1-6');
+    await fillStable(page.getByPlaceholder(/Scope 1/), 'E1-6');
     await expect(page.getByRole('heading', { name: /scope 1/i })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Effectif' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Effectif', exact: true })).toHaveCount(0);
   });
 
   test('la page Ressources propose les outils gratuits', async ({ page }) => {

@@ -29,7 +29,8 @@ test.describe('Authentification', () => {
     await fillStable(page.locator('input[type="email"]'), DEMO_EMAIL);
     await fillStable(page.locator('input[type="password"]'), DEMO_PASSWORD);
     await page.click('button[type="submit"]');
-    await expect(page).toHaveURL(/\/app/);
+    // Premier test de la CI : le serveur démarre à froid, la connexion peut dépasser 10 s.
+    await expect(page).toHaveURL(/\/app/, { timeout: 25_000 });
     await expect(page.getByText(/Bienvenue sur ESGFlow|Bonjour|Bonsoir/i).first()).toBeVisible();
   });
 });
