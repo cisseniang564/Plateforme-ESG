@@ -1,4 +1,4 @@
-# Stratégie de Communication — ESG Flow
+# Stratégie de Communication — ESGFlow
 
 > **Document opérationnel** · Mai 2026 · v1.0
 > Complète la stratégie marketing GTM existante.
@@ -14,7 +14,7 @@
 > 90 % n'ont ni budget, ni compétences, ni outil adapté.
 > Les solutions existantes coûtent 30 000 à 150 000 €/an et nécessitent 3 à 6 mois de mise en route.
 
-### La promesse ESG Flow (en une phrase)
+### La promesse ESGFlow (en une phrase)
 
 > **« Votre conformité CSRD en libre-service, en français, en moins d'une heure, à partir de 199 €/mois. »**
 
@@ -22,7 +22,7 @@
 
 > La conformité ESG ne devrait pas être un privilège réservé au CAC 40.
 > Chaque PME, chaque ETI a le droit d'accéder aux mêmes outils que les grands groupes — sans payer le prix d'un cabinet de conseil, sans attendre 6 mois de mise en place, sans confier ses données à un cloud américain.
-> ESG Flow est né de cette conviction. Nous construisons la plateforme ESG la plus complète ET la plus accessible du marché européen. Pas un outil carbone rebrandé. Pas un Excel glorifié. Une vraie plateforme — 16 référentiels, 46 modules, hébergée en France, auditée, souveraine.
+> ESGFlow est né de cette conviction. Nous construisons la plateforme ESG la plus complète ET la plus accessible du marché européen. Pas un outil carbone rebrandé. Pas un Excel glorifié. Une vraie plateforme — 16 référentiels, 46 modules, hébergée en France, auditée, souveraine.
 > Parce que la transition écologique ne peut pas attendre que tout le monde ait les moyens de se payer Workiva.
 
 ---
@@ -53,7 +53,7 @@ Toute la communication se structure autour de **3 piliers** qui couvrent le funn
 
 ### Pilier 2 — DÉMONTRER (Consideration · 30 % du contenu)
 
-**Objectif** : prouver que ESG Flow résout le problème mieux et moins cher.
+**Objectif** : prouver que ESGFlow résout le problème mieux et moins cher.
 
 **Thématiques** :
 - Études de cas clients (avant/après)
@@ -67,7 +67,7 @@ Toute la communication se structure autour de **3 piliers** qui couvrent le funn
 - Posts LinkedIn "résultat client" avec captures d'écran
 - Vidéos démo courtes (60-90 sec Reels/TikTok/LinkedIn)
 - Pages comparatives SEO (/compare/workiva, /compare/sweep)
-- Newsletter "ESG Flow en action" (bi-mensuelle)
+- Newsletter "ESGFlow en action" (bi-mensuelle)
 
 ### Pilier 3 — INSPIRER (Advocacy · 20 % du contenu)
 
@@ -102,7 +102,7 @@ Toute la communication se structure autour de **3 piliers** qui couvrent le funn
 | Compte | Rôle | Fréquence |
 |---|---|---|
 | **Profil fondateur** (personnel) | Thought leadership, opinion, behind the scenes | 4-5 posts/sem |
-| **Page ESG Flow** (entreprise) | Produit, fonctionnalités, cas clients, recrutement | 2-3 posts/sem |
+| **Page ESGFlow** (entreprise) | Produit, fonctionnalités, cas clients, recrutement | 2-3 posts/sem |
 | **Newsletter LinkedIn** "ESG sans bullshit" | Analyse réglementaire mensuelle approfondie | 1/mois |
 
 > **Règle d'or** : le profil fondateur génère 5-10× plus d'engagement qu'une page entreprise. Prioriser le personal branding du CEO.
@@ -126,7 +126,7 @@ Toute la communication se structure autour de **3 piliers** qui couvrent le funn
 
 2. **Le post "chiffre choc"** — viralité
    - "92 % des PME françaises n'ont pas commencé leur CSRD. Il reste 7 mois."
-   - "Coût moyen d'un rapport CSRD avec cabinet : 47 000 €. Avec ESG Flow : 2 388 €/an."
+   - "Coût moyen d'un rapport CSRD avec cabinet : 47 000 €. Avec ESGFlow : 2 388 €/an."
 
 3. **Le storytelling fondateur** — connexion humaine
    - "En 2024, j'ai découvert qu'aucun outil CSRD ne coûtait moins de 30 000 €/an..."
@@ -138,7 +138,7 @@ Toute la communication se structure autour de **3 piliers** qui couvrent le funn
 
 5. **Le comparatif transparent** — crédibilité
    - "J'ai testé 6 plateformes ESG. Voici mon tableau de comparaison honnête."
-   - Tableau avec ESG Flow + 5 concurrents, avec des cases rouges chez nous aussi (honnêteté)
+   - Tableau avec ESGFlow + 5 concurrents, avec des cases rouges chez nous aussi (honnêteté)
 
 6. **Le post "méthode pas à pas"** — sauvegardé massivement
    - "Comment calculer vos émissions Scope 3 en 5 étapes (sans consultant)"
@@ -157,7 +157,7 @@ Toute la communication se structure autour de **3 piliers** qui couvrent le funn
    - Texte long (1 200-1 800 caractères), structuré avec emojis
 
 10. **Le post "résultats / milestone"** — social proof
-    - "100 entreprises utilisent ESG Flow. Voici ce qu'on a appris."
+    - "100 entreprises utilisent ESGFlow. Voici ce qu'on a appris."
     - "Notre score G2 est passé à 4.9/5. Merci."
 
 ### Stratégie d'engagement (30 min/jour)
@@ -206,7 +206,7 @@ Toute la communication se structure autour de **3 piliers** qui couvrent le funn
    [Statistique marquante avec source]
    Ex : "72 % des PME industrielles n'ont pas encore commencé leur CSRD (Bpifrance, 2026)"
 
-5. 🚀 QUOI DE NEUF CHEZ ESG FLOW
+5. 🚀 QUOI DE NEUF CHEZ ESGFLOW
    [1 fonctionnalité ou mise à jour — 2-3 phrases]
    Ex : "Nouveau : comparez vos LCA produit par produit avec l'outil Éco-conception"
 ```
@@ -264,7 +264,7 @@ greenconnect.cloud/blog/
 |---|---|---|---|---|
 | S1 | Guide long | "Guide complet CSRD pour PME 2026" | logiciel CSRD | 1 300/mois |
 | S2 | Actualité | "Omnibus CSRD : ce qui change pour votre entreprise" | omnibus CSRD PME | 480/mois |
-| S3 | Comparatif | "ESG Flow vs Workiva : comparatif détaillé" | alternative Workiva | 70/mois |
+| S3 | Comparatif | "ESGFlow vs Workiva : comparatif détaillé" | alternative Workiva | 70/mois |
 | S4 | Cas client | "Comment [ETI] a publié son rapport CSRD en 3 jours" | rapport CSRD PME | 260/mois |
 
 **Objectif** : 4 articles/mois minimum → 50 articles indexés à M12.
@@ -273,7 +273,7 @@ greenconnect.cloud/blog/
 
 ```
 1. Titre H1 avec mot-clé principal (60-70 caractères)
-2. Chapô accrocheur (2-3 lignes) + CTA "Essayer ESG Flow gratuitement"
+2. Chapô accrocheur (2-3 lignes) + CTA "Essayer ESGFlow gratuitement"
 3. Sommaire cliquable (Table of Contents)
 4. Introduction (200 mots) — problème + promesse de l'article
 5. Corps (1 500-3 000 mots) — H2/H3 structurés, listes, tableaux
@@ -315,11 +315,11 @@ Bonjour [Prénom],
 14 000 PME françaises doivent publier leur premier rapport CSRD 
 en 2026. La plupart n'ont ni le budget ni l'outil pour le faire.
 
-ESG Flow, lauréat France 2030, est la première plateforme ESG 
+ESGFlow, lauréat France 2030, est la première plateforme ESG 
 qui couvre 16 référentiels réglementaires à partir de 199 €/mois 
 — là où les solutions comme Workiva démarrent à 30 000 €/an.
 
-Ce qui distingue ESG Flow :
+Ce qui distingue ESGFlow :
 • 46 modules (CSRD, bilan carbone, LCA, supply chain, taxonomie UE)
 • 34 connecteurs natifs (SAP, Pennylane, Enedis...)
 • 100 % hébergé en France (ISO 27001, zéro cloud US)
@@ -434,7 +434,7 @@ Cordialement,
 
 ## 9. Stratégie Vidéo
 
-### YouTube — Chaîne "ESG Flow"
+### YouTube — Chaîne "ESGFlow"
 
 **Positionnement** : la chaîne éducative ESG la plus actionnable en français.
 
@@ -512,7 +512,7 @@ Cordialement,
 - [ ] Préparer le press kit (logo, photos, captures, chiffres clés)
 - [ ] Configurer Google Search Console + soumettre sitemap
 - [ ] Créer la page `/blog` sur le site (architecture SEO)
-- [ ] Premier post LinkedIn fondateur : "Pourquoi j'ai créé ESG Flow"
+- [ ] Premier post LinkedIn fondateur : "Pourquoi j'ai créé ESGFlow"
 
 ### Semaine 3-4 : Premiers contenus
 
@@ -596,9 +596,9 @@ Le problème ?
 
 La solution n'est pas de [approche classique qui ne marche pas].
 
-C'est de [votre approche / ce que fait ESG Flow].
+C'est de [votre approche / ce que fait ESGFlow].
 
-Chez ESG Flow, on [ce qu'on fait concrètement — 1-2 phrases].
+Chez ESGFlow, on [ce qu'on fait concrètement — 1-2 phrases].
 
 [Question ouverte pour l'engagement]
 
@@ -672,17 +672,17 @@ Voici votre veille ESG en 3 minutes.
   [XX %] — [Ce que ça signifie] (Source : [Organisme])
 
 
-🚀 QUOI DE NEUF CHEZ ESG FLOW
+🚀 QUOI DE NEUF CHEZ ESGFLOW
 
 [1-2 phrases sur une fonctionnalité récente + lien]
 
 ---
 
 À dans deux semaines,
-[Prénom] · Fondateur ESG Flow
+[Prénom] · Fondateur ESGFlow
 
 📩 Transférez cette newsletter à un·e collègue concerné·e par la CSRD
-🔗 Essayer ESG Flow gratuitement : greenconnect.cloud
+🔗 Essayer ESGFlow gratuitement : greenconnect.cloud
 ```
 
 ---

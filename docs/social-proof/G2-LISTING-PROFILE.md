@@ -1,7 +1,7 @@
-# ESG Flow — G2 Product Listing Profile
+# ESGFlow — G2 Product Listing Profile
 
 ## Company Information
-- **Company Name:** ESG Flow (GreenConnect SAS)
+- **Company Name:** ESGFlow (GreenConnect SAS)
 - **Website:** https://greenconnect.cloud
 - **HQ Location:** Paris, France
 - **Founded:** 2024
@@ -11,20 +11,20 @@
 ## Product Information
 
 ### Product Name
-ESG Flow
+ESGFlow
 
 ### Tagline (max 70 chars)
 Plateforme ESG, CSRD & Bilan Carbone all-in-one pour PME & ETI
 
 ### Short Description (max 150 chars)
-ESG Flow automates ESG compliance, carbon accounting, and CSRD reporting with AI, 34 connectors, and audit-grade traceability. Hosted in France.
+ESGFlow automates ESG compliance, carbon accounting, and CSRD reporting with AI, 34 connectors, and audit-grade traceability. Hosted in France.
 
 ### Long Description
-ESG Flow is an all-in-one ESG management platform designed for European SMEs and mid-market companies navigating CSRD, carbon accounting, and multi-framework compliance.
+ESGFlow is an all-in-one ESG management platform designed for European SMEs and mid-market companies navigating CSRD, carbon accounting, and multi-framework compliance.
 
-**What Makes ESG Flow Different:**
+**What Makes ESGFlow Different:**
 
-ESG Flow is the most comprehensive ESG platform at its price point, combining 46 modules across 16 regulatory frameworks (CSRD/ESRS, GRI, CDP, TCFD, SFDR, ISSB, SBTi, EU Taxonomy, DPEF, Loi Sapin II, Devoir de Vigilance, LkSG, CSDDD, B Corp, iXBRL) in a single subscription.
+ESGFlow is the most comprehensive ESG platform at its price point, combining 46 modules across 16 regulatory frameworks (CSRD/ESRS, GRI, CDP, TCFD, SFDR, ISSB, SBTi, EU Taxonomy, DPEF, Loi Sapin II, Devoir de Vigilance, LkSG, CSDDD, B Corp, iXBRL) in a single subscription.
 
 **Key Capabilities:**
 - Full CSRD/ESRS compliance: 82 ESRS requirements mapped, gap analysis, report builder with PDF/Word/Excel/JSON export
@@ -121,7 +121,7 @@ Subject: Votre avis compte - 2 min sur G2
 
 Bonjour [Prenom],
 
-Vous utilisez ESG Flow depuis [durée]. Votre retour d'experience nous aiderait enormement.
+Vous utilisez ESGFlow depuis [durée]. Votre retour d'experience nous aiderait enormement.
 
 Pourriez-vous laisser un avis sur G2 ? Cela prend 2 minutes :
 [G2 review link]
@@ -129,7 +129,7 @@ Pourriez-vous laisser un avis sur G2 ? Cela prend 2 minutes :
 En remerciement, nous offrons 1 mois gratuit sur votre abonnement.
 
 Merci !
-L'equipe ESG Flow
+L'equipe ESGFlow
 ```
 
 ### Phase 2: Automated Collection (Month 2+)

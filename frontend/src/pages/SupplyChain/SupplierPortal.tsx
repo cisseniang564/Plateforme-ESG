@@ -71,7 +71,7 @@ export default function SupplierPortal() {
         <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
         <h2 className="text-xl font-bold text-gray-900 mb-2">{t('suppl.invalidLink','Lien invalide')}</h2>
         <p className="text-gray-500">{error}</p>
-        <p className="text-sm text-gray-400 mt-4">{t('suppl.invalidLinkHint','Veuillez contacter votre partenaire ESG Flow pour obtenir un nouveau lien.')}</p>
+        <p className="text-sm text-gray-400 mt-4">{t('suppl.invalidLinkHint','Veuillez contacter votre partenaire ESGFlow pour obtenir un nouveau lien.')}</p>
       </div>
     </div>
   );
@@ -104,7 +104,7 @@ export default function SupplierPortal() {
               </p>
             </div>
           )}
-          <p className="text-xs text-gray-400">{t('suppl.poweredBy','Propulsé par ESG Flow · Plateforme ESG')}</p>
+          <p className="text-xs text-gray-400">{t('suppl.poweredBy','Propulsé par ESGFlow · Plateforme ESG')}</p>
         </div>
       </div>
     );
@@ -210,7 +210,7 @@ export default function SupplierPortal() {
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-6">
-          {t('suppl.footer','Propulsé par ')} <strong>ESG Flow</strong> {t('suppl.footerB','· Vos données sont traitées de façon sécurisée et confidentielle')}
+          {t('suppl.footer','Propulsé par ')} <strong>ESGFlow</strong> {t('suppl.footerB','· Vos données sont traitées de façon sécurisée et confidentielle')}
         </p>
       </div>
     </div>

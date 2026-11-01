@@ -23,7 +23,7 @@ const getTOC = (t: TFunction) => [
   { id: 'donnees',          title: t('resources.guideCsrdPme.toc.donnees', 'Données à collecter') },
   { id: 'rapport',          title: t('resources.guideCsrdPme.toc.rapport', 'Le rapport') },
   { id: 'sanctions',        title: t('resources.guideCsrdPme.toc.sanctions', 'Sanctions & risques') },
-  { id: 'esgflow',          title: t('resources.guideCsrdPme.toc.esgflow', 'Comment ESG Flow vous aide') },
+  { id: 'esgflow',          title: t('resources.guideCsrdPme.toc.esgflow', 'Comment ESGFlow vous aide') },
   { id: 'faq',              title: t('resources.guideCsrdPme.toc.faq', 'FAQ') },
 ];
 
@@ -36,14 +36,14 @@ export default function GuideCsrdPmePage() {
 
   usePageSeo({
     id: 'guide-csrd-pme',
-    title: t('resources.guideCsrdPme.seo.title', 'Guide complet CSRD pour les PME et ETI françaises — ESG Flow'),
+    title: t('resources.guideCsrdPme.seo.title', 'Guide complet CSRD pour les PME et ETI françaises — ESGFlow'),
     description: desc,
     keywords: t('resources.guideCsrdPme.seo.keywords', 'CSRD, ESRS, PME, ETI, rapport durabilité, double matérialité, taxonomie UE, bilan carbone, EFRAG, directive 2022/2464'),
     url,
     ogType: 'article',
     ogTitle: t('resources.guideCsrdPme.seo.ogTitle', 'Guide complet CSRD pour les PME et ETI françaises'),
     ogImage: img,
-    ogImageAlt: t('resources.guideCsrdPme.seo.ogImageAlt', 'Guide complet de la CSRD pour les PME et ETI françaises — ESG Flow'),
+    ogImageAlt: t('resources.guideCsrdPme.seo.ogImageAlt', 'Guide complet de la CSRD pour les PME et ETI françaises — ESGFlow'),
     breadcrumb: [
       { name: t('resources.guideCsrdPme.seo.breadcrumb.home', 'Accueil'),     url: 'https://greenconnect.cloud/' },
       { name: t('resources.guideCsrdPme.seo.breadcrumb.resources', 'Ressources'),  url: 'https://greenconnect.cloud/resources' },
@@ -57,7 +57,7 @@ export default function GuideCsrdPmePage() {
       "image": [img],
       "datePublished": "2026-05-01T08:00:00+02:00",
       "dateModified": "2026-05-20T08:00:00+02:00",
-      "author":    { "@type": "Organization", "name": "ESG Flow", "url": "https://greenconnect.cloud" },
+      "author":    { "@type": "Organization", "name": "ESGFlow", "url": "https://greenconnect.cloud" },
       "publisher": { "@type": "Organization", "name": "GreenConnect SAS",
                      "logo": { "@type": "ImageObject", "url": "https://greenconnect.cloud/brand/icon-esgflow-v5-256.png", "width": 256, "height": 256 } },
       "mainEntityOfPage": { "@type": "WebPage", "@id": url },
@@ -79,9 +79,9 @@ export default function GuideCsrdPmePage() {
         { "@type": "Question", "name": "Quelle différence entre CSRD et DPEF ?",
           "acceptedAnswer": { "@type": "Answer", "text": "La DPEF (loi 2017) couvrait ~3 000 sociétés françaises. La CSRD étend à toute l'UE (~50 000 entreprises) avec des standards techniques uniformes (ESRS), un audit obligatoire et un format iXBRL. La CSRD remplace la DPEF pour les sociétés concernées." } },
         { "@type": "Question", "name": "Quel budget prévoir pour la 1ère année CSRD ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Sans outil : 30-80 k€ (cabinet conseil + commissaire aux comptes). Avec ESG Flow : 2-5 k€/an d'abonnement + 5-15 k€ d'audit. Économie 70-90 %." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "Sans outil : 30-80 k€ (cabinet conseil + commissaire aux comptes). Avec ESGFlow : 2-5 k€/an d'abonnement + 5-15 k€ d'audit. Économie 70-90 %." } },
         { "@type": "Question", "name": "Combien de temps pour produire le 1er rapport CSRD ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Avec préparation amont : 3-4 mois (matrice de matérialité 4-6 sem, collecte données 6-8 sem, rédaction et audit 4-6 sem). ESG Flow accélère la collecte et la rédaction d'environ 60 %." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "Avec préparation amont : 3-4 mois (matrice de matérialité 4-6 sem, collecte données 6-8 sem, rédaction et audit 4-6 sem). ESGFlow accélère la collecte et la rédaction d'environ 60 %." } },
         { "@type": "Question", "name": "L'iXBRL est-il obligatoire pour ma PME non cotée ?",
           "acceptedAnswer": { "@type": "Answer", "text": "Non. iXBRL n'est obligatoire que pour les sociétés cotées sur un marché réglementé européen. Pour les autres, un PDF suffit (mais l'iXBRL aide à l'audit)." } }
       ]
@@ -93,7 +93,7 @@ export default function GuideCsrdPmePage() {
       {/* ── Sticky header ──────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-xl border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link to="/" aria-label={t('resources.guideCsrdPme.header.logoAria', 'ESG Flow — Accueil')}>
+          <Link to="/" aria-label={t('resources.guideCsrdPme.header.logoAria', 'ESGFlow — Accueil')}>
             <LogoBrand size="sm" variant="dark" showTagline={false} />
           </Link>
           <div className="flex items-center gap-3">
@@ -559,9 +559,9 @@ export default function GuideCsrdPmePage() {
             </ul>
 
             <div className="bg-emerald-50 border-l-4 border-emerald-500 rounded-r-xl p-5 my-6">
-              <p className="font-semibold text-emerald-900 mb-2">{t('resources.guideCsrdPme.data.useCaseLabel', '🎯 Cas d\'usage ESG Flow')}</p>
+              <p className="font-semibold text-emerald-900 mb-2">{t('resources.guideCsrdPme.data.useCaseLabel', '🎯 Cas d\'usage ESGFlow')}</p>
               <p className="text-emerald-900 text-base">
-                <Trans i18nKey="resources.guideCsrdPme.data.useCaseBody">Toutes ces sources sont pré-connectables dans ESG Flow. Vous importez votre FEC une fois → on calcule automatiquement votre Scope 3 spend-based avec les facteurs ADEME. Vous connectez votre compte Enedis → vos kWh remontent quotidiennement. <Link to="/register" className="font-semibold underline">Voir la démo &nbsp;→</Link></Trans>
+                <Trans i18nKey="resources.guideCsrdPme.data.useCaseBody">Toutes ces sources sont pré-connectables dans ESGFlow. Vous importez votre FEC une fois → on calcule automatiquement votre Scope 3 spend-based avec les facteurs ADEME. Vous connectez votre compte Enedis → vos kWh remontent quotidiennement. <Link to="/register" className="font-semibold underline">Voir la démo &nbsp;→</Link></Trans>
               </p>
             </div>
           </section>
@@ -594,9 +594,9 @@ export default function GuideCsrdPmePage() {
             </ul>
 
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 my-6">
-              <p className="font-semibold text-blue-900 mb-2">{t('resources.guideCsrdPme.report.auditBoxLabel', "🔒 Comment ESG Flow vous aide à passer l'audit")}</p>
+              <p className="font-semibold text-blue-900 mb-2">{t('resources.guideCsrdPme.report.auditBoxLabel', "🔒 Comment ESGFlow vous aide à passer l'audit")}</p>
               <p className="text-blue-900 text-base">
-                <Trans i18nKey="resources.guideCsrdPme.report.auditBoxBody">Chaque rapport généré dans ESG Flow inclut une <strong>empreinte SHA-256</strong> du contenu, un système de versioning automatique et un endpoint public <code className="bg-blue-100 px-1 rounded text-sm">/api/v1/reports/verify</code> que votre commissaire aux comptes peut interroger pour vérifier l'intégrité d'un PDF reçu — utile pour vos travaux d'assurance limitée (CSRD) ou raisonnable (ISA 3410).</Trans>
+                <Trans i18nKey="resources.guideCsrdPme.report.auditBoxBody">Chaque rapport généré dans ESGFlow inclut une <strong>empreinte SHA-256</strong> du contenu, un système de versioning automatique et un endpoint public <code className="bg-blue-100 px-1 rounded text-sm">/api/v1/reports/verify</code> que votre commissaire aux comptes peut interroger pour vérifier l'intégrité d'un PDF reçu — utile pour vos travaux d'assurance limitée (CSRD) ou raisonnable (ISA 3410).</Trans>
               </p>
             </div>
 
@@ -629,9 +629,9 @@ export default function GuideCsrdPmePage() {
 
           {/* ───────────────────────────────────────── */}
           <section id="esgflow" className="scroll-mt-24 mt-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('resources.guideCsrdPme.esgflow.title', 'Comment ESG Flow accélère votre conformité CSRD')}</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('resources.guideCsrdPme.esgflow.title', 'Comment ESGFlow accélère votre conformité CSRD')}</h2>
             <p>
-              <Trans i18nKey="resources.guideCsrdPme.esgflow.intro">ESG Flow est la plateforme SaaS française pensée pour les PME et ETI qui veulent se mettre en conformité CSRD <strong>sans cabinet de conseil à 15 000 € ni 6 mois d'implémentation</strong>.</Trans>
+              <Trans i18nKey="resources.guideCsrdPme.esgflow.intro">ESGFlow est la plateforme SaaS française pensée pour les PME et ETI qui veulent se mettre en conformité CSRD <strong>sans cabinet de conseil à 15 000 € ni 6 mois d'implémentation</strong>.</Trans>
             </p>
 
             <div className="grid md:grid-cols-2 gap-4 my-8">
@@ -659,7 +659,7 @@ export default function GuideCsrdPmePage() {
             </div>
 
             <div className="my-8 p-6 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-2xl text-white">
-              <h3 className="text-2xl font-bold mb-2">{t('resources.guideCsrdPme.esgflow.ctaTitle', 'Essayer ESG Flow gratuitement')}</h3>
+              <h3 className="text-2xl font-bold mb-2">{t('resources.guideCsrdPme.esgflow.ctaTitle', 'Essayer ESGFlow gratuitement')}</h3>
               <p className="text-emerald-50 mb-5">{t('resources.guideCsrdPme.esgflow.ctaBody', "14 jours d'essai sur le plan ETI, sans carte bancaire. Toutes les fonctionnalités débloquées.")}</p>
               <div className="flex flex-wrap gap-3">
                 <Link to="/register" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-emerald-700 font-bold text-sm hover:bg-emerald-50 transition-colors">
@@ -679,12 +679,12 @@ export default function GuideCsrdPmePage() {
               {[
                 { q: t('resources.guideCsrdPme.faq.q1', "Ma société de 60 salariés est-elle concernée par la CSRD ?"), a: t('resources.guideCsrdPme.faq.a1', "Directement, non (seuil post-Omnibus à 1 000 salariés). Indirectement, oui si vous fournissez des grands groupes : ils vont vous demander vos données ESG. Reporting volontaire recommandé.") },
                 { q: t('resources.guideCsrdPme.faq.q2', "Quelle différence entre CSRD et DPEF ?"), a: t('resources.guideCsrdPme.faq.a2', "La DPEF (loi 2017) couvrait ~3 000 sociétés françaises. La CSRD étend à toute l'UE (~50 000 entreprises) avec des standards techniques uniformes (ESRS), un audit obligatoire et un format iXBRL. La CSRD remplace la DPEF pour les sociétés concernées.") },
-                { q: t('resources.guideCsrdPme.faq.q3', "Quel budget prévoir pour la 1ère année CSRD ?"), a: t('resources.guideCsrdPme.faq.a3', "Sans outil : 30-80 k€ (cabinet de conseil + commissaire aux comptes). Avec ESG Flow : 2-5 k€/an d'abonnement + 5-15 k€ d'audit. Économie 70-90 %.") },
-                { q: t('resources.guideCsrdPme.faq.q4', "Combien de temps pour produire le 1er rapport ?"), a: t('resources.guideCsrdPme.faq.a4', "Avec préparation amont : 3-4 mois (matrice de matérialité = 4-6 semaines, collecte données = 6-8 semaines, rédaction et audit = 4-6 semaines). ESG Flow accélère la collecte et la rédaction d'environ 60 %.") },
+                { q: t('resources.guideCsrdPme.faq.q3', "Quel budget prévoir pour la 1ère année CSRD ?"), a: t('resources.guideCsrdPme.faq.a3', "Sans outil : 30-80 k€ (cabinet de conseil + commissaire aux comptes). Avec ESGFlow : 2-5 k€/an d'abonnement + 5-15 k€ d'audit. Économie 70-90 %.") },
+                { q: t('resources.guideCsrdPme.faq.q4', "Combien de temps pour produire le 1er rapport ?"), a: t('resources.guideCsrdPme.faq.a4', "Avec préparation amont : 3-4 mois (matrice de matérialité = 4-6 semaines, collecte données = 6-8 semaines, rédaction et audit = 4-6 semaines). ESGFlow accélère la collecte et la rédaction d'environ 60 %.") },
                 { q: t('resources.guideCsrdPme.faq.q5', "L'iXBRL est-il obligatoire pour ma PME non cotée ?"), a: t('resources.guideCsrdPme.faq.a5', "Non. iXBRL n'est obligatoire que pour les sociétés cotées sur un marché réglementé européen. Pour les autres, un PDF suffit (mais l'iXBRL aide à l'audit).") },
                 { q: t('resources.guideCsrdPme.faq.q6', "Que se passe-t-il si je ne publie pas ?"), a: t('resources.guideCsrdPme.faq.a6', "Si vous êtes légalement obligé·e : amende AMF (jusqu'à 3,75 M€ cotées / 50 k€ non-cotées), refus de certification CAC, exclusion AO publics. Si vous n'êtes pas obligé·e : pas de sanction directe, mais perte d'opportunités B2B avec les grands comptes.") },
-                { q: t('resources.guideCsrdPme.faq.q7', "Peut-on utiliser ESG Flow uniquement pour le Bilan Carbone ?"), a: t('resources.guideCsrdPme.faq.a7', "Oui. Le plan PME inclut le Bilan Carbone Scopes 1/2/3 selon GHG Protocol avec les facteurs ADEME 2024. Vous n'êtes pas obligé·e d'activer les autres modules ESRS.") },
-                { q: t('resources.guideCsrdPme.faq.q8', "Comment se passe l'audit avec ESG Flow ?"), a: t('resources.guideCsrdPme.faq.a8', "Chaque rapport généré inclut un hash SHA-256 et une URL de vérification publique. Votre CAC reçoit le PDF et peut vérifier l'intégrité en ouvrant /api/v1/reports/verify. Toutes les données sources sont traçables jusqu'à l'écriture comptable ou la mesure terrain.") },
+                { q: t('resources.guideCsrdPme.faq.q7', "Peut-on utiliser ESGFlow uniquement pour le Bilan Carbone ?"), a: t('resources.guideCsrdPme.faq.a7', "Oui. Le plan PME inclut le Bilan Carbone Scopes 1/2/3 selon GHG Protocol avec les facteurs ADEME 2024. Vous n'êtes pas obligé·e d'activer les autres modules ESRS.") },
+                { q: t('resources.guideCsrdPme.faq.q8', "Comment se passe l'audit avec ESGFlow ?"), a: t('resources.guideCsrdPme.faq.a8', "Chaque rapport généré inclut un hash SHA-256 et une URL de vérification publique. Votre CAC reçoit le PDF et peut vérifier l'intégrité en ouvrant /api/v1/reports/verify. Toutes les données sources sont traçables jusqu'à l'écriture comptable ou la mesure terrain.") },
               ].map((item, i) => (
                 <details key={i} className="group border border-gray-200 rounded-xl overflow-hidden hover:border-emerald-300 transition-colors">
                   <summary className="flex items-start justify-between cursor-pointer p-5 hover:bg-gray-50 transition-colors">
@@ -753,7 +753,7 @@ export default function GuideCsrdPmePage() {
             <Link to="/privacy-policy" className="hover:text-emerald-600">{t('resources.guideCsrdPme.footer.privacy', 'Confidentialité')}</Link>
             <Link to="/legal-notice" className="hover:text-emerald-600">{t('resources.guideCsrdPme.footer.legal', 'Mentions légales')}</Link>
           </div>
-          <p className="text-xs text-gray-400 mt-6">© 2026 GreenConnect SAS — ESG Flow</p>
+          <p className="text-xs text-gray-400 mt-6">© 2026 GreenConnect SAS — ESGFlow</p>
         </div>
       </footer>
     </div>

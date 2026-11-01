@@ -133,7 +133,7 @@ export default function GoogleSheetsConfigModal({
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <p className="text-xs text-gray-600">
                     <strong>Note:</strong> You'll be redirected to Google to authorize access.
-                    ESG Flow will be able to read and write to your spreadsheets.
+                    ESGFlow will be able to read and write to your spreadsheets.
                   </p>
                 </div>
               </div>

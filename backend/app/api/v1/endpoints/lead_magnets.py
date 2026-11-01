@@ -236,7 +236,7 @@ def _generate_checklist_pdf() -> bytes:
                        alignment=1, spaceAfter=10),
     ))
     story.append(Paragraph(
-        'ESG Flow est la plateforme française qui automatise tous ces indicateurs.<br/>'
+        'ESGFlow est la plateforme française qui automatise tous ces indicateurs.<br/>'
         '14 jours d\'essai gratuit · sans carte bancaire · plan ETI complet inclus.',
         ParagraphStyle('cta_desc', fontSize=12, textColor=GRAY, alignment=1, spaceAfter=20, leading=18),
     ))
@@ -254,7 +254,7 @@ def _generate_checklist_pdf() -> bytes:
     story.append(cta)
     story.append(Spacer(1, 20*mm))
     story.append(Paragraph(
-        '© 2026 GreenConnect SAS · ESG Flow · Plateforme ESG intelligente',
+        '© 2026 GreenConnect SAS · ESGFlow · Plateforme ESG intelligente',
         ParagraphStyle('foot', fontSize=8, textColor=GRAY, alignment=1),
     ))
 
@@ -314,14 +314,14 @@ async def submit_checklist_lead(
     }
 
 
-@router.post("/leads/newsletter", summary="Inscription newsletter ESG Flow")
+@router.post("/leads/newsletter", summary="Inscription newsletter ESGFlow")
 async def submit_newsletter(
     body: NewsletterRequest,
     background_tasks: BackgroundTasks,
     request: Request,
 ):
     """
-    Inscription minimaliste à la newsletter mensuelle ESG Flow.
+    Inscription minimaliste à la newsletter mensuelle ESGFlow.
     Single opt-in via le clic sur le bouton (l'utilisateur peut se désabonner
     à tout moment via le lien dans chaque email — RFC 8058).
     """
@@ -376,18 +376,18 @@ def _send_newsletter_welcome(to_email: str) -> None:
         Data · Carbon · Impact
       </p>
       <hr style="border:none;border-top:2px solid #10b981;margin:20px 0;"/>
-      <h1 style="font-size:22px;color:#0f172a;">Bienvenue dans la newsletter ESG Flow !</h1>
+      <h1 style="font-size:22px;color:#0f172a;">Bienvenue dans la newsletter ESGFlow !</h1>
       <p>Merci de vous être inscrit·e. Chaque mois, vous recevrez :</p>
       <ul style="color:#475569;line-height:1.8;">
         <li>📊 <strong>Une analyse</strong> d'un sujet ESG/CSRD du moment (Omnibus, CSDDD, taxonomie…)</li>
         <li>🛠 <strong>Un outil ou guide pratique</strong> téléchargeable</li>
         <li>📈 <strong>Les chiffres du marché</strong> ESG B2B en France</li>
-        <li>🚀 <strong>Les nouveautés produit</strong> ESG Flow (sans spam)</li>
+        <li>🚀 <strong>Les nouveautés produit</strong> ESGFlow (sans spam)</li>
       </ul>
       <p>Sans bullshit, sans jargon, et sans chiffres inventés.</p>
       <p style="text-align:center;margin:24px 0;">
         <a href="https://greenconnect.cloud/register" style="display:inline-block;padding:14px 28px;background:#10b981;color:white;text-decoration:none;border-radius:10px;font-weight:700;">
-          Essayer ESG Flow gratuitement
+          Essayer ESGFlow gratuitement
         </a>
       </p>
       <p style="color:#94a3b8;font-size:12px;text-align:center;margin-top:32px;">
@@ -397,9 +397,9 @@ def _send_newsletter_welcome(to_email: str) -> None:
     """
 
     resend.Emails.send({
-        "from": f"ESG Flow <noreply@greenconnect.cloud>",
+        "from": f"ESGFlow <noreply@greenconnect.cloud>",
         "to":   [to_email],
-        "subject": "Bienvenue dans la newsletter ESG Flow",
+        "subject": "Bienvenue dans la newsletter ESGFlow",
         "html": html,
         "headers": {
             "List-Unsubscribe": f"<mailto:unsubscribe@greenconnect.cloud?subject=unsubscribe>, <https://greenconnect.cloud/api/v1/unsubscribe?email={to_email}>",
@@ -438,7 +438,7 @@ def _send_lead_email(to_email: str, first_name: str, pdf_bytes: bytes) -> None:
       classés par criticité, pour démarrer votre conformité sans rien oublier.</p>
       <p>Le PDF est en pièce jointe de cet email. Conseil : imprimez-le et cochez les indicateurs au fur
       et à mesure que vous les renseignez dans votre outil ESG.</p>
-      <p>Si vous voulez aller plus vite, ESG Flow automatise tous ces indicateurs — essai 14 jours gratuit
+      <p>Si vous voulez aller plus vite, ESGFlow automatise tous ces indicateurs — essai 14 jours gratuit
       sans carte bancaire :</p>
       <p style="text-align:center;margin:24px 0;">
         <a href="https://greenconnect.cloud/register" style="display:inline-block;padding:14px 28px;background:#10b981;color:white;text-decoration:none;border-radius:10px;font-weight:700;">
@@ -447,12 +447,12 @@ def _send_lead_email(to_email: str, first_name: str, pdf_bytes: bytes) -> None:
       </p>
       <p style="color:#64748b;font-size:13px;">Une question ? Répondez simplement à cet email,
       nous lisons toutes vos réponses.</p>
-      <p style="color:#64748b;font-size:13px;">— L'équipe ESG Flow</p>
+      <p style="color:#64748b;font-size:13px;">— L'équipe ESGFlow</p>
     </div>
     """
 
     resend.Emails.send({
-        "from": f"ESG Flow <noreply@greenconnect.cloud>",
+        "from": f"ESGFlow <noreply@greenconnect.cloud>",
         "to":   [to_email],
         "subject": "📄 Votre check-list CSRD — 47 indicateurs ESRS",
         "html": html,

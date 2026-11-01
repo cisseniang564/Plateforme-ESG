@@ -65,7 +65,7 @@ export default function ContactPage() {
   const COMPANY_SIZES = getCompanySizes(t);
   const SUBJECTS = getSubjects(t);
   const BENEFITS = getBenefits(t);
-  usePageSeo({ id: 'contact', title: t('contact.seo.title', 'Contact — ESG Flow'), description: t('contact.seo.desc', 'Contactez l\'équipe ESG Flow pour une démonstration, un devis ou une question sur la conformité CSRD, Bilan Carbone, Taxonomie UE.'), url: 'https://greenconnect.cloud/contact', keywords: t('contact.seo.keywords', 'contact ESG Flow, démonstration CSRD, devis plateforme ESG'), ogImage: 'https://greenconnect.cloud/og/contact.png' });
+  usePageSeo({ id: 'contact', title: t('contact.seo.title', 'Contact — ESGFlow'), description: t('contact.seo.desc', 'Contactez l\'équipe ESGFlow pour une démonstration, un devis ou une question sur la conformité CSRD, Bilan Carbone, Taxonomie UE.'), url: 'https://greenconnect.cloud/contact', keywords: t('contact.seo.keywords', 'contact ESGFlow, démonstration CSRD, devis plateforme ESG'), ogImage: 'https://greenconnect.cloud/og/contact.png' });
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -82,8 +82,8 @@ export default function ContactPage() {
   // scroll to top + page title on mount
   useEffect(() => {
     window.scrollTo(0, 0);
-    document.title = t('contact.docTitle', 'Contactez-nous — ESG Flow | Devis Enterprise & Demo');
-    return () => { document.title = t('contact.docTitleDefault', 'ESG Flow — Plateforme ESG, CSRD & Bilan Carbone'); };
+    document.title = t('contact.docTitle', 'Contactez-nous — ESGFlow | Devis Enterprise & Demo');
+    return () => { document.title = t('contact.docTitleDefault', 'ESGFlow — Plateforme ESG, CSRD & Bilan Carbone'); };
   }, []);
 
   function update(field: string, value: string) {
@@ -144,7 +144,7 @@ export default function ContactPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2 text-gray-900 hover:text-emerald-600 transition-colors">
               <ChevronLeft className="w-4 h-4" />
-              <img src="/brand/logo-full.png" alt="ESG Flow" className="h-8" />
+              <img src="/brand/logo-full.png" alt="ESGFlow" className="h-8" />
             </Link>
             <Link
               to="/register"

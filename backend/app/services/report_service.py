@@ -101,7 +101,7 @@ def _make_header_footer(report_title: str, year: int):
         # Logo
         canvas.setFillColor(C_WHITE)
         canvas.setFont('Helvetica-Bold', 10)
-        canvas.drawString(20*mm, h - 8*mm, 'ESG Flow')
+        canvas.drawString(20*mm, h - 8*mm, 'ESGFlow')
         # Title
         canvas.setFont('Helvetica', 8)
         canvas.drawCentredString(w / 2, h - 8*mm, report_title[:65])
@@ -114,7 +114,7 @@ def _make_header_footer(report_title: str, year: int):
         canvas.setFillColor(C_GRAY)
         canvas.setFont('Helvetica', 7)
         canvas.drawString(20*mm, 9*mm,
-                          f'© {year} ESG Flow · Confidentiel · Généré le {gen_date}')
+                          f'© {year} ESGFlow · Confidentiel · Généré le {gen_date}')
         canvas.drawRightString(w - 20*mm, 9*mm, 'CSRD · ESRS · GRI · TCFD')
         canvas.restoreState()
 
@@ -266,7 +266,7 @@ class ReportService:
 
         ws_summary.merge_cells('A2:C2')
         c = ws_summary['A2']
-        c.value = f'Conforme ESRS 2024 — Généré le {datetime.now().strftime("%d/%m/%Y")} — ESG Flow'
+        c.value = f'Conforme ESRS 2024 — Généré le {datetime.now().strftime("%d/%m/%Y")} — ESGFlow'
         c.font = Font(color=GRAY, size=9, name='Calibri')
         c.fill = _fill(LGRAY)
         c.alignment = Alignment(horizontal='center')
@@ -682,7 +682,7 @@ class ReportService:
         doc.add_paragraph(f'Score ESG Global : {stats["score"]}/100')
         doc.add_paragraph(f'Notation : {stats["rating"]}')
         doc.add_paragraph(f'Indicateurs collectés : {stats["total_entries"]} (vérifiés : {stats["verified_count"]})')
-        doc.add_paragraph(f'Généré le : {datetime.now().strftime("%d/%m/%Y à %H:%M")} — ESG Flow')
+        doc.add_paragraph(f'Généré le : {datetime.now().strftime("%d/%m/%Y à %H:%M")} — ESGFlow')
 
         doc.add_page_break()
 
@@ -874,7 +874,7 @@ class ReportService:
                 row.cells[5].text = str(s.get('governance', '—'))
 
         p = doc.add_paragraph()
-        p.add_run(f'\n© {year} ESG Flow · Rapport généré automatiquement · {datetime.now().strftime("%d/%m/%Y")}').italic = True
+        p.add_run(f'\n© {year} ESGFlow · Rapport généré automatiquement · {datetime.now().strftime("%d/%m/%Y")}').italic = True
 
         buf = io.BytesIO()
         doc.save(buf)
@@ -1838,7 +1838,7 @@ class ReportService:
           └─────────────────────────────────────────────────┘
 
         Key fixes vs. previous version:
-          • "ESG Flow" (34 pt) and subtitle split into TWO separate Table rows
+          • "ESGFlow" (34 pt) and subtitle split into TWO separate Table rows
             so leading never fights font size → zero overlap.
           • spaceAfter values increased to proper optical spacing.
           • _kpi_cell uses two separate rows (value / label) instead of
@@ -1848,7 +1848,7 @@ class ReportService:
 
         # ── 1. Navy header: TWO rows so leading is irrelevant ─────────────────
         header_logo = Paragraph(
-            'ESG Flow',
+            'ESGFlow',
             ParagraphStyle('hdr_logo', fontSize=34, textColor=C_WHITE,
                            alignment=1, fontName='Helvetica-Bold', leading=42)
         )
@@ -2002,7 +2002,7 @@ class ReportService:
         # ── 12. Generation info ───────────────────────────────────────────────
         story.append(Spacer(1, 8*mm))
         story.append(Paragraph(
-            f"Généré le {datetime.now().strftime('%d/%m/%Y à %H:%M')} · ESG Flow v2.0.0",
+            f"Généré le {datetime.now().strftime('%d/%m/%Y à %H:%M')} · ESGFlow v2.0.0",
             ParagraphStyle('cov_date', fontSize=8, textColor=C_GRAY,
                            alignment=1, leading=11)
         ))
@@ -2647,7 +2647,7 @@ class ReportService:
         story.append(HRFlowable(width='100%', thickness=1, color=C_MGRAY))
         story.append(Spacer(1, 4*mm))
         story.append(Paragraph(
-            f'© {year} ESG Flow · Tous droits réservés · Rapport généré automatiquement par la plateforme ESG Flow v2.0.0',
+            f'© {year} ESGFlow · Tous droits réservés · Rapport généré automatiquement par la plateforme ESGFlow v2.0.0',
             ParagraphStyle('footer', fontSize=8, textColor=C_GRAY, alignment=1)
         ))
         return story

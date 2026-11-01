@@ -28,7 +28,7 @@ def _get_resend():
 
 def _from_address() -> str:
     from app.config import settings
-    name = getattr(settings, "RESEND_FROM_NAME", "ESG Flow")
+    name = getattr(settings, "RESEND_FROM_NAME", "ESGFlow")
     email = getattr(settings, "RESEND_FROM_EMAIL", "noreply@greenconnect.cloud")
     return f"{name} <{email}>"
 
@@ -81,7 +81,7 @@ def _base_html(title: str, preheader: str, body_html: str, recipient_email: str 
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr>
             <td align="center">
-              <img src="{_app_url()}/brand/icon-esgflow-v5-128.png" alt="ESG Flow" width="56" height="56" style="display:block;margin:0 auto 12px auto;border-radius:12px;"/>
+              <img src="{_app_url()}/brand/icon-esgflow-v5-128.png" alt="ESGFlow" width="56" height="56" style="display:block;margin:0 auto 12px auto;border-radius:12px;"/>
               <div style="font-size:24px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;line-height:1;">
                 ESG<span style="color:#10b981;"> FLOW</span>
               </div>
@@ -101,13 +101,13 @@ def _base_html(title: str, preheader: str, body_html: str, recipient_email: str 
       <!-- Footer -->
       <tr><td style="background:#f1f5f9;padding:24px 40px;border-radius:0 0 16px 16px;border:1px solid #e2e8f0;border-top:none;text-align:center;">
         <p style="margin:0 0 8px 0;font-size:12px;color:#64748b;">
-          © {datetime.now().year} GreenConnect SAS · ESG Flow · Plateforme ESG intelligente
+          © {datetime.now().year} GreenConnect SAS · ESGFlow · Plateforme ESG intelligente
         </p>
         <p style="margin:0 0 12px 0;font-size:11px;color:#94a3b8;">
           CSRD · ESRS · GRI · TCFD · GHG Protocol
         </p>
         <p style="margin:0;font-size:11px;color:#94a3b8;line-height:1.6;">
-          Vous recevez cet email car vous avez un compte ESG Flow.<br/>
+          Vous recevez cet email car vous avez un compte ESGFlow.<br/>
           <a href="{unsub_url}" style="color:#64748b;text-decoration:underline;">Se désabonner</a>
           &nbsp;·&nbsp;
           <a href="{unsub_mailto}" style="color:#64748b;text-decoration:underline;">par email</a>
@@ -201,7 +201,7 @@ class EmailService:
 {_p(f"Le rapport a été généré automatiquement à partir de vos données ESG. Le lien ci-dessous reste valable <strong>{valid_days} jours</strong>.")}
 {_btn("Télécharger le rapport", link)}
 {_divider()}
-{_p("Vous recevez ce message car votre adresse figure parmi les destinataires d'un rapport planifié dans ESG Flow.", "#64748b", "13px")}
+{_p("Vous recevez ce message car votre adresse figure parmi les destinataires d'un rapport planifié dans ESGFlow.", "#64748b", "13px")}
 """
         return cls._send(email, f"Votre rapport « {title} » est prêt", _base_html("Rapport planifié", "Votre rapport planifié est prêt", body, email))
 
@@ -211,9 +211,9 @@ class EmailService:
     def send_welcome(cls, email: str, first_name: str, company: str) -> bool:
         app = _app_url()
         body = f"""
-{_badge("Bienvenue sur ESG Flow 🎉")}
+{_badge("Bienvenue sur ESGFlow 🎉")}
 {_h1(f"Bonjour {first_name} !")}
-{_p(f"Votre compte ESG Flow pour <strong>{company}</strong> est prêt. Vous démarrez avec un <strong>essai gratuit de 14 jours</strong> incluant toutes les fonctionnalités du plan <strong>ETI</strong> — sans carte bancaire, sans engagement.")}
+{_p(f"Votre compte ESGFlow pour <strong>{company}</strong> est prêt. Vous démarrez avec un <strong>essai gratuit de 14 jours</strong> incluant toutes les fonctionnalités du plan <strong>ETI</strong> — sans carte bancaire, sans engagement.")}
 {_kpi_row([("Essai gratuit", "14 jours"), ("Plan inclus", "ETI"), ("Engagement", "Aucun")])}
 {_btn("Accéder à la plateforme", f"{app}/app")}
 <p style="margin:24px 0 12px 0;font-size:14px;color:#475569;font-weight:600;">Pour bien démarrer :</p>
@@ -226,7 +226,7 @@ class EmailService:
 {_divider()}
 {_p(f"Une question ? Notre équipe est disponible sur <a href='mailto:{_support_email()}' style='color:#059669;'>{_support_email()}</a>", "#64748b", "13px")}
 """
-        return cls._send(email, f"Bienvenue sur ESG Flow — votre compte {company} est prêt", _base_html("Bienvenue", "Votre compte ESG Flow est prêt", body, email))
+        return cls._send(email, f"Bienvenue sur ESGFlow — votre compte {company} est prêt", _base_html("Bienvenue", "Votre compte ESGFlow est prêt", body, email))
 
     # ── Trial ─────────────────────────────────────────────────────────────────
 
@@ -235,7 +235,7 @@ class EmailService:
         app = _app_url()
         body = f"""
 {_badge("Essai ETI démarré ✨", "#10b981", "#d1fae5")}
-{_h1("Votre essai ESG Flow commence !")}
+{_h1("Votre essai ESGFlow commence !")}
 {_p(f"Bonjour {first_name}, votre essai gratuit du plan <strong>ETI</strong> pour <strong>{company}</strong> est actif jusqu'au <strong>{trial_end}</strong>.")}
 {_p("Pendant 14 jours, profitez de toutes les fonctionnalités ETI :")}
 <ul style="color:#475569;font-size:14px;line-height:1.8;padding-left:20px;margin:0 0 20px 0;">
@@ -248,20 +248,20 @@ class EmailService:
 </ul>
 {_btn("Explorer la plateforme", f"{app}/app")}
 """
-        return cls._send(email, "Votre essai ESG Flow ETI commence aujourd'hui", _base_html("Essai ETI", "14 jours pour explorer ESG Flow ETI", body, email))
+        return cls._send(email, "Votre essai ESGFlow ETI commence aujourd'hui", _base_html("Essai ETI", "14 jours pour explorer ESGFlow ETI", body, email))
 
     @classmethod
     def send_trial_ending_soon(cls, email: str, first_name: str, days_left: int) -> bool:
         app = _app_url()
         body = f"""
 {_badge(f"⏰ Plus que {days_left} jour{'s' if days_left > 1 else ''}", "#d97706", "#fef3c7")}
-{_h1("Votre essai ESG Flow se termine bientôt")}
-{_p(f"Bonjour {first_name}, votre essai gratuit se termine dans <strong>{days_left} jour{'s' if days_left > 1 else ''}</strong>. Pour continuer à utiliser ESG Flow, choisissez un plan.")}
+{_h1("Votre essai ESGFlow se termine bientôt")}
+{_p(f"Bonjour {first_name}, votre essai gratuit se termine dans <strong>{days_left} jour{'s' if days_left > 1 else ''}</strong>. Pour continuer à utiliser ESGFlow, choisissez un plan.")}
 {_btn("Choisir mon plan", f"{app}/app/settings?tab=billing", "#7c3aed")}
 {_divider()}
 {_p("Le plan <strong>PME</strong> commence à 79 €/mois — aucune interruption de service, données conservées.", "#64748b", "13px")}
 """
-        return cls._send(email, f"Votre essai ESG Flow se termine dans {days_left} jour{'s' if days_left > 1 else ''}", _base_html("Essai bientôt terminé", f"Plus que {days_left} jours d'essai", body, email))
+        return cls._send(email, f"Votre essai ESGFlow se termine dans {days_left} jour{'s' if days_left > 1 else ''}", _base_html("Essai bientôt terminé", f"Plus que {days_left} jours d'essai", body, email))
 
     # ── Onboarding nurture sequence (J3 / J7 / J11 / J13) ───────────────────
     #
@@ -276,7 +276,7 @@ class EmailService:
         body = f"""
 {_badge("J+3 · On vous accompagne 🚀", "#2563eb", "#dbeafe")}
 {_h1(f"3 choses que vous pouvez tester aujourd'hui")}
-{_p(f"Bonjour {first_name}, vous venez de démarrer votre essai ESG Flow — bravo. Pour ne pas rester au stade de la démo curieuse, voici 3 actions concrètes à faire <strong>cette semaine</strong> :")}
+{_p(f"Bonjour {first_name}, vous venez de démarrer votre essai ESGFlow — bravo. Pour ne pas rester au stade de la démo curieuse, voici 3 actions concrètes à faire <strong>cette semaine</strong> :")}
 <table width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;">
   <tr><td style="padding:14px 18px;background:#f0fdf4;border-left:4px solid #10b981;border-radius:4px;">
     <p style="margin:0 0 4px 0;font-size:14px;color:#065f46;font-weight:700;">1. Importez votre FEC comptable</p>
@@ -295,9 +295,9 @@ class EmailService:
 </table>
 {_btn("Continuer mon essai", f"{app}/app")}
 {_divider()}
-{_p(f"Une question ? Répondez à cet email, on lit tout. — L'équipe ESG Flow", "#64748b", "13px")}
+{_p(f"Une question ? Répondez à cet email, on lit tout. — L'équipe ESGFlow", "#64748b", "13px")}
 """
-        return cls._send(email, "Vos 3 prochaines étapes sur ESG Flow", _base_html("J+3", "3 actions pour profiter de votre essai", body, email))
+        return cls._send(email, "Vos 3 prochaines étapes sur ESGFlow", _base_html("J+3", "3 actions pour profiter de votre essai", body, email))
 
     @classmethod
     def send_trial_day7(cls, email: str, first_name: str, *, indicators_filled: int = 0) -> bool:
@@ -318,13 +318,13 @@ class EmailService:
 <p style="margin:20px 0 10px 0;font-size:14px;color:#475569;font-weight:600;">Témoignage client :</p>
 <blockquote style="margin:0;padding:16px 20px;background:#f8fafc;border-left:3px solid #10b981;border-radius:4px;">
   <p style="margin:0 0 8px 0;font-size:14px;color:#0f172a;line-height:1.6;font-style:italic;">
-    « On avait reçu un devis de 18 k€ d'un cabinet pour notre 1er rapport CSRD. Avec ESG Flow, on l'a fait en interne en 6 semaines, pour 2 388 €/an. Le commissaire aux comptes a validé l'audit trail sans réserve. »
+    « On avait reçu un devis de 18 k€ d'un cabinet pour notre 1er rapport CSRD. Avec ESGFlow, on l'a fait en interne en 6 semaines, pour 2 388 €/an. Le commissaire aux comptes a validé l'audit trail sans réserve. »
   </p>
   <p style="margin:0;font-size:12px;color:#64748b;">— Directrice RSE, PME industrielle 180 salariés (Auvergne)</p>
 </blockquote>
 {_btn("Reprendre où je m'étais arrêté·e", f"{app}/app")}
 """
-        return cls._send(email, "À mi-parcours de votre essai ESG Flow", _base_html("J+7", "Votre essai progresse", body, email))
+        return cls._send(email, "À mi-parcours de votre essai ESGFlow", _base_html("J+7", "Votre essai progresse", body, email))
 
     @classmethod
     def send_trial_day11(cls, email: str, first_name: str) -> bool:
@@ -355,7 +355,7 @@ class EmailService:
         body = f"""
 {_badge("🚨 DEMAIN · Fin de votre essai", "#dc2626", "#fee2e2")}
 {_h1(f"{first_name}, votre essai se termine dans 24 h")}
-{_p("Dernier rappel : sans choix de plan d'ici demain, votre compte ESG Flow va passer en mode lecture seule. Vos données sont conservées 30 jours, mais vous ne pourrez plus :")}
+{_p("Dernier rappel : sans choix de plan d'ici demain, votre compte ESGFlow va passer en mode lecture seule. Vos données sont conservées 30 jours, mais vous ne pourrez plus :")}
 <ul style="color:#475569;font-size:14px;line-height:1.8;padding-left:20px;margin:0 0 20px 0;">
   <li>Saisir de nouveaux indicateurs</li>
   <li>Générer de nouveaux rapports</li>
@@ -368,7 +368,7 @@ class EmailService:
   <strong>Pas convaincu·e ?</strong> Répondez à cet email et dites-nous ce qui vous a manqué — on prend le feedback très au sérieux et on peut souvent vous aider en 15 min.
 </p>
 """
-        return cls._send(email, "🚨 Dernière chance — activer votre plan ESG Flow", _base_html("J+13", "Votre essai se termine demain", body, email))
+        return cls._send(email, "🚨 Dernière chance — activer votre plan ESGFlow", _base_html("J+13", "Votre essai se termine demain", body, email))
 
     @classmethod
     def send_trial_expired(cls, email: str, first_name: str) -> bool:
@@ -388,7 +388,7 @@ class EmailService:
 {_divider()}
 {_p(f"Vous ne reviendrez pas ? Pas grave. Dites-nous pourquoi en <a href='mailto:{_support_email()}' style='color:#10b981;'>2 lignes</a> — ça nous aide à améliorer.", "#64748b", "13px")}
 """
-        return cls._send(email, "Votre compte ESG Flow vous attend (1 mois offert)", _base_html("Essai terminé", "Réactivez votre compte avec 1 mois offert", body, email))
+        return cls._send(email, "Votre compte ESGFlow vous attend (1 mois offert)", _base_html("Essai terminé", "Réactivez votre compte avec 1 mois offert", body, email))
 
     # ── Password Reset ────────────────────────────────────────────────────────
 
@@ -397,23 +397,23 @@ class EmailService:
         body = f"""
 {_badge("Réinitialisation du mot de passe 🔐", "#2563eb", "#dbeafe")}
 {_h1("Réinitialisez votre mot de passe")}
-{_p(f"Bonjour {first_name}, nous avons reçu une demande de réinitialisation de mot de passe pour votre compte ESG Flow.")}
+{_p(f"Bonjour {first_name}, nous avons reçu une demande de réinitialisation de mot de passe pour votre compte ESGFlow.")}
 {_btn("Réinitialiser mon mot de passe", reset_url, "#2563eb")}
 {_divider()}
 {_p("Ce lien expire dans <strong>1 heure</strong>. Si vous n'avez pas demandé cette réinitialisation, ignorez cet email — votre compte reste sécurisé.", "#64748b", "13px")}
 """
-        return cls._send(email, "Réinitialisez votre mot de passe ESG Flow", _base_html("Mot de passe oublié", "Lien de réinitialisation de mot de passe", body, email))
+        return cls._send(email, "Réinitialisez votre mot de passe ESGFlow", _base_html("Mot de passe oublié", "Lien de réinitialisation de mot de passe", body, email))
 
     @classmethod
     def send_password_changed(cls, email: str, first_name: str) -> bool:
         body = f"""
 {_badge("Mot de passe modifié ✅")}
 {_h1("Votre mot de passe a été modifié")}
-{_p(f"Bonjour {first_name}, votre mot de passe ESG Flow a bien été mis à jour.")}
+{_p(f"Bonjour {first_name}, votre mot de passe ESGFlow a bien été mis à jour.")}
 {_p("Si vous n'êtes pas à l'origine de ce changement, contactez immédiatement notre support.", "#dc2626", "13px")}
 {_btn("Accéder à mon compte", _app_url() + "/app")}
 """
-        return cls._send(email, "Votre mot de passe ESG Flow a été modifié", _base_html("Mot de passe modifié", "Confirmation de changement de mot de passe", body, email))
+        return cls._send(email, "Votre mot de passe ESGFlow a été modifié", _base_html("Mot de passe modifié", "Confirmation de changement de mot de passe", body, email))
 
     # ── Subscription events ───────────────────────────────────────────────────
 
@@ -423,13 +423,13 @@ class EmailService:
         body = f"""
 {_badge(f"Abonnement {plan_name} activé 🎉")}
 {_h1(f"Bienvenue sur le plan {plan_name} !")}
-{_p(f"Bonjour {first_name}, votre abonnement ESG Flow <strong>{plan_name}</strong> est maintenant actif.")}
+{_p(f"Bonjour {first_name}, votre abonnement ESGFlow <strong>{plan_name}</strong> est maintenant actif.")}
 {_kpi_row([("Montant", amount), ("Prochain renouvellement", next_date), ("Statut", "Actif ✓")])}
 {_btn("Accéder à la plateforme", f"{app}/app")}
 {_divider()}
 {_p(f"Retrouvez vos factures dans <a href='{app}/app/settings?tab=billing' style='color:#059669;'>Paramètres → Facturation</a>.", "#64748b", "13px")}
 """
-        return cls._send(email, f"Abonnement ESG Flow {plan_name} activé", _base_html(f"Plan {plan_name}", f"Votre abonnement {plan_name} est actif", body))
+        return cls._send(email, f"Abonnement ESGFlow {plan_name} activé", _base_html(f"Plan {plan_name}", f"Votre abonnement {plan_name} est actif", body))
 
     @classmethod
     def send_payment_failed(cls, email: str, first_name: str, amount: str, retry_date: Optional[str] = None) -> bool:
@@ -443,17 +443,17 @@ class EmailService:
 {_divider()}
 {_p(f"{'Prochain essai de prélèvement le ' + retry_date + '.' if retry_date else 'Votre accès peut être limité si le paiement reste en échec.'}", "#64748b", "13px")}
 """
-        return cls._send(email, "Problème de paiement sur votre abonnement ESG Flow", _base_html("Paiement échoué", "Action requise : paiement en échec", body, email))
+        return cls._send(email, "Problème de paiement sur votre abonnement ESGFlow", _base_html("Paiement échoué", "Action requise : paiement en échec", body, email))
 
     @classmethod
     def send_invoice_paid(cls, email: str, first_name: str, amount: str, invoice_url: str, invoice_number: str) -> bool:
         body = f"""
 {_badge("Facture réglée ✅")}
 {_h1("Votre paiement a bien été traité")}
-{_p(f"Bonjour {first_name}, votre facture ESG Flow <strong>{invoice_number}</strong> de <strong>{amount}</strong> a été réglée avec succès.")}
+{_p(f"Bonjour {first_name}, votre facture ESGFlow <strong>{invoice_number}</strong> de <strong>{amount}</strong> a été réglée avec succès.")}
 {_btn("Télécharger la facture", invoice_url, "#2563eb")}
 """
-        return cls._send(email, f"Facture ESG Flow {invoice_number} réglée — {amount}", _base_html("Facture payée", f"Facture {invoice_number} réglée", body))
+        return cls._send(email, f"Facture ESGFlow {invoice_number} réglée — {amount}", _base_html("Facture payée", f"Facture {invoice_number} réglée", body))
 
     @classmethod
     def send_subscription_canceled(cls, email: str, first_name: str, plan_name: str, end_date: str) -> bool:
@@ -461,11 +461,11 @@ class EmailService:
         body = f"""
 {_badge("Abonnement annulé", "#6b7280", "#f3f4f6")}
 {_h1("Votre abonnement a été annulé")}
-{_p(f"Bonjour {first_name}, votre abonnement ESG Flow <strong>{plan_name}</strong> a été annulé. Vous conservez l'accès jusqu'au <strong>{end_date}</strong>.")}
+{_p(f"Bonjour {first_name}, votre abonnement ESGFlow <strong>{plan_name}</strong> a été annulé. Vous conservez l'accès jusqu'au <strong>{end_date}</strong>.")}
 {_p("Vos données sont conservées pendant 90 jours après la fin de votre abonnement.")}
 {_btn("Réactiver mon abonnement", f"{app}/app/settings?tab=billing", "#6b7280")}
 """
-        return cls._send(email, "Votre abonnement ESG Flow a été annulé", _base_html("Abonnement annulé", "Confirmation d'annulation", body, email))
+        return cls._send(email, "Votre abonnement ESGFlow a été annulé", _base_html("Abonnement annulé", "Confirmation d'annulation", body, email))
 
     # ── Email Verification ────────────────────────────────────────────────────
 
@@ -474,14 +474,14 @@ class EmailService:
         body = f"""
 {_badge("Vérification d'email 📧", "#2563eb", "#dbeafe")}
 {_h1(f"Confirmez votre adresse email")}
-{_p(f"Bonjour {first_name}, merci de vous être inscrit(e) sur ESG Flow. Veuillez confirmer votre adresse email en cliquant sur le bouton ci-dessous.")}
+{_p(f"Bonjour {first_name}, merci de vous être inscrit(e) sur ESGFlow. Veuillez confirmer votre adresse email en cliquant sur le bouton ci-dessous.")}
 {_btn("Confirmer mon email", verify_url, "#2563eb")}
 {_divider()}
-{_p("Ce lien expire dans <strong>24 heures</strong>. Si vous n'avez pas créé de compte ESG Flow, ignorez cet email.", "#64748b", "13px")}
+{_p("Ce lien expire dans <strong>24 heures</strong>. Si vous n'avez pas créé de compte ESGFlow, ignorez cet email.", "#64748b", "13px")}
 """
         return cls._send(
             email,
-            "Confirmez votre adresse email ESG Flow",
+            "Confirmez votre adresse email ESGFlow",
             _base_html("Vérification email", "Confirmez votre adresse email", body, email),
         )
 
@@ -490,11 +490,11 @@ class EmailService:
     @classmethod
     def send_user_invited(cls, email: str, inviter_name: str, company: str, invite_url: str) -> bool:
         body = f"""
-{_badge("Invitation ESG Flow 👋", "#7c3aed", "#ede9fe")}
-{_h1(f"Vous êtes invité(e) sur ESG Flow")}
-{_p(f"<strong>{inviter_name}</strong> vous invite à rejoindre <strong>{company}</strong> sur ESG Flow, la plateforme de reporting ESG professionnelle.")}
+{_badge("Invitation ESGFlow 👋", "#7c3aed", "#ede9fe")}
+{_h1(f"Vous êtes invité(e) sur ESGFlow")}
+{_p(f"<strong>{inviter_name}</strong> vous invite à rejoindre <strong>{company}</strong> sur ESGFlow, la plateforme de reporting ESG professionnelle.")}
 {_btn("Accepter l'invitation", invite_url, "#7c3aed")}
 {_divider()}
 {_p("Ce lien expire dans 7 jours.", "#64748b", "13px")}
 """
-        return cls._send(email, f"{inviter_name} vous invite à rejoindre {company} sur ESG Flow", _base_html("Invitation ESG Flow", f"Invitation de {inviter_name}", body))
+        return cls._send(email, f"{inviter_name} vous invite à rejoindre {company} sur ESGFlow", _base_html("Invitation ESGFlow", f"Invitation de {inviter_name}", body))

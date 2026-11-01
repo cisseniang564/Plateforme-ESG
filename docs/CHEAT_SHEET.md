@@ -1,11 +1,11 @@
 ---
-title: "ESG Flow — Outreach Cheat Sheet"
+title: "ESGFlow — Outreach Cheat Sheet"
 ---
 
 <div class="cheat-sheet">
 
 <div class="header-band">
-<h1>ESG Flow — Outreach Cheat Sheet</h1>
+<h1>ESGFlow — Outreach Cheat Sheet</h1>
 <p>1 page · 1 process · 4 semaines · 15-20 entretiens</p>
 </div>
 
@@ -152,7 +152,7 @@ LinkedIn → Tampermonkey → `prospects.csv` → `drafts` → copier-coller Lin
 </div>
 
 <div class="footer">
-ESG Flow — greenconnect.cloud · Cheat sheet v1 — 27/05/2026
+ESGFlow — greenconnect.cloud · Cheat sheet v1 — 27/05/2026
 </div>
 
 </div>

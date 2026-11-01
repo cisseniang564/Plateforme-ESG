@@ -64,7 +64,7 @@ export default function SecurityPage() {
             <ArrowLeft className="h-4 w-4" />
             {t('security.page.navHome', 'Accueil')}
           </Link>
-          <span className="text-sm font-bold text-gray-900">{t('security.page.navTitle', 'ESG Flow — Sécurité')}</span>
+          <span className="text-sm font-bold text-gray-900">{t('security.page.navTitle', 'ESGFlow — Sécurité')}</span>
           <Link to="/register" className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-colors">
             {t('security.page.navFreeTrial', 'Essai gratuit →')}
           </Link>
@@ -83,7 +83,7 @@ export default function SecurityPage() {
             {t('security.page.heroTitle', 'Sécurité, conformité & souveraineté')}
           </h1>
           <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed mb-4">
-            {t('security.page.heroSubtitle', 'Vos données ESG sont aussi sensibles que vos données financières. Voici comment ESG Flow les protège.')}
+            {t('security.page.heroSubtitle', 'Vos données ESG sont aussi sensibles que vos données financières. Voici comment ESGFlow les protège.')}
           </p>
           <p className="text-xs text-slate-400 mb-10 inline-flex items-center gap-1.5">
             <Clock className="h-3 w-3" />

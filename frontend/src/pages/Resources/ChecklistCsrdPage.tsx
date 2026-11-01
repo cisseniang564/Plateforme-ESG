@@ -28,7 +28,7 @@ export default function ChecklistCsrdPage() {
 
   usePageSeo({
     id: 'checklist-csrd',
-    title: t('resources.checklist.seo.title', 'Check-list CSRD gratuite — 47 indicateurs ESRS · ESG Flow'),
+    title: t('resources.checklist.seo.title', 'Check-list CSRD gratuite — 47 indicateurs ESRS · ESGFlow'),
     description: t('resources.checklist.seo.description', "Téléchargez la check-list CSRD gratuite : 47 indicateurs ESRS prioritaires classés par criticité. PDF prêt à imprimer pour démarrer votre conformité CSRD."),
     keywords: t('resources.checklist.seo.keywords', 'check-list CSRD, indicateurs ESRS, PDF gratuit, conformité CSRD, EFRAG, lead magnet'),
     url,
@@ -77,7 +77,7 @@ export default function ChecklistCsrdPage() {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link to="/" aria-label={t('resources.checklist.nav.homeAria', 'ESG Flow — Accueil')}>
+          <Link to="/" aria-label={t('resources.checklist.nav.homeAria', 'ESGFlow — Accueil')}>
             <LogoBrand size="sm" variant="dark" showTagline={false} />
           </Link>
           <Link to="/register" className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold">
@@ -154,7 +154,7 @@ export default function ChecklistCsrdPage() {
                 {t('resources.checklist.success.body', "Vérifiez votre boîte mail (et le dossier spam au cas où). La check-list arrive dans moins d'une minute.")}
               </p>
               <Link to="/register" className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold">
-                {t('resources.checklist.success.cta', 'Démarrer mon essai ESG Flow')} →
+                {t('resources.checklist.success.cta', 'Démarrer mon essai ESGFlow')} →
               </Link>
               <p className="text-xs text-gray-400 mt-6">
                 <Trans i18nKey="resources.checklist.success.notReceived">
@@ -224,7 +224,7 @@ export default function ChecklistCsrdPage() {
                     className="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                   />
                   <span className="text-xs text-gray-600 leading-relaxed">
-                    {t('resources.checklist.form.consent', "J'accepte de recevoir cette ressource par email ainsi que la newsletter mensuelle ESG Flow (désabonnement en un clic).")}
+                    {t('resources.checklist.form.consent', "J'accepte de recevoir cette ressource par email ainsi que la newsletter mensuelle ESGFlow (désabonnement en un clic).")}
                   </span>
                 </label>
 
@@ -268,10 +268,10 @@ export default function ChecklistCsrdPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-3">{t('resources.checklist.bottomCta.title', 'Et si on automatisait tout ça ?')}</h2>
           <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-            {t('resources.checklist.bottomCta.body', "ESG Flow remplit automatiquement 80 % de la check-list à partir de vos données comptables, RH et énergie. 14 jours d'essai gratuit, sans carte bancaire.")}
+            {t('resources.checklist.bottomCta.body', "ESGFlow remplit automatiquement 80 % de la check-list à partir de vos données comptables, RH et énergie. 14 jours d'essai gratuit, sans carte bancaire.")}
           </p>
           <Link to="/register" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
-            {t('resources.checklist.bottomCta.cta', 'Démarrer mon essai ESG Flow')} →
+            {t('resources.checklist.bottomCta.cta', 'Démarrer mon essai ESGFlow')} →
           </Link>
         </div>
       </section>

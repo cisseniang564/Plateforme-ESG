@@ -196,7 +196,7 @@ const ESG_KB: Array<{ keywords: string[]; response: string }> = [
   },
   {
     keywords: ['rapport', 'rapport', 'gri', 'tcfd', 'pdf', 'générer', 'publier'],
-    response: `**Génération de rapports** 📄\n\nESG Flow génère automatiquement 3 types de rapports conformes :\n\n| Standard | Couverture | Usage |\n|---------|-----------|-------|
+    response: `**Génération de rapports** 📄\n\nESGFlow génère automatiquement 3 types de rapports conformes :\n\n| Standard | Couverture | Usage |\n|---------|-----------|-------|
 | **CSRD/ESRS** | Tous piliers E,S,G | Réglementaire EU |
 | **GRI** | Universel | Parties prenantes |
 | **TCFD** | Climat & risques | Investisseurs |
@@ -226,7 +226,7 @@ function getESGResponse(input: string): string {
       return entry.response;
     }
   }
-  return `**Bonne question !** 🤖\n\nJe suis l'assistant ESG d'ESG Flow. Je peux vous aider sur :\n\n- 📋 **Conformité CSRD/ESRS** — indicateurs requis, calendrier\n- 🌍 **Bilan carbone** — Scope 1, 2, 3 et catégories GHG Protocol\n- 📊 **Score ESG** — méthodologie et amélioration\n- 📄 **Rapports** — GRI, CSRD, TCFD\n- 🎯 **Matérialité** — double matérialité, parties prenantes\n- 🔍 **Anomalies** — interprétation des alertes\n- ♻️ **Réduction** — leviers d'action concrets\n\nPosez-moi une question plus précise ou utilisez les suggestions ci-dessus.`;
+  return `**Bonne question !** 🤖\n\nJe suis l'assistant ESG d'ESGFlow. Je peux vous aider sur :\n\n- 📋 **Conformité CSRD/ESRS** — indicateurs requis, calendrier\n- 🌍 **Bilan carbone** — Scope 1, 2, 3 et catégories GHG Protocol\n- 📊 **Score ESG** — méthodologie et amélioration\n- 📄 **Rapports** — GRI, CSRD, TCFD\n- 🎯 **Matérialité** — double matérialité, parties prenantes\n- 🔍 **Anomalies** — interprétation des alertes\n- ♻️ **Réduction** — leviers d'action concrets\n\nPosez-moi une question plus précise ou utilisez les suggestions ci-dessus.`;
 }
 
 // ─── Reduction levers data ────────────────────────────────────────────────────

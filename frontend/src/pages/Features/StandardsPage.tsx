@@ -142,16 +142,16 @@ const SECURITY = [
 
 const FAQS = [
   {
-    q: "ESG Flow est-il conforme à la CSRD ?",
-    a: "ESG Flow est un outil qui vous aide à être conforme à la CSRD. Il implémente nativement les exigences ESRS sur les mandatory disclosures (E1 à G1), génère les rapports de durabilité avec balisage iXBRL EFRAG 2024 et maintient une piste d'audit certifiable. La conformité CSRD reste une démarche d'entreprise — ESG Flow fournit l'infrastructure technologique pour y parvenir."
+    q: "ESGFlow est-il conforme à la CSRD ?",
+    a: "ESGFlow est un outil qui vous aide à être conforme à la CSRD. Il implémente nativement les exigences ESRS sur les mandatory disclosures (E1 à G1), génère les rapports de durabilité avec balisage iXBRL EFRAG 2024 et maintient une piste d'audit certifiable. La conformité CSRD reste une démarche d'entreprise — ESGFlow fournit l'infrastructure technologique pour y parvenir."
   },
   {
     q: "Proposez-vous la norme VSME pour les PME non cotées ?",
-    a: "Oui. ESG Flow inclut un template prêt à l'emploi aligné sur la norme volontaire VSME publiée par l'EFRAG (décembre 2024) : les 11 exigences du Module de Base (B1 à B11) sont pré-structurées — énergie & GES, pollution, biodiversité, eau, déchets, effectifs, santé-sécurité, rémunération & formation, corruption. Appliquez le template, ajustez les valeurs à votre réalité, et exportez un rapport VSME répondant aux demandes de vos banques et donneurs d'ordre soumis à la CSRD."
+    a: "Oui. ESGFlow inclut un template prêt à l'emploi aligné sur la norme volontaire VSME publiée par l'EFRAG (décembre 2024) : les 11 exigences du Module de Base (B1 à B11) sont pré-structurées — énergie & GES, pollution, biodiversité, eau, déchets, effectifs, santé-sécurité, rémunération & formation, corruption. Appliquez le template, ajustez les valeurs à votre réalité, et exportez un rapport VSME répondant aux demandes de vos banques et donneurs d'ordre soumis à la CSRD."
   },
   {
     q: "Quelle est votre couverture GRI ?",
-    a: "ESG Flow mappe automatiquement 46 indicateurs ESRS vers les standards GRI — 24 séries couvertes, des standards économiques (GRI 201, 202, 207) aux séries environnementales (301 à 308) et sociales (401 à 418), en passant par les standards universels (GRI 2). Vous saisissez vos données une fois, le tableau de correspondance GRI/CDP/TCFD/SDG se remplit automatiquement."
+    a: "ESGFlow mappe automatiquement 46 indicateurs ESRS vers les standards GRI — 24 séries couvertes, des standards économiques (GRI 201, 202, 207) aux séries environnementales (301 à 308) et sociales (401 à 418), en passant par les standards universels (GRI 2). Vous saisissez vos données une fois, le tableau de correspondance GRI/CDP/TCFD/SDG se remplit automatiquement."
   },
   {
     q: "Quels ESRS sont couverts à 100% ?",
@@ -159,15 +159,15 @@ const FAQS = [
   },
   {
     q: "L'iXBRL généré est-il valide pour le dépôt réglementaire ?",
-    a: "ESG Flow génère des fichiers iXBRL conformes au namespace EFRAG 2024-12-31 (esrs_cor). Pour un dépôt réglementaire officiel, nous recommandons une validation via Arelle (outil EFRAG). ESG Flow couvre les mandatory disclosures les plus couramment requis — une validation complète XSD reste la responsabilité de votre auditeur externe."
+    a: "ESGFlow génère des fichiers iXBRL conformes au namespace EFRAG 2024-12-31 (esrs_cor). Pour un dépôt réglementaire officiel, nous recommandons une validation via Arelle (outil EFRAG). ESGFlow couvre les mandatory disclosures les plus couramment requis — une validation complète XSD reste la responsabilité de votre auditeur externe."
   },
   {
     q: "Mes données sont-elles hébergées en France ?",
-    a: "Oui. ESG Flow est hébergé exclusivement sur des serveurs IONOS situés en France (région Europe). Vos données ESG ne quittent jamais le territoire européen. L'architecture est conforme au RGPD avec isolation totale entre clients (multi-tenancy)."
+    a: "Oui. ESGFlow est hébergé exclusivement sur des serveurs IONOS situés en France (région Europe). Vos données ESG ne quittent jamais le territoire européen. L'architecture est conforme au RGPD avec isolation totale entre clients (multi-tenancy)."
   },
   {
     q: "Puis-je exporter mes données pour un auditeur externe ?",
-    a: "Oui. ESG Flow permet d'exporter la piste d'audit complète en PDF (avec empreintes SHA-256), les données ESG en CSV/Excel, et les rapports en format iXBRL et PDF. Un accès auditeur en lecture seule peut être accordé directement depuis la plateforme."
+    a: "Oui. ESGFlow permet d'exporter la piste d'audit complète en PDF (avec empreintes SHA-256), les données ESG en CSV/Excel, et les rapports en format iXBRL et PDF. Un accès auditeur en lecture seule peut être accordé directement depuis la plateforme."
   },
 ];
 
@@ -194,8 +194,8 @@ function CoveredBadge({ status }: { status: string }) {
 export default function StandardsPage() {
   usePageSeo({
     id: 'normes',
-    title: 'Normes & Conformité CSRD — ESG Flow',
-    description: 'Découvrez quels standards ESRS (E1-G1), frameworks (GHG Protocol, SBTi, SFDR, Taxonomie UE) et exigences de sécurité sont couverts nativement par ESG Flow.',
+    title: 'Normes & Conformité CSRD — ESGFlow',
+    description: 'Découvrez quels standards ESRS (E1-G1), frameworks (GHG Protocol, SBTi, SFDR, Taxonomie UE) et exigences de sécurité sont couverts nativement par ESGFlow.',
     url: 'https://greenconnect.cloud/normes',
     robots: 'index,follow',
     keywords: 'CSRD conformité, ESRS E1 E2 S1 G1, double matérialité, iXBRL EFRAG, GHG Protocol, SBTi, Taxonomie UE, SFDR, BEGES, CSDDD, VSME EFRAG norme volontaire PME, GRI mapping',
@@ -219,7 +219,7 @@ export default function StandardsPage() {
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <img src="/icon-esgflow-v5.svg" alt="ESGFlow" className="h-7 w-7" />
-            <span className="font-semibold text-gray-900">ESG Flow</span>
+            <span className="font-semibold text-gray-900">ESGFlow</span>
           </Link>
           <div className="flex items-center gap-3">
             <Link to="/demo" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Démo</Link>
@@ -241,7 +241,7 @@ export default function StandardsPage() {
             Normes & Conformité CSRD
           </h1>
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Voici exactement ce que couvre ESG Flow — sans marketing. Standards ESRS, frameworks, sécurité et ce qui est encore en roadmap.
+            Voici exactement ce que couvre ESGFlow — sans marketing. Standards ESRS, frameworks, sécurité et ce qui est encore en roadmap.
           </p>
 
           {/* Stats */}
@@ -349,7 +349,7 @@ export default function StandardsPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-3">Frameworks & référentiels supportés</h2>
-            <p className="text-gray-500">Au-delà de la CSRD, ESG Flow couvre les principaux référentiels ESG internationaux.</p>
+            <p className="text-gray-500">Au-delà de la CSRD, ESGFlow couvre les principaux référentiels ESG internationaux.</p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {FRAMEWORKS.map(fw => (
@@ -377,7 +377,7 @@ export default function StandardsPage() {
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-4">Sécurité & Hébergement</h2>
               <p className="text-gray-500 mb-8">
-                Vos données ESG sont sensibles. ESG Flow est conçu avec une sécurité de niveau enterprise, hébergé exclusivement en France et conforme au RGPD.
+                Vos données ESG sont sensibles. ESGFlow est conçu avec une sécurité de niveau enterprise, hébergé exclusivement en France et conforme au RGPD.
               </p>
               <div className="space-y-3">
                 {SECURITY.map((s, i) => (

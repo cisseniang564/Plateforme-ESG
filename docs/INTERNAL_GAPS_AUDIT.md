@@ -1,5 +1,5 @@
 ---
-title: "Audit Réglementaire Interne — ESG Flow"
+title: "Audit Réglementaire Interne — ESGFlow"
 subtitle: "État réel de couverture vs promesses marketing"
 author: "Audit technique — Pré-lancement"
 date: "27 mai 2026"
@@ -17,7 +17,7 @@ toc-depth: 2
 
 **Document interne — NE PAS DIFFUSER.**
 
-Ce document recense l'écart entre les promesses marketing de la plateforme ESG Flow et la réalité du code source au 27 mai 2026. Il sert de référence stratégique pour :
+Ce document recense l'écart entre les promesses marketing de la plateforme ESGFlow et la réalité du code source au 27 mai 2026. Il sert de référence stratégique pour :
 
 - Identifier les risques juridiques (publicité comparative trompeuse, Art. L121-1 Code conso)
 - Prioriser la roadmap produit aligné avec la nouvelle grille tarifaire (249–1 199 €/mois)
@@ -72,7 +72,7 @@ Ces promesses présentes sur la landing page ou dans les CTAs ne correspondent p
 ## 2.3 « Plan de vigilance Sapin 2 / Loi 2017-399 »
 
 - **Réalité** : Couverture **10 %**. Mentions textuelles uniquement dans `reports.py:677-689` et `materiality.py:559`. Aucun module, aucune table dédiée, aucun mécanisme d'alerte.
-- **Conséquence** : Sociétés mères > 5 000 salariés en France (obligation légale) ne peuvent pas couvrir leur obligation via ESG Flow.
+- **Conséquence** : Sociétés mères > 5 000 salariés en France (obligation légale) ne peuvent pas couvrir leur obligation via ESGFlow.
 - **Risque** : Client refusera dès la lecture du cahier des charges.
 - **Action** : retirer la promesse ou créer un module minimal (table `vigilance_plans` + cartographie risques + plan d'action + mécanisme d'alerte).
 
@@ -86,8 +86,8 @@ Ces fonctionnalités existent dans le code, fonctionnent, et constituent un avan
 
 - **Fichier** : `backend/app/services/ixbrl_service.py` (580 lignes)
 - **Caractéristiques** : Génération XHTML balisée avec le namespace EFRAG `2024-12-31`, 35 concepts ESRS encodés.
-- **Différenciation** : 90 % des concurrents (Greenly, Sweep) produisent du PDF déguisé. ESG Flow produit le XHTML certifiable réel.
-- **Argument commercial** : « ESG Flow est l'une des rares solutions à produire un XHTML iXBRL conforme au format EFRAG, exigé par l'ESMA à partir de 2026 pour les sociétés cotées. »
+- **Différenciation** : 90 % des concurrents (Greenly, Sweep) produisent du PDF déguisé. ESGFlow produit le XHTML certifiable réel.
+- **Argument commercial** : « ESGFlow est l'une des rares solutions à produire un XHTML iXBRL conforme au format EFRAG, exigé par l'ESMA à partir de 2026 pour les sociétés cotées. »
 
 ## 3.2 Import FEC → Calcul Scope 3 automatique
 

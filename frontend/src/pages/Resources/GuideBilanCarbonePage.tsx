@@ -26,7 +26,7 @@ const getTOC = (t: TFunction) => [
   { id: 'facteurs',       title: t('resources.guideBilanCarbone.toc.facteurs', "Facteurs d'émission ADEME") },
   { id: 'calcul-exemple', title: t('resources.guideBilanCarbone.toc.calculExemple', 'Exemple chiffré PME') },
   { id: 'reduction',      title: t('resources.guideBilanCarbone.toc.reduction', 'Réduction & trajectoire SBTi') },
-  { id: 'esgflow',        title: t('resources.guideBilanCarbone.toc.esgflow', 'Faire son bilan avec ESG Flow') },
+  { id: 'esgflow',        title: t('resources.guideBilanCarbone.toc.esgflow', 'Faire son bilan avec ESGFlow') },
   { id: 'faq',            title: t('resources.guideBilanCarbone.toc.faq', 'FAQ') },
 ];
 
@@ -39,14 +39,14 @@ export default function GuideBilanCarbonePage() {
 
   usePageSeo({
     id: 'guide-bilan-carbone',
-    title: t('resources.guideBilanCarbone.seo.title', 'Bilan carbone entreprise : méthode complète Scopes 1/2/3 — ESG Flow'),
+    title: t('resources.guideBilanCarbone.seo.title', 'Bilan carbone entreprise : méthode complète Scopes 1/2/3 — ESGFlow'),
     description: desc,
     keywords: t('resources.guideBilanCarbone.seo.keywords', 'bilan carbone, BEGES, GHG Protocol, scope 1, scope 2, scope 3, ADEME, facteur émission, SBTi, ESRS E1, taxonomie UE'),
     url,
     ogType: 'article',
     ogTitle: t('resources.guideBilanCarbone.seo.ogTitle', 'Bilan carbone entreprise : méthode complète Scopes 1/2/3'),
     ogImage: img,
-    ogImageAlt: t('resources.guideBilanCarbone.seo.ogImageAlt', 'Bilan carbone entreprise — méthode Scopes 1/2/3 — ESG Flow'),
+    ogImageAlt: t('resources.guideBilanCarbone.seo.ogImageAlt', 'Bilan carbone entreprise — méthode Scopes 1/2/3 — ESGFlow'),
     breadcrumb: [
       { name: t('resources.guideBilanCarbone.breadcrumb.home', 'Accueil'),     url: 'https://greenconnect.cloud/' },
       { name: t('resources.guideBilanCarbone.breadcrumb.resources', 'Ressources'),  url: 'https://greenconnect.cloud/resources' },
@@ -60,7 +60,7 @@ export default function GuideBilanCarbonePage() {
       "image": [img],
       "datePublished": "2026-05-15T08:00:00+02:00",
       "dateModified": "2026-05-20T08:00:00+02:00",
-      "author":    { "@type": "Organization", "name": "ESG Flow", "url": "https://greenconnect.cloud" },
+      "author":    { "@type": "Organization", "name": "ESGFlow", "url": "https://greenconnect.cloud" },
       "publisher": { "@type": "Organization", "name": "GreenConnect SAS",
                      "logo": { "@type": "ImageObject", "url": "https://greenconnect.cloud/brand/icon-esgflow-v5-256.png", "width": 256, "height": 256 } },
       "mainEntityOfPage": { "@type": "WebPage", "@id": url },
@@ -84,7 +84,7 @@ export default function GuideBilanCarbonePage() {
         { "@type": "Question", "name": "Comment calculer son Scope 3 quand on n'a pas toutes les données ?",
           "acceptedAnswer": { "@type": "Answer", "text": "Méthode spend-based : montants d'achat (FEC) × facteur monétaire ADEME. Précision moyenne mais légalement acceptée." } },
         { "@type": "Question", "name": "Quel logiciel pour faire son bilan carbone ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "ESG Flow inclut le bilan carbone GHG Protocol avec facteurs ADEME 2024 dès le plan PME (249 €/mois)." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "ESGFlow inclut le bilan carbone GHG Protocol avec facteurs ADEME 2024 dès le plan PME (249 €/mois)." } },
       ]
     },
   });
@@ -93,7 +93,7 @@ export default function GuideBilanCarbonePage() {
     <div className="min-h-screen bg-white">
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-xl border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link to="/" aria-label={t('resources.guideBilanCarbone.nav.logoAria', 'ESG Flow — Accueil')}><LogoBrand size="sm" variant="dark" showTagline={false} /></Link>
+          <Link to="/" aria-label={t('resources.guideBilanCarbone.nav.logoAria', 'ESGFlow — Accueil')}><LogoBrand size="sm" variant="dark" showTagline={false} /></Link>
           <Link to="/register" className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold">{t('resources.guideBilanCarbone.nav.cta', 'Essai gratuit →')}</Link>
         </div>
       </header>
@@ -443,8 +443,8 @@ export default function GuideBilanCarbonePage() {
           </section>
 
           <section id="esgflow" className="scroll-mt-24 mt-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('resources.guideBilanCarbone.esgflow.title', 'Faire son bilan carbone avec ESG Flow')}</h2>
-            <p><Trans i18nKey="resources.guideBilanCarbone.esgflow.intro">ESG Flow inclut un module bilan carbone <strong>conforme GHG Protocol et BEGES</strong> dans tous les plans payants (dès 249 €/mois). Les avantages :</Trans></p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('resources.guideBilanCarbone.esgflow.title', 'Faire son bilan carbone avec ESGFlow')}</h2>
+            <p><Trans i18nKey="resources.guideBilanCarbone.esgflow.intro">ESGFlow inclut un module bilan carbone <strong>conforme GHG Protocol et BEGES</strong> dans tous les plans payants (dès 249 €/mois). Les avantages :</Trans></p>
             <div className="grid md:grid-cols-2 gap-4 my-8">
               {[
                 { icon: Factory,    t: t('resources.guideBilanCarbone.esgflow.feat0.t', 'Scopes 1/2/3 GHG Protocol'),  d: t('resources.guideBilanCarbone.esgflow.feat0.d', 'Les 3 scopes avec les 15 catégories Scope 3 selon le standard mondial.') },
@@ -485,7 +485,7 @@ export default function GuideBilanCarbonePage() {
                 { q: t('resources.guideBilanCarbone.faq.3.q', "Faut-il faire le bilan carbone tous les ans ?"), a: t('resources.guideBilanCarbone.faq.3.a', "BEGES tous les 4 ans (entreprises). CSRD : annuel. Mieux : suivi mensuel des principaux postes pour piloter en continu.") },
                 { q: t('resources.guideBilanCarbone.faq.4.q', "Quelle pénalité en cas d'absence de bilan carbone ?"), a: t('resources.guideBilanCarbone.faq.4.a', "Amende administrative jusqu'à 10 000 € (50 000 € en récidive). Appliquée depuis 2019, ~15 entreprises/an sanctionnées.") },
                 { q: t('resources.guideBilanCarbone.faq.5.q', "Comment calculer son Scope 3 quand on n'a pas toutes les données ?"), a: t('resources.guideBilanCarbone.faq.5.a', "Méthode spend-based : montants d'achat (FEC) × facteur monétaire ADEME. Précision moyenne mais légalement acceptée pour un premier bilan.") },
-                { q: t('resources.guideBilanCarbone.faq.6.q', "Quel logiciel pour faire son bilan carbone ?"), a: t('resources.guideBilanCarbone.faq.6.a', "ESG Flow inclut le bilan carbone GHG Protocol avec facteurs ADEME 2024 dès le plan PME (249 €/mois). Concurrents : Greenly, Sweep, Sami, Carbonfact.") },
+                { q: t('resources.guideBilanCarbone.faq.6.q', "Quel logiciel pour faire son bilan carbone ?"), a: t('resources.guideBilanCarbone.faq.6.a', "ESGFlow inclut le bilan carbone GHG Protocol avec facteurs ADEME 2024 dès le plan PME (249 €/mois). Concurrents : Greenly, Sweep, Sami, Carbonfact.") },
                 { q: t('resources.guideBilanCarbone.faq.7.q', "Combien de temps prend un bilan carbone complet ?"), a: t('resources.guideBilanCarbone.faq.7.a', "Premier bilan : 6-10 semaines (collecte = 70 % du temps). Bilans suivants : 2-3 semaines si automatisé via connecteurs.") },
               ].map((item, i) => (
                 <details key={i} className="group border border-gray-200 rounded-xl overflow-hidden hover:border-emerald-300 transition-colors">
@@ -529,7 +529,7 @@ export default function GuideBilanCarbonePage() {
             <Link to="/status" className="hover:text-emerald-600">{t('resources.guideBilanCarbone.footer.status', 'Statut')}</Link>
             <Link to="/privacy-policy" className="hover:text-emerald-600">{t('resources.guideBilanCarbone.footer.privacy', 'Confidentialité')}</Link>
           </div>
-          <p className="text-xs text-gray-400 mt-6">{t('resources.guideBilanCarbone.footer.copyright', '© 2026 GreenConnect SAS — ESG Flow')}</p>
+          <p className="text-xs text-gray-400 mt-6">{t('resources.guideBilanCarbone.footer.copyright', '© 2026 GreenConnect SAS — ESGFlow')}</p>
         </div>
       </footer>
     </div>

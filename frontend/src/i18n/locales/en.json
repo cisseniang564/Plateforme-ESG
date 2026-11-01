@@ -141,7 +141,7 @@
     "passwordStrengthGood": "Good",
     "passwordStrengthExcellent": "Excellent",
     "joinEsgflow": "Join ESGFlow",
-    "platformTagline": "ESG Flow — Professional ESG reporting platform",
+    "platformTagline": "ESGFlow — Professional ESG reporting platform",
     "featureMaxSecurity": "Maximum security",
     "featureMaxSecurityDesc": "Your data protected with end-to-end encryption",
     "featureAI": "Built-in AI",
@@ -366,7 +366,7 @@
       "logout": "Sign out",
       "mainNav": "Main sections",
       "platformNav": "Main platform navigation",
-      "logoHome": "ESG Flow — Home",
+      "logoHome": "ESGFlow — Home",
       "profile": "View profile"
     },
     "cta": {
@@ -1905,7 +1905,7 @@
       },
       "apiKeys": {
         "title": "API Keys",
-        "desc": "Programmatic access to the ESG Flow API.",
+        "desc": "Programmatic access to the ESGFlow API.",
         "newKey": "New key",
         "keyCreated": "Key «{{name}}» created",
         "copyNow": "Copy it now — it will not be shown again.",
@@ -1933,7 +1933,7 @@
         "disconnectAll": "Disconnect all",
         "current": "Current session",
         "active": "Active",
-        "browserInfo": "Active browser · Authenticated via ESG Flow",
+        "browserInfo": "Active browser · Authenticated via ESGFlow",
         "multiDeviceComingSoon": "Multi-device session management will be available in a future version.",
         "auditLog": "Recent audit log",
         "seeAll": "See all",
@@ -2050,10 +2050,10 @@
         "interfaceLanguage": "Interface language",
         "loading": "Loading…",
         "mapped": "Mapped",
-        "officialEmail": "Official ESG Flow email",
+        "officialEmail": "Official ESGFlow email",
         "orgName": "Organization name",
         "orgNamePlaceholder": "Your organization name",
-        "orgNameSynced": "Synced with your ESG Flow tenant",
+        "orgNameSynced": "Synced with your ESGFlow tenant",
         "saveChanges": "Save changes",
         "saving": "Saving…",
         "sector": "Industry sector",
@@ -8433,15 +8433,15 @@
     "privacyLink": "Privacy Policy",
     "cgv": {
       "seo": {
-        "title": "General Terms of Sale — ESG Flow",
-        "desc": "General terms of sale for the ESG Flow platform. Pricing, subscriptions, billing and cancellation."
+        "title": "General Terms of Sale — ESGFlow",
+        "desc": "General terms of sale for the ESGFlow platform. Pricing, subscriptions, billing and cancellation."
       },
       "back": "Back",
       "title": "General Terms of Sale",
       "updated": "Last updated: {{date}}",
       "preamble": {
         "title": "Preamble",
-        "p1": "These General Terms of Sale (hereinafter “GTS”) govern the subscription to and use of subscriptions to the <strong>ESG Flow</strong> platform, published by <3>{{company}}</3> (hereinafter “the Publisher”), accessible at <5>{{domain}}</5>.",
+        "p1": "These General Terms of Sale (hereinafter “GTS”) govern the subscription to and use of subscriptions to the <strong>ESGFlow</strong> platform, published by <3>{{company}}</3> (hereinafter “the Publisher”), accessible at <5>{{domain}}</5>.",
         "p2": "Any subscription implies full and unreserved acceptance of these GTS. The customer acknowledges having read them before placing any order."
       },
       "s1": {
@@ -8450,7 +8450,7 @@
       },
       "s2": {
         "title": "2. Description of Offers",
-        "intro": "ESG Flow offers the following subscription plans, with prices shown in euros (€) excl. VAT, as of the effective date of these terms:",
+        "intro": "ESGFlow offers the following subscription plans, with prices shown in euros (€) excl. VAT, as of the effective date of these terms:",
         "th": {
           "plan": "Plan",
           "monthly": "Monthly (excl. VAT)",
@@ -8513,11 +8513,11 @@
       },
       "s8": {
         "title": "8. Personal Data",
-        "body": "The processing of personal data is governed by ESG Flow's <1>Privacy Policy</1>, compliant with Regulation (EU) 2016/679 (GDPR). The Publisher acts as data controller for account data and as data processor for the ESG data entered by the customer."
+        "body": "The processing of personal data is governed by ESGFlow's <1>Privacy Policy</1>, compliant with Regulation (EU) 2016/679 (GDPR). The Publisher acts as data controller for account data and as data processor for the ESG data entered by the customer."
       },
       "s9": {
         "title": "9. Intellectual Property",
-        "p1": "The ESG Flow platform, its source code, interfaces, scoring algorithms and ESG methodologies are the exclusive property of {{company}} and are protected by intellectual property law. Any unauthorised reproduction, representation or exploitation is strictly prohibited.",
+        "p1": "The ESGFlow platform, its source code, interfaces, scoring algorithms and ESG methodologies are the exclusive property of {{company}} and are protected by intellectual property law. Any unauthorised reproduction, representation or exploitation is strictly prohibited.",
         "p2": "The customer retains full rights over the ESG data they enter into the platform. They have the right to export their data at any time, including in the event of cancellation."
       },
       "s10": {
@@ -9125,7 +9125,7 @@
     "saving": "Saving…",
     "errorUpdate": "Error updating profile.",
     "changePassword": "Change password",
-    "changePasswordDesc": "Use a strong password unique to ESG Flow.",
+    "changePasswordDesc": "Use a strong password unique to ESGFlow.",
     "currentPassword": "Current password",
     "newPassword": "New password",
     "confirmNewPassword": "Confirm new password",
@@ -9171,7 +9171,7 @@
     "heroBadge": "Help Center · {{articles}} articles · {{categories}} categories",
     "heroTitle1": "How can we",
     "heroTitle2": "help you?",
-    "heroSubtitle": "Step-by-step guides, tutorials, and answers to your questions about ESG Flow.",
+    "heroSubtitle": "Step-by-step guides, tutorials, and answers to your questions about ESGFlow.",
     "searchPlaceholder": "Search for an article, a feature…",
     "noResults": "No results for \"{{query}}\" — try a different term.",
     "popular": "Popular",
@@ -9217,7 +9217,7 @@
       },
       "api": {
         "title": "API & Integrations",
-        "desc": "Connect ESG Flow to your tools via the REST API."
+        "desc": "Connect ESGFlow to your tools via the REST API."
       }
     },
     "art": {
@@ -9239,17 +9239,17 @@
       "c1": {
         "title": "Difference between Scope 1, 2 and 3",
         "tags": "scope1,scope2,scope3,ghg,carbon",
-        "content": "## The three emission scopes\n\n**Scope 1 — Direct emissions**: combustion in your own facilities and vehicles.\n\n**Scope 2 — Indirect energy emissions**: purchased electricity, steam, heat.\n\n**Scope 3 — Other indirect emissions** (15 GHG Protocol categories):\n- *Upstream*: purchased goods & services, capital goods, business travel…\n- *Downstream*: use of sold products, end-of-life, franchises…\n\n> **CSRD note**: the directive requires disclosure of Scopes 1, 2 and relevant Scope 3 categories.\n\n## Built-in emission factors\n\nESG Flow includes the ADEME database (France) and IEA factors for 80+ countries. They are updated automatically every quarter."
+        "content": "## The three emission scopes\n\n**Scope 1 — Direct emissions**: combustion in your own facilities and vehicles.\n\n**Scope 2 — Indirect energy emissions**: purchased electricity, steam, heat.\n\n**Scope 3 — Other indirect emissions** (15 GHG Protocol categories):\n- *Upstream*: purchased goods & services, capital goods, business travel…\n- *Downstream*: use of sold products, end-of-life, franchises…\n\n> **CSRD note**: the directive requires disclosure of Scopes 1, 2 and relevant Scope 3 categories.\n\n## Built-in emission factors\n\nESGFlow includes the ADEME database (France) and IEA factors for 80+ countries. They are updated automatically every quarter."
       },
       "c2": {
         "title": "Set up your SBTi decarbonization plan",
         "tags": "sbti,decarbonization,trajectory,1.5°C",
-        "content": "## What is SBTi?\n\nThe *Science Based Targets* initiative (SBTi) allows companies to set emission reduction targets aligned with a +1.5°C or +2°C trajectory.\n\n## In ESG Flow\n\n1. Go to **Decarbonization › SBTi Plan**.\n2. Set your **baseline year** and **target horizon** (2030, 2050).\n3. The tool automatically calculates the required annual trajectory.\n4. Add your **actions** (energy efficiency, green procurement, mobility…) with their estimated impact.\n5. Track progress in real time on the convergence chart."
+        "content": "## What is SBTi?\n\nThe *Science Based Targets* initiative (SBTi) allows companies to set emission reduction targets aligned with a +1.5°C or +2°C trajectory.\n\n## In ESGFlow\n\n1. Go to **Decarbonization › SBTi Plan**.\n2. Set your **baseline year** and **target horizon** (2030, 2050).\n3. The tool automatically calculates the required annual trajectory.\n4. Add your **actions** (energy efficiency, green procurement, mobility…) with their estimated impact.\n5. Track progress in real time on the convergence chart."
       },
       "r1": {
         "title": "Generate your CSRD / ESRS report",
         "tags": "csrd,esrs,report,compliance",
-        "content": "## CSRD overview\n\nThe Corporate Sustainability Reporting Directive (CSRD) applies progressively from 2024. It requires publishing sustainability information according to ESRS standards.\n\n## In ESG Flow — CSRD Report Builder\n\n1. Go to **Reports › CSRD Builder**.\n2. Select your **applicable ESRS** (auto-detected based on your sector and size).\n3. Previously entered data is **pre-filled** automatically.\n4. Complete missing fields (flagged in orange).\n5. Click **Generate report** — Word, PDF or iXBRL/ESEF (XHTML EFRAG) format.\n\n## Detailed audit trail\n\nEach data point carries a UTC timestamp and SHA-256 fingerprint, with source → calculation → report traceability to facilitate your external auditor's work."
+        "content": "## CSRD overview\n\nThe Corporate Sustainability Reporting Directive (CSRD) applies progressively from 2024. It requires publishing sustainability information according to ESRS standards.\n\n## In ESGFlow — CSRD Report Builder\n\n1. Go to **Reports › CSRD Builder**.\n2. Select your **applicable ESRS** (auto-detected based on your sector and size).\n3. Previously entered data is **pre-filled** automatically.\n4. Complete missing fields (flagged in orange).\n5. Click **Generate report** — Word, PDF or iXBRL/ESEF (XHTML EFRAG) format.\n\n## Detailed audit trail\n\nEach data point carries a UTC timestamp and SHA-256 fingerprint, with source → calculation → report traceability to facilitate your external auditor's work."
       },
       "r2": {
         "title": "Schedule automatic reports",
@@ -9259,7 +9259,7 @@
       "sc1": {
         "title": "Send questionnaires to your suppliers",
         "tags": "supplier,questionnaire,supply chain,due diligence",
-        "content": "## Supply Chain module\n\nESG Flow lets you evaluate your suppliers across 6 ESG dimensions: environment, labor rights, ethics, diversity, governance, supply chain.\n\n## Send a questionnaire\n\n1. Go to **Supply Chain › Suppliers**.\n2. Add your suppliers (CSV import or manual entry).\n3. Select the questionnaire **template** (CSRD Tier 1, Duty of Vigilance, custom).\n4. Click **Send** — the supplier receives a unique secure link.\n5. Track responses and scores in the Supply Chain dashboard.\n\n## Vigilance plan\n\nIn accordance with law 2017-399 (Duty of Vigilance), the module automatically generates the vigilance plan with identified corrective actions."
+        "content": "## Supply Chain module\n\nESGFlow lets you evaluate your suppliers across 6 ESG dimensions: environment, labor rights, ethics, diversity, governance, supply chain.\n\n## Send a questionnaire\n\n1. Go to **Supply Chain › Suppliers**.\n2. Add your suppliers (CSV import or manual entry).\n3. Select the questionnaire **template** (CSRD Tier 1, Duty of Vigilance, custom).\n4. Click **Send** — the supplier receives a unique secure link.\n5. Track responses and scores in the Supply Chain dashboard.\n\n## Vigilance plan\n\nIn accordance with law 2017-399 (Duty of Vigilance), the module automatically generates the vigilance plan with identified corrective actions."
       },
       "sec1": {
         "title": "Enable two-factor authentication (2FA)",
@@ -9279,17 +9279,17 @@
       "api2": {
         "title": "Configure a webhook",
         "tags": "webhook,notification,integration",
-        "content": "## What are webhooks for?\n\nWebhooks allow ESG Flow to notify your system in real time when events occur: new score calculated, report generated, alert triggered, etc.\n\n## Setup\n\n1. Go to **Settings › Webhooks**.\n2. Click **Add an endpoint**.\n3. Enter your HTTPS URL (required).\n4. Select the events to listen for.\n5. Save — a signing secret is generated.\n\n## Signature verification\n\nEach call includes the header `X-ESGFlow-Signature: sha256=<hmac>`. Verify it server-side to secure your endpoint."
+        "content": "## What are webhooks for?\n\nWebhooks allow ESGFlow to notify your system in real time when events occur: new score calculated, report generated, alert triggered, etc.\n\n## Setup\n\n1. Go to **Settings › Webhooks**.\n2. Click **Add an endpoint**.\n3. Enter your HTTPS URL (required).\n4. Select the events to listen for.\n5. Save — a signing secret is generated.\n\n## Signature verification\n\nEach call includes the header `X-ESGFlow-Signature: sha256=<hmac>`. Verify it server-side to secure your endpoint."
       }
     }
   },
   "security": {
     "page": {
       "navHome": "Home",
-      "navTitle": "ESG Flow — Security",
+      "navTitle": "ESGFlow — Security",
       "navFreeTrial": "Free trial →",
       "heroTitle": "Security, compliance & sovereignty",
-      "heroSubtitle": "Your ESG data is as sensitive as your financial data. Here is how ESG Flow protects it.",
+      "heroSubtitle": "Your ESG data is as sensitive as your financial data. Here is how ESGFlow protects it.",
       "lastUpdated": "Last updated:",
       "badgeHostedFrance": "Hosted in France",
       "badgeGdpr": "GDPR native",
@@ -9452,7 +9452,7 @@
         "ctaDemo": "Interactive demo"
       },
       "benefits": {
-        "heading": "Why choose ESG Flow?",
+        "heading": "Why choose ESGFlow?",
         "subheading": "Concrete benefits for your organization"
       },
       "capabilities": {
@@ -9487,7 +9487,7 @@
       },
       "cta": {
         "heading": "Ready to simplify your ESG compliance?",
-        "subheading": "Join 500+ companies using ESG Flow to drive their ESG strategy.",
+        "subheading": "Join 500+ companies using ESGFlow to drive their ESG strategy.",
         "start": "Start your free trial"
       },
       "footer": {
@@ -9568,7 +9568,7 @@
       "faqs": {
         "0": {
           "question": "Which AI models are used?",
-          "answer": "ESG Flow uses latest-generation language models (GPT-4, Claude) for the chatbot and text generation, computer vision models for OCR, and classic machine learning algorithms (Isolation Forest, Prophet) for anomaly detection and predictions."
+          "answer": "ESGFlow uses latest-generation language models (GPT-4, Claude) for the chatbot and text generation, computer vision models for OCR, and classic machine learning algorithms (Isolation Forest, Prophet) for anomaly detection and predictions."
         },
         "1": {
           "question": "Is my data used to train the models?",
@@ -9653,7 +9653,7 @@
       "steps": {
         "0": {
           "title": "Automatic from day 1",
-          "description": "The audit trail activates automatically. Every action in ESG Flow is traced with no configuration or action on your part."
+          "description": "The audit trail activates automatically. Every action in ESGFlow is traced with no configuration or action on your part."
         },
         "1": {
           "title": "Review and search",
@@ -9667,11 +9667,11 @@
       "faqs": {
         "0": {
           "question": "Is the audit trail mandatory for the CSRD?",
-          "answer": "Article 34 of the CSRD directive requires sustainability information to be audited with limited assurance (then reasonable assurance). The ESG Flow audit trail provides the useful elements: data traceability, sources, owners and calculation methods."
+          "answer": "Article 34 of the CSRD directive requires sustainability information to be audited with limited assurance (then reasonable assurance). The ESGFlow audit trail provides the useful elements: data traceability, sources, owners and calculation methods."
         },
         "1": {
           "question": "What is ISAE 3000?",
-          "answer": "ISAE 3000 (International Standard on Assurance Engagements) is the audit standard used to verify sustainability reports. It requires complete traceability, documented internal controls and evidence of reliability. The ESG Flow log eases the production of these elements — the ISAE 3000 attestation is still issued by your external auditor."
+          "answer": "ISAE 3000 (International Standard on Assurance Engagements) is the audit standard used to verify sustainability reports. It requires complete traceability, documented internal controls and evidence of reliability. The ESGFlow log eases the production of these elements — the ISAE 3000 attestation is still issued by your external auditor."
         },
         "2": {
           "question": "Can I modify or delete log entries?",
@@ -9700,7 +9700,7 @@
     "bilanCarbone": {
       "title": "Carbon Footprint Scope 1, 2 & 3",
       "subtitle": "Calculate your company's complete carbon footprint with ADEME emission factors",
-      "description": "Measure your greenhouse gas emissions across the 3 scopes of the GHG Protocol. ESG Flow natively integrates ADEME Base Carbone emission factors and covers the 15 Scope 3 categories for a regulatory, auditable carbon footprint.",
+      "description": "Measure your greenhouse gas emissions across the 3 scopes of the GHG Protocol. ESGFlow natively integrates ADEME Base Carbone emission factors and covers the 15 Scope 3 categories for a regulatory, auditable carbon footprint.",
       "benefits": {
         "0": {
           "title": "Built-in ADEME factors",
@@ -9760,7 +9760,7 @@
         },
         "1": {
           "title": "Calculate automatically",
-          "description": "ESG Flow applies the ADEME factors and calculates your emissions by scope, category and site. Real-time results."
+          "description": "ESGFlow applies the ADEME factors and calculates your emissions by scope, category and site. Real-time results."
         },
         "2": {
           "title": "Analyze and reduce",
@@ -9770,19 +9770,19 @@
       "faqs": {
         "0": {
           "question": "Which emission factors are included?",
-          "answer": "ESG Flow natively integrates the ADEME Base Carbone (v23.0) with over 600 factors covering energy, transport, materials, food and services. Factors are updated automatically when ADEME publishes new releases."
+          "answer": "ESGFlow natively integrates the ADEME Base Carbone (v23.0) with over 600 factors covering energy, transport, materials, food and services. Factors are updated automatically when ADEME publishes new releases."
         },
         "1": {
           "question": "Is the carbon footprint compliant with French regulations?",
-          "answer": "Yes. The assessment produced by ESG Flow complies with Article L.229-25 of the French Environment Code (regulatory GHG assessment), the GHG Protocol Corporate Standard and the ISO 14064-1 standard. It is accepted by ADEME for publication on the Bilans GES platform."
+          "answer": "Yes. The assessment produced by ESGFlow complies with Article L.229-25 of the French Environment Code (regulatory GHG assessment), the GHG Protocol Corporate Standard and the ISO 14064-1 standard. It is accepted by ADEME for publication on the Bilans GES platform."
         },
         "2": {
           "question": "Can I import my accounting data for Scope 3?",
-          "answer": "Yes. ESG Flow can import your General Ledger file (FEC) and automatically convert your expense accounts into Scope 3 categories 1 (purchases) and 2 (capital goods) emissions using the ADEME monetary method."
+          "answer": "Yes. ESGFlow can import your General Ledger file (FEC) and automatically convert your expense accounts into Scope 3 categories 1 (purchases) and 2 (capital goods) emissions using the ADEME monetary method."
         },
         "3": {
-          "question": "How does ESG Flow compare to tools like Greenly or Sweep?",
-          "answer": "ESG Flow covers all 3 scopes with 15 Scope 3 categories, whereas Greenly focuses on carbon only and Sweep on large enterprises. Our advantage: the carbon footprint is integrated into a complete ESG platform (CSRD, supply chain, LCA) from €599/month."
+          "question": "How does ESGFlow compare to tools like Greenly or Sweep?",
+          "answer": "ESGFlow covers all 3 scopes with 15 Scope 3 categories, whereas Greenly focuses on carbon only and Sweep on large enterprises. Our advantage: the carbon footprint is integrated into a complete ESG platform (CSRD, supply chain, LCA) from €599/month."
         },
         "4": {
           "question": "Is the data auditable?",
@@ -9807,7 +9807,7 @@
     "csrdReporting": {
       "title": "CSRD / ESRS Reporting",
       "subtitle": "Build your CSRD sustainability report compliant with the ESRS standards",
-      "description": "ESG Flow covers the 82 requirements of the ESRS (European Sustainability Reporting Standards) with a structured report editor, automatic gap analysis and multi-format exports ready for your auditors.",
+      "description": "ESGFlow covers the 82 requirements of the ESRS (European Sustainability Reporting Standards) with a structured report editor, automatic gap analysis and multi-format exports ready for your auditors.",
       "benefits": {
         "0": {
           "title": "82 ESRS requirements mapped",
@@ -9863,7 +9863,7 @@
       "steps": {
         "0": {
           "title": "Run your gap analysis",
-          "description": "ESG Flow analyzes your existing data and identifies the gaps against the 82 ESRS requirements. Instant compliance score."
+          "description": "ESGFlow analyzes your existing data and identifies the gaps against the 82 ESRS requirements. Instant compliance score."
         },
         "1": {
           "title": "Complete your report",
@@ -9881,19 +9881,19 @@
         },
         "1": {
           "question": "Which ESRS standards are covered?",
-          "answer": "ESG Flow covers the entire ESRS Set 1 published by EFRAG: ESRS 1 (general requirements), ESRS 2 (general disclosures), E1 to E5 (environment), S1 to S4 (social) and G1 (governance). Sector-specific standards will be added as soon as they are published."
+          "answer": "ESGFlow covers the entire ESRS Set 1 published by EFRAG: ESRS 1 (general requirements), ESRS 2 (general disclosures), E1 to E5 (environment), S1 to S4 (social) and G1 (governance). Sector-specific standards will be added as soon as they are published."
         },
         "2": {
           "question": "Can the AI write my report?",
-          "answer": "ESG Flow's AI generates draft narrative sections compliant with ESRS terminology. You keep full control: every text is editable and must be validated before publication. The AI speeds up writing, it does not replace it."
+          "answer": "ESGFlow's AI generates draft narrative sections compliant with ESRS terminology. You keep full control: every text is editable and must be validated before publication. The AI speeds up writing, it does not replace it."
         },
         "3": {
           "question": "Is the iXBRL format mandatory?",
-          "answer": "iXBRL tagging in the ESEF format is required for the sustainability reports of listed companies subject to the Transparency Directive. ESG Flow generates the tagging automatically from your structured data."
+          "answer": "iXBRL tagging in the ESEF format is required for the sustainability reports of listed companies subject to the Transparency Directive. ESGFlow generates the tagging automatically from your structured data."
         },
         "4": {
-          "question": "Can I use ESG Flow for the DPEF?",
-          "answer": "Yes. ESG Flow supports the Extra-Financial Performance Statement (DPEF, Art. L.225-102-1 of the French Commercial Code) in addition to the CSRD. Your data is reusable from one format to another."
+          "question": "Can I use ESGFlow for the DPEF?",
+          "answer": "Yes. ESGFlow supports the Extra-Financial Performance Statement (DPEF, Art. L.225-102-1 of the French Commercial Code) in addition to the CSRD. Your data is reusable from one format to another."
         }
       },
       "related": {
@@ -9952,7 +9952,7 @@
         },
         "4": {
           "title": "Carbon Footprint integration",
-          "description": "Your decarbonization plan draws directly from your ESG Flow carbon footprint. The baseline emissions and annual tracking are synchronized automatically."
+          "description": "Your decarbonization plan draws directly from your ESGFlow carbon footprint. The baseline emissions and annual tracking are synchronized automatically."
         },
         "5": {
           "title": "Validatable SBTi targets",
@@ -9984,7 +9984,7 @@
         },
         "1": {
           "question": "Do I need a carbon footprint before creating my plan?",
-          "answer": "Yes. The decarbonization plan requires a base year with a complete carbon footprint (at minimum Scope 1 and 2, ideally Scope 3). ESG Flow lets you produce your carbon footprint and move straight on to the decarbonization plan."
+          "answer": "Yes. The decarbonization plan requires a base year with a complete carbon footprint (at minimum Scope 1 and 2, ideally Scope 3). ESGFlow lets you produce your carbon footprint and move straight on to the decarbonization plan."
         },
         "2": {
           "question": "Are the 24 actions customizable?",
@@ -9992,7 +9992,7 @@
         },
         "3": {
           "question": "Is the plan compatible with CSRD reporting?",
-          "answer": "Yes. The ESG Flow decarbonization plan covers the ESRS E1 (Climate change) requirements for a transition plan: reduction targets, actions, investments and timeline. The data is exportable for your CSRD report."
+          "answer": "Yes. The ESGFlow decarbonization plan covers the ESRS E1 (Climate change) requirements for a transition plan: reduction targets, actions, investments and timeline. The data is exportable for your CSRD report."
         }
       },
       "related": {
@@ -10186,11 +10186,11 @@
         },
         "2": {
           "question": "Do my suppliers need to create an account?",
-          "answer": "No. Your suppliers receive a secure link to the ESG Flow supplier portal. They can answer the questionnaire, upload documents and view their score without creating an account."
+          "answer": "No. Your suppliers receive a secure link to the ESGFlow supplier portal. They can answer the questionnaire, upload documents and view their score without creating an account."
         },
         "3": {
-          "question": "Can I use ESG Flow for the French Duty of Vigilance?",
-          "answer": "Yes. ESG Flow structures your approach per the requirements of law 2017-399: risk mapping, assessment procedures, prevention and remediation actions, an alert mechanism and monitoring. All exportable for your vigilance plan."
+          "question": "Can I use ESGFlow for the French Duty of Vigilance?",
+          "answer": "Yes. ESGFlow structures your approach per the requirements of law 2017-399: risk mapping, assessment procedures, prevention and remediation actions, an alert mechanism and monitoring. All exportable for your vigilance plan."
         }
       },
       "related": {
@@ -10249,7 +10249,7 @@
         },
         "4": {
           "title": "Automatic KPI calculation",
-          "description": "Enter your financial data (revenue, CapEx, OpEx) per activity. ESG Flow automatically calculates the eligibility and alignment percentages."
+          "description": "Enter your financial data (revenue, CapEx, OpEx) per activity. ESGFlow automatically calculates the eligibility and alignment percentages."
         },
         "5": {
           "title": "Regulatory tables",
@@ -10263,7 +10263,7 @@
       "steps": {
         "0": {
           "title": "Identify your eligible activities",
-          "description": "Search for your economic activities in the Taxonomy reference. ESG Flow suggests the relevant activities based on your NACE code."
+          "description": "Search for your economic activities in the Taxonomy reference. ESGFlow suggests the relevant activities based on your NACE code."
         },
         "1": {
           "title": "Assess alignment",
@@ -10288,8 +10288,8 @@
           "answer": "Taxonomy reporting obligations (Art. 8) apply to companies subject to the CSRD. Financial institutions have additional obligations (Green Asset Ratio). Unlisted SMEs are not directly concerned but may be solicited by their financial partners."
         },
         "3": {
-          "question": "How does ESG Flow handle gas and nuclear activities?",
-          "answer": "ESG Flow integrates the Complementary Delegated Act (Regulation 2022/1214) that includes natural gas and nuclear under strict conditions. The specific criteria and dedicated reporting tables are supported."
+          "question": "How does ESGFlow handle gas and nuclear activities?",
+          "answer": "ESGFlow integrates the Complementary Delegated Act (Regulation 2022/1214) that includes natural gas and nuclear under strict conditions. The specific criteria and dedicated reporting tables are supported."
         }
       },
       "related": {
@@ -10632,7 +10632,7 @@
   "resources": {
     "checklist": {
       "seo": {
-        "title": "Free CSRD checklist — 47 ESRS indicators · ESG Flow",
+        "title": "Free CSRD checklist — 47 ESRS indicators · ESGFlow",
         "description": "Download the free CSRD checklist: 47 priority ESRS indicators ranked by criticality. Print-ready PDF to kick-start your CSRD compliance.",
         "keywords": "CSRD checklist, ESRS indicators, free PDF, CSRD compliance, EFRAG, lead magnet",
         "ogTitle": "Free CSRD checklist — 47 ESRS indicators",
@@ -10652,13 +10652,13 @@
         "emailLabel": "Work email",
         "firstNameLabel": "First name",
         "companyLabel": "Company",
-        "consent": "I agree to receive this resource by email as well as the monthly ESG Flow newsletter (one-click unsubscribe).",
+        "consent": "I agree to receive this resource by email as well as the monthly ESGFlow newsletter (one-click unsubscribe).",
         "sending": "Sending…",
         "submit": "Download for free",
         "privacy": "Your data stays in France, hosted by OVH. <1>Privacy policy</1>."
       },
       "nav": {
-        "homeAria": "ESG Flow — Home",
+        "homeAria": "ESGFlow — Home",
         "freeTrial": "Free trial"
       },
       "pitch": {
@@ -10685,13 +10685,13 @@
       "success": {
         "title": "Email sent!",
         "body": "Check your inbox (and the spam folder just in case). The checklist arrives in less than a minute.",
-        "cta": "Start my ESG Flow trial",
+        "cta": "Start my ESGFlow trial",
         "notReceived": "Not received after 5 min? <1>Write to us</1>."
       },
       "bottomCta": {
         "title": "What if we automated all of this?",
-        "body": "ESG Flow automatically fills 80% of the checklist from your accounting, HR and energy data. 14-day free trial, no credit card.",
-        "cta": "Start my ESG Flow trial"
+        "body": "ESGFlow automatically fills 80% of the checklist from your accounting, HR and energy data. 14-day free trial, no credit card.",
+        "cta": "Start my ESGFlow trial"
       }
     },
     "omnibus": {
@@ -10828,7 +10828,7 @@
         "mnd": {
           "title": "Minimum Disclosure (MND) indicators maintained",
           "body1": "Omnibus I distinguishes <strong>MND (Mandatory Non-discretionary)</strong> indicators — mandatory for all in-scope entities — from optional indicators. The MNDs cover the essential data of the 10 ESRS topics (E1 to G1).",
-          "body2": "ESG Flow already incorporates this distinction: each indicator is marked MND or optional in the ESRS Gap Analysis module and the CSRD Report Builder."
+          "body2": "ESGFlow already incorporates this distinction: each indicator is marked MND or optional in the ESRS Gap Analysis module and the CSRD Report Builder."
         }
       },
       "actions": {
@@ -10884,12 +10884,12 @@
           },
           "4": {
             "q": "Is the EU Taxonomy also streamlined by the Omnibus?",
-            "a": "Omnibus I also contains simplifications for EU Taxonomy reporting (Regulation 2020/852), notably by reducing the quantitative reporting obligations for certain activities. Companies subject to the Taxonomy should consult the amended texts for their specific scope. ESG Flow updates its Taxonomy modules in real time according to the official texts."
+            "a": "Omnibus I also contains simplifications for EU Taxonomy reporting (Regulation 2020/852), notably by reducing the quantitative reporting obligations for certain activities. Companies subject to the Taxonomy should consult the amended texts for their specific scope. ESGFlow updates its Taxonomy modules in real time according to the official texts."
           }
         }
       },
       "cta": {
-        "badge": "ESG Flow — Ready for post-Omnibus",
+        "badge": "ESGFlow — Ready for post-Omnibus",
         "title": "Prepare your ESG before your clients ask for it",
         "body": "Carbon footprint, ESRS gap analysis, double materiality, CSRD report and EU Taxonomy — everything you need to respond to post-Omnibus pressures, starting at €249/month.",
         "button1": "Start free — 14 days",
@@ -10920,7 +10920,7 @@
           "duration": "over 12 months",
           "benefits": {
             "0": "Free training (3 h online)",
-            "1": "Free ESG Flow demo account (up to 3 organizations)",
+            "1": "Free ESGFlow demo account (up to 3 organizations)",
             "2": "Listing in our public directory",
             "3": "Co-authoring of customer case studies"
           },
@@ -10962,15 +10962,15 @@
       "types": {
         "0": {
           "title": "ESG consulting firms",
-          "desc": "Supporting your clients on their CSRD journey? ESG Flow becomes your operational tool while you keep the high-value advisory relationship."
+          "desc": "Supporting your clients on their CSRD journey? ESGFlow becomes your operational tool while you keep the high-value advisory relationship."
         },
         "1": {
           "title": "Accountants",
-          "desc": "Clients asking you about the CSRD? Become an ESG Flow advocate and generate recurring revenue while staying focused on your accounting business."
+          "desc": "Clients asking you about the CSRD? Become an ESGFlow advocate and generate recurring revenue while staying focused on your accounting business."
         },
         "2": {
           "title": "IT services & integrators",
-          "desc": "Deploying software to your SME/mid-cap clients? Add ESG Flow to your cloud offering, with white-label option and documented API."
+          "desc": "Deploying software to your SME/mid-cap clients? Add ESGFlow to your cloud offering, with white-label option and documented API."
         },
         "3": {
           "title": "Professional associations",
@@ -10980,11 +10980,11 @@
         "subtext": "Do you support French SMEs and mid-caps on ESG, accounting or IT topics? You're eligible."
       },
       "seo": {
-        "title": "Partner Program — ESG Flow",
-        "description": "Become an ESG Flow partner: up to 20% recurring commission, free training, public directory. For ESG consultancies, accountants, IT services companies.",
+        "title": "Partner Program — ESGFlow",
+        "description": "Become an ESGFlow partner: up to 20% recurring commission, free training, public directory. For ESG consultancies, accountants, IT services companies.",
         "keywords": "ESG partners, ESG consultancy, accountant, affiliate program, white label CSRD, recurring commission",
-        "ogTitle": "ESG Flow Partner Program — up to 20% commission",
-        "ogImageAlt": "ESG Flow Partner Program — Referrer, Premium, Integrator"
+        "ogTitle": "ESGFlow Partner Program — up to 20% commission",
+        "ogImageAlt": "ESGFlow Partner Program — Referrer, Premium, Integrator"
       },
       "breadcrumb": {
         "home": "Home",
@@ -10992,14 +10992,14 @@
         "program": "Partner Program"
       },
       "nav": {
-        "homeAria": "ESG Flow — Home",
+        "homeAria": "ESGFlow — Home",
         "freeTrial": "Free trial"
       },
       "hero": {
         "badge": "PARTNER PROGRAM · OPEN 2026",
         "titleLine1": "Grow your revenue",
         "titleLine2": "by democratizing the CSRD",
-        "subtitle": "ESG consulting firm, accountant or IT services company: become an ESG Flow partner and earn up to <strong>20% recurring commission</strong> on every referred client.",
+        "subtitle": "ESG consulting firm, accountant or IT services company: become an ESGFlow partner and earn up to <strong>20% recurring commission</strong> on every referred client.",
         "applyCta": "Apply in 3 minutes",
         "tiersCta": "See the tiers"
       },
@@ -11024,11 +11024,11 @@
         },
         "1": {
           "title": "Get trained",
-          "desc": "3 h online training on ESG Flow + sales resources."
+          "desc": "3 h online training on ESGFlow + sales resources."
         },
         "2": {
           "title": "Refer",
-          "desc": "Share your partner link or sell ESG Flow as an engagement tool."
+          "desc": "Share your partner link or sell ESGFlow as an engagement tool."
         },
         "3": {
           "title": "Get paid",
@@ -11049,7 +11049,7 @@
           "title": "CSRD-compliant",
           "desc": "12 ESRS modules, iXBRL, SHA-256 audit trail."
         },
-        "heading": "Why recommend ESG Flow?"
+        "heading": "Why recommend ESGFlow?"
       },
       "contact": {
         "title": "Ready to join the program?",
@@ -11110,7 +11110,7 @@
       },
       "cta": {
         "title": "Ready to take action?",
-        "subtitle": "ESG Flow puts into practice everything these guides explain — CSRD, Scope 3, Taxonomy — in a single platform starting at €249/month.",
+        "subtitle": "ESGFlow puts into practice everything these guides explain — CSRD, Scope 3, Taxonomy — in a single platform starting at €249/month.",
         "button": "Start free — 14 days"
       },
       "footer": {
@@ -11229,11 +11229,11 @@
         "ai": "AI"
       },
       "seo": {
-        "title": "Public roadmap — ESG Flow",
-        "description": "Discover the ESG Flow product roadmap: what's shipped, in progress and planned. Full transparency on our CSRD/ESG direction.",
-        "keywords": "ESG Flow roadmap, product, features, planning, CSRD, transparency",
-        "ogTitle": "ESG Flow public roadmap",
-        "ogImageAlt": "ESG Flow public roadmap — shipped, in progress, planned"
+        "title": "Public roadmap — ESGFlow",
+        "description": "Discover the ESGFlow product roadmap: what's shipped, in progress and planned. Full transparency on our CSRD/ESG direction.",
+        "keywords": "ESGFlow roadmap, product, features, planning, CSRD, transparency",
+        "ogTitle": "ESGFlow public roadmap",
+        "ogImageAlt": "ESGFlow public roadmap — shipped, in progress, planned"
       },
       "breadcrumb": {
         "home": "Home",
@@ -11241,7 +11241,7 @@
         "roadmap": "Roadmap"
       },
       "nav": {
-        "homeAria": "ESG Flow — Home",
+        "homeAria": "ESGFlow — Home",
         "freeTrial": "Free trial"
       },
       "hero": {
@@ -11288,7 +11288,7 @@
         "heading": "What is the EU Taxonomy?",
         "body": "The EU Taxonomy (Regulation 2020/852/EU) is a classification system that defines what counts as an environmentally sustainable economic activity. It is the foundation of the European Green Deal, sustainable finance and the reporting obligations of Article 8 of the CSRD.",
         "warningTitle": "Only objectives 1 and 2 are operational at this stage",
-        "warningBody": "Only objectives 1 (mitigation) and 2 (adaptation) have detailed, enforceable technical criteria. Objectives 3 to 6 received their first delegated acts in 2023, but their criteria remain less comprehensive. ESG Flow integrates them progressively as the official texts are published."
+        "warningBody": "Only objectives 1 (mitigation) and 2 (adaptation) have detailed, enforceable technical criteria. Objectives 3 to 6 received their first delegated acts in 2023, but their criteria remain less comprehensive. ESGFlow integrates them progressively as the official texts are published."
       },
       "objectives": {
         "0": "Climate change mitigation",
@@ -11362,7 +11362,7 @@
         },
         "4": {
           "title": "Not documenting the evidence",
-          "desc": "Alignment must be justified by concrete evidence (certifications, energy assessments, supplier attestations, contracts). Without a documentary trail, the auditor will reject the alignment. ESG Flow links each Taxonomy declaration to its supporting documents."
+          "desc": "Alignment must be justified by concrete evidence (certifications, energy assessments, supplier attestations, contracts). Without a documentary trail, the auditor will reject the alignment. ESGFlow links each Taxonomy declaration to its supporting documents."
         },
         "badge": "Common mistakes",
         "heading": "The 5 most common pitfalls",
@@ -11396,7 +11396,7 @@
       },
       "esgflow": {
         "badge": "Solution",
-        "heading": "How ESG Flow simplifies your Taxonomy reporting",
+        "heading": "How ESGFlow simplifies your Taxonomy reporting",
         "intro": "A guided Taxonomy module, from NACE qualification to the final regulatory export.",
         "features": {
           "0": {
@@ -11405,11 +11405,11 @@
           },
           "1": {
             "title": "SC + DNSH + MinSafeguards checklist per objective",
-            "desc": "For each activity, ESG Flow checks the 3 cumulative conditions with criteria updated in real time according to the official texts."
+            "desc": "For each activity, ESGFlow checks the 3 cumulative conditions with criteria updated in real time according to the official texts."
           },
           "2": {
             "title": "Automatic calculation of the 3 KPIs (revenue, CapEx, OpEx)",
-            "desc": "In accordance with Delegated Regulation 2021/2178/EU. ESG Flow automatically calculates and breaks down your KPIs by activity and by objective."
+            "desc": "In accordance with Delegated Regulation 2021/2178/EU. ESGFlow automatically calculates and breaks down your KPIs by activity and by objective."
           },
           "3": {
             "title": "Evidence Vault: link your supporting documents to each criterion",
@@ -11432,7 +11432,7 @@
         },
         "3": {
           "q": "Are objectives 3 to 6 already applicable?",
-          "a": "The Water (3), Circular economy (4), Pollution (5) and Biodiversity (6) objectives received their first delegated acts in 2023. They are applicable but still less detailed compared to objectives 1 and 2, whose criteria cover the vast majority of sectors. ESG Flow integrates them as the official technical texts are published."
+          "a": "The Water (3), Circular economy (4), Pollution (5) and Biodiversity (6) objectives received their first delegated acts in 2023. They are applicable but still less detailed compared to objectives 1 and 2, whose criteria cover the vast majority of sectors. ESGFlow integrates them as the official technical texts are published."
         },
         "4": {
           "q": "How did Omnibus I change Taxonomy reporting?",
@@ -11441,7 +11441,7 @@
         "heading": "Frequently asked questions about the EU Taxonomy"
       },
       "cta": {
-        "label": "ESG Flow — EU Taxonomy Module",
+        "label": "ESGFlow — EU Taxonomy Module",
         "title": "Your Taxonomy reporting, with no confusion between eligibility and alignment",
         "body": "NACE wizard, SC + DNSH + MinSafeguards checklist, automatic calculation of the 3 KPIs and Evidence Vault — everything you need for an auditable Taxonomy report, from €249/month.",
         "button1": "Start for free — 14 days",
@@ -11473,15 +11473,15 @@
         "facteurs": "ADEME emission factors",
         "calculExemple": "Worked SME example",
         "reduction": "Reduction & SBTi trajectory",
-        "esgflow": "Footprint with ESG Flow",
+        "esgflow": "Footprint with ESGFlow",
         "faq": "FAQ"
       },
       "seo": {
         "description": "Practical carbon-footprint guide for SMEs and mid-caps: GHG Protocol method, scopes 1/2/3, ADEME Base Carbone factors, worked examples, SBTi trajectory. BEGES, CSRD ESRS E1 and EU Taxonomy compliance.",
-        "title": "Corporate carbon footprint: complete Scopes 1/2/3 method — ESG Flow",
+        "title": "Corporate carbon footprint: complete Scopes 1/2/3 method — ESGFlow",
         "keywords": "carbon footprint, BEGES, GHG Protocol, scope 1, scope 2, scope 3, ADEME, emission factor, SBTi, ESRS E1, EU taxonomy",
         "ogTitle": "Corporate carbon footprint: complete Scopes 1/2/3 method",
-        "ogImageAlt": "Corporate carbon footprint — Scopes 1/2/3 method — ESG Flow"
+        "ogImageAlt": "Corporate carbon footprint — Scopes 1/2/3 method — ESGFlow"
       },
       "breadcrumb": {
         "home": "Home",
@@ -11489,7 +11489,7 @@
         "current": "Corporate carbon footprint"
       },
       "nav": {
-        "logoAria": "ESG Flow — Home",
+        "logoAria": "ESGFlow — Home",
         "cta": "Free trial →"
       },
       "hero": {
@@ -11798,8 +11798,8 @@
         "lever5": "<strong>Sufficiency</strong>: reduce volumes (less flying, more video, remote work, transport pooling)"
       },
       "esgflow": {
-        "title": "Build your carbon footprint with ESG Flow",
-        "intro": "ESG Flow includes a carbon-footprint module <strong>compliant with the GHG Protocol and BEGES</strong> in all paid plans (from €249/month). The benefits:",
+        "title": "Build your carbon footprint with ESGFlow",
+        "intro": "ESGFlow includes a carbon-footprint module <strong>compliant with the GHG Protocol and BEGES</strong> in all paid plans (from €249/month). The benefits:",
         "feat0": {
           "t": "Scopes 1/2/3 GHG Protocol",
           "d": "All 3 scopes with the 15 Scope 3 categories per the global standard."
@@ -11855,7 +11855,7 @@
         },
         "6": {
           "q": "Which software to do your carbon footprint?",
-          "a": "ESG Flow includes the GHG Protocol carbon footprint with ADEME 2024 factors from the SME plan (€249/month). Competitors: Greenly, Sweep, Sami, Carbonfact."
+          "a": "ESGFlow includes the GHG Protocol carbon footprint with ADEME 2024 factors from the SME plan (€249/month). Competitors: Greenly, Sweep, Sami, Carbonfact."
         },
         "7": {
           "q": "How long does a complete carbon footprint take?",
@@ -11884,7 +11884,7 @@
         "security": "Security",
         "status": "Status",
         "privacy": "Privacy",
-        "copyright": "© 2026 GreenConnect SAS — ESG Flow"
+        "copyright": "© 2026 GreenConnect SAS — ESGFlow"
       }
     },
     "guideCsddd": {
@@ -11897,12 +11897,12 @@
         "ruissellement": "The effect on SMEs",
         "sanctions": "Penalties & civil liability",
         "methode": "7-step method",
-        "esgflow": "Implementing with ESG Flow",
+        "esgflow": "Implementing with ESGFlow",
         "faq": "FAQ"
       },
       "seo": {
         "description": "Understanding the CSDDD (EU due diligence directive 2024/1760): obligations, timeline, penalties, 7-step method for SMEs and mid-caps. Trickle-down effect on the suppliers of large groups, link with CSRD ESRS S2.",
-        "title": "CSDDD — complete guide to supplier due diligence · ESG Flow",
+        "title": "CSDDD — complete guide to supplier due diligence · ESGFlow",
         "keywords": "CSDDD, due diligence, directive 2024/1760, supply chain, supplier audit, ESRS S2, human rights, due diligence, vigilance law, SME mid-cap",
         "ogTitle": "CSDDD: supplier due diligence — SME / mid-cap guide",
         "ogImageAlt": "CSDDD — supplier due diligence guide for SMEs and mid-caps"
@@ -11913,7 +11913,7 @@
         "guide": "CSDDD Guide"
       },
       "nav": {
-        "homeAria": "ESG Flow — Home",
+        "homeAria": "ESGFlow — Home",
         "freeTrial": "Free trial"
       },
       "hero": {
@@ -12102,8 +12102,8 @@
         "step6": "<strong>Publish an annual</strong> due diligence report (integrated into the CSRD ESRS S2 report if applicable)"
       },
       "esgflow": {
-        "heading": "Implementing the CSDDD with ESG Flow",
-        "intro": "ESG Flow's <strong>Supply Chain ESG</strong> module covers CSDDD + ESRS S2 obligations in a single tool:",
+        "heading": "Implementing the CSDDD with ESGFlow",
+        "intro": "ESGFlow's <strong>Supply Chain ESG</strong> module covers CSDDD + ESRS S2 obligations in a single tool:",
         "features": {
           "0": {
             "t": "Supplier mapping",
@@ -12152,7 +12152,7 @@
           "a": "Fines up to 5% of net global revenue. Mandatory public naming and shaming. Expanded civil liability: victims can act directly against the French company even for harm abroad."
         },
         "4": {
-          "q": "How does ESG Flow help with compliance?",
+          "q": "How does ESGFlow help with compliance?",
           "a": "Supply Chain ESG module included from the mid-cap plan: supplier mapping, audit questionnaires, action-plan tracking, complaints register. Compliant with ESRS S2 and CSDDD."
         },
         "5": {
@@ -12161,7 +12161,7 @@
         },
         "6": {
           "q": "What documents should I prepare to answer a client CSDDD questionnaire?",
-          "a": "Signed supplier code of conduct, human-rights policy, risk mapping, recent audit results, complaints mechanism, corrective action plan. ESG Flow provides templates for all these documents."
+          "a": "Signed supplier code of conduct, human-rights policy, risk mapping, recent audit results, complaints mechanism, corrective action plan. ESGFlow provides templates for all these documents."
         },
         "heading": "Frequently asked questions"
       },
@@ -12186,7 +12186,7 @@
         "security": "Security",
         "status": "Status",
         "privacy": "Privacy",
-        "copyright": "© 2026 GreenConnect SAS — ESG Flow"
+        "copyright": "© 2026 GreenConnect SAS — ESGFlow"
       }
     },
     "scope3Fec": {
@@ -12252,9 +12252,9 @@
         "trad3": "Manual line-by-line entry",
         "trad4": "Missing, incomplete or inconsistent data",
         "trad5": "<strong>3 to 6 months of work</strong> for a partial result",
-        "fecTitle": "FEC method with ESG Flow",
+        "fecTitle": "FEC method with ESGFlow",
         "fec1": "FEC export from your existing accounting software",
-        "fec2": "Drag-and-drop import into ESG Flow",
+        "fec2": "Drag-and-drop import into ESGFlow",
         "fec3": "Automatic reading of accounts 60x, 61x, 62x",
         "fec4": "ADEME 2024 factors applied automatically",
         "fec5": "<strong>15 complete categories in 1 click</strong>",
@@ -12270,7 +12270,7 @@
         "after3": "15 categories",
         "after4": "ADEME 2024 factors",
         "fecBoxTitle": "What is the FEC (Accounting Entries File)?",
-        "fecBoxBody": "The FEC is a standardized file (NF Z55-002) that <strong>any accounting software certified in France</strong> must be able to generate. Introduced by the 2014 Finance Act for tax audits, it contains all the accounting entries for a fiscal year. ESG Flow reads accounts <strong>60x</strong> (purchases of materials and goods), <strong>61x</strong> (external services) and <strong>62x</strong> (other external services) to extract expenses by GHG Protocol category and apply the <strong>ADEME 2024 emission factors</strong>."
+        "fecBoxBody": "The FEC is a standardized file (NF Z55-002) that <strong>any accounting software certified in France</strong> must be able to generate. Introduced by the 2014 Finance Act for tax audits, it contains all the accounting entries for a fiscal year. ESGFlow reads accounts <strong>60x</strong> (purchases of materials and goods), <strong>61x</strong> (external services) and <strong>62x</strong> (other external services) to extract expenses by GHG Protocol category and apply the <strong>ADEME 2024 emission factors</strong>."
       },
       "comment": {
         "badge": "How it works",
@@ -12281,22 +12281,22 @@
           "desc": "In your accounting software, open the \"Accounting export\" or \"DGFiP export\" menu and choose the FEC format (.txt or standardized .csv extension). This takes less than 2 minutes on Sage 100, Cegid, Pennylane, EBP or Quadratus."
         },
         "step2": {
-          "title": "Import the file into ESG Flow",
-          "desc": "Drag and drop your FEC file into ESG Flow or click \"Browse\". ESG Flow automatically validates the file structure (NF Z55-002 columns) and tells you if any data is missing or malformed."
+          "title": "Import the file into ESGFlow",
+          "desc": "Drag and drop your FEC file into ESGFlow or click \"Browse\". ESGFlow automatically validates the file structure (NF Z55-002 columns) and tells you if any data is missing or malformed."
         },
         "step3": {
-          "title": "ESG Flow analyzes the accounts and applies the ADEME 2024 factors",
+          "title": "ESGFlow analyzes the accounts and applies the ADEME 2024 factors",
           "desc": "The calculation engine reads accounts 60x (purchases), 61x (services) and 62x (other services), maps them to the 15 GHG Protocol categories and multiplies each amount by the corresponding ADEME 2024 emission factor. A quality score is assigned to each category."
         },
         "step4": {
           "title": "Get your complete Scope 3 assessment",
-          "desc": "ESG Flow generates your Scope 3 assessment with a breakdown by category, interactive charts, year-over-year comparison and a certifiable PDF / Excel export. You can enrich the categories with additional physical data to improve accuracy."
+          "desc": "ESGFlow generates your Scope 3 assessment with a breakdown by category, interactive charts, year-over-year comparison and a certifiable PDF / Excel export. You can enrich the categories with additional physical data to improve accuracy."
         }
       },
       "categories": {
         "badge": "Full coverage",
         "title": "The 15 GHG Protocol categories covered",
-        "intro": "ESG Flow automatically calculates the categories available from the FEC and flags the categories requiring additional data.",
+        "intro": "ESGFlow automatically calculates the categories available from the FEC and flags the categories requiring additional data.",
         "legend": {
           "auto": "Auto FEC ✓ — calculated automatically",
           "partial": "Partial FEC — mixed data",
@@ -12317,7 +12317,7 @@
         "cat13": "Downstream leased assets",
         "cat14": "Franchises",
         "cat15": "Financial investments",
-        "note": "Categories marked \"Data required\" can be entered manually or imported from other sources (HR, logistics, product data). ESG Flow generates a quality score from 0 to 100 for your overall assessment."
+        "note": "Categories marked \"Data required\" can be entered manually or imported from other sources (HR, logistics, product data). ESGFlow generates a quality score from 0 to 100 for your overall assessment."
       },
       "exemples": {
         "badge": "Real-world cases",
@@ -12361,7 +12361,7 @@
         },
         "item3": {
           "title": "CDP — Climate questionnaire: Scope 3 scored",
-          "desc": "The CDP Climate questionnaire includes a dedicated Scope 3 section. Companies that fail to report it lose points and risk a C or D score. ESG Flow generates CDP-ready tables for your annual submission."
+          "desc": "The CDP Climate questionnaire includes a dedicated Scope 3 section. Companies that fail to report it lose points and risk a C or D score. ESGFlow generates CDP-ready tables for your annual submission."
         },
         "item4": {
           "title": "Supply chain: your customers will ask for your data",
@@ -12370,7 +12370,7 @@
       },
       "ademe": {
         "title": "Why the ADEME 2024 factors?",
-        "body": "ADEME's Base Empreinte® is the French reference for emission factors. Updated annually, it covers more than <strong>3,000 expense items</strong> with factors validated by sector experts. ESG Flow integrates the 2024 version and updates it as soon as ADEME publishes new data.",
+        "body": "ADEME's Base Empreinte® is the French reference for emission factors. Updated annually, it covers more than <strong>3,000 expense items</strong> with factors validated by sector experts. ESGFlow integrates the 2024 version and updates it as soon as ADEME publishes new data.",
         "stat1": {
           "label": "Available factors",
           "value": "3,000+"
@@ -12389,14 +12389,14 @@
         "q1": "Does my accounting software generate a FEC?",
         "a1": "Yes. All accounting software certified in France generates the FEC — it has been a legal requirement since 2014 to facilitate tax audits by the DGFiP. Sage 100, Cegid, Pennylane, EBP, Quadratus, Ciel and most ERPs have an \"Export FEC\" or \"Export DGFiP\" menu. If you are unsure where to find it, contact your software vendor or your chartered accountant.",
         "q2": "How accurate is the FEC-based calculation?",
-        "a2": "The monetary (spend-based) method via FEC is recognized by the GHG Protocol as a level 1 approach — the most accessible. It is particularly well suited to Scope 3 categories 1, 3, 4, 5 and 6. Accuracy can be improved by replacing monetary factors with physical data (kWh, km, tonnes) when available. ESG Flow generates a quality score from 0 to 100 for each category, indicating where improvements are possible.",
+        "a2": "The monetary (spend-based) method via FEC is recognized by the GHG Protocol as a level 1 approach — the most accessible. It is particularly well suited to Scope 3 categories 1, 3, 4, 5 and 6. Accuracy can be improved by replacing monetary factors with physical data (kWh, km, tonnes) when available. ESGFlow generates a quality score from 0 to 100 for each category, indicating where improvements are possible.",
         "q3": "Is my FEC data confidential?",
-        "a3": "Yes. Your FEC file is encrypted with AES-256 from upload, processed on our infrastructure hosted in France (OVHcloud HDS), and never shared with third parties or used for model training. You can delete your data at any time from your dashboard. ESG Flow is GDPR-compliant and has ISO 27001 certification in progress.",
+        "a3": "Yes. Your FEC file is encrypted with AES-256 from upload, processed on our infrastructure hosted in France (OVHcloud HDS), and never shared with third parties or used for model training. You can delete your data at any time from your dashboard. ESGFlow is GDPR-compliant and has ISO 27001 certification in progress.",
         "q4": "Can I supplement the FEC with other data sources?",
-        "a4": "Yes. ESG Flow is designed to mix methods: the FEC automatically covers the accounting categories (1, 2, 3, 4, 5, 6), and you can add physical data for the other categories — HR data (cat. 7 commuting), logistics data (cat. 9 downstream transport), product data (cat. 11 and 12), financial data (cat. 15 investments). You can also import custom emission factors for your sector."
+        "a4": "Yes. ESGFlow is designed to mix methods: the FEC automatically covers the accounting categories (1, 2, 3, 4, 5, 6), and you can add physical data for the other categories — HR data (cat. 7 commuting), logistics data (cat. 9 downstream transport), product data (cat. 11 and 12), financial data (cat. 15 investments). You can also import custom emission factors for your sector."
       },
       "cta": {
-        "badge": "ESG Flow — Scope 3 assessment in 1 click",
+        "badge": "ESGFlow — Scope 3 assessment in 1 click",
         "title": "Import your FEC and get your Scope 3 assessment today",
         "body": "15 GHG Protocol categories, ADEME 2024 factors, certifiable PDF export — everything you need for your CSRD, SBTi and CDP, from €249/month.",
         "primaryBtn": "Start free — 14 days",
@@ -12426,17 +12426,17 @@
         "donnees": "Data to collect",
         "rapport": "The report",
         "sanctions": "Sanctions & risks",
-        "esgflow": "How ESG Flow helps you",
+        "esgflow": "How ESGFlow helps you",
         "faq": "FAQ",
         "aria": "Contents",
         "heading": "Contents"
       },
       "seo": {
         "description": "Understand the CSRD, find out whether you are concerned, identify the 12 ESRS standards, conduct double materiality, collect the data and publish your first report. Complete guide for French SMEs and mid-caps, updated for Omnibus 2025.",
-        "title": "Complete CSRD Guide for French SMEs and Mid-Caps — ESG Flow",
+        "title": "Complete CSRD Guide for French SMEs and Mid-Caps — ESGFlow",
         "keywords": "CSRD, ESRS, SME, mid-cap, sustainability report, double materiality, EU taxonomy, carbon footprint, EFRAG, directive 2022/2464",
         "ogTitle": "Complete CSRD Guide for French SMEs and Mid-Caps",
-        "ogImageAlt": "Complete CSRD guide for French SMEs and mid-caps — ESG Flow",
+        "ogImageAlt": "Complete CSRD guide for French SMEs and mid-caps — ESGFlow",
         "breadcrumb": {
           "home": "Home",
           "resources": "Resources",
@@ -12444,7 +12444,7 @@
         }
       },
       "header": {
-        "logoAria": "ESG Flow — Home",
+        "logoAria": "ESGFlow — Home",
         "trial": "Free 14-day trial",
         "cta": "Get started →"
       },
@@ -12685,8 +12685,8 @@
         "ext4": "<strong>Climatiq</strong> / <strong>ecoinvent</strong>: international emission factors for Scope 3",
         "ext5": "<strong>INSEE (Sirene)</strong>: company data for supplier mapping",
         "ext6": "<strong>WRI Aqueduct</strong>: site water stress (E3)",
-        "useCaseLabel": "🎯 ESG Flow use case",
-        "useCaseBody": "All these sources are pre-connectable in ESG Flow. You import your FEC once → we automatically calculate your spend-based Scope 3 with ADEME factors. You connect your Enedis account → your kWh sync daily. <1>See the demo →</1>"
+        "useCaseLabel": "🎯 ESGFlow use case",
+        "useCaseBody": "All these sources are pre-connectable in ESGFlow. You import your FEC once → we automatically calculate your spend-based Scope 3 with ADEME factors. You connect your Enedis account → your kWh sync daily. <1>See the demo →</1>"
       },
       "report": {
         "title": "The report: structure and technical requirements",
@@ -12700,8 +12700,8 @@
         "audit1": "A documented <strong>audit trail</strong> for each indicator (source, calculation, validation)",
         "audit2": "<strong>Internal control</strong> over ESG data (segregation of duties, hierarchical validation)",
         "audit3": "<strong>Traceability</strong> allowing source documents to be traced back in under 24 h",
-        "auditBoxLabel": "🔒 How ESG Flow helps you pass the audit",
-        "auditBoxBody": "Each report generated in ESG Flow includes a <strong>SHA-256 fingerprint</strong> of the content, an automatic versioning system and a public endpoint <3>/api/v1/reports/verify</3> that your statutory auditor can query to verify the integrity of a received PDF — useful for your limited-assurance (CSRD) or reasonable-assurance (ISA 3410) work.",
+        "auditBoxLabel": "🔒 How ESGFlow helps you pass the audit",
+        "auditBoxBody": "Each report generated in ESGFlow includes a <strong>SHA-256 fingerprint</strong> of the content, an automatic versioning system and a public endpoint <3>/api/v1/reports/verify</3> that your statutory auditor can query to verify the integrity of a received PDF — useful for your limited-assurance (CSRD) or reasonable-assurance (ISA 3410) work.",
         "deadlineTitle": "Publication deadlines",
         "deadlineBody": "The CSRD report is published with the management report, so <strong>within 6 months of the financial year-end</strong>. For a year ending 31/12, publication by 30/06 of the following year at the latest."
       },
@@ -12717,8 +12717,8 @@
         "boxBody": "The real risk for an SME/mid-cap is <1>not</1> the AMF fine (rarely applied to unlisted companies) but <strong>exclusion from large-account markets</strong>. If you lose a Carrefour, Engie or Bouygues tender because your ESG file is weak, the financial impact far exceeds an administrative fine."
       },
       "esgflow": {
-        "title": "How ESG Flow accelerates your CSRD compliance",
-        "intro": "ESG Flow is the French SaaS platform designed for SMEs and mid-caps that want to achieve CSRD compliance <strong>without a €15,000 consulting firm or 6 months of implementation</strong>.",
+        "title": "How ESGFlow accelerates your CSRD compliance",
+        "intro": "ESGFlow is the French SaaS platform designed for SMEs and mid-caps that want to achieve CSRD compliance <strong>without a €15,000 consulting firm or 6 months of implementation</strong>.",
         "feat1": {
           "title": "12 ready-made ESRS modules",
           "desc": "E1 to E5, S1 to S4, G1, plus cross-cutting ESRS 2. All indicators pre-filled to EFRAG standards."
@@ -12743,7 +12743,7 @@
           "title": "Data 🇫🇷 hosted in France",
           "desc": "OVH/Scaleway, GDPR compliance, outside the CLOUD Act, COFRAC audit in progress."
         },
-        "ctaTitle": "Try ESG Flow for free",
+        "ctaTitle": "Try ESGFlow for free",
         "ctaBody": "14-day trial on the mid-cap plan, no credit card. All features unlocked.",
         "ctaPrimary": "Start my trial",
         "ctaSecondary": "See pricing"
@@ -12755,16 +12755,16 @@
         "q2": "What's the difference between the CSRD and the DPEF?",
         "a2": "The DPEF (2017 law) covered ~3,000 French companies. The CSRD extends to the whole EU (~50,000 companies) with uniform technical standards (ESRS), a mandatory audit and an iXBRL format. The CSRD replaces the DPEF for the companies concerned.",
         "q3": "What budget should I plan for the first CSRD year?",
-        "a3": "Without a tool: €30-80k (consulting firm + statutory auditor). With ESG Flow: €2-5k/year subscription + €5-15k audit. Savings of 70-90%.",
+        "a3": "Without a tool: €30-80k (consulting firm + statutory auditor). With ESGFlow: €2-5k/year subscription + €5-15k audit. Savings of 70-90%.",
         "q4": "How long to produce the first report?",
-        "a4": "With upfront preparation: 3-4 months (materiality matrix = 4-6 weeks, data collection = 6-8 weeks, drafting and audit = 4-6 weeks). ESG Flow speeds up collection and drafting by about 60%.",
+        "a4": "With upfront preparation: 3-4 months (materiality matrix = 4-6 weeks, data collection = 6-8 weeks, drafting and audit = 4-6 weeks). ESGFlow speeds up collection and drafting by about 60%.",
         "q5": "Is iXBRL mandatory for my unlisted SME?",
         "a5": "No. iXBRL is only mandatory for companies listed on a European regulated market. For others, a PDF is enough (but iXBRL helps the audit).",
         "q6": "What happens if I don't publish?",
         "a6": "If you are legally required to: AMF fine (up to €3.75M listed / €50k unlisted), refusal to certify by the auditor, exclusion from public tenders. If you are not required to: no direct sanction, but loss of B2B opportunities with large accounts.",
-        "q7": "Can ESG Flow be used only for the carbon footprint?",
+        "q7": "Can ESGFlow be used only for the carbon footprint?",
         "a7": "Yes. The SME plan includes the Scope 1/2/3 carbon footprint per the GHG Protocol with the ADEME 2024 factors. You don't have to enable the other ESRS modules.",
-        "q8": "How does the audit work with ESG Flow?",
+        "q8": "How does the audit work with ESGFlow?",
         "a8": "Each generated report includes a SHA-256 hash and a public verification URL. Your auditor receives the PDF and can verify integrity by opening /api/v1/reports/verify. All source data is traceable down to the accounting entry or the field measurement."
       },
       "more": {
@@ -12799,12 +12799,12 @@
   },
   "contact": {
     "seo": {
-      "title": "Contact — ESG Flow",
-      "desc": "Contact the ESG Flow team for a demo, a quote or a question about CSRD, Carbon Footprint or EU Taxonomy compliance.",
-      "keywords": "contact ESG Flow, CSRD demo, ESG platform quote"
+      "title": "Contact — ESGFlow",
+      "desc": "Contact the ESGFlow team for a demo, a quote or a question about CSRD, Carbon Footprint or EU Taxonomy compliance.",
+      "keywords": "contact ESGFlow, CSRD demo, ESG platform quote"
     },
-    "docTitle": "Contact us — ESG Flow | Enterprise quote & demo",
-    "docTitleDefault": "ESG Flow — ESG platform, CSRD & Carbon Footprint",
+    "docTitle": "Contact us — ESGFlow | Enterprise quote & demo",
+    "docTitleDefault": "ESGFlow — ESG platform, CSRD & Carbon Footprint",
     "size": {
       "1": "1-49 employees",
       "2": "50-249 employees",
@@ -12909,7 +12909,7 @@
   "status": {
     "back": "Back to home",
     "title": "Platform status",
-    "subtitle": "Real-time status of ESG Flow's critical components. Checked every 30 seconds.",
+    "subtitle": "Real-time status of ESGFlow's critical components. Checked every 30 seconds.",
     "lastCheck": "Last check: {{time}}",
     "checking": "Checking…",
     "refreshAria": "Refresh status",
@@ -13243,7 +13243,7 @@
     },
     "confirm": {
       "title": "Confirm enrichment",
-      "linkLabel": "Link to an ESG Flow organization",
+      "linkLabel": "Link to an ESGFlow organization",
       "createAuto": "Create automatically",
       "createAutoSub": "New organization from INSEE",
       "linkExisting": "Link to existing",
@@ -14389,7 +14389,7 @@
   },
   "apidoc": {
     "devPortal": "Developer Portal",
-    "heroTitle": "ESG Flow Public API",
+    "heroTitle": "ESGFlow Public API",
     "heroDesc": "Integrate your ESG data directly from your applications. Manage your indicators, submit data and retrieve your scores via a secure REST API.",
     "generateNewKey": "Generate a new key",
     "openSwagger": "Open the Swagger documentation",
@@ -14414,7 +14414,7 @@
     "securityLabel": "Security:",
     "securityText": "Never share your API key. Store it in environment variables, never in source code.",
     "quickStartTitle": "Quick start",
-    "quickStartDesc": "Examples of how to use the main ESG Flow API endpoints.",
+    "quickStartDesc": "Examples of how to use the main ESGFlow API endpoints.",
     "fullDocsTitle": "Full documentation",
     "fullDocsDesc": "Explore all available endpoints, test requests live and review response schemas.",
     "qsList": "List indicators",
@@ -14578,8 +14578,8 @@
     "ctaDescB": "More complete than {{name}} for your regulatory context — at a fraction of the price.",
     "ctaModules": "See all features",
     "ctaStart": "Start for free — 14 days",
-    "ctaTitle": "Try ESG Flow for free",
-    "esgPlans": "ESG Flow Plans",
+    "ctaTitle": "Try ESGFlow for free",
+    "esgPlans": "ESGFlow Plans",
     "estPrices": "Estimated prices",
     "fAI": "Embedded AI + ESG chatbot",
     "fAPI": "API REST + webhooks",
@@ -14623,8 +14623,8 @@
       "s3": "Extended emission factor database",
       "s4": "Community and \"Climate School\" training",
       "tagline": "Carbon & ESG platform for SMEs/mid-caps",
-      "targetMarket": "SMEs and mid-caps (similar target to ESG Flow)",
-      "verdict": "Greenly is a good reference for SMEs wanting turnkey carbon support. But for full CSRD compliance, French data sovereignty and a controlled budget, ESG Flow offers 2× more ESG modules for roughly half the price, with an immediate free trial.",
+      "targetMarket": "SMEs and mid-caps (similar target to ESGFlow)",
+      "verdict": "Greenly is a good reference for SMEs wanting turnkey carbon support. But for full CSRD compliance, French data sovereignty and a controlled budget, ESGFlow offers 2× more ESG modules for roughly half the price, with an immediate free trial.",
       "w0": "CSRD / ESRS: add-on module, not included by default",
       "w1": "EU Taxonomy: partial coverage",
       "w2": "DPEF / iXBRL ESEF: not supported",
@@ -14678,14 +14678,14 @@
     "planFeat3": "500 users · SSO/SAML · IFRS 10 multi-entity consolidation · White label",
     "planFeat4": "SLA 99.9% · Dedicated account manager · On-premise possible",
     "planFreeName": "Free",
-    "pricingSubtitle": "All ESG Flow prices are public and available without a quote.",
+    "pricingSubtitle": "All ESGFlow prices are public and available without a quote.",
     "pricingTitle": "Pricing comparison",
     "publicPrices": "Public prices",
-    "seoDesc": "Compare ESG Flow and {{name}}: features, pricing, CSRD compliance. Discover why ESG Flow is the European alternative.",
+    "seoDesc": "Compare ESGFlow and {{name}}: features, pricing, CSRD compliance. Discover why ESGFlow is the European alternative.",
     "seoDescDefault": "ESG platform comparison.",
-    "seoKw": "ESG Flow vs {{name}}, ESG comparison, {{name}} alternative",
-    "seoTitle": "ESG Flow vs {{name}} — ESG platform comparison",
-    "seoTitleDefault": "ESG Comparison — ESG Flow",
+    "seoKw": "ESGFlow vs {{name}}, ESG comparison, {{name}} alternative",
+    "seoTitle": "ESGFlow vs {{name}} — ESG platform comparison",
+    "seoTitleDefault": "ESG Comparison — ESGFlow",
     "strengths": "Strengths of {{name}}",
     "surDevis": "On request",
     "surMesure": "Custom",
@@ -14720,7 +14720,7 @@
     "vStrong": "✓ Strong",
     "verdictTitle": "Our verdict",
     "whatIs": "What is {{name}}?",
-    "whyTitle": "Why choose ESG Flow",
+    "whyTitle": "Why choose ESGFlow",
     "wkPlan0feat": "3–6 month implementation",
     "wkPlan0name": "Enterprise only",
     "wkPlan1feat": "Add-ons and services extra",
@@ -14923,7 +14923,7 @@
     "free": "Free",
     "frenchDataTitle": "French company data",
     "gsConnected": "Google Sheets connected successfully",
-    "heroDesc": "Connect ESG Flow to your favorite tools and sync your ESG data in real time",
+    "heroDesc": "Connect ESGFlow to your favorite tools and sync your ESG data in real time",
     "import": "Import",
     "inactive": "Inactive",
     "inseeCount": "10M+ companies",
@@ -15571,7 +15571,7 @@
     "l6": "Connect a data source",
     "l7": "Export your first report",
     "progress": "{{done}}/{{total}} steps · {{pct}}%",
-    "title": "Get started with ESG Flow"
+    "title": "Get started with ESGFlow"
   },
   "suppl": {
     "alreadyDesc": "You have already completed this ESG questionnaire.",
@@ -15588,7 +15588,7 @@
     "globalScore": "Overall ESG score",
     "introDesc": "Complete this questionnaire to assess your ESG performance and strengthen your relationship with your partner.",
     "invalidLink": "Invalid link",
-    "invalidLinkHint": "Please contact your ESG Flow partner to get a new link.",
+    "invalidLinkHint": "Please contact your ESGFlow partner to get a new link.",
     "linkExpired": "Invalid or expired link",
     "loading": "Loading questionnaire…",
     "next": "Next",
@@ -15596,7 +15596,7 @@
     "pillarEnv": "Environment",
     "pillarGov": "Governance",
     "pillarSoc": "Social",
-    "poweredBy": "Powered by ESG Flow · ESG Platform",
+    "poweredBy": "Powered by ESGFlow · ESG Platform",
     "prev": "Previous",
     "questionnaire": "Supplier ESG questionnaire",
     "required": "{{n}}/{{m}} required",
@@ -15675,8 +15675,8 @@
     "chaptersHint": "Chapters — click to start",
     "close": "Close",
     "completed": "✓ Completed",
-    "dialogLabel": "ESG Flow guided tour",
-    "discover": "Discover ESG Flow",
+    "dialogLabel": "ESGFlow guided tour",
+    "discover": "Discover ESGFlow",
     "escA": "Press",
     "escB": "to close",
     "guidedTour": "Guided tour",
@@ -15810,7 +15810,7 @@
   },
   "tsteps": {
     "chWelcome": "Welcome",
-    "chWelcomeDesc": "Introduction to ESG Flow",
+    "chWelcomeDesc": "Introduction to ESGFlow",
     "chDashboard": "Dashboard",
     "chDashboardDesc": "Overview of your ESG scores",
     "chCollect": "Data Collection",
@@ -15823,7 +15823,7 @@
     "chComplianceDesc": "CSRD, decarbonisation, taxonomy",
     "chSettings": "Settings",
     "chSettingsDesc": "API, configuration",
-    "s0Title": "🌿 Welcome to ESG Flow",
+    "s0Title": "🌿 Welcome to ESGFlow",
     "s0Content": "This interactive tour (≈ 3 min) walks you through all the platform features. Navigate with Next / Back, skip a step, or relaunch the tour at any time.",
     "s1Title": "📊 Dashboard",
     "s1Content": "Your real-time ESG cockpit. View your E, S, G scores, trends, priority alerts, and CSRD compliance progress at a glance.",
@@ -15872,9 +15872,9 @@
     "s23Title": "🛠️ CSRD Builder",
     "s23Content": "Visual CSRD report editor, section by section. Answer ESRS 1 & 2 requirements, add your policies and performance indicators, then export the finalised report.",
     "s24Title": "🔗 Public API",
-    "s24Content": "Access the ESG Flow REST API Swagger documentation. Integrate your BI tools (Power BI, Tableau) or internal systems via secure webhooks.",
+    "s24Content": "Access the ESGFlow REST API Swagger documentation. Integrate your BI tools (Power BI, Tableau) or internal systems via secure webhooks.",
     "s25Title": "⚙️ Settings",
-    "s25Content": "Configure your profile, notification preferences, user access rights, and tenant settings. You're all set — enjoy ESG Flow! 🎉"
+    "s25Content": "Configure your profile, notification preferences, user access rights, and tenant settings. You're all set — enjoy ESGFlow! 🎉"
   },
   "ptour": {
     "chWelcome": "Welcome",

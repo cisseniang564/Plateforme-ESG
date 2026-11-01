@@ -411,7 +411,7 @@ export default function APIDocumentation() {
             <Globe className="h-4 w-4" />
             {t('apidoc.devPortal', 'Portail Développeur')}
           </div>
-          <h1 className="text-3xl font-bold text-white md:text-4xl">{t('apidoc.heroTitle', 'API Publique ESG Flow')}</h1>
+          <h1 className="text-3xl font-bold text-white md:text-4xl">{t('apidoc.heroTitle', 'API Publique ESGFlow')}</h1>
           <p className="mt-3 max-w-2xl text-slate-300">
             {t('apidoc.heroDesc', 'Intégrez vos données ESG directement depuis vos applications. Gérez vos indicateurs, soumettez des données et récupérez vos scores via une API REST sécurisée.')}
           </p>
@@ -584,7 +584,7 @@ export default function APIDocumentation() {
 
           <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
             <p className="mb-5 text-sm text-gray-600">
-              {t('apidoc.quickStartDesc', "Exemples d'utilisation des endpoints principaux de l'API ESG Flow.")}
+              {t('apidoc.quickStartDesc', "Exemples d'utilisation des endpoints principaux de l'API ESGFlow.")}
             </p>
 
             {/* Quick start tabs */}

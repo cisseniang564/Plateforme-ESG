@@ -104,7 +104,7 @@ export default function FeaturePageLayout({
 
   usePageSeo({
     id: `feature-${slug}`,
-    title: `${title} — ESG Flow`,
+    title: `${title} — ESGFlow`,
     description: subtitle,
     keywords: `${title}, ESG, ${(frameworks ?? []).join(', ')}, RSE, conformité, plateforme ESG`,
     url: `https://greenconnect.cloud${location.pathname}`,
@@ -200,7 +200,7 @@ export default function FeaturePageLayout({
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <h2 className="text-3xl font-bold text-gray-900 mb-3">{t('features.layout.benefits.heading', 'Pourquoi choisir ESG Flow ?')}</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-3">{t('features.layout.benefits.heading', 'Pourquoi choisir ESGFlow ?')}</h2>
             <p className="text-gray-500 max-w-xl mx-auto">{t('features.layout.benefits.subheading', 'Les avantages concrets pour votre organisation')}</p>
           </div>
           <div className={`grid grid-cols-1 md:grid-cols-${benefits.length > 3 ? '4' : '3'} gap-6`}>
@@ -340,7 +340,7 @@ export default function FeaturePageLayout({
             {t('features.layout.cta.heading', 'Pret a simplifier votre conformite ESG ?')}
           </h2>
           <p className="text-lg text-white/80 mb-10">
-            {t('features.layout.cta.subheading', 'Rejoignez plus de 500 entreprises qui utilisent ESG Flow pour piloter leur strategie ESG.')}
+            {t('features.layout.cta.subheading', 'Rejoignez plus de 500 entreprises qui utilisent ESGFlow pour piloter leur strategie ESG.')}
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link

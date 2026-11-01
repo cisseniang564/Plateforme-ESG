@@ -1,4 +1,4 @@
-# Stratégie Marketing — ESG Flow
+# Stratégie Marketing — ESGFlow
 
 > **Document de référence GTM (Go-To-Market)** · Mai 2026 · v1.0
 > Pour : équipe fondatrice GreenConnect SAS
@@ -8,7 +8,7 @@
 
 ## 1. Résumé exécutif (TL;DR)
 
-**ESG Flow est la première plateforme ESG/CSRD self-service pensée pour les PME et ETI françaises.** Là où Workiva (US, $30k-$150k/an, 3-6 mois de mise en route) et Sweep (US/EU, sales-led, $5k+/mois) ciblent le CAC 40, ESG Flow ouvre le reporting CSRD/ESRS à 79 €/mois en moins d'1 heure de setup.
+**ESGFlow est la première plateforme ESG/CSRD self-service pensée pour les PME et ETI françaises.** Là où Workiva (US, $30k-$150k/an, 3-6 mois de mise en route) et Sweep (US/EU, sales-led, $5k+/mois) ciblent le CAC 40, ESGFlow ouvre le reporting CSRD/ESRS à 79 €/mois en moins d'1 heure de setup.
 
 **Positionnement marketing** :
 > *« La conformité CSRD en libre-service, en français, à partir de 79 € par mois. »*
@@ -61,7 +61,7 @@ Maturité ESG   : Démarrage à intermédiaire (pas d'équipe RSE dédiée)
 Trigger event  : Demande client B2B "Communiquez-moi votre rapport CSRD"
                  OU mention CSRD dans rapport du commissaire aux comptes
                  OU appel d'offre public/grand groupe avec critères RSE
-Budget annuel  : 1 k€ - 5 k€ pour un outil ESG (sweet spot pour ESG Flow)
+Budget annuel  : 1 k€ - 5 k€ pour un outil ESG (sweet spot pour ESGFlow)
 ```
 
 ### Persona 1 — « Sophie, Directrice RSE/QSE débordée »
@@ -122,8 +122,8 @@ Budget annuel  : 1 k€ - 5 k€ pour un outil ESG (sweet spot pour ESG Flow)
 ### Le pitch en 3 lignes
 
 > **Pour les PME et ETI françaises concernées par la CSRD,**
-> **ESG Flow est la plateforme ESG la plus simple et la plus abordable**
-> **— là où Workiva ou Sweep coûtent $30k-$150k/an, ESG Flow démarre à 79 €/mois et fonctionne en moins d'une heure.**
+> **ESGFlow est la plateforme ESG la plus simple et la plus abordable**
+> **— là où Workiva ou Sweep coûtent $30k-$150k/an, ESGFlow démarre à 79 €/mois et fonctionne en moins d'une heure.**
 
 ### Les 5 messages clés (à décliner partout)
 
@@ -491,7 +491,7 @@ Si MRR cible 6 500 € atteint à M12, ARR = 78 000 €. **Ratio dépense market
 ✅ **Aujourd'hui** :
 - Renseigner SIRET dans Privacy Policy + Mentions légales
 - Soumettre sitemap.xml à Google Search Console : https://search.google.com/search-console
-- Créer compte LinkedIn Company `ESG Flow` + premier post de lancement
+- Créer compte LinkedIn Company `ESGFlow` + premier post de lancement
 - Activer Plausible Analytics (gratuit en self-hosted)
 
 ✅ **Cette semaine** :

@@ -2186,13 +2186,13 @@ function TabDocumentation() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <h3 className="font-bold text-gray-800 mb-1">Architecture d&apos;ingestion ESG automatisee</h3>
             <p className="text-sm text-gray-500 mb-6">
-              ESG Flow connecte vos systemes sources a une plateforme de normalisation et de stockage ESG centralisee.
+              ESGFlow connecte vos systemes sources a une plateforme de normalisation et de stockage ESG centralisee.
             </p>
             {/* Pipeline */}
             <div className="flex flex-col sm:flex-row items-center gap-2 overflow-x-auto py-2">
               {[
                 { icon: <Globe size={20} />, title: 'Source ERP/RH/Energie', bullets: ['SAP, Oracle, Workday', 'APIs REST / SOAP', 'Webhooks temps reel'] },
-                { icon: <Plug size={20} />, title: 'Connecteur ESG Flow', bullets: ['Auth OAuth2/API Key', 'Rate limiting', 'Retry automatique'] },
+                { icon: <Plug size={20} />, title: 'Connecteur ESGFlow', bullets: ['Auth OAuth2/API Key', 'Rate limiting', 'Retry automatique'] },
                 { icon: <Layers size={20} />, title: 'Normalisation ESG', bullets: ['Schema GHG Protocol', 'Validation CSRD', 'Deduplication'] },
                 { icon: <Database size={20} />, title: 'Stockage & Reporting', bullets: ['Base de donnees ESG', 'Calculs Scope 1/2/3', 'Exports conformes'] },
               ].map((step, i, arr) => (

@@ -21,9 +21,9 @@ const H = 630;
 // ── Page definitions ─────────────────────────────────────────────────────────
 const PAGES = [
   // Landing & core
-  { slug: 'default',              title: 'ESG Flow',                          subtitle: 'La plateforme ESG tout-en-un pour les entreprises engagees', accent: '#10b981' },
-  { slug: 'landing',              title: 'ESG Flow',                          subtitle: 'Pilotez votre strategie ESG avec 22 modules integres',       accent: '#10b981' },
-  { slug: 'pricing',              title: 'Tarifs ESG Flow',                   subtitle: 'Plans adaptes a votre taille — a partir de 0 EUR',            accent: '#059669' },
+  { slug: 'default',              title: 'ESGFlow',                          subtitle: 'La plateforme ESG tout-en-un pour les entreprises engagees', accent: '#10b981' },
+  { slug: 'landing',              title: 'ESGFlow',                          subtitle: 'Pilotez votre strategie ESG avec 22 modules integres',       accent: '#10b981' },
+  { slug: 'pricing',              title: 'Tarifs ESGFlow',                   subtitle: 'Plans adaptes a votre taille — a partir de 0 EUR',            accent: '#059669' },
   { slug: 'contact',              title: 'Contact',                           subtitle: 'Parlons de votre projet ESG',                                accent: '#6366f1' },
 
   // Feature pages
@@ -38,12 +38,12 @@ const PAGES = [
 
   // Legal
   { slug: 'privacy-policy',       title: 'Politique de Confidentialite',      subtitle: 'RGPD — Donnees hebergees en France',                        accent: '#3b82f6' },
-  { slug: 'terms',                title: 'Conditions Generales d\'Utilisation', subtitle: 'CGU de la plateforme ESG Flow',                           accent: '#64748b' },
+  { slug: 'terms',                title: 'Conditions Generales d\'Utilisation', subtitle: 'CGU de la plateforme ESGFlow',                           accent: '#64748b' },
   { slug: 'cgv',                  title: 'Conditions Generales de Vente',     subtitle: 'Tarifs, abonnements et facturation',                        accent: '#64748b' },
   { slug: 'legal-notice',         title: 'Mentions Legales',                  subtitle: 'Editeur, hebergement et responsabilite',                    accent: '#64748b' },
 
   // Comparison
-  { slug: 'compare',              title: 'ESG Flow vs Alternatives',          subtitle: 'Comparez ESG Flow aux autres plateformes ESG',              accent: '#10b981' },
+  { slug: 'compare',              title: 'ESGFlow vs Alternatives',          subtitle: 'Comparez ESGFlow aux autres plateformes ESG',              accent: '#10b981' },
 ];
 
 // ── SVG template ─────────────────────────────────────────────────────────────
@@ -80,7 +80,7 @@ function buildSvg({ title, subtitle, accent }) {
   <text x="96" y="92" text-anchor="middle" fill="white" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="800">EF</text>
 
   <!-- Brand name -->
-  <text x="132" y="92" fill="white" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="700" opacity="0.9">ESG Flow</text>
+  <text x="132" y="92" fill="white" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="700" opacity="0.9">ESGFlow</text>
 
   <!-- Title -->
   <text x="72" y="300" fill="white" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="800" letter-spacing="-1">${escapeXml(t)}</text>

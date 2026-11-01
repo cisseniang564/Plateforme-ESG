@@ -1,4 +1,4 @@
-# Jeu de données de test ESG Flow
+# Jeu de données de test ESGFlow
 
 > Données fictives mais réalistes pour tester la plateforme **sans connecteur**.
 > Permet d'évaluer : calcul des scores ESG, benchmark sectoriel, taxonomie UE,
@@ -32,7 +32,7 @@
 - **Contenu** : **375** lignes d'écritures sur l'exercice 2025
 - **Comptes représentés** : 60* (achats), 61*-62* (services), 63* (impôts),
   64* (personnel), 401* (fournisseurs auxiliaires)
-- **Utilité** : Import dans ESG Flow → calcul automatique du **Scope 3 spend-based**
+- **Utilité** : Import dans ESGFlow → calcul automatique du **Scope 3 spend-based**
   avec les facteurs ADEME Base Carbone®. Les comptes 625100 (déplacements pro)
   alimentent le Scope 3 catégorie 6.
 

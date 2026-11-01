@@ -65,13 +65,13 @@ def _confirmation_page(email: str, success: bool) -> str:
     """Plain HTML response — no React/JS required, works in any client."""
     msg_ok = (
         "<h1 style='color:#10b981'>Désabonnement confirmé</h1>"
-        f"<p>L'adresse <strong>{email}</strong> ne recevra plus d'emails marketing de ESG Flow. "
+        f"<p>L'adresse <strong>{email}</strong> ne recevra plus d'emails marketing de ESGFlow. "
         "Vous continuerez à recevoir les emails strictement nécessaires (réinitialisation de "
         "mot de passe, factures, sécurité du compte).</p>"
     )
     msg_ko = (
         "<h1 style='color:#dc2626'>Demande enregistrée</h1>"
-        "<p>Si une adresse correspond à un compte ESG Flow, elle sera désabonnée. "
+        "<p>Si une adresse correspond à un compte ESGFlow, elle sera désabonnée. "
         "Pour toute question, contactez "
         "<a href='mailto:support@greenconnect.cloud'>support@greenconnect.cloud</a>.</p>"
     )
@@ -80,7 +80,7 @@ def _confirmation_page(email: str, success: bool) -> str:
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Désabonnement — ESG Flow</title>
+<title>Désabonnement — ESGFlow</title>
 <style>
   body {{ margin:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
          background:#f8fafc; color:#0f172a; padding: 48px 16px; }}

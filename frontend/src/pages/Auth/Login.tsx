@@ -113,7 +113,7 @@ export default function Login() {
             {/* Testimonial */}
             <div className="p-5 bg-white/5 border border-white/10 rounded-2xl">
               <p className="text-sm text-slate-200 italic leading-relaxed mb-4">
-                "ESG Flow a transformé notre conformité CSRD. Ce qui prenait des semaines se fait maintenant en heures."
+                "ESGFlow a transformé notre conformité CSRD. Ce qui prenait des semaines se fait maintenant en heures."
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-xs font-bold">SM</div>

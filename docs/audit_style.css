@@ -2,7 +2,7 @@
   size: A4;
   margin: 18mm 16mm 20mm 16mm;
   @bottom-center {
-    content: "Audit Réglementaire Interne — ESG Flow — Page " counter(page) " / " counter(pages);
+    content: "Audit Réglementaire Interne — ESGFlow — Page " counter(page) " / " counter(pages);
     font-size: 9pt;
     color: #94a3b8;
   }

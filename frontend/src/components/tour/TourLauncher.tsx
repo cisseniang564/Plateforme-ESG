@@ -92,7 +92,7 @@ export default function TourLauncher() {
           ref={panelRef}
           role="dialog"
           aria-modal="true"
-          aria-label={t('tour.dialogLabel', 'Tour guidé ESG Flow')}
+          aria-label={t('tour.dialogLabel', 'Tour guidé ESGFlow')}
           className="absolute right-0 top-full mt-2 w-[460px] max-w-[calc(100vw-2rem)] origin-top-right rounded-2xl border border-gray-100/80 bg-white shadow-2xl shadow-gray-400/20 z-50 overflow-hidden"
           style={{ animation: 'tourPanelIn 0.2s cubic-bezier(0.16,1,0.3,1) both' }}
         >
@@ -110,7 +110,7 @@ export default function TourLauncher() {
                     {t('tour.interactive', 'Tour interactif')}
                   </span>
                 </div>
-                <h3 className="text-xl font-bold tracking-tight">{t('tour.discover', 'Découvrez ESG Flow')}</h3>
+                <h3 className="text-xl font-bold tracking-tight">{t('tour.discover', 'Découvrez ESGFlow')}</h3>
                 <p className="text-sm text-slate-300/80 mt-1 max-w-xs">
                   {t('tour.subtitle', 'Toutes les fonctionnalités, étape par étape, en moins de {{min}} minutes.', { min: totalMinutes })}
                 </p>

@@ -303,7 +303,7 @@ export const generatePDF = async (data: ReportData) => {
     doc.setFontSize(8);
     doc.setTextColor(128, 128, 128);
     doc.text(`Page ${i} sur ${pageCount}`, 105, 285, { align: 'center' });
-    doc.text('© ESG Flow Platform - Rapport confidentiel', 105, 290, { align: 'center' });
+    doc.text('© ESGFlow Platform - Rapport confidentiel', 105, 290, { align: 'center' });
   }
   
   // Télécharger
@@ -596,7 +596,7 @@ export const generateWord = async (data: ReportData) => {
           alignment: AlignmentType.CENTER,
           children: [
             new TextRun({
-              text: '© ESG Flow Platform - Rapport confidentiel',
+              text: '© ESGFlow Platform - Rapport confidentiel',
               italics: true
             })
           ]

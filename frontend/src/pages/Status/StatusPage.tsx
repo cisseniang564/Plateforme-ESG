@@ -169,7 +169,7 @@ export default function StatusPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('status.title', 'État de la plateforme')}</h1>
           <p className="text-gray-500 text-sm">
-            {t('status.subtitle', "Statut en temps réel des composants critiques d'ESG Flow. Vérification toutes les 30 secondes.")}
+            {t('status.subtitle', "Statut en temps réel des composants critiques d'ESGFlow. Vérification toutes les 30 secondes.")}
           </p>
         </div>
 
