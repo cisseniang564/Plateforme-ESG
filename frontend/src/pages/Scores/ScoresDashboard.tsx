@@ -41,6 +41,7 @@ import {
   Cell,
 } from 'recharts';
 import Spinner from '@/components/common/Spinner';
+import ScoreMethodology from '@/components/ESG/ScoreMethodology';
 import { useESGScoring } from '@/hooks/useESGScoring';
 import toast from 'react-hot-toast';
 
@@ -440,6 +441,7 @@ export default function ScoresDashboard() {
                 </span>
               )}
             </div>
+            <ScoreMethodology className="mt-3 !text-white/80 hover:!text-white" />
 
             <div className="mt-6 flex flex-wrap gap-3 items-center">
               <button

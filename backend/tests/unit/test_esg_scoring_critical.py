@@ -77,9 +77,10 @@ class TestNormalizeValue:
             r = engine._normalize_value(float(val), "ENV-004", higher_is_better=True)
             assert 0.0 <= r <= 100.0, f"Out of bounds for val={val}: got {r}"
 
-    def test_equal_min_max_returns_50(self, engine):
+    def test_equal_min_max_returns_50(self, engine, monkeypatch):
         # Le BENCHMARK_RANGES d'un indicateur synthétique avec min=max
-        engine.BENCHMARK_RANGES["TEST-EQ"] = {"min": 10, "max": 10}
+        # (monkeypatch : l'entrée est retirée après le test, la table est partagée par la classe)
+        monkeypatch.setitem(engine.BENCHMARK_RANGES, "TEST-EQ", {"min": 10, "max": 10})
         r = engine._normalize_value(10.0, "TEST-EQ", higher_is_better=True)
         assert r == pytest.approx(50.0, abs=0.01)
 

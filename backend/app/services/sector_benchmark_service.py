@@ -250,27 +250,19 @@ class SectorBenchmarkService:
             FROM latest_scores
         """)
 
-        # Set a session GUC to bypass RLS for this aggregation. We never
-        # return organization IDs — only aggregated quartiles — so this is
-        # safe for anonymization.
+        # Agrégation anonymisée sur tous les comptes : session « système » dédiée (la RLS filtrerait
+        # sinon sur le seul compte courant). Jamais d'identifiant d'organisation en sortie, uniquement
+        # des quartiles, et seulement si le seuil de k-anonymat est atteint. Session séparée : les
+        # autres requêtes de la requête HTTP restent filtrées par la RLS.
         try:
-            await self.db.execute(text("SET LOCAL row_security = off"))
+            from app.db.session import SystemSessionLocal
+            async with SystemSessionLocal() as system_db:
+                rows = (await system_db.execute(sql, params)).all()
         except Exception as exc:
-            # Permission may be denied on hosted DBs; the query may still
-            # work via the application-level RLS bypass pattern used
-            # elsewhere in the codebase.
-            logger.debug("Could not disable row_security GUC: %s — relying on application-level RLS bypass", exc)
-
-        try:
-            rows = (await self.db.execute(sql, params)).all()
-        except Exception as exc:
-            # Query failed (RLS, schema mismatch on shared DB, etc.) — fall
-            # back to public baselines silently. The caller handles the
-            # ``None`` return value.
+            # Échec (schéma, droits…) : repli sur les référentiels publics ; l'appelant gère None.
             logger.warning("Cross-tenant aggregation failed for sector=%s: %s — falling back to public baseline", sector_key, exc)
             return None
 
-        # K-anonymity check
         if len(rows) < MIN_COHORT_SIZE:
             return None
         distinct_tenants = len({r.tenant_id for r in rows})

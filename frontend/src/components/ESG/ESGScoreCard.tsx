@@ -2,6 +2,7 @@ import { TrendingUp, TrendingDown, Minus, Award, AlertCircle, Leaf, Users, Landm
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { getConfidenceInfo } from '@/utils/confidenceLevel';
+import ScoreMethodology from './ScoreMethodology';
 
 interface ESGScoreCardProps {
   score: {
@@ -16,6 +17,7 @@ interface ESGScoreCardProps {
     data_completeness: number;
     percentile_rank?: number;
     sector_median?: number;
+    provenance?: { unmeasured_pillars?: string[] };
   };
   previousScore?: number;
 }
@@ -162,12 +164,12 @@ export default function ESGScoreCard({ score, previousScore }: ESGScoreCardProps
 
             <div className="grid grid-cols-2 gap-3 text-center sm:text-right">
               <div className="rounded-xl bg-gray-50 px-3 py-2">
-                <p className="text-xs text-gray-500">{t('escard.completeness', 'Complétude')}</p>
+                <p className="text-xs text-gray-500">{t('escard.completeness', 'Régularité de saisie')}</p>
                 <p className="text-lg font-bold text-gray-900">{Math.round(score.data_completeness ?? 0)}%</p>
               </div>
               {score.percentile_rank !== undefined ? (
                 <div className="rounded-xl bg-gray-50 px-3 py-2">
-                  <p className="text-xs text-gray-500">Percentile</p>
+                  <p className="text-xs text-gray-500">{t('escard.percentile', 'Rang parmi vos organisations')}</p>
                   <p className="text-lg font-bold text-gray-900">{Math.round(score.percentile_rank ?? 0)}%</p>
                 </div>
               ) : (
@@ -211,10 +213,19 @@ export default function ESGScoreCard({ score, previousScore }: ESGScoreCardProps
           />
         </div>
 
+        {score.provenance?.unmeasured_pillars && score.provenance.unmeasured_pillars.length > 0 && (
+          <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+            {t('escard.unmeasured', 'Pilier non renseigné (compte pour 0 dans le score global) :')}{' '}
+            <strong>{score.provenance.unmeasured_pillars.map(p => ({ environmental: 'Environnement', social: 'Social', governance: 'Gouvernance' } as Record<string, string>)[p] ?? p).join(', ')}</strong>
+          </p>
+        )}
+
+        <div className="mt-4"><ScoreMethodology /></div>
+
         {/* Sector median */}
         {score.sector_median !== undefined && (
           <div className="mt-5 flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
-            <span className="text-xs text-gray-500">{t('escard.sectorMedian', 'Médiane sectorielle')}</span>
+            <span className="text-xs text-gray-500">{t('escard.sectorMedian', 'Médiane de vos autres organisations')}</span>
             <span className="text-sm font-bold text-gray-800">{Math.round(score.sector_median ?? 0)} / 100</span>
           </div>
         )}
