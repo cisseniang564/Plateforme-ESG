@@ -411,7 +411,6 @@ export default function SecurityPage() {
                 <Lock className="h-4 w-4" /> privacy@greenconnect.cloud
               </a>
             </div>
-            <p className="text-xs text-gray-400 mt-4">{t('security.page.pentestNote', 'Rapport de pentest disponible sur demande sous NDA (clients Enterprise).')}</p>
           </div>
 
           <div style={{ background: 'linear-gradient(135deg, #064e3b 0%, #134e4a 100%)' }} className="rounded-2xl p-6 flex flex-col justify-between">
