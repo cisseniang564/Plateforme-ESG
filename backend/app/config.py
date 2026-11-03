@@ -226,6 +226,9 @@ class Settings(BaseSettings):
     # RATE LIMITING
     # ========================================================================
     RATE_LIMIT_ENABLED: bool = True
+    # Requêtes par minute du palier gratuit (et des appels non authentifiés, par IP). 300 en production ;
+    # relevé uniquement dans l'environnement de test E2E, où deux workers partagent un même tenant.
+    RATE_LIMIT_FREE_PER_MIN: int = 300
     RATE_LIMIT_STORAGE_URL: Optional[str] = None
     RATE_LIMIT_TIER_STARTER: int = 100
     RATE_LIMIT_TIER_PRO: int = 1000

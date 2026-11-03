@@ -203,6 +203,9 @@ jobs:
           S3_SECRET_ACCESS_KEY: ci
           APP_ENV: development
           APP_URL: http://127.0.0.1:3000
+          # Deux workers E2E partagent le tenant de démo : on relève la limite générale (300/min en production).
+          # Le blocage des connexions répétées, testé par le projet « bruteforce », reste actif.
+          RATE_LIMIT_FREE_PER_MIN: "3000"
         run: |
           nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 > /tmp/api.log 2>&1 &
           # Attend que l'API réponde (jusqu'à 90 s) au lieu d'un « sleep 5 » : le démarrage crée toutes les tables
