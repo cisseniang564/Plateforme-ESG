@@ -3092,7 +3092,7 @@
     "effortLow": "Low",
     "effortMedium": "Medium",
     "effortHigh": "High",
-    "heroBadge": "Artificial Intelligence — Sweep & Greenly level",
+    "heroBadge": "Artificial Intelligence",
     "anomalyValue": "Value:",
     "anomalyRange": "Normal range:",
     "anomalyPillar": "Pillar:",
@@ -3117,7 +3117,7 @@
     "reportSectionSocialDesc": "Training 18h/employee · Parity 47% management positions",
     "reportSectionGov": "Governance",
     "reportSectionGovDesc": "Anti-corruption policy published · 3 compliance alerts",
-    "likeGreenly": "Like Greenly",
+    "likeGreenly": "Built in",
     "ocrAnalyzing": "OCR analysis in progress...",
     "ocrAnalyzingDesc": "Data extraction · Scope 3 categorization",
     "ocrFieldVendor": "Supplier",
@@ -6866,9 +6866,9 @@
         }
       ],
       "diff": {
-        "eyebrow": "3 unique differentiators",
-        "title": "What Greenly and Sweep can't do",
-        "subtitle": "Three technical capabilities our competitors promise but don't truly deliver. Verifiable, demonstrable, measurable.",
+        "eyebrow": "3 key capabilities",
+        "title": "Three technical capabilities to see in a demo",
+        "subtitle": "Concrete capabilities you can check yourself during the free trial.",
         "cards": [
           {
             "badge": "ESMA 2026 REQUIREMENT",
@@ -6895,8 +6895,8 @@
               "Automatic PCG mapping",
               "Sage/Cegid/Pennylane compatible"
             ],
-            "footerLabel": "CFO argument:",
-            "footerText": "immediate return on investment in the first week."
+            "footerLabel": "For the CFO:",
+            "footerText": "a time saving to measure on your own data."
           },
           {
             "badge": "SAVES $9,500",
@@ -6909,11 +6909,11 @@
               "Scope 3 ≥ 40% required",
               "Net-zero ≤ 2050"
             ],
-            "footerLabel": "Unique on the market:",
-            "footerText": "no direct competitor offers this pre-flight."
+            "footerLabel": "Upstream check:",
+            "footerText": "the pre-flight flags gaps before any submission."
           }
         ],
-        "bottomNote": "These 3 capabilities are already in production and verifiable in a demo.",
+        "bottomNote": "These capabilities are available in the free trial.",
         "bottomCta": "Try it free — 14 days"
       },
       "how": {
@@ -7511,41 +7511,10 @@
           },
           {
             "problem": "Prohibitive cost of enterprise solutions",
-            "problemDesc": "Legacy ESG platforms (Workiva, Enablon) start at €50,000/year. Out of reach for the SMBs and mid-market companies that make up 99% of Europe's economic fabric.",
+            "problemDesc": "Many ESG platforms are built for large groups, with a cost and implementation effort that are hard to bear for an SME or mid-cap.",
             "solution": "Accessible pricing from €0 — no commitment",
             "solutionDesc": "A functional free plan and a PME plan starting at €249/month. ESG compliance shouldn't be reserved for large groups."
           }
-        ],
-        "posEyebrow": "Our positioning",
-        "posTitle": "Why ESGFlow rather than another platform?",
-        "posSubtitle": "We don't claim to be the best at everything — but at what matters for European CSR teams, yes.",
-        "diffCards": [
-          {
-            "title": "100% built for Europe",
-            "desc": "Greenly, Sweep and Persefoni are English-language tools retrofitted to European regulation. ESGFlow was designed from the ground up for the CSRD, EU Taxonomy and SFDR — the regulatory texts are integrated natively, not bolted on as a layer."
-          },
-          {
-            "title": "22 modules in a single platform",
-            "desc": "Most competitors are single-purpose: carbon footprint only (Greenly), reporting only (Workiva), risk only (Enablon). ESGFlow covers the full spectrum: carbon, CSRD reporting, materiality, SBTi, SFDR, taxonomy, vigilance and audit trail — without juggling between tools."
-          },
-          {
-            "title": "Accessible to SMBs from €249/month",
-            "desc": "Workiva starts at €50,000/year. IBM Envizi requires a 6-month implementation. ESGFlow is up and running in 48 hours, with a functional free plan and pricing designed for SMBs and mid-market companies — the ones that most need to comply and have the fewest resources to do so."
-          }
-        ],
-        "quickCompareTitle": "Quick comparison",
-        "criterion": "Criterion",
-        "compareRows": [
-          "Full carbon footprint",
-          "Native CSRD reporting",
-          "EU Taxonomy 2020/852",
-          "SFDR (investment funds)",
-          "SBTi pre-flight & validation",
-          "Duty of vigilance (CSDDD)",
-          "ISAE 3000 approval workflow",
-          "iXBRL / ESEF export",
-          "Free plan available",
-          "SMB pricing < €500/month"
         ]
       },
       "differentiators": {
@@ -9741,8 +9710,8 @@
           "answer": "Yes. ESGFlow can import your General Ledger file (FEC) and automatically convert your expense accounts into Scope 3 categories 1 (purchases) and 2 (capital goods) emissions using the ADEME monetary method."
         },
         "3": {
-          "question": "How does ESGFlow compare to tools like Greenly or Sweep?",
-          "answer": "ESGFlow covers all 3 scopes with 15 Scope 3 categories, whereas Greenly focuses on carbon only and Sweep on large enterprises. Our advantage: the carbon footprint is integrated into a complete ESG platform (CSRD, supply chain, LCA) from €599/month."
+          "question": "What does ESGFlow's carbon footprint cover?",
+          "answer": "ESGFlow covers all 3 scopes with 15 Scope 3 categories. The carbon footprint is part of the ESG platform (CSRD, supply chain, EU Taxonomy), with a paid plan from €249/month."
         },
         "4": {
           "question": "Is the data auditable?",
@@ -11002,8 +10971,8 @@
           "desc": "From €249/month — no €30k consultancy needed."
         },
         "1": {
-          "title": "Setup in 1 hour",
-          "desc": "Self-service vs. 3-6 months of Workiva."
+          "title": "Self-service start",
+          "desc": "No integration project to plan."
         },
         "2": {
           "title": "CSRD-compliant",
@@ -11815,7 +11784,7 @@
         },
         "6": {
           "q": "Which software to do your carbon footprint?",
-          "a": "ESGFlow includes the GHG Protocol carbon footprint with ADEME 2024 factors from the SME plan (€249/month). Competitors: Greenly, Sweep, Sami, Carbonfact."
+          "a": "ESGFlow includes the GHG Protocol carbon footprint with ADEME 2024 factors from the SME plan (€249/month)."
         },
         "7": {
           "q": "How long does a complete carbon footprint take?",
