@@ -13,7 +13,7 @@ const FAQ = [
   },
   {
     q: 'Comment configurer un connecteur de données externe ?',
-    a: "Allez dans Données → Connecteurs, cliquez sur « Ajouter un connecteur » et sélectionnez votre source (SAP, Salesforce, Google Sheets…). Suivez le guide de configuration pas-à-pas.",
+    a: "Allez dans Données → Connecteurs, cliquez sur « Ajouter un connecteur » et sélectionnez votre source (Pennylane, Qonto, Enedis…). Suivez le guide de configuration pas-à-pas.",
   },
   {
     q: 'Mes données CSRD sont-elles conformes ESRS ?',

@@ -122,7 +122,7 @@ export const gestion: DocArticle[] = [
     routes: [{ label: 'Paramètres', to: '/app/settings' }],
     about: 'Les paramètres sont organisés en rubriques : Général, Membres, Notifications, Intégrations, Compte, Facturation, Sécurité, Clés API, Sessions, Avancé et Zone de danger.',
     shows: [
-      'Des raccourcis vers les notifications en temps réel, les données d\'entreprises françaises, l\'enrichissement ESG, les connecteurs (Google Sheets, Power BI, SAP…) et les méthodologies (GRI, SASB, TCFD, ESRS).',
+      'Des raccourcis vers les notifications en temps réel, les données d\'entreprises françaises, l\'enrichissement ESG, les connecteurs (Pennylane, Qonto, Enedis…) et les méthodologies (GRI, SASB, TCFD, ESRS).',
       'L\'authentification unique (SSO) : connexion de votre fournisseur d\'identité OIDC (Okta, Microsoft Entra, Google Workspace, Keycloak…) avec URL de découverte, identifiant et secret client, domaines autorisés, test de la connexion, activation et désactivation.',
       'La zone de danger : actions irréversibles, à manier avec précaution.',
     ],

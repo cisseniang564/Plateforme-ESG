@@ -92,7 +92,7 @@ function getSettingsModules(t: TFunction) {
     { id: 'webhooks',    title: 'Webhooks',           desc: t('settings.tenant.modules.webhooks.desc', 'Notifications temps réel'),           icon: Webhook,    gradient: 'from-green-500 to-emerald-600',  badge: t('settings.tenant.modules.webhooks.badge', '3 actifs'),       path: '/app/settings/webhooks' },
     { id: 'insee',       title: 'API INSEE Sirene',   desc: t('settings.tenant.modules.insee.desc', 'Données entreprises françaises'),         icon: Building2,  gradient: 'from-indigo-500 to-indigo-600',  badge: 'Gov API',                                                      path: '/app/settings/insee' },
     { id: 'enrichment',  title: t('settings.tenant.modules.enrichment.title', 'Enrichissement ESG'),  desc: t('settings.tenant.modules.enrichment.desc', "Génération données IA"),              icon: Database,   gradient: 'from-purple-500 to-purple-600',  badge: 'AI',              path: '/app/settings/esg-enrichment' },
-    { id: 'integrations',title: t('settings.tenant.modules.integrations.title', 'Connecteurs'),       desc: t('settings.tenant.modules.integrations.desc', 'Google Sheets, Power BI, SAP…'), icon: Plug,      gradient: 'from-orange-500 to-orange-600',  badge: t('settings.tenant.modules.integrations.badge', '5 connectés'), path: '/app/settings/integrations' },
+    { id: 'integrations',title: t('settings.tenant.modules.integrations.title', 'Connecteurs'),       desc: t('settings.tenant.modules.integrations.desc', 'Pennylane, Qonto, Enedis…'), icon: Plug,      gradient: 'from-orange-500 to-orange-600',  badge: '', path: '/app/settings/integrations' },
     { id: 'methodology', title: t('settings.tenant.modules.methodology.title', 'Méthodologies'),      desc: t('settings.tenant.modules.methodology.desc', 'GRI, SASB, TCFD, ESRS'),             icon: BarChart3,  gradient: 'from-teal-500 to-teal-600',      badge: t('settings.tenant.modules.methodology.badge', '3 actives'),   path: '/app/settings/methodology' },
     { id: 'api-docs',    title: 'API Docs',           desc: t('settings.tenant.modules.api-docs.desc', 'Documentation Swagger'),               icon: FileText,   gradient: 'from-pink-500 to-pink-600',      badge: 'Swagger',                                                      path: '/docs', external: true },
   ];
@@ -910,7 +910,7 @@ export default function TenantSettings() {
                 <p className="text-xs text-gray-400 truncate">{mod.desc}</p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{mod.badge}</span>
+                {mod.badge ? <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{mod.badge}</span> : null}
                 <ChevronRight size={14} className="text-gray-300 group-hover:text-gray-500 group-hover:translate-x-0.5 transition-all" />
               </div>
             </button>

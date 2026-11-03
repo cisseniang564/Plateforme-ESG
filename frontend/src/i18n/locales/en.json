@@ -1843,8 +1843,7 @@
         },
         "integrations": {
           "title": "Connecteurs",
-          "desc": "Google Sheets, Power BI, SAP…",
-          "badge": "5 connectés"
+          "desc": "Pennylane, Qonto, Enedis…"
         },
         "methodology": {
           "title": "Méthodologies",
@@ -15416,7 +15415,7 @@
       "carbon": "Carbon Report · Scope 1, 2 & 3",
       "climate": "Climate stress tests",
       "compliance": "10 frameworks · Compliance",
-      "connectors": "SAP · Oracle · Workday",
+      "connectors": "Pennylane · Qonto · Enedis",
       "csrd": "CSRD report section by section",
       "dashboard": "Global ESG dashboard",
       "dataEntry": "Manual data entry form",
