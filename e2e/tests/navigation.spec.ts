@@ -24,3 +24,13 @@ test.describe('Navigation et accueil', () => {
     await expect(page.getByRole('button', { name: /actions rapides|quick actions/i })).toHaveCount(0);
   });
 });
+
+test.describe('Gaïa', () => {
+  test('un seul état vide : pas de doublon « aucune analyse » et un appel à l’action clair', async ({ page }) => {
+    await page.goto('/app/gaia');
+    await expect(page.getByRole('heading', { name: 'Analysez un rapport en 30 secondes' })).toBeVisible();
+    await expect(page.getByText(/Aucune analyse sélectionnée/)).toHaveCount(0);
+    await expect(page.getByText(/Aucune analyse pour le moment/)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Choisir un fichier' }).first()).toBeVisible();
+  });
+});
