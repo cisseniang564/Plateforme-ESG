@@ -26,6 +26,11 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 logger = logging.getLogger(__name__)
 
+
+def _settings():
+    from app.config import settings
+    return settings
+
 # Requests per minute per plan
 PLAN_LIMITS: dict[str, int] = {
     "free":       300,
@@ -37,6 +42,15 @@ PLAN_LIMITS: dict[str, int] = {
     "starter":    600,   # same generosity as PME
     "pro":       2000,   # same as ETI
 }
+
+def limit_for_plan(plan_tier: str) -> int:
+    """Requêtes par minute d'un palier. Le palier gratuit (et le repli pour un palier inconnu) lit
+    RATE_LIMIT_FREE_PER_MIN, 300 par défaut ; les autres paliers restent ceux de PLAN_LIMITS."""
+    free = _settings().RATE_LIMIT_FREE_PER_MIN
+    if plan_tier == "free":
+        return free
+    return PLAN_LIMITS.get(plan_tier, free)
+
 
 # Read-only endpoints called on every page load — these should never trip the
 # bucket alone. We still count them but exempt path matching is enforced for
@@ -197,9 +211,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             plan_tier = getattr(request.state, "plan_tier", None)
             if not plan_tier:
                 plan_tier = await _get_tenant_plan(str(tenant_id))
-            limit = PLAN_LIMITS.get(plan_tier, PLAN_LIMITS["free"])
-            return limit, f"tenant:{tenant_id}"
+            return limit_for_plan(plan_tier), f"tenant:{tenant_id}"
 
         # Unauthenticated: IP-based rate limit (brute force protection)
         ip = request.client.host if request.client else "unknown"
-        return PLAN_LIMITS["free"], f"ip:{ip}"
+        return limit_for_plan("free"), f"ip:{ip}"
