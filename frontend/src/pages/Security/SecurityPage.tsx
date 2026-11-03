@@ -92,7 +92,7 @@ export default function SecurityPage() {
 
           {/* Badges */}
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <Badge ok label={t('security.page.badgeHostedFrance', 'Hébergé chez IONOS')} />
+            <Badge ok label={t('security.page.badgeHostedFrance', 'IONOS — région France')} />
             <Badge ok label={t('security.page.badgeGdpr', 'RGPD natif')} />
             <Badge ok label="TLS 1.3 + AES-256" />
             <Badge ok label="SHA-256 audit trail" />
@@ -118,7 +118,7 @@ export default function SecurityPage() {
             </div>
             <div className="p-6 font-mono text-sm space-y-2">
               {[
-                { key: 'hosting',         value: t('security.page.posture.hosting',        'IONOS'),                     ok: true },
+                { key: 'hosting',         value: t('security.page.posture.hosting',        'IONOS (France)'),                     ok: true },
                 { key: 'encryption_rest', value: t('security.page.posture.encryptionRest', 'AES-256 (PostgreSQL + S3)'),                         ok: true },
                 { key: 'encryption_tls',  value: t('security.page.posture.encryptionTls',  "TLS 1.3 (nginx + Let's Encrypt)"),                   ok: true },
                 { key: 'audit_trail',     value: t('security.page.posture.auditTrail',     'Journal détaillé + empreintes SHA-256 par entrée'),   ok: true },
@@ -149,7 +149,7 @@ export default function SecurityPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
 
             <SecurityCard icon={Globe} color="emerald" title={t('security.page.card1Title', 'Hébergement chez IONOS')}>
-              <p>{t('security.page.card1p1', 'Infrastructure hébergée chez IONOS. La région du serveur sera précisée ici dès confirmation.')}</p>
+              <p>{t('security.page.card1p1', 'Infrastructure hébergée chez IONOS, sur un serveur situé en France.')}</p>
               <p>{t('security.page.card1p2', "Aucun sous-traitant américain. Aucun transfert de données hors UE. Conformité RGPD garantie contractuellement par notre DPA.")}</p>
             </SecurityCard>
 
@@ -231,7 +231,7 @@ export default function SecurityPage() {
                 cert:   t('security.page.cert2Name',   'Hébergement IONOS'),
                 status: t('security.page.cert2Status', 'Pas de HDS'),
                 statusColor: 'amber',
-                detail: t('security.page.cert2Detail', 'Hébergement chez IONOS. Aucune certification HDS : ne pas déposer de données de santé.'),
+                detail: t('security.page.cert2Detail', 'Hébergement chez IONOS (région France). Aucune certification HDS : ne pas déposer de données de santé.'),
               },
               {
                 cert:   t('security.page.cert3Name',   'TLS 1.3 + HSTS'),
@@ -296,7 +296,7 @@ export default function SecurityPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {[
-                  { vendor: 'IONOS',      service: t('security.page.proc1Service',  'Hébergement infra + base de données'),            location: t('security.page.proc1Location',  'Région à confirmer'), data: t('security.page.proc1Data',  'Toutes les données applicatives (PII, métriques ESG)') },
+                  { vendor: 'IONOS',      service: t('security.page.proc1Service',  'Hébergement infra + base de données'),            location: t('security.page.proc1Location',  '🇫🇷 France'), data: t('security.page.proc1Data',  'Toutes les données applicatives (PII, métriques ESG)') },
                   { vendor: 'Stripe',     service: t('security.page.proc3Service',  'Facturation & paiements'),                        location: t('security.page.proc3Location',  '🇮🇪 Irlande (UE)'),  data: t('security.page.proc3Data',  'Email de facturation, numéro TVA — jamais les données ESG') },
                   { vendor: 'Resend',     service: t('security.page.proc4Service',  'Délivrabilité email transactionnel'),             location: t('security.page.proc4Location',  '🇮🇪 Irlande (UE)'),  data: t('security.page.proc4Data',  'Email destinataire + contenu transactionnel') },
                   { vendor: 'Sentry',     service: t('security.page.proc5Service',  'Monitoring erreurs'),            location: t('security.page.proc5Location',  'À confirmer'),     data: t('security.page.proc5Data',  'Stack traces, user_id pseudonymisé — pas de données métier') },

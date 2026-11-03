@@ -126,7 +126,7 @@ export default function PrivacyPolicy() {
             <p>Vos données peuvent être transmises à :</p>
             <ul>
               <li><strong>Personnel autorisé de GreenConnect SAS</strong> : accès strictement limité aux besoins</li>
-              <li><strong>Hébergeur</strong> : IONOS (serveur privé virtuel)</li>
+              <li><strong>Hébergeur</strong> : IONOS (serveur privé virtuel, région France)</li>
               <li><strong>Sous-traitants techniques</strong> : Resend (envoi d'emails), Stripe (paiement) et, uniquement lorsque vous soumettez un document à l'analyse par IA, OpenAI</li>
               <li><strong>Autorités</strong> : sur réquisition judiciaire uniquement</li>
             </ul>
@@ -137,7 +137,7 @@ export default function PrivacyPolicy() {
 
             <h2>6. Transferts Hors UE</h2>
             <p>
-              Vos données sont hébergées chez IONOS. Certains sous-traitants listés ci-dessus
+              Vos données sont stockées sur un serveur IONOS situé en France. Certains sous-traitants listés ci-dessus
               (Stripe, Resend, OpenAI) peuvent être établis hors de l'Union Européenne : le cas échéant,
               les transferts s'appuient sur les garanties prévues par le RGPD (clauses contractuelles types
               ou décision d'adéquation). L'analyse par IA n'est déclenchée que lorsque vous soumettez
