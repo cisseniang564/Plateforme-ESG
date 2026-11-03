@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildListParams, displayName, entriesToCsv, formatValue, looksLikeYear, totalPages, verifiedRate, type EntryLike } from '@/pages/DataEntry/dataEntryHelpers';
+import { buildListParams, displayName, entriesToCsv, formatValue, looksLikeYear, totalPages, verifiedRate, type EntryLike, pillarCompleteness } from '@/pages/DataEntry/dataEntryHelpers';
 
 const E = (over: Partial<EntryLike>): EntryLike => ({ pillar: 'environmental', metric_name: 'x', verification_status: 'verified', ...over });
 describe('paramètres de liste (filtres côté serveur)', () => {
@@ -55,5 +55,22 @@ describe('export CSV des saisies', () => {
     const csv = entriesToCsv([E({ value_text: 'oui', verification_status: 'pending' })]);
     expect(csv).toContain('"oui"');
     expect(csv).toContain('"à vérifier"');
+  });
+});
+
+describe('pillarCompleteness', () => {
+  it('additionne les exigences vérifiables et couvertes par pilier', () => {
+    const c = pillarCompleteness([
+      { pillar: 'environmental', disclosures_auto: 10, disclosures_covered: 4 },
+      { pillar: 'environmental', disclosures_auto: 5, disclosures_covered: 5 },
+      { pillar: 'social', disclosures_auto: 8, disclosures_covered: 2 },
+    ]);
+    expect(c.environmental).toEqual({ pillar: 'environmental', covered: 9, total: 15, pct: 60 });
+    expect(c.social.pct).toBe(25);
+    expect(c.governance).toBeUndefined();
+  });
+  it('un pilier sans exigence vérifiable vaut 0 %, sans diviser par zéro, et l’absence de données donne un objet vide', () => {
+    expect(pillarCompleteness([{ pillar: 'governance', disclosures_auto: 0, disclosures_covered: 0 }]).governance.pct).toBe(0);
+    expect(pillarCompleteness(undefined)).toEqual({});
   });
 });

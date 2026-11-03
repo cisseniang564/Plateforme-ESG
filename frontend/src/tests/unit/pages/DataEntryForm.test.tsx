@@ -14,6 +14,11 @@ const ROWS = [
 ];
 const STATS = { total: 250, by_pillar: { environmental: 150, social: 60, governance: 40 }, by_verification_status: { verified: 50, pending: 200 }, by_period: { '2024': 200, '2023': 50 } };
 
+const GAP_SECTIONS = [
+  { pillar: 'environmental', disclosures_auto: 10, disclosures_covered: 4 },
+  { pillar: 'social', disclosures_auto: 8, disclosures_covered: 8 },
+];
+
 const { get, put, del } = vi.hoisted(() => ({ get: vi.fn(), put: vi.fn(), del: vi.fn() }));
 vi.mock('@/services/api', () => ({ default: { get, post: vi.fn(), put, delete: del } }));
 vi.mock('react-hot-toast', () => ({ default: { success: vi.fn(), error: vi.fn() } }));
@@ -38,6 +43,7 @@ beforeEach(() => {
   get.mockImplementation((url: string) => {
     if (url === '/data-entry/') return Promise.resolve({ data: ROWS, headers: { 'x-total-count': '250' } });
     if (url === '/data-entry/stats') return Promise.resolve({ data: STATS });
+    if (url === '/esrs/gap-analysis') return Promise.resolve({ data: { sections: GAP_SECTIONS } });
     if (url === '/organizations') return Promise.resolve({ data: { items: [] } });
     return Promise.resolve({ data: {} });
   });
@@ -108,5 +114,27 @@ describe('Saisie manuelle — détail', () => {
     expect(await screen.findByText(/est verrouillée/i)).toBeInTheDocument();
     expect(document.getElementById('de-value')).toBeDisabled();
     expect(screen.queryByRole('button', { name: /^Enregistrer$/ })).toBeNull();
+  });
+});
+
+describe('complétude par pilier', () => {
+  it('affiche les exigences ESRS couvertes pour les piliers connus par l’API, et rien d’inventé pour les autres', async () => {
+    await renderPage();
+    expect(await screen.findByText('4/10 exigences ESRS couvertes · 40 %')).toBeInTheDocument();
+    expect(screen.getByText('8/8 exigences ESRS couvertes · 100 %')).toBeInTheDocument();
+    expect(screen.getAllByText(/exigences ESRS couvertes/)).toHaveLength(2);
+    expect(screen.getAllByRole('link', { name: 'Voir ce qui manque' })).toHaveLength(1);
+  });
+  it('si l’API de couverture échoue, les comptes restent affichés sans pourcentage', async () => {
+    get.mockImplementation((url: string) => {
+      if (url === '/data-entry/') return Promise.resolve({ data: ROWS, headers: { 'x-total-count': '250' } });
+      if (url === '/data-entry/stats') return Promise.resolve({ data: STATS });
+      return Promise.reject(new Error('indisponible'));
+    });
+    await renderPage();
+    await waitFor(() => expect(screen.queryByRole('status', { name: /Chargement de la complétude/ })).not.toBeInTheDocument());
+    expect(screen.queryByText(/exigences ESRS couvertes/)).not.toBeInTheDocument();
+    const kpis = screen.getByRole('region', { name: /indicateurs clés/i });
+    expect(within(kpis).getByText('150')).toBeInTheDocument();
   });
 });
