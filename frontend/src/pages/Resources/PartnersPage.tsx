@@ -268,7 +268,7 @@ export default function PartnersPage() {
           <div className="grid md:grid-cols-3 gap-6">
             {[
               { icon: Coins, title: t('resources.partners.why.0.title', 'Tarif accessible'), desc: t('resources.partners.why.0.desc', 'À partir de 249 €/mois — sans cabinet à 30 k€.') },
-              { icon: Sparkles, title: t('resources.partners.why.1.title', 'Setup en 1 heure'), desc: t('resources.partners.why.1.desc', 'Self-service contre 3-6 mois de Workiva.') },
+              { icon: Sparkles, title: t('resources.partners.why.1.title', 'Démarrage en self-service'), desc: t('resources.partners.why.1.desc', 'Pas de projet d’intégration à prévoir.') },
               { icon: TrendingUp, title: t('resources.partners.why.2.title', 'Conforme CSRD'), desc: t('resources.partners.why.2.desc', '12 modules ESRS, iXBRL, audit trail SHA-256.') },
             ].map((r, i) => {
               const I = r.icon;

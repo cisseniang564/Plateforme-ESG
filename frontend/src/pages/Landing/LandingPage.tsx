@@ -2016,14 +2016,14 @@ export default function LandingPage() {
           <div className="text-center mb-14 max-w-3xl mx-auto">
             <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
               <span className="w-8 h-px bg-emerald-400 inline-block" />
-              {t('landing.lp.diff.eyebrow', '3 différenciateurs uniques')}
+              {t('landing.lp.diff.eyebrow', '3 capacités clés')}
               <span className="w-8 h-px bg-emerald-400 inline-block" />
             </span>
             <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">
-              {t('landing.lp.diff.title', 'Ce que Greenly et Sweep ne savent pas faire')}
+              {t('landing.lp.diff.title', 'Trois capacités techniques à voir en démonstration')}
             </h2>
             <p className="text-lg text-gray-500">
-              {t('landing.lp.diff.subtitle', 'Trois capacités techniques que nos concurrents promettent mais ne livrent pas vraiment. Vérifiables, démontrables, mesurables.')}
+              {t('landing.lp.diff.subtitle', 'Des capacités concrètes, que vous pouvez vérifier vous-même pendant l’essai gratuit.')}
             </p>
           </div>
 
@@ -2077,7 +2077,7 @@ export default function LandingPage() {
                 ))}
               </div>
               <div className="pt-5 border-t border-gray-100 text-xs text-gray-500">
-                <strong className="text-gray-900">{t('landing.lp.diff.cards.1.footerLabel', 'Argument DAF :')}</strong> {t('landing.lp.diff.cards.1.footerText', 'retour sur investissement immédiat la 1ère semaine.')}
+                <strong className="text-gray-900">{t('landing.lp.diff.cards.1.footerLabel', 'Pour le DAF :')}</strong> {t('landing.lp.diff.cards.1.footerText', 'un gain de temps à mesurer sur vos propres données.')}
               </div>
             </div>
 
@@ -2103,14 +2103,14 @@ export default function LandingPage() {
                 ))}
               </div>
               <div className="pt-5 border-t border-gray-100 text-xs text-gray-500">
-                <strong className="text-gray-900">{t('landing.lp.diff.cards.2.footerLabel', 'Unique sur le marché :')}</strong> {t('landing.lp.diff.cards.2.footerText', 'aucun concurrent direct ne propose ce préflight.')}
+                <strong className="text-gray-900">{t('landing.lp.diff.cards.2.footerLabel', 'Contrôle en amont :')}</strong> {t('landing.lp.diff.cards.2.footerText', 'le préflight signale les écarts avant toute soumission.')}
               </div>
             </div>
 
           </div>
 
           <div className="mt-12 text-center">
-            <p className="text-sm text-gray-500 mb-4">{t('landing.lp.diff.bottomNote', 'Ces 3 capacités sont déjà en production, vérifiables sur démo.')}</p>
+            <p className="text-sm text-gray-500 mb-4">{t('landing.lp.diff.bottomNote', 'Ces capacités sont disponibles dans l’essai gratuit.')}</p>
             <Link
               to="/register"
               className="inline-flex items-center gap-2 px-7 py-3.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold rounded-2xl shadow-xl shadow-emerald-500/30 hover:-translate-y-0.5 transition-all"
@@ -2438,98 +2438,6 @@ export default function LandingPage() {
                   ))}
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Comparatif concurrents ──────────────────────────────────────────── */}
-      <section className="py-24 bg-white relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(ellipse at 50% 100%, rgba(16,185,129,0.05) 0%, transparent 60%)' }} />
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
-              <span className="w-8 h-px bg-emerald-400 inline-block" />
-              {t('landing.lp.comparison.eyebrow', 'Comparatif')}
-              <span className="w-8 h-px bg-emerald-400 inline-block" />
-            </span>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">
-              {t('landing.lp.comparison.title', 'Pourquoi choisir ESGFlow ?')}
-            </h2>
-            <p className="text-lg text-gray-500 max-w-2xl mx-auto">{t('landing.lp.comparison.subtitle', "Comparez en un coup d'oeil ce que chaque solution propose réellement.")}</p>
-          </div>
-
-          <div className="bg-white rounded-3xl border border-gray-200 shadow-xl overflow-hidden">
-            {/* Header */}
-            <div className="grid grid-cols-5 text-center text-sm font-bold border-b border-gray-200">
-              <div className="p-4 text-left text-gray-500 text-xs uppercase tracking-wider">{t('landing.lp.comparison.colFeature', 'Fonctionnalité')}</div>
-              <div className="p-4 bg-emerald-50 border-x border-emerald-100">
-                <div className="flex items-center justify-center gap-1.5">
-                  <LogoMark size={20} decorative />
-                  <span className="text-emerald-700">ESGFlow</span>
-                </div>
-              </div>
-              <div className="p-4 text-gray-600">{t('landing.lp.comparison.colExcel', 'Tableurs Excel')}</div>
-              <div className="p-4 text-gray-600">Greenly</div>
-              <div className="p-4 text-gray-600">Sweep</div>
-            </div>
-            {/* Rows */}
-            {[
-              { feature: 'Bilan Carbone Scope 1/2/3', esg: true, excel: 'partial', greenly: true, sweep: true },
-              { feature: '15 catégories Scope 3', esg: true, excel: false, greenly: 'partial', sweep: true },
-              { feature: 'Rapport CSRD / ESRS complet', esg: true, excel: false, greenly: false, sweep: 'partial' },
-              { feature: 'Double matérialité interactive', esg: true, excel: false, greenly: false, sweep: 'partial' },
-              { feature: 'Supply Chain / Due Diligence', esg: true, excel: false, greenly: false, sweep: 'partial' },
-              { feature: 'Plan décarbonation SBTi', esg: true, excel: false, greenly: 'partial', sweep: true },
-              { feature: 'IA générative & Chatbot ESG', esg: true, excel: false, greenly: false, sweep: false },
-              { feature: 'Piste d\'audit SHA-256', esg: true, excel: false, greenly: false, sweep: false },
-              { feature: 'Multi-réglementaire (10 ref.)', esg: true, excel: false, greenly: false, sweep: false },
-              { feature: 'Taxonomie UE', esg: true, excel: false, greenly: false, sweep: 'partial' },
-              { feature: 'À partir de', esg: '249€', excel: '0€', greenly: '500€+', sweep: t('landing.lp.comparison.customQuote', 'Sur devis') },
-            ].map((row, i) => {
-              const renderCell = (val: boolean | string) => {
-                if (val === true) return <Check className="h-5 w-5 text-emerald-500 mx-auto" />;
-                if (val === false) return <X className="h-5 w-5 text-gray-300 mx-auto" />;
-                if (val === 'partial') return <div className="w-5 h-5 mx-auto rounded-full border-2 border-amber-400 flex items-center justify-center"><div className="w-2 h-2 bg-amber-400 rounded-full" /></div>;
-                if (val === 'na') return <span className="text-xs text-gray-400">—</span>;
-                return <span className="text-sm font-bold text-gray-900">{val}</span>;
-              };
-              return (
-                <div key={i} className={`grid grid-cols-5 text-center items-center ${i % 2 === 0 ? 'bg-gray-50/50' : ''} ${i === 11 ? 'border-t-2 border-gray-200 bg-gray-50 font-semibold' : ''}`}>
-                  <div className="p-3.5 text-left text-sm text-gray-700">{t(`landing.lp.comparison.rows.${i}`, row.feature)}</div>
-                  <div className="p-3.5 bg-emerald-50/50 border-x border-emerald-100/50">{renderCell(row.esg)}</div>
-                  <div className="p-3.5">{renderCell(row.excel)}</div>
-                  <div className="p-3.5">{renderCell(row.greenly)}</div>
-                  <div className="p-3.5">{renderCell(row.sweep)}</div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Legend */}
-          <div className="flex items-center justify-center gap-6 mt-6 text-xs text-gray-500">
-            <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-500" /> {t('landing.lp.comparison.legendIncluded', 'Inclus')}</span>
-            <span className="flex items-center gap-1.5"><div className="w-4 h-4 rounded-full border-2 border-amber-400 flex items-center justify-center"><div className="w-1.5 h-1.5 bg-amber-400 rounded-full" /></div> {t('landing.lp.comparison.legendPartial', 'Partiel')}</span>
-            <span className="flex items-center gap-1.5"><X className="h-4 w-4 text-gray-300" /> {t('landing.lp.comparison.legendUnavailable', 'Non disponible')}</span>
-          </div>
-
-          <div className="text-center mt-10">
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <span className="text-sm text-gray-500">{t('landing.lp.comparison.detailedCompare', 'Voir les comparatifs détaillés :')}</span>
-              {[
-                { slug: 'greenly', name: 'Greenly' },
-                { slug: 'sweep', name: 'Sweep' },
-                { slug: 'persefoni', name: 'Persefoni' },
-                { slug: 'workiva', name: 'Workiva' },
-              ].map(c => (
-                <Link
-                  key={c.slug}
-                  to={`/compare/${c.slug}`}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-full text-sm font-semibold transition-colors"
-                >
-                  vs {c.name} <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              ))}
             </div>
           </div>
         </div>
@@ -3047,7 +2955,7 @@ export default function LandingPage() {
                 },
                 {
                   problem: 'Coût prohibitif des solutions enterprise',
-                  problemDesc: 'Les plateformes ESG historiques (Workiva, Enablon) commencent à 50 000 €/an. Hors de portée pour les PME et ETI qui représentent 99% du tissu économique européen.',
+                  problemDesc: 'Beaucoup de plateformes ESG sont conçues pour les grands groupes, avec un coût et une mise en œuvre difficiles à porter pour une PME ou une ETI.',
                   solution: 'Pricing accessible dès 0 € — sans engagement',
                   solutionDesc: 'Plan gratuit fonctionnel, plan PME à partir de 249 €/mois. La conformité ESG ne doit pas être réservée aux grands groupes.',
                   problemIcon: AlertTriangle,
@@ -3083,102 +2991,6 @@ export default function LandingPage() {
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-
-          {/* ── Ce qui nous différencie ── */}
-          <div>
-            <div className="text-center mb-14">
-              <span className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-100 rounded-full text-blue-600 text-xs font-semibold uppercase tracking-wide mb-4">
-                <Award className="h-3.5 w-3.5" /> {t('landing.lp.about.posEyebrow', 'Notre positionnement')}
-              </span>
-              <h3 className="text-3xl font-bold text-gray-900">{t('landing.lp.about.posTitle', "Pourquoi ESGFlow plutôt qu'une autre plateforme ?")}</h3>
-              <p className="text-gray-500 mt-3 max-w-xl mx-auto">{t('landing.lp.about.posSubtitle', 'Nous ne prétendons pas être les meilleurs sur tout — mais sur ce qui compte pour les équipes RSE européennes, oui.')}</p>
-            </div>
-
-            {/* Differentiator cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-              {[
-                {
-                  icon: Globe,
-                  iconBg: 'bg-blue-600',
-                  title: '100% conçu pour l\'Europe',
-                  desc: 'Greenly, Sweep et Persefoni sont des outils anglophones adaptés après coup à la réglementation européenne. ESGFlow a été conçu dès le départ pour la CSRD, la Taxonomie UE et SFDR — les textes réglementaires sont intégrés nativement, pas collés en surcouche.',
-                  badge: 'vs Greenly / Sweep / Persefoni',
-                  badgeBg: 'bg-blue-50 text-blue-700 border-blue-200',
-                },
-                {
-                  icon: Layers,
-                  iconBg: 'bg-violet-600',
-                  title: '22 modules dans une seule plateforme',
-                  desc: 'La plupart des concurrents sont mono-fonctionnels : bilan carbone uniquement (Greenly), reporting uniquement (Workiva), risques uniquement (Enablon). ESGFlow couvre le spectre complet : carbone, reporting CSRD, matérialité, SBTi, SFDR, taxonomie, vigilance, bilan d\'audit — sans jongler entre outils.',
-                  badge: 'vs Workiva / Enablon',
-                  badgeBg: 'bg-violet-50 text-violet-700 border-violet-200',
-                },
-                {
-                  icon: Calculator,
-                  iconBg: 'bg-emerald-600',
-                  title: 'Accessible aux PME dès 249 €/mois',
-                  desc: 'Workiva commence à 50 000 €/an. IBM Envizi demande une implémentation de 6 mois. ESGFlow se prend en main en self-service, avec un plan gratuit fonctionnel et des tarifs pensés pour les PME et ETI — celles qui ont le plus besoin de se conformer et le moins de ressources pour le faire.',
-                  badge: 'vs IBM Envizi / Workiva',
-                  badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                },
-              ].map((d, i) => (
-                <div key={i} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-7 hover:shadow-md transition-shadow flex flex-col">
-                  <div className={`w-11 h-11 ${d.iconBg} rounded-2xl flex items-center justify-center mb-5 shadow-sm`}>
-                    <d.icon className="h-5 w-5 text-white" />
-                  </div>
-                  <span className={`inline-flex items-center self-start px-2.5 py-0.5 rounded-full text-[11px] font-semibold border mb-4 ${d.badgeBg}`}>
-                    {d.badge}
-                  </span>
-                  <h4 className="text-lg font-bold text-gray-900 mb-3">{t(`landing.lp.about.diffCards.${i}.title`, d.title)}</h4>
-                  <p className="text-sm text-gray-600 leading-relaxed flex-1">{t(`landing.lp.about.diffCards.${i}.desc`, d.desc)}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Quick comparison strip */}
-            <div className="bg-slate-900 rounded-3xl p-8 text-white overflow-x-auto">
-              <h4 className="text-lg font-bold text-white mb-6 text-center">{t('landing.lp.about.quickCompareTitle', 'Comparaison rapide')}</h4>
-              <table className="w-full text-sm min-w-[640px]">
-                <thead>
-                  <tr className="border-b border-white/10">
-                    <th className="text-left text-slate-400 font-medium pb-3 pr-6">{t('landing.lp.about.criterion', 'Critère')}</th>
-                    <th className="text-center pb-3 px-4">
-                      <span className="text-emerald-400 font-bold">ESGFlow</span>
-                    </th>
-                    <th className="text-center pb-3 px-4 text-slate-400 font-medium">Greenly / Sweep</th>
-                    <th className="text-center pb-3 px-4 text-slate-400 font-medium">Workiva</th>
-                    <th className="text-center pb-3 px-4 text-slate-400 font-medium">Persefoni</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {[
-                    ['Bilan carbone complet', true, true, false, true],
-                    ['Reporting CSRD natif', true, false, true, false],
-                    ['Taxonomie UE 2020/852', true, false, false, false],
-                    ['SFDR (fonds d\'investissement)', true, false, false, false],
-                    ['SBTi pre-flight & validation', true, false, false, true],
-                    ['Devoir de vigilance (CSDDD)', true, false, false, false],
-                    ['Circuit approbation ISAE 3000', true, false, true, false],
-                    ['iXBRL / ESEF export', true, false, true, false],
-                    ['Plan gratuit disponible', true, false, false, false],
-                    ['Tarif PME < 500 €/mois', true, true, false, false],
-                  ].map(([label, ...values], i) => (
-                    <tr key={i} className="hover:bg-white/3 transition-colors">
-                      <td className="py-3 pr-6 text-slate-300">{t(`landing.lp.about.compareRows.${i}`, label as string)}</td>
-                      {(values as boolean[]).map((v, j) => (
-                        <td key={j} className="py-3 px-4 text-center">
-                          {v
-                            ? <span className={j === 0 ? 'text-emerald-400 font-bold' : 'text-emerald-400'}>✓</span>
-                            : <span className="text-slate-600">✗</span>
-                          }
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
           </div>
 

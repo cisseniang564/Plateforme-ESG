@@ -112,3 +112,13 @@ describe('mentions légales : hébergeur', () => {
     expect(legalNotice).not.toMatch(/à compléter/);
   });
 });
+
+describe('page publique : aucune comparaison nominative avec des concurrents', () => {
+  it('la landing et les pages publiques ne nomment ni Greenly, Sweep, Workiva, Persefoni, Enablon ni Envizi', () => {
+    for (const src of [landing, standards, auditPage, cabinetPage, indexHtml]) expect(src).not.toMatch(/Greenly|Sweep|Workiva|Persefoni|Enablon|Envizi/);
+    expect(JSON.stringify((en as any).landing)).not.toMatch(/Greenly|Sweep|Workiva|Persefoni|Enablon|Envizi|competitor/i);
+  });
+  it('plus de tableau « comparaison rapide » ni de section « Comparatif concurrents » sur la landing', () => {
+    expect(landing).not.toMatch(/Comparaison rapide|quickCompare|Comparatif concurrents|compareRows/);
+  });
+});
