@@ -23,7 +23,10 @@ mkdir -p "$INBOX"; chmod 700 "$INBOX"
 F="$INBOX/frontend-$(date +%F-%H%M%S).tgz"
 head -c 200000000 > "$F"                       # 200 Mo maximum
 [ "$(stat -c %s "$F")" -gt 100000 ] || { echo "Archive trop petite"; rm -f "$F"; exit 1; }
-tar tzf "$F" | grep -q '^dist/index.html$' || tar tzf "$F" | grep -q '^\./dist/index.html$' \
+# Liste écrite dans un fichier : un « tar | grep -q » peut échouer sous pipefail (SIGPIPE) même quand le fichier est présent.
+LIST="$(mktemp)"; trap 'rm -f "$LIST"' EXIT
+tar tzf "$F" > "$LIST" || { echo "Archive illisible"; rm -f "$F"; exit 1; }
+grep -qE '^(\./)?dist/index\.html$' "$LIST" \
   || { echo "dist/index.html absent"; rm -f "$F"; exit 1; }
 /usr/local/bin/esgflow-deploy-frontend "$F"
 ls -1t "$INBOX"/frontend-*.tgz | tail -n +6 | xargs -r rm -f   # garde les 5 dernières
