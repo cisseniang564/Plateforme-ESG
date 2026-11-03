@@ -21,7 +21,7 @@ export default function CabinetPage() {
       title={t('features.cabinet.title', "Mode Cabinet — Pilotez tous vos clients depuis un espace unique")}
       subtitle={t('features.cabinet.subtitle', "La plateforme pensée pour les cabinets d'expertise comptable, d'audit et de conseil RSE")}
       description={t('features.cabinet.description', "Gérez l'ensemble de vos clients ESG/CSRD depuis un espace unique : passez d'une organisation à l'autre en un clic, comparez leurs scores et leur niveau de maturité, et générez des rapports personnalisés pour chacun. Chaque organisation cliente bénéficie d'un cloisonnement strict de ses données (isolation multi-tenant), tandis que votre équipe garde une vue consolidée pour piloter l'ensemble du portefeuille.")}
-      frameworks={['Multi-tenant RLS', 'ISO 27001', 'RGPD']}
+      frameworks={['Multi-tenant RLS', 'RGPD']}
       appPath="/app/cabinet"
       benefits={[
         {

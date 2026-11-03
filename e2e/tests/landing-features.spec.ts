@@ -47,3 +47,17 @@ test.describe('Landing : menu et section Fonctionnalités', () => {
     await expect(section.getByText('Scores ESG traçables')).toBeVisible();
   });
 });
+
+test.describe('Landing : aucune fausse preuve sociale', () => {
+  test.use({ storageState: anonymousState() });
+
+  test('la page publique n’affiche ni faux client, ni faux témoin, ni certification non documentée', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    await expect(page.getByRole('button', { name: 'Fonctionnalités' })).toBeVisible();
+    const text = await page.locator('body').innerText();
+    for (const forbidden of ['Deloitte', 'Nexans', 'Biocoop', 'TotalEnergies', 'LVMH', 'Ils nous font confiance', 'avis vérifiés', 'ISO 27001', 'GAFAM', 'Hébergé en France']) {
+      expect(text, `« ${forbidden} » ne doit pas apparaître`).not.toContain(forbidden);
+    }
+  });
+});
