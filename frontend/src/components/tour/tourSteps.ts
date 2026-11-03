@@ -87,7 +87,7 @@ export function getTourSteps(t: TFunction): Step[] {
     {
       target: '[data-tour="sidebar-indicators"]',
       title: t('tsteps.s7Title', '📈 Indicateurs de performance'),
-      content: t('tsteps.s7Content', '174 indicateurs ESRS préchargés (E1–E5, S1–S4, G1). Filtrez par pilier, voyez instantanément lesquels ont des données et lesquels sont en attente.'),
+      content: t('tsteps.s7Content', '150 concepts ESRS préchargés (E1–E5, S1–S4, G1). Filtrez par pilier, voyez instantanément lesquels ont des données et lesquels sont en attente.'),
       placement: 'right', disableBeacon: true,
       data: { chapter: 'pilotage', stepInChapter: 1, totalInChapter: 7 },
     },

@@ -52,10 +52,9 @@ export default function LegalNotice() {
 
             <h2>2. Hébergement</h2>
             <p>
-              <strong>Hébergeur :</strong> OVH SAS<br />
-              <strong>Siège social :</strong> 2 rue Kellermann, 59100 Roubaix, France<br />
-              <strong>Téléphone :</strong> 1007 (service client)<br />
-              <strong>Site web :</strong> <a href="https://www.ovhcloud.com" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">www.ovhcloud.com</a>
+              <strong>Hébergeur :</strong> IONOS<br />
+              <strong>Entité contractante, adresse et téléphone :</strong> [à compléter d'après le contrat IONOS]<br />
+              <strong>Site web :</strong> <a href="https://www.ionos.fr" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">www.ionos.fr</a>
             </p>
 
             <h2>3. Propriété Intellectuelle</h2>

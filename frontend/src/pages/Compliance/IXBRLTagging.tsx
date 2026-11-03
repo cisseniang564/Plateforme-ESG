@@ -593,7 +593,7 @@ ${taggedText}
               <h2 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wide">{t('compliance.ixbrl.overview.workflowTitle', 'Workflow de balisage')}</h2>
               <div className="space-y-3">
                 {[
-                  { step: 1, title: t('compliance.ixbrl.overview.step1Title', 'Parcourir la taxonomie ESRS'), desc: t('compliance.ixbrl.overview.step1Desc', 'Onglet « Taxonomie ESRS » — explorez les 35+ concepts obligatoires et optionnels.'), tab: 'taxonomy' },
+                  { step: 1, title: t('compliance.ixbrl.overview.step1Title', 'Parcourir la taxonomie ESRS'), desc: t('compliance.ixbrl.overview.step1Desc', 'Onglet « Taxonomie ESRS » — explorez les 150 concepts du catalogue ESRS.'), tab: 'taxonomy' },
                   { step: 2, title: t('compliance.ixbrl.overview.step2Title', 'Saisir ou coller votre rapport'), desc: t('compliance.ixbrl.overview.step2Desc', 'Onglet « Balisage » — collez le texte de votre déclaration de durabilité CSRD.'), tab: 'tagging' },
                   { step: 3, title: t('compliance.ixbrl.overview.step3Title', 'Sélectionner et baliser'), desc: t('compliance.ixbrl.overview.step3Desc', 'Sélectionnez un extrait de texte, choisissez le concept XBRL, saisissez la valeur.'), tab: 'tagging' },
                   { step: 4, title: t('compliance.ixbrl.overview.step4Title', 'Valider et exporter'), desc: t('compliance.ixbrl.overview.step4Desc', 'Onglet « Validation » — vérifiez les erreurs, puis exportez le fichier .xhtml iXBRL.'), tab: 'validation' },
