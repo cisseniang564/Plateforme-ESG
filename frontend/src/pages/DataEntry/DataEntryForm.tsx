@@ -11,7 +11,7 @@ import {
   Upload, AlertTriangle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import Spinner from '@/components/common/Spinner';
 import api from '@/services/api';
 import toast from 'react-hot-toast';
@@ -126,8 +126,11 @@ export default function DataEntryForm() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [step, setStep] = useState(1);
 
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
+  // Un lien extérieur (ex. la source d'une réponse de questionnaire) peut arriver avec ?search=…
+  const [params] = useSearchParams();
+  const initialSearch = params.get('search') ?? '';
+  const [searchInput, setSearchInput] = useState(initialSearch);
+  const [search, setSearch] = useState(initialSearch);
   const [pillarFilter, setPillarFilter] = useState<PillarFilter>('all');
   const [verifFilter, setVerifFilter] = useState<VerifFilter>('all');
   const [year, setYear] = useState('');
