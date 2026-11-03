@@ -547,7 +547,7 @@ export default function Scope3FecPage() {
               },
               {
                 q: t('resources.scope3Fec.faq.q3', 'Les données de mon FEC sont-elles confidentielles ?'),
-                a: t('resources.scope3Fec.faq.a3', 'Oui. Votre fichier FEC est chiffré en AES-256 dès l\'upload, traité dans notre infrastructure hébergée en France (OVHcloud HDS), et jamais partagé avec des tiers ni utilisé pour l\'entraînement de modèles. Vous pouvez supprimer vos données à tout moment depuis votre tableau de bord. ESGFlow est conforme au RGPD et dispose d\'une certification ISO 27001 en cours.'),
+                a: t('resources.scope3Fec.faq.a3', 'Oui. Votre fichier FEC est chiffré en AES-256 dès l\'upload, traité dans notre infrastructure hébergée chez IONOS, et jamais partagé avec des tiers ni utilisé pour l\'entraînement de modèles. Vous pouvez supprimer vos données à tout moment depuis votre tableau de bord. ESGFlow s\'engage à respecter le RGPD.'),
               },
               {
                 q: t('resources.scope3Fec.faq.q4', 'Puis-je compléter le FEC par d\'autres sources de données ?'),

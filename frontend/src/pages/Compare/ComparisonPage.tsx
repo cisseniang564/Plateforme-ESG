@@ -139,7 +139,7 @@ function getFeatures(slug: string, t: TFunction): Feature[] {
     { label: t('compare.fCSRD',    'CSRD / ESRS (82 exigences)'),                  esgflow: true, competitor: slug === 'workiva' ? vStrong : slug === 'sweep' ? vStrong : slug === 'greenly' ? '⚠ Add-on' : vPartial, important: true },
     { label: t('compare.fTaxo',    'EU Taxonomie (DNSH + alignement)'),             esgflow: true, competitor: slug === 'workiva' ? '⚠ Template' : slug === 'greenly' ? vPartial : false, important: true },
     { label: t('compare.fDPEF',    'DPEF'),                                          esgflow: true, competitor: false, important: true },
-    { label: t('compare.fIXBRL',   'iXBRL / ESEF (35 concepts ESRS)'),              esgflow: true, competitor: slug === 'workiva' ? '✓ XBRL' : false, important: true },
+    { label: t('compare.fIXBRL',   'iXBRL / ESEF (catalogue de 150 concepts ESRS)'),              esgflow: true, competitor: slug === 'workiva' ? '✓ XBRL' : false, important: true },
     { label: t('compare.fGRI',     'Mapping multi-standards GRI/CDP/TCFD (46 indicateurs, 24 séries GRI)'), esgflow: true, competitor: slug === 'workiva' ? vStrong : slug === 'persefoni' ? false : vPartial, important: true },
     { label: t('compare.fVSME',    'Norme VSME EFRAG — template PME prêt à l\'emploi (B1–B11)'), esgflow: true, competitor: slug === 'greenly' ? vPartial : false, important: true },
     { label: t('compare.fDMA',     'Double matérialité IRO'),                        esgflow: true, competitor: slug === 'persefoni' ? false : slug === 'greenly' ? vPartial : true },
@@ -504,7 +504,7 @@ export default function ComparisonPage() {
               { icon: Zap,       color: 'amber',   title: t('compare.adv1title','Opérationnel en 1 jour'),   desc: t('compare.adv1desc','Aucun consultant, aucune intégration complexe. Self-service total.') },
               { icon: Lock,      color: 'violet',  title: t('compare.adv2title','CSRD + DPEF + EU Tax'),      desc: t('compare.adv2desc','Les 3 obligations françaises dans une seule plateforme accessible.') },
               { icon: Globe,     color: 'blue',    title: t('compare.adv3title','Import FEC unique'),         desc: t('compare.adv3desc','Scope 3 calculé automatiquement depuis votre comptabilité Sage/Cegid.') },
-              { icon: TrendingUp,color: 'emerald', title: t('compare.adv4title','iXBRL / ESEF inclus'),       desc: t('compare.adv4desc','35 concepts ESRS balisés, export .xhtml certifiable dès le plan ETI.') },
+              { icon: TrendingUp,color: 'emerald', title: t('compare.adv4title','iXBRL / ESEF inclus'),       desc: t('compare.adv4desc','Catalogue de 150 concepts ESRS, export .xhtml validable avec Arelle.') },
               { icon: Building2, color: 'slate',   title: t('compare.adv5title','À partir de 0 €/mois'),      desc: t('compare.adv5desc','Plan gratuit réel, plans payants publics. Pas de devis, pas de surprise.') },
             ].map(({ icon: Icon, color, title, desc }) => (
               <div key={title} className="p-5 bg-white border border-gray-200 rounded-2xl hover:border-emerald-200 hover:shadow-md transition-all">

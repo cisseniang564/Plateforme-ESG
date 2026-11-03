@@ -254,7 +254,7 @@ export default function ChecklistCsrdPage() {
 
                 <p className="text-[10px] text-center text-gray-400 pt-1">
                   <Trans i18nKey="resources.checklist.form.privacy">
-                    Vos données restent en France, hébergées chez OVH. <Link to="/privacy-policy" className="underline">Politique de confidentialité</Link>.
+                    Vos données sont hébergées chez IONOS. <Link to="/privacy-policy" className="underline">Politique de confidentialité</Link>.
                   </Trans>
                 </p>
               </div>

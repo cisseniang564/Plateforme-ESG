@@ -1111,7 +1111,7 @@ function PreviewMultiStandard() {
       </div>
       <div className="mt-3 flex items-center gap-2 text-xs text-teal-400 bg-teal-500/10 px-3 py-2 rounded-xl border border-teal-500/20">
         <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" />
-        47 indicateurs mappés automatiquement vers 5 référentiels
+        Aperçu illustratif : une saisie, plusieurs référentiels
       </div>
     </div>
   );
@@ -2036,14 +2036,14 @@ export default function LandingPage() {
                 <FileText className="h-6 w-6 text-white" />
               </div>
               <h3 className="text-xl font-extrabold text-gray-900 mb-2">{t('landing.lp.diff.cards.0.title', 'Vrai iXBRL / ESEF')}</h3>
-              <div className="text-xs font-bold text-emerald-700 mb-4">{t('landing.lp.diff.cards.0.subtitle', 'Namespace EFRAG 2024-12-31 · 35 concepts ESRS')}</div>
+              <div className="text-xs font-bold text-emerald-700 mb-4">{t('landing.lp.diff.cards.0.subtitle', 'Namespace EFRAG 2024-12-31 · 150 concepts ESRS au catalogue')}</div>
               <p className="text-sm text-gray-600 leading-relaxed mb-5 flex-1">
                 <Trans i18nKey="landing.lp.diff.cards.0.body">
                   Nous produisons un <strong>XHTML balisé en iXBRL</strong>, le format visé par l'ESMA pour les rapports de durabilité des sociétés cotées.
                 </Trans>
               </p>
               <div className="space-y-2 mb-6">
-                {['XHTML EFRAG 2024-12-31', '35 concepts ESRS balisés', 'Validation namespace stricte', 'Compatible Arelle / SEC EDGAR'].map((p, i) => (
+                {['XHTML EFRAG 2024-12-31', 'Catalogue de 150 concepts ESRS', 'Validation namespace stricte', 'Validation Arelle intégrée'].map((p, i) => (
                   <div key={i} className="flex items-center gap-2 text-sm text-gray-700">
                     <Check className="h-4 w-4 text-emerald-500 flex-shrink-0" />
                     {t(`landing.lp.diff.cards.0.points.${i}`, p)}
@@ -2143,9 +2143,9 @@ export default function LandingPage() {
             {[
               {
                 num: '01', title: 'Connectez vos sources',
-                desc: 'Importez vos fichiers FEC, CSV ou Excel, ou saisissez à la main. 100+ indicateurs ESRS pré-configurés vous guident dès le premier jour.',
+                desc: 'Importez vos fichiers FEC, CSV ou Excel, ou saisissez à la main. 150 concepts ESRS pré-configurés vous guident dès le premier jour.',
                 icon: Database, color: 'from-emerald-500 to-green-600',
-                detail: ['Import CSV · FEC · Excel', 'Exports RH', '100+ indicateurs ESRS'],
+                detail: ['Import CSV · FEC · Excel', 'Exports RH', '150 concepts ESRS'],
               },
               {
                 num: '02', title: "L'IA analyse et calcule",

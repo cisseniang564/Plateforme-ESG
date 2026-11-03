@@ -641,7 +641,7 @@ export default function GuideCsrdPmePage() {
                 { icon: FileText, title: t('resources.guideCsrdPme.esgflow.feat3.title', 'Rapport PDF + iXBRL'), desc: t('resources.guideCsrdPme.esgflow.feat3.desc', 'Génération en un clic, branding personnalisable, contenu prêt à insérer dans votre rapport de gestion.') },
                 { icon: Shield, title: t('resources.guideCsrdPme.esgflow.feat4.title', "Piste d'audit certifiable"), desc: t('resources.guideCsrdPme.esgflow.feat4.desc', 'Hash SHA-256, versioning automatique, endpoint public de vérification — votre CAC valide en 1 heure.') },
                 { icon: Sparkles, title: t('resources.guideCsrdPme.esgflow.feat5.title', 'IA narrative ETI+'), desc: t('resources.guideCsrdPme.esgflow.feat5.desc', 'Rédaction assistée pour les sections qualitatives (politiques, plans de transition, gouvernance climat).') },
-                { icon: Globe, title: t('resources.guideCsrdPme.esgflow.feat6.title', 'Données 🇫🇷 hébergées en France'), desc: t('resources.guideCsrdPme.esgflow.feat6.desc', 'OVH/Scaleway, conformité RGPD, hors CLOUD Act, audit COFRAC en cours.') },
+                { icon: Globe, title: t('resources.guideCsrdPme.esgflow.feat6.title', 'Données hébergées chez IONOS'), desc: t('resources.guideCsrdPme.esgflow.feat6.desc', 'Hébergement IONOS, engagement de conformité RGPD, suppression de vos données à la demande.') },
               ].map((f, i) => {
                 const I = f.icon;
                 return (

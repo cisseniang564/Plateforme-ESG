@@ -6,6 +6,10 @@ import auditPage from '@/pages/Features/AuditTrailPage.tsx?raw';
 import cabinetPage from '@/pages/Features/CabinetPage.tsx?raw';
 import indexHtml from '../../index.html?raw';
 import en from '@/i18n/locales/en.json';
+import privacy from '@/pages/Legal/PrivacyPolicy.tsx?raw';
+import legalNotice from '@/pages/Legal/LegalNotice.tsx?raw';
+import tourSteps from '@/components/tour/tourSteps.ts?raw';
+import ixbrlPage from '@/pages/Compliance/IXBRLTagging.tsx?raw';
 
 // Garde-fou : tant qu'il n'y a ni clients, ni avis, ni certification documentée, la page publique ne les affiche pas.
 const PUBLIC = { landing, standards, compare, auditPage, cabinetPage, indexHtml };
@@ -56,5 +60,22 @@ describe('page publique : traductions anglaises alignées', () => {
   it('plus de section témoignages ni d’analystes dans les traductions', () => {
     expect((en as any).landing.lp.testimonials).toBeUndefined();
     expect((en as any).landing.lp.proof.analysts).toBeUndefined();
+  });
+});
+
+describe('chiffres et hébergeur vérifiés dans le code', () => {
+  it('l’hébergeur est IONOS dans les pages légales (plus d’OVH, de HDS ni de datacenter à Roubaix)', () => {
+    for (const src of [privacy, legalNotice]) {
+      expect(src).toMatch(/IONOS/);
+      expect(src).not.toMatch(/OVH|Roubaix|HDS|ISO 27001/i);
+    }
+    expect(privacy).not.toMatch(/Aucun transfert hors Union Europ/i);
+  });
+  it('le catalogue ESRS annonce 150 concepts (valeur réelle du backend), pas 35 / 100+ / 174', () => {
+    for (const src of [landing, compare, tourSteps, ixbrlPage]) expect(src).not.toMatch(/35\+? concepts|100\+ indicateurs ESRS|174 indicateurs/i);
+    expect(JSON.stringify(en)).not.toMatch(/35\+? (tagged )?ESRS concepts|35\+ mandatory|174 preloaded|100\+ (pre-configured )?ESRS indicators|SEC EDGAR compatible/i);
+  });
+  it('le mockup multi-référentiels n’affirme pas un mapping automatique chiffré', () => {
+    expect(landing).not.toMatch(/47 indicateurs mappés automatiquement/);
   });
 });

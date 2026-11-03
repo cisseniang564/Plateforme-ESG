@@ -126,8 +126,8 @@ export default function PrivacyPolicy() {
             <p>Vos données peuvent être transmises à :</p>
             <ul>
               <li><strong>Personnel autorisé de GreenConnect SAS</strong> : accès strictement limité aux besoins</li>
-              <li><strong>Hébergeur</strong> : OVH Cloud (France) - certifié ISO 27001, HDS</li>
-              <li><strong>Sous-traitants techniques</strong> : services d'envoi d'emails, analytics (avec DPA)</li>
+              <li><strong>Hébergeur</strong> : IONOS (serveur privé virtuel)</li>
+              <li><strong>Sous-traitants techniques</strong> : Resend (envoi d'emails), Stripe (paiement) et, uniquement lorsque vous soumettez un document à l'analyse par IA, OpenAI</li>
               <li><strong>Autorités</strong> : sur réquisition judiciaire uniquement</li>
             </ul>
 
@@ -137,8 +137,11 @@ export default function PrivacyPolicy() {
 
             <h2>6. Transferts Hors UE</h2>
             <p>
-              Vos données sont hébergées exclusivement en France (datacenter OVH à Roubaix).
-              Aucun transfert hors Union Européenne n'est effectué.
+              Vos données sont hébergées chez IONOS. Certains sous-traitants listés ci-dessus
+              (Stripe, Resend, OpenAI) peuvent être établis hors de l'Union Européenne : le cas échéant,
+              les transferts s'appuient sur les garanties prévues par le RGPD (clauses contractuelles types
+              ou décision d'adéquation). L'analyse par IA n'est déclenchée que lorsque vous soumettez
+              vous-même un document, et le fichier n'est pas conservé par le prestataire d'IA.
             </p>
 
             <h2>7. Durée de Conservation</h2>
