@@ -76,3 +76,22 @@ export function entriesToCsv(entries: EntryLike[]): string {
   ].map(esc).join(',')).join('\n');
   return '﻿' + head + '\n' + rows;
 }
+
+export interface GapSectionLike { pillar: string; disclosures_auto?: number; disclosures_covered?: number }
+export interface PillarCompleteness { pillar: string; covered: number; total: number; pct: number }
+
+// Complétude par pilier, calculée sur l'API /esrs/gap-analysis (même base que l'accueil et les rapports) :
+// exigences ESRS vérifiables à partir des données (« auto ») et celles déjà couvertes. Aucun dénominateur inventé.
+export function pillarCompleteness(sections: GapSectionLike[] | undefined | null): Record<string, PillarCompleteness> {
+  const out: Record<string, PillarCompleteness> = {};
+  for (const s of sections ?? []) {
+    const p = (s.pillar ?? '').toLowerCase();
+    if (!p) continue;
+    const cur = out[p] ?? { pillar: p, covered: 0, total: 0, pct: 0 };
+    cur.total += s.disclosures_auto ?? 0;
+    cur.covered += s.disclosures_covered ?? 0;
+    out[p] = cur;
+  }
+  for (const c of Object.values(out)) c.pct = c.total ? Math.round((c.covered / c.total) * 100) : 0;
+  return out;
+}

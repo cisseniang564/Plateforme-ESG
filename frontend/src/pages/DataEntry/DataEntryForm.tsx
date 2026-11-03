@@ -1,7 +1,8 @@
 import { Button, ConfirmDialog, Modal } from '@/components/common';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  buildListParams, displayName, formatValue, looksLikeYear, totalPages, verifiedRate,
+  buildListParams, displayName, formatValue, looksLikeYear, pillarCompleteness, totalPages, verifiedRate,
+  type PillarCompleteness,
   type PillarFilter, type SortKey, type SortOrder, type VerifFilter,
 } from './dataEntryHelpers';
 import { useTranslation } from 'react-i18next';
@@ -95,6 +96,30 @@ function SortHeader({ label, k, sortBy, order, onSort, align = 'left' }: {
   );
 }
 
+function PillarCard({ label, count, color, comp, loading }: { label: string; count: number; color: string; comp?: PillarCompleteness; loading: boolean }) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 px-4 py-3">
+      <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
+        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />{label}
+      </div>
+      <p className="mt-1 text-2xl font-semibold text-gray-900 tabular-nums">{count}</p>
+      {loading ? (
+        <div className="mt-2 h-3 animate-pulse rounded bg-gray-200" role="status" aria-label="Chargement de la complétude" />
+      ) : comp && comp.total > 0 ? (
+        <>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-200" role="img" aria-label={`${comp.covered} exigences ESRS couvertes sur ${comp.total}`}>
+            <span className="block h-full rounded-full" style={{ width: `${comp.pct}%`, backgroundColor: color }} />
+          </div>
+          <p className="mt-1 text-xs text-gray-600">{comp.covered}/{comp.total} exigences ESRS couvertes · {comp.pct} %</p>
+          {comp.covered < comp.total && (
+            <Link to="/app/esrs-gap" className="mt-0.5 inline-block text-xs font-semibold text-emerald-800 hover:underline">Voir ce qui manque</Link>
+          )}
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 function Kpi({ label, value, hint, color }: { label: string; value: string | number; hint?: string; color: string }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 px-4 py-3">
@@ -114,6 +139,8 @@ export default function DataEntryForm() {
   const [entries, setEntries] = useState<DataEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [completeness, setCompleteness] = useState<Record<string, PillarCompleteness> | null>(null);
+  const [completenessLoading, setCompletenessLoading] = useState(true);
   const [templates, setTemplates] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [listLoading, setListLoading] = useState(false);
@@ -187,6 +214,9 @@ export default function DataEntryForm() {
 
   const loadStats = useCallback(async () => {
     try { setStats((await api.get('/data-entry/stats')).data); } catch { /* KPI facultatifs */ }
+    try { setCompleteness(pillarCompleteness((await api.get('/esrs/gap-analysis')).data?.sections)); }
+    catch { setCompleteness(null); }      // sans la couverture, on n'affiche que les comptes
+    finally { setCompletenessLoading(false); }
   }, []);
 
   useEffect(() => { loadEntries(); }, [loadEntries]);
@@ -368,9 +398,9 @@ export default function DataEntryForm() {
       {/* ─── KPI (calculés sur toutes les saisies, pas sur la page affichée) ─── */}
       <section aria-label="Indicateurs clés" className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <Kpi label={t('dataEntry.totalEntries')} value={grandTotal} color="#64748b" />
-        <Kpi label={t('dashboard.environmental')} value={stats?.by_pillar?.environmental ?? 0} color={PILLAR_CFG.environmental.strip} />
-        <Kpi label={t('dashboard.social')} value={stats?.by_pillar?.social ?? 0} color={PILLAR_CFG.social.strip} />
-        <Kpi label={t('dashboard.governance')} value={stats?.by_pillar?.governance ?? 0} color={PILLAR_CFG.governance.strip} />
+        <PillarCard label={t('dashboard.environmental')} count={stats?.by_pillar?.environmental ?? 0} color={PILLAR_CFG.environmental.strip} comp={completeness?.environmental} loading={completenessLoading} />
+        <PillarCard label={t('dashboard.social')} count={stats?.by_pillar?.social ?? 0} color={PILLAR_CFG.social.strip} comp={completeness?.social} loading={completenessLoading} />
+        <PillarCard label={t('dashboard.governance')} count={stats?.by_pillar?.governance ?? 0} color={PILLAR_CFG.governance.strip} comp={completeness?.governance} loading={completenessLoading} />
         <Kpi label="Vérifiées" value={`${verifiedRate(stats?.by_verification_status, grandTotal)} %`} hint={`${pending} à vérifier`} color="#10b981" />
       </section>
 
