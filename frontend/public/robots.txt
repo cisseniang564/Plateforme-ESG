@@ -17,7 +17,6 @@ Allow: /privacy-policy
 Allow: /legal-notice
 Allow: /guide/
 Allow: /ressources/
-Allow: /compare/
 Allow: /features/
 Allow: /contact
 Allow: /omnibus-csrd
