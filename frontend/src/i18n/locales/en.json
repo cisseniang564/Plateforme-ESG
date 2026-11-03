@@ -6801,7 +6801,7 @@
         "eyebrow": "Why ESGFlow",
         "titleLine1": "Everything you need,",
         "titleLine2": "nothing you don't",
-        "subtitle": "A platform built by ESG experts so your team is up and running in 3 days — not 3 months.",
+        "subtitle": "A platform built by ESG experts, so you can get started in self-service without an integration project.",
         "pillars": [
           {
             "title": "Total compliance, zero blind spots",
@@ -6847,9 +6847,9 @@
       },
       "reassure": [
         {
-          "value": "3 days",
-          "label": "Go-live",
-          "sub": "onboarding included"
+          "value": "Self-service",
+          "label": "Getting started",
+          "sub": "no integration"
         },
         {
           "label": "Integrated modules",
@@ -6919,7 +6919,7 @@
       },
       "how": {
         "eyebrow": "How it works",
-        "title": "Up and running in 3 steps",
+        "title": "Get started in 3 steps",
         "subtitle": "No months-long rollout, no external consultant. Your team takes ownership of the platform from day one.",
         "steps": [
           {
@@ -7459,7 +7459,7 @@
             "label": "ESG modules"
           },
           {
-            "label": "regulations covered"
+            "label": "frameworks covered"
           },
           {
             "label": "European host"
@@ -9292,15 +9292,15 @@
       "codeQualityTitle": "Code quality & engineering",
       "codeQualitySubtitle": "The figures a large-group buyer systematically requests in an RFP.",
       "kpi1Label": "Automated tests",
-      "kpi1Sub": "pytest · critical coverage 100%",
-      "kpi2Label": "Security patch",
-      "kpi2Sub": "Critical CVE · Dependabot + pip-audit",
-      "kpi3Label": "Contractual SLA",
-      "kpi3Sub": "Group & Enterprise plan",
-      "kpi4Label": "Major incidents",
-      "kpi4Sub": "Last 12 months — see status.greenconnect.cloud",
+      "kpi1Sub": "backend pytest suite",
+      "kpi2Label": "Per-customer isolation",
+      "kpi2Sub": "PostgreSQL Row-Level Security",
+      "kpi3Label": "Audit trail",
+      "kpi3Sub": "log fingerprints",
+      "kpi4Label": "Free trial",
+      "kpi4Sub": "no credit card",
       "incidentTitle": "Incident response",
-      "incidentSubtitle": "Documented procedure, tested quarterly.",
+      "incidentSubtitle": "The formal incident response procedure is still to be written.",
       "incident1Title": "Detection",
       "incident1Detail": "Automated 24/7 monitoring + PagerDuty alerts on critical indicators (uptime, latency, 5xx errors).",
       "incident2Title": "Triage",
@@ -9313,7 +9313,7 @@
       "docsSubtitle": "To share with your DPO or CISO for validation.",
       "docRequest": "Request at security@greenconnect.cloud",
       "contactTitle": "Security questions",
-      "contactSubtitle": "Our team responds within 48h to security, audit and compliance requests.",
+      "contactSubtitle": "Write to us for any security, audit or compliance request.",
       "pentestNote": "Pentest report available on request under NDA (Enterprise clients).",
       "ctaTitle": "Ready to get started?",
       "ctaSubtitle": "14 days free, data hosted at IONOS. No credit card required.",
@@ -9372,17 +9372,9 @@
       "proc7Location": "🇺🇸 États-Unis ⚠",
       "proc7Data": "Uniquement les snippets envoyés via /generate-narrative (option désactivable)",
       "doc1Name": "Accord de traitement (DPA)",
-      "doc1Desc": "Conforme RGPD Art. 28 — adapté à votre juridiction",
-      "doc2Name": "Questionnaire sécurité pré-rempli",
-      "doc2Desc": "Format VSAQ ou SIG Lite — réponses certifiées",
-      "doc3Name": "Rapport de pentest 2026",
-      "doc3Desc": "Cabinet indépendant, méthodologie OWASP ASVS L2",
-      "doc4Name": "Architecture sécurité (1-pager PDF)",
-      "doc4Desc": "Diagramme infra + flux de données chiffrés",
-      "doc5Name": "Politique de continuité (BCP/DRP)",
-      "doc5Desc": "Plan de continuité d'activité — RTO 4h, RPO 24h",
+      "doc1Desc": "GDPR Art. 28 data processing agreement, on request",
       "doc6Name": "Liste des sous-traitants (CSV)",
-      "doc6Desc": "Export à jour avec localisations et finalités de traitement",
+      "doc6Desc": "Up-to-date list with processing purposes",
       "ndaRequired": "NDA requis",
       "incident1Delay": "< 5 min",
       "incident2Delay": "< 30 min",
@@ -9393,19 +9385,17 @@
       "card7p3": "Droits RGPD exercés via",
       "card7p3b": "accès, rectification, effacement, portabilité sous 30 jours.",
       "card8p1a": "Sauvegardes quotidiennes",
-      "card8p1b": "chiffrées (AES-256), rétention 30 jours, stockées dans une région géographique distincte.",
-      "card8p2a": "RTO cible",
-      "card8p2b": "4 heures",
-      "card8p2c": "RPO cible",
-      "card8p2d": "24 heures.",
-      "card8p3": "Tests de restauration trimestriels documentés.",
+      "card8p1b": "of the database (scheduled script), kept for 30 days. Restore tests are still to be formalised.",
       "card9p1": "Aucun secret (clés API, mots de passe) en dur dans le code source. Variables d'environnement chiffrées au déploiement.",
       "card9p2a": "Dépendances npm et Python analysées automatiquement (",
-      "card9p2b": "à chaque push. Patches de sécurité en moins de 48h.",
+      "card9p2b": "on every push. Security patches are applied as soon as they are available.",
       "card10p1": "Vous avez découvert une vulnérabilité ? Signalez-la à",
-      "card10p2": "Nous accusons réception sous 48h, évaluons sous 7 jours et corrigeons en moins de 30 jours pour les vulnérabilités critiques.",
+      "card10p2": "Every report is reviewed and critical vulnerabilities are handled first.",
       "card10p3": "Politique de divulgation coordonnée — aucune poursuite judiciaire pour les chercheurs de bonne foi.",
-      "footerAddress": "12 Vieux chemin de meaux, 93190 Livry-Gargan, France"
+      "footerAddress": "12 Vieux chemin de meaux, 93190 Livry-Gargan, France",
+      "incidentBody": "In the event of a personal data breach, we commit to informing the CNIL and affected customers within the deadlines set by the GDPR (Article 33: 72 hours).",
+      "doc7Name": "Technical controls inventory",
+      "doc7Desc": "Controls in place and identified gaps (SOC 2 / ISO 27001 basis)"
     }
   },
   "features": {
@@ -14529,8 +14519,8 @@
   "compare": {
     "adv0desc": "Sovereign data, native GDPR compliance. No US cloud.",
     "adv0title": "Hosted in France",
-    "adv1desc": "No consultant, no complex integration. Fully self-service.",
-    "adv1title": "Up and running in 1 day",
+    "adv1desc": "Create your account and enter or import your data yourself, no integration needed.",
+    "adv1title": "Self-service start",
     "adv2desc": "All 3 French obligations in a single accessible platform.",
     "adv2title": "CSRD + DPEF + EU Tax",
     "adv3desc": "Scope 3 calculated automatically from your Sage/Cegid accounting.",

@@ -455,7 +455,7 @@ export default function StandardsPage() {
             </Link>
           </div>
           <p className="mt-6 text-green-200 text-xs">
-            Hébergeur européen · Conçu pour le RGPD · Support en français
+            Conçu pour le RGPD · Essai gratuit sans carte bancaire
           </p>
         </div>
       </section>

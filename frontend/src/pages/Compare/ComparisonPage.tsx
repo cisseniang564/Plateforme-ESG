@@ -1,7 +1,7 @@
 import { Link, useParams, Navigate } from 'react-router-dom';
 import {
   Check, X, ArrowRight, Shield, Zap, Lock, Globe,
-  TrendingUp, ChevronRight, Star, ArrowLeft, Building2,
+  TrendingUp, ChevronRight, ArrowLeft, Building2,
 } from 'lucide-react';
 import { usePageSeo } from '@/hooks/usePageSeo';
 import { useTranslation } from 'react-i18next';
@@ -158,7 +158,7 @@ function getFeatures(slug: string, t: TFunction): Feature[] {
     { label: t('compare.fTrial',   'Essai gratuit 14 jours sans CB'),               esgflow: true, competitor: false },
     { label: t('compare.fSupFR',   'Support en français'),                           esgflow: true, competitor: slug === 'sweep' || slug === 'greenly' ? true : false },
   ];
-  return base;
+  return base.map(f => ({ ...f, competitor: t('compare.unverified', '⚠ Non vérifié — voir le site de l\'éditeur') }));
 }
 
 // ─── Pricing comparison ───────────────────────────────────────────────────────
@@ -270,7 +270,7 @@ export default function ComparisonPage() {
   if (!competitor) return <Navigate to="/" replace />;
 
   const features = getFeatures(competitor.slug, t);
-  const { esgflowPlans, competitorPlans } = getPricingRows(competitor.slug, t);
+  const { esgflowPlans } = getPricingRows(competitor.slug, t);
 
   const esgflowWins = features.filter(f => f.esgflow === true && f.competitor === false).length;
   const importantWins = features.filter(f => f.important && f.esgflow === true && f.competitor === false).length;
@@ -329,7 +329,7 @@ export default function ComparisonPage() {
             ESGFlow vs {competitor.name}
           </h1>
           <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed mb-10">
-            {t('compare.heroTagline', '{{tagline}} — comparatif complet des fonctionnalités, prix et couverture réglementaire française.', { tagline: competitor.tagline })}
+            {t('compare.heroTagline', '{{tagline}} — les fonctionnalités d’ESGFlow, avec les points à vérifier chez l’éditeur.', { tagline: competitor.tagline })}
           </p>
 
           {/* Quick score */}
@@ -346,7 +346,7 @@ export default function ComparisonPage() {
             <div className="hidden sm:block w-px h-10 bg-white/20" />
             <div className="text-center">
               <div className="text-2xl font-extrabold text-white">249 €<span className="text-base font-normal text-slate-300">/mois</span></div>
-              <div className="text-xs text-slate-300 mt-0.5">{t('compare.heroFrom','à partir de · vs')} {competitor.pricingLabel.split('·')[0].trim()}</div>
+              <div className="text-xs text-slate-300 mt-0.5">{t('compare.heroFrom','à partir de')}</div>
             </div>
           </div>
         </div>
@@ -359,22 +359,9 @@ export default function ComparisonPage() {
           <h2 className="text-2xl font-extrabold text-gray-900 mb-6">{t('compare.whatIs',"Qu'est-ce que {{name}} ?",{name:competitor.name})}</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
-              <p className="text-gray-700 leading-relaxed mb-4">{competitor.description}</p>
+              <p className="text-gray-700 leading-relaxed mb-4">{competitor.tagline}.</p>
               <div className="text-sm text-gray-500">
                 <span className="font-semibold text-gray-700">{t('compare.target','Cible :')} </span>{competitor.targetMarket}
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{t('compare.strengths','Points forts de {{name}}',{name:competitor.name})}</div>
-                <ul className="space-y-1.5">
-                  {competitor.strengths.map((s, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                      <Check className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                      {s}
-                    </li>
-                  ))}
-                </ul>
               </div>
             </div>
           </div>
@@ -437,60 +424,11 @@ export default function ComparisonPage() {
               </div>
             </div>
 
-            {/* Competitor plans */}
+            {/* Prix concurrents : volontairement non affichés (aucune source vérifiée) */}
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: competitor.logoColor + '20' }}>
-                  <span className="text-xs font-extrabold" style={{ color: competitor.logoColor }}>{competitor.logoText.slice(0, 1)}</span>
-                </div>
-                <span className="font-bold text-gray-900">{t('compare.compPlans','Plans {{name}}',{name:competitor.name})}</span>
-                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-semibold">{t('compare.estPrices','Prix estimés')}</span>
+              <div className="p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm text-gray-600">
+                {t('compare.noCompPrices','Les tarifs de {{name}} ne sont pas reproduits ici : consultez le site de l\'éditeur pour des prix à jour.',{name:competitor.name})}
               </div>
-              <div className="space-y-3">
-                {competitorPlans.map((plan, i) => (
-                  <div key={i} className="flex items-start justify-between p-4 bg-gray-50 border border-gray-200 rounded-2xl">
-                    <div>
-                      <div className="text-sm font-bold text-gray-900">{plan.name}</div>
-                      <div className="text-xs text-gray-500 mt-0.5">{plan.features}</div>
-                    </div>
-                    <div className="text-sm font-extrabold text-gray-600 whitespace-nowrap ml-4">{plan.price}</div>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-gray-400 mt-3 italic">{competitor.pricingNote}</p>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Points d'attention pour les PME/ETI françaises ─────────────────── */}
-        {/* Tonalité neutre / factuelle — conforme à l'art. L122-1 (pas de dénigrement) */}
-        <section className="bg-amber-50 border border-amber-100 rounded-3xl p-8">
-          <h2 className="text-xl font-extrabold text-gray-900 mb-2">{t('compare.attentionTitle',"Points d'attention pour une PME ou ETI française")}</h2>
-          <p className="text-sm text-gray-600 mb-4">
-            {t('compare.attentionSubA','Éléments factuels à considérer si vous évaluez {{name}} pour le marché français.',{name:competitor.name})}
-            {' '}{t('compare.attentionSubB',"Information à date de 2026 ; vérifiez auprès de l'éditeur.")}
-          </p>
-          <ul className="space-y-3">
-            {competitor.weaknesses.map((w, i) => (
-              <li key={i} className="flex items-start gap-3 text-sm text-gray-700">
-                <div className="w-5 h-5 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <X className="h-3 w-3 text-amber-600" />
-                </div>
-                {w}
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        {/* ── Verdict ───────────────────────────────────────────────────────── */}
-        <section className="bg-emerald-50 border border-emerald-100 rounded-3xl p-8">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <Star className="h-5 w-5 text-emerald-600" />
-            </div>
-            <div>
-              <h2 className="text-xl font-extrabold text-gray-900 mb-3">{t('compare.verdictTitle','Notre verdict')}</h2>
-              <p className="text-gray-700 leading-relaxed">{competitor.verdict}</p>
             </div>
           </div>
         </section>
@@ -501,7 +439,7 @@ export default function ComparisonPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
               { icon: Shield,    color: 'emerald', title: t('compare.adv0title','Hébergeur européen'),        desc: t('compare.adv0desc','Cloisonnement par client. Les fonctions d\'IA utilisent OpenAI, signalé avant chaque envoi.') },
-              { icon: Zap,       color: 'amber',   title: t('compare.adv1title','Opérationnel en 1 jour'),   desc: t('compare.adv1desc','Aucun consultant, aucune intégration complexe. Self-service total.') },
+              { icon: Zap,       color: 'amber',   title: t('compare.adv1title','Démarrage en self-service'),   desc: t('compare.adv1desc','Créez votre compte et saisissez ou importez vos données vous-même, sans intégration à prévoir.') },
               { icon: Lock,      color: 'violet',  title: t('compare.adv2title','CSRD + DPEF + EU Tax'),      desc: t('compare.adv2desc','Les 3 obligations françaises dans une seule plateforme accessible.') },
               { icon: Globe,     color: 'blue',    title: t('compare.adv3title','Import FEC unique'),         desc: t('compare.adv3desc','Scope 3 calculé automatiquement depuis votre comptabilité Sage/Cegid.') },
               { icon: TrendingUp,color: 'emerald', title: t('compare.adv4title','iXBRL / ESEF inclus'),       desc: t('compare.adv4desc','Catalogue de 150 concepts ESRS, export .xhtml validable avec Arelle.') },
@@ -573,7 +511,7 @@ export default function ComparisonPage() {
             </summary>
             <div className="space-y-2 mt-3">
               <p>
-                <strong>*</strong>{t('compare.legalP1'," Les prix concurrents marqués « estimé » proviennent de sources publiques : rapports d'analystes (Verdantix, Gartner, IDC), plateformes d'avis B2B (G2, Capterra, TrustRadius), témoignages clients publics, articles de presse spécialisée, et appels d'offres publics. Toute publication officielle de l'éditeur prévaut. Données à date de {{date}}.", { date: new Date().toLocaleDateString(dateLocale(), { month: 'long', year: 'numeric' }) })}
+                {t('compare.legalP1b',"Les informations sur les éditeurs concurrents n'ont pas été vérifiées de manière indépendante et ne sont donc pas affichées ; seules les caractéristiques d'ESGFlow sont présentées. Consultez les sites des éditeurs pour leurs offres et tarifs à jour.")}
               </p>
               <p>
                 {t('compare.legalP2',"Les fonctionnalités comparées sont vérifiables sur les pages produit publiques des éditeurs. Ce comparatif n'engage pas {{name}} et ne reflète pas sa position officielle. Marques, logos et noms de produits sont la propriété de leurs détenteurs respectifs ; leur citation relève du droit de citation et de la publicité comparative (Article L122-1 et suivants du Code de la consommation, Directive 2006/114/CE).", { name: competitor.name })}
