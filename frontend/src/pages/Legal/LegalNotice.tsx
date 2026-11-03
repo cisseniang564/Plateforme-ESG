@@ -53,7 +53,9 @@ export default function LegalNotice() {
             <h2>2. Hébergement</h2>
             <p>
               <strong>Hébergeur :</strong> IONOS<br />
-              <strong>Entité contractante, adresse et téléphone :</strong> [à compléter d'après le contrat IONOS]<br />
+              <strong>Société :</strong> IONOS SARL<br />
+              <strong>Adresse :</strong> 7 place de la Gare, BP 70109, 57201 Sarreguemines Cedex, France<br />
+              <strong>Téléphone :</strong> 0805 54 21 80 (service client)<br />
               <strong>Site web :</strong> <a href="https://www.ionos.fr" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">www.ionos.fr</a>
             </p>
 
