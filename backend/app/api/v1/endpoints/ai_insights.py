@@ -544,8 +544,6 @@ async def get_ai_insights(
         recommendations = _generate_recommendations(env, soc, gov, data_count)
 
         # ── 4. Build response ─────────────────────────────────────────────────
-        total_gain_est = sum(r["score_gain_est"] for r in recommendations[:5])  # Top 5
-
         quick_wins = [r for r in recommendations if r["quick_win"]]
         strategic   = [r for r in recommendations if not r["quick_win"]]
 
@@ -567,7 +565,9 @@ async def get_ai_insights(
             "quick_wins": quick_wins[:4],
             "strategic_actions": strategic[:6],
             "total_recommendations": len(recommendations),
-            "total_gain_estimate": min(total_gain_est, 40),  # Cap at +40 pts
+            # Les gains par recommandation sont des ordres de grandeur fixes par type d'action : on ne les
+            # additionne pas en une promesse de score (l'ancien total « +40 pts, 100/100 » n'était pas fondé).
+            "gain_is_indicative": True,
             "has_score": score is not None,
         }
 
@@ -587,7 +587,7 @@ async def get_ai_insights(
             "quick_wins": [],
             "strategic_actions": [],
             "total_recommendations": 0,
-            "total_gain_estimate": 0,
+            "gain_is_indicative": True,
             "has_score": False,
         }
 

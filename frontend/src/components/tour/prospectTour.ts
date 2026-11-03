@@ -82,8 +82,8 @@ export function getProspectSteps(t: TFunction): Step[] {
       target: 'body',
       title: t('ptour.s0Title', '👋 Bienvenue dans la démo ESGFlow'),
       content: t('ptour.s0Content',
-        "En 2 minutes, nous vous montrons comment notre plateforme divise par 5 le temps de production d'un rapport CSRD, " +
-        "et comment notre IA transforme vos risques ESG en plan d'action concret. Prêt ?"),
+        "En 2 minutes, nous vous montrons comment la plateforme transforme vos données ESG en rapport CSRD, " +
+        "et comment l'IA aide à identifier vos priorités d'action. Prêt ?"),
       placement: 'center',
       disableBeacon: true,
       data: { chapter: 'welcome', stepInChapter: 1, totalInChapter: 1 },
@@ -102,18 +102,18 @@ export function getProspectSteps(t: TFunction): Step[] {
       target: '[data-tour="sidebar-import-csv"]',
       title: t('ptour.s2Title', '📤 Import en masse + connecteurs'),
       content: t('ptour.s2Content',
-        'Import Excel/CSV intelligent (détection automatique des colonnes), ou branchement direct sur SAP, Workday, Salesforce. ' +
-        "Vos données ESG remontent sans ressaisie — gain estimé : 30 jours-homme par campagne."),
+        'Import Excel/CSV avec détection des colonnes, et connecteurs vers certains de vos outils (Pennylane, Qonto, Enedis). ' +
+        "Les autres systèmes (ERP, SIRH) se branchent sur demande."),
       placement: 'right',
       disableBeacon: true,
       data: { chapter: 'value', stepInChapter: 2, totalInChapter: 3 },
     },
     {
       target: '[data-tour="sidebar-reports"]',
-      title: t('ptour.s3Title', '📄 CSRD en un clic'),
+      title: t('ptour.s3Title', '📄 Un brouillon CSRD pré-rempli'),
       content: t('ptour.s3Content',
-        "Générez un rapport CSRD complet, pré-rempli avec vos données et aligné sur les 10 standards ESRS, " +
-        'au format PDF, Word ou XBRL — prêt pour votre commissaire aux comptes.'),
+        "Générez un rapport CSRD pré-rempli avec vos données, et voyez avant l'export ce qu'il manque, norme par norme. " +
+        'Formats PDF, Word ou Excel.'),
       placement: 'right',
       disableBeacon: true,
       data: { chapter: 'value', stepInChapter: 3, totalInChapter: 3 },
@@ -122,8 +122,8 @@ export function getProspectSteps(t: TFunction): Step[] {
       target: '[data-tour="sidebar-intelligence"]',
       title: t('ptour.s4Title', "🤖 Une IA qui passe à l'action"),
       content: t('ptour.s4Content',
-        "Notre IA analyse vos scores, identifie vos points faibles et vous propose des plans d'action chiffrés " +
-        '(gain de score estimé, effort, échéance). 40 % de gain de score moyen en 12 mois chez nos clients.'),
+        "Notre IA analyse vos scores, identifie vos points faibles et vous propose des actions priorisées " +
+        "avec leur niveau d'effort et un gain de score indicatif."),
       placement: 'right',
       disableBeacon: true,
       data: { chapter: 'ai', stepInChapter: 1, totalInChapter: 2 },
