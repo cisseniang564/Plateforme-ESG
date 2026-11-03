@@ -332,7 +332,7 @@
     },
     "rail": {
       "home": "Home",
-      "data": "Data",
+      "data": "Collect",
       "analyses": "Analytics",
       "carbon": "Carbon",
       "compliance": "Compliance",
@@ -347,6 +347,7 @@
       "steering": "Steering",
       "emissions": "Emissions",
       "trajectory": "Trajectory",
+      "carbonClimate": "Carbon & climate",
       "euMandatory": "European — mandatory",
       "intlVoluntary": "International — voluntary",
       "production": "Production",
