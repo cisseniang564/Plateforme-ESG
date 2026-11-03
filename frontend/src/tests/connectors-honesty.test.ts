@@ -4,6 +4,10 @@ import landing from '@/pages/Landing/LandingPage.tsx?raw';
 import pennylane from '@/pages/Data/PennylaneConnector.tsx?raw';
 import qonto from '@/pages/Data/QontoConnector.tsx?raw';
 import en from '@/i18n/locales/en.json';
+import tenant from '@/pages/Settings/TenantSettings.tsx?raw';
+import support from '@/pages/Support/Support.tsx?raw';
+import palette from '@/components/common/CommandPalette.tsx?raw';
+import docsGestion from '@/pages/Docs/content/gestion.ts?raw';
 
 // Garde-fou : la page des connecteurs et la landing ne doivent pas afficher de chiffres inventés.
 describe('connecteurs : aucune donnée inventée à l\'écran', () => {
@@ -34,5 +38,12 @@ describe('connecteurs : aucune donnée inventée à l\'écran', () => {
   it('l\'aperçu des connecteurs de la landing ne montre ni SAP « connecté » ni volumes inventés', () => {
     const preview = landing.slice(landing.indexOf('function PreviewConnectors'), landing.indexOf('function PreviewINSEE'));
     expect(preview).not.toMatch(/47 syncs|8\.4 GB|status: 'connected'|1 250/);
+  });
+});
+
+describe('connecteurs : aucune promesse hors Pennylane, Qonto, Enedis', () => {
+  it('ni badge « N connectés » inventé, ni SAP/Oracle/Workday/Power BI cités comme disponibles', () => {
+    for (const src of [tenant, support, palette, docsGestion]) expect(src).not.toMatch(/5 connectés|SAP · Oracle|Google Sheets, Power BI|SAP, Salesforce/);
+    expect(JSON.stringify(en)).not.toMatch(/5 connectés|SAP · Oracle · Workday|Google Sheets, Power BI, SAP/);
   });
 });
