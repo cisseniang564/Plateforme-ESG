@@ -1403,7 +1403,7 @@ export default function LandingPage() {
   ];
 
   const faqs = [
-    { q: 'Combien de temps pour déployer la plateforme ?', a: 'La mise en service prend 2 à 3 jours ouvrés. Nos équipes assurent l\'onboarding, la configuration des indicateurs et la formation de vos équipes.' },
+    { q: 'Combien de temps pour déployer la plateforme ?', a: 'La plateforme est en self-service : vous créez votre compte, puis saisissez ou importez vos données (FEC, CSV, Excel) vous-même. Aucun délai de mise en service n’est promis à ce stade.' },
     { q: 'La plateforme est-elle vraiment conforme CSRD ?', a: 'ESGFlow couvre les standards ESRS principaux (E1-E5, S1-S4, G1) et génère le format iXBRL/ESEF exigé par l\'ESMA. Notre journal d\'audit détaillé avec empreintes SHA-256 et export pour auditeurs facilite vos revues internes et externes.' },
     { q: 'Peut-on importer nos données depuis Excel ou ERP ?', a: 'Oui. La plateforme accepte les imports CSV, Excel et FEC (Sage, Cegid, Pennylane) ainsi que les exports RH de Silae, Lucca ou PayFit. Les connexions API Pennylane, Qonto et Enedis sont en bêta. Pour SAP, Oracle ou Workday, dites-nous votre besoin : ils ne sont pas disponibles en standard. Notre API REST permet des intégrations sur mesure.' },
     { q: 'Où sont hébergées les données ?', a: "La plateforme est hébergée chez un prestataire européen. Les fonctions d'IA (Gaïa, questionnaires clients) envoient le texte analysé à OpenAI, un prestataire américain : ce point est indiqué avant chaque envoi, et le fichier lui-même n'est pas conservé. Aucun engagement de certification n'est affiché tant qu'il n'est pas documenté." },
@@ -1959,7 +1959,7 @@ export default function LandingPage() {
               <span className="text-emerald-600">{t('landing.lp.why.titleLine2', "rien de ce que vous n'utilisez pas")}</span>
             </h2>
             <p className="text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
-              {t('landing.lp.why.subtitle', 'Une plateforme pensée par des experts ESG, pour que votre équipe soit opérationnelle en 3 jours — pas en 3 mois.')}
+              {t('landing.lp.why.subtitle', 'Une plateforme pensée par des experts ESG, pour démarrer en self-service, sans projet d’intégration.')}
             </p>
           </div>
 
@@ -1994,7 +1994,7 @@ export default function LandingPage() {
           {/* Bande de réassurance */}
           <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { value: t('landing.lp.reassure.0.value', '3 jours'), label: t('landing.lp.reassure.0.label', 'Mise en service'), sub: t('landing.lp.reassure.0.sub', 'onboarding inclus') },
+              { value: t('landing.lp.reassure.0.value', 'Self-service'), label: t('landing.lp.reassure.0.label', 'Démarrage'), sub: t('landing.lp.reassure.0.sub', 'sans intégration') },
               { value: t('landing.lp.reassure.1.value', '22'), label: t('landing.lp.reassure.1.label', 'Modules intégrés'), sub: t('landing.lp.reassure.1.sub', 'dans un seul outil') },
               { value: t('landing.lp.reassure.2.value', 'Europe'), label: t('landing.lp.reassure.2.label', 'Hébergeur européen'), sub: t('landing.lp.reassure.2.sub', 'RGPD') },
               { value: t('landing.lp.reassure.3.value', 'Sans CB'), label: t('landing.lp.reassure.3.label', 'Essai 14 jours'), sub: t('landing.lp.reassure.3.sub', 'aucun engagement') },
@@ -2132,7 +2132,7 @@ export default function LandingPage() {
               {t('landing.lp.how.eyebrow', 'Comment ça marche')}
               <span className="w-8 h-px bg-emerald-400 inline-block" />
             </span>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mt-2 mb-4">{t('landing.lp.how.title', 'Opérationnel en 3 étapes')}</h2>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mt-2 mb-4">{t('landing.lp.how.title', 'Démarrez en 3 étapes')}</h2>
             <p className="text-lg text-gray-500 max-w-xl mx-auto">{t('landing.lp.how.subtitle', 'Pas de mois de déploiement, pas de consultant externe. Votre équipe prend en main la plateforme dès le premier jour.')}</p>
           </div>
 
@@ -2939,7 +2939,7 @@ export default function LandingPage() {
               <div className="grid grid-cols-2 gap-4">
                 {[
                   { value: '22', label: 'modules ESG', color: 'text-emerald-600' },
-                  { value: '8', label: 'réglementations couvertes', color: 'text-blue-600' },
+                  { value: '10', label: 'référentiels couverts', color: 'text-blue-600' },
                   { value: 'UE', label: 'hébergeur européen', color: 'text-violet-600' },
                   { value: '14j', label: "d'essai gratuit", color: 'text-amber-600' },
                 ].map((s, i) => (
@@ -2957,22 +2957,22 @@ export default function LandingPage() {
               <div className="relative p-8 space-y-6">
                 {[
                   {
-                    year: '2022', icon: Leaf, color: 'bg-emerald-500',
+                    year: 'Origine', icon: Leaf, color: 'bg-emerald-500',
                     title: 'Naissance du projet',
                     desc: 'Face à la complexité de la directive CSRD, le projet naît d\'un besoin concret : un outil simple pour préparer le reporting.',
                   },
                   {
-                    year: '2023', icon: Code2, color: 'bg-blue-500',
+                    year: 'Prototype', icon: Code2, color: 'bg-blue-500',
                     title: 'Premier prototype',
                     desc: 'Premiers modules : bilan carbone et générateur de rapport CSRD.',
                   },
                   {
-                    year: '2024', icon: Globe, color: 'bg-violet-500',
+                    year: 'Plateforme', icon: Globe, color: 'bg-violet-500',
                     title: 'Plateforme complète',
                     desc: 'Ajout de la Taxonomie UE, SFDR, SBTi, Vigilance et d\'un circuit de validation. Balisage iXBRL/ESEF des rapports de durabilité.',
                   },
                   {
-                    year: '2025+', icon: Sparkles, color: 'bg-amber-500',
+                    year: 'En cours', icon: Sparkles, color: 'bg-amber-500',
                     title: 'Intelligence augmentée',
                     desc: 'IA générative intégrée : extraction automatique des données FEC, analyse de gap CSRD, calcul de matérialité, génération de politiques RSE.',
                   },
@@ -3119,7 +3119,7 @@ export default function LandingPage() {
                   icon: Calculator,
                   iconBg: 'bg-emerald-600',
                   title: 'Accessible aux PME dès 249 €/mois',
-                  desc: 'Workiva commence à 50 000 €/an. IBM Envizi demande une implémentation de 6 mois. ESGFlow est opérationnel en 48h, avec un plan gratuit fonctionnel et des tarifs pensés pour les PME et ETI — celles qui ont le plus besoin de se conformer et le moins de ressources pour le faire.',
+                  desc: 'Workiva commence à 50 000 €/an. IBM Envizi demande une implémentation de 6 mois. ESGFlow se prend en main en self-service, avec un plan gratuit fonctionnel et des tarifs pensés pour les PME et ETI — celles qui ont le plus besoin de se conformer et le moins de ressources pour le faire.',
                   badge: 'vs IBM Envizi / Workiva',
                   badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
                 },

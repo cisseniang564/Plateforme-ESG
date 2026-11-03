@@ -180,7 +180,6 @@ export default function SecurityPage() {
             <SecurityCard icon={Eye} color="slate" title={t('security.page.card6Title', "Monitoring & détection d'anomalies")}>
               <p>{t('security.page.card6p1a', 'Surveillance en temps réel via')} <strong>Sentry</strong> {t('security.page.card6p1b', '(erreurs front + back) et alertes automatiques sur comportements suspects.')}</p>
               <p>{t('security.page.card6p2', 'Logs centralisés, rate limiting sur toutes les API, protection CSRF et injection SQL.')}</p>
-              <p>{t('security.page.card6p3', 'Uptime monitoring 24/7 avec alertes PagerDuty.')}</p>
             </SecurityCard>
 
           </div>
@@ -199,19 +198,17 @@ export default function SecurityPage() {
             </SecurityCard>
 
             <SecurityCard icon={RefreshCw} color="emerald" title={t('security.page.card8Title', 'Sauvegardes & continuité')}>
-              <p><strong>{t('security.page.card8p1a', 'Sauvegardes quotidiennes')}</strong> {t('security.page.card8p1b', 'chiffrées (AES-256), rétention 30 jours, stockées dans une région géographique distincte.')}</p>
-              <p><strong>{t('security.page.card8p2a', 'RTO cible')}</strong> : {t('security.page.card8p2b', '4 heures')} · <strong>{t('security.page.card8p2c', 'RPO cible')}</strong> : {t('security.page.card8p2d', '24 heures.')}</p>
-              <p>{t('security.page.card8p3', 'Tests de restauration trimestriels documentés.')}</p>
+              <p><strong>{t('security.page.card8p1a', 'Sauvegardes quotidiennes')}</strong> {t('security.page.card8p1b', 'de la base de données (script planifié), conservées 30 jours. Les tests de restauration restent à formaliser.')}</p>
             </SecurityCard>
 
             <SecurityCard icon={Zap} color="amber" title={t('security.page.card9Title', 'Gestion des secrets & dépendances')}>
               <p>{t('security.page.card9p1', "Aucun secret (clés API, mots de passe) en dur dans le code source. Variables d'environnement chiffrées au déploiement.")}</p>
-              <p>{t('security.page.card9p2a', 'Dépendances npm et Python analysées automatiquement (')} <strong>Dependabot + pip-audit</strong>) {t('security.page.card9p2b', 'à chaque push. Patches de sécurité en moins de 48h.')}</p>
+              <p>{t('security.page.card9p2a', 'Dépendances npm et Python analysées automatiquement (')} <strong>Dependabot + pip-audit</strong>) {t('security.page.card9p2b', 'à chaque push. Les correctifs de sécurité sont appliqués dès qu’ils sont disponibles.')}</p>
             </SecurityCard>
 
             <SecurityCard icon={AlertTriangle} color="red" title={t('security.page.card10Title', 'Divulgation responsable (Bug Bounty)')}>
               <p>{t('security.page.card10p1', 'Vous avez découvert une vulnérabilité ? Signalez-la à')} <a href="mailto:security@greenconnect.cloud" className="text-emerald-600 hover:underline">security@greenconnect.cloud</a>.</p>
-              <p>{t('security.page.card10p2', 'Nous accusons réception sous 48h, évaluons sous 7 jours et corrigeons en moins de 30 jours pour les vulnérabilités critiques.')}</p>
+              <p>{t('security.page.card10p2', 'Chaque signalement est examiné et les vulnérabilités critiques sont traitées en priorité.')}</p>
               <p>{t('security.page.card10p3', 'Politique de divulgation coordonnée — aucune poursuite judiciaire pour les chercheurs de bonne foi.')}</p>
             </SecurityCard>
           </div>
@@ -329,10 +326,10 @@ export default function SecurityPage() {
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { icon: ListChecks, color: 'emerald', value: '32+',    label: t('security.page.kpi1Label', 'Tests automatisés'), sub: t('security.page.kpi1Sub', 'pytest · couverture critique 100%') },
-              { icon: Code2,      color: 'blue',    value: '< 48 h', label: t('security.page.kpi2Label', 'Patch de sécurité'), sub: t('security.page.kpi2Sub', 'CVE critique · Dependabot + pip-audit') },
-              { icon: Activity,   color: 'violet',  value: '99,9 %', label: t('security.page.kpi3Label', 'SLA contractuel'),   sub: t('security.page.kpi3Sub', 'plan Groupe & Enterprise') },
-              { icon: Shield,     color: 'amber',   value: '0',      label: t('security.page.kpi4Label', 'Incidents majeurs'), sub: t('security.page.kpi4Sub', '12 derniers mois — voir status.greenconnect.cloud') },
+              { icon: ListChecks, color: 'emerald', value: '800+',   label: t('security.page.kpi1Label', 'Tests automatisés'), sub: t('security.page.kpi1Sub', 'suite pytest du backend') },
+              { icon: Code2,      color: 'blue',    value: 'RLS',    label: t('security.page.kpi2Label', 'Isolation par client'), sub: t('security.page.kpi2Sub', 'PostgreSQL Row-Level Security') },
+              { icon: Activity,   color: 'violet',  value: 'SHA-256', label: t('security.page.kpi3Label', 'Piste d’audit'),   sub: t('security.page.kpi3Sub', 'empreintes des journaux') },
+              { icon: Shield,     color: 'amber',   value: '14 j',   label: t('security.page.kpi4Label', 'Essai gratuit'), sub: t('security.page.kpi4Sub', 'sans carte bancaire') },
             ].map((kpi) => {
               const Icon = kpi.icon;
               const colorMap: Record<string, { bg: string; text: string }> = {
@@ -359,23 +356,8 @@ export default function SecurityPage() {
         {/* ── Incident response ───────────────────────────────────────────── */}
         <section className="mb-20">
           <h2 className="text-2xl font-extrabold text-gray-900 mb-2">{t('security.page.incidentTitle', 'Réponse aux incidents')}</h2>
-          <p className="text-gray-500 mb-8">{t('security.page.incidentSubtitle', 'Procédure documentée, testée trimestriellement.')}</p>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { step: '01', title: t('security.page.incident1Title', 'Détection'),    delay: t('security.page.incident1Delay', '< 5 min'),   detail: t('security.page.incident1Detail', 'Monitoring automatique 24/7 + alertes PagerDuty sur indicateurs critiques (uptime, latence, erreurs 5xx).') },
-              { step: '02', title: t('security.page.incident2Title', 'Triage'),       delay: t('security.page.incident2Delay', '< 30 min'),  detail: t('security.page.incident2Detail', "Sévérité S1-S4 attribuée selon impact (données / disponibilité / sécurité). Équipe d'astreinte mobilisée.") },
-              { step: '03', title: t('security.page.incident3Title', 'Notification'), delay: t('security.page.incident3Delay', '< 24 h'),    detail: t('security.page.incident3Detail', 'Pour les violations de données : notification CNIL sous 72h (RGPD Art. 33). Clients impactés notifiés par email.') },
-              { step: '04', title: t('security.page.incident4Title', 'Post-mortem'),  delay: t('security.page.incident4Delay', '< 5 jours'), detail: t('security.page.incident4Detail', 'Rapport public sur status.greenconnect.cloud avec timeline, root cause, mesures correctives.') },
-            ].map((s) => (
-              <div key={s.step} className="bg-white border border-gray-200 rounded-2xl p-5">
-                <p className="text-xs font-mono text-gray-400 mb-2">{s.step}</p>
-                <p className="text-sm font-bold text-gray-900 mb-1">{s.title}</p>
-                <p className="text-xs font-semibold text-emerald-600 mb-2">{s.delay}</p>
-                <p className="text-xs text-gray-500 leading-relaxed">{s.detail}</p>
-              </div>
-            ))}
-          </div>
+          <p className="text-gray-500 mb-4">{t('security.page.incidentSubtitle', 'La procédure formelle de réponse aux incidents reste à rédiger.')}</p>
+          <p className="text-sm text-gray-600">{t('security.page.incidentBody', 'En cas de violation de données personnelles, nous nous engageons à informer la CNIL et les clients concernés dans les délais prévus par le RGPD (article 33 : 72 heures).')}</p>
         </section>
 
         {/* ── Documents téléchargeables ───────────────────────────────────── */}
@@ -385,12 +367,9 @@ export default function SecurityPage() {
 
           <div className="grid sm:grid-cols-2 gap-4">
             {[
-              { name: t('security.page.doc1Name', 'Accord de traitement (DPA)'),          desc: t('security.page.doc1Desc', 'Conforme RGPD Art. 28 — adapté à votre juridiction'),           ndaRequired: false, contact: true },
-              { name: t('security.page.doc2Name', 'Questionnaire sécurité pré-rempli'),   desc: t('security.page.doc2Desc', 'Format VSAQ ou SIG Lite — réponses certifiées'),               ndaRequired: false, contact: true },
-              { name: t('security.page.doc3Name', 'Rapport de pentest 2026'),             desc: t('security.page.doc3Desc', 'Cabinet indépendant, méthodologie OWASP ASVS L2'),             ndaRequired: true,  contact: true },
-              { name: t('security.page.doc4Name', 'Architecture sécurité (1-pager PDF)'), desc: t('security.page.doc4Desc', 'Diagramme infra + flux de données chiffrés'),                  ndaRequired: false, contact: true },
-              { name: t('security.page.doc5Name', 'Politique de continuité (BCP/DRP)'),   desc: t('security.page.doc5Desc', "Plan de continuité d'activité — RTO 4h, RPO 24h"),             ndaRequired: false, contact: true },
-              { name: t('security.page.doc6Name', 'Liste des sous-traitants (CSV)'),      desc: t('security.page.doc6Desc', 'Export à jour avec localisations et finalités de traitement'), ndaRequired: false, contact: true },
+              { name: t('security.page.doc1Name', 'Accord de traitement (DPA)'),          desc: t('security.page.doc1Desc', 'Accord de sous-traitance RGPD Art. 28, sur demande'),           ndaRequired: false, contact: true },
+              { name: t('security.page.doc6Name', 'Liste des sous-traitants (CSV)'),      desc: t('security.page.doc6Desc', 'Liste à jour avec finalités de traitement'), ndaRequired: false, contact: true },
+              { name: t('security.page.doc7Name', 'Inventaire des contrôles techniques'), desc: t('security.page.doc7Desc', 'Contrôles en place et écarts identifiés (base SOC 2 / ISO 27001)'), ndaRequired: false, contact: true },
             ].map((doc) => (
               <a
                 key={doc.name}
@@ -423,7 +402,7 @@ export default function SecurityPage() {
         <section className="grid md:grid-cols-2 gap-6">
           <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
             <h3 className="text-base font-bold text-gray-900 mb-2">{t('security.page.contactTitle', 'Questions de sécurité')}</h3>
-            <p className="text-sm text-gray-600 mb-4">{t('security.page.contactSubtitle', "Notre équipe répond sous 48h aux demandes de sécurité, d'audit et de conformité.")}</p>
+            <p className="text-sm text-gray-600 mb-4">{t('security.page.contactSubtitle', "Écrivez-nous pour toute demande de sécurité, d’audit ou de conformité.")}</p>
             <div className="space-y-2 text-sm">
               <a href="mailto:security@greenconnect.cloud" className="flex items-center gap-2 text-emerald-600 hover:underline font-medium">
                 <Shield className="h-4 w-4" /> security@greenconnect.cloud
@@ -432,7 +411,6 @@ export default function SecurityPage() {
                 <Lock className="h-4 w-4" /> privacy@greenconnect.cloud
               </a>
             </div>
-            <p className="text-xs text-gray-400 mt-4">{t('security.page.pentestNote', 'Rapport de pentest disponible sur demande sous NDA (clients Enterprise).')}</p>
           </div>
 
           <div style={{ background: 'linear-gradient(135deg, #064e3b 0%, #134e4a 100%)' }} className="rounded-2xl p-6 flex flex-col justify-between">

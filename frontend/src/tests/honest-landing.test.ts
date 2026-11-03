@@ -88,3 +88,19 @@ describe('page Sécurité', () => {
     expect(JSON.stringify((en as any).security)).not.toMatch(/OVH|Scaleway|Cloudflare|SSL Labs/i);
   });
 });
+
+describe('promesses de service et comparatif concurrents', () => {
+  it('plus de délai de mise en service promis (3 jours, 48h, 1 jour)', () => {
+    for (const src of [landing, compare, standards]) expect(src).not.toMatch(/en 3 jours|2 à 3 jours ouvrés|opérationnel en 48h|Opérationnel en 1 jour|onboarding inclus/i);
+    expect(JSON.stringify((en as any).landing)).not.toMatch(/3 days|onboarding included/i);
+  });
+  it('le comparatif n’affiche aucun prix, faiblesse ou verdict concurrent non sourcé', () => {
+    expect(compare).not.toMatch(/competitor\.weaknesses|competitor\.verdict|competitor\.strengths|competitorPlans\.map|competitor\.description/);
+  });
+  it('plus de SLA ni de procédure d’incident inventés sur la page Sécurité', () => {
+    expect(security).not.toMatch(/PagerDuty|24\/7|testée trimestriellement|99,9|RTO cible|Rapport de pentest|Incidents majeurs|Tests de restauration trimestriels|status\.greenconnect/i);
+  });
+  it('plus de chronologie datée ni de « 8 réglementations »', () => {
+    expect(landing).not.toMatch(/year: '20(22|23|24|25\+)'|réglementations couvertes/);
+  });
+});
