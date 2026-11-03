@@ -428,7 +428,12 @@ export default function QuestionnairesPage() {
         </section>
 
         <section aria-labelledby="my-q">
-          <h2 id="my-q" className="mb-3 text-[15px] font-semibold text-gray-900">Vos questionnaires</h2>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 id="my-q" className="text-[15px] font-semibold text-gray-900">Vos questionnaires</h2>
+            {items.length > 0 && (
+              <button type="button" onClick={() => load(Q_EXAMPLE)} className="text-sm font-semibold text-emerald-800 hover:underline">Voir un exemple pré-rempli</button>
+            )}
+          </div>
           {loadingList ? (
             <div className="space-y-2" role="status" aria-label="Chargement">
               {[0, 1, 2].map(i => <div key={i} className="h-[72px] animate-pulse rounded-xl bg-gray-200" />)}

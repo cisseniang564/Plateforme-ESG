@@ -44,4 +44,11 @@ describe('Questionnaires : exemple de démonstration', () => {
     expect(quest.exportQuestionnaire).not.toHaveBeenCalled();
     expect(quest.saveAnswers).not.toHaveBeenCalled();
   });
+
+  it('le lien vers l’exemple reste visible quand l’utilisateur a déjà des questionnaires', async () => {
+    quest.listQuestionnaires.mockResolvedValue([{ id: 'q1', title: 'Mon questionnaire', client_name: null, status: 'ready', created_at: null, counts: { total: 1, validated: 0, prefilled: 1, to_complete: 0 } }]);
+    render(<MemoryRouter><QuestionnairesPage /></MemoryRouter>);
+    fireEvent.click(await screen.findByRole('button', { name: /Voir un exemple pré-rempli/ }));
+    expect(await screen.findByText(/Exemple fictif\./)).toBeInTheDocument();
+  });
 });
