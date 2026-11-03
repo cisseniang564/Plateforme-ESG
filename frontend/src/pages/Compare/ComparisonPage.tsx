@@ -151,7 +151,6 @@ function getFeatures(slug: string, t: TFunction): Feature[] {
     { label: t('compare.fAudit',   "Journal d'audit détaillé + empreintes SHA-256"), esgflow: true, competitor: slug === 'workiva' ? vBest : slug === 'sweep' ? vPartial : slug === 'persefoni' ? '✓ SOC-2' : vPartial },
     { label: t('compare.fAI',      'IA embarquée + chatbot ESG'),                   esgflow: true, competitor: slug === 'greenly' ? false : true },
     { label: t('compare.fInvest',  'Relations Investisseurs (CDP/MSCI)'),            esgflow: true, competitor: slug === 'sweep' ? vPartial : false },
-    { label: t('compare.fHosting', 'Hébergement France / souveraineté RGPD'),        esgflow: true, competitor: slug === 'sweep' ? '⚠ AWS EU' : slug === 'greenly' ? '⚠ AWS EU' : false, important: true },
     { label: t('compare.fPricing', 'Tarifs transparents et publics'),                esgflow: true, competitor: slug === 'persefoni' ? vPartial : false, important: true },
     { label: t('compare.fSelfSvc', 'Self-service PME (sans consultant)'),            esgflow: true, competitor: false, important: true },
     { label: t('compare.fMultiOrg','Multi-organisations par tenant'),                esgflow: true, competitor: slug === 'persefoni' ? false : true },
@@ -179,7 +178,7 @@ function getPricingRows(slug: string, t: TFunction) {
     { name: 'PME',                               price: '249 €/mois',   features: t('compare.planFeat1','25 utilisateurs · 50 orgs · CSRD · Carbone · FEC · Taxonomie') },
     { name: 'ETI',                               price: '599 €/mois',   features: t('compare.planFeat2','100 utilisateurs · 250 orgs · IA narrative · Connecteurs avancés') },
     { name: 'Groupe',                            price: '1 199 €/mois', features: t('compare.planFeat3','500 utilisateurs · SSO/SAML · Consolidation multi-entités IFRS 10 · Marque blanche') },
-    { name: 'Enterprise',                        price: surMesure,       features: t('compare.planFeat4',"SLA 99,9% · Account manager dédié · On-premise possible") },
+    { name: 'Enterprise',                        price: surMesure,       features: t('compare.planFeat4',"Account manager dédié · On-premise possible (sur devis)") },
   ];
 
   const competitorPlanMap: Record<string, Array<{ name: string; price: string; features: string }>> = {
@@ -501,7 +500,7 @@ export default function ComparisonPage() {
           <h2 className="text-2xl font-extrabold text-gray-900 mb-8">{t('compare.whyTitle','Pourquoi choisir ESGFlow')}</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
-              { icon: Shield,    color: 'emerald', title: t('compare.adv0title','Hébergé en France'),        desc: t('compare.adv0desc','Données souveraines, RGPD natif. Aucun cloud américain.') },
+              { icon: Shield,    color: 'emerald', title: t('compare.adv0title','Hébergeur européen'),        desc: t('compare.adv0desc','Cloisonnement par client. Les fonctions d\'IA utilisent OpenAI, signalé avant chaque envoi.') },
               { icon: Zap,       color: 'amber',   title: t('compare.adv1title','Opérationnel en 1 jour'),   desc: t('compare.adv1desc','Aucun consultant, aucune intégration complexe. Self-service total.') },
               { icon: Lock,      color: 'violet',  title: t('compare.adv2title','CSRD + DPEF + EU Tax'),      desc: t('compare.adv2desc','Les 3 obligations françaises dans une seule plateforme accessible.') },
               { icon: Globe,     color: 'blue',    title: t('compare.adv3title','Import FEC unique'),         desc: t('compare.adv3desc','Scope 3 calculé automatiquement depuis votre comptabilité Sage/Cegid.') },

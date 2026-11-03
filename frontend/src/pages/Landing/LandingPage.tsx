@@ -154,7 +154,7 @@ const MODULES = [
     lightText: 'text-violet-700',
     name: 'Matrice de Matérialité',
     tagline: 'Double matérialité CSRD · Drag & drop',
-    desc: 'Outil interactif de double matérialité : questionnaire parties prenantes, matrice drag & drop, suggestions IA sectorielles et export PDF certifiable.',
+    desc: 'Outil interactif de double matérialité : questionnaire parties prenantes, matrice drag & drop, suggestions IA sectorielles et export PDF.',
     badges: ['Drag & drop', 'Questionnaire parties prenantes', 'Suggestions IA', 'Export rapport'],
     preview: 'materiality',
     featurePath: '/features/double-materialite',
@@ -702,10 +702,11 @@ function PreviewConnectors() {
 
 function PreviewINSEE() {
   const companies = [
-    { name: 'LVMH Moët Hennessy', siren: '775 670 417', naf: '7010Z', city: 'Paris 8e', size: 'GE', score: 91 },
-    { name: 'Renault Group', siren: '780 129 987', naf: '2910Z', city: 'Boulogne-Bill.', size: 'GE', score: 78 },
-    { name: 'Danone', siren: '552 032 534', naf: '1051A', city: 'Paris 9e', size: 'GE', score: 85 },
-    { name: 'Invivoo', siren: '529 518 792', naf: '6201Z', city: 'Levallois-Perret', size: 'PME', score: 67 },
+    // Entreprises fictives : jamais de nom réel associé à un score ESG.
+    { name: 'Exemple Industrie SA', siren: '000 000 001', naf: '7010Z', city: 'Ville exemple', size: 'GE', score: 91 },
+    { name: 'Exemple Mobilité SAS', siren: '000 000 002', naf: '2910Z', city: 'Ville exemple', size: 'GE', score: 78 },
+    { name: 'Exemple Alimentaire SA', siren: '000 000 003', naf: '1051A', city: 'Ville exemple', size: 'GE', score: 85 },
+    { name: 'Exemple Services SARL', siren: '000 000 004', naf: '6201Z', city: 'Ville exemple', size: 'PME', score: 67 },
   ];
   return (
     <div className="p-5 space-y-3">
@@ -1277,8 +1278,8 @@ const WHY_PILLARS = [
     lightText: 'text-blue-700',
     border: 'border-blue-100',
     title: 'Données fiables, auditables, sécurisées',
-    desc: 'Journal d\'audit détaillé avec empreintes SHA-256 par entrée, workflow de validation en 3 étapes, hébergement 100 % en France ISO 27001. Vos données restent vos données.',
-    points: ['Empreintes SHA-256', 'Hébergement France · RGPD', 'Workflow Brouillon → Approuvé', 'Export complet pour auditeurs'],
+    desc: 'Journal d\'audit détaillé avec empreintes SHA-256 par entrée, workflow de validation en 3 étapes, hébergement chez un prestataire européen. Vos données restent vos données.',
+    points: ['Empreintes SHA-256', 'Hébergement européen · RGPD', 'Workflow Brouillon → Approuvé', 'Export complet pour auditeurs'],
   },
   {
     icon: Brain,
@@ -1396,7 +1397,7 @@ export default function LandingPage() {
         'Account manager attitré',
         'Rétention données 84 mois',
       ],
-      missing: ['SLA 99,9% garanti', 'On-premise'],
+      missing: ['On-premise'],
       cta: 'Démarrer maintenant', primary: false,
     },
   ];
@@ -1405,7 +1406,7 @@ export default function LandingPage() {
     { q: 'Combien de temps pour déployer la plateforme ?', a: 'La mise en service prend 2 à 3 jours ouvrés. Nos équipes assurent l\'onboarding, la configuration des indicateurs et la formation de vos équipes.' },
     { q: 'La plateforme est-elle vraiment conforme CSRD ?', a: 'ESGFlow couvre les standards ESRS principaux (E1-E5, S1-S4, G1) et génère le format iXBRL/ESEF exigé par l\'ESMA. Notre journal d\'audit détaillé avec empreintes SHA-256 et export pour auditeurs facilite vos revues internes et externes.' },
     { q: 'Peut-on importer nos données depuis Excel ou ERP ?', a: 'Oui. La plateforme accepte les imports CSV, Excel et FEC (Sage, Cegid, Pennylane) ainsi que les exports RH de Silae, Lucca ou PayFit. Les connexions API Pennylane, Qonto et Enedis sont en bêta. Pour SAP, Oracle ou Workday, dites-nous votre besoin : ils ne sont pas disponibles en standard. Notre API REST permet des intégrations sur mesure.' },
-    { q: 'Où sont hébergées les données ?', a: 'Toutes les données sont hébergées en France, dans des datacenters certifiés ISO 27001. Nous n\'utilisons aucun cloud américain. La conformité RGPD est garantie contractuellement.' },
+    { q: 'Où sont hébergées les données ?', a: "La plateforme est hébergée chez un prestataire européen. Les fonctions d'IA (Gaïa, questionnaires clients) envoient le texte analysé à OpenAI, un prestataire américain : ce point est indiqué avant chaque envoi, et le fichier lui-même n'est pas conservé. Aucun engagement de certification n'est affiché tant qu'il n'est pas documenté." },
     { q: 'Que couvre le module Supply Chain ESG ?', a: 'Le module couvre l\'évaluation des fournisseurs sur 6 dimensions ESG, l\'envoi de questionnaires automatisés, la gestion de la due diligence et le suivi du plan de vigilance conformément à la Loi 2017-399.' },
     { q: 'Y a-t-il un engagement de durée ?', a: 'Non. Les plans PME, ETI et Groupe sont sans engagement, résiliables à tout moment. Les contrats annuels bénéficient de 15% de réduction.' },
     { q: 'Comment fonctionne l\'import FEC pour le Scope 3 ?', a: 'Exportez votre FEC depuis Sage, Cegid ou Pennylane et importez-le directement dans ESGFlow. La plateforme analyse automatiquement vos comptes 60x/61x/62x et calcule vos émissions Scope 3 par catégorie de dépenses en appliquant les facteurs d\'émission ADEME.' },
@@ -1416,12 +1417,12 @@ export default function LandingPage() {
   usePageSeo({
     id: 'landing',
     title: 'ESGFlow — Plateforme ESG tout-en-un pour la conformité CSRD, Taxonomie UE & Bilan Carbone',
-    description: 'ESGFlow centralise votre conformité ESG en une seule plateforme : CSRD, Taxonomie UE, SFDR, SBTi, Bilan Carbone, Vigilance. 22 modules, hébergé en France, RGPD. Essai gratuit 14 jours.',
+    description: 'ESGFlow centralise votre conformité ESG en une seule plateforme : CSRD, Taxonomie UE, SFDR, SBTi, Bilan Carbone, Vigilance. 22 modules, hébergeur européen, RGPD. Essai gratuit 14 jours.',
     keywords: 'ESG, CSRD, Taxonomie UE, SFDR, SBTi, bilan carbone, RSE, conformité ESG, plateforme ESG, reporting durabilité, ESRS, GHG Protocol, ADEME, devoir de vigilance, CSDDD',
     url: 'https://greenconnect.cloud/',
     ogImage: 'https://greenconnect.cloud/og/landing.png',
     ogTitle: 'ESGFlow — Conformité ESG simplifiée',
-    ogDescription: '22 modules ESG dans une seule plateforme. CSRD, Taxonomie UE, SFDR, Bilan Carbone, SBTi. Hébergé en France. Essai gratuit.',
+    ogDescription: '22 modules ESG dans une seule plateforme. CSRD, Taxonomie UE, SFDR, Bilan Carbone, SBTi. Hébergeur européen. Essai gratuit.',
     faqJsonLd: {
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
@@ -1594,7 +1595,7 @@ export default function LandingPage() {
             </h1>
 
             <p className="text-xl text-slate-300 leading-relaxed max-w-lg">
-              {t('landing.lp.hero.subtitle', "De la collecte de données à la publication de votre rapport CSRD, ESGFlow couvre l'intégralité de votre démarche — avec l'IA, les connecteurs et la piste d'audit certifiable qu'il vous faut.")}
+              {t('landing.lp.hero.subtitle', "De la collecte de données à la publication de votre rapport CSRD, ESGFlow couvre l'intégralité de votre démarche — avec l'IA, les connecteurs et la piste d'audit horodatée qu'il vous faut.")}
             </p>
 
             <div className="flex flex-wrap gap-3">
@@ -1612,27 +1613,9 @@ export default function LandingPage() {
             </div>
 
             <div className="space-y-3">
-              {/* Avatar social proof */}
-              <div className="flex items-center gap-3">
-                <div className="flex -space-x-2">
-                  {['#059669','#2563eb','#7c3aed','#dc2626','#d97706'].map((bg, i) => (
-                    <div key={i} className="w-8 h-8 rounded-full border-2 flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                      style={{ backgroundColor: bg, borderColor: '#020b18' }}>
-                      {['A','M','L','R','S'][i]}
-                    </div>
-                  ))}
-                </div>
-                <div>
-                  <div className="flex items-center gap-0.5 mb-0.5">
-                    {[...Array(5)].map((_, i) => <Star key={i} className="h-3 w-3 text-amber-400 fill-amber-400" />)}
-                    <span className="text-xs text-slate-400 ml-1.5">4,9/5</span>
-                  </div>
-                  <span className="text-xs text-slate-400">500+ équipes ESG · Hébergé en France 🇫🇷</span>
-                </div>
-              </div>
               <div className="flex items-center gap-2 text-sm text-slate-400">
                 <CheckCircle className="h-4 w-4 text-green-400 flex-shrink-0" />
-                {t('landing.lp.hero.noCard', 'Aucune carte bancaire · Sans engagement · Hébergé en France')}
+                {t('landing.lp.hero.noCard', 'Aucune carte bancaire · Sans engagement')}
               </div>
             </div>
 
@@ -1816,62 +1799,12 @@ export default function LandingPage() {
       <section ref={proofRef} className="pt-16 pb-8 bg-white border-b border-gray-100 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-          {/* ── Header ── */}
-          <div className="text-center mb-10">
-            <span className="inline-flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-widest">
-              <span className="w-8 h-px bg-gray-300 inline-block" />
-              {t('landing.lp.proof.trustedBy', 'Ils nous font confiance')}
-              <span className="w-8 h-px bg-gray-300 inline-block" />
-            </span>
-          </div>
-
-          {/* ── Infinite-scroll logo marquee ── */}
-          <div className="relative mb-14">
-            <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-            <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
-            <div className="overflow-hidden">
-              <div className="marquee-track flex w-max gap-6">
-                {[...Array(2)].flatMap((_, dup) =>
-                  [
-                    { init: 'TE', name: 'TotalEnergies', sector: 'Énergie', grad: 'from-red-600 to-red-500' },
-                    { init: 'LV', name: 'LVMH', sector: 'Luxe', grad: 'from-amber-700 to-yellow-600' },
-                    { init: 'CA', name: 'Carrefour', sector: 'Distribution', grad: 'from-blue-700 to-blue-500' },
-                    { init: 'RE', name: 'Renault', sector: 'Automobile', grad: 'from-yellow-500 to-amber-400' },
-                    { init: 'SE', name: 'Schneider Electric', sector: 'Industrie', grad: 'from-green-600 to-emerald-500' },
-                    { init: 'DA', name: 'Danone', sector: 'Agroalimentaire', grad: 'from-sky-500 to-cyan-400' },
-                    { init: 'MI', name: 'Michelin', sector: 'Industrie', grad: 'from-blue-800 to-indigo-600' },
-                    { init: 'VE', name: 'Veolia', sector: 'Environnement', grad: 'from-teal-500 to-cyan-500' },
-                    { init: 'BN', name: 'BNP Paribas', sector: 'Finance', grad: 'from-green-700 to-green-500' },
-                    { init: 'LO', name: "L'Oréal", sector: 'Cosmétiques', grad: 'from-purple-600 to-violet-500' },
-                    { init: 'EN', name: 'Engie', sector: 'Énergie', grad: 'from-cyan-600 to-blue-400' },
-                    { init: 'VI', name: 'Vinci', sector: 'Construction', grad: 'from-slate-700 to-slate-500' },
-                    { init: 'AB', name: 'Airbus', sector: 'Aéronautique', grad: 'from-indigo-600 to-blue-500' },
-                    { init: 'SA', name: 'Sanofi', sector: 'Santé', grad: 'from-violet-600 to-purple-400' },
-                    { init: 'EF', name: 'EDF', sector: 'Énergie', grad: 'from-orange-500 to-amber-500' },
-                    { init: 'BO', name: 'Bouygues', sector: 'Télécom & BTP', grad: 'from-sky-600 to-blue-500' },
-                  ].map((c, i) => (
-                    <div key={`${dup}-${i}`} className="flex items-center gap-3 px-5 py-3 rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-lg hover:border-emerald-200 transition-all duration-300 flex-shrink-0 cursor-default select-none group">
-                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${c.grad} flex items-center justify-center flex-shrink-0 shadow-sm group-hover:scale-110 transition-transform`}>
-                        <span className="text-white text-xs font-black tracking-tight">{c.init}</span>
-                      </div>
-                      <div>
-                        <div className="text-sm font-bold text-gray-800 whitespace-nowrap">{c.name}</div>
-                        <div className="text-[11px] text-gray-400 font-medium">{c.sector}</div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-
           {/* ── Key metrics counters ── */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-14">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-14">
             {[
               { value: 22,  suffix: '',    label: 'Modules ESG couverts',       icon: BarChart3,  color: 'text-emerald-600', bg: 'bg-emerald-50', ring: 'ring-emerald-100', accent: '#059669' },
               { value: 100, suffix: '+',   label: 'Indicateurs ESRS trackés',   icon: Database,   color: 'text-blue-600',    bg: 'bg-blue-50',    ring: 'ring-blue-100',    accent: '#2563eb' },
               { value: 10,  suffix: '',    label: 'Référentiels intégrés',      icon: Globe,      color: 'text-violet-600',  bg: 'bg-violet-50',  ring: 'ring-violet-100',  accent: '#7c3aed' },
-              { value: 99,  suffix: ',9%', label: 'Disponibilité SLA garanti',  icon: Activity,   color: 'text-amber-600',   bg: 'bg-amber-50',   ring: 'ring-amber-100',   accent: '#d97706' },
             ].map(({ value, suffix, label, icon: Icon, color, bg, ring, accent }) => (
               <div key={label} className={`relative text-center p-6 rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-lg transition-all duration-200 group ring-1 ${ring}`}>
                 <div className={`w-12 h-12 ${bg} rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform`}>
@@ -1888,11 +1821,9 @@ export default function LandingPage() {
           {/* ── Trust badges ── */}
           <div className="flex flex-wrap justify-center gap-3 mb-12">
             {[
-              { icon: Shield, label: t('landing.lp.proof.badges.0.label', 'RGPD'), sub: t('landing.lp.proof.badges.0.sub', 'Données souveraines FR'), bg: 'bg-blue-50', text: 'text-blue-600', ring: 'ring-blue-100' },
-              { icon: Award, label: t('landing.lp.proof.badges.1.label', 'CSRD / ESRS 2025'), sub: t('landing.lp.proof.badges.1.sub', 'Conforme & à jour'), bg: 'bg-emerald-50', text: 'text-emerald-600', ring: 'ring-emerald-100' },
-              { icon: Lock, label: t('landing.lp.proof.badges.2.label', 'ISO 27001'), sub: t('landing.lp.proof.badges.2.sub', 'Infra certifiée'), bg: 'bg-slate-50', text: 'text-slate-700', ring: 'ring-slate-100' },
-              { icon: ShieldCheck, label: t('landing.lp.proof.badges.3.label', 'iXBRL / ESEF'), sub: t('landing.lp.proof.badges.3.sub', 'EFRAG conforme'), bg: 'bg-violet-50', text: 'text-violet-600', ring: 'ring-violet-100' },
-              { icon: Star, label: t('landing.lp.proof.badges.4.label', '4,9 / 5'), sub: t('landing.lp.proof.badges.4.sub', '200+ avis vérifiés'), bg: 'bg-amber-50', text: 'text-amber-600', ring: 'ring-amber-100' },
+              { icon: Shield, label: t('landing.lp.proof.badges.0.label', 'Isolation par client'), sub: t('landing.lp.proof.badges.0.sub', 'Cloisonnement en base de données (RLS)'), bg: 'bg-blue-50', text: 'text-blue-700', ring: 'ring-blue-100' },
+              { icon: Lock, label: t('landing.lp.proof.badges.1.label', 'Secrets chiffrés'), sub: t('landing.lp.proof.badges.1.sub', "Clés d'intégration chiffrées au repos"), bg: 'bg-slate-50', text: 'text-slate-700', ring: 'ring-slate-100' },
+              { icon: ShieldCheck, label: t('landing.lp.proof.badges.2.label', "Piste d'audit"), sub: t('landing.lp.proof.badges.2.sub', 'Empreintes SHA-256, validations datées'), bg: 'bg-violet-50', text: 'text-violet-700', ring: 'ring-violet-100' },
             ].map(({ icon: Icon, label, sub, bg, text, ring }) => (
               <div key={label} className={`flex items-center gap-3 px-5 py-3 rounded-2xl bg-white border border-gray-200 ring-1 ${ring} shadow-sm hover:shadow-md transition-all duration-200`}>
                 <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center flex-shrink-0`}>
@@ -1906,55 +1837,6 @@ export default function LandingPage() {
             ))}
           </div>
 
-          {/* ── Analyst & review platform recognition ── */}
-          <div className="pt-8 border-t border-gray-100">
-            <p className="text-center text-xs font-medium text-gray-400 uppercase tracking-widest mb-6">{t('landing.lp.proof.analystsTitle', "Reconnu par les analystes & plateformes d'évaluation")}</p>
-            <div className="flex flex-wrap justify-center gap-4">
-              {[
-                { badge: 'G2', title: 'High Performer 2025', score: '4.9/5', cat: 'ESG Reporting Software', grad: 'from-orange-500 to-red-500', hoverBorder: 'hover:border-orange-200', bgTint: 'to-orange-50/30', starColor: 'text-orange-400 fill-orange-400' },
-                { badge: '✓', title: 'Capterra Shortlist 2025', score: '4.8/5', cat: 'Sustainability Software', grad: 'from-teal-500 to-cyan-600', hoverBorder: 'hover:border-teal-200', bgTint: 'to-teal-50/30', starColor: 'text-teal-500 fill-teal-500' },
-                { badge: '🌿', title: 'Verdantix Green Quadrant', score: null, cat: 'Challenger innovant', grad: 'from-emerald-600 to-green-700', hoverBorder: 'hover:border-emerald-200', bgTint: 'to-emerald-50/30', starColor: '' },
-                { badge: '🌐', title: 'IDC MarketScape', score: null, cat: 'Major Player', grad: 'from-blue-600 to-indigo-700', hoverBorder: 'hover:border-blue-200', bgTint: 'to-blue-50/30', starColor: '' },
-                { badge: '🇫🇷', title: 'France 2030', score: null, cat: 'Lauréat innovation', grad: 'from-indigo-600 to-blue-800', hoverBorder: 'hover:border-indigo-200', bgTint: 'to-indigo-50/30', starColor: '' },
-              ].map((a, i) => (
-                <div key={a.title} className={`group flex items-center gap-3 px-5 py-4 rounded-2xl border border-gray-200 bg-gradient-to-br from-white ${a.bgTint} shadow-sm hover:shadow-lg ${a.hoverBorder} transition-all duration-300 cursor-default`}>
-                  <div className={`w-11 h-11 bg-gradient-to-br ${a.grad} rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm group-hover:scale-105 transition-transform`}>
-                    <span className="text-white font-black text-base">{a.badge}</span>
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-gray-900">{t(`landing.lp.proof.analysts.${i}.title`, a.title)}</div>
-                    {a.score ? (
-                      <div className="flex items-center gap-1 mt-0.5">
-                        {[...Array(5)].map((_, i) => <Star key={i} className={`h-3 w-3 ${a.starColor}`} />)}
-                        <span className="text-xs text-gray-500 ml-1">{a.score}</span>
-                      </div>
-                    ) : (
-                      <div className="text-xs text-emerald-600 font-semibold mt-0.5">{t(`landing.lp.proof.analysts.${i}.cat`, a.cat)}</div>
-                    )}
-                    {a.score && <div className="text-[11px] text-gray-400 mt-0.5">{t(`landing.lp.proof.analysts.${i}.cat`, a.cat)}</div>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* ── Press mentions ── */}
-          <div className="mt-10 pt-8 border-t border-gray-100">
-            <p className="text-center text-xs font-medium text-gray-400 uppercase tracking-widest mb-6">{t('landing.lp.proof.pressTitle', 'Dans la presse')}</p>
-            <div className="flex flex-wrap justify-center items-center gap-x-10 gap-y-4">
-              {[
-                { name: 'Les Echos', weight: 'font-serif font-bold', size: 'text-lg' },
-                { name: 'BFM Business', weight: 'font-extrabold', size: 'text-base' },
-                { name: 'Forbes France', weight: 'font-bold italic', size: 'text-lg' },
-                { name: 'Maddyness', weight: 'font-black', size: 'text-base' },
-                { name: 'FrenchWeb', weight: 'font-extrabold', size: 'text-base' },
-                { name: 'L\'Usine Digitale', weight: 'font-bold', size: 'text-sm' },
-              ].map(p => (
-                <span key={p.name} className={`${p.weight} ${p.size} text-gray-300 hover:text-gray-500 transition-colors cursor-default select-none`}>{p.name}</span>
-              ))}
-            </div>
-          </div>
-
         </div>
       </section>
 
@@ -1964,14 +1846,13 @@ export default function LandingPage() {
         <div className="absolute pointer-events-none" style={{ top: '50%', left: '20%', transform: 'translateY(-50%)', width: 600, height: 300, borderRadius: '50%', filter: 'blur(80px)', background: 'radial-gradient(ellipse, rgba(16,185,129,0.18) 0%, transparent 65%)' }} />
         <div className="absolute pointer-events-none" style={{ top: '50%', right: '15%', transform: 'translateY(-50%)', width: 400, height: 300, borderRadius: '50%', filter: 'blur(70px)', background: 'radial-gradient(ellipse, rgba(5,150,105,0.12) 0%, transparent 65%)' }} />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 lg:gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 lg:gap-8">
             {[
               { value: 22, suffix: '', label: t('landing.lp.stats.modules', 'Modules intégrés'), icon: Layers },
               { value: 100, suffix: '+', label: t('landing.lp.stats.indicators', 'Indicateurs ESRS'), icon: FileCheck },
               { value: 10, suffix: 'M+', label: t('landing.lp.stats.companies', 'Entreprises INSEE'), icon: Database },
               { value: 24, suffix: '', label: t('landing.lp.stats.actions', 'Actions décarbonation'), icon: Flame },
               { value: 10, suffix: '', label: t('landing.lp.stats.frameworks', 'Référentiels couverts'), icon: BookOpen },
-              { value: 500, suffix: '+', label: t('landing.lp.stats.clients', 'Entreprises clientes'), icon: Building2 },
             ].map(({ value, suffix, label, icon: Icon }) => (
               <div key={label} className="text-center group cursor-default">
                 <div className="w-12 h-12 mx-auto mb-3 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110" style={{ background: 'rgba(16,185,129,0.14)', border: '1px solid rgba(16,185,129,0.2)', boxShadow: '0 0 20px rgba(16,185,129,0.08)' }}>
@@ -2115,7 +1996,7 @@ export default function LandingPage() {
             {[
               { value: t('landing.lp.reassure.0.value', '3 jours'), label: t('landing.lp.reassure.0.label', 'Mise en service'), sub: t('landing.lp.reassure.0.sub', 'onboarding inclus') },
               { value: t('landing.lp.reassure.1.value', '22'), label: t('landing.lp.reassure.1.label', 'Modules intégrés'), sub: t('landing.lp.reassure.1.sub', 'dans un seul outil') },
-              { value: t('landing.lp.reassure.2.value', '100%'), label: t('landing.lp.reassure.2.label', 'Hébergement France'), sub: t('landing.lp.reassure.2.sub', 'ISO 27001 · RGPD') },
+              { value: t('landing.lp.reassure.2.value', 'Europe'), label: t('landing.lp.reassure.2.label', 'Hébergeur européen'), sub: t('landing.lp.reassure.2.sub', 'RGPD') },
               { value: t('landing.lp.reassure.3.value', 'Sans CB'), label: t('landing.lp.reassure.3.label', 'Essai 14 jours'), sub: t('landing.lp.reassure.3.sub', 'aucun engagement') },
             ].map((s, i) => (
               <div key={i} className="text-center p-6 bg-gray-50 rounded-2xl border border-gray-100">
@@ -2158,7 +2039,7 @@ export default function LandingPage() {
               <div className="text-xs font-bold text-emerald-700 mb-4">{t('landing.lp.diff.cards.0.subtitle', 'Namespace EFRAG 2024-12-31 · 35 concepts ESRS')}</div>
               <p className="text-sm text-gray-600 leading-relaxed mb-5 flex-1">
                 <Trans i18nKey="landing.lp.diff.cards.0.body">
-                  Nous produisons un <strong>XHTML balisé certifiable</strong> conforme au format imposé par l'ESMA aux sociétés cotées dès 2026. 90 % des plateformes concurrentes génèrent un PDF "déguisé" non conforme.
+                  Nous produisons un <strong>XHTML balisé en iXBRL</strong>, le format visé par l'ESMA pour les rapports de durabilité des sociétés cotées.
                 </Trans>
               </p>
               <div className="space-y-2 mb-6">
@@ -2318,7 +2199,7 @@ export default function LandingPage() {
               <br />
               <span className="text-emerald-600">{t('landing.lp.impact.titleLine2', 'avant et après ESGFlow')}</span>
             </h2>
-            <p className="text-lg text-gray-500 max-w-2xl mx-auto">{t('landing.lp.impact.subtitle', "Nos clients constatent des gains significatifs dès le premier trimestre d'utilisation.")}</p>
+            <p className="text-lg text-gray-500 max-w-2xl mx-auto">{t('landing.lp.impact.subtitle', "Estimez le temps que vous pourriez gagner, avec vos propres chiffres.")}</p>
           </div>
 
           {/* Before / After cards */}
@@ -2377,7 +2258,7 @@ export default function LandingPage() {
             {[
               { value: 80, suffix: '%', label: t('landing.lp.impact.kpis.0.label', 'Temps gagné'), sub: t('landing.lp.impact.kpis.0.sub', 'sur la collecte de données'), color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
               { value: 3, suffix: 'x', label: t('landing.lp.impact.kpis.1.label', 'Plus rapide'), sub: t('landing.lp.impact.kpis.1.sub', 'pour le reporting CSRD'), color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
-              { value: 100, suffix: '%', label: t('landing.lp.impact.kpis.2.label', 'Traçabilité'), sub: t('landing.lp.impact.kpis.2.sub', "piste d'audit certifiable"), color: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-100' },
+              { value: 100, suffix: '%', label: t('landing.lp.impact.kpis.2.label', 'Traçabilité'), sub: t('landing.lp.impact.kpis.2.sub', "des validations datées dans la piste d'audit"), color: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-100' },
               { value: 40, suffix: '%', label: t('landing.lp.impact.kpis.3.label', 'Coûts réduits'), sub: t('landing.lp.impact.kpis.3.sub', 'vs prestation externe'), color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
             ].map((kpi, i) => {
               // TODO : hook appelé dans un .map() — fonctionne car la liste est fixe (4 éléments) ; à extraire dans un composant <KpiCounter />.
@@ -2604,7 +2485,6 @@ export default function LandingPage() {
               { feature: 'Piste d\'audit SHA-256', esg: true, excel: false, greenly: false, sweep: false },
               { feature: 'Multi-réglementaire (10 ref.)', esg: true, excel: false, greenly: false, sweep: false },
               { feature: 'Taxonomie UE', esg: true, excel: false, greenly: false, sweep: 'partial' },
-              { feature: 'Hébergement 100% France', esg: true, excel: 'na', greenly: false, sweep: false },
               { feature: 'À partir de', esg: '249€', excel: '0€', greenly: '500€+', sweep: t('landing.lp.comparison.customQuote', 'Sur devis') },
             ].map((row, i) => {
               const renderCell = (val: boolean | string) => {
@@ -2794,7 +2674,7 @@ export default function LandingPage() {
                       {/* Assumptions */}
                       <div className="flex items-start gap-2 text-xs text-gray-400 bg-gray-50 rounded-xl p-3">
                         <BookOpen className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                        <span>{t('landing.lp.roi.assumption', "Estimation basée sur une réduction de 80 % du temps de collecte et de reporting, constatée en moyenne par nos clients après 3 mois d'utilisation.")}</span>
+                        <span>{t('landing.lp.roi.assumption', "Simulation indicative fondée sur une hypothèse de 80 % de temps gagné. Cette hypothèse n'a pas été mesurée sur des clients : adaptez les curseurs à votre situation.")}</span>
                       </div>
                     </div>
 
@@ -2851,60 +2731,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Testimonials ─────────────────────────────────────────────────────── */}
-      <section className="py-24 bg-gradient-to-b from-white to-gray-50 relative overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
-              <span className="w-8 h-px bg-emerald-400 inline-block" />
-              {t('landing.lp.testimonials.eyebrow', 'Témoignages')}
-              <span className="w-8 h-px bg-emerald-400 inline-block" />
-            </span>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mt-2">{t('landing.lp.testimonials.title', 'Ce que disent nos clients')}</h2>
-          </div>
-
-          {/* Featured testimonial */}
-          <div className="mb-8 bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-10 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl" />
-            <div className="relative flex flex-col md:flex-row gap-8 items-start">
-              <div className="flex-shrink-0">
-                <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-xl font-black shadow-lg">SM</div>
-              </div>
-              <div className="flex-1">
-                <div className="flex gap-1 mb-4">{Array.from({ length: 5 }).map((_, j) => <Star key={j} className="h-4 w-4 text-yellow-400 fill-yellow-400" />)}</div>
-                <blockquote className="text-white text-lg md:text-xl leading-relaxed font-medium mb-6">
-                  "{t('landing.lp.testimonials.featured.text', "Le journal d'audit détaillé et le module multi-réglementaire ont transformé notre préparation aux revues CSRD. Ce qui prenait plusieurs semaines se fait maintenant en quelques heures.")}"
-                </blockquote>
-                <div>
-                  <div className="text-white font-bold">Sophie Martineau</div>
-                  <div className="text-slate-400 text-sm">{t('landing.lp.testimonials.featured.role', 'Directrice RSE · Nexans')}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[
-              { name: 'Thomas Durand', role: 'CFO · Biocoop', text: 'Le plan de décarbonation avec les scénarios SBTi et les 24 actions ROI nous a permis de construire notre trajectoire Net Zero en quelques jours, contre plusieurs semaines auparavant.', stars: 5, avatar: 'TD', color: 'from-blue-500 to-indigo-600' },
-              { name: 'Amélie Chen', role: 'Partner ESG · Deloitte France', text: 'Le module Supply Chain ESG avec scoring fournisseurs et questionnaires automatisés est exactement ce que nos clients attendaient pour structurer leur démarche CSDDD. Excellent outil.', stars: 5, avatar: 'AC', color: 'from-emerald-500 to-teal-600' },
-            ].map((tst, i) => (
-              <div key={i} className="flex flex-col p-8 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                <div className="flex gap-1 mb-5">{Array.from({ length: tst.stars }).map((_, j) => <Star key={j} className="h-4 w-4 text-yellow-400 fill-yellow-400" />)}</div>
-                <blockquote className="text-gray-700 text-sm leading-relaxed flex-1 mb-6 italic">"{t(`landing.lp.testimonials.items.${i}.text`, tst.text)}"</blockquote>
-                <div className="flex items-center gap-3 pt-5 border-t border-gray-100">
-                  <div className={`w-10 h-10 bg-gradient-to-br ${tst.color} rounded-xl flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>{tst.avatar}</div>
-                  <div>
-                    <div className="text-sm font-bold text-gray-900">{tst.name}</div>
-                    <div className="text-xs text-gray-500">{t(`landing.lp.testimonials.items.${i}.role`, tst.role)}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── Sécurité & Conformité ──────────────────────────────────────────── */}
       <section className="py-24 bg-white relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(ellipse at 70% 50%, rgba(99,102,241,0.04) 0%, transparent 60%)' }} />
@@ -2916,16 +2742,16 @@ export default function LandingPage() {
               <span className="w-8 h-px bg-slate-300 inline-block" />
             </span>
             <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mt-2 mb-4">{t('landing.lp.security.title', 'Vos données méritent le meilleur')}</h2>
-            <p className="text-lg text-gray-500 max-w-2xl mx-auto">{t('landing.lp.security.subtitle', "Infrastructure souveraine, chiffrement de bout en bout, audit certifiable — la confiance n'est pas une option.")}</p>
+            <p className="text-lg text-gray-500 max-w-2xl mx-auto">{t('landing.lp.security.subtitle', "Cloisonnement par client, secrets chiffrés, piste d'audit horodatée : la confiance se prouve.")}</p>
           </div>
 
           {/* Certifications row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-14">
             {[
-              { icon: Shield, label: 'RGPD', sub: 'Données hébergées en France', desc: 'Aucun transfert hors UE. DPA inclus.', color: 'from-blue-500 to-indigo-600', ring: 'ring-blue-100' },
-              { icon: Lock, label: 'ISO 27001', sub: 'Datacenter certifié', desc: 'Sécurité physique & logique auditée.', color: 'from-slate-600 to-slate-800', ring: 'ring-slate-100' },
-              { icon: ShieldCheck, label: 'iXBRL/ESEF', sub: 'EFRAG 2024-12-31', desc: 'XHTML certifiable conforme ESMA.', color: 'from-violet-500 to-purple-600', ring: 'ring-violet-100' },
-              { icon: Award, label: 'CSRD / ESRS 2025', sub: 'Conforme & mis à jour', desc: '82 exigences ESRS mappées.', color: 'from-emerald-500 to-green-600', ring: 'ring-emerald-100' },
+              { icon: Shield, label: 'Isolation', sub: 'Cloisonnement par client', desc: 'Chaque organisation ne voit que ses propres données (RLS PostgreSQL).', color: 'from-blue-500 to-indigo-600', ring: 'ring-blue-100' },
+              { icon: Lock, label: 'Secrets chiffrés', sub: "Clés d'intégration", desc: 'Les identifiants de vos connecteurs sont chiffrés avant stockage.', color: 'from-slate-600 to-slate-800', ring: 'ring-slate-100' },
+              { icon: ShieldCheck, label: 'Piste d\'audit', sub: 'Empreintes SHA-256', desc: 'Validations datées ; toute modification ultérieure est détectée.', color: 'from-violet-500 to-purple-600', ring: 'ring-violet-100' },
+              { icon: Award, label: 'iXBRL / ESEF', sub: 'Balisage des rapports', desc: 'Concepts ESRS balisés pour les rapports de durabilité.', color: 'from-emerald-500 to-green-600', ring: 'ring-emerald-100' },
             ].map(({ icon: Icon, label, sub, desc, color, ring }, i) => (
               <div key={label} className={`relative group p-6 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 ring-1 ${ring}`}>
                 <div className={`w-12 h-12 bg-gradient-to-br ${color} rounded-xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-105 transition-transform`}>
@@ -2956,12 +2782,11 @@ export default function LandingPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
-                  { icon: Lock, title: 'Chiffrement AES-256', items: ['Données au repos chiffrées', 'TLS 1.3 en transit', 'Clés rotées automatiquement'] },
-                  { icon: Hash, title: 'Empreintes SHA-256', items: ['Empreinte par enregistrement', 'Horodatage UTC précis', 'Détection des modifications'] },
-                  { icon: Server, title: 'Hébergement souverain', items: ['Datacenter France tier III+', 'Backup quotidien géo-répliqué', 'Aucun cloud US / Aucun GAFAM'] },
-                  { icon: Eye, title: 'Traçabilité complète', items: ['Journal d\'audit détaillé', 'Qui, quoi, quand — traçable', 'Export auditeurs 1 clic'] },
+                  { icon: Lock, title: 'Chiffrement', items: ['Secrets d\'intégration chiffrés', 'Connexion en HTTPS', 'Mots de passe hachés'] },
+                  { icon: Hash, title: 'Empreintes SHA-256', items: ['Empreinte par validation', 'Horodatage UTC', 'Détection des modifications'] },
+                  { icon: Server, title: 'Hébergement européen', items: ['Prestataire européen', 'Données de chaque client cloisonnées', 'IA : texte envoyé à OpenAI, signalé avant envoi'] },
+                  { icon: Eye, title: 'Traçabilité', items: ['Journal d\'audit détaillé', 'Qui, quoi, quand', 'Export des données'] },
                   { icon: Users, title: 'Contrôle d\'accès', items: ['RBAC multi-niveaux', 'SSO SAML / OAuth2', 'Isolation tenant (RLS)'] },
-                  { icon: RefreshCw, title: 'Continuité & SLA', items: ['Disponibilité 99.9%', 'Monitoring 24/7', 'PRA & PCA documentés'] },
                 ].map(({ icon: Icon, title, items }, i) => (
                   <div key={title} className="p-5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/8 transition-colors">
                     <div className="flex items-center gap-3 mb-4">
@@ -3105,17 +2930,17 @@ export default function LandingPage() {
               </h3>
               <p className="text-gray-600 leading-relaxed mb-6 text-lg">
                 <Trans i18nKey="landing.lp.about.missionP1">
-                  Nous construisons la première plateforme ESG <strong className="text-gray-900">nativement européenne</strong> : conçue dès le départ pour la CSRD, la Taxonomie UE, SFDR, les SBTi et le devoir de vigilance — pas adaptée après coup.
+                  Nous construisons une plateforme ESG <strong className="text-gray-900">pensée pour l'Europe</strong> : conçue dès le départ pour la CSRD, la Taxonomie UE, SFDR, les SBTi et le devoir de vigilance — pas adaptée après coup.
                 </Trans>
               </p>
               <p className="text-gray-600 leading-relaxed mb-8">
-                {t('landing.lp.about.missionP2', 'Notre conviction : la transition durable ne doit pas être réservée aux grands groupes avec des équipes de 20 consultants. Une PME de 250 personnes doit pouvoir produire un rapport CSRD certifiable, en quelques semaines, sans expertise préalable.')}
+                {t('landing.lp.about.missionP2', 'Notre conviction : la transition durable ne doit pas être réservée aux grands groupes avec des équipes de 20 consultants. Une PME de 250 personnes doit pouvoir préparer un rapport CSRD, en quelques semaines, sans expertise préalable.')}
               </p>
               <div className="grid grid-cols-2 gap-4">
                 {[
                   { value: '22', label: 'modules ESG', color: 'text-emerald-600' },
                   { value: '8', label: 'réglementations couvertes', color: 'text-blue-600' },
-                  { value: '100%', label: 'hébergement France', color: 'text-violet-600' },
+                  { value: 'UE', label: 'hébergeur européen', color: 'text-violet-600' },
                   { value: '14j', label: "d'essai gratuit", color: 'text-amber-600' },
                 ].map((s, i) => (
                   <div key={i} className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
@@ -3134,17 +2959,17 @@ export default function LandingPage() {
                   {
                     year: '2022', icon: Leaf, color: 'bg-emerald-500',
                     title: 'Naissance du projet',
-                    desc: 'Face à la complexité de la directive CSRD en cours de finalisation, une équipe de consultants RSE décide de construire l\'outil qu\'ils auraient voulu avoir.',
+                    desc: 'Face à la complexité de la directive CSRD, le projet naît d\'un besoin concret : un outil simple pour préparer le reporting.',
                   },
                   {
                     year: '2023', icon: Code2, color: 'bg-blue-500',
                     title: 'Premier prototype',
-                    desc: 'Lancement du module Bilan Carbone et du générateur de rapport CSRD. Premiers bêta-testeurs en France et en Belgique.',
+                    desc: 'Premiers modules : bilan carbone et générateur de rapport CSRD.',
                   },
                   {
                     year: '2024', icon: Globe, color: 'bg-violet-500',
                     title: 'Plateforme complète',
-                    desc: 'Ajout de la Taxonomie UE, SFDR, SBTi, Vigilance, circuit d\'approbation ISAE 3000. Certification iXBRL/ESEF pour les rapports de durabilité.',
+                    desc: 'Ajout de la Taxonomie UE, SFDR, SBTi, Vigilance et d\'un circuit de validation. Balisage iXBRL/ESEF des rapports de durabilité.',
                   },
                   {
                     year: '2025+', icon: Sparkles, color: 'bg-amber-500',
@@ -3337,7 +3162,6 @@ export default function LandingPage() {
                     ['Devoir de vigilance (CSDDD)', true, false, false, false],
                     ['Circuit approbation ISAE 3000', true, false, true, false],
                     ['iXBRL / ESEF export', true, false, true, false],
-                    ['Hébergement France / RGPD', true, false, false, false],
                     ['Plan gratuit disponible', true, false, false, false],
                     ['Tarif PME < 500 €/mois', true, true, false, false],
                   ].map(([label, ...values], i) => (
@@ -3458,7 +3282,7 @@ export default function LandingPage() {
           </h2>
 
           <p className="text-xl text-slate-300 mb-12 max-w-2xl mx-auto leading-relaxed">
-            {t('landing.lp.cta.subtitle', 'Rejoignez les équipes RSE qui ont remplacé leurs tableurs et leurs silos par une plateforme unique, intelligente et certifiable.')}
+            {t('landing.lp.cta.subtitle', 'Remplacez vos tableurs et vos silos par une plateforme unique. Essayez gratuitement pendant 14 jours.')}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
@@ -3478,9 +3302,9 @@ export default function LandingPage() {
           {/* Trust badges */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mx-auto">
             {[
-              { icon: Shield, label: 'RGPD conforme', sub: 'Données souveraines' },
-              { icon: Globe, label: 'Hébergé en France', sub: 'ISO 27001' },
-              { icon: Award, label: 'iXBRL/ESEF', sub: 'EFRAG 2024-12-31' },
+              { icon: Shield, label: 'RGPD', sub: 'Conçu pour la conformité' },
+              { icon: Globe, label: 'Hébergeur européen', sub: 'Données en Europe' },
+              { icon: Award, label: 'iXBRL/ESEF', sub: 'Balisage des rapports' },
               { icon: Lock, label: 'SHA-256', sub: 'Empreintes par entrée' },
             ].map((item, i) => (
               <div key={i} className="flex flex-col items-center gap-2 p-4 bg-white/5 border border-white/10 rounded-2xl">
@@ -3504,7 +3328,7 @@ export default function LandingPage() {
                 <Wordmark className="text-xl" tone="light" />
               </div>
               <p className="text-slate-400 text-sm leading-relaxed max-w-xs mb-6">
-                {t('landing.lp.footer.tagline', 'La plateforme ESG complète — 22 modules, 100+ indicateurs ESRS, IA intégrée, conformité CSRD certifiable.')}
+                {t('landing.lp.footer.tagline', 'La plateforme ESG pour préparer votre reporting CSRD : collecte, scores, rapports, IA.')}
               </p>
               <div className="flex gap-2.5">
                 {[

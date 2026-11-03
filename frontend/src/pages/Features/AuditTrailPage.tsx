@@ -12,7 +12,7 @@ export default function AuditTrailPage() {
       title={t('features.auditTrail.title', "Piste d'Audit & Traçabilité")}
       subtitle={t('features.auditTrail.subtitle', "Journal d'audit détaillé avec empreintes SHA-256 par entrée")}
       description={t('features.auditTrail.description', "Tracez chaque action ESG de bout en bout : qui a modifié quoi, quand, pourquoi et avec quelle source. Versionning avant/après, pièces justificatives attachées, empreintes SHA-256 par entrée et export complet pour vos auditeurs externes.")}
-      frameworks={['CSRD Art. 34', 'ISO 27001', 'NIS 2', 'RGPD Art. 30']}
+      frameworks={['CSRD Art. 34', 'RGPD Art. 30']}
       appPath="/app/audit-trail"
       benefits={[
         {

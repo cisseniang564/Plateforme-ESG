@@ -130,7 +130,7 @@ const FRAMEWORKS = [
 ];
 
 const SECURITY = [
-  { label: 'Hébergement France (IONOS)', icon: ShieldCheck },
+  { label: 'Hébergeur européen (IONOS)', icon: ShieldCheck },
   { label: 'Chiffrement TLS 1.3 en transit', icon: Lock },
   { label: 'Données chiffrées au repos (AES-256)', icon: Database },
   { label: 'Multi-tenancy avec isolation complète', icon: Building2 },
@@ -162,8 +162,8 @@ const FAQS = [
     a: "ESGFlow génère des fichiers iXBRL conformes au namespace EFRAG 2024-12-31 (esrs_cor). Pour un dépôt réglementaire officiel, nous recommandons une validation via Arelle (outil EFRAG). ESGFlow couvre les mandatory disclosures les plus couramment requis — une validation complète XSD reste la responsabilité de votre auditeur externe."
   },
   {
-    q: "Mes données sont-elles hébergées en France ?",
-    a: "Oui. ESGFlow est hébergé exclusivement sur des serveurs IONOS situés en France (région Europe). Vos données ESG ne quittent jamais le territoire européen. L'architecture est conforme au RGPD avec isolation totale entre clients (multi-tenancy)."
+    q: "Où sont hébergées mes données ?",
+    a: "ESGFlow est hébergé chez IONOS, un hébergeur européen, avec une isolation entre clients (multi-tenancy). Les fonctions d'IA (Gaïa, questionnaires clients) envoient le texte analysé à OpenAI : ce point est signalé avant chaque envoi, et le fichier n'est pas conservé."
   },
   {
     q: "Puis-je exporter mes données pour un auditeur externe ?",
@@ -259,8 +259,8 @@ export default function StandardsPage() {
               <div className="text-sm text-gray-300 mt-1">Frameworks supportés</div>
             </div>
             <div className="bg-white/10 rounded-xl px-6 py-4 text-center">
-              <div className="text-3xl font-bold text-green-400">🇫🇷</div>
-              <div className="text-sm text-gray-300 mt-1">Hébergé en France</div>
+              <div className="text-3xl font-bold text-green-400">UE</div>
+              <div className="text-sm text-gray-300 mt-1">Hébergeur européen</div>
             </div>
           </div>
 
@@ -377,7 +377,7 @@ export default function StandardsPage() {
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-4">Sécurité & Hébergement</h2>
               <p className="text-gray-500 mb-8">
-                Vos données ESG sont sensibles. ESGFlow est conçu avec une sécurité de niveau enterprise, hébergé exclusivement en France et conforme au RGPD.
+                Vos données ESG sont sensibles. ESGFlow est conçu pour les protéger : cloisonnement par client, secrets chiffrés et piste d'audit horodatée.
               </p>
               <div className="space-y-3">
                 {SECURITY.map((s, i) => (
@@ -455,7 +455,7 @@ export default function StandardsPage() {
             </Link>
           </div>
           <p className="mt-6 text-green-200 text-xs">
-            Hébergé en France · Conforme RGPD · Support en français
+            Hébergeur européen · Conçu pour le RGPD · Support en français
           </p>
         </div>
       </section>
