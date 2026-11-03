@@ -34,3 +34,14 @@ test.describe('Gaïa', () => {
     await expect(page.getByRole('button', { name: 'Choisir un fichier' }).first()).toBeVisible();
   });
 });
+
+test.describe('Rapports', () => {
+  test('deux mesures nommées, et plus de « conformité CSRD » ambiguë', async ({ page }) => {
+    await page.goto('/app/reports');
+    const measures = page.getByRole('region', { name: 'Mesures' });
+    await expect(measures.getByText('Données saisies')).toBeVisible();
+    await expect(measures.getByText('Exigences ESRS couvertes')).toBeVisible();
+    await expect(page.getByText(/conformité CSRD/i)).toHaveCount(0);
+    await expect(page.getByText(/taux de complétude/i)).toHaveCount(0);
+  });
+});
