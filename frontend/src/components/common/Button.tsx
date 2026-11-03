@@ -22,8 +22,8 @@ const BASE = [
 ].join(' ');
 
 const VARIANTS: Record<Variant, string> = {
-  primary:   'bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 shadow-btn-primary hover:shadow-btn-primary-hover hover:-translate-y-px focus-visible:ring-primary-500',
-  success:   'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 shadow-sm focus-visible:ring-emerald-500',
+  primary:   'bg-primary-700 text-white hover:bg-primary-800 active:bg-primary-900 shadow-btn-primary hover:shadow-btn-primary-hover hover:-translate-y-px focus-visible:ring-primary-500',
+  success:   'bg-emerald-700 text-white hover:bg-emerald-800 active:bg-emerald-900 shadow-sm focus-visible:ring-emerald-500',
   danger:    'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm focus-visible:ring-red-500',
   secondary: 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 shadow-sm focus-visible:ring-gray-400',
   outline:   'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 focus-visible:ring-gray-400',

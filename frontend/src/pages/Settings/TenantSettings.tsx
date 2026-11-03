@@ -1494,7 +1494,7 @@ export default function TenantSettings() {
         </div>
       </div>
 
-      {/* Safety spacer to avoid overlap with floating QuickActions (+) button on small viewports */}
+      {/* Marge basse de sécurité sur petits écrans */}
       <div className="h-24 sm:h-4" aria-hidden="true" />
     </div>
   );

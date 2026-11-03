@@ -43,6 +43,7 @@ interface PanelGroup {
 interface RailSection {
   id: string;
   label: string;
+  title?: string;         // libellé complet (infobulle) quand le libellé du rail est abrégé
   icon: LucideIcon;
   href?: string;          // direct link — no panel
   groups?: PanelGroup[];
@@ -104,6 +105,14 @@ function buildRail(t: TFn): RailSection[] {
       ],
     },
     {
+      // Fonction clé pour répondre aux clients : au premier niveau, plus cachée dans Conformité.
+      id: 'questionnaires',
+      label: 'Clients',
+      title: 'Questionnaires clients',
+      icon: ClipboardList,
+      href: '/app/questionnaires',
+    },
+    {
       id: 'analyses',
       label: t('sidebar.rail.analyses'),
       icon: BarChart3,
@@ -124,7 +133,6 @@ function buildRail(t: TFn): RailSection[] {
             { name: t('sidebar.nav.materiality'),       href: '/app/materiality',        icon: Grid },
             { name: t('sidebar.nav.risks'),              href: '/app/risks',              icon: AlertTriangle },
             { name: t('sidebar.nav.organisations'),      href: '/app/organizations',      icon: Building2 },
-            { name: t('sidebar.nav.gaia'),               href: '/app/gaia',               icon: Sparkles, feature: 'ai_narrative' },
             { name: t('sidebar.nav.aiInsights'),         href: '/app/intelligence',       icon: Sparkles, feature: 'ai_narrative' },
             { name: t('sidebar.nav.iaPredictive'),       href: '/app/ai-insights',        icon: Brain, feature: 'ai_narrative' },
           ],
@@ -169,12 +177,6 @@ function buildRail(t: TFn): RailSection[] {
             { name: t('sidebar.nav.sfdr'),        href: '/app/compliance/sfdr',               icon: Globe,       feature: 'sfdr_report' },
             { name: t('sidebar.nav.ixbrl'),       href: '/app/compliance/ixbrl',              icon: FileCode2 },
             { name: 'Plan de vigilance',          href: '/app/vigilance',                     icon: Shield,      feature: 'risk_register' },
-          ],
-        },
-        {
-          title: 'Répondre à vos clients',
-          items: [
-            { name: 'Questionnaires clients', href: '/app/questionnaires', icon: ClipboardList, badge: 'IA', badgeVariant: 'violet' },
           ],
         },
         {
@@ -306,6 +308,7 @@ function ScoreRing({ score }: { score: number }) {
 const ACCENT: Record<string, string> = {
   home:       '16,185,129',   // émeraude
   gaia:       '167,139,250',  // violet (IA)
+  questionnaires: '192,132,252', // violet clair
   donnees:    '56,189,248',   // ciel
   analyses:   '129,140,248',  // indigo
   carbone:    '251,146,60',   // orange
@@ -342,8 +345,8 @@ function RailTile({ icon: Icon, label, active, rgb, small }: {
         />
       </span>
       <span
-        className={`mt-1 text-[10px] font-semibold leading-none tracking-wide transition-colors ${
-          active ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'
+        className={`mt-1 text-[11px] font-semibold leading-none tracking-wide transition-colors ${
+          active ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'
         }`}
       >
         {label}
@@ -363,7 +366,7 @@ function RailItem({ section, isActive, isOpen, onClick }: {
 
   if (section.href) {
     return (
-      <NavLink to={section.href} end={section.href === '/app'} className={cls} title={section.label}>
+      <NavLink to={section.href} end={section.href === '/app'} className={cls} title={section.title ?? section.label} aria-label={section.title ?? section.label}>
         {({ isActive: na }) => <RailTile icon={section.icon} label={section.label} active={na} rgb={rgb} />}
       </NavLink>
     );

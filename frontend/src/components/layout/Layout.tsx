@@ -1,12 +1,11 @@
 import { Component, type ReactNode, useState, useEffect } from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { TourProvider, useTourContext } from '@/components/tour/TourContext';
 import GuidedTour from '@/components/tour/GuidedTour';
-import QuickActions from '@/components/common/QuickActions';
 import TrialBanner from '@/components/common/TrialExpiredBanner';
 import DemoSessionBanner from '@/components/common/DemoSessionBanner';
 import OnboardingChecklist from '@/components/common/OnboardingChecklist';
@@ -87,6 +86,7 @@ export default function Layout() {
   const { t } = useTranslation();
   const { checked } = useOnboarding();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { pathname } = useLocation();
 
   // Prevent flash before onboarding check
   if (!checked) {
@@ -131,8 +131,13 @@ export default function Layout() {
             </div>
           </main>
 
-          <QuickActions />
-          <OnboardingChecklist />
+          {/* Un seul élément flottant : la checklist de démarrage, sur l'accueil et sur grand écran.
+              Le bouton « + » est supprimé : chaque page porte déjà son action principale. */}
+          {pathname === '/app' && (
+            <div className="hidden md:block">
+              <OnboardingChecklist />
+            </div>
+          )}
 
           {/* ── Footer ── */}
           <footer className="flex-shrink-0 border-t border-gray-100 bg-white px-6 py-2">

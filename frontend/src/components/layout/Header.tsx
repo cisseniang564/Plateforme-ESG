@@ -98,6 +98,7 @@ function buildRouteLabels(t: TFn): Record<string, string> {
     '/app/reports/multi-standards':       t('header.routes.multiStandards'),
     '/app/templates':                     t('header.routes.templates'),
     '/app/questionnaires':                t('header.routes.questionnaires'),
+    '/app/gaia':                          t('header.routes.gaia'),
     '/app/settings':                      t('header.routes.settings'),
     '/app/settings/users':                t('header.routes.settingsUsers'),
     '/app/settings/methodology':          t('header.routes.settingsMethodology'),
@@ -120,6 +121,8 @@ function usePageTitle() {
   if (labels[location.pathname]) return labels[location.pathname];
   let best = '';
   for (const key of Object.keys(labels)) {
+    // « /app » est le préfixe de toutes les pages : il ne sert que pour l'accueil exact.
+    if (key === '/app') continue;
     if (location.pathname.startsWith(key) && key.length > best.length) best = key;
   }
   return labels[best] ?? 'ESGFlow';
