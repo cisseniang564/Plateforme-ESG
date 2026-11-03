@@ -1,21 +1,20 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Award, Building2, Database, Shield, Plug, Brain, Leaf, Users, Scale,
-  RefreshCw, Sparkles, ArrowUpRight, ChevronRight, AlertTriangle, CheckCircle2, Target, CalendarClock, Bell,
+  Leaf, Users, Scale, RefreshCw, Sparkles, ArrowUpRight, ChevronRight, AlertTriangle, CheckCircle2,
+  Target, CalendarClock, Bell, FileText,
 } from 'lucide-react';
 import {
   Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
-  PieChart, Pie, Cell,
 } from 'recharts';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Button, SegmentedControl, StatCard, Badge, EmptyState } from '@/components/common';
+import { Button, Badge, EmptyState } from '@/components/common';
 import Spinner from '@/components/common/Spinner';
 import GettingStarted from './GettingStarted';
 import { useAuth } from '@/hooks/useAuth';
-import { PILLAR_COLORS } from '@/styles/tokens';
+import { buildNextActions, esrsAverage, esrsLevel, gapToTarget, shortCode, trend as trendOf } from './dashboardHelpers';
 import api from '@/services/api';
 import { getBatchOrgScores, getScoringDashboard, getOrgScores, type OrgScore } from '@/services/esgScoringService';
 import toast from 'react-hot-toast';
@@ -34,11 +33,6 @@ interface Organization {
 interface DashboardStats {
   total_organizations: number;
   average_score: number;
-  top_performers: number;
-  improving_orgs: number;
-  total_indicators: number;   // nb organisations avec données (anciennement hardcodé)
-  data_points: number;        // nb organisations avec scores calculés
-  completion_rate: number;    // taux moyen de complétude (% de l'API)
 }
 
 /** Convert a score data window (months) into a human-friendly label. */
@@ -88,7 +82,6 @@ export default function ExecutiveDashboard() {
   const [loading, setLoading] = useState(true);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
   const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
   const [esrsSections, setEsrsSections] = useState<{ code: string; label: string; pct: number }[] | null>(null);
   // Aggregated time series of historical scores across ALL orgs.
@@ -181,21 +174,9 @@ export default function ExecutiveDashboard() {
         ?? (scoredOrgs.length > 0
           ? scoredOrgs.reduce((sum: number, org: any) => sum + (org.overall_score || 0), 0) / scoredOrgs.length
           : 0);
-      const topPerformers = scoredOrgs.filter((org: any) => (org.overall_score || 0) >= 75).length;
-      // Nombre d'orgs avec un score en amélioration (score entre 40 et 74)
-      const improving = scoredOrgs.filter((org: any) => {
-        const s = org.overall_score || 0;
-        return s >= 40 && s < 75;
-      }).length || Math.floor(totalOrgs * 0.3);
-
       setStats({
         total_organizations: totalOrgs,
         average_score: Math.round(avgScore * 10) / 10,
-        top_performers: topPerformers,
-        improving_orgs: improving,
-        total_indicators: dash?.statistics?.total_organizations ?? totalOrgs,
-        data_points: scoredOrgs.length,
-        completion_rate: Math.round(dash?.statistics?.average_completeness ?? (totalOrgs > 0 ? 70 : 0))
       });
 
       // ── Aggregated score history for the evolution chart ─────────────────
@@ -248,127 +229,49 @@ export default function ExecutiveDashboard() {
     }
   };
 
-  // Évolution temporelle — alimentée par les scores historiques agrégés.
-  // Filtre selon la période sélectionnée (7j / 30j / 90j / 1an).
-  const evolutionData = useMemo(() => {
-    if (scoreHistory.length === 0) return [];
-    const today = new Date();
-    const days = selectedPeriod === '7d' ? 7 :
-                 selectedPeriod === '30d' ? 30 :
-                 selectedPeriod === '90d' ? 90 : 365;
-    const cutoff = new Date(today.getTime() - days * 86_400_000);
-    const inWindow = scoreHistory.filter(p => new Date(p.date + '-01') >= cutoff);
-    // Les scores sont mensuels : une fenêtre de 7 ou 30 jours contient au plus 1 point.
-    // On retombe alors sur les 6 derniers mois pour toujours montrer une tendance.
-    return (inWindow.length >= 2 ? inWindow : scoreHistory.slice(-6))
-      .map(p => ({
-        // Keys used by the recharts ComposedChart below
-        month:         p.label,
-        overall:       p.global,
-        environmental: p.env,
-        social:        p.soc,
-        governance:    p.gov,
-      }));
-  }, [scoreHistory, selectedPeriod]);
+  // Évolution : tout l'historique disponible (scores mensuels, 12 points au plus).
+  const evolutionData = useMemo(
+    () => scoreHistory.map(p => ({ month: p.label, overall: p.global })),
+    [scoreHistory],
+  );
 
-  // Répartition par rating — couvre TOUS les buckets (AAA → D) et masque les vides
-  const RATING_COLORS: Record<string, string> = {
-    AAA: '#047857', AA: '#059669', A: '#10b981',
-    BBB: '#3b82f6', BB: '#0ea5e9', B:  '#f59e0b',
-    CCC: '#ef4444', CC: '#dc2626', C:  '#991b1b',
-    D:   '#7f1d1d',
-  };
-  const ratingDistribution = ['AAA','AA','A','BBB','BB','B','CCC','CC','C','D']
-    .map(r => ({
-      name:  r,
-      value: organizations.filter(o => (o.rating || '').toUpperCase() === r).length,
-      color: RATING_COLORS[r],
-    }))
-    .filter(r => r.value > 0);
+  const PILLAR_STYLE = {
+    env: { text: '#047857', fill: '#10b981', soft: '#ecfdf5', route: 'environmental' },
+    soc: { text: '#1d4ed8', fill: '#3b82f6', soft: '#eff6ff', route: 'social' },
+    gov: { text: '#6d28d9', fill: '#8b5cf6', soft: '#f5f3ff', route: 'governance' },
+  } as const;
 
-  // Scores moyens par pilier (protégé contre division par zéro)
   const orgCount = organizations.length || 1;
-  const pillarAverages = [
-    {
-      name: t('dashboard.environmental'),
-      score: Math.round(organizations.reduce((sum, org) =>
-        sum + (org.environmental_score || 0), 0) / orgCount),
-      target: 75,
-      color: '#10b981',
-      icon: Leaf
-    },
-    {
-      name: t('dashboard.social'),
-      score: Math.round(organizations.reduce((sum, org) =>
-        sum + (org.social_score || 0), 0) / orgCount),
-      target: 75,
-      color: '#3b82f6',
-      icon: Users
-    },
-    {
-      name: t('dashboard.governance'),
-      score: Math.round(organizations.reduce((sum, org) =>
-        sum + (org.governance_score || 0), 0) / orgCount),
-      target: 75,
-      color: '#8b5cf6',
-      icon: Scale
-    }
+  const avgOf = (k: 'environmental_score' | 'social_score' | 'governance_score') =>
+    Math.round(organizations.reduce((sum, org) => sum + (org[k] || 0), 0) / orgCount);
+  const pillars = [
+    { key: 'env' as const, name: t('dashboard.environmental'), icon: Leaf,  value: avgOf('environmental_score') },
+    { key: 'soc' as const, name: t('dashboard.social'),        icon: Users, value: avgOf('social_score') },
+    { key: 'gov' as const, name: t('dashboard.governance'),    icon: Scale, value: avgOf('governance_score') },
   ];
 
-  const getPeriodLabel = () => {
-    switch (selectedPeriod) {
-      case '7d': return t('dashboard.last7days');
-      case '30d': return t('dashboard.last30days');
-      case '90d': return t('dashboard.last90days');
-      case '1y': return t('dashboard.last12months');
-    }
-  };
-
-  // ── Valeurs dérivées (toutes calculées à partir des vraies données) ──────────
   const avg = Math.round(stats?.average_score || 0);
-  const scored = organizations.filter(o => o.overall_score != null);
-  const needAttention = scored.filter(o => (o.overall_score || 0) < 45);
-  const unscored = organizations.filter(o => o.overall_score == null);
-  const esrsAvg = esrsSections && esrsSections.length
-    ? Math.round(esrsSections.reduce((a, s) => a + s.pct, 0) / esrsSections.length)
-    : null;
-  const lowEsrs = (esrsSections ?? []).filter(s => s.pct < 50);
-
-  // Évolution du score moyen : dernier point vs. point précédent de l'historique réel
-  const trendPts = scoreHistory.length >= 2
-    ? scoreHistory[scoreHistory.length - 1].global - scoreHistory[scoreHistory.length - 2].global
-    : null;
-
+  const esrsAvg = esrsAverage(esrsSections);
+  const actions = buildNextActions(organizations, esrsSections);
+  const trendPts = trendOf(scoreHistory);
+  const deadlines = buildDeadlines(t);
   const scoreTone = (n: number) => (n >= 75 ? 'success' : n >= 60 ? 'info' : n >= 45 ? 'warning' : 'danger') as 'success' | 'info' | 'warning' | 'danger';
+  const scoreLabel = avg >= 75 ? t('dashboard.scoreExcellent') : avg >= 60 ? t('dashboard.scoreGood') : avg >= 45 ? t('dashboard.scoreAverage') : t('dashboard.scoreLow');
   const greeting = () => {
     const h = new Date().getHours();
     return h < 6 ? t('dashboard.greetNight', 'Bonsoir') : h < 18 ? t('dashboard.greetDay', 'Bonjour') : t('dashboard.greetEvening', 'Bonsoir');
   };
   const firstName = (user as any)?.first_name || '';
-  const deadlines = buildDeadlines(t);
 
-  const attention: { tone: 'danger' | 'warning' | 'info'; text: string; to: string }[] = [];
-  if (unscored.length > 0) attention.push({ tone: 'info', text: t('dashboard.attnUnscored', { n: unscored.length, defaultValue: '{{n}} organisation(s) sans score calculé' }), to: '/app/data-entry' });
-  if (needAttention.length > 0) attention.push({ tone: 'danger', text: t('dashboard.attnLow', { n: needAttention.length, defaultValue: '{{n}} organisation(s) sous le seuil de 45/100' }), to: '/app/organizations' });
-  lowEsrs.slice(0, 3).forEach(s => attention.push({ tone: 'warning', text: t('dashboard.attnEsrs', { code: String(s.code).replace(/^ESRS\s*/i, ''), pct: s.pct, defaultValue: 'ESRS {{code}} : couverture à {{pct}} %' }), to: '/app/esrs-gap' }));
-
-  const pillars = [
-    { key: 'env', name: t('dashboard.environmental'), icon: Leaf,  color: PILLAR_COLORS.environmental.main, value: pillarAverages[0].score },
-    { key: 'soc', name: t('dashboard.social'),        icon: Users, color: PILLAR_COLORS.social.main,        value: pillarAverages[1].score },
-    { key: 'gov', name: t('dashboard.governance'),    icon: Scale, color: PILLAR_COLORS.governance.main,    value: pillarAverages[2].score },
-  ];
-
-  const quick = [
-    { label: t('dashboard.quickAccessEntry'),      route: '/app/data-entry',           icon: Database, tint: 'bg-emerald-50 text-emerald-700' },
-    { label: t('dashboard.quickAccessCsrd'),       route: '/app/reports/csrd-builder', icon: Shield,   tint: 'bg-violet-50 text-violet-700' },
-    { label: t('dashboard.quickAccessConnectors'), route: '/app/data/connectors',      icon: Plug,     tint: 'bg-cyan-50 text-cyan-700' },
-    { label: t('dashboard.quickAccessGaia', 'Analyser un rapport avec Gaïa'), route: '/app/gaia', icon: Sparkles, tint: 'bg-teal-50 text-teal-700' },
-    { label: t('dashboard.quickAccessAI'),         route: '/app/intelligence',         icon: Brain,    tint: 'bg-rose-50 text-rose-700' },
-  ];
-
-  const card = 'rounded-2xl border border-gray-200 bg-white shadow-kpi';
+  const card = 'rounded-xl border border-gray-200 bg-white';
   const ringR = 52;
   const ringC = 2 * Math.PI * ringR;
+  const LEVEL = {
+    covered: { bg: '#047857', fg: '#ffffff', label: 'couverte' },
+    partial: { bg: '#fbbf24', fg: '#1f2937', label: 'partielle' },
+    missing: { bg: '#e2e8f0', fg: '#1f2937', label: 'non couverte' },
+  } as const;
+  const TONE_ICON = { danger: 'text-red-600', warning: 'text-amber-600', info: 'text-blue-600' } as const;
 
   if (loading) {
     return (
@@ -384,199 +287,204 @@ export default function ExecutiveDashboard() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* ── En-tête ── */}
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      {/* ── En-tête : un titre, une action principale ── */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-sm text-gray-500 capitalize">{format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}</p>
-          <h2 className="mt-1 text-2xl sm:text-3xl font-semibold tracking-tight text-gray-900">
-            {greeting()}{firstName ? `, ${firstName}` : ''}
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="text-xs font-medium text-gray-600 capitalize">
+            {greeting()}{firstName ? `, ${firstName}` : ''} · {format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}
+          </p>
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-gray-900">{t('dashboard.titleNew', 'Votre performance ESG')}</h2>
+          <p className="mt-1 text-sm text-gray-600">
             {t('dashboard.subtitleNew', 'Voici où en est votre performance ESG.')}
-            {latestPeriodMonths ? <span className="ml-1 text-gray-400">· {t('dashboard.dataWindow', 'Données sur')} {humanizePeriod(latestPeriodMonths, t)}</span> : null}
+            {latestPeriodMonths ? <span className="ml-1">· {t('dashboard.dataWindow', 'Données sur')} {humanizePeriod(latestPeriodMonths, t)}</span> : null}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <SegmentedControl
-            aria-label={t('dashboard.period', 'Période')}
-            value={selectedPeriod}
-            onChange={setSelectedPeriod}
-            options={[
-              { value: '7d', label: '7 j' }, { value: '30d', label: '30 j' },
-              { value: '90d', label: '90 j' }, { value: '1y', label: '1 an' },
-            ]}
-          />
+        <div className="flex items-center gap-2">
           <Button variant="secondary" icon={<RefreshCw className="h-4 w-4" />} onClick={() => { loadDashboard(); loadActivity(); loadEsrsCoverage(); }}>
             {t('dashboard.refresh', 'Actualiser')}
+          </Button>
+          <Button icon={<FileText className="h-4 w-4" />} onClick={() => navigate('/app/reports')}>
+            {t('dashboard.generateReport', 'Générer un rapport')}
           </Button>
         </div>
       </header>
 
-      {/* ── Gaïa ── */}
-      <button
-        type="button"
-        onClick={() => navigate('/app/gaia')}
-        className="group flex w-full items-center gap-4 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 p-4 text-left transition hover:border-emerald-300 hover:shadow-md"
-      >
-        <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white shadow-md shadow-emerald-600/25" aria-hidden="true">
-          <Sparkles className="h-5 w-5" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-2 text-sm font-semibold text-gray-900">
-            Gaïa <Badge tone="brand">{t('dashboard.gaiaNew', 'Nouveau')}</Badge>
-          </span>
-          <span className="block text-sm text-gray-600">{t('dashboard.gaiaPitch', 'Déposez le rapport d\'une entreprise : Gaïa le résume, relève les chiffres et repère ce qui manque.')}</span>
-        </span>
-        <ArrowUpRight className="h-5 w-5 flex-none text-emerald-600 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden="true" />
-      </button>
+      {/* ── Score global + trois piliers ── */}
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[1.25fr_1fr_1fr_1fr]" aria-label={t('dashboard.keyFigures', 'Chiffres clés')}>
+        <div className={`${card} flex items-center gap-5 p-5`}>
+          <div className="relative h-[124px] w-[124px] flex-none" role="img" aria-label={`${avg} / 100`}>
+            <svg viewBox="0 0 128 128" className="h-full w-full -rotate-90" aria-hidden="true">
+              <circle cx="64" cy="64" r={ringR} fill="none" stroke="#e2e8f0" strokeWidth="12" />
+              <circle cx="64" cy="64" r={ringR} fill="none" stroke="#047857" strokeWidth="12" strokeLinecap="round"
+                strokeDasharray={`${(ringC * Math.min(avg, 100)) / 100} ${ringC}`} />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-4xl font-bold tracking-tight text-gray-900 tabular-nums">{avg}</span>
+              <span className="text-xs text-gray-600">/ 100</span>
+            </div>
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-[15px] font-semibold text-gray-900">{t('dashboard.avgScore')}</h2>
+            <div className="mt-2"><Badge tone={scoreTone(avg)} dot>{scoreLabel}</Badge></div>
+            {trendPts !== null && (
+              <p className={`mt-2 text-sm font-medium ${trendPts >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                {trendPts >= 0 ? '▲ +' : '▼ '}{trendPts.toFixed(1)} {t('dashboard.ptsVsPrev', 'pts vs. période précédente')}
+              </p>
+            )}
+          </div>
+        </div>
 
-      {/* ── Score + indicateurs clés ── */}
-      <section className="grid grid-cols-1 gap-5 lg:grid-cols-12" aria-label={t('dashboard.keyFigures', 'Chiffres clés')}>
-        <div className={`${card} p-6 lg:col-span-5`}>
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium text-gray-500">{t('dashboard.avgScore')}</h2>
-            <Badge tone={scoreTone(avg)} dot>{avg >= 75 ? t('dashboard.scoreExcellent') : avg >= 60 ? t('dashboard.scoreGood') : avg >= 45 ? t('dashboard.scoreAverage') : t('dashboard.scoreLow')}</Badge>
-          </div>
-          <div className="mt-4 flex items-center gap-6">
-            <div className="relative h-32 w-32 flex-none" role="img" aria-label={`${avg} / 100`}>
-              <svg viewBox="0 0 128 128" className="h-full w-full -rotate-90">
-                <circle cx="64" cy="64" r={ringR} fill="none" stroke="#e5e7eb" strokeWidth="11" />
-                <circle cx="64" cy="64" r={ringR} fill="none" stroke={PILLAR_COLORS.environmental.main} strokeWidth="11" strokeLinecap="round"
-                  strokeDasharray={`${(ringC * Math.min(avg, 100)) / 100} ${ringC}`} />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-4xl font-semibold tracking-tight text-gray-900 tabular-nums">{avg}</span>
-                <span className="text-xs text-gray-400">/ 100</span>
+        {pillars.map(p => {
+          const st = PILLAR_STYLE[p.key];
+          const gap = gapToTarget(p.value);
+          return (
+            <div key={p.key} className={`${card} flex flex-col gap-3 p-5`}>
+              <div className="flex items-center gap-2">
+                <p.icon className="h-[18px] w-[18px]" style={{ color: st.text }} aria-hidden="true" />
+                <h3 className="text-sm font-semibold" style={{ color: st.text }}>{p.name}</h3>
+                <span className="ml-auto text-3xl font-bold leading-none tabular-nums text-gray-900">{p.value}</span>
               </div>
+              <div className="h-2 rounded-full bg-gray-200" role="img" aria-label={`${p.name} : ${p.value} sur 100`}>
+                <div className="h-2 rounded-full" style={{ width: `${Math.min(p.value, 100)}%`, background: st.fill }} />
+              </div>
+              <p className="text-[13px] text-gray-600">
+                {gap >= 0 ? `Objectif de 75 atteint (+${gap} pts)` : `${Math.abs(gap)} pts sous l’objectif de 75`}
+              </p>
+              <button type="button" onClick={() => navigate(`/app/dashboard/pillar/${st.route}`)} className="mt-auto inline-flex items-center gap-1.5 text-[13px] font-semibold text-emerald-700 hover:underline">
+                {t('dashboard.seePillar', 'Voir les indicateurs')} <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
             </div>
-            <div className="min-w-0 flex-1 space-y-3">
-              {pillars.map(p => (
-                <div key={p.key}>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-1.5 text-gray-600"><p.icon className="h-3.5 w-3.5" style={{ color: p.color }} aria-hidden="true" />{p.name}</span>
-                    <span className="font-semibold tabular-nums text-gray-900">{p.value}</span>
-                  </div>
-                  <div className="mt-1 h-1.5 rounded-full bg-gray-100"><div className="h-1.5 rounded-full" style={{ width: `${Math.min(p.value, 100)}%`, background: p.color }} /></div>
-                </div>
-              ))}
+          );
+        })}
+      </section>
+
+      {/* ── Prêt pour la CSRD ? + prochaines actions ── */}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1.15fr_1fr]">
+        <div className={`${card} p-5`}>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-[15px] font-semibold text-gray-900">{t('dashboard.csrdReady', 'Prêt pour la CSRD ?')}</h2>
+              <p className="mt-1 text-[13px] text-gray-600">{t('dashboard.csrdReadyHint', 'Couverture de vos données par norme ESRS')}</p>
             </div>
+            {esrsAvg !== null && (
+              <div className="text-right">
+                <div className="text-3xl font-bold leading-none tabular-nums text-gray-900">{esrsAvg} %</div>
+                <div className="mt-1.5"><Badge tone={esrsAvg >= 70 ? 'success' : 'warning'}>{esrsAvg >= 70 ? 'Couverte' : 'À renforcer'}</Badge></div>
+              </div>
+            )}
           </div>
-          {trendPts !== null && (
-            <p className={`mt-5 text-sm font-medium ${trendPts >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-              {trendPts >= 0 ? '▲ +' : '▼ '}{trendPts.toFixed(1)} {t('dashboard.ptsVsPrev', 'pts vs. période précédente')}
-            </p>
+          {esrsSections && esrsSections.length > 0 ? (
+            <>
+              <ul className="mt-4 grid grid-cols-5 gap-2">
+                {esrsSections.map(s => {
+                  const lv = LEVEL[esrsLevel(s.pct)];
+                  return (
+                    <li key={s.code} title={`${s.label} : ${s.pct} % (${lv.label})`}
+                      className="flex h-14 flex-col items-center justify-center rounded-lg text-xs font-bold" style={{ background: lv.bg, color: lv.fg }}>
+                      <span>{shortCode(s.code)}</span>
+                      <span className="font-medium">{s.pct} %</span>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600">
+                <span><b style={{ color: '#047857' }}>■</b> couverte (70 % et plus)</span>
+                <span><b style={{ color: '#d97706' }}>■</b> partielle</span>
+                <span><b style={{ color: '#94a3b8' }}>■</b> non couverte</span>
+                <button type="button" onClick={() => navigate('/app/esrs-gap')} className="ml-auto font-semibold text-emerald-700 hover:underline">{t('dashboard.esrsLink', 'Analyse détaillée')}</button>
+              </div>
+            </>
+          ) : (
+            <EmptyState icon={Target} title={t('dashboard.noEsrs', 'Analyse non disponible')} description={t('dashboard.noEsrsDesc', 'Lancez l’analyse ESRS pour voir votre couverture norme par norme.')} />
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-5 lg:col-span-7">
-          <StatCard label={t('dashboard.organizations')} value={stats?.total_organizations ?? 0} hint={t('dashboard.totalActive')} icon={<Building2 className="h-5 w-5" />} />
-          <StatCard label={t('dashboard.esrsCoverageLabel', 'Couverture ESRS')} value={esrsAvg !== null ? `${esrsAvg} %` : '—'} hint={esrsAvg !== null ? t('dashboard.esrsCoverageHint', 'Moyenne des normes analysées') : t('dashboard.noEsrs', 'Analyse non disponible')} icon={<Shield className="h-5 w-5" />} />
-          <StatCard label={t('dashboard.leaders')} value={stats?.top_performers ?? 0} hint={t('dashboard.excellentPerformances')} icon={<Award className="h-5 w-5" />} />
-          <StatCard label={t('dashboard.attnLabel', 'À renforcer')} value={needAttention.length} hint={t('dashboard.attnHint', 'Score inférieur à 45')} icon={<Target className="h-5 w-5" />} />
+        <div className={`${card} p-5`}>
+          <h2 className="text-[15px] font-semibold text-gray-900">{t('dashboard.nextActions', 'Prochaines actions')}</h2>
+          <p className="mt-1 text-[13px] text-gray-600">{t('dashboard.nextActionsHint', 'Classées par urgence, à partir de vos données')}</p>
+          {actions.length === 0 ? (
+            <p className="mt-4 flex items-start gap-2 text-sm text-gray-700">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none text-emerald-700" aria-hidden="true" />
+              {t('dashboard.attentionNone', 'Rien d\'urgent : toutes vos organisations sont au-dessus des seuils.')}
+            </p>
+          ) : (
+            <ol className="mt-3">
+              {actions.map((a, i) => (
+                <li key={a.id} className="border-t border-gray-100 first:border-t-0">
+                  <button type="button" onClick={() => navigate(a.to)} className="group flex w-full items-start gap-3 py-3 text-left">
+                    <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-gray-100 text-[13px] font-bold text-gray-700">{i + 1}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold text-gray-900">{a.title}</span>
+                      <span className="block text-[13px] text-gray-600">{a.why}</span>
+                    </span>
+                    <AlertTriangle className={`mt-0.5 h-4 w-4 flex-none ${TONE_ICON[a.tone]}`} aria-hidden="true" />
+                    <ChevronRight className="mt-0.5 h-4 w-4 flex-none text-gray-400 transition group-hover:text-gray-600" aria-hidden="true" />
+                  </button>
+                </li>
+              ))}
+            </ol>
+          )}
         </div>
       </section>
 
-      {/* ── Évolution + points d'attention ── */}
-      <section className="grid grid-cols-1 gap-5 lg:grid-cols-12">
-        <div className={`${card} p-6 lg:col-span-8`}>
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-gray-900">{t('dashboard.evolutionTitle', 'Évolution du score ESG')}</h2>
-            <span className="text-xs text-gray-400">{getPeriodLabel()}</span>
-          </div>
+      {/* ── Gaïa : une ligne, pas un bandeau ── */}
+      <button type="button" onClick={() => navigate('/app/gaia')}
+        className={`${card} group flex w-full items-center gap-4 p-4 text-left transition hover:border-gray-300`}>
+        <span className="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-violet-50 text-violet-700" aria-hidden="true"><Sparkles className="h-5 w-5" /></span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold text-gray-900">{t('dashboard.gaiaTitleNew', 'Analysez le rapport d’une entreprise avec Gaïa')}</span>
+          <span className="block text-[13px] text-gray-600">{t('dashboard.gaiaPitch', 'Déposez le rapport d\'une entreprise : Gaïa le résume, relève les chiffres et repère ce qui manque.')}</span>
+        </span>
+        <ArrowUpRight className="h-5 w-5 flex-none text-gray-400 transition group-hover:text-gray-700" aria-hidden="true" />
+      </button>
+
+      {/* ── Évolution + échéances / activité ── */}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1.15fr_1fr]">
+        <div className={`${card} p-5`}>
+          <h2 className="text-[15px] font-semibold text-gray-900">{t('dashboard.evolutionTitle', 'Évolution du score ESG')}</h2>
+          <p className="mt-1 text-[13px] text-gray-600">{t('dashboard.evolutionHint', 'Score moyen de vos organisations, par mois')}</p>
           {evolutionData.length > 1 ? (
-            <div className="mt-4 h-64">
+            <div className="mt-3 h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={evolutionData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
                   <defs>
                     <linearGradient id="gOverall" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={PILLAR_COLORS.environmental.main} stopOpacity={0.28} />
-                      <stop offset="100%" stopColor={PILLAR_COLORS.environmental.main} stopOpacity={0} />
+                      <stop offset="0%" stopColor="#047857" stopOpacity={0.2} />
+                      <stop offset="100%" stopColor="#047857" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid vertical={false} stroke="rgba(148,163,184,0.2)" />
-                  <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
-                  <YAxis domain={[(m: number) => Math.max(0, Math.floor(m - 8)), (m: number) => Math.min(100, Math.ceil(m + 8))]} allowDecimals={false} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
-                  <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e5e7eb', boxShadow: '0 8px 24px rgba(15,23,42,.08)', fontSize: 12 }} />
-                  <Area type="monotone" dataKey="overall" name={t('dashboard.overall', 'Global')} stroke={PILLAR_COLORS.environmental.main} strokeWidth={2.5} fill="url(#gOverall)" />
-                  <Area type="monotone" dataKey="social" name={t('dashboard.social')} stroke={PILLAR_COLORS.social.main} strokeWidth={1.5} fill="none" strokeDasharray="4 4" />
-                  <Area type="monotone" dataKey="governance" name={t('dashboard.governance')} stroke={PILLAR_COLORS.governance.main} strokeWidth={1.5} fill="none" strokeDasharray="4 4" />
+                  <CartesianGrid vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#556274' }} />
+                  <YAxis domain={[(m: number) => Math.max(0, Math.floor(m - 8)), (m: number) => Math.min(100, Math.ceil(m + 8))]} allowDecimals={false} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#556274' }} />
+                  <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }} />
+                  <Area type="monotone" dataKey="overall" name={t('dashboard.overall', 'Global')} stroke="#047857" strokeWidth={2.5} fill="url(#gOverall)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           ) : (
-            <EmptyState icon={Target} title={t('dashboard.noHistoryTitle', 'Pas encore assez d\'historique')} description={t('dashboard.noHistoryDesc', 'La courbe apparaît dès que deux périodes de score sont calculées.')} />
+            <EmptyState icon={Target} title={t('dashboard.noHistoryTitle', 'Pas encore assez d\'historique')} description={t('dashboard.noHistoryDesc', 'La courbe apparaît dès que deux périodes de score sont calculées.')}
+              action={<Button variant="secondary" onClick={() => navigate('/app/scores/calculate')}>{t('dashboard.calcScore', 'Calculer un score')}</Button>} />
           )}
         </div>
 
-        <div className={`${card} p-6 lg:col-span-4`}>
-          <h2 className="text-base font-semibold text-gray-900">{t('dashboard.attentionTitle', 'Points d\'attention')}</h2>
-          {attention.length === 0 ? (
-            <p className="mt-4 flex items-start gap-2 text-sm text-gray-600">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none text-emerald-600" aria-hidden="true" />
-              {t('dashboard.attentionNone', 'Rien d\'urgent : toutes vos organisations sont au-dessus des seuils.')}
-            </p>
-          ) : (
-            <ul className="mt-4 space-y-2.5">
-              {attention.map((a, i) => (
-                <li key={i}>
-                  <button type="button" onClick={() => navigate(a.to)} className="group flex w-full items-start gap-3 rounded-xl border border-gray-100 p-3 text-left transition hover:border-gray-200 hover:bg-gray-50">
-                    <AlertTriangle className={`mt-0.5 h-4 w-4 flex-none ${a.tone === 'danger' ? 'text-red-500' : a.tone === 'warning' ? 'text-amber-500' : 'text-blue-500'}`} aria-hidden="true" />
-                    <span className="flex-1 text-sm text-gray-700">{a.text}</span>
-                    <ChevronRight className="mt-0.5 h-4 w-4 flex-none text-gray-300 transition group-hover:text-gray-500" aria-hidden="true" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </section>
-
-      {/* ── Organisations + échéances / activité ── */}
-      <section className="grid grid-cols-1 gap-5 lg:grid-cols-12">
-        <div className={`${card} overflow-hidden lg:col-span-7`}>
-          <div className="flex items-center justify-between p-6 pb-3">
-            <h2 className="text-base font-semibold text-gray-900">{t('dashboard.orgsTitle', 'Vos organisations')}</h2>
-            <button type="button" onClick={() => navigate('/app/organizations')} className="inline-flex items-center gap-1 text-sm font-medium text-primary-700 hover:underline">
-              {t('dashboard.seeAll', 'Tout voir')} <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-          </div>
-          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
-            {[...organizations].sort((a, b) => (b.overall_score ?? -1) - (a.overall_score ?? -1)).slice(0, 6).map(o => (
-              <li key={o.id}>
-                <button type="button" onClick={() => navigate(`/app/organizations/${o.id}`)} className="flex w-full items-center gap-4 px-6 py-3.5 text-left transition hover:bg-gray-50">
-                  <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-primary-50 text-sm font-semibold text-primary-700">{(o.name || '?').slice(0, 1).toUpperCase()}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium text-gray-900">{o.name}</span>
-                    <span className="mt-1.5 block h-1.5 rounded-full bg-gray-100">
-                      <span className="block h-1.5 rounded-full" style={{ width: `${Math.min(o.overall_score ?? 0, 100)}%`, background: PILLAR_COLORS.environmental.main }} />
-                    </span>
-                  </span>
-                  <span className="w-10 text-right text-sm font-semibold tabular-nums text-gray-900">{o.overall_score != null ? Math.round(o.overall_score) : '—'}</span>
-                  {o.rating ? <Badge tone={scoreTone(o.overall_score ?? 0)}>{o.rating}</Badge> : <span className="w-12" />}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="space-y-5 lg:col-span-5">
-          <div className={`${card} p-6`}>
-            <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900"><CalendarClock className="h-4 w-4 text-gray-400" aria-hidden="true" />{t('dashboard.deadlinesTitle', 'Prochaines échéances')}</h2>
-            <ul className="mt-4 space-y-3">
+        <div className="space-y-4">
+          <div className={`${card} p-5`}>
+            <h2 className="flex items-center gap-2 text-[15px] font-semibold text-gray-900"><CalendarClock className="h-4 w-4 text-gray-500" aria-hidden="true" />{t('dashboard.deadlinesTitle', 'Prochaines échéances')}</h2>
+            <ul className="mt-3 space-y-3">
               {deadlines.map(d => (
                 <li key={d.label} className="flex items-center justify-between gap-3">
-                  <span className="min-w-0"><span className="block truncate text-sm font-medium text-gray-800">{d.label}</span><span className="text-xs text-gray-400">{d.dateStr}</span></span>
+                  <span className="min-w-0"><span className="block truncate text-sm font-medium text-gray-800">{d.label}</span><span className="text-xs text-gray-600">{d.dateStr}</span></span>
                   <Badge tone={d.urgent ? 'danger' : 'neutral'}>{t('dashboard.daysLeft', { n: d.daysLeft, defaultValue: 'J-{{n}}' })}</Badge>
                 </li>
               ))}
             </ul>
           </div>
           {recentActivity.length > 0 && (
-            <div className={`${card} p-6`}>
-              <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900"><Bell className="h-4 w-4 text-gray-400" aria-hidden="true" />{t('dashboard.activityTitle', 'Activité récente')}</h2>
-              <ul className="mt-4 space-y-3">
+            <div className={`${card} p-5`}>
+              <h2 className="flex items-center gap-2 text-[15px] font-semibold text-gray-900"><Bell className="h-4 w-4 text-gray-500" aria-hidden="true" />{t('dashboard.activityTitle', 'Activité récente')}</h2>
+              <ul className="mt-3 space-y-3">
                 {recentActivity.map((a, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm"><span aria-hidden="true">{a.icon}</span><span className="flex-1 text-gray-700">{a.label}</span><span className="flex-none text-xs text-gray-400">{a.time}</span></li>
+                  <li key={i} className="flex items-start gap-3 text-sm"><span aria-hidden="true">{a.icon}</span><span className="flex-1 text-gray-700">{a.label}</span><span className="flex-none text-xs text-gray-600">{a.time}</span></li>
                 ))}
               </ul>
             </div>
@@ -584,76 +492,31 @@ export default function ExecutiveDashboard() {
         </div>
       </section>
 
-      {/* ── Répartition par note + couverture ESRS ── */}
-      {(ratingDistribution.length > 0 || (esrsSections && esrsSections.length > 0)) && (
-        <section className="grid grid-cols-1 gap-5 lg:grid-cols-12">
-          {ratingDistribution.length > 0 && (
-            <div className={`${card} p-6 lg:col-span-5`}>
-              <h2 className="text-base font-semibold text-gray-900">{t('dashboard.ratingDistTitle', 'Répartition par note')}</h2>
-              {ratingDistribution.length === 1 ? (
-                <div className="mt-4 flex items-center gap-5">
-                  <span className="inline-flex h-20 w-20 flex-none items-center justify-center rounded-2xl text-2xl font-black text-white" style={{ background: ratingDistribution[0].color }}>
-                    {ratingDistribution[0].name}
-                  </span>
-                  <p className="text-sm text-gray-600">
-                    {t('dashboard.ratingSingle', {
-                      n: ratingDistribution[0].value, rating: ratingDistribution[0].name,
-                      defaultValue: '{{n}} organisation notée {{rating}}. La répartition apparaît dès que plusieurs organisations ont un score.',
-                    })}
-                  </p>
-                </div>
-              ) : (
-              <div className="mt-2 flex items-center gap-6">
-                <div className="h-40 w-40 flex-none">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={ratingDistribution} dataKey="value" nameKey="name" innerRadius={44} outerRadius={70} paddingAngle={2} stroke="none">
-                        {ratingDistribution.map(r => <Cell key={r.name} fill={r.color} />)}
-                      </Pie>
-                      <Tooltip contentStyle={{ borderRadius: 12, fontSize: 12 }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <ul className="flex-1 space-y-2 text-sm">
-                  {ratingDistribution.map(r => (
-                    <li key={r.name} className="flex items-center justify-between"><span className="flex items-center gap-2 text-gray-700"><span className="h-2.5 w-2.5 rounded-full" style={{ background: r.color }} />{r.name}</span><span className="font-semibold tabular-nums text-gray-900">{r.value}</span></li>
-                  ))}
-                </ul>
-              </div>
-              )}
-            </div>
-          )}
-          {esrsSections && esrsSections.length > 0 && (
-            <div className={`${card} p-6 ${ratingDistribution.length > 0 ? 'lg:col-span-7' : 'lg:col-span-12'}`}>
-              <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold text-gray-900">{t('dashboard.esrsTitle', 'Couverture des normes ESRS')}</h2>
-                <button type="button" onClick={() => navigate('/app/esrs-gap')} className="inline-flex items-center gap-1 text-sm font-medium text-primary-700 hover:underline">{t('dashboard.esrsLink', 'Analyse détaillée')} <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" /></button>
-              </div>
-              <ul className="mt-4 grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
-                {esrsSections.map(s => (
-                  <li key={s.code}>
-                    <div className="flex items-center justify-between text-sm"><span className="truncate text-gray-700"><span className="font-semibold text-gray-900">{s.code}</span> · {s.label}</span><span className="tabular-nums text-gray-500">{s.pct} %</span></div>
-                    <div className="mt-1.5 h-1.5 rounded-full bg-gray-100"><div className="h-1.5 rounded-full" style={{ width: `${Math.min(s.pct, 100)}%`, background: s.pct >= 70 ? '#16a34a' : s.pct >= 50 ? '#d97706' : '#dc2626' }} /></div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* ── Accès rapide ── */}
-      <section aria-label={t('dashboard.quickAccessTitle')}>
-        <h2 className="mb-3 text-sm font-medium text-gray-500">{t('dashboard.quickAccessTitle')}</h2>
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-          {quick.map(q => (
-            <button key={q.route} type="button" onClick={() => navigate(q.route)} className={`${card} group flex items-center gap-3 p-4 text-left transition hover:border-gray-300 hover:shadow-md`}>
-              <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl ${q.tint}`}><q.icon className="h-5 w-5" aria-hidden="true" /></span>
-              <span className="flex-1 text-sm font-medium text-gray-900">{q.label}</span>
-              <ArrowUpRight className="h-4 w-4 text-gray-300 transition group-hover:text-gray-500" aria-hidden="true" />
-            </button>
-          ))}
+      {/* ── Organisations ── */}
+      <section className={`${card} overflow-hidden`}>
+        <div className="flex items-center justify-between p-5 pb-2">
+          <h2 className="text-[15px] font-semibold text-gray-900">{t('dashboard.orgsTitle', 'Vos organisations')}</h2>
+          <button type="button" onClick={() => navigate('/app/organizations')} className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:underline">
+            {t('dashboard.seeAll', 'Tout voir')} <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
         </div>
+        <ul className="divide-y divide-gray-100">
+          {[...organizations].sort((a, b) => (b.overall_score ?? -1) - (a.overall_score ?? -1)).slice(0, 6).map(o => (
+            <li key={o.id}>
+              <button type="button" onClick={() => navigate(`/app/organizations/${o.id}`)} className="flex w-full items-center gap-4 px-5 py-3 text-left transition hover:bg-gray-50">
+                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-emerald-50 text-sm font-semibold text-emerald-800">{(o.name || '?').slice(0, 1).toUpperCase()}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-gray-900">{o.name}</span>
+                  <span className="mt-1.5 block h-1.5 rounded-full bg-gray-200">
+                    <span className="block h-1.5 rounded-full bg-emerald-600" style={{ width: `${Math.min(o.overall_score ?? 0, 100)}%` }} />
+                  </span>
+                </span>
+                <span className="w-10 text-right text-sm font-semibold tabular-nums text-gray-900">{o.overall_score != null ? Math.round(o.overall_score) : '—'}</span>
+                {o.rating ? <Badge tone={scoreTone(o.overall_score ?? 0)}>{o.rating}</Badge> : <span className="w-12" />}
+              </button>
+            </li>
+          ))}
+        </ul>
       </section>
     </div>
   );
