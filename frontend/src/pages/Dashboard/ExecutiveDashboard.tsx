@@ -84,6 +84,8 @@ export default function ExecutiveDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
   const [esrsSections, setEsrsSections] = useState<{ code: string; label: string; pct: number }[] | null>(null);
+  // Couverture globale calculée par le serveur (exigences couvertes / mesurables) : le même chiffre que sur la page Rapports.
+  const [esrsOverall, setEsrsOverall] = useState<number | null>(null);
   // Aggregated time series of historical scores across ALL orgs.
   const [scoreHistory, setScoreHistory] = useState<Array<{
     date: string; label: string; global: number; env: number; soc: number; gov: number;
@@ -102,6 +104,7 @@ export default function ExecutiveDashboard() {
     try {
       const res = await api.get('/esrs/gap-analysis');
       const sections: any[] = res.data?.sections ?? [];
+      if (typeof res.data?.overall_coverage_pct === 'number') setEsrsOverall(res.data.overall_coverage_pct);
       if (sections.length > 0) {
         setEsrsSections(sections.map((s: any) => ({
           code: s.code,
@@ -251,7 +254,7 @@ export default function ExecutiveDashboard() {
   ];
 
   const avg = Math.round(stats?.average_score || 0);
-  const esrsAvg = esrsAverage(esrsSections);
+  const esrsAvg = esrsOverall ?? esrsAverage(esrsSections);
   const actions = buildNextActions(organizations, esrsSections);
   const trendPts = trendOf(scoreHistory);
   const deadlines = buildDeadlines(t);

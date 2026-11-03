@@ -62,6 +62,13 @@ describe('écart et tendance', () => {
   });
 });
 
+describe('accueil : même couverture ESRS que la page Rapports', () => {
+  it('utilise la couverture globale calculée par le serveur, comme Rapports', () => {
+    expect(page).toContain('overall_coverage_pct');
+    expect(page).toContain('esrsOverall ?? esrsAverage');
+  });
+});
+
 describe('accueil : aucune valeur de repli inventée', () => {
   it('plus de « 30 % des organisations » ni de taux de complétude à 70 par défaut', () => {
     expect(page).not.toMatch(/Math\.floor\(totalOrgs \* 0\.3\)/);
