@@ -135,7 +135,6 @@ function buildRail(t: TFn): RailSection[] {
             { name: t('sidebar.nav.risks'),              href: '/app/risks',              icon: AlertTriangle },
             { name: t('sidebar.nav.organisations'),      href: '/app/organizations',      icon: Building2 },
             { name: t('sidebar.nav.aiInsights'),         href: '/app/intelligence',       icon: Sparkles, feature: 'ai_narrative' },
-            { name: t('sidebar.nav.iaPredictive'),       href: '/app/ai-insights',        icon: Brain, feature: 'ai_narrative' },
             { name: t('sidebar.nav.supplyChain'),          href: '/app/supply-chain',           icon: PackageSearch, feature: 'supply_chain_esg' },
           ],
         },

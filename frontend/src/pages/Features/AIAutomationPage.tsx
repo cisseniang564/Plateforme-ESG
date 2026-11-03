@@ -13,7 +13,7 @@ export default function AIAutomationPage() {
       subtitle={t('features.aiAutomation.subtitle', "Intelligence artificielle générative au service de votre reporting ESG")}
       description={t('features.aiAutomation.description', "Accélérez votre démarche ESG grâce à l'IA : chatbot expert réglementaire, OCR de factures et certifications fournisseurs, détection d'anomalies en temps réel, génération de narratifs CSRD et prédictions de tendances. L'IA qui comprend l'ESG.")}
       frameworks={['GPT-4 / Claude', 'OCR Tesseract', 'Machine Learning', 'NLP']}
-      appPath="/app/ai-insights"
+      appPath="/app/intelligence"
       benefits={[
         {
           icon: MessageSquare,

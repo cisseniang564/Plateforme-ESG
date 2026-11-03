@@ -124,7 +124,7 @@ export const analyse: DocArticle[] = [
     section: 'ia',
     title: 'Insights IA : recommandations personnalisées',
     summary: 'Des actions prioritaires, chiffrées en effort et en gain de score, pour progresser.',
-    routes: [{ label: 'IA & Recommandations', to: '/app/ai-insights' }],
+    routes: [{ label: 'IA & Recommandations', to: '/app/intelligence?tab=recommandations' }],
     feature: 'ai_narrative',
     about: 'À partir de votre score et de vos données, la page propose des actions prioritaires avec leur effort, leur impact et le gain de points estimé.',
     shows: [

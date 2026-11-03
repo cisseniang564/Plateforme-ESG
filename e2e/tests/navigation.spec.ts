@@ -62,3 +62,16 @@ test.describe('Menu à 7 entrées', () => {
     await expect(page.getByRole('link', { name: /Empreinte produit/ })).toBeVisible();
   });
 });
+
+test.describe('Insights IA fusionné', () => {
+  test('l’ancienne adresse « IA prédictive » redirige vers l’onglet Recommandations', async ({ page }) => {
+    await page.goto('/app/ai-insights');
+    await expect(page).toHaveURL(/\/app\/intelligence\?tab=recommandations/);
+  });
+
+  test('le menu ne propose plus qu’une entrée « Insights IA »', async ({ page }) => {
+    await page.goto('/app/intelligence');
+    await expect(page.getByRole('link', { name: 'Insights IA' }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: 'IA Prédictive' })).toHaveCount(0);
+  });
+});
