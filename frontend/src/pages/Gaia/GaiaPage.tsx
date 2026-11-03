@@ -14,6 +14,7 @@ import {
   COVERAGE_LABEL, coverageCounts, coverageSentence, indicatorValue, isUnpublished, pageLabel, shortStandard, tabsFor, unpublishedCount,
   type TabKey,
 } from './gaiaHelpers';
+import { GAIA_EXAMPLE, GAIA_EXAMPLE_ID } from './gaiaExample';
 
 const card = 'rounded-xl border border-gray-200 bg-white';
 const CELL: Record<GaiaEsrs['coverage'], { bg: string; fg: string }> = {
@@ -99,6 +100,9 @@ export default function GaiaPage() {
     } finally { setAsking(false); }
   };
 
+  const openExample = () => { setSelected(GAIA_EXAMPLE); setChat([]); setTab('summary'); };
+  const isExample = selected?.id === GAIA_EXAMPLE_ID;
+
   const confirmDelete = async () => {
     if (!toDelete) return;
     try {
@@ -141,6 +145,7 @@ export default function GaiaPage() {
             <div className="mt-3">
               <Button loading={uploading} onClick={() => fileInput.current?.click()}>{t('gaia.choose', 'Choisir un fichier')}</Button>
             </div>
+            <button type="button" onClick={openExample} className="mt-3 text-sm font-semibold text-emerald-800 hover:underline">{t('gaia.seeExample', 'Voir un exemple d\'analyse')}</button>
           </div>
 
           <p className="text-xs leading-relaxed text-gray-600">
@@ -190,7 +195,10 @@ export default function GaiaPage() {
               <p className="mt-1 max-w-md text-sm text-gray-600">
                 {t('gaia.emptyDescNew', 'Déposez celui d\'un client, d\'un fournisseur ou d\'un concurrent. Gaïa relève les chiffres publiés, avec leur page, et repère ce que le rapport ne dit pas.')}
               </p>
-              <Button className="mt-5" onClick={() => fileInput.current?.click()}>{t('gaia.choose', 'Choisir un fichier')}</Button>
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                <Button onClick={() => fileInput.current?.click()}>{t('gaia.choose', 'Choisir un fichier')}</Button>
+                <Button variant="secondary" onClick={openExample}>{t('gaia.seeExample', 'Voir un exemple d\'analyse')}</Button>
+              </div>
             </div>
           )}
 
@@ -215,6 +223,12 @@ export default function GaiaPage() {
 
           {selected?.status === 'done' && r && (
             <>
+              {isExample && (
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-900" role="note">
+                  <p><b>{t('gaia.exampleTitle', 'Exemple fictif.')}</b> {t('gaia.exampleBody', 'Cette entreprise et ces chiffres sont inventés pour montrer le rendu. Gaïa produit le même type de résultat sur votre propre rapport.')}</p>
+                  <Button size="sm" onClick={() => fileInput.current?.click()}>{t('gaia.tryMine', 'Analyser mon rapport')}</Button>
+                </div>
+              )}
               <div className={`${card} p-5`}>
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0">
@@ -359,7 +373,10 @@ export default function GaiaPage() {
                     </div>
                   )}
 
-                  {activeTab === 'ask' && (
+                  {activeTab === 'ask' && isExample && (
+                    <p className="rounded-lg bg-gray-50 p-4 text-sm text-gray-700">{t('gaia.askExample', 'Les questions sont disponibles sur vos propres rapports : Gaïa répond à partir du texte que vous avez déposé.')}</p>
+                  )}
+                  {activeTab === 'ask' && !isExample && (
                     <div>
                       {chat.length === 0 && (
                         <div className="flex flex-wrap gap-2">
