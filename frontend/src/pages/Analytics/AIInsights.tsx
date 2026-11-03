@@ -29,7 +29,7 @@ interface Recommendation {
 interface InsightsData {
   scores: Scores; data_count: number; strengths: string[]; risks: Risk[];
   recommendations: Recommendation[]; quick_wins: Recommendation[]; strategic_actions: Recommendation[];
-  total_recommendations: number; total_gain_estimate: number; has_score: boolean;
+  total_recommendations: number; has_score: boolean;
 }
 
 const PILLAR_STYLES: Record<string, { bg: string; text: string; border: string; icon: React.ElementType; badge: string }> = {
@@ -76,7 +76,7 @@ function RecoCard({ reco, expanded, onToggle }: { reco: Recommendation; expanded
           <div className="flex items-center gap-3 mt-1.5 text-xs">
             <span className={IMPACT_COLOR[reco.impact]}>{t('ai.impactLabel', 'Impact')} {reco.impact_label}</span>
             <span className="text-gray-300">·</span>
-            <span className="text-emerald-600 font-medium">+{reco.score_gain_est} {t('ai.ptsEst', 'pts estimés')}</span>
+            <span className="text-emerald-600 font-medium">{t('ai.gainIndicative', 'Gain indicatif')} : +{reco.score_gain_est} {t('ai.pts', 'pts')}</span>
           </div>
         </div>
         <ChevronRight size={16} className={`flex-shrink-0 text-gray-400 transition-transform duration-200 mt-1 ${expanded ? 'rotate-90' : ''}`} />
@@ -134,7 +134,7 @@ export default function AIInsights({ embedded = false }: { embedded?: boolean } 
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">{t('ai.recoTitle', 'Recommandations')}</h2>
-            <p className="mt-1 text-sm text-gray-600">{t('ai.recoSub', 'Actions prioritaires classées par effort et par gain de score estimé.')}</p>
+            <p className="mt-1 text-sm text-gray-600">{t('ai.recoSub', 'Actions prioritaires classées par impact et par effort, avec un gain de score indicatif.')}</p>
           </div>
           <button onClick={() => fetchInsights(true)} disabled={refreshing}
             className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-gray-300 bg-white px-3.5 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60">
@@ -203,19 +203,19 @@ export default function AIInsights({ embedded = false }: { embedded?: boolean } 
             ))}
           </div>
 
-          {data.total_gain_estimate > 0 && (
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0"><TrendingUp size={20} className="text-amber-600" /></div>
+          {data.total_recommendations > 0 && (
+            <div className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gray-100"><TrendingUp size={20} className="text-gray-700" aria-hidden="true" /></div>
                 <div>
-                  <p className="font-semibold text-amber-900">{t('ai.potentialA', "Potentiel d'amélioration :")} <span className="text-2xl">+{data.total_gain_estimate} pts</span></p>
-                  <p className="text-sm text-amber-700">{t('ai.applyRecos', 'En appliquant les 5 recommandations prioritaires, votre score ESG pourrait atteindre ')}
-                    <strong>{Math.min(Math.round(data.scores.overall) + data.total_gain_estimate, 100)}/100</strong>
+                  <p className="font-semibold text-gray-900">{t('ai.priorityCount', '{{count}} actions identifiées', { count: data.total_recommendations })}</p>
+                  <p className="text-sm text-gray-600">
+                    {t('ai.gainNote', 'Les gains de points sont des ordres de grandeur indicatifs, fixes par type d’action : ils ne sont pas calculés à partir de vos données et ne s’additionnent pas. Recalculez votre score après chaque action pour mesurer l’effet réel.')}
                   </p>
                 </div>
               </div>
-              <button onClick={() => navigate('/app/scores/calculate')} className="flex-shrink-0 hidden sm:flex items-center gap-2 px-4 py-2 border border-amber-300 text-amber-800 rounded-xl text-sm font-medium hover:bg-amber-100 transition-colors">
-                <BarChart3 size={15} />{t('ai.recalculate', 'Recalculer')}
+              <button onClick={() => navigate('/app/scores/calculate')} className="hidden flex-shrink-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 sm:flex">
+                <BarChart3 size={15} aria-hidden="true" />{t('ai.recalculate', 'Recalculer')}
               </button>
             </div>
           )}

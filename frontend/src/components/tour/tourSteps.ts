@@ -80,7 +80,7 @@ export function getTourSteps(t: TFunction): Step[] {
     {
       target: '[data-tour="sidebar-connectors"]',
       title: t('tsteps.s6Title', '🔌 Connecteurs data'),
-      content: t('tsteps.s6Content', 'Branchez directement vos systèmes métiers : SAP, Workday, Salesforce, fichiers SFTP. Les données remontent automatiquement selon le planning que vous configurez.'),
+      content: t('tsteps.s6Content', 'Branchez certains de vos outils (Pennylane, Qonto, Enedis). Les autres systèmes (ERP, SIRH) se branchent sur demande : la page indique ce qui est disponible aujourd’hui.'),
       placement: 'right', disableBeacon: true,
       data: { chapter: 'collecte', stepInChapter: 5, totalInChapter: 5 },
     },
