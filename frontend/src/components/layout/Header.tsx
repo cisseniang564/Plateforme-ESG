@@ -65,7 +65,6 @@ function buildRouteLabels(t: TFn): Record<string, string> {
     '/app/benchmarking':                  t('header.routes.benchmarking'),
     '/app/organizations':                 t('header.routes.organizations'),
     '/app/intelligence':                  t('header.routes.intelligence'),
-    '/app/ai-insights':                   t('header.routes.aiInsights'),
     '/app/carbon':                        t('header.routes.carbon'),
     '/app/scope3':                        t('header.routes.scope3'),
     '/app/lca':                           t('header.routes.lca'),

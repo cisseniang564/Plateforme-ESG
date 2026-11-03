@@ -103,7 +103,7 @@ function RecoCard({ reco, expanded, onToggle }: { reco: Recommendation; expanded
   );
 }
 
-export default function AIInsights() {
+export default function AIInsights({ embedded = false }: { embedded?: boolean } = {}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -130,6 +130,18 @@ export default function AIInsights() {
 
   return (
     <div className="space-y-6">
+      {embedded ? (
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">{t('ai.recoTitle', 'Recommandations')}</h2>
+            <p className="mt-1 text-sm text-gray-600">{t('ai.recoSub', 'Actions prioritaires classées par effort et par gain de score estimé.')}</p>
+          </div>
+          <button onClick={() => fetchInsights(true)} disabled={refreshing}
+            className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-gray-300 bg-white px-3.5 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60">
+            <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} aria-hidden="true" />{t('ai.refresh', 'Actualiser')}
+          </button>
+        </div>
+      ) : (
       <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 rounded-2xl p-8 text-white shadow-xl">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZyIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLW9wYWNpdHk9IjAuMDUiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg==')] opacity-30" />
         <div className="relative">
@@ -153,6 +165,7 @@ export default function AIInsights() {
           </div>
         </div>
       </div>
+      )}
 
       {loading ? (
         <div className="flex flex-col items-center justify-center h-64">

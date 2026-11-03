@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import sidebar from '@/components/layout/Sidebar.tsx?raw';
+import routes from '@/routes.tsx?raw';
 import fr from '@/i18n/locales/fr.json';
 import en from '@/i18n/locales/en.json';
 
-// Les 65 routes du menu avant la réorganisation : aucune ne doit disparaître.
+// Les routes du menu avant la réorganisation : aucune ne doit disparaître.
+// Seule exception voulue : /app/ai-insights (« IA prédictive »), fusionnée dans Insights IA et conservée comme redirection.
 const ROUTES_BEFORE = [
   '/app',
-  '/app/ai-insights',
   '/app/api-docs',
   '/app/audit-trail',
   '/app/audit/preparation',
@@ -109,3 +110,22 @@ describe('menu : 7 entrées de contenu + Paramètres', () => {
     expect((fr as any).sidebar.rail.data).toBe('Collecte');
   });
 });
+
+describe('fusion Insights IA / IA prédictive', () => {
+  it('une seule entrée de menu : /app/intelligence', () => {
+    expect(sidebar).toContain("href: '/app/intelligence'");
+    expect(sidebar).not.toContain("href: '/app/ai-insights'");
+  });
+  it('l’ancienne adresse redirige vers l’onglet Recommandations (aucun lien cassé)', () => {
+    expect(routes).toMatch(/path="ai-insights"[^\n]*Navigate to="\/app\/intelligence\?tab=recommandations" replace/);
+  });
+  it('plus aucun lien interne vers l’ancienne adresse', () => {
+    const files = import.meta.glob('/src/**/*.{ts,tsx}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+    const offenders = Object.entries(files)
+      .filter(([path]) => !path.includes('/tests/') && !path.endsWith('routes.tsx') && !path.endsWith('insightsTabs.ts') && !path.endsWith('InsightsIA.tsx'))
+      .filter(([, src]) => /['"`]\/app\/ai-insights/.test(src))
+      .map(([path]) => path);
+    expect(offenders).toEqual([]);
+  });
+});
+

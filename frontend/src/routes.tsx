@@ -106,10 +106,9 @@ const MaterialityMatrix = lazy(() => import('@/pages/Materiality/MaterialityMatr
 const RiskRegister      = lazy(() => import('@/pages/Risks/RiskRegister'));
 
 // ── Lazy — Analytics ─────────────────────────────────────────────────────────
-const IntelligenceDashboard = lazy(() => import('@/pages/Analytics/IntelligenceDashboard'));
+const InsightsIA = lazy(() => import('@/pages/Analytics/InsightsIA'));
 const GaiaPage = lazy(() => import('@/pages/Gaia/GaiaPage'));
 const QuestionnairesPage = lazy(() => import('@/pages/Questionnaires/QuestionnairesPage'));
-const AIInsights            = lazy(() => import('@/pages/Analytics/AIInsights'));
 const DataQualityDashboard  = lazy(() => import('@/pages/DataQuality/DataQualityDashboard'));
 
 // ── Lazy — Carbon ────────────────────────────────────────────────────────────
@@ -463,10 +462,11 @@ export default function AppRoutes() {
             <Route path="risks"       element={<RiskRegister />} />
 
             {/* Analytics & Intelligence */}
-            <Route path="intelligence"  element={<PlanRoute feature="ai_narrative"><IntelligenceDashboard /></PlanRoute>} />
+            <Route path="intelligence"  element={<PlanRoute feature="ai_narrative"><InsightsIA /></PlanRoute>} />
             <Route path="gaia"          element={<PlanRoute feature="ai_narrative"><GaiaPage /></PlanRoute>} />
             <Route path="questionnaires" element={<QuestionnairesPage />} />
-            <Route path="ai-insights"   element={<PlanRoute feature="ai_narrative"><AIInsights /></PlanRoute>} />
+            {/* Ancienne page « IA prédictive » : fusionnée dans Insights IA (onglet Recommandations) */}
+            <Route path="ai-insights"   element={<Navigate to="/app/intelligence?tab=recommandations" replace />} />
             <Route path="data-quality"  element={<DataQualityDashboard />} />
 
             {/* Carbon */}

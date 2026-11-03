@@ -435,7 +435,7 @@ export default function ScoresList() {
               </p>
             </div>
             <button
-              onClick={() => navigate('/app/ai-insights')}
+              onClick={() => navigate('/app/intelligence?tab=recommandations')}
               className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-primary-700"
             >
               <TrendingUp className="h-4 w-4" />

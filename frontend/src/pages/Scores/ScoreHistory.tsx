@@ -864,7 +864,7 @@ export default function ScoreHistory() {
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 hover:border-gray-300 text-gray-600 text-sm font-semibold rounded-xl transition-all hover:shadow-sm">
               <Download size={14} /> Export CSV
             </button>
-            <button onClick={() => navigate('/app/ai-insights')}
+            <button onClick={() => navigate('/app/intelligence?tab=recommandations')}
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 hover:border-indigo-200 text-gray-700 text-sm font-semibold rounded-xl transition-all hover:shadow-sm">
               {t('sch.aiInsights', 'Insights IA')} <ArrowUpRight size={14} />
             </button>

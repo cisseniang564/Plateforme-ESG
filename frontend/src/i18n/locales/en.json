@@ -428,7 +428,7 @@
       "scoresCalculate": "Calculate a score",
       "benchmarking": "Benchmarking",
       "organizations": "Organisations",
-      "intelligence": "Predictive AI",
+      "intelligence": "AI Insights",
       "aiInsights": "AI Insights",
       "carbon": "Carbon footprint",
       "scope3": "Scope 3 Calculator",
@@ -1000,6 +1000,11 @@
     "csvGlobalScore": "Global Score",
     "csvExported": "CSV export downloaded",
     "evolution12mSubtitle": "Average global score: one point per score calculation"
+  },
+  "insights": {
+    "tabAnalysis": "Analysis",
+    "tabReco": "Recommendations",
+    "sections": "Sections"
   },
   "reports": {
     "v2": {

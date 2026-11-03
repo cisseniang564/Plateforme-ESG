@@ -452,7 +452,7 @@ export default function ScoreBreakdown() {
               Recalculer le score
             </button>
             <button
-              onClick={() => navigate('/app/ai-insights')}
+              onClick={() => navigate('/app/intelligence?tab=recommandations')}
               className="inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-5 py-2.5 text-sm font-semibold text-violet-700 transition hover:bg-violet-100"
             >
               <Brain className="h-4 w-4" />
