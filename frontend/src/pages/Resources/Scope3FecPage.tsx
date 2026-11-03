@@ -582,12 +582,6 @@ export default function Scope3FecPage() {
               >
                 {t('resources.scope3Fec.cta.primaryBtn', 'Démarrer gratuitement — 14 jours')} <ArrowRight className="h-5 w-5" />
               </Link>
-              <Link
-                to="/compare/sweep"
-                className="inline-flex items-center justify-center gap-2 px-6 py-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold rounded-2xl transition-all text-sm"
-              >
-                {t('resources.scope3Fec.cta.secondaryBtn', 'Comparer avec les concurrents')}
-              </Link>
               <div className="flex items-center gap-2 text-xs text-slate-400">
                 <Calendar className="h-3.5 w-3.5" />
                 <span>{t('resources.scope3Fec.cta.demoNote', 'Ou réservez une démo de 30 min avec un expert bilan carbone')}</span>

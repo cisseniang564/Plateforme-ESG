@@ -18,7 +18,6 @@ import LandingPage from '@/pages/Landing/LandingPage';
 import NotFound from '@/pages/Errors/NotFound';
 
 // ── Lazy — Public marketing pages ────────────────────────────────────────────
-const ComparisonPage  = lazy(() => import('@/pages/Compare/ComparisonPage'));
 const SecurityPage    = lazy(() => import('@/pages/Security/SecurityPage'));
 const StatusPage      = lazy(() => import('@/pages/Status/StatusPage'));
 const GuideCsrdPmePage      = lazy(() => import('@/pages/Resources/GuideCsrdPmePage'));
@@ -360,7 +359,7 @@ export default function AppRoutes() {
           <Route index                   element={<DocsHome />} />
           <Route path=":slug"            element={<DocsArticlePage />} />
         </Route>
-        <Route path="/compare/:slug"     element={<ComparisonPage />} />
+        <Route path="/compare/:slug"     element={<Navigate to="/" replace />} />
         <Route path="/security"          element={<SecurityPage />} />
         <Route path="/status"                  element={<StatusPage />} />
         {import.meta.env.DEV && <Route path="/design-system" element={<DesignSystemPage />} />}

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import landing from '@/pages/Landing/LandingPage.tsx?raw';
 import standards from '@/pages/Features/StandardsPage.tsx?raw';
-import compare from '@/pages/Compare/ComparisonPage.tsx?raw';
 import auditPage from '@/pages/Features/AuditTrailPage.tsx?raw';
 import cabinetPage from '@/pages/Features/CabinetPage.tsx?raw';
 import indexHtml from '../../index.html?raw';
@@ -13,7 +12,7 @@ import security from '@/pages/Security/SecurityPage.tsx?raw';
 import ixbrlPage from '@/pages/Compliance/IXBRLTagging.tsx?raw';
 
 // Garde-fou : tant qu'il n'y a ni clients, ni avis, ni certification documentée, la page publique ne les affiche pas.
-const PUBLIC = { landing, standards, compare, auditPage, cabinetPage, indexHtml };
+const PUBLIC = { landing, standards, auditPage, cabinetPage, indexHtml };
 const enLanding = JSON.stringify((en as any).landing);
 
 describe('page publique : aucune fausse preuve sociale', () => {
@@ -40,10 +39,9 @@ describe('page publique : aucune certification ni garantie non documentée', () 
   });
   it('plus de « tier III », de sauvegarde géo-répliquée, ni de « aucun cloud américain / GAFAM »', () => {
     expect(landing).not.toMatch(/tier III|géo-répliqué|Aucun cloud US|Aucun GAFAM|aucun cloud américain/i);
-    expect(compare).not.toMatch(/Aucun cloud américain/i);
   });
   it('le lieu d’hébergement n’est plus affirmé « en France » (contradictoire entre pages, et l’IA passe par OpenAI)', () => {
-    for (const src of [landing, standards, compare]) expect(src).not.toMatch(/h[ée]berg[ée][^.\n]{0,30}en France|Hébergement (100 ?% )?France|hébergé exclusivement/i);
+    for (const src of [landing, standards]) expect(src).not.toMatch(/h[ée]berg[ée][^.\n]{0,30}en France|Hébergement (100 ?% )?France|hébergé exclusivement/i);
   });
   it('la FAQ d’hébergement signale que l’IA envoie le texte à OpenAI', () => {
     expect(landing).toMatch(/OpenAI, un prestataire américain/);
@@ -73,7 +71,7 @@ describe('chiffres et hébergeur vérifiés dans le code', () => {
     expect(privacy).not.toMatch(/Aucun transfert hors Union Europ/i);
   });
   it('le catalogue ESRS annonce 150 concepts (valeur réelle du backend), pas 35 / 100+ / 174', () => {
-    for (const src of [landing, compare, tourSteps, ixbrlPage]) expect(src).not.toMatch(/35\+? concepts|100\+ indicateurs ESRS|174 indicateurs/i);
+    for (const src of [landing, tourSteps, ixbrlPage]) expect(src).not.toMatch(/35\+? concepts|100\+ indicateurs ESRS|174 indicateurs/i);
     expect(JSON.stringify(en)).not.toMatch(/35\+? (tagged )?ESRS concepts|35\+ mandatory|174 preloaded|100\+ (pre-configured )?ESRS indicators|SEC EDGAR compatible/i);
   });
   it('le mockup multi-référentiels n’affirme pas un mapping automatique chiffré', () => {
@@ -91,11 +89,8 @@ describe('page Sécurité', () => {
 
 describe('promesses de service et comparatif concurrents', () => {
   it('plus de délai de mise en service promis (3 jours, 48h, 1 jour)', () => {
-    for (const src of [landing, compare, standards]) expect(src).not.toMatch(/en 3 jours|2 à 3 jours ouvrés|opérationnel en 48h|Opérationnel en 1 jour|onboarding inclus/i);
+    for (const src of [landing, standards]) expect(src).not.toMatch(/en 3 jours|2 à 3 jours ouvrés|opérationnel en 48h|Opérationnel en 1 jour|onboarding inclus/i);
     expect(JSON.stringify((en as any).landing)).not.toMatch(/3 days|onboarding included/i);
-  });
-  it('le comparatif n’affiche aucun prix, faiblesse ou verdict concurrent non sourcé', () => {
-    expect(compare).not.toMatch(/competitor\.weaknesses|competitor\.verdict|competitor\.strengths|competitorPlans\.map|competitor\.description/);
   });
   it('plus de SLA ni de procédure d’incident inventés sur la page Sécurité', () => {
     expect(security).not.toMatch(/PagerDuty|24\/7|testée trimestriellement|99,9|RTO cible|Rapport de pentest|Incidents majeurs|Tests de restauration trimestriels|status\.greenconnect/i);
@@ -120,5 +115,13 @@ describe('page publique : aucune comparaison nominative avec des concurrents', (
   });
   it('plus de tableau « comparaison rapide » ni de section « Comparatif concurrents » sur la landing', () => {
     expect(landing).not.toMatch(/Comparaison rapide|quickCompare|Comparatif concurrents|compareRows/);
+  });
+});
+
+describe('pages /compare retirées', () => {
+  it('la route redirige vers l’accueil et la page n’existe plus', async () => {
+    const routes = (await import('@/routes.tsx?raw')).default;
+    expect(routes).not.toMatch(/ComparisonPage/);
+    expect(routes).toMatch(/path="\/compare\/:slug"[^>]*Navigate to="\/"/);
   });
 });
