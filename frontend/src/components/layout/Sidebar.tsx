@@ -52,7 +52,8 @@ interface RailSection {
 // ─── Navigation Data ──────────────────────────────────────────────────────────
 //
 // Information Architecture: rail + panel pattern (Notion/Linear style).
-//   - 6 rail sections + 3 bottom rail = 9 top-level entries (was 7+3)
+//   - 7 rail sections (+ Paramètres) : Carbone fusionné dans Analyses, Engagement réparti entre
+//     Conformité (audit), Rapports (parties prenantes) et Analyses (supply chain)
 //   - Each panel: max 15 items, no more than 3 groups
 //   - Settings / admin moved to the user dropdown in the Header
 //     (Stripe/Linear pattern — rarely accessed daily)
@@ -135,26 +136,15 @@ function buildRail(t: TFn): RailSection[] {
             { name: t('sidebar.nav.organisations'),      href: '/app/organizations',      icon: Building2 },
             { name: t('sidebar.nav.aiInsights'),         href: '/app/intelligence',       icon: Sparkles, feature: 'ai_narrative' },
             { name: t('sidebar.nav.iaPredictive'),       href: '/app/ai-insights',        icon: Brain, feature: 'ai_narrative' },
+            { name: t('sidebar.nav.supplyChain'),          href: '/app/supply-chain',           icon: PackageSearch, feature: 'supply_chain_esg' },
           ],
         },
-      ],
-    },
-    {
-      id: 'carbone',
-      label: t('sidebar.rail.carbon'),
-      icon: Flame,
-      groups: [
         {
-          title: t('sidebar.groups.emissions'),
+          title: t('sidebar.groups.carbonClimate'),
           items: [
             { name: t('sidebar.nav.bilanCarbone'),      href: '/app/carbon',             icon: Flame,        feature: 'carbon_report' },
             { name: t('sidebar.nav.scope3'),             href: '/app/scope3',             icon: Calculator,   feature: 'carbon_report' },
             { name: t('sidebar.nav.lca'),                href: '/app/lca',                icon: Package,      feature: 'carbon_report' },
-          ],
-        },
-        {
-          title: t('sidebar.groups.trajectory'),
-          items: [
             { name: t('sidebar.nav.decarbonation'),     href: '/app/decarbonation',      icon: TrendingDown, feature: 'carbon_report' },
             { name: t('sidebar.nav.sbti'),               href: '/app/compliance/sbti',    icon: Target },
             { name: t('sidebar.nav.climateScenarios'),   href: '/app/climate-scenarios',  icon: TrendingUp },
@@ -188,6 +178,14 @@ function buildRail(t: TFn): RailSection[] {
             { name: t('sidebar.nav.moreStandards'), href: '/app/compliance',       icon: GitMerge },
           ],
         },
+        {
+          title: t('sidebar.groups.audit'),
+          items: [
+            { name: t('sidebar.nav.workflowValidation'),  href: '/app/validation',             icon: CheckSquare },
+            { name: t('sidebar.nav.auditTrail'),           href: '/app/audit-trail',            icon: List },
+            { name: t('sidebar.nav.auditPrep'),            href: '/app/audit/preparation',      icon: ClipboardList },
+          ],
+        },
       ],
     },
     {
@@ -212,27 +210,11 @@ function buildRail(t: TFn): RailSection[] {
             { name: t('sidebar.nav.multiStandards'),      href: '/app/reports/multi-standards', icon: GitMerge, feature: 'multi_standard' },
           ],
         },
-      ],
-    },
-    {
-      id: 'engagement',
-      label: t('sidebar.rail.engagement'),
-      icon: Users,
-      groups: [
         {
           title: t('sidebar.groups.stakeholders'),
           items: [
             { name: t('sidebar.nav.stakeholders'),        href: '/app/stakeholders',           icon: MessageSquare },
-            { name: t('sidebar.nav.supplyChain'),          href: '/app/supply-chain',           icon: PackageSearch, feature: 'supply_chain_esg' },
             { name: t('sidebar.nav.investorRelations'),    href: '/app/investor-relations',     icon: Briefcase },
-          ],
-        },
-        {
-          title: t('sidebar.groups.audit'),
-          items: [
-            { name: t('sidebar.nav.workflowValidation'),  href: '/app/validation',             icon: CheckSquare },
-            { name: t('sidebar.nav.auditTrail'),           href: '/app/audit-trail',            icon: List },
-            { name: t('sidebar.nav.auditPrep'),            href: '/app/audit/preparation',      icon: ClipboardList },
           ],
         },
       ],
@@ -311,10 +293,8 @@ const ACCENT: Record<string, string> = {
   questionnaires: '192,132,252', // violet clair
   donnees:    '56,189,248',   // ciel
   analyses:   '129,140,248',  // indigo
-  carbone:    '251,146,60',   // orange
   conformite: '45,212,191',   // turquoise
   rapports:   '251,191,36',   // ambre
-  engagement: '244,114,182',  // rose
   settings:   '148,163,184',  // ardoise
 };
 const accentOf = (id: string) => ACCENT[id] ?? ACCENT.home;

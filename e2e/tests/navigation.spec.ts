@@ -45,3 +45,20 @@ test.describe('Rapports', () => {
     await expect(page.getByText(/taux de complétude/i)).toHaveCount(0);
   });
 });
+
+test.describe('Menu à 7 entrées', () => {
+  test('le rail n’a plus d’entrée Carbone ni Engagement, mais Collecte et Clients', async ({ page }) => {
+    await page.goto('/app');
+    const rail = page.locator('[data-rail]');
+    await expect(rail).toContainText('Collecte');
+    await expect(rail).toContainText('Clients');
+    await expect(rail).not.toContainText('Carbone');
+    await expect(rail).not.toContainText('Engagement');
+  });
+
+  test('les pages carbone restent atteignables, sous Analyses', async ({ page }) => {
+    await page.goto('/app/carbon');
+    await expect(page.getByRole('link', { name: /Bilan Carbone/ }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /Empreinte produit/ })).toBeVisible();
+  });
+});
