@@ -92,13 +92,13 @@ export default function SecurityPage() {
 
           {/* Badges */}
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <Badge ok label={t('security.page.badgeHostedFrance', 'Hébergé en France')} />
+            <Badge ok label={t('security.page.badgeHostedFrance', 'Hébergé chez IONOS')} />
             <Badge ok label={t('security.page.badgeGdpr', 'RGPD natif')} />
             <Badge ok label="TLS 1.3 + AES-256" />
             <Badge ok label="SHA-256 audit trail" />
             <Badge ok label="RLS PostgreSQL" />
-            <Badge ok={false} label={t('security.page.badgeIso27001', 'ISO 27001 — en cours')} />
-            <Badge ok={false} label={t('security.page.badgeSoc2', 'SOC 2 Type 2 — roadmap')} />
+            <Badge ok={false} label={t('security.page.badgeIso27001', 'ISO 27001 — non certifié')} />
+            <Badge ok={false} label={t('security.page.badgeSoc2', 'SOC 2 — non certifié')} />
           </div>
         </div>
       </section>
@@ -118,7 +118,7 @@ export default function SecurityPage() {
             </div>
             <div className="p-6 font-mono text-sm space-y-2">
               {[
-                { key: 'hosting',         value: t('security.page.posture.hosting',        'France (OVHcloud / Scaleway)'),                     ok: true },
+                { key: 'hosting',         value: t('security.page.posture.hosting',        'IONOS'),                     ok: true },
                 { key: 'encryption_rest', value: t('security.page.posture.encryptionRest', 'AES-256 (PostgreSQL + S3)'),                         ok: true },
                 { key: 'encryption_tls',  value: t('security.page.posture.encryptionTls',  "TLS 1.3 (nginx + Let's Encrypt)"),                   ok: true },
                 { key: 'audit_trail',     value: t('security.page.posture.auditTrail',     'Journal détaillé + empreintes SHA-256 par entrée'),   ok: true },
@@ -127,7 +127,7 @@ export default function SecurityPage() {
                 { key: 'secrets',         value: t('security.page.posture.secrets',        'Env variables chiffrées, pas de secrets en code'),    ok: true },
                 { key: 'backups',         value: t('security.page.posture.backups',        'Quotidiens chiffrés, rétention 30 jours'),            ok: true },
                 { key: 'iso_27001',       value: t('security.page.posture.iso27001',       "En cours d'obtention (2026)"),                       ok: false },
-                { key: 'soc2_type2',      value: t('security.page.posture.soc2',           'Roadmap 2026–2027'),                                  ok: false },
+                { key: 'soc2_type2',      value: t('security.page.posture.soc2',           'Non démarré'),                                  ok: false },
               ].map(row => (
                 <div key={row.key} className="flex items-center gap-3">
                   <span className={`text-xs ${row.ok ? 'text-emerald-400' : 'text-amber-400'}`}>
@@ -148,8 +148,8 @@ export default function SecurityPage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
 
-            <SecurityCard icon={Globe} color="emerald" title={t('security.page.card1Title', 'Hébergement souverain en France')}>
-              <p>{t('security.page.card1p1', 'Infrastructure 100 % en France chez')} <strong>OVHcloud</strong> {t('security.page.card1p1b', 'et')} <strong>Scaleway</strong> — {t('security.page.card1p1c', 'deux acteurs certifiés HDS et SecNumCloud.')}</p>
+            <SecurityCard icon={Globe} color="emerald" title={t('security.page.card1Title', 'Hébergement chez IONOS')}>
+              <p>{t('security.page.card1p1', 'Infrastructure hébergée chez IONOS. La région du serveur sera précisée ici dès confirmation.')}</p>
               <p>{t('security.page.card1p2', "Aucun sous-traitant américain. Aucun transfert de données hors UE. Conformité RGPD garantie contractuellement par notre DPA.")}</p>
             </SecurityCard>
 
@@ -226,39 +226,39 @@ export default function SecurityPage() {
             {[
               {
                 cert:   t('security.page.cert1Name',   'RGPD (Règlement européen 2016/679)'),
-                status: t('security.page.cert1Status', 'Conforme'),
+                status: t('security.page.cert1Status', 'Engagement'),
                 statusColor: 'emerald',
-                detail: t('security.page.cert1Detail', 'DPA disponible, DPO désigné, traitements documentés dans le registre CNIL'),
+                detail: t('security.page.cert1Detail', 'Engagement de conformité. Accord de sous-traitance (DPA) disponible sur demande ; registre des traitements en cours de formalisation.'),
               },
               {
-                cert:   t('security.page.cert2Name',   'Hébergement HDS (OVHcloud)'),
-                status: t('security.page.cert2Status', 'Actif'),
-                statusColor: 'emerald',
-                detail: t('security.page.cert2Detail', 'Données hébergées chez un opérateur certifié HDS pour les données de santé'),
+                cert:   t('security.page.cert2Name',   'Hébergement IONOS'),
+                status: t('security.page.cert2Status', 'Pas de HDS'),
+                statusColor: 'amber',
+                detail: t('security.page.cert2Detail', 'Hébergement chez IONOS. Aucune certification HDS : ne pas déposer de données de santé.'),
               },
               {
                 cert:   t('security.page.cert3Name',   'TLS 1.3 + HSTS'),
                 status: t('security.page.cert3Status', 'Actif'),
                 statusColor: 'emerald',
-                detail: t('security.page.cert3Detail', 'Score A+ SSL Labs sur tous les domaines de production'),
+                detail: t('security.page.cert3Detail', 'Chiffrement des échanges en TLS, HSTS activé.'),
               },
               {
-                cert:   t('security.page.cert4Name',   'Pentest externe'),
-                status: t('security.page.cert4Status', 'Réalisé T1 2026'),
-                statusColor: 'emerald',
-                detail: t('security.page.cert4Detail', 'Test de pénétration par cabinet spécialisé indépendant — rapport disponible sur demande (NDA)'),
+                cert:   t('security.page.cert4Name',   'Test d’intrusion externe'),
+                status: t('security.page.cert4Status', 'Non réalisé'),
+                statusColor: 'amber',
+                detail: t('security.page.cert4Detail', 'Aucun test d’intrusion externe n’a encore été réalisé ; il est prévu avant les premiers déploiements clients.'),
               },
               {
                 cert:   t('security.page.cert5Name',   'ISO 27001'),
-                status: t('security.page.cert5Status', "En cours d'obtention"),
+                status: t('security.page.cert5Status', 'Non certifié'),
                 statusColor: 'amber',
-                detail: t('security.page.cert5Detail', 'Audit de certification prévu H2 2026 — gap analysis réalisée, politique SMSI rédigée'),
+                detail: t('security.page.cert5Detail', 'Aucune certification à ce jour. Un inventaire des contrôles techniques existe (docs/security) ; la politique de sécurité reste à rédiger.'),
               },
               {
                 cert:   t('security.page.cert6Name',   'SOC 2 Type 2'),
-                status: t('security.page.cert6Status', 'Roadmap 2026–2027'),
+                status: t('security.page.cert6Status', 'Non démarré'),
                 statusColor: 'amber',
-                detail: t('security.page.cert6Detail', "Démarrage de la période d'observation T4 2026 — partenaire d'audit sélectionné"),
+                detail: t('security.page.cert6Detail', 'Aucune certification à ce jour ; inventaire des contrôles techniques en cours.'),
               },
             ].map((row, i, arr) => (
               <div key={i} className={`flex items-center justify-between px-6 py-4 ${i < arr.length - 1 ? 'border-b border-gray-100' : ''} hover:bg-gray-50 transition-colors`}>
@@ -299,12 +299,10 @@ export default function SecurityPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {[
-                  { vendor: 'OVHcloud',   service: t('security.page.proc1Service',  'Hébergement infra + base de données'),            location: t('security.page.proc1Location',  '🇫🇷 France'),        data: t('security.page.proc1Data',  'Toutes les données applicatives (PII, métriques ESG)') },
-                  { vendor: 'Scaleway',   service: t('security.page.proc2Service',  'Stockage objets (S3-compatible)'),                location: t('security.page.proc2Location',  '🇫🇷 France'),        data: t('security.page.proc2Data',  'Pièces justificatives, exports PDF') },
+                  { vendor: 'IONOS',      service: t('security.page.proc1Service',  'Hébergement infra + base de données'),            location: t('security.page.proc1Location',  'Région à confirmer'), data: t('security.page.proc1Data',  'Toutes les données applicatives (PII, métriques ESG)') },
                   { vendor: 'Stripe',     service: t('security.page.proc3Service',  'Facturation & paiements'),                        location: t('security.page.proc3Location',  '🇮🇪 Irlande (UE)'),  data: t('security.page.proc3Data',  'Email de facturation, numéro TVA — jamais les données ESG') },
                   { vendor: 'Resend',     service: t('security.page.proc4Service',  'Délivrabilité email transactionnel'),             location: t('security.page.proc4Location',  '🇮🇪 Irlande (UE)'),  data: t('security.page.proc4Data',  'Email destinataire + contenu transactionnel') },
-                  { vendor: 'Sentry',     service: t('security.page.proc5Service',  'Monitoring erreurs (auto-hosted EU)'),            location: t('security.page.proc5Location',  '🇩🇪 Allemagne'),     data: t('security.page.proc5Data',  'Stack traces, user_id pseudonymisé — pas de données métier') },
-                  { vendor: 'Cloudflare', service: t('security.page.proc6Service',  'CDN + protection DDoS'),                         location: t('security.page.proc6Location',  '🇪🇺 Edge UE'),       data: t('security.page.proc6Data',  'Métadonnées de requêtes (IP, user-agent) — pas le contenu') },
+                  { vendor: 'Sentry',     service: t('security.page.proc5Service',  'Monitoring erreurs'),            location: t('security.page.proc5Location',  'À confirmer'),     data: t('security.page.proc5Data',  'Stack traces, user_id pseudonymisé — pas de données métier') },
                   { vendor: 'OpenAI',     service: t('security.page.proc7Service',  'Génération de narratifs ESG (opt-in)'),           location: t('security.page.proc7Location',  '🇺🇸 États-Unis ⚠'), data: t('security.page.proc7Data',  'Uniquement les snippets envoyés via /generate-narrative (option désactivable)') },
                 ].map((row, i) => (
                   <tr key={row.vendor} className="hover:bg-gray-50 transition-colors">
@@ -440,7 +438,7 @@ export default function SecurityPage() {
           <div style={{ background: 'linear-gradient(135deg, #064e3b 0%, #134e4a 100%)' }} className="rounded-2xl p-6 flex flex-col justify-between">
             <div>
               <h3 className="text-base font-bold text-white mb-2">{t('security.page.ctaTitle', 'Prêt à démarrer ?')}</h3>
-              <p className="text-sm text-slate-300 mb-6">{t('security.page.ctaSubtitle', '14 jours gratuits, données hébergées en France, RGPD garanti. Sans carte bancaire.')}</p>
+              <p className="text-sm text-slate-300 mb-6">{t('security.page.ctaSubtitle', '14 jours gratuits, données hébergées chez IONOS. Sans carte bancaire.')}</p>
             </div>
             <Link
               to="/register"

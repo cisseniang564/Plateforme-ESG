@@ -9,6 +9,7 @@ import en from '@/i18n/locales/en.json';
 import privacy from '@/pages/Legal/PrivacyPolicy.tsx?raw';
 import legalNotice from '@/pages/Legal/LegalNotice.tsx?raw';
 import tourSteps from '@/components/tour/tourSteps.ts?raw';
+import security from '@/pages/Security/SecurityPage.tsx?raw';
 import ixbrlPage from '@/pages/Compliance/IXBRLTagging.tsx?raw';
 
 // Garde-fou : tant qu'il n'y a ni clients, ni avis, ni certification documentée, la page publique ne les affiche pas.
@@ -77,5 +78,13 @@ describe('chiffres et hébergeur vérifiés dans le code', () => {
   });
   it('le mockup multi-référentiels n’affirme pas un mapping automatique chiffré', () => {
     expect(landing).not.toMatch(/47 indicateurs mappés automatiquement/);
+  });
+});
+
+describe('page Sécurité', () => {
+  it('ne cite plus OVH/Scaleway/HDS/Cloudflare ni de pentest, DPO ou SSL Labs non établis', () => {
+    expect(security).not.toMatch(/OVH|Scaleway|SecNumCloud|Cloudflare|SSL Labs|DPO désigné|Hébergé en France|100 % en France|partenaire d'audit sélectionné/i);
+    expect(security).toMatch(/IONOS/);
+    expect(JSON.stringify((en as any).security)).not.toMatch(/OVH|Scaleway|Cloudflare|SSL Labs/i);
   });
 });
