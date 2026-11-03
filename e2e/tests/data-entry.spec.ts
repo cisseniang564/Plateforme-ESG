@@ -28,4 +28,9 @@ test.describe('Saisie de données ESG', () => {
     await page.keyboard.press('Escape');
     await expect(dialog).toHaveCount(0);
   });
+
+  test('un lien ?search= (source d\'une réponse de questionnaire) pré-remplit la recherche', async ({ page }) => {
+    await page.goto('/app/data-entry?search=Scope%201');
+    await expect(page.getByRole('searchbox', { name: /rechercher un indicateur/i })).toHaveValue('Scope 1');
+  });
 });
