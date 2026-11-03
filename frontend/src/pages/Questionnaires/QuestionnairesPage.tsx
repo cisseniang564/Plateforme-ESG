@@ -14,6 +14,7 @@ import {
   confidenceLabel, countStatuses, currentStep, effectiveOf, isDirty, nextUnresolvedId, preparedPercent, sourceLink,
   type Drafts, type Step,
 } from './questionnaireHelpers';
+import { Q_EXAMPLE, Q_EXAMPLE_ID } from './questionnaireExample';
 
 const card = 'rounded-xl border border-gray-200 bg-white';
 const STATUS: Record<QStatus, { label: string; cls: string; dot: string }> = {
@@ -118,8 +119,11 @@ export default function QuestionnairesPage() {
   const set = (id: string, patch: Partial<{ answer: string; status: QStatus }>) =>
     setDrafts(d => ({ ...d, [id]: { ...(d[id] ?? { answer: '', status: 'to_complete' as QStatus }), ...patch } }));
 
+  const isExample = detail?.id === Q_EXAMPLE_ID;
+
   const persist = async (): Promise<boolean> => {
     if (!detail) return false;
+    if (isExample) { toast('Exemple : rien n\'est enregistré.'); return false; }
     setBusy(true);
     try {
       const payload = Object.fromEntries(Object.entries(drafts).map(([id, d]) => [id, { answer: d.answer || null, status: d.status }]));
@@ -136,6 +140,7 @@ export default function QuestionnairesPage() {
   // Exporter enregistre d'abord : le fichier Excel doit refléter ce que l'on voit à l'écran.
   const doExport = async () => {
     if (!detail) return;
+    if (isExample) { toast('L\'export Excel est disponible avec vos propres questionnaires.'); return; }
     if (dirty && !(await persist())) return;
     await exportQuestionnaire(detail.id, detail.title).catch(() => toast.error('Export impossible.'));
   };
@@ -194,6 +199,13 @@ export default function QuestionnairesPage() {
             </div>
           )}
         </header>
+
+        {isExample && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-900" role="note">
+            <p><b>Exemple fictif.</b> Ce client, ces questions et ces réponses sont inventés pour montrer le rendu. Vous pouvez relire et valider, mais rien n'est enregistré.</p>
+            <Button size="sm" onClick={() => { setDetail(null); }}>Déposer mon questionnaire</Button>
+          </div>
+        )}
 
         <Stepper step={step} />
 
@@ -429,6 +441,7 @@ export default function QuestionnairesPage() {
                 <li className="flex gap-2"><b className="text-emerald-800">2.</b> Les réponses sont pré-remplies à partir de vos données, avec leur source.</li>
                 <li className="flex gap-2"><b className="text-emerald-800">3.</b> Vous relisez, complétez, puis exportez en Excel.</li>
               </ol>
+              <Button className="mt-4" variant="secondary" onClick={() => load(Q_EXAMPLE)}>Voir un exemple de questionnaire pré-rempli</Button>
             </div>
           ) : (
             <ul className="space-y-2">
