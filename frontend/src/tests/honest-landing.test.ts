@@ -104,3 +104,11 @@ describe('promesses de service et comparatif concurrents', () => {
     expect(landing).not.toMatch(/year: '20(22|23|24|25\+)'|réglementations couvertes/);
   });
 });
+
+describe('mentions légales : hébergeur', () => {
+  it('l’entité IONOS SARL est renseignée, sans placeholder', () => {
+    expect(legalNotice).toMatch(/IONOS SARL/);
+    expect(legalNotice).toMatch(/Sarreguemines/);
+    expect(legalNotice).not.toMatch(/à compléter/);
+  });
+});
