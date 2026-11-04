@@ -326,34 +326,20 @@ class AuthService:
         base_slug = (request.tenant_slug or "company").strip("-")[:80] or "company"
         unique_slug = f"{base_slug}-{new_tenant_id.hex[:8]}"
 
-        # ── Email uniqueness check — users table also has RLS, so we run
-        # it under a "SET LOCAL row_security = off" savepoint that requires
-        # no special privileges. If RLS hides the duplicate, the INSERT will
-        # still fail later on the (tenant_id, email) UNIQUE constraint — but
-        # the row count check below catches the cross-tenant duplicate first.
-        try:
-            async with self.db.begin_nested():
-                await self.db.execute(_text("SET LOCAL row_security = off"))
-                stmt = select(User).where(User.email == request.admin_email)
-                result = await self.db.execute(stmt)
-                existing_user = result.scalar_one_or_none()
-                if existing_user:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Email already registered",
-                    )
-        except HTTPException:
-            raise
-        except Exception as exc:
-            # RLS not switchable (non-superuser) — fall back to a normal check.
-            logger.warning("Email uniqueness check fallback (RLS off failed): %s", exc)
-            stmt = select(User).where(User.email == request.admin_email)
-            result = await self.db.execute(stmt)
-            if result.scalar_one_or_none():
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Email already registered",
-                )
+        # ── Email uniqueness check ─────────────────────────────────────────
+        # Cette route n'a pas de client identifié : get_db fournit une session système
+        # (bypass RLS), donc la requête voit tous les comptes. Ne JAMAIS utiliser
+        # « SET LOCAL row_security = off » ici : sans droit BYPASSRLS il reste actif
+        # jusqu'à la fin de la transaction et fait échouer l'INSERT suivant sur `tenants`
+        # (« query would be affected by row-level security policy »).
+        existing_user = (await self.db.execute(
+            select(User).where(User.email == request.admin_email)
+        )).scalar_one_or_none()
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered",
+            )
 
         tenant = Tenant(
             id=new_tenant_id,
