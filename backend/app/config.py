@@ -203,6 +203,8 @@ class Settings(BaseSettings):
     # ========================================================================
     APP_URL: str = "http://localhost:3000"
     TRIAL_DAYS: int = 14
+    # Emails (séparés par des virgules) autorisés à voir les inscriptions de toute la plateforme.
+    PLATFORM_ADMIN_EMAILS: str = ""
 
     # ========================================================================
     # SENTRY — error monitoring & performance tracing

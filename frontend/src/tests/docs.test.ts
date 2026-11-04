@@ -21,6 +21,7 @@ function appRoutes(): string[] {
     if (!el || el.includes('<Navigate')) continue;
     if (isIndex && !path) { out.push('/app'); continue; }
     if (!path || path.startsWith('/') || path.includes(':') || path.includes('*')) continue;
+    if (path === 'platform') continue;   // vue réservée à l'exploitant : volontairement absente de la documentation publique
     out.push('/app/' + path);
   }
   return [...new Set(out)];

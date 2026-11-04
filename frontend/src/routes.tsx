@@ -117,6 +117,7 @@ const Scope3Calculator = lazy(() => import('@/pages/Carbon/Scope3Calculator'));
 // ── Lazy — Compliance & ESG ──────────────────────────────────────────────────
 const TaxonomyAlignment        = lazy(() => import('@/pages/Compliance/TaxonomyAlignment'));
 const MultiRegulatoryCompliance = lazy(() => import('@/pages/Compliance/MultiRegulatoryCompliance'));
+const PlatformSignups = lazy(() => import('@/pages/Platform/PlatformSignups'));
 const ESRSGapAnalysis          = lazy(() => import('@/pages/Compliance/ESRSGapAnalysis'));
 const CSRDProgress             = lazy(() => import('@/pages/Compliance/CSRDProgress'));
 const ConsolidatedView         = lazy(() => import('@/pages/Organizations/ConsolidatedView'));
@@ -429,6 +430,7 @@ export default function AppRoutes() {
 
             {/* Data Entry */}
             <Route path="data-entry"         element={<DataEntryForm />} />
+            <Route path="platform"           element={<PlatformSignups />} />
             <Route path="import-csv"         element={<ImportCSV />} />
             <Route path="my-data"            element={<MyDataDashboard />} />
             <Route path="calculated-metrics" element={<CalculatedMetrics />} />

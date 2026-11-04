@@ -145,6 +145,13 @@ async def login(
     # Successful login — clear any brute-force counter
     await _clear_failed_logins(request)
 
+    # Dernière connexion : sert à voir qui utilise réellement la plateforme.
+    try:
+        user.update_last_login()
+        await db.commit()
+    except Exception:  # ne jamais bloquer une connexion pour ça
+        await db.rollback()
+
     return {
         "tokens": {
             "access_token": access_token,
