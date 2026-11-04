@@ -39,8 +39,8 @@ const getSubjects = (t: TFunction) => [
 const getBenefits = (t: TFunction) => [
   {
     icon: Shield,
-    title: t('contact.benefit.deploy.title', 'Deploiement dedie'),
-    desc: t('contact.benefit.deploy.desc', 'Instance isolee, SLA 99,9 %, hebergement souverain EU.'),
+    title: t('contact.benefit.deploy.title', 'Hébergement en France'),
+    desc: t('contact.benefit.deploy.desc', 'Hébergé en France chez IONOS, données isolées par client.'),
   },
   {
     icon: Users,

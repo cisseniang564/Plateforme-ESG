@@ -38,7 +38,6 @@ const getItems = (t: TFunction): RoadmapItem[] => [
   { title: t('resources.roadmap.items.9.title', 'Connecteur Pennylane'),                    desc: t('resources.roadmap.items.9.desc', 'Import direct des FEC depuis Pennylane (alpha).'),                 quarter: 'Q3 2026', category: 'integrations', status: 'in_progress' },
   { title: t('resources.roadmap.items.10.title', 'iXBRL / ESEF certifié EFRAG'),            desc: t('resources.roadmap.items.10.desc', 'Tagging XBRL des 12 ESRS pour dépôt AMF.'),                        quarter: 'Q3 2026', category: 'reports',      status: 'in_progress' },
   { title: t('resources.roadmap.items.11.title', 'Anglais natif'),                          desc: t('resources.roadmap.items.11.desc', 'Interface + rapports en anglais pour filiales/clients UE.'),       quarter: 'Q3 2026', category: 'ux',           status: 'in_progress' },
-  { title: t('resources.roadmap.items.12.title', 'SOC 2 Type I'),                           desc: t('resources.roadmap.items.12.desc', 'Audit en cours, livraison prévue T3.'),                            quarter: 'Q3 2026', category: 'security',     status: 'in_progress' },
 
   // 🔵 Planned
   { title: t('resources.roadmap.items.13.title', 'Connecteur Qonto'),                       desc: t('resources.roadmap.items.13.desc', 'Banque pro Qonto → catégorisation Scope 3.'),                      quarter: 'Q4 2026', category: 'integrations', status: 'planned' },
@@ -50,7 +49,6 @@ const getItems = (t: TFunction): RoadmapItem[] => [
 
   // 💭 Considering
   { title: t('resources.roadmap.items.19.title', 'Mobile app iOS / Android'),               desc: t('resources.roadmap.items.19.desc', 'Consultation rapports + saisie indicateurs terrain.'),             quarter: '2027',    category: 'ux',           status: 'considering' },
-  { title: t('resources.roadmap.items.20.title', 'SOC 2 Type II'),                          desc: t('resources.roadmap.items.20.desc', 'Maintien continu sur 12 mois après Type I.'),                      quarter: '2027',    category: 'security',     status: 'considering' },
   { title: t('resources.roadmap.items.21.title', 'Marketplace de modules sectoriels'),      desc: t('resources.roadmap.items.21.desc', 'Modules verticaux : agro, BTP, finance, transport.'),              quarter: '2027',    category: 'core',         status: 'considering' },
   { title: t('resources.roadmap.items.22.title', 'Intégration Climatiq (DB facteurs)'),     desc: t('resources.roadmap.items.22.desc', "Base de 200 000+ facteurs d'émission internationaux."),           quarter: '2027',    category: 'integrations', status: 'considering' },
 ];
