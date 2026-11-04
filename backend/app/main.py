@@ -44,6 +44,7 @@ from app.middleware.prometheus_middleware import PrometheusMiddleware
 from app.middleware.csrf_middleware import CSRFMiddleware
 from app.core.logging_config import configure_logging
 from app.api.v1.endpoints import admin_users
+from app.api.v1.endpoints import platform_admin
 from app.api.v1.endpoints import register
 from app.api.v1.endpoints import onboarding
 from app.api.v1.endpoints import validation_workflow
@@ -386,6 +387,7 @@ app.include_router(data_validation.router, prefix="/api/v1/data-validation", tag
 app.include_router(esg_import.router, prefix="/api/v1/esg-import", tags=["ESG Import"])
 app.include_router(auth.router, prefix="/api/v1", tags=["Authentication"])
 app.include_router(admin_users.router, prefix="/api/v1/admin", tags=["Admin"])
+app.include_router(platform_admin.router, prefix="/api/v1/admin", tags=["Admin"])
 app.include_router(register.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(onboarding.router, prefix="/api/v1")
 app.include_router(validation_workflow.router, prefix="/api/v1", tags=["Validation Workflow"])
