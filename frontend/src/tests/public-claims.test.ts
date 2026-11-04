@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import login from '../pages/Auth/Login.tsx?raw';
 import status from '../pages/Status/StatusPage.tsx?raw';
 import contact from '../pages/Contact/ContactPage.tsx?raw';
+import privacy from '../pages/Legal/PrivacyPolicy.tsx?raw';
 import roadmap from '../pages/Resources/RoadmapPage.tsx?raw';
 
 // Aucune certification ni disponibilité inventée sur les pages publiques.
@@ -17,5 +18,8 @@ describe('pages publiques : pas d\'affirmation invérifiable', () => {
   });
   it('Roadmap : pas d\'audit SOC 2 annoncé', () => {
     expect(roadmap).not.toMatch(/SOC 2/);
+  });
+  it('Confidentialité : pas de Google Analytics, pentest ni surveillance 24/7 inventés', () => {
+    expect(privacy).not.toMatch(/Google Analytics|Tests d'intrusion|Surveillance 24\/7/);
   });
 });

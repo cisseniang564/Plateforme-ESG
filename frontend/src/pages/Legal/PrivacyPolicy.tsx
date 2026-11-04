@@ -1,11 +1,17 @@
+import { useEffect } from 'react';
 import { ArrowLeft, Shield } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { usePageSeo } from '@/hooks/usePageSeo';
 
 export default function PrivacyPolicy() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { hash } = useLocation();
+  // Lien d'ancre (ex. /privacy-policy#cookies) : le routeur ne fait pas défiler seul.
+  useEffect(() => {
+    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView();
+  }, [hash]);
   usePageSeo({ id: 'privacy', title: 'Politique de Confidentialité — ESGFlow', description: 'Politique de confidentialité et protection des données personnelles de la plateforme ESGFlow. Hébergement France, RGPD.', url: 'https://greenconnect.cloud/privacy-policy', ogImage: 'https://greenconnect.cloud/og/privacy-policy.png' });
 
   return (
@@ -205,9 +211,9 @@ export default function PrivacyPolicy() {
 
             <h3>📧 Exercer vos droits</h3>
             <p>
-              Pour exercer vos droits, contactez notre DPO :<br />
+              Pour exercer vos droits, contactez notre contact protection des données :<br />
               Email : <a href="mailto:privacy@greenconnect.cloud" className="text-primary-600 hover:underline">privacy@greenconnect.cloud</a><br />
-              Courrier : GreenConnect SAS - DPO, 12 Vieux chemin de meaux, 93190 Livry-Gargan, France<br />
+              Courrier : GreenConnect SAS - Protection des données, 12 Vieux chemin de meaux, 93190 Livry-Gargan, France<br />
               <br />
               Réponse sous 1 mois maximum.
             </p>
@@ -220,29 +226,38 @@ export default function PrivacyPolicy() {
               <li>✅ Authentification multi-facteurs (MFA) disponible</li>
               <li>✅ Contrôle d'accès basé sur les rôles (RBAC)</li>
               <li>✅ Sauvegardes quotidiennes chiffrées</li>
-              <li>✅ Surveillance 24/7 des intrusions</li>
-              <li>✅ Tests d'intrusion annuels</li>
               <li>✅ Journalisation des accès</li>
             </ul>
 
-            <h2>10. Cookies et Traceurs</h2>
-            <p>ESGFlow utilise les cookies suivants :</p>
-            
-            <h3>Cookies strictement nécessaires (pas de consentement requis)</h3>
+            <h2 id="cookies">10. Cookies et Traceurs</h2>
+            <p>
+              ESGFlow n'utilise aucun cookie publicitaire ni outil de profilage. Aucun outil de mesure
+              d'audience n'est actif à ce jour ; si un tel outil était ajouté, cette page serait mise à jour
+              avant son activation.
+            </p>
+
+            <h3>Données stockées dans votre navigateur (strictement nécessaires)</h3>
             <ul>
-              <li>Session utilisateur (auth_token)</li>
-              <li>Préférences de langue</li>
+              <li>Session de connexion</li>
+              <li>Préférence de langue</li>
+              <li>Votre choix sur le bandeau de consentement</li>
             </ul>
 
-            <h3>Cookies analytiques (consentement requis)</h3>
+            <h3>Services tiers chargés par le site</h3>
             <ul>
-              <li>Google Analytics (anonymisé)</li>
-              <li>Statistiques d'usage</li>
+              <li>
+                Polices de caractères (Inter) : chargées depuis les serveurs de Google Fonts, ce qui
+                transmet votre adresse IP à Google.
+              </li>
+              <li>
+                Suivi des erreurs techniques (Sentry), le cas échéant : utilisé uniquement pour corriger
+                les bogues.
+              </li>
             </ul>
 
             <p>
-              Vous pouvez gérer vos préférences cookies via le bandeau de consentement ou dans les
-              paramètres de votre navigateur.
+              Vous pouvez gérer vos préférences via le bandeau de consentement ou dans les paramètres de
+              votre navigateur.
             </p>
 
             <h2>11. Violations de Données</h2>
@@ -274,13 +289,13 @@ export default function PrivacyPolicy() {
               Site web : <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">www.cnil.fr</a>
             </p>
 
-            <h2>14. Contact DPO</h2>
+            <h2>14. Contact protection des données</h2>
             <p>
               Pour toute question relative à la protection de vos données personnelles :<br />
               <br />
-              <strong>Délégué à la Protection des Données (DPO)</strong><br />
+              <strong>Contact protection des données</strong><br />
               Email : <a href="mailto:privacy@greenconnect.cloud" className="text-primary-600 hover:underline">privacy@greenconnect.cloud</a><br />
-              Courrier : GreenConnect SAS - DPO, 12 Vieux chemin de meaux, 93190 Livry-Gargan, France
+              Courrier : GreenConnect SAS - Protection des données, 12 Vieux chemin de meaux, 93190 Livry-Gargan, France
             </p>
           </div>
         </div>
