@@ -152,7 +152,7 @@ export default function FirstTimeSetup() {
     if (!profile.org_name.trim()) { setError(t('setup.errOrgRequired', "Le nom de l'entreprise est requis.")); return; }
     setLoading(true); setError('');
     try {
-      const res = await api.post('/onboarding/profile', profile);
+      const res = await api.post('/onboarding/profile', { ...profile, siren: profile.siren || undefined });
       const suggested: Record<string, Regulation> = res.data.suggested_regulations || {};
       setRegulations(suggested);
       setSelectedRegCodes(new Set(Object.keys(suggested)));

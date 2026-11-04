@@ -3,7 +3,7 @@ from typing import Optional, List, Any, Dict
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_db, get_current_user
@@ -51,8 +51,21 @@ class ProfileRequest(BaseModel):
     employee_count: Optional[int] = Field(default=None, ge=0)
     revenue_eur: Optional[Decimal] = Field(default=None, ge=0)
     country_code: str = Field(default="FR", min_length=2, max_length=2)
-    siren: Optional[str] = Field(default=None, min_length=9, max_length=9)
+    siren: Optional[str] = None
     is_listed: bool = False
+
+    @field_validator("siren", mode="before")
+    @classmethod
+    def _siren_optional(cls, v):
+        # Un champ SIREN laissé vide par le formulaire ("") équivaut à « non renseigné ».
+        if v is None:
+            return None
+        v = str(v).strip()
+        if v == "":
+            return None
+        if not (v.isdigit() and len(v) == 9):
+            raise ValueError("Le SIREN doit contenir 9 chiffres")
+        return v
 
 
 class RegulationsRequest(BaseModel):
