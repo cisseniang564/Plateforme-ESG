@@ -4,11 +4,11 @@
  * No auth required. Polls /api/v1/status every 30s and renders a clean
  * operational dashboard suitable for IT/DSI review.
  */
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation, Trans } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { CheckCircle2, AlertTriangle, XCircle, RefreshCw, ChevronLeft, Clock, Activity, Bell, Shield } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, XCircle, RefreshCw, ChevronLeft, Clock, Bell, Shield } from 'lucide-react';
 import { LogoBrand } from '@/components/common/Logo';
 
 type SubsystemStatus = 'up' | 'down' | 'degraded';
@@ -49,50 +49,9 @@ const STATUS_CHIP: Record<SubsystemStatus, string> = {
   down:     'bg-red-100 text-red-700',
 };
 
-// ── Uptime history (90 days simulated from seed) ─────────────────────────────
-function generateUptimeHistory(): Array<{ date: string; uptime: number; status: 'up' | 'degraded' | 'down' }> {
-  const days: Array<{ date: string; uptime: number; status: 'up' | 'degraded' | 'down' }> = [];
-  const now = new Date();
-  for (let i = 89; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().slice(0, 10);
-    // Deterministic "random" from date seed — mostly 99.9%+, rare dips
-    const seed = d.getDate() * 31 + d.getMonth() * 7;
-    let uptime: number;
-    if (seed % 47 === 0) uptime = 98.5 + Math.random() * 1.0;       // rare degraded
-    else if (seed % 89 === 0) uptime = 95.0 + Math.random() * 3.0;  // very rare incident
-    else uptime = 99.8 + Math.random() * 0.2;                       // normal
-    const status = uptime >= 99.5 ? 'up' : uptime >= 98.0 ? 'degraded' : 'down';
-    days.push({ date: dateStr, uptime: Math.round(uptime * 100) / 100, status });
-  }
-  return days;
-}
-
 // ── Recent incidents (static for now) ────────────────────────────────────────
-const getIncidents = (t: TFunction) => [
-  {
-    date: '2026-05-18',
-    title: t('status.incidents.i1.title', 'Latence base de donnees elevee'),
-    duration: '12 min',
-    severity: 'degraded' as const,
-    detail: t('status.incidents.i1.detail', 'Pics de latence PostgreSQL suite a une maintenance planifiee. Aucune perte de donnees.'),
-  },
-  {
-    date: '2026-04-29',
-    title: t('status.incidents.i2.title', 'Maintenance planifiee infrastructure'),
-    duration: '25 min',
-    severity: 'degraded' as const,
-    detail: t('status.incidents.i2.detail', 'Migration vers une nouvelle version du cluster. Temps d\'arret planifie et communique.'),
-  },
-  {
-    date: '2026-04-10',
-    title: t('status.incidents.i3.title', 'Incident reseau fournisseur cloud'),
-    duration: '8 min',
-    severity: 'down' as const,
-    detail: t('status.incidents.i3.detail', 'Interruption breve causee par un incident chez notre fournisseur cloud. Resolution automatique par failover.'),
-  },
-];
+// Aucun historique d'incidents publié pour l'instant : on n'affiche rien d'inventé.
+const getIncidents = (_t: TFunction): Array<{ date: string; title: string; duration: string; severity: 'degraded' | 'down'; detail: string }> => [];
 
 export default function StatusPage() {
   const { t } = useTranslation();
@@ -107,11 +66,6 @@ export default function StatusPage() {
   const [subscribed, setSubscribed] = useState(false);
   const [latencyHistory, setLatencyHistory] = useState<number[]>([]);
 
-  const uptimeHistory = useMemo(() => generateUptimeHistory(), []);
-  const avgUptime = useMemo(
-    () => Math.round((uptimeHistory.reduce((s, d) => s + d.uptime, 0) / uptimeHistory.length) * 100) / 100,
-    [uptimeHistory],
-  );
 
   const fetchStatus = async () => {
     try {
@@ -225,45 +179,6 @@ export default function StatusPage() {
               );
             })}
           </ul>
-        </div>
-
-        {/* ── 90-day uptime history ── */}
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden mt-8">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Activity className="h-4 w-4 text-gray-500" />
-              <h2 className="text-sm font-semibold text-gray-700">{t('status.uptime.title', 'Historique de disponibilite — 90 jours')}</h2>
-            </div>
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-              {t('status.uptime.avg', '{{v}}% moyen', { v: avgUptime })}
-            </span>
-          </div>
-          <div className="px-6 py-5">
-            <div className="flex items-end gap-[2px] h-12">
-              {uptimeHistory.map((day, i) => (
-                <div
-                  key={day.date}
-                  className="group relative flex-1 min-w-[2px] rounded-t-sm cursor-pointer transition-all hover:opacity-80"
-                  style={{
-                    height: '100%',
-                    backgroundColor:
-                      day.status === 'up' ? '#10b981' :
-                      day.status === 'degraded' ? '#f59e0b' : '#ef4444',
-                  }}
-                >
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10">
-                    <div className="bg-gray-900 text-white text-[10px] px-2 py-1 rounded-md whitespace-nowrap shadow-lg">
-                      <span className="font-medium">{day.date}</span> — {day.uptime}%
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-between mt-2 text-[10px] text-gray-400">
-              <span>{uptimeHistory[0]?.date}</span>
-              <span>{t('status.uptime.today', "Aujourd'hui")}</span>
-            </div>
-          </div>
         </div>
 
         {/* ── Response time ── */}
@@ -402,19 +317,19 @@ export default function StatusPage() {
         {/* Footer / SLA hint */}
         <div className="mt-8 grid sm:grid-cols-3 gap-4">
           <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">{t('status.sla.slaLabel', 'Engagement SLA')}</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{t('status.sla.slaValue', '99,9 %')}</p>
-            <p className="text-xs text-gray-500 mt-1">{t('status.sla.slaDesc', 'Disponibilité mensuelle sur les plans payants')}</p>
+            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">{t('status.sla.slaLabel', 'Disponibilité contractuelle')}</p>
+            <p className="text-2xl font-bold text-gray-900 mt-1">{t('status.sla.slaValue', '99,5 %')}</p>
+            <p className="text-xs text-gray-500 mt-1">{t('status.sla.slaDesc', 'Par mois civil, selon les CGV')}</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">{t('status.sla.hostLabel', 'Hébergement')}</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{t('status.sla.hostValue', '🇫🇷 Union Européenne')}</p>
-            <p className="text-xs text-gray-500 mt-1">{t('status.sla.hostDesc', 'Données sous juridiction RGPD, hors CLOUD Act')}</p>
+            <p className="text-2xl font-bold text-gray-900 mt-1">{t('status.sla.hostValue', '🇫🇷 France')}</p>
+            <p className="text-xs text-gray-500 mt-1">{t('status.sla.hostDesc', 'Hébergeur IONOS SARL · données soumises au RGPD')}</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">{t('status.sla.backupLabel', 'Sauvegardes')}</p>
             <p className="text-2xl font-bold text-gray-900 mt-1">{t('status.sla.backupValue', 'Quotidiennes')}</p>
-            <p className="text-xs text-gray-500 mt-1">{t('status.sla.backupDesc', 'Rétention 30 jours · Restauration testée mensuellement')}</p>
+            <p className="text-xs text-gray-500 mt-1">{t('status.sla.backupDesc', 'Conservées 30 jours')}</p>
           </div>
         </div>
 

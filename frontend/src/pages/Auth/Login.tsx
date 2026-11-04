@@ -127,10 +127,8 @@ export default function Login() {
 
           {/* Bottom trust */}
           <div className="flex items-center gap-6 text-xs text-slate-400">
-            <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" /> ISO 27001</span>
             <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" /> RGPD</span>
-            <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" /> ISAE 3000</span>
-            <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" /> SOC 2</span>
+            <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" /> Hébergé en France</span>
           </div>
         </div>
       </div>
@@ -289,9 +287,9 @@ export default function Login() {
                 {/* Trust line */}
                 <div className="mt-8 flex items-center justify-center gap-4 text-xs text-gray-400">
                   {[
-                    { icon: Lock, text: 'Chiffrement AES-256' },
-                    { icon: Shield, text: 'RGPD conforme' },
-                    { icon: CheckCircle, text: '99.9% SLA' },
+                    { icon: Lock, text: 'Connexion chiffrée (HTTPS)' },
+                    { icon: Shield, text: 'RGPD' },
+                    { icon: CheckCircle, text: 'Hébergé en France' },
                   ].map(({ icon: Icon, text }) => (
                     <span key={text} className="flex items-center gap-1">
                       <Icon className="h-3 w-3" />
