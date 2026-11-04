@@ -3203,7 +3203,7 @@ export default function LandingPage() {
               <Link to="/legal-notice" className="hover:text-white transition-colors">{t('landing.lp.footer.legalNotice', 'Mentions légales')}</Link>
               <Link to="/privacy-policy" className="hover:text-white transition-colors">{t('landing.lp.footer.privacy', 'Confidentialité')}</Link>
               <Link to="/terms-of-service" className="hover:text-white transition-colors">{t('landing.lp.footer.terms', 'CGU')}</Link>
-              <Link to="/privacy-policy" className="hover:text-white transition-colors">{t('landing.lp.footer.cookies', 'Cookies')}</Link>
+              <Link to="/privacy-policy#cookies" className="hover:text-white transition-colors">{t('landing.lp.footer.cookies', 'Cookies')}</Link>
             </div>
           </div>
         </div>

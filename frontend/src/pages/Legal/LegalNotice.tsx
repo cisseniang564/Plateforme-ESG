@@ -89,10 +89,10 @@ export default function LegalNotice() {
               </a>.
             </p>
 
-            <h3>Délégué à la Protection des Données (DPO)</h3>
+            <h3>Contact protection des données</h3>
             <p>
               Email : privacy@greenconnect.cloud<br />
-              Courrier : GreenConnect SAS - DPO, 12 Vieux chemin de meaux, 93190 Livry-Gargan, France
+              Courrier : GreenConnect SAS - Protection des données, 12 Vieux chemin de meaux, 93190 Livry-Gargan, France
             </p>
 
             <h2>5. Cookies</h2>
