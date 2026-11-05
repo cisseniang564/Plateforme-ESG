@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04   # épinglé : Playwright ne supporte pas encore Ubuntu 26 (ubuntu-latest)
     steps:
       - uses: actions/checkout@v4
 
