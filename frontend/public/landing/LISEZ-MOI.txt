@@ -12,4 +12,5 @@ en JPG, ~1600 px de large, < 300 Ko chacune. Noms attendus :
 Tant qu'un fichier est absent, un visuel de remplacement (dégradé + icône) s'affiche : rien ne casse.
 Ne réutilisez pas les photos d'un autre site (droits d'auteur).
 
-État : eolien, solaire, equipe, atelier (mains jointes, carte PME) fournis. Reste : cabinet.jpg (carte « Cabinets »).
+État : les cinq photos sont fournies. equipe.jpg (carte ETI) et cabinet.jpg (carte Cabinets) sont des images générées par IA,
+recadrées en 4:3 sans leur bandeau de texte (la carte affiche déjà son étiquette et son titre).
