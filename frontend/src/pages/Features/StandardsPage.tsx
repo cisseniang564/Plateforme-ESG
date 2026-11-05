@@ -132,7 +132,7 @@ const FRAMEWORKS = [
 const SECURITY = [
   { label: 'Hébergeur européen (IONOS)', icon: ShieldCheck },
   { label: 'Chiffrement TLS 1.3 en transit', icon: Lock },
-  { label: 'Données chiffrées au repos (AES-256)', icon: Database },
+  { label: 'Identifiants de connecteurs chiffrés', icon: Database },
   { label: 'Multi-tenancy avec isolation complète', icon: Building2 },
   { label: 'Audit trail SHA-256 (immuable)', icon: FileText },
   { label: 'RGPD Art. 30 — registre traitements', icon: ShieldCheck },

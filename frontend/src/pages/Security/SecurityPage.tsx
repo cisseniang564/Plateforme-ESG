@@ -94,7 +94,7 @@ export default function SecurityPage() {
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Badge ok label={t('security.page.badgeHostedFrance', 'IONOS — région France')} />
             <Badge ok label={t('security.page.badgeGdpr', 'RGPD natif')} />
-            <Badge ok label="TLS 1.3 + AES-256" />
+            <Badge ok label="TLS 1.3 (HTTPS)" />
             <Badge ok label="SHA-256 audit trail" />
             <Badge ok label="RLS PostgreSQL" />
             <Badge ok={false} label={t('security.page.badgeIso27001', 'ISO 27001 — non certifié')} />
@@ -119,13 +119,12 @@ export default function SecurityPage() {
             <div className="p-6 font-mono text-sm space-y-2">
               {[
                 { key: 'hosting',         value: t('security.page.posture.hosting',        'IONOS (France)'),                     ok: true },
-                { key: 'encryption_rest', value: t('security.page.posture.encryptionRest', 'AES-256 (PostgreSQL + S3)'),                         ok: true },
                 { key: 'encryption_tls',  value: t('security.page.posture.encryptionTls',  "TLS 1.3 (nginx + Let's Encrypt)"),                   ok: true },
                 { key: 'audit_trail',     value: t('security.page.posture.auditTrail',     'Journal détaillé + empreintes SHA-256 par entrée'),   ok: true },
                 { key: 'db_isolation',    value: t('security.page.posture.dbIsolation',    'Row-Level Security PostgreSQL (RLS)'),                ok: true },
                 { key: 'auth',            value: t('security.page.posture.auth',           'JWT RS256 + 2FA TOTP + SSO SAML 2.0'),               ok: true },
-                { key: 'secrets',         value: t('security.page.posture.secrets',        'Env variables chiffrées, pas de secrets en code'),    ok: true },
-                { key: 'backups',         value: t('security.page.posture.backups',        'Quotidiens chiffrés, rétention 30 jours'),            ok: true },
+                { key: 'secrets',         value: t('security.page.posture.secrets',        'Aucun secret dans le code source'),    ok: true },
+                { key: 'backups',         value: t('security.page.posture.backups',        'Quotidiennes, rétention 30 jours'),            ok: true },
                 { key: 'iso_27001',       value: t('security.page.posture.iso27001',       "En cours d'obtention (2026)"),                       ok: false },
                 { key: 'soc2_type2',      value: t('security.page.posture.soc2',           'Non démarré'),                                  ok: false },
               ].map(row => (
@@ -153,9 +152,9 @@ export default function SecurityPage() {
               <p>{t('security.page.card1p2', "Aucun sous-traitant américain. Aucun transfert de données hors UE. Conformité RGPD garantie contractuellement par notre DPA.")}</p>
             </SecurityCard>
 
-            <SecurityCard icon={Lock} color="violet" title={t('security.page.card2Title', 'Chiffrement bout en bout')}>
+            <SecurityCard icon={Lock} color="violet" title={t('security.page.card2Title', 'Chiffrement en transit')}>
               <p><strong>{t('security.page.card2transit', 'En transit :')}</strong> {t('security.page.card2transitDesc', "TLS 1.3 uniquement sur toutes les connexions (nginx + Let's Encrypt). HSTS activé, HTTPS forcé.")}</p>
-              <p><strong>{t('security.page.card2rest', 'Au repos :')}</strong> {t('security.page.card2restDesc', 'AES-256 pour la base PostgreSQL et le stockage objets (S3-compatible). Clés de chiffrement gérées par notre infrastructure.')}</p>
+              <p><strong>{t('security.page.card2rest', 'Au repos :')}</strong> {t('security.page.card2restDesc', "Les identifiants de vos connecteurs sont chiffrés avant stockage. Le reste de la base n'est pas chiffré au niveau applicatif.")}</p>
             </SecurityCard>
 
             <SecurityCard icon={Database} color="blue" title={t('security.page.card3Title', 'Isolation multi-tenant RLS')}>
@@ -202,7 +201,7 @@ export default function SecurityPage() {
             </SecurityCard>
 
             <SecurityCard icon={Zap} color="amber" title={t('security.page.card9Title', 'Gestion des secrets & dépendances')}>
-              <p>{t('security.page.card9p1', "Aucun secret (clés API, mots de passe) en dur dans le code source. Variables d'environnement chiffrées au déploiement.")}</p>
+              <p>{t('security.page.card9p1', "Aucun secret (clés API, mots de passe) en dur dans le code source. Les secrets sont fournis par variables d'environnement.")}</p>
               <p>{t('security.page.card9p2a', 'Dépendances npm et Python analysées automatiquement (')} <strong>Dependabot + pip-audit</strong>) {t('security.page.card9p2b', 'à chaque push. Les correctifs de sécurité sont appliqués dès qu’ils sont disponibles.')}</p>
             </SecurityCard>
 

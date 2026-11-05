@@ -222,10 +222,10 @@ export default function PrivacyPolicy() {
             <p>GreenConnect SAS met en œuvre les mesures de sécurité suivantes :</p>
             <ul>
               <li>✅ Chiffrement TLS 1.3 (transit)</li>
-              <li>✅ Chiffrement AES-256 (stockage)</li>
+              <li>✅ Identifiants de connecteurs chiffrés avant stockage</li>
               <li>✅ Authentification multi-facteurs (MFA) disponible</li>
               <li>✅ Contrôle d'accès basé sur les rôles (RBAC)</li>
-              <li>✅ Sauvegardes quotidiennes chiffrées</li>
+              <li>✅ Sauvegardes quotidiennes (conservées 30 jours)</li>
               <li>✅ Journalisation des accès</li>
             </ul>
 

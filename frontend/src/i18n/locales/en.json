@@ -9237,7 +9237,7 @@
       "secArchTitle": "Security architecture",
       "secArchSubtitle": "Layered security, without compromising accessibility.",
       "card1Title": "Hosting at IONOS",
-      "card2Title": "End-to-end encryption",
+      "card2Title": "Encryption in transit",
       "card3Title": "Multi-tenant RLS isolation",
       "card4Title": "Authentication & sessions",
       "card5Title": "Auditability & detailed log",
@@ -9289,13 +9289,13 @@
       "footerLegal": "Legal notice",
       "posture": {
         "hosting": "IONOS (France)",
-        "encryptionRest": "AES-256 (PostgreSQL + S3)",
+        "encryptionRest": "Connector credentials encrypted before storage",
         "encryptionTls": "TLS 1.3 (nginx + Let's Encrypt)",
         "auditTrail": "Journal détaillé + empreintes SHA-256 par entrée",
         "dbIsolation": "Row-Level Security PostgreSQL (RLS)",
         "auth": "JWT RS256 + 2FA TOTP + SSO SAML 2.0",
-        "secrets": "Env variables chiffrées, pas de secrets en code",
-        "backups": "Quotidiens chiffrés, rétention 30 jours",
+        "secrets": "No secrets in the source code",
+        "backups": "Daily, retained 30 days",
         "iso27001": "En cours d'obtention (2026)",
         "soc2": "Roadmap 2026–2027"
       },
@@ -9353,7 +9353,7 @@
       "card7p3b": "accès, rectification, effacement, portabilité sous 30 jours.",
       "card8p1a": "Sauvegardes quotidiennes",
       "card8p1b": "of the database (scheduled script), kept for 30 days. Restore tests are still to be formalised.",
-      "card9p1": "Aucun secret (clés API, mots de passe) en dur dans le code source. Variables d'environnement chiffrées au déploiement.",
+      "card9p1": "No secrets (API keys, passwords) hard-coded in the source code. Secrets are provided through environment variables.",
       "card9p2a": "Dépendances npm et Python analysées automatiquement (",
       "card9p2b": "on every push. Security patches are applied as soon as they are available.",
       "card10p1": "Vous avez découvert une vulnérabilité ? Signalez-la à",
@@ -9501,7 +9501,7 @@
         },
         "1": {
           "question": "Is my data used to train the models?",
-          "answer": "No. Your ESG data is never used to train or fine-tune the AI models. It is processed in real time via secure APIs with encryption in transit and at rest. No data is retained by the AI providers."
+          "answer": "No. Your ESG data is never used to train or fine-tune the AI models. It is processed in real time via secure APIs with encryption in transit (HTTPS)."
         },
         "2": {
           "question": "Can the AI be wrong?",
@@ -12320,7 +12320,7 @@
         "q2": "How accurate is the FEC-based calculation?",
         "a2": "The monetary (spend-based) method via FEC is recognized by the GHG Protocol as a level 1 approach — the most accessible. It is particularly well suited to Scope 3 categories 1, 3, 4, 5 and 6. Accuracy can be improved by replacing monetary factors with physical data (kWh, km, tonnes) when available. ESGFlow generates a quality score from 0 to 100 for each category, indicating where improvements are possible.",
         "q3": "Is my FEC data confidential?",
-        "a3": "Yes. Your FEC file is encrypted with AES-256 from upload, processed on our infrastructure hosted by IONOS, and never shared with third parties or used for model training. You can delete your data at any time from your dashboard. ESGFlow is committed to GDPR compliance.",
+        "a3": "Yes. Your FEC file is processed on our infrastructure hosted by IONOS, and never shared with third parties or used for model training. You can delete your data at any time from your dashboard. ESGFlow is committed to GDPR compliance.",
         "q4": "Can I supplement the FEC with other data sources?",
         "a4": "Yes. ESGFlow is designed to mix methods: the FEC automatically covers the accounting categories (1, 2, 3, 4, 5, 6), and you can add physical data for the other categories — HR data (cat. 7 commuting), logistics data (cat. 9 downstream transport), product data (cat. 11 and 12), financial data (cat. 15 investments). You can also import custom emission factors for your sector."
       },
