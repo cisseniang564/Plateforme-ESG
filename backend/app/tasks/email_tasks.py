@@ -88,6 +88,25 @@ def send_user_invited_email(
 
 
 @shared_task(
+    name="email.send_supplier_questionnaire",
+    bind=True,
+    max_retries=3,
+    default_retry_delay=60,
+)
+def send_supplier_questionnaire_email(
+    self, email: str, requester_company: str, supplier_name: str, portal_url: str
+) -> bool:
+    """Send the ESG questionnaire link to a supplier."""
+    logger.info("Sending supplier questionnaire to %s for %s", email, supplier_name)
+    result = _email_svc().send_supplier_questionnaire(
+        email, requester_company, supplier_name, portal_url
+    )
+    if not result:
+        raise self.retry(countdown=60)
+    return result
+
+
+@shared_task(
     name="email.send_trial_ending_soon",
     bind=True,
     max_retries=2,
