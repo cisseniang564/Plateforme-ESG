@@ -1,1483 +1,460 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import api from '@/services/api';
-import { getBatchOrgScores } from '@/services/esgScoringService';
 import {
-  Truck, Search, Plus, Send, CheckCircle, AlertTriangle,
-  XCircle, Clock, ChevronRight, Download,
-  Shield, Leaf, Users, Scale,
-  Mail, Eye, RefreshCw,
-  ArrowRight, Info, X, Check,
+  AlertTriangle, CheckCircle, ChevronRight, Download, Info, Loader2, Plus, Scale, Search, Send, Truck, X,
 } from 'lucide-react';
+import SupplierDrawer from './SupplierDrawer';
+import SupplierFormModal from './SupplierFormModal';
+import {
+  EvalStatus, RISK_CFG, RISK_ORDER, RISK_THRESHOLDS, RiskLevel, STATUS_CFG, STATUS_ORDER, Supplier,
+  apiErrorMessage, downloadCsv, hasScore, mapSupplier,
+} from './supplyChainModel';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-type RiskLevel = 'Critique' | 'Élevé' | 'Moyen' | 'Faible';
-type EvalStatus = 'Évalué' | 'En cours' | 'Non évalué' | 'Refus';
-type TabId = 'dashboard' | 'suppliers' | 'questionnaires' | 'diligence';
+type TabId = 'overview' | 'suppliers' | 'vigilance';
 
-interface ESGScore {
-  env: number;
-  social: number;
-  gov: number;
-  ethics: number;
-  safety: number;
-  compliance: number;
-}
+interface Toast { kind: 'ok' | 'error'; text: string }
 
-interface Supplier {
-  id: string;
-  name: string;
-  country: string;
-  category: string;
-  spend: number;
-  employees: number;
-  risk: RiskLevel;
-  status: EvalStatus;
-  scores: ESGScore;
-  globalScore: number;
-  lastEval: string;
-  flags: string[];
-  questionnaireSent: boolean;
-  questionnaireCompleted: boolean;
-  contactEmail: string;
-}
-
-interface Question {
-  id: string;
-  section: string;
-  text: string;
-  type: 'yesno' | 'scale' | 'text' | 'multiselect';
-  options?: string[];
-  weight: number;
-}
-
-// ─── Data ─────────────────────────────────────────────────────────────────────
-function riskFromScore(score: number | null): RiskLevel {
-  if (!score || score === 0) return 'Élevé';
-  if (score < 40) return 'Critique';
-  if (score < 60) return 'Élevé';
-  if (score < 75) return 'Moyen';
-  return 'Faible';
-}
-function statusFromScore(score: number | null): EvalStatus {
-  if (!score || score === 0) return 'Non évalué';
-  return 'Évalué';
-}
-
-// ─── Questionnaire scoring engine ─────────────────────────────────────────────
-/**
- * Computes E/S/G/Compliance scores (0–100) from questionnaire answers.
- * Scoring rules:
- *   yesno   — 1st option (Oui/Yes) = 100%, 3rd (En cours/In Progress) = 50%, 2nd (Non/No) = 0%
- *   scale   — value 1–5 mapped linearly to 0–100%
- *   multiselect — option index mapped linearly (first = worst, last = best)
- *
- * The `yesLabel` and `progressLabel` must match what was stored in `qAnswers`
- * (i.e. the translated strings rendered in the buttons).
- */
-interface QuestionnaireScores {
-  env: number;
-  social: number;
-  gov: number;
-  compliance: number;
-  overall: number;
-  answeredCount: number;
-  totalCount: number;
-}
-
-function computeQuestionnaireScores(
-  answers: Record<string, string>,
-  questions: Question[],
-  yesLabel: string,
-  progressLabel: string,
-): QuestionnaireScores {
-  // Map section names → dimension keys
-  const SECTION_DIM: Record<string, keyof Omit<QuestionnaireScores, 'overall' | 'answeredCount' | 'totalCount'>> = {
-    'Environnement': 'env',
-    'Social':        'social',
-    'Gouvernance':   'gov',
-    'Conformité':    'compliance',
-  };
-
-  const earned:  Record<string, number> = { env: 0, social: 0, gov: 0, compliance: 0 };
-  const maxPoss: Record<string, number> = { env: 0, social: 0, gov: 0, compliance: 0 };
-  let answered = 0;
-
-  for (const q of questions) {
-    const dim = SECTION_DIM[q.section];
-    if (!dim) continue;
-
-    const answer = answers[q.id];
-    maxPoss[dim] += q.weight;
-    if (!answer) continue;
-    answered++;
-
-    if (q.type === 'yesno') {
-      if (answer === yesLabel)      earned[dim] += q.weight;         // Oui → 100%
-      else if (answer === progressLabel) earned[dim] += q.weight * 0.5; // En cours → 50%
-      // Non → 0
-    } else if (q.type === 'scale') {
-      const val = parseInt(answer) || 0;
-      if (val >= 1 && val <= 5) earned[dim] += q.weight * (val - 1) / 4;
-    } else if (q.type === 'multiselect' && q.options && q.options.length > 1) {
-      // Special: q9 (accident frequency) — lower index is BETTER (< 2 is best)
-      // Detect by checking if first option starts with '<' or is a low number
-      const idx = q.options.indexOf(answer);
-      if (idx >= 0) {
-        const firstOpt = q.options[0];
-        const isInverse = firstOpt.startsWith('<') || firstOpt === '0%';
-        if (isInverse) {
-          // Lower index = better (e.g. accident rate: < 2 is the best)
-          earned[dim] += q.weight * (1 - idx / (q.options.length - 1));
-        } else {
-          // Higher index = better (e.g. renewable energy: >75% is the best)
-          earned[dim] += q.weight * (idx / (q.options.length - 1));
-        }
-      }
-    }
-  }
-
-  const toScore = (e: number, m: number) => m > 0 ? Math.min(100, Math.round((e / m) * 100)) : 0;
-  const env        = toScore(earned.env,        maxPoss.env);
-  const social     = toScore(earned.social,     maxPoss.social);
-  const gov        = toScore(earned.gov,        maxPoss.gov);
-  const compliance = toScore(earned.compliance, maxPoss.compliance);
-
-  // Weighted average by section max possible points
-  const totalMax = (maxPoss.env + maxPoss.social + maxPoss.gov + maxPoss.compliance) || 1;
-  const overall  = Math.round(
-    (earned.env + earned.social + earned.gov + earned.compliance) / totalMax * 100
-  );
-
-  return { env, social, gov, compliance, overall, answeredCount: answered, totalCount: questions.length };
-}
-
-// Note: no demo/fallback supplier data — empty state is shown when API returns nothing.
-
-const QUESTIONNAIRE: Question[] = [
-  // Environnement
-  { id: 'q1', section: 'Environnement', text: 'Avez-vous mesuré votre bilan carbone (Scope 1, 2, 3) ?', type: 'yesno', weight: 15 },
-  { id: 'q2', section: 'Environnement', text: 'Disposez-vous d\'une certification ISO 14001 ou équivalente ?', type: 'yesno', weight: 10 },
-  { id: 'q3', section: 'Environnement', text: 'Avez-vous des objectifs de réduction d\'émissions GHG formalisés ?', type: 'yesno', weight: 10 },
-  { id: 'q4', section: 'Environnement', text: 'Comment évaluez-vous votre gestion des déchets ?', type: 'scale', weight: 8 },
-  { id: 'q5', section: 'Environnement', text: 'Quelle part de votre énergie est renouvelable ?', type: 'multiselect', options: ['0%', '1-25%', '26-50%', '51-75%', '>75%'], weight: 7 },
-  // Social
-  { id: 'q6', section: 'Social', text: 'Êtes-vous certifié SA8000 ou disposez-vous d\'une politique droits humains ?', type: 'yesno', weight: 15 },
-  { id: 'q7', section: 'Social', text: 'Avez-vous réalisé un audit social tiers sur les 24 derniers mois ?', type: 'yesno', weight: 12 },
-  { id: 'q8', section: 'Social', text: 'Vos sous-traitants rang 1 sont-ils évalués sur des critères sociaux ?', type: 'yesno', weight: 10 },
-  { id: 'q9', section: 'Social', text: 'Quel est votre taux de fréquence des accidents du travail (TF1) ?', type: 'multiselect', options: ['< 2', '2-5', '5-10', '10-20', '> 20'], weight: 8 },
-  { id: 'q10', section: 'Social', text: 'Avez-vous une politique de diversité & inclusion formalisée ?', type: 'yesno', weight: 6 },
-  // Gouvernance
-  { id: 'q11', section: 'Gouvernance', text: 'Disposez-vous d\'un code de conduite anticorruption (Sapin II / FCPA) ?', type: 'yesno', weight: 12 },
-  { id: 'q12', section: 'Gouvernance', text: 'Avez-vous un mécanisme d\'alerte (whistleblowing) opérationnel ?', type: 'yesno', weight: 10 },
-  { id: 'q13', section: 'Gouvernance', text: 'Vos fournisseurs sont-ils évalués sur des critères éthiques ?', type: 'yesno', weight: 8 },
-  { id: 'q14', section: 'Gouvernance', text: 'Publiez-vous un rapport RSE ou développement durable annuel ?', type: 'yesno', weight: 6 },
-  // Conformité
-  { id: 'q15', section: 'Conformité', text: 'Êtes-vous conforme à la réglementation REACH (si applicable) ?', type: 'yesno', weight: 10 },
-  { id: 'q16', section: 'Conformité', text: 'Respectez-vous les exigences du règlement sur les minéraux de conflit (OCDE) ?', type: 'yesno', weight: 10 },
-  { id: 'q17', section: 'Conformité', text: 'Avez-vous fait l\'objet de sanctions réglementaires dans les 3 dernières années ?', type: 'yesno', weight: 8 },
-  { id: 'q18', section: 'Conformité', text: 'Acceptez-vous un audit de notre part sur site ?', type: 'yesno', weight: 5 },
-];
-
-// ─── Config maps ──────────────────────────────────────────────────────────────
-const RISK_CFG: Record<RiskLevel, { color: string; bg: string; border: string; dot: string }> = {
-  Critique: { color: 'text-red-700',    bg: 'bg-red-50',    border: 'border-red-200',    dot: 'bg-red-500' },
-  Élevé:    { color: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-200', dot: 'bg-orange-500' },
-  Moyen:    { color: 'text-amber-700',  bg: 'bg-amber-50',  border: 'border-amber-200',  dot: 'bg-amber-400' },
-  Faible:   { color: 'text-green-700',  bg: 'bg-green-50',  border: 'border-green-200',  dot: 'bg-green-500' },
-};
-
-const STATUS_CFG: Record<EvalStatus, { color: string; bg: string; icon: any }> = {
-  Évalué:       { color: 'text-green-700',  bg: 'bg-green-100',  icon: CheckCircle },
-  'En cours':   { color: 'text-blue-700',   bg: 'bg-blue-100',   icon: Clock },
-  'Non évalué': { color: 'text-gray-500',   bg: 'bg-gray-100',   icon: AlertTriangle },
-  Refus:        { color: 'text-red-700',    bg: 'bg-red-100',    icon: XCircle },
-};
-
-const SCORE_DIMS_KEYS = [
-  { key: 'env',        labelKey: 'supplychain.dimEnvironment', icon: Leaf,    color: '#16a34a' },
-  { key: 'social',     labelKey: 'supplychain.dimSocial',      icon: Users,   color: '#2563eb' },
-  { key: 'gov',        labelKey: 'supplychain.dimGovernance',  icon: Scale,   color: '#7c3aed' },
-  { key: 'ethics',     labelKey: 'supplychain.dimEthics',      icon: Shield,  color: '#0891b2' },
-  { key: 'safety',     labelKey: 'supplychain.dimSafety',      icon: Shield,  color: '#d97706' },
-  { key: 'compliance', labelKey: 'supplychain.dimCompliance',  icon: Check,   color: '#be185d' },
-] as const;
-
-const CATEGORIES = ['Toutes', 'Matières premières', 'Logistique', 'Sous-traitance', 'Emballages', 'IT & Numérique', 'Énergie', 'Services'];
-
-// ─── Mini components ──────────────────────────────────────────────────────────
-function ScorePill({ score }: { score: number }) {
-  const color = score === 0 ? 'bg-gray-100 text-gray-400' :
-    score >= 75 ? 'bg-green-100 text-green-700' :
-    score >= 50 ? 'bg-amber-100 text-amber-700' :
-    'bg-red-100 text-red-700';
+function RiskBadge({ supplier }: { supplier: Supplier }) {
+  const { t } = useTranslation();
+  if (!hasScore(supplier)) return <span className="text-xs text-gray-400">{t('supplychain.riskUnknown', 'Non évalué')}</span>;
+  const c = RISK_CFG[supplier.risk];
   return (
-    <span className={`inline-flex items-center justify-center w-12 h-7 rounded-lg text-xs font-bold ${color}`}>
-      {score === 0 ? 'N/A' : score}
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${c.bg} ${c.color}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />{supplier.risk}
     </span>
   );
 }
 
-function ScoreBar({ value, color }: { value: number; color: string }) {
+function StatusBadge({ status }: { status: EvalStatus }) {
+  const c = STATUS_CFG[status];
+  const Icon = c.icon;
   return (
-    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-      <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${value}%`, backgroundColor: color }} />
-    </div>
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${c.bg} ${c.color}`}>
+      <Icon className="h-3 w-3" />{status}
+    </span>
   );
 }
 
-// ─── Supplier drawer ──────────────────────────────────────────────────────────
-function SupplierDrawer({
-  supplier,
-  onClose,
-  onSend,
-}: {
-  supplier: Supplier;
-  onClose: () => void;
-  onSend: (s: Supplier) => void;
-}) {
-  const { t } = useTranslation();
-  const riskCfg = RISK_CFG[supplier.risk];
-  const statusCfg = STATUS_CFG[supplier.status];
-  const StatusIcon = statusCfg.icon;
-
-  const handleExportSheet = () => {
-    const rows: [string, string | number][] = [
-      ['Nom', supplier.name],
-      ['Pays', supplier.country],
-      ['Catégorie', supplier.category],
-      ['Achats (k€)', supplier.spend],
-      ['Employés', supplier.employees],
-      ['Risque ESG', supplier.risk],
-      ['Statut évaluation', supplier.status],
-      ['Score ESG global', supplier.globalScore || 'N/A'],
-      ['Score Environnement', supplier.scores.env || 'N/A'],
-      ['Score Social', supplier.scores.social || 'N/A'],
-      ['Score Gouvernance', supplier.scores.gov || 'N/A'],
-      ['Score Éthique', supplier.scores.ethics || 'N/A'],
-      ['Score Sécurité', supplier.scores.safety || 'N/A'],
-      ['Score Conformité', supplier.scores.compliance || 'N/A'],
-      ['Dernière évaluation', supplier.lastEval],
-      ['Email contact', supplier.contactEmail],
-      ['Questionnaire envoyé', supplier.questionnaireSent ? 'Oui' : 'Non'],
-      ['Questionnaire complété', supplier.questionnaireCompleted ? 'Oui' : 'Non'],
-      ...supplier.flags.map((f, i): [string, string] => [`Alerte ${i + 1}`, f]),
-    ];
-    const csv = rows.map(r => `"${r[0]}";"${r[1]}"`).join('\n');
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `fiche-${supplier.name.replace(/\s+/g, '-')}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  return (
-    <div className="fixed inset-0 z-[60] flex">
-      <div className="flex-1 bg-black/40" onClick={onClose} />
-      <div className="w-full max-w-lg bg-white shadow-2xl overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">{supplier.name}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg"><X className="h-5 w-5" /></button>
-        </div>
-
-        <div className="p-6 space-y-6">
-          {/* Header info */}
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { label: t('supplychain.drawerCountry'), val: supplier.country },
-              { label: t('supplychain.drawerCategory'), val: supplier.category },
-              { label: t('supplychain.drawerSpend'), val: `${supplier.spend.toLocaleString()}k€` },
-              { label: t('supplychain.drawerHeadcount'), val: supplier.employees.toLocaleString() },
-            ].map((i, idx) => (
-              <div key={idx} className="bg-gray-50 rounded-xl p-3">
-                <div className="text-xs text-gray-400 mb-0.5">{i.label}</div>
-                <div className="text-sm font-bold text-gray-900">{i.val}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Status & Risk */}
-          <div className="flex items-center gap-3">
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${statusCfg.bg} ${statusCfg.color}`}>
-              <StatusIcon className="h-3.5 w-3.5" />{supplier.status}
-            </span>
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${riskCfg.bg} ${riskCfg.color} border ${riskCfg.border}`}>
-              <span className={`w-2 h-2 rounded-full ${riskCfg.dot}`} />{t('supplychain.drawerRisk')} {supplier.risk}
-            </span>
-            <span className="ml-auto text-xs text-gray-400">{t('supplychain.drawerLastEval')} {supplier.lastEval}</span>
-          </div>
-
-          {/* Global score */}
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-5 text-center text-white">
-            <div className="text-5xl font-extrabold mb-1">{supplier.globalScore || '—'}</div>
-            <div className="text-sm text-slate-300">{t('supplychain.drawerGlobalScore')}</div>
-            <div className="mt-3 text-xs text-slate-400">{
-              supplier.globalScore === 0 ? t('supplychain.scoreNotEvaluated') :
-              supplier.globalScore >= 75 ? t('supplychain.scoreValidated') :
-              supplier.globalScore >= 50 ? t('supplychain.scoreImprove') :
-              t('supplychain.scoreAtRisk')
-            }</div>
-          </div>
-
-          {/* Score breakdown */}
-          {supplier.globalScore > 0 && (
-            <div className="space-y-3">
-              <h3 className="text-sm font-bold text-gray-900">{t('supplychain.drawerDimensions')}</h3>
-              {SCORE_DIMS_KEYS.map(dim => (
-                <div key={dim.key}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-gray-700 flex items-center gap-1.5">
-                      <dim.icon className="h-3.5 w-3.5" style={{ color: dim.color }} />
-                      {t(dim.labelKey)}
-                    </span>
-                    <span className="text-sm font-bold" style={{ color: dim.color }}>{supplier.scores[dim.key]}</span>
-                  </div>
-                  <ScoreBar value={supplier.scores[dim.key]} color={dim.color} />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Flags */}
-          {supplier.flags.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-bold text-red-700 flex items-center gap-1.5">
-                <AlertTriangle className="h-4 w-4" /> {t('supplychain.drawerAlerts')}
-              </h3>
-              {supplier.flags.map((flag, i) => (
-                <div key={i} className="flex items-start gap-2 p-2.5 bg-red-50 rounded-lg border border-red-200">
-                  <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-red-700">{flag}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Questionnaire status */}
-          <div className="border border-gray-200 rounded-xl p-4 space-y-2">
-            <h3 className="text-sm font-bold text-gray-900">{t('supplychain.drawerQuestionnaire')}</h3>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">{t('supplychain.drawerQuestionnaireLastSent')}</span>
-              {supplier.questionnaireSent ? <CheckCircle className="h-4 w-4 text-green-500" /> : <X className="h-4 w-4 text-gray-300" />}
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">{t('supplychain.drawerQuestionnaireCompletion')}</span>
-              {supplier.questionnaireCompleted ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Clock className="h-4 w-4 text-amber-400" />}
-            </div>
-            {supplier.contactEmail && (
-              <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
-                <Mail className="h-3.5 w-3.5" />{supplier.contactEmail}
-              </div>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="flex flex-col gap-2">
-            {/* Always show a questionnaire action button */}
-            {!supplier.questionnaireSent ? (
-              <button
-                onClick={() => { onSend(supplier); onClose(); }}
-                className="flex items-center justify-center gap-2 w-full py-3 bg-green-600 text-white rounded-xl font-semibold text-sm hover:bg-green-700 transition-colors"
-              >
-                <Send className="h-4 w-4" /> {t('supplychain.drawerSendQuestionnaire')}
-              </button>
-            ) : !supplier.questionnaireCompleted ? (
-              <button
-                onClick={() => { onSend(supplier); onClose(); }}
-                className="flex items-center justify-center gap-2 w-full py-3 bg-amber-500 text-white rounded-xl font-semibold text-sm hover:bg-amber-600 transition-colors"
-              >
-                <RefreshCw className="h-4 w-4" /> {t('supplychain.drawerViewHistory')}
-              </button>
-            ) : (
-              <button
-                onClick={() => { onSend(supplier); onClose(); }}
-                className="flex items-center justify-center gap-2 w-full py-3 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-colors"
-              >
-                <Send className="h-4 w-4" /> {t('supplychain.drawerResend', 'Renvoyer le questionnaire')}
-              </button>
-            )}
-            <button
-              onClick={handleExportSheet}
-              className="flex items-center justify-center gap-2 w-full py-3 border border-gray-200 text-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-50 transition-colors"
-            >
-              <Download className="h-4 w-4" /> {t('supplychain.exportSheet')}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Main component ───────────────────────────────────────────────────────────
 export default function SupplyChainESG() {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<TabId>('dashboard');
-  const [catFilter, setCatFilter] = useState('Toutes');
-  const [riskFilter, setRiskFilter] = useState('Tous');
-  const [statusFilter, setStatusFilter] = useState('Tous');
-  const [search, setSearch] = useState('');
-  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
-  const [activeQSection, setActiveQSection] = useState('Environnement');
-  const [qAnswers, setQAnswers] = useState<Record<string, string>>({});
-  const [sendSuccess, setSendSuccess] = useState(false);
+  const [tab, setTab] = useState<TabId>('overview');
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [loadingSuppliers, setLoadingSuppliers] = useState(true);
-  const [dataSource, setDataSource] = useState<'real' | 'orgs' | 'demo' | 'empty'>('empty');
-  const [questionnaire, setQuestionnaire] = useState<Question[]>(QUESTIONNAIRE);
-  const [checkedSupplierIds, setCheckedSupplierIds] = useState<Set<string>>(new Set());
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [newSupplier, setNewSupplier] = useState({ name: '', country: 'France', category: 'Services', contactEmail: '', spend: '' });
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [search, setSearch] = useState('');
+  const [riskFilter, setRiskFilter] = useState<RiskLevel | 'Tous'>('Tous');
+  const [statusFilter, setStatusFilter] = useState<EvalStatus | 'Tous'>('Tous');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [checked, setChecked] = useState<Set<string>>(new Set());
+  const [form, setForm] = useState<{ supplier?: Supplier } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [toast, setToast] = useState<Toast | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        // 1) Try dedicated supply-chain endpoint
-        const scRes = await api.get('/supply-chain/suppliers?page_size=200');
-        const scSuppliers: any[] = scRes.data || [];
-        if (scSuppliers.length > 0) {
-          // Validate that risk/status are valid enum members; otherwise fall
-          // back to a score-derived value. Without this guard, the UI tries
-          // ``RISK_CFG[s.risk]`` / ``STATUS_CFG[s.status]`` with a non-member
-          // value (e.g. ``'low'`` from a CSV import) and crashes with
-          // ``undefined is not an object (evaluating 'n.icon')``.
-          const VALID_RISK: RiskLevel[]    = ['Critique', 'Élevé', 'Moyen', 'Faible'];
-          const VALID_STATUS: EvalStatus[] = ['Évalué', 'En cours', 'Non évalué', 'Refus'];
-
-          const mapped: Supplier[] = scSuppliers.map((s: any) => {
-            const rawRisk   = s.risk ?? s.risk_level;
-            const rawStatus = s.status;
-            const risk: RiskLevel    = VALID_RISK.includes(rawRisk as RiskLevel)
-              ? (rawRisk as RiskLevel)
-              : riskFromScore(s.global_score);
-            const status: EvalStatus = VALID_STATUS.includes(rawStatus as EvalStatus)
-              ? (rawStatus as EvalStatus)
-              : statusFromScore(s.global_score);
-            return {
-              id: s.id,
-              name: s.name,
-              country: s.country ?? 'France',
-              category: s.category ?? 'Services',
-              spend: s.spend ?? s.spend_k_eur ?? 0,
-              employees: s.employees ?? 0,
-              risk,
-              status,
-              scores: {
-                env: s.env_score ?? 0,
-                social: s.social_score ?? 0,
-                gov: s.gov_score ?? 0,
-                ethics: s.gov_score ?? 0,
-                safety: s.social_score ?? 0,
-                compliance: s.gov_score ?? 0,
-              },
-              globalScore: s.global_score ?? 0,
-              lastEval: s.last_eval ?? s.last_scored_at ?? '—',
-              flags: Array.isArray(s.flags) ? s.flags : [],
-              questionnaireSent: s.questionnaire_sent ?? false,
-              questionnaireCompleted: s.questionnaire_completed ?? false,
-              contactEmail: s.contact_email ?? '',
-            };
-          });
-          setSuppliers(mapped);
-          setDataSource('real');
-          setLoadingSuppliers(false);
-          return;
-        }
-      } catch { /* pas de module supply-chain — fallback organisations */ }
-
-      // 2) Fallback: use organisations + real ESG scores
-      try {
-        const res = await api.get('/organizations');
-        const orgs: any[] = res.data?.organizations || res.data?.items || res.data || [];
-        if (orgs.length > 0) {
-          const scoreMap = await getBatchOrgScores(orgs.map((o: any) => o.id));
-          const mapped: Supplier[] = orgs.map((org: any) => {
-            const s = scoreMap[org.id];
-            const env   = Math.round(s?.environmental_score ?? 0);
-            const soc   = Math.round(s?.social_score ?? 0);
-            const gov   = Math.round(s?.governance_score ?? 0);
-            const score = Math.round(s?.overall_score ?? 0);
-            return {
-              id: org.id, name: org.name,
-              country: org.country ?? 'France',
-              category: org.industry ?? org.sector ?? 'Services',
-              spend: 0, employees: org.employees ?? 0,
-              risk: riskFromScore(score),
-              status: statusFromScore(score),
-              scores: { env, social: soc, gov, ethics: gov, safety: soc, compliance: gov },
-              globalScore: score,
-              lastEval: s ? new Date().toISOString().slice(0, 10) : '—',
-              flags: score === 0 ? ['Évaluation en attente'] : score < 40 ? ['Score ESG critique'] : [],
-              questionnaireSent: score > 0,
-              questionnaireCompleted: score > 0,
-              contactEmail: '',
-            };
-          });
-          setSuppliers(mapped);
-          setDataSource('orgs');
-          setLoadingSuppliers(false);
-          return;
-        }
-      } catch { /* ignore */ }
-
-      // 3) No real data — show empty state (no demo/fictitious data)
-      setSuppliers([]);
-      setDataSource('empty');
-      setLoadingSuppliers(false);
-    })();
+  const notify = useCallback((kind: Toast['kind'], text: string) => {
+    setToast({ kind, text });
+    window.setTimeout(() => setToast(null), 5000);
   }, []);
 
-  // Fetch questionnaire questions from backend (fallback to local constant)
-  useEffect(() => {
-    api.get('/supply-chain/questionnaire/questions')
-      .then(res => {
-        const items: any[] = res.data || [];
-        if (items.length === 0) return;
-        const typeMap: Record<string, Question['type']> = {
-          boolean: 'yesno', number: 'scale', select: 'multiselect', text: 'text',
-        };
-        const sectionWeightBase: Record<string, number> = {
-          Environnement: 10, Social: 10, Gouvernance: 8, Conformité: 8,
-        };
-        const mapped: Question[] = items.map((q: any) => ({
-          id: String(q.id),
-          section: q.section ?? 'Général',
-          text: q.question ?? q.text ?? '',
-          type: typeMap[q.type] ?? 'yesno',
-          options: q.options ?? undefined,
-          weight: q.weight ?? sectionWeightBase[q.section] ?? 8,
-        }));
-        setQuestionnaire(mapped);
-      })
-      .catch(() => { /* keep local QUESTIONNAIRE fallback */ });
+  const load = useCallback(async () => {
+    try {
+      const res = await api.get('/supply-chain/suppliers', { params: { page_size: 200 } });
+      setSuppliers((res.data as any[]).map(mapSupplier));
+      setLoadError(false);
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // Pre-check high-risk suppliers when data loads
-  useEffect(() => {
-    if (suppliers.length === 0) return;
-    setCheckedSupplierIds(new Set(
-      suppliers
-        .filter(s => (s.risk === 'Critique' || s.risk === 'Élevé') && !s.questionnaireCompleted)
-        .map(s => s.id)
-    ));
-  }, [suppliers.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [load]);
 
-  // KPIs
-  const evaluated = suppliers.filter(s => s.status === 'Évalué').length;
-  const critical = suppliers.filter(s => s.risk === 'Critique').length;
-  const scoredSuppliers = suppliers.filter(s => s.globalScore > 0);
-  const avgScore = scoredSuppliers.length
-    ? Math.round(scoredSuppliers.reduce((acc, s) => acc + s.globalScore, 0) / scoredSuppliers.length)
-    : 0;
-  const totalSpend = suppliers.reduce((s, sup) => s + sup.spend, 0);
-  const criticalSpend = suppliers.filter(s => s.risk === 'Critique').reduce((s, sup) => s + sup.spend, 0);
-
-  // Filtered suppliers
-  const filtered = useMemo(() => suppliers.filter(s => {
-    if (catFilter !== 'Toutes' && s.category !== catFilter) return false;
-    if (riskFilter !== 'Tous' && s.risk !== riskFilter) return false;
-    if (statusFilter !== 'Tous' && s.status !== statusFilter) return false;
-    if (search && !s.name.toLowerCase().includes(search.toLowerCase()) && !s.country.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  }).sort((a, b) => {
-    const rOrder: Record<RiskLevel, number> = { Critique: 0, Élevé: 1, Moyen: 2, Faible: 3 };
-    return rOrder[a.risk] - rOrder[b.risk];
-  }), [catFilter, riskFilter, statusFilter, search, suppliers]);
-
-  const qSections = [...new Set(questionnaire.map(q => q.section))];
-  const sectionQuestions = questionnaire.filter(q => q.section === activeQSection);
-
-  // ─── Questionnaire live scoring ────────────────────────────────────────────
-  const computedScores = useMemo(() =>
-    computeQuestionnaireScores(
-      qAnswers,
-      questionnaire,
-      t('supplychain.questionnaireYes'),
-      t('supplychain.questionnaireInProgress'),
-    ),
-  [qAnswers, questionnaire, t]);
-
-  const [applySuccess, setApplySuccess] = useState(false);
-
-  const handleApplyScores = () => {
-    const ids = Array.from(checkedSupplierIds);
-    if (ids.length === 0 || computedScores.answeredCount === 0) return;
-    setSuppliers(prev => prev.map(s => {
-      if (!ids.includes(s.id)) return s;
-      const newScores: ESGScore = {
-        env:        computedScores.env,
-        social:     computedScores.social,
-        gov:        computedScores.gov,
-        ethics:     Math.round((computedScores.gov + computedScores.compliance) / 2),
-        safety:     Math.round((computedScores.social + computedScores.compliance) / 2),
-        compliance: computedScores.compliance,
-      };
-      return {
-        ...s,
-        scores:                newScores,
-        globalScore:           computedScores.overall,
-        risk:                  riskFromScore(computedScores.overall),
-        status:                'Évalué' as EvalStatus,
-        questionnaireCompleted: true,
-        lastEval:              new Date().toISOString().split('T')[0],
-      };
-    }));
-    setApplySuccess(true);
-    setTimeout(() => setApplySuccess(false), 3500);
+  const selected = suppliers.find(s => s.id === selectedId) ?? null;
+  const upsert = (raw: any) => {
+    const s = mapSupplier(raw);
+    setSuppliers(prev => (prev.some(p => p.id === s.id) ? prev.map(p => (p.id === s.id ? s : p)) : [...prev, s]));
+    return s;
   };
 
-  // ─── Actions ───────────────────────────────────────────────────────────────
-
-  /** Send questionnaire to one or more supplier IDs */
-  const sendQuestionnaire = async (supplierIds: string[]) => {
-    if (supplierIds.length === 0) return;
-    await Promise.allSettled(
-      supplierIds.map(id => {
-        const sup = suppliers.find(s => s.id === id);
-        return api.post(`/supply-chain/suppliers/${id}/questionnaire`, {
-          recipient_email: sup?.contactEmail || undefined,
-        }).catch(() => {});
-      })
-    );
-    setSuppliers(prev => prev.map(s =>
-      supplierIds.includes(s.id) ? { ...s, questionnaireSent: true, status: 'En cours' as EvalStatus } : s
-    ));
-    setSendSuccess(true);
-    setTimeout(() => setSendSuccess(false), 3500);
-  };
-
-  /** Send to all checked suppliers (questionnaire tab button) */
-  const handleSendQuestionnaire = () => {
-    const ids = Array.from(checkedSupplierIds);
+  // ── Actions ────────────────────────────────────────────────────────────────
+  const sendQuestionnaires = async (ids: string[]) => {
     if (ids.length === 0) return;
-    sendQuestionnaire(ids);
+    setBusy(true);
+    const results = await Promise.allSettled(ids.map(id => api.post(`/supply-chain/suppliers/${id}/questionnaire`, {})));
+    setBusy(false);
+    const ok = results.filter(r => r.status === 'fulfilled') as PromiseFulfilledResult<any>[];
+    const emailed = ok.filter(r => r.value.data?.email_sent).length;
+    const failed = results.length - ok.length;
+    const noEmail = ok.length - emailed;
+    const parts: string[] = [];
+    if (emailed) parts.push(t('supplychain.toastEmailed', '{{n}} questionnaire(s) envoyé(s) par email', { n: emailed }));
+    if (noEmail) parts.push(t('supplychain.toastNoEmail', '{{n}} lien(s) généré(s) sans email (adresse manquante) : copiez-le depuis la fiche', { n: noEmail }));
+    if (failed) parts.push(t('supplychain.toastFailed', '{{n}} échec(s)', { n: failed }));
+    notify(failed && !ok.length ? 'error' : 'ok', parts.join(' · '));
+    setChecked(new Set());
+    await load();
   };
 
-  /** Export all suppliers as CSV */
-  const handleExportCSV = () => {
-    const header = ['Nom', 'Pays', 'Catégorie', 'Achats (k€)', 'Employés', 'Risque', 'Statut', 'Score ESG', 'Email contact'];
-    const rows = suppliers.map(s => [
-      s.name, s.country, s.category, String(s.spend), String(s.employees),
-      s.risk, s.status, String(s.globalScore), s.contactEmail,
+  const deleteSupplier = async (s: Supplier) => {
+    setBusy(true);
+    try {
+      await api.delete(`/supply-chain/suppliers/${s.id}`);
+      setSuppliers(prev => prev.filter(p => p.id !== s.id));
+      setSelectedId(null);
+      notify('ok', t('supplychain.toastDeleted', 'Fournisseur supprimé'));
+    } catch (err) {
+      notify('error', apiErrorMessage(err, t('supplychain.deleteError', 'Suppression impossible.')));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const exportAll = () =>
+    downloadCsv('fournisseurs-esg.csv', [
+      ['Nom', 'Pays', 'Catégorie', 'Achats (k€)', 'Effectif', 'Statut', 'Risque', 'Score ESG', 'Email contact'],
+      ...suppliers.map(s => [s.name, s.country, s.category, s.spend, s.employees, s.status, hasScore(s) ? s.risk : '', hasScore(s) ? s.globalScore : '', s.contactEmail]),
     ]);
-    const csv = [header, ...rows].map(r => r.map(v => `"${v}"`).join(';')).join('\n');
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'fournisseurs-esg.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
-  /** Add a new supplier locally (and attempt backend save) */
-  const handleAddSupplier = async () => {
-    if (!newSupplier.name.trim()) return;
-    const sup: Supplier = {
-      id: `new-${Date.now()}`,
-      name: newSupplier.name.trim(),
-      country: newSupplier.country || 'France',
-      category: newSupplier.category || 'Services',
-      spend: parseInt(newSupplier.spend) || 0,
-      employees: 0,
-      risk: 'Élevé',
-      status: 'Non évalué',
-      scores: { env: 0, social: 0, gov: 0, ethics: 0, safety: 0, compliance: 0 },
-      globalScore: 0,
-      lastEval: '—',
-      flags: ['Évaluation en attente'],
-      questionnaireSent: false,
-      questionnaireCompleted: false,
-      contactEmail: newSupplier.contactEmail,
+  // ── Dérivés ────────────────────────────────────────────────────────────────
+  const stats = useMemo(() => {
+    const scored = suppliers.filter(hasScore);
+    const totalSpend = suppliers.reduce((a, s) => a + s.spend, 0);
+    const evaluatedSpend = scored.reduce((a, s) => a + s.spend, 0);
+    return {
+      total: suppliers.length,
+      evaluated: scored.length,
+      avg: scored.length ? Math.round(scored.reduce((a, s) => a + s.globalScore, 0) / scored.length) : null,
+      atRisk: scored.filter(s => s.risk === 'Critique' || s.risk === 'Élevé'),
+      critical: scored.filter(s => s.risk === 'Critique').length,
+      totalSpend,
+      evaluatedSpend,
+      pending: suppliers.filter(s => s.status === 'En cours').length,
+      notEvaluated: suppliers.filter(s => s.status === 'Non évalué').length,
     };
-    setSuppliers(prev => [...prev, sup]);
-    setShowAddModal(false);
-    setNewSupplier({ name: '', country: 'France', category: 'Services', contactEmail: '', spend: '' });
-    // Attempt backend save silently
-    api.post('/supply-chain/suppliers', {
-      name: sup.name, country: sup.country, category: sup.category,
-      spend: sup.spend, contact_email: sup.contactEmail,
-    }).catch(() => {});
-  };
+  }, [suppliers]);
 
-  const tabs = [
-    { id: 'dashboard' as TabId, label: t('supplychain.tabs.dashboard') },
-    { id: 'suppliers' as TabId, label: `${t('supplychain.tabs.suppliers')} (${suppliers.length})` },
-    { id: 'questionnaires' as TabId, label: t('supplychain.tabs.questionnaires') },
-    { id: 'diligence' as TabId, label: t('supplychain.tabs.vigilance') },
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return suppliers
+      .filter(s => (riskFilter === 'Tous' || (hasScore(s) && s.risk === riskFilter)))
+      .filter(s => statusFilter === 'Tous' || s.status === statusFilter)
+      .filter(s => !q || s.name.toLowerCase().includes(q) || s.country.toLowerCase().includes(q) || s.category.toLowerCase().includes(q))
+      .sort((a, b) => {
+        // Les plus risqués d'abord ; les non évalués après les évalués.
+        const rank = (s: Supplier) => (hasScore(s) ? RISK_ORDER.indexOf(s.risk) : RISK_ORDER.length);
+        return rank(a) - rank(b) || a.name.localeCompare(b.name);
+      });
+  }, [suppliers, search, riskFilter, statusFilter]);
+
+  const toggle = (id: string) => setChecked(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const allChecked = filtered.length > 0 && filtered.every(s => checked.has(s.id));
+
+  const tabs: { id: TabId; label: string }[] = [
+    { id: 'overview', label: t('supplychain.tabs.dashboard', "Vue d'ensemble") },
+    { id: 'suppliers', label: `${t('supplychain.tabs.suppliers', 'Fournisseurs')} (${suppliers.length})` },
+    { id: 'vigilance', label: t('supplychain.tabs.vigilance', 'Vigilance') },
+  ];
+
+  const kpis = [
+    { label: t('supplychain.kpiEvaluated', 'Fournisseurs évalués'), val: `${stats.evaluated} / ${stats.total}` },
+    { label: t('supplychain.kpiAvgScore', 'Score ESG moyen'), val: stats.avg === null ? '—' : `${stats.avg}/100` },
+    { label: t('supplychain.kpiAtRisk', 'À risque élevé ou critique'), val: String(stats.atRisk.length) },
+    { label: t('supplychain.kpiPurchases', 'Achats suivis'), val: stats.totalSpend > 0 ? `${stats.totalSpend.toLocaleString('fr-FR')} k€` : '—' },
   ];
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* ── Data source banner ──────────────────────────────────────────────── */}
-      {loadingSuppliers ? (
-        <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700 animate-pulse">
-          <RefreshCw className="h-4 w-4 animate-spin" />
-          {t('supplychain.loadingSuppliers', 'Chargement des données fournisseurs…')}
+      {/* ── En-tête compact ─────────────────────────────────────────────── */}
+      <header className="flex items-start justify-between flex-wrap gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-blue-600 text-white flex items-center justify-center"><Truck className="h-5 w-5" /></div>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">{t('supplychain.title', 'Supply Chain ESG')}</h1>
+            <p className="text-sm text-gray-500">{t('supplychain.subtitleHonest', "Évaluez vos fournisseurs avec un questionnaire ESG et suivez leur niveau de risque.")}</p>
+          </div>
         </div>
-      ) : dataSource === 'real' ? (
-        <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800">
-          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-          <span><span className="font-bold">{t('supplychain.bannerRealLoaded', '{{n}} fournisseurs chargés', { n: suppliers.length })}</span> — {evaluated} {t('supplychain.bannerEvaluated', 'évalués')} · {critical} {t('supplychain.bannerCritical', 'à risque critique')}</span>
+        <div className="flex items-center gap-2">
+          <button onClick={exportAll} disabled={suppliers.length === 0} className="flex items-center gap-2 px-4 py-2 border border-gray-200 hover:bg-gray-50 disabled:opacity-40 text-gray-700 rounded-xl text-sm font-medium">
+            <Download className="h-4 w-4" />{t('common.export', 'Exporter')}
+          </button>
+          <button onClick={() => setForm({})} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold">
+            <Plus className="h-4 w-4" />{t('supplychain.addSupplier', 'Ajouter un fournisseur')}
+          </button>
         </div>
-      ) : dataSource === 'orgs' ? (
-        <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
-          <Info className="h-5 w-5 text-blue-500 flex-shrink-0" />
-          <span>
-            <span className="font-bold">{t('supplychain.bannerOrgsLoaded', '{{n}} organisations affichées comme fournisseurs', { n: suppliers.length })}</span> — {t('supplychain.bannerOrgsDesc', 'données ESG réelles · module Supply Chain non activé.')}{' '}
-            <a href="/app/data/connectors" className="underline hover:text-blue-900">{t('supplychain.configConnectors', 'Configurer les connecteurs →')}</a>
-          </span>
-        </div>
-      ) : dataSource === 'demo' ? (
-        <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-          <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
-          <span>
-            <span className="font-bold">{t('supplychain.bannerDemoTitle', 'Données de démonstration.')}</span> {t('supplychain.bannerDemoDesc', 'Aucun fournisseur réel trouvé — module Supply Chain non activé.')}{' '}
-            <a href="/app/data/connectors" className="underline hover:text-amber-900">{t('supplychain.configConnectors', 'Configurer les connecteurs →')}</a>
-          </span>
-        </div>
-      ) : (
-        <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-          <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
-          <span>
-            <span className="font-bold">{t('supplychain.bannerEmptyTitle', 'Aucun fournisseur trouvé.')}</span> {t('supplychain.bannerEmptyDesc', 'Ajoutez des fournisseurs via le bouton ci-dessous ou importez-les depuis vos connecteurs.')}
-          </span>
+      </header>
+
+      <div role="tablist" aria-label={t('supplychain.title', 'Supply Chain ESG')} className="flex gap-6 border-b border-gray-200">
+        {tabs.map(tb => (
+          <button key={tb.id} role="tab" aria-selected={tab === tb.id} onClick={() => setTab(tb.id)}
+            className={`pb-3 -mb-px text-sm font-semibold border-b-2 transition-colors ${tab === tb.id ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>
+            {tb.label}
+          </button>
+        ))}
+      </div>
+
+      {loading && <div className="flex items-center gap-2 text-sm text-gray-500 py-10 justify-center"><Loader2 className="h-4 w-4 animate-spin" />{t('supplychain.loadingSuppliers', 'Chargement des fournisseurs…')}</div>}
+
+      {!loading && loadError && (
+        <div role="alert" className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-800">
+          <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+          <span className="flex-1">{t('supplychain.loadError', 'Impossible de charger vos fournisseurs.')}</span>
+          <button onClick={() => { setLoading(true); load(); }} className="font-semibold underline">{t('common.retry', 'Réessayer')}</button>
         </div>
       )}
 
-      {/* ── Hero gradient ─────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-700 via-indigo-600 to-cyan-700 p-8 text-white shadow-xl">
-        <div className="absolute inset-0 opacity-10">
-          <svg width="100%" height="100%"><defs><pattern id="sc" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M0 20h40M20 0v40" stroke="white" strokeWidth="0.5" fill="none"/></pattern></defs><rect width="100%" height="100%" fill="url(#sc)"/></svg>
+      {!loading && !loadError && suppliers.length === 0 && (
+        <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
+          <Truck className="h-12 w-12 mx-auto text-gray-200 mb-4" />
+          <p className="text-lg font-semibold text-gray-900">{t('supplychain.emptyStateTitle', 'Aucun fournisseur enregistré')}</p>
+          <p className="text-sm text-gray-500 mt-2 max-w-sm mx-auto">{t('supplychain.emptyStateDesc', 'Ajoutez vos fournisseurs pour leur envoyer un questionnaire ESG et suivre leur niveau de risque.')}</p>
+          <button onClick={() => setForm({})} className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700">
+            <Plus className="h-4 w-4" />{t('supplychain.addSupplier', 'Ajouter un fournisseur')}
+          </button>
         </div>
-        <div className="relative flex items-start justify-between flex-wrap gap-6">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
-              <Truck className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">{t('supplychain.title')}</h1>
-              <p className="text-sm text-blue-100 mt-0.5">{t('supplychain.subtitle')}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-white text-blue-700 hover:bg-blue-50 rounded-xl text-sm font-semibold transition-colors shadow-sm"
-            >
-              <Plus className="h-4 w-4" /> {t('supplychain.addSupplier')}
-            </button>
-            <button
-              onClick={handleExportCSV}
-              className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 border border-white/30 text-white rounded-xl text-sm font-medium transition-colors"
-            >
-              <Download className="h-4 w-4" /> {t('common.export')}
-            </button>
-          </div>
-        </div>
-        {/* Tabs */}
-        <div className="relative mt-6 flex gap-2">
-          {tabs.map(tb => (
-            <button key={tb.id} onClick={() => setTab(tb.id)}
-              className={`px-5 py-2.5 text-sm font-semibold rounded-xl transition-all ${tab === tb.id ? 'bg-white text-blue-700 shadow-md' : 'text-white/80 hover:bg-white/20'}`}>
-              {tb.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      )}
 
-      <div className="max-w-7xl mx-auto px-0 py-0">
-
-        {/* ── Dashboard ── */}
-        {tab === 'dashboard' && (
-          <div className="space-y-8">
-            {/* Empty state when no suppliers */}
-            {!loadingSuppliers && suppliers.length === 0 && (
-              <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
-                <Truck className="h-14 w-14 mx-auto text-gray-200 mb-4" />
-                <p className="text-lg font-semibold text-gray-900">{t('supplychain.emptyStateTitle', 'Aucun fournisseur enregistré')}</p>
-                <p className="text-sm text-gray-500 mt-2 max-w-sm mx-auto">
-                  {t('supplychain.emptyStateDesc', 'Ajoutez vos fournisseurs pour évaluer leurs risques ESG et envoyer des questionnaires.')}
-                </p>
-                <button
-                  onClick={() => setShowAddModal(true)}
-                  className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors"
-                >
-                  <Plus className="h-4 w-4" /> {t('supplychain.addSupplier', 'Ajouter un fournisseur')}
-                </button>
+      {!loading && !loadError && suppliers.length > 0 && (
+        <>
+          {/* ── Vue d'ensemble ── */}
+          {tab === 'overview' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {kpis.map(k => (
+                  <div key={k.label} className="bg-white rounded-2xl border border-gray-200 p-5">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">{k.label}</p>
+                    <p className="text-2xl font-extrabold text-gray-900 mt-2">{k.val}</p>
+                  </div>
+                ))}
               </div>
-            )}
-            {/* KPIs — only when suppliers exist */}
-            {suppliers.length > 0 && (
-              <>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {[
-                    { label: t('supplychain.kpiEvaluated'), val: `${evaluated}/${suppliers.length}`, sub: `${suppliers.length > 0 ? Math.round(evaluated / suppliers.length * 100) : 0}% ${t('supplychain.kpiEvaluatedSub')}`, variant: 'kpi-card-blue' },
-                    { label: t('supplychain.kpiAvgScore'), val: avgScore, sub: t('supplychain.kpiAvgScoreSub'), variant: 'kpi-card-green' },
-                    { label: t('supplychain.kpiCritical'), val: critical, sub: `${totalSpend > 0 ? Math.round(criticalSpend / totalSpend * 100) : 0}% ${t('supplychain.kpiCriticalSub')}`, variant: 'kpi-card-amber' },
-                    { label: t('supplychain.kpiPurchases'), val: `${(totalSpend / 1000).toFixed(1)}M€`, sub: t('supplychain.kpiPurchasesSub'), variant: 'kpi-card-purple' },
-                  ].map((k, i) => (
-                    <div key={i} className={`kpi-card ${k.variant} p-5 cursor-default`}>
-                      <p className="stat-label mb-3">{k.label}</p>
-                      <p className="stat-value">{k.val}</p>
-                      <p className="text-xs text-gray-500 mt-2">{k.sub}</p>
-                    </div>
-                  ))}
-                </div>
 
-                {/* Alert banner for critical suppliers */}
-                {critical > 0 && (
-                  <div className="flex items-start gap-3 p-4 bg-red-50 border-2 border-red-200 rounded-2xl">
-                    <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <span className="font-bold text-red-800">{t('supplychain.alertBannerText', { count: critical })}</span>
-                      <span className="text-red-700 text-sm"> {t('supplychain.alertBannerDesc')}</span>
-                    </div>
-                    <button onClick={() => setTab('diligence')} className="flex items-center gap-1 text-xs font-bold text-red-700 hover:underline whitespace-nowrap">
-                      {t('supplychain.alertBannerLink')} <ArrowRight className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                )}
-
-                {/* Risk distribution */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                    <h2 className="text-base font-bold text-gray-900 mb-5">{t('supplychain.sectionRiskDistribution')}</h2>
-                    <div className="space-y-3">
-                      {(['Critique', 'Élevé', 'Moyen', 'Faible'] as RiskLevel[]).map(r => {
-                        const count = suppliers.filter(s => s.risk === r).length;
-                        const pct = suppliers.length > 0 ? Math.round(count / suppliers.length * 100) : 0;
-                        const cfg = RISK_CFG[r];
-                        return (
-                          <div key={r}>
-                            <div className="flex items-center justify-between mb-1.5">
-                              <span className={`text-sm font-semibold ${cfg.color}`}>{r}</span>
-                              <span className="text-sm text-gray-600">{t('supplychain.supplierCount', { count, pct })}</span>
-                            </div>
-                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                              <div
-                                className="h-2 rounded-full transition-all duration-500"
-                                style={{
-                                  width: `${pct}%`,
-                                  background: r === 'Critique' ? 'linear-gradient(to right,#ef4444,#dc2626)'
-                                    : r === 'Élevé' ? 'linear-gradient(to right,#f97316,#ea580c)'
-                                    : r === 'Moyen' ? 'linear-gradient(to right,#fbbf24,#f59e0b)'
-                                    : 'linear-gradient(to right,#34d399,#22c55e)',
-                                }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                    <h2 className="text-base font-bold text-gray-900 mb-5">{t('supplychain.sectionEvalStatus')}</h2>
-                    <div className="space-y-3">
-                      {(['Évalué', 'En cours', 'Non évalué', 'Refus'] as EvalStatus[]).map(s => {
-                        const count = suppliers.filter(sup => sup.status === s).length;
-                        const pct = suppliers.length > 0 ? Math.round(count / suppliers.length * 100) : 0;
-                        const cfg = STATUS_CFG[s];
-                        const Icon = cfg.icon;
-                        return (
-                          <div key={s} className="flex items-center gap-3">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.bg} ${cfg.color} w-28 flex-shrink-0`}>
-                              <Icon className="h-3 w-3" />{s}
-                            </span>
-                            <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
-                              <div className={`h-3 rounded-full ${s === 'Évalué' ? 'bg-green-500' : s === 'En cours' ? 'bg-blue-500' : s === 'Refus' ? 'bg-red-400' : 'bg-gray-300'}`} style={{ width: `${pct}%` }} />
-                            </div>
-                            <span className="text-sm text-gray-500 w-6 text-right">{count}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Top risks */}
-                <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                  <h2 className="text-base font-bold text-gray-900 mb-4">{t('supplychain.sectionPriority')}</h2>
-                  <div className="divide-y divide-gray-100">
-                    {suppliers.filter(s => s.risk === 'Critique' || (s.risk === 'Élevé' && s.status === 'Non évalué')).map(s => {
-                      const cfg = RISK_CFG[s.risk];
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <section className="bg-white rounded-2xl border border-gray-200 p-6">
+                  <h2 className="text-base font-bold text-gray-900 mb-1">{t('supplychain.sectionRiskDistribution', 'Répartition par risque')}</h2>
+                  <p className="text-xs text-gray-400 mb-4">{t('supplychain.riskScaleHint', 'Fournisseurs évalués · score global : ')}{RISK_THRESHOLDS.map(r => `${r.level} ${r.label}`).join(' · ')}</p>
+                  <div className="space-y-3">
+                    {RISK_ORDER.map(r => {
+                      const count = suppliers.filter(s => hasScore(s) && s.risk === r).length;
+                      const pct = stats.evaluated ? Math.round((count / stats.evaluated) * 100) : 0;
                       return (
-                        <div key={s.id} className="flex items-center gap-4 py-4 hover:bg-gray-50 transition-colors cursor-pointer rounded-xl px-2" onClick={() => setSelectedSupplier(s)}>
-                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.dot}`} />
-                          <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-gray-900 text-sm">{s.name}</div>
-                            <div className="text-xs text-gray-500">{s.country} · {s.category} · {s.spend.toLocaleString()}k€</div>
+                        <div key={r}>
+                          <div className="flex justify-between mb-1.5 text-sm">
+                            <span className={`font-semibold ${RISK_CFG[r].color}`}>{r}</span>
+                            <span className="text-gray-600">{count}</span>
                           </div>
-                          <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${cfg.bg} ${cfg.color}`}>{s.risk}</span>
-                          <div className="text-xs text-gray-400">{s.flags[0] || ''}</div>
-                          <ChevronRight className="h-4 w-4 text-gray-300 flex-shrink-0" />
+                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden"><div className={`h-2 rounded-full ${RISK_CFG[r].bar}`} style={{ width: `${pct}%` }} /></div>
                         </div>
                       );
                     })}
-                    {suppliers.filter(s => s.risk === 'Critique' || (s.risk === 'Élevé' && s.status === 'Non évalué')).length === 0 && (
-                      <p className="py-6 text-sm text-center text-gray-400">{t('supplychain.noPrioritySuppliers', 'Aucun fournisseur à risque critique ou élevé non évalué.')}</p>
-                    )}
+                    {stats.evaluated === 0 && <p className="text-sm text-gray-400">{t('supplychain.noScoredYet', "Aucun fournisseur évalué pour l'instant.")}</p>}
                   </div>
-                </div>
-              </>
-            )}
-          </div>
-        )}
+                </section>
 
-        {/* ── Suppliers list ── */}
-        {tab === 'suppliers' && (
-          <div className="space-y-5">
-            {/* Filters */}
-            <div className="flex flex-wrap gap-3 items-center bg-white p-4 rounded-2xl border border-gray-200">
-              <div className="relative flex-1 min-w-48">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('supplychain.searchSupplier')} className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <section className="bg-white rounded-2xl border border-gray-200 p-6">
+                  <h2 className="text-base font-bold text-gray-900 mb-4">{t('supplychain.sectionEvalStatus', "Avancement des évaluations")}</h2>
+                  <div className="space-y-3">
+                    {STATUS_ORDER.map(st => {
+                      const count = suppliers.filter(s => s.status === st).length;
+                      const pct = Math.round((count / suppliers.length) * 100);
+                      return (
+                        <div key={st} className="flex items-center gap-3">
+                          <div className="w-28 flex-shrink-0"><StatusBadge status={st} /></div>
+                          <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden"><div className="h-2.5 bg-blue-500 rounded-full" style={{ width: `${pct}%` }} /></div>
+                          <span className="text-sm text-gray-600 w-6 text-right">{count}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {CATEGORIES.slice(0, 5).map(c => (
-                  <button key={c} onClick={() => setCatFilter(c)} className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${catFilter === c ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{c}</button>
-                ))}
+
+              <section className="bg-white rounded-2xl border border-gray-200 p-6">
+                <h2 className="text-base font-bold text-gray-900 mb-3">{t('supplychain.sectionPriority', 'À traiter en priorité')}</h2>
+                <div className="divide-y divide-gray-100">
+                  {[...stats.atRisk].sort((a, b) => RISK_ORDER.indexOf(a.risk) - RISK_ORDER.indexOf(b.risk)).map(s => (
+                    <button key={s.id} onClick={() => setSelectedId(s.id)} className="w-full flex items-center gap-4 py-3 px-2 text-left hover:bg-gray-50 rounded-xl">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm text-gray-900 truncate">{s.name}</div>
+                        <div className="text-xs text-gray-500">{[s.country, s.category].filter(Boolean).join(' · ')}</div>
+                      </div>
+                      <RiskBadge supplier={s} />
+                      <ChevronRight className="h-4 w-4 text-gray-300" />
+                    </button>
+                  ))}
+                  {stats.atRisk.length === 0 && (
+                    <p className="py-4 text-sm text-gray-500">
+                      {stats.notEvaluated > 0
+                        ? t('supplychain.priorityNone', "Aucun fournisseur évalué à risque élevé ou critique. {{n}} fournisseur(s) restent à évaluer.", { n: stats.notEvaluated })
+                        : t('supplychain.priorityNoneAll', 'Aucun fournisseur à risque élevé ou critique.')}
+                    </p>
+                  )}
+                </div>
+              </section>
+            </div>
+          )}
+
+          {/* ── Fournisseurs ── */}
+          {tab === 'suppliers' && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-3 items-center bg-white p-4 rounded-2xl border border-gray-200">
+                <div className="relative flex-1 min-w-48">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input value={search} onChange={e => setSearch(e.target.value)} aria-label={t('supplychain.searchSupplier', 'Rechercher un fournisseur')} placeholder={t('supplychain.searchSupplier', 'Rechercher un fournisseur…')}
+                    className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <select value={riskFilter} onChange={e => setRiskFilter(e.target.value as any)} aria-label={t('supplychain.colRisk', 'Risque')} className="px-3 py-2 border border-gray-200 rounded-xl text-sm">
+                  <option value="Tous">{t('supplychain.allRisks', 'Tous les risques')}</option>
+                  {RISK_ORDER.map(r => <option key={r}>{r}</option>)}
+                </select>
+                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)} aria-label={t('supplychain.colStatus', 'Statut')} className="px-3 py-2 border border-gray-200 rounded-xl text-sm">
+                  <option value="Tous">{t('supplychain.allStatuses', 'Tous les statuts')}</option>
+                  {STATUS_ORDER.map(s => <option key={s}>{s}</option>)}
+                </select>
               </div>
-              <div className="flex gap-2 ml-auto">
-                {(['Tous', 'Critique', 'Élevé', 'Moyen', 'Faible'] as const).map(r => (
-                  <button key={r} onClick={() => setRiskFilter(r)} className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${riskFilter === r ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600'}`}>{r}</button>
-                ))}
+
+              {checked.size > 0 && (
+                <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl text-sm">
+                  <span className="font-semibold text-blue-900">{t('supplychain.selectedCount', '{{n}} sélectionné(s)', { n: checked.size })}</span>
+                  <button onClick={() => sendQuestionnaires([...checked])} disabled={busy} className="ml-auto flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-semibold">
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}{t('supplychain.questionnaireSendButton', 'Envoyer le questionnaire')}
+                  </button>
+                  <button onClick={() => setChecked(new Set())} aria-label={t('common.cancel', 'Annuler')} className="p-1 text-blue-700"><X className="h-4 w-4" /></button>
+                </div>
+              )}
+
+              <div className="bg-white rounded-2xl border border-gray-200 overflow-x-auto">
+                <table className="w-full min-w-[720px]">
+                  <thead>
+                    <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                      <th className="pl-5 py-3 w-8"><input type="checkbox" aria-label={t('supplychain.selectAll', 'Tout sélectionner')} checked={allChecked} onChange={() => setChecked(allChecked ? new Set() : new Set(filtered.map(s => s.id)))} /></th>
+                      <th className="px-4 py-3 text-left">{t('supplychain.colSupplier', 'Fournisseur')}</th>
+                      <th className="px-4 py-3 text-left">{t('supplychain.colCategory', 'Catégorie')}</th>
+                      <th className="px-4 py-3 text-right">{t('supplychain.colPurchases', 'Achats')}</th>
+                      <th className="px-4 py-3 text-center">{t('supplychain.colRisk', 'Risque')}</th>
+                      <th className="px-4 py-3 text-center">{t('supplychain.colStatus', 'Statut')}</th>
+                      <th className="px-4 py-3 text-center">{t('supplychain.colEsgScore', 'Score')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {filtered.map(s => (
+                      <tr key={s.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setSelectedId(s.id)}>
+                        <td className="pl-5 py-3" onClick={e => e.stopPropagation()}>
+                          <input type="checkbox" aria-label={s.name} checked={checked.has(s.id)} onChange={() => toggle(s.id)} />
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="font-semibold text-sm text-gray-900">{s.name}</div>
+                          <div className="text-xs text-gray-400">{s.country}</div>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{s.category}</td>
+                        <td className="px-4 py-3 text-right text-sm text-gray-700">{s.spend > 0 ? `${s.spend.toLocaleString('fr-FR')} k€` : '—'}</td>
+                        <td className="px-4 py-3 text-center"><RiskBadge supplier={s} /></td>
+                        <td className="px-4 py-3 text-center"><StatusBadge status={s.status} /></td>
+                        <td className="px-4 py-3 text-center text-sm font-bold text-gray-800">{hasScore(s) ? s.globalScore : '—'}</td>
+                      </tr>
+                    ))}
+                    {filtered.length === 0 && (
+                      <tr><td colSpan={7} className="px-5 py-10 text-center text-sm text-gray-400">{t('supplychain.noResults', 'Aucun fournisseur ne correspond à ces filtres.')}</td></tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
+          )}
 
-            {/* Table */}
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider border-b border-gray-200">
-                    <th className="px-5 py-3 text-left">{t('supplychain.colSupplier')}</th>
-                    <th className="px-5 py-3 text-left">{t('supplychain.colCategory')}</th>
-                    <th className="px-5 py-3 text-right">{t('supplychain.colPurchases')}</th>
-                    <th className="px-5 py-3 text-center">{t('supplychain.colRisk')}</th>
-                    <th className="px-5 py-3 text-center">{t('supplychain.colStatus')}</th>
-                    <th className="px-5 py-3 text-center">{t('supplychain.colEsgScore')}</th>
-                    <th className="px-5 py-3 text-center">{t('supplychain.colQuestionnaire')}</th>
-                    <th className="px-5 py-3 text-center">{t('supplychain.colActions')}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {filtered.map(s => {
-                    const rCfg = RISK_CFG[s.risk];
-                    const stCfg = STATUS_CFG[s.status];
-                    const StIcon = stCfg.icon;
+          {/* ── Vigilance ── */}
+          {tab === 'vigilance' && (
+            <div className="space-y-6">
+              <div className="flex items-start gap-4 p-5 bg-blue-50 border border-blue-200 rounded-2xl">
+                <Scale className="h-6 w-6 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h2 className="font-bold text-blue-900 mb-1">{t('supplychain.vigilanceLawTitle')}</h2>
+                  <p className="text-sm text-blue-700">{t('supplychain.vigilanceLawDesc')}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { label: t('supplychain.vigilanceKpiCovered', 'Fournisseurs évalués'), val: `${stats.evaluated} / ${stats.total}` },
+                  { label: t('supplychain.vigilanceKpiRisks', 'Risque élevé ou critique'), val: String(stats.atRisk.length) },
+                  { label: t('supplychain.vigilanceKpiPending', 'Questionnaires en attente'), val: String(stats.pending) },
+                  { label: t('supplychain.vigilanceKpiSpendCovered', 'Achats couverts par une évaluation'), val: stats.totalSpend > 0 ? `${Math.round((stats.evaluatedSpend / stats.totalSpend) * 100)} %` : '—' },
+                ].map(k => (
+                  <div key={k.label} className="bg-white rounded-2xl border border-gray-200 p-5">
+                    <div className="text-2xl font-extrabold text-gray-900">{k.val}</div>
+                    <div className="text-sm text-gray-600 mt-2">{k.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <h2 className="text-base font-bold text-gray-900">{t('supplychain.actionPlanTitle', 'Fournisseurs à suivre')}</h2>
+                  <p className="text-xs text-gray-400 mt-0.5">{t('supplychain.actionPlanHint', 'Mesures recommandées à documenter dans votre plan de vigilance. Elles ne sont pas suivies automatiquement.')}</p>
+                </div>
+                <div className="divide-y divide-gray-100">
+                  {stats.atRisk.map(s => {
+                    const c = RISK_CFG[s.risk];
+                    const measures = [
+                      s.risk === 'Critique' ? t('supplychain.actionCritiqueAudit') : t('supplychain.actionHighQuestionnaire'),
+                      t('supplychain.actionContractClauses'),
+                      s.risk === 'Critique' ? t('supplychain.actionCritiqueImprovement') : t('supplychain.actionHighMonitoring'),
+                      t('supplychain.actionDocument'),
+                    ];
                     return (
-                      <tr key={s.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-5 py-4">
-                          <div className="font-semibold text-gray-900 text-sm">{s.name}</div>
-                          <div className="text-xs text-gray-400">{s.country} · {s.employees.toLocaleString()} {t('supplychain.employees')}</div>
-                          {s.flags.length > 0 && (
-                            <div className="flex items-center gap-1 mt-1">
-                              <AlertTriangle className="h-3 w-3 text-red-400" />
-                              <span className="text-xs text-red-500">{t('supplychain.flagCount', { count: s.flags.length })}</span>
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-5 py-4 text-sm text-gray-600">{s.category}</td>
-                        <td className="px-5 py-4 text-right text-sm font-semibold text-gray-700">{s.spend.toLocaleString()}k€</td>
-                        <td className="px-5 py-4 text-center">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${rCfg.bg} ${rCfg.color}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${rCfg.dot}`} />{s.risk}
-                          </span>
-                        </td>
-                        <td className="px-5 py-4 text-center">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${stCfg.bg} ${stCfg.color}`}>
-                            <StIcon className="h-3 w-3" />{s.status}
-                          </span>
-                        </td>
-                        <td className="px-5 py-4 text-center">
-                          <ScorePill score={s.globalScore} />
-                        </td>
-                        <td className="px-5 py-4 text-center">
-                          {s.questionnaireCompleted ? (
-                            <span className="text-green-600 text-xs font-semibold flex items-center justify-center gap-1"><CheckCircle className="h-3.5 w-3.5" />{t('supplychain.questionnaireCompleted')}</span>
-                          ) : s.questionnaireSent ? (
-                            <span className="text-amber-600 text-xs font-semibold flex items-center justify-center gap-1"><Clock className="h-3.5 w-3.5" />{t('supplychain.questionnairePending')}</span>
-                          ) : (
-                            <span className="text-gray-400 text-xs flex items-center justify-center gap-1"><X className="h-3.5 w-3.5" />{t('supplychain.questionnaireNotSent')}</span>
-                          )}
-                        </td>
-                        <td className="px-5 py-4 text-center">
-                          <button onClick={() => setSelectedSupplier(s)} className="p-1.5 hover:bg-blue-100 rounded-lg transition-colors">
-                            <Eye className="h-4 w-4 text-blue-600" />
-                          </button>
-                        </td>
-                      </tr>
+                      <div key={s.id} className="p-6 flex gap-4 flex-wrap md:flex-nowrap">
+                        <div className="flex-1 min-w-0 space-y-3">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <h3 className="font-bold text-gray-900">{s.name}</h3>
+                            <span className={`text-xs px-2.5 py-1 rounded-full font-bold border ${c.bg} ${c.color} ${c.border}`}>{s.risk}</span>
+                            <span className="text-xs text-gray-400">{[s.country, s.category].filter(Boolean).join(' · ')}</span>
+                          </div>
+                          <ol className="space-y-1.5 list-decimal list-inside text-sm text-gray-700">
+                            {measures.map((m, i) => <li key={i}>{m}</li>)}
+                          </ol>
+                        </div>
+                        <button onClick={() => setSelectedId(s.id)} className="self-start px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold">{t('supplychain.btnSheet', 'Ouvrir la fiche')}</button>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
-              <div className="px-5 py-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-400">
-                {t('supplychain.supplierCountFooter', { count: filtered.length })}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── Questionnaire tab ── */}
-        {tab === 'questionnaires' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Questionnaire builder */}
-              <div className="lg:col-span-2 space-y-5">
-                <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                  <div className="flex items-center justify-between mb-5">
-                    <h2 className="text-base font-bold text-gray-900">{t('supplychain.questionnaireTabTitle')}</h2>
-                    <span className="text-xs bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full font-semibold">{t('supplychain.questionCount', '{{n}} questions', { n: questionnaire.length })}</span>
-                  </div>
-                  {/* Section tabs */}
-                  <div className="flex gap-2 flex-wrap mb-6">
-                    {qSections.map(s => (
-                      <button key={s} onClick={() => setActiveQSection(s)}
-                        className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${activeQSection === s ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-                        {s} ({questionnaire.filter(q => q.section === s).length})
-                      </button>
-                    ))}
-                  </div>
-                  <div className="space-y-4">
-                    {sectionQuestions.map((q, i) => (
-                      <div key={q.id} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                        <div className="flex items-start gap-3 mb-3">
-                          <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
-                          <p className="text-sm font-medium text-gray-900">{q.text}</p>
-                          <span className="text-xs text-gray-400 ml-auto flex-shrink-0">{t('supplychain.questionnaireWeight')} {q.weight}%</span>
-                        </div>
-                        {q.type === 'yesno' && (
-                          <div className="flex gap-3 ml-9">
-                            {[t('supplychain.questionnaireYes'), t('supplychain.questionnaireNo'), t('supplychain.questionnaireInProgress')].map(opt => (
-                              <button key={opt} onClick={() => setQAnswers(prev => ({ ...prev, [q.id]: opt }))}
-                                className={`px-4 py-1.5 rounded-xl text-sm font-semibold transition-colors border ${qAnswers[q.id] === opt ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'}`}>
-                                {opt}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                        {q.type === 'scale' && (
-                          <div className="flex gap-2 ml-9">
-                            {[1, 2, 3, 4, 5].map(v => (
-                              <button key={v} onClick={() => setQAnswers(prev => ({ ...prev, [q.id]: String(v) }))}
-                                className={`w-9 h-9 rounded-xl text-sm font-bold transition-colors border ${qAnswers[q.id] === String(v) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'}`}>
-                                {v}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                        {q.type === 'multiselect' && q.options && (
-                          <div className="flex gap-2 flex-wrap ml-9">
-                            {q.options.map(opt => (
-                              <button key={opt} onClick={() => setQAnswers(prev => ({ ...prev, [q.id]: opt }))}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors border ${qAnswers[q.id] === opt ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'}`}>
-                                {opt}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  {stats.atRisk.length === 0 && <p className="py-8 px-6 text-sm text-gray-500">{t('supplychain.noCriticalSuppliers', 'Aucun fournisseur évalué à risque élevé ou critique.')}</p>}
                 </div>
-              </div>
+              </section>
 
-              {/* Score preview + Send panel */}
-              <div className="space-y-5">
-
-                {/* ── Live Score Preview ── */}
-                <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-gray-900">{t('supplychain.liveScoreTitle', 'Score calculé en temps réel')}</h3>
-                    <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-                      {t('supplychain.liveScoreAnswers', '{{n}}/{{total}} réponses', { n: computedScores.answeredCount, total: computedScores.totalCount })}
-                    </span>
-                  </div>
-
-                  {/* Overall ring */}
-                  <div className="flex items-center justify-center py-2">
-                    <div className="relative w-24 h-24">
-                      <svg className="w-24 h-24 -rotate-90" viewBox="0 0 72 72">
-                        <circle cx="36" cy="36" r="28" fill="none" stroke="#f3f4f6" strokeWidth="7" />
-                        <circle cx="36" cy="36" r="28" fill="none"
-                          stroke={computedScores.overall >= 70 ? '#16a34a' : computedScores.overall >= 40 ? '#f59e0b' : computedScores.overall > 0 ? '#ef4444' : '#e5e7eb'}
-                          strokeWidth="7"
-                          strokeDasharray={String(2 * Math.PI * 28)}
-                          strokeDashoffset={String(2 * Math.PI * 28 * (1 - computedScores.overall / 100))}
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-2xl font-extrabold text-gray-900">{computedScores.overall}</span>
-                        <span className="text-[10px] text-gray-400 font-medium">/ 100</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Risk label */}
-                  {computedScores.answeredCount > 0 && (
-                    <div className="text-center">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${RISK_CFG[riskFromScore(computedScores.overall)].bg} ${RISK_CFG[riskFromScore(computedScores.overall)].color}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${RISK_CFG[riskFromScore(computedScores.overall)].dot}`} />
-                        {t('supplychain.riskLabel', 'Risque')} {riskFromScore(computedScores.overall)}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Dimension bars */}
-                  <div className="space-y-2.5 pt-1">
-                    {[
-                      { label: t('supplychain.dimEnvironment', 'Environnement'), val: computedScores.env,        color: '#16a34a' },
-                      { label: t('supplychain.dimSocial',      'Social'),        val: computedScores.social,     color: '#2563eb' },
-                      { label: t('supplychain.dimGovernance',  'Gouvernance'),   val: computedScores.gov,        color: '#7c3aed' },
-                      { label: t('supplychain.dimCompliance',  'Conformité'),    val: computedScores.compliance, color: '#be185d' },
-                    ].map(dim => (
-                      <div key={dim.label}>
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-gray-600 font-medium">{dim.label}</span>
-                          <span className="font-bold text-gray-700">{dim.val}/100</span>
-                        </div>
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${dim.val}%`, backgroundColor: dim.color }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Apply button */}
-                  {applySuccess ? (
-                    <div className="flex items-center gap-2 p-2.5 bg-green-50 border border-green-200 rounded-xl text-xs text-green-700 font-semibold">
-                      <CheckCircle className="h-4 w-4 flex-shrink-0" />
-                      {t('supplychain.scoresApplied', 'Scores appliqués aux fournisseurs sélectionnés !')}
-                    </div>
-                  ) : (
-                    <button
-                      onClick={handleApplyScores}
-                      disabled={checkedSupplierIds.size === 0 || computedScores.answeredCount === 0}
-                      className="w-full flex items-center justify-center gap-2 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors text-sm"
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                      {checkedSupplierIds.size > 0
-                        ? t('supplychain.applyToSuppliers', 'Appliquer à {{n}} fournisseur{{s}}', { n: checkedSupplierIds.size, s: checkedSupplierIds.size > 1 ? 's' : '' })
-                        : t('supplychain.selectSuppliersFirst', 'Sélectionner des fournisseurs ci-dessous')}
-                    </button>
-                  )}
-                  {computedScores.answeredCount === 0 && (
-                    <p className="text-xs text-gray-400 text-center">{t('supplychain.answersRequired', 'Répondez aux questions pour voir le score.')}</p>
-                  )}
-                </div>
-
-                <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4 sticky top-6">
-                  <h3 className="font-bold text-gray-900">{t('supplychain.questionnaireSendTitle')}</h3>
-                  <div className="space-y-2">
-                    {suppliers.filter(s => !s.questionnaireCompleted).slice(0, 6).map(s => (
-                      <label key={s.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="rounded"
-                          checked={checkedSupplierIds.has(s.id)}
-                          onChange={e => setCheckedSupplierIds(prev => {
-                            const next = new Set(prev);
-                            if (e.target.checked) next.add(s.id); else next.delete(s.id);
-                            return next;
-                          })}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-gray-900 truncate">{s.name}</div>
-                          <div className="text-xs text-gray-400">{s.country}</div>
-                        </div>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${RISK_CFG[s.risk].bg} ${RISK_CFG[s.risk].color}`}>{s.risk}</span>
-                      </label>
-                    ))}
-                    {suppliers.filter(s => !s.questionnaireCompleted).length === 0 && (
-                      <p className="text-sm text-gray-400 text-center py-3">{t('supplychain.allCompleted', 'Tous les questionnaires ont été complétés.')}</p>
-                    )}
-                  </div>
-                  {sendSuccess ? (
-                    <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700">
-                      <CheckCircle className="h-4 w-4" /> {t('supplychain.questionnaireSendSuccess')}
-                    </div>
-                  ) : (
-                    <button
-                      onClick={handleSendQuestionnaire}
-                      disabled={checkedSupplierIds.size === 0}
-                      className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors text-sm"
-                    >
-                      <Send className="h-4 w-4" />
-                      {checkedSupplierIds.size > 0
-                        ? `${t('supplychain.questionnaireSendButton')} (${checkedSupplierIds.size})`
-                        : t('supplychain.questionnaireSendButton')}
-                    </button>
-                  )}
-                  <p className="text-xs text-gray-400 text-center">{t('supplychain.questionnaireNotice')}</p>
-                </div>
-
-                {/* Progress */}
-                <div className="bg-white rounded-2xl border border-gray-200 p-5">
-                  <h3 className="font-bold text-gray-900 mb-4">{t('supplychain.questionnaireTrackingStatus')}</h3>
-                  <div className="space-y-2.5">
-                    {[
-                      { label: t('supplychain.questionnaireTrackingLastSent'), count: suppliers.filter(s => s.questionnaireSent).length, color: 'bg-blue-500' },
-                      { label: t('supplychain.questionnaireCompleted'), count: suppliers.filter(s => s.questionnaireCompleted).length, color: 'bg-green-500' },
-                      { label: t('supplychain.questionnairePending'), count: suppliers.filter(s => s.questionnaireSent && !s.questionnaireCompleted).length, color: 'bg-amber-400' },
-                      { label: t('supplychain.questionnaireNotSent'), count: suppliers.filter(s => !s.questionnaireSent).length, color: 'bg-gray-300' },
-                    ].map(item => (
-                      <div key={item.label} className="flex items-center gap-3">
-                        <span className="text-sm text-gray-600 w-28">{item.label}</span>
-                        <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div
-                            className={`h-2.5 ${item.color} rounded-full`}
-                            style={{ width: `${suppliers.length > 0 ? (item.count / suppliers.length) * 100 : 0}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-bold text-gray-700 w-4 text-right">{item.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <div className="flex items-start gap-3 p-4 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-600">
+                <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />{t('supplychain.vigilanceDisclaimer')}
               </div>
             </div>
-          </div>
-        )}
-
-        {/* ── Due diligence tab ── */}
-        {tab === 'diligence' && (
-          <div className="space-y-8">
-            {/* Legal context */}
-            <div className="flex items-start gap-4 p-5 bg-blue-50 border-2 border-blue-200 rounded-2xl">
-              <Scale className="h-6 w-6 text-blue-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-bold text-blue-900 mb-1">{t('supplychain.vigilanceLawTitle')}</h3>
-                <p className="text-sm text-blue-700">{t('supplychain.vigilanceLawDesc')}</p>
-              </div>
-            </div>
-
-            {/* Plan de vigilance KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { label: t('supplychain.vigilanceKpiCovered'), val: `${suppliers.filter(s => s.status === 'Évalué').length}/${suppliers.length}`, color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
-                { label: t('supplychain.vigilanceKpiRisks'), val: critical + suppliers.filter(s => s.risk === 'Élevé').length, color: 'text-red-700', bg: 'bg-red-50 border-red-200' },
-                { label: t('supplychain.vigilanceKpiActivePlans'), val: critical, color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
-                { label: t('supplychain.vigilanceKpiCompliance'), val: critical === 0 ? '✓ OK' : '⚠ Action', color: critical === 0 ? 'text-green-700' : 'text-red-700', bg: critical === 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200' },
-              ].map((k, i) => (
-                <div key={i} className={`rounded-2xl border-2 ${k.bg} p-5`}>
-                  <div className={`text-3xl font-extrabold ${k.color}`}>{k.val}</div>
-                  <div className="text-sm font-semibold text-gray-700 mt-2">{k.label}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Critical suppliers action plan */}
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h2 className="text-base font-bold text-gray-900">{t('supplychain.actionPlanTitle')}</h2>
-                <span className="text-xs text-gray-400">{t('supplychain.actionPlanLegal')}</span>
-              </div>
-              <div className="divide-y divide-gray-100">
-                {suppliers.filter(s => s.risk === 'Critique' || s.risk === 'Élevé').map(s => {
-                  const cfg = RISK_CFG[s.risk];
-                  return (
-                    <div key={s.id} className="p-6">
-                      <div className="flex items-start gap-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.bg} border ${cfg.border}`}>
-                          <Truck className={`h-5 w-5 ${cfg.color}`} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3 flex-wrap mb-2">
-                            <h3 className="font-bold text-gray-900">{s.name}</h3>
-                            <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${cfg.bg} ${cfg.color} border ${cfg.border}`}>{s.risk}</span>
-                            <span className="text-xs text-gray-400">{s.country} · {s.category}</span>
-                          </div>
-                          {/* Flags */}
-                          {s.flags.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-3">
-                              {s.flags.map((f, i) => (
-                                <span key={i} className="text-xs bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 rounded-lg flex items-center gap-1">
-                                  <AlertTriangle className="h-3 w-3" />{f}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                          {/* Actions requises */}
-                          <div className="space-y-2">
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('supplychain.vigilanceMeasures')}</p>
-                            {[
-                              s.risk === 'Critique' ? t('supplychain.actionCritiqueAudit') : t('supplychain.actionHighQuestionnaire'),
-                              t('supplychain.actionContractClauses'),
-                              s.risk === 'Critique' ? t('supplychain.actionCritiqueImprovement') : t('supplychain.actionHighMonitoring'),
-                              t('supplychain.actionDocument'),
-                            ].map((action, i) => (
-                              <div key={i} className="flex items-start gap-2.5 p-2.5 bg-gray-50 rounded-lg">
-                                <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${s.risk === 'Critique' ? 'bg-red-100' : 'bg-amber-100'}`}>
-                                  <span className={`text-xs font-bold ${s.risk === 'Critique' ? 'text-red-600' : 'text-amber-600'}`}>{i + 1}</span>
-                                </div>
-                                <span className="text-sm text-gray-700">{action}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-2 flex-shrink-0">
-                          <button
-                            onClick={() => setSelectedSupplier(s)}
-                            className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition-colors"
-                          >
-                            <Eye className="h-3.5 w-3.5" /> {t('supplychain.btnSheet')}
-                          </button>
-                          <button
-                            onClick={() => sendQuestionnaire([s.id])}
-                            className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-xl text-xs font-semibold transition-colors"
-                          >
-                            <Send className="h-3.5 w-3.5" /> {t('supplychain.btnFollowUp')}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                {suppliers.filter(s => s.risk === 'Critique' || s.risk === 'Élevé').length === 0 && (
-                  <p className="py-8 text-sm text-center text-gray-400">{t('supplychain.noCriticalSuppliers', 'Aucun fournisseur à risque critique ou élevé identifié.')}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Scope coverage */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h2 className="text-base font-bold text-gray-900 mb-4">{t('supplychain.vigilanceCoverage')}</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                  { title: t('supplychain.coverageDirectSubsidiaries'), pct: 95, status: t('supplychain.coverageStatusCovered'), color: 'bg-green-500' },
-                  { title: t('supplychain.coverageRank1'), pct: suppliers.length > 0 ? Math.round(suppliers.filter(s => s.status === 'Évalué').length / suppliers.length * 100) : 0, status: t('supplychain.coverageStatusPartial'), color: 'bg-amber-400' },
-                  { title: t('supplychain.coverageRank2Plus'), pct: 12, status: t('supplychain.coverageStatusToDevelop'), color: 'bg-red-400' },
-                ].map((item, i) => (
-                  <div key={i} className="bg-gray-50 rounded-xl p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-semibold text-gray-900">{item.title}</span>
-                      <span className="text-sm font-bold text-gray-700">{item.pct}%</span>
-                    </div>
-                    <div className="h-3 bg-gray-200 rounded-full overflow-hidden mb-2">
-                      <div className={`h-3 ${item.color} rounded-full`} style={{ width: `${item.pct}%` }} />
-                    </div>
-                    <span className="text-xs text-gray-500">{item.status}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Disclaimer */}
-            <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700">
-              <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
-              {t('supplychain.vigilanceDisclaimer')}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ── Add supplier modal ─────────────────────────────────────────────── */}
-      {showAddModal && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40"
-          onClick={e => { if (e.target === e.currentTarget) setShowAddModal(false); }}
-        >
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-gray-900">{t('supplychain.addSupplier', 'Ajouter un fournisseur')}</h2>
-              <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('supplychain.modalFieldName', 'Nom')} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={newSupplier.name}
-                  onChange={e => setNewSupplier(p => ({ ...p, name: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder={t('supplychain.modalNamePlaceholder', "Nom de l'entreprise fournisseur")}
-                  autoFocus
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('supplychain.modalFieldCountry', 'Pays')}</label>
-                  <input
-                    value={newSupplier.country}
-                    onChange={e => setNewSupplier(p => ({ ...p, country: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('supplychain.modalFieldCategory', 'Catégorie')}</label>
-                  <select
-                    value={newSupplier.category}
-                    onChange={e => setNewSupplier(p => ({ ...p, category: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {CATEGORIES.slice(1).map(c => <option key={c}>{c}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('supplychain.modalFieldEmail', 'Email contact RSE')}</label>
-                <input
-                  value={newSupplier.contactEmail}
-                  onChange={e => setNewSupplier(p => ({ ...p, contactEmail: e.target.value }))}
-                  type="email"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="rse@fournisseur.com"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('supplychain.modalFieldSpend', 'Achats annuels (k€)')}</label>
-                <input
-                  value={newSupplier.spend}
-                  onChange={e => setNewSupplier(p => ({ ...p, spend: e.target.value }))}
-                  type="number"
-                  min="0"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0"
-                />
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="flex-1 py-2.5 border border-gray-200 text-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-50 transition-colors"
-              >
-                {t('common.cancel', 'Annuler')}
-              </button>
-              <button
-                onClick={handleAddSupplier}
-                disabled={!newSupplier.name.trim()}
-                className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {t('common.add', 'Ajouter')}
-              </button>
-            </div>
-          </div>
-        </div>
+          )}
+        </>
       )}
 
-      {/* ── Global send success toast ──────────────────────────────────────── */}
-      {sendSuccess && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 bg-green-600 text-white rounded-2xl shadow-xl text-sm font-semibold">
-          <CheckCircle className="h-5 w-5 flex-shrink-0" />
-          {t('supplychain.questionnaireSendSuccess')}
-        </div>
-      )}
-
-      {/* ── Supplier drawer ────────────────────────────────────────────────── */}
-      {selectedSupplier && (
-        <SupplierDrawer
-          supplier={selectedSupplier}
-          onClose={() => setSelectedSupplier(null)}
-          onSend={sup => sendQuestionnaire([sup.id])}
+      {form && (
+        <SupplierFormModal
+          supplier={form.supplier}
+          onClose={() => setForm(null)}
+          onSaved={raw => { const s = upsert(raw); setForm(null); notify('ok', form.supplier ? t('supplychain.toastUpdated', 'Fournisseur mis à jour') : t('supplychain.toastAdded', 'Fournisseur ajouté')); if (!form.supplier) setSelectedId(s.id); }}
         />
+      )}
+
+      {selected && (
+        <SupplierDrawer
+          supplier={selected}
+          busy={busy}
+          onClose={() => setSelectedId(null)}
+          onSend={s => sendQuestionnaires([s.id])}
+          onEdit={s => setForm({ supplier: s })}
+          onDelete={deleteSupplier}
+          onAssessed={raw => { upsert(raw); notify('ok', t('supplychain.toastAssessed', 'Évaluation enregistrée')); }}
+        />
+      )}
+
+      {toast && createPortal(
+        <div role="status" className={`fixed bottom-6 right-6 z-[110] max-w-sm flex items-start gap-3 px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white ${toast.kind === 'ok' ? 'bg-green-600' : 'bg-red-600'}`}>
+          {toast.kind === 'ok' ? <CheckCircle className="h-5 w-5 flex-shrink-0" /> : <AlertTriangle className="h-5 w-5 flex-shrink-0" />}
+          <span>{toast.text}</span>
+        </div>,
+        document.body,
       )}
     </div>
   );

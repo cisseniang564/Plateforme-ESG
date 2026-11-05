@@ -34,7 +34,7 @@ export default function SupplierPortal() {
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [scores, setScores] = useState<Record<string, number> | null>(null);
+  const [scores, setScores] = useState<Record<string, any> | null>(null);
 
   useEffect(() => {
     if (!token) { setError(t('suppl.invalidLink','Lien invalide')); setLoading(false); return; }
@@ -77,7 +77,8 @@ export default function SupplierPortal() {
   );
 
   if (submitted) {
-    const riskLabel = scores ? (scores.global_score >= 70 ? t('suppl.riskLow','Faible') : scores.global_score >= 50 ? t('suppl.riskMed','Moyen') : t('suppl.riskHigh','Élevé')) : '';
+    // Libellé calculé côté serveur (seuils uniques 70/50/30)
+    const riskLabel = scores?.risk ?? '';
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-3xl p-10 shadow-xl max-w-lg w-full text-center">
@@ -99,7 +100,7 @@ export default function SupplierPortal() {
             <div className="bg-gray-50 rounded-xl p-4 mb-6">
               <p className="text-sm text-gray-500">{t('suppl.globalScore','Score ESG global')}</p>
               <p className="text-4xl font-bold text-gray-900">{scores.global_score}<span className="text-xl text-gray-400">/100</span></p>
-              <p className={`text-sm font-semibold mt-1 ${scores.global_score >= 70 ? 'text-green-600' : scores.global_score >= 50 ? 'text-amber-600' : 'text-red-600'}`}>
+              <p className={`text-sm font-semibold mt-1 ${scores.global_score >= 70 ? 'text-green-600' : scores.global_score >= 50 ? 'text-amber-600' : scores.global_score >= 30 ? 'text-orange-600' : 'text-red-600'}`}>
                 {t('suppl.riskLabel','Risque {{level}}',{level:riskLabel})}
               </p>
             </div>

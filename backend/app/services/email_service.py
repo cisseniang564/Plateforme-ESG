@@ -488,6 +488,26 @@ class EmailService:
     # ── User invitation ───────────────────────────────────────────────────────
 
     @classmethod
+    def send_supplier_questionnaire(
+        cls, email: str, requester_company: str, supplier_name: str, portal_url: str, valid_days: int = 90
+    ) -> bool:
+        """Questionnaire ESG envoyé à un fournisseur (sans compte ESGFlow requis)."""
+        body = f"""
+{_badge("Questionnaire ESG fournisseur", "#059669", "#d1fae5")}
+{_h1("Votre questionnaire ESG")}
+{_p(f"<strong>{requester_company}</strong> demande à <strong>{supplier_name}</strong> de renseigner un court questionnaire ESG (environnement, social, gouvernance).")}
+{_p("Une quinzaine de questions, dont quatre obligatoires. Aucun compte n'est nécessaire.")}
+{_btn("Répondre au questionnaire", portal_url, "#059669")}
+{_divider()}
+{_p(f"Ce lien est personnel et reste valable {valid_days} jours. Il cesse de fonctionner une fois le questionnaire envoyé.", "#64748b", "13px")}
+"""
+        return cls._send(
+            email,
+            f"{requester_company} vous invite à répondre à un questionnaire ESG",
+            _base_html("Questionnaire ESG", f"Questionnaire de {requester_company}", body),
+        )
+
+    @classmethod
     def send_user_invited(cls, email: str, inviter_name: str, company: str, invite_url: str) -> bool:
         body = f"""
 {_badge("Invitation ESGFlow 👋", "#7c3aed", "#ede9fe")}

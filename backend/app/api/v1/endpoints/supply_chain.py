@@ -14,7 +14,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_db, get_current_user
 from app.models.user import User
 from app.config import settings
-from app.services.supply_chain_service import SupplyChainService
+from app.services.supply_chain_service import (
+    PORTAL_VALID_DAYS,
+        SupplyChainService,
+    risk_level_from_score,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -49,6 +53,11 @@ class SupplierUpdate(BaseModel):
 
 class QuestionnaireRequest(BaseModel):
     recipient_email: Optional[str] = None
+
+
+class AssessmentSubmission(BaseModel):
+    """Évaluation saisie par l'utilisateur (sans passer par le portail fournisseur)."""
+    answers: Dict[str, Any]
 
 
 class PortalSubmission(BaseModel):
@@ -162,13 +171,13 @@ async def create_supplier(
             "contact_email": payload.contact_email,
             "employees": payload.employees,
             "spend_k_eur": payload.spend_k_eur,
-            "risk_level": "high",
+            "risk_level": "medium",
             "status": "pending",
             "global_score": 0.0,
             "env_score": 0.0,
             "social_score": 0.0,
             "gov_score": 0.0,
-            "flags": ["Évaluation en attente"],
+            "flags": [],
         },
     )
     return _supplier_to_dict(supplier)
@@ -184,6 +193,8 @@ async def update_supplier(
     """Update an existing supplier."""
     svc = SupplyChainService(db)
     update_data = payload.model_dump(exclude_none=True)
+    if "global_score" in update_data:
+        update_data["last_scored_at"] = datetime.utcnow()
     supplier = await svc.update_supplier(
         tenant_id=UUID(str(current_user.tenant_id)),
         supplier_id=UUID(supplier_id),
@@ -236,31 +247,70 @@ async def send_questionnaire(
         data={"status": "pending"},
     )
 
-    frontend_url = getattr(settings, "FRONTEND_URL", "https://greenconnect.cloud")
-    portal_url = f"{frontend_url}/supplier-portal/{token}"
+    portal_url = f"{settings.APP_URL.rstrip('/')}/supplier-portal/{token}"
 
-    # Optional email notification
-    recipient = payload.recipient_email or (supplier.contact_email if supplier else "")
-    sent_at = datetime.utcnow().isoformat()
+    recipient = (payload.recipient_email or (supplier.contact_email if supplier else "") or "").strip()
+    email_sent = False
     if recipient:
         try:
-            from app.tasks.email_tasks import send_user_invited_email
-            send_user_invited_email.delay(
+            from app.tasks.email_tasks import send_supplier_questionnaire_email
+            tenant_name = getattr(getattr(current_user, "tenant", None), "name", None)
+            send_supplier_questionnaire_email.delay(
                 email=recipient,
-                inviter_name=current_user.first_name or "ESGFlow",
-                company=supplier.name if supplier else "",
-                invite_url=portal_url,
+                requester_company=tenant_name or "Une entreprise cliente",
+                supplier_name=supplier.name if supplier else "",
+                portal_url=portal_url,
             )
-        except Exception as e:
+            email_sent = True
+        except Exception as e:  # noqa: BLE001
             logger.warning("Could not queue questionnaire email to %s: %s", recipient, e)
 
     return {
-        "status": "sent",
+        "status": "sent" if email_sent else "link_generated",
+        "email_sent": email_sent,
         "supplier_id": supplier_id,
         "recipient": recipient,
-        "sent_at": sent_at,
+        "sent_at": datetime.utcnow().isoformat(),
         "portal_url": portal_url,
+        "valid_days": PORTAL_VALID_DAYS,
     }
+
+
+@router.post("/suppliers/{supplier_id}/assessment")
+async def save_assessment(
+    supplier_id: str,
+    payload: AssessmentSubmission,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Enregistre une évaluation saisie en interne et en calcule les scores."""
+    svc = SupplyChainService(db)
+    missing = svc.missing_required(payload.answers)
+    if missing:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": "Questions obligatoires sans réponse", "missing": missing},
+        )
+    scores = svc.compute_esg_score(payload.answers)
+    now = datetime.utcnow()
+    supplier = await svc.update_supplier(
+        tenant_id=UUID(str(current_user.tenant_id)),
+        supplier_id=UUID(supplier_id),
+        data={
+            "questionnaire_data": payload.answers,
+            "questionnaire_completed_at": now,
+            "last_scored_at": now,
+            "status": "active",
+            "global_score": scores["global_score"],
+            "env_score": scores["env_score"],
+            "social_score": scores["social_score"],
+            "gov_score": scores["gov_score"],
+            "risk_level": risk_level_from_score(scores["global_score"]),
+        },
+    )
+    if supplier is None:
+        raise HTTPException(status_code=404, detail="Fournisseur introuvable")
+    return {"supplier": _supplier_to_dict(supplier), "scores": scores}
 
 
 # ─── Questionnaire catalog ────────────────────────────────────────────────────
@@ -306,6 +356,13 @@ async def submit_portal(
     if not supplier:
         raise HTTPException(status_code=404, detail="Lien invalide ou expiré")
 
+    missing = svc.missing_required(payload.answers)
+    if missing:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": "Questions obligatoires sans réponse", "missing": missing},
+        )
+
     scores = svc.compute_esg_score(payload.answers)
 
     await svc.update_supplier(
@@ -349,11 +406,7 @@ def _level_to_risk_label(level: str | None, fallback_score: float | None = None)
             return normalised
     # Fallback from global_score
     if fallback_score is not None:
-        s = float(fallback_score)
-        if s >= 75: return "Faible"
-        if s >= 55: return "Moyen"
-        if s >= 35: return "Élevé"
-        return "Critique"
+        return _level_to_risk_label(risk_level_from_score(float(fallback_score)))
     return "Moyen"
 
 
@@ -364,6 +417,8 @@ def _status_to_eval_label(status: str | None, last_scored_at, global_score) -> s
     timestamp; ``En cours`` if a questionnaire was sent but not finalised;
     ``Refus`` if explicitly rejected; ``Non évalué`` otherwise.
     """
+    if last_scored_at is not None:
+        return "Évalué"
     if status:
         s = status.lower().strip()
         if s in ("refused", "rejected", "refus"):
@@ -377,8 +432,16 @@ def _status_to_eval_label(status: str | None, last_scored_at, global_score) -> s
 
 def _supplier_to_dict(s) -> Dict[str, Any]:
     """Serialize a Supplier ORM instance to a plain dict for API responses."""
+    from datetime import timezone
+    expires = s.portal_token_expires_at
+    link_active = bool(
+        s.portal_token and expires is not None
+        and (expires if expires.tzinfo else expires.replace(tzinfo=timezone.utc)) > datetime.now(timezone.utc)
+    )
     risk_fr   = _level_to_risk_label(s.risk_level, s.global_score)
     status_fr = _status_to_eval_label(s.status, s.last_scored_at, s.global_score)
+    if status_fr == "En cours" and not link_active:
+        status_fr = "Non évalué"  # aucun questionnaire réellement en attente
     return {
         "id": str(s.id),
         "tenant_id": str(s.tenant_id),
@@ -404,6 +467,8 @@ def _supplier_to_dict(s) -> Dict[str, Any]:
         "flags":         s.flags or [],
         "questionnaire_data": s.questionnaire_data,
         "portal_token": s.portal_token,
+        "questionnaire_link_active": link_active,
+        "questionnaire_completed": s.questionnaire_completed_at is not None,
         "portal_token_expires_at": s.portal_token_expires_at.isoformat() if s.portal_token_expires_at else None,
         "questionnaire_completed_at": s.questionnaire_completed_at.isoformat() if s.questionnaire_completed_at else None,
         "last_scored_at": s.last_scored_at.isoformat() if s.last_scored_at else None,

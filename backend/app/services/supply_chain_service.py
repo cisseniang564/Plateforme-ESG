@@ -10,6 +10,34 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.supplier import Supplier
 
 
+PORTAL_VALID_DAYS = 90
+
+# Seuils uniques (score global 0-100 → niveau de risque), utilisés partout.
+RISK_THRESHOLDS = (("low", 70), ("medium", 50), ("high", 30))
+
+REQUIRED_QUESTION_IDS = ("scope1", "scope2", "headcount", "anticorruption")
+
+
+def risk_level_from_score(score: float) -> str:
+    """Niveau de risque DB (low/medium/high/critical) pour un score global."""
+    for level, minimum in RISK_THRESHOLDS:
+        if score >= minimum:
+            return level
+    return "critical"
+
+
+def _num(answers: Dict[str, Any], key: str, default: float) -> float:
+    """Valeur numérique d'une réponse ; ``default`` seulement si non renseignée
+    (un 0 saisi est une vraie réponse : 0 accident, 0 % de turnover…)."""
+    value = answers.get(key)
+    if value is None or value == "":
+        return default
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
 class SupplyChainService:
     """Service layer for supply chain supplier management.
 
@@ -78,7 +106,7 @@ class SupplyChainService:
     ) -> str:
         """Generate a unique portal token valid for 90 days."""
         token = secrets.token_urlsafe(48)
-        expires_at = datetime.now(timezone.utc) + timedelta(days=90)
+        expires_at = datetime.now(timezone.utc) + timedelta(days=PORTAL_VALID_DAYS)
 
         supplier = await self.get_supplier(tenant_id, supplier_id)
         if not supplier:
@@ -99,6 +127,14 @@ class SupplyChainService:
         )
         return result.scalar_one_or_none()
 
+    @staticmethod
+    def missing_required(answers: Dict[str, Any]) -> List[str]:
+        """Identifiants des questions obligatoires sans réponse."""
+        return [
+            q for q in REQUIRED_QUESTION_IDS
+            if answers.get(q) is None or answers.get(q) == ""
+        ]
+
     # ── ESG scoring ───────────────────────────────────────────────────────────
 
     def compute_esg_score(self, answers: Dict[str, Any]) -> Dict[str, float]:
@@ -111,11 +147,11 @@ class SupplyChainService:
         gov_pts = 0
 
         # ── Environmental (max 30 pts) ────────────────────────────────────────
-        renewable = float(answers.get("renewable_pct") or 0)
-        recycling = float(answers.get("recycling_pct") or 0)
-        scope1 = float(answers.get("scope1") or 0)
-        scope2 = float(answers.get("scope2") or 0)
-        headcount = max(float(answers.get("headcount") or 1), 1)
+        renewable = _num(answers, "renewable_pct", 0)
+        recycling = _num(answers, "recycling_pct", 0)
+        scope1 = _num(answers, "scope1", 0)
+        scope2 = _num(answers, "scope2", 0)
+        headcount = max(_num(answers, "headcount", 1), 1)
         emissions_per_fte = (scope1 + scope2) / headcount
 
         env_pts += 10 if renewable >= 50 else (6 if renewable >= 25 else 2)
@@ -124,10 +160,10 @@ class SupplyChainService:
         env_score = min(100, round(env_pts / 30 * 100))
 
         # ── Social (max 30 pts) ───────────────────────────────────────────────
-        women = float(answers.get("women_pct") or 0)
-        accident = float(answers.get("accident_rate") or 99)
-        training = float(answers.get("training_hours") or 0)
-        turnover = float(answers.get("turnover_pct") or 99)
+        women = _num(answers, "women_pct", 0)
+        accident = _num(answers, "accident_rate", 99)
+        training = _num(answers, "training_hours", 0)
+        turnover = _num(answers, "turnover_pct", 99)
 
         soc_pts += 10 if women >= 40 else (6 if women >= 30 else 2)
         soc_pts += 10 if accident < 2 else (6 if accident < 5 else 2)
@@ -139,19 +175,16 @@ class SupplyChainService:
         gov_pts += 12 if answers.get("anticorruption") in (True, "true", "oui", "yes", "1") else 0
         gov_pts += 10 if answers.get("supplier_code") in (True, "true", "oui", "yes", "1") else 0
         gov_pts += 8 if answers.get("iso14001") in (True, "true", "oui", "yes", "1") else 0
-        compliance = float(answers.get("compliance_pct") or 0)
+        compliance = _num(answers, "compliance_pct", 0)
         gov_pts += 6 if compliance >= 80 else (3 if compliance >= 50 else 0)
         incidents = str(answers.get("incidents") or "0")
         gov_pts -= 5 if incidents in ("3 ou plus", "3") else (2 if incidents == "2" else 0)
         gov_score = min(100, max(0, round(gov_pts / 36 * 100)))
 
         global_score = round(env_score * 0.4 + social_score * 0.35 + gov_score * 0.25)
-        risk = (
-            "Faible" if global_score >= 70
-            else ("Moyen" if global_score >= 50
-                  else ("Élevé" if global_score >= 30
-                        else "Critique"))
-        )
+        risk = {"low": "Faible", "medium": "Moyen", "high": "Élevé", "critical": "Critique"}[
+            risk_level_from_score(global_score)
+        ]
 
         return {
             "env_score": env_score,
