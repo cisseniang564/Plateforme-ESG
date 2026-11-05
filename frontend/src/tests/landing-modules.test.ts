@@ -3,7 +3,7 @@ import landing from '../pages/Landing/LandingPage.tsx?raw';
 
 // L'explorateur de modules est rangé par catégories : chaque module doit y figurer une fois.
 describe('landing : explorateur de modules par catégories', () => {
-  const modules = [...landing.matchAll(/^    id: '([a-z0-9]+)',\n    icon:/gm)].map(m => m[1]);
+  const modules = [...landing.matchAll(/^ {4}id: '([a-z0-9]+)',\n {4}icon:/gm)].map(m => m[1]);
   const block = landing.match(/const MODULE_CATEGORIES[\s\S]*?\n\];/)![0];
   const classed = [...block.matchAll(/modules: \[([^\]]*)\]/g)].flatMap(m => [...m[1].matchAll(/'([a-z0-9]+)'/g)].map(x => x[1]));
 
