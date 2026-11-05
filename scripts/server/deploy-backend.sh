@@ -51,8 +51,9 @@ REPLACED=1
 # on copie le nouveau code SANS écraser les fichiers de configuration locaux (.env…)
 # et SANS rien supprimer : des fichiers présents seulement sur le serveur peuvent servir à l'API.
 rsync -a --exclude='.env*' --exclude='__pycache__' --exclude='logs' --exclude='uploads' "$NEW/backend/" backend/
-"${COMPOSE[@]}" build backend
-"${COMPOSE[@]}" up -d --no-deps backend
+# le worker Celery et le planificateur embarquent le même code : on les reconstruit avec l'API
+"${COMPOSE[@]}" build backend celery_worker celery_beat
+"${COMPOSE[@]}" up -d --no-deps backend celery_worker celery_beat
 
 echo "5/6 Vérification"
 for i in $(seq 1 30); do
@@ -60,6 +61,9 @@ for i in $(seq 1 30); do
   sleep 2
 done
 docker exec "$CONTAINER" python3 -c "import app.main, pypdf; print('   API et lecteur PDF : OK')"
+sleep 8
+if [ "$(docker inspect -f '{{.State.Running}}' esgflow-celery_worker-1 2>/dev/null)" != true ] || docker logs esgflow-celery_worker-1 --tail 20 2>&1 | grep -q "Traceback"; then echo "!! Le worker Celery ne démarre pas : docker logs esgflow-celery_worker-1 --tail 40"; rollback; exit 1; fi
+echo "   worker Celery : OK"
 sleep 5
 site="$(curl -s -o /dev/null -w '%{http_code}' "$SITE/")"
 gaia="$(curl -s -o /dev/null -w '%{http_code}' "$SITE/api/v1/gaia/analyses")"
