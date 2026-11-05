@@ -1234,6 +1234,15 @@ function PreviewDataQuality() {
   );
 }
 
+/** Les 22 modules rangés par besoin : l'explorateur n'affiche qu'une catégorie à la fois. */
+const MODULE_CATEGORIES: { id: string; label: string; modules: string[] }[] = [
+  { id: 'pilotage', label: 'Pilotage', modules: ['dashboard', 'scores', 'benchmarking', 'smartalerts', 'risks'] },
+  { id: 'carbone', label: 'Carbone & chaîne de valeur', modules: ['scope3', 'decarb', 'supplychain', 'materiality'] },
+  { id: 'conformite', label: 'Conformité & reporting', modules: ['esrs', 'taxonomy', 'multistandard', 'csrdbuilder', 'compliance', 'audit'] },
+  { id: 'donnees', label: 'Collecte & qualité', modules: ['connectors', 'dataquality', 'validation', 'insee'] },
+  { id: 'ia', label: 'IA & intégrations', modules: ['ia', 'apiportal', 'webhooks'] },
+];
+
 const PREVIEWS: Record<string, () => JSX.Element> = {
   dashboard: PreviewDashboard,
   scope3: PreviewScope3,
@@ -1315,7 +1324,8 @@ export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
   const [scrolled, setScrolled] = useState(false);
-  const [activeModule, setActiveModule] = useState(0);
+  const [activeModule, setActiveModule] = useState(0);   // explorateur de modules (change au clic uniquement)
+  const [heroModule, setHeroModule] = useState(0);         // aperçu du hero (défile seul)
   const [autoPlay, setAutoPlay] = useState(true);
   const [roiEmployees, setRoiEmployees] = useState(150);
   const [roiHoursMonth, setRoiHoursMonth] = useState(120);
@@ -1333,10 +1343,14 @@ export default function LandingPage() {
   }, []);
 
   useInterval(() => {
-    if (autoPlay) setActiveModule(m => (m + 1) % MODULES.length);
+    if (autoPlay) setHeroModule(m => (m + 1) % MODULES.length);
   }, autoPlay ? 3500 : null);
 
-  const mod = MODULES[activeModule];
+  const mod = MODULES[heroModule];
+  const activeCategory = MODULE_CATEGORIES.find(c => c.modules.includes(MODULES[activeModule].id)) ?? MODULE_CATEGORIES[0];
+  const categoryModules = activeCategory.modules
+    .map(id => ({ m: MODULES[MODULES.findIndex(x => x.id === id)], i: MODULES.findIndex(x => x.id === id) }))
+    .filter(x => x.i >= 0);
   const PreviewComp = PREVIEWS[mod.preview];
 
   const scrollTo = (id: string) => {
@@ -1438,7 +1452,7 @@ export default function LandingPage() {
   const openModule = (moduleId: string) => {
     const i = MODULES.findIndex(m => m.id === moduleId);
     scrollTo('modules');
-    if (i >= 0) { setActiveModule(i); setAutoPlay(false); }
+    if (i >= 0) setActiveModule(i);
   };
 
   return (
@@ -1683,14 +1697,14 @@ export default function LandingPage() {
                     {MODULES.slice(0, 5).map((m, i) => (
                       <button
                         key={i}
-                        onClick={() => { setActiveModule(i); setAutoPlay(false); }}
+                        onClick={() => { setHeroModule(i); setAutoPlay(false); }}
                         className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-t-lg text-[11px] font-semibold whitespace-nowrap transition-colors flex-shrink-0 -mb-px ${
-                          activeModule === i
+                          heroModule === i
                             ? 'bg-[#0f1117] text-white border border-b-[#0f1117] border-white/[0.08]'
                             : 'text-slate-500 hover:text-slate-300'
                         }`}
                       >
-                        <m.icon className="h-3 w-3" style={{ color: activeModule === i ? m.color : undefined }} />
+                        <m.icon className="h-3 w-3" style={{ color: heroModule === i ? m.color : undefined }} />
                         {tMod(m, 'name').split(' ')[0]}
                       </button>
                     ))}
@@ -1705,9 +1719,9 @@ export default function LandingPage() {
                   <div className="flex items-center gap-2 px-3 py-2 bg-[#141720] border-t border-white/[0.05]">
                     <div className="flex gap-0.5 flex-1">
                       {MODULES.map((_, i) => (
-                        <div key={i} onClick={() => { setActiveModule(i); setAutoPlay(false); }}
+                        <div key={i} onClick={() => { setHeroModule(i); setAutoPlay(false); }}
                           className="h-0.5 rounded-full flex-1 cursor-pointer transition-all"
-                          style={{ background: i === activeModule ? '#10b981' : 'rgba(255,255,255,0.12)' }}
+                          style={{ background: i === heroModule ? '#10b981' : 'rgba(255,255,255,0.12)' }}
                         />
                       ))}
                     </div>
@@ -1880,14 +1894,31 @@ export default function LandingPage() {
             <p className="text-lg text-gray-500 max-w-2xl mx-auto">{t('landing.lp.modulesSection.subtitle', 'Chaque module est conçu pour répondre à un besoin précis — et ils fonctionnent tous ensemble.')}</p>
           </div>
 
+          {/* Onglets par catégorie */}
+          <div role="tablist" aria-label={t('landing.lp.modulesSection.tabsLabel', 'Catégories de modules')}
+            className="flex gap-2 overflow-x-auto pb-2 mb-8 sm:justify-center [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {MODULE_CATEGORIES.map(c => {
+              const on = c.id === activeCategory.id;
+              return (
+                <button key={c.id} role="tab" aria-selected={on}
+                  onClick={() => { const first = MODULES.findIndex(m => m.id === c.modules[0]); if (first >= 0) { setActiveModule(first); } }}
+                  className={`flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border transition-all ${on ? 'bg-gray-900 text-white border-gray-900 shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
+                >
+                  {t(`landing.lp.modulesSection.cat.${c.id}`, c.label)}
+                  <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${on ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>{c.modules.length}</span>
+                </button>
+              );
+            })}
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-            {/* Module list */}
-            <div className="lg:col-span-2 space-y-2">
-              {MODULES.map((m, i) => (
+            {/* Modules de la catégorie */}
+            <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
+              {categoryModules.map(({ m, i }) => (
                 <button
-                  key={i}
-                  onClick={() => { setActiveModule(i); setAutoPlay(false); }}
-                  className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left transition-all border-2 ${activeModule === i ? `border-transparent ${m.lightBg} shadow-md` : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'}`}
+                  key={m.id}
+                  onClick={() => setActiveModule(i)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all border-2 ${activeModule === i ? `border-transparent ${m.lightBg} shadow-md` : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'}`}
                 >
                   <div className={`w-10 h-10 ${activeModule === i ? m.bg : 'bg-gray-100'} rounded-xl flex items-center justify-center flex-shrink-0 transition-colors`}>
                     <m.icon className={`h-5 w-5 ${activeModule === i ? 'text-white' : 'text-gray-400'}`} />
@@ -1905,9 +1936,12 @@ export default function LandingPage() {
             <div className="lg:col-span-3">
               <div className={`rounded-3xl border-2 ${MODULES[activeModule].lightBg} overflow-hidden`} style={{ borderColor: MODULES[activeModule].color + '30' }}>
                 {/* Dark preview */}
-                <div className="bg-slate-900 rounded-2xl m-4 overflow-hidden">
+                <div className="bg-slate-900 rounded-2xl mx-4 mt-4 overflow-hidden">
                   {PREVIEWS[MODULES[activeModule].preview] && (() => { const P = PREVIEWS[MODULES[activeModule].preview]; return <P />; })()}
                 </div>
+                <p className="px-6 pt-2 pb-3 text-right text-[11px] text-gray-400">
+                  {t('landing.lp.modulesSection.illustrative', 'Aperçu illustratif · données fictives')}
+                </p>
 
                 {/* Info */}
                 <div className="px-6 pb-6">

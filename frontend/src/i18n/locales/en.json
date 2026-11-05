@@ -6550,7 +6550,16 @@
         "title": "22 modules. One single platform.",
         "subtitle": "Each module is built to address a specific need — and they all work together.",
         "discover": "Explore this module",
-        "learnMore": "Learn more"
+        "learnMore": "Learn more",
+        "tabsLabel": "Module categories",
+        "illustrative": "Illustrative preview · sample data",
+        "cat": {
+          "pilotage": "Steering",
+          "carbone": "Carbon & value chain",
+          "conformite": "Compliance & reporting",
+          "donnees": "Data collection & quality",
+          "ia": "AI & integrations"
+        }
       },
       "modules": {
         "dashboard": {
