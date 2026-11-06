@@ -62,8 +62,18 @@ class SupplyChainService:
         supplier = Supplier(tenant_id=tenant_id, **data)
         self.db.add(supplier)
         await self.db.commit()
-        await self.db.refresh(supplier)
-        return supplier
+        # Après commit l'instance est expirée : on la relit par un SELECT complet
+        # (refresh() laissait des attributs non chargés → MissingGreenlet à la
+        # sérialisation, d'où l'erreur « interne » au 1er clic).
+        return await self._reload(tenant_id, supplier.id, supplier)
+
+    async def _reload(self, tenant_id: UUID, supplier_id: UUID, fallback: Supplier) -> Supplier:
+        result = await self.db.execute(
+            select(Supplier)
+            .where(Supplier.id == supplier_id, Supplier.tenant_id == tenant_id)
+            .execution_options(populate_existing=True)
+        )
+        return result.scalar_one_or_none() or fallback
 
     async def get_supplier(
         self, tenant_id: UUID, supplier_id: UUID
@@ -87,8 +97,7 @@ class SupplyChainService:
         for key, value in data.items():
             setattr(supplier, key, value)
         await self.db.commit()
-        await self.db.refresh(supplier)
-        return supplier
+        return await self._reload(tenant_id, supplier_id, supplier)
 
     async def delete_supplier(self, tenant_id: UUID, supplier_id: UUID) -> bool:
         """Delete a supplier. Returns False if not found."""
