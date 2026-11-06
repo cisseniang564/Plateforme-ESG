@@ -3,6 +3,7 @@ Database session management.
 """
 import logging
 import os
+import sys
 from typing import AsyncGenerator
 
 from fastapi import Request
@@ -62,16 +63,29 @@ class SafeAsyncSession(AsyncSession):
                     pass
             return instance
 
+# Un worker Celery lance une boucle asyncio par tâche : un pool de connexions asyncpg
+# partagé serait réutilisé depuis une autre boucle (« attached to a different loop »).
+# Dans le worker (et les tests) on ouvre donc une connexion par usage, sans pool.
+_IS_CELERY_WORKER = os.path.basename(sys.argv[0] or "") == "celery"
+_USE_NULLPOOL = settings.APP_ENV == "test" or _IS_CELERY_WORKER
+
+_pool_args = (
+    {"poolclass": NullPool}
+    if _USE_NULLPOOL
+    else {
+        "pool_size": settings.DATABASE_POOL_SIZE,
+        "max_overflow": settings.DATABASE_MAX_OVERFLOW,
+        "pool_timeout": settings.DATABASE_POOL_TIMEOUT,
+        "pool_recycle": settings.DATABASE_POOL_RECYCLE,
+    }
+)
+
 # Create async engine
 engine = create_async_engine(
     str(settings.DATABASE_URL),
     echo=settings.APP_DEBUG,
-    pool_size=settings.DATABASE_POOL_SIZE,
-    max_overflow=settings.DATABASE_MAX_OVERFLOW,
-    pool_timeout=settings.DATABASE_POOL_TIMEOUT,
-    pool_recycle=settings.DATABASE_POOL_RECYCLE,
     pool_pre_ping=True,
-    poolclass=NullPool if settings.APP_ENV == "test" else None,
+    **_pool_args,
 )
 
 # Async session factory — uses SafeAsyncSession so a failed refresh() doesn't
