@@ -254,7 +254,15 @@ async def send_questionnaire(
     if recipient:
         try:
             from app.tasks.email_tasks import send_supplier_questionnaire_email
-            tenant_name = getattr(getattr(current_user, "tenant", None), "name", None)
+            tenant_name = None
+            try:
+                from sqlalchemy import select
+                from app.models.tenant import Tenant
+                tenant_name = (
+                    await db.execute(select(Tenant.name).where(Tenant.id == tenant_id))
+                ).scalar_one_or_none()
+            except Exception:  # noqa: BLE001  (le nom est cosmétique : on envoie quand même)
+                logger.warning("Could not read tenant name for questionnaire email", exc_info=True)
             send_supplier_questionnaire_email.delay(
                 email=recipient,
                 requester_company=tenant_name or "Une entreprise cliente",

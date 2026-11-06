@@ -83,3 +83,13 @@ def test_zero_is_a_real_answer():
     zero = svc.compute_esg_score({**base, "accident_rate": 0, "turnover_pct": 0})
     missing = svc.compute_esg_score(base)
     assert zero["social_score"] > missing["social_score"]
+
+
+def test_email_endpoint_does_not_lazy_load_tenant():
+    """`current_user.tenant` déclenche un lazy-load async (greenlet_spawn) : l'email n'était jamais mis en file."""
+    import inspect
+    from app.api.v1.endpoints import supply_chain
+
+    src = inspect.getsource(supply_chain.send_questionnaire)
+    assert 'current_user, "tenant"' not in src
+    assert "select(Tenant.name)" in src
