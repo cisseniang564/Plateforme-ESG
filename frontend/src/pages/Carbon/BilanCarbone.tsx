@@ -7,7 +7,7 @@ import {
   Flame, Zap, Package, Truck, Trash2, Briefcase, Users, Home,
   ArrowDownRight, Settings, ShoppingBag, BarChart3, Leaf, Download,
   AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronUp,
-  Sparkles, Info, RefreshCw, TrendingDown, TrendingUp, Target,
+  Info, RefreshCw, TrendingUp, Target,
   Calendar, Activity, Upload,
 } from 'lucide-react';
 
@@ -24,7 +24,6 @@ interface Scope3Category {
   placeholder: string;
   tooltip: string;
   value: number | null;
-  aiEstimate: number | null;
   hex: string;     // main hex color (inline styles — no Tailwind purging)
   softHex: string; // light bg hex
   borderHex: string;
@@ -56,105 +55,105 @@ const initialCategories: Scope3Category[] = [
     description: 'Émissions liées à la production des biens et services achetés par l\'entreprise (matières premières, fournitures, sous-traitance...)',
     icon: ShoppingBag, ademe_factor: 0.85, ademe_unit: 'kgCO₂e/€ d\'achats',
     placeholder: 'ex : 1 250', tooltip: 'Source : Base Empreinte® ADEME — Facteur moyen tous secteurs confondus',
-    value: null, aiEstimate: 1280, ...CAT_COLORS[1],
+    value: null, ...CAT_COLORS[1],
   },
   {
     id: 2, num: 'Cat. 2', name: 'Biens d\'équipement (immobilisations)', upstream: true,
     description: 'Émissions associées à la fabrication des biens d\'équipements utilisés (machines, bâtiments, véhicules...)',
     icon: Settings, ademe_factor: 1.2, ademe_unit: 'kgCO₂e/€ d\'immobilisations',
     placeholder: 'ex : 340', tooltip: 'Source : Base Empreinte® ADEME — Secteur équipements industriels',
-    value: null, aiEstimate: 340, ...CAT_COLORS[2],
+    value: null, ...CAT_COLORS[2],
   },
   {
     id: 3, num: 'Cat. 3', name: 'Activités liées à l\'énergie', upstream: true,
     description: 'Émissions en amont de la production d\'énergie (extraction, raffinage, transport du gaz/fioul), non incluses en Scope 1 & 2',
     icon: Zap, ademe_factor: 0.084, ademe_unit: 'kgCO₂e/kWh énergie',
     placeholder: 'ex : 45', tooltip: 'Source : ADEME / RTE — Facteur résidu réseau électrique français',
-    value: null, aiEstimate: 48, ...CAT_COLORS[3],
+    value: null, ...CAT_COLORS[3],
   },
   {
     id: 4, num: 'Cat. 4', name: 'Transport & distribution amont', upstream: true,
     description: 'Transport des matières premières et marchandises vers l\'entreprise (fret routier, maritime, aérien, ferroviaire)',
     icon: Truck, ademe_factor: 0.089, ademe_unit: 'kgCO₂e/tonne.km',
     placeholder: 'ex : 180', tooltip: 'Source : Base Empreinte® ADEME — Poids lourd <26t, gazole Euro VI',
-    value: null, aiEstimate: 195, ...CAT_COLORS[4],
+    value: null, ...CAT_COLORS[4],
   },
   {
     id: 5, num: 'Cat. 5', name: 'Déchets générés par l\'exploitation', upstream: true,
     description: 'Traitement des déchets produits par les opérations internes (déchets ménagers, industriels, dangereux...)',
     icon: Trash2, ademe_factor: 0.449, ademe_unit: 'kgCO₂e/tonne de déchets',
     placeholder: 'ex : 22', tooltip: 'Source : ADEME — Enfouissement centre de stockage déchets ménagers',
-    value: null, aiEstimate: 18, ...CAT_COLORS[5],
+    value: null, ...CAT_COLORS[5],
   },
   {
     id: 6, num: 'Cat. 6', name: 'Déplacements professionnels', upstream: true,
     description: 'Voyages d\'affaires (avion, train, voiture de location, taxi) effectués par les employés',
     icon: Briefcase, ademe_factor: 0.186, ademe_unit: 'kgCO₂e/km (avion court-courrier)',
     placeholder: 'ex : 95', tooltip: 'Source : ADEME — Avion court-courrier classe éco, incluant traînées condensation ×2',
-    value: null, aiEstimate: 88, ...CAT_COLORS[6],
+    value: null, ...CAT_COLORS[6],
   },
   {
     id: 7, num: 'Cat. 7', name: 'Trajets domicile-travail', upstream: true,
     description: 'Émissions des déplacements quotidiens des salariés entre leur domicile et leur lieu de travail',
     icon: Users, ademe_factor: 0.218, ademe_unit: 'kgCO₂e/km (voiture thermique moy.)',
     placeholder: 'ex : 140', tooltip: 'Source : ADEME — Véhicule particulier thermique moyen France 2023',
-    value: null, aiEstimate: 152, ...CAT_COLORS[7],
+    value: null, ...CAT_COLORS[7],
   },
   {
     id: 8, num: 'Cat. 8', name: 'Actifs en leasing (amont)', upstream: true,
     description: 'Émissions opérationnelles des biens loués par l\'entreprise (immeubles, équipements, véhicules de fonction)',
     icon: Home, ademe_factor: 0.025, ademe_unit: 'kgCO₂e/m².an (bâtiment RT2012)',
     placeholder: 'ex : 35', tooltip: 'Source : ADEME — Bâtiment tertiaire chauffage gaz, norme RT2012',
-    value: null, aiEstimate: 32, ...CAT_COLORS[8],
+    value: null, ...CAT_COLORS[8],
   },
   {
     id: 9, num: 'Cat. 9', name: 'Transport & distribution aval', upstream: false,
     description: 'Transport des produits vendus vers les clients finaux (fret et logistique aval)',
     icon: ArrowDownRight, ademe_factor: 0.089, ademe_unit: 'kgCO₂e/tonne.km',
     placeholder: 'ex : 210', tooltip: 'Source : Base Empreinte® ADEME — Poids lourd <26t, gazole Euro VI',
-    value: null, aiEstimate: 220, ...CAT_COLORS[9],
+    value: null, ...CAT_COLORS[9],
   },
   {
     id: 10, num: 'Cat. 10', name: 'Traitement des produits vendus', upstream: false,
     description: 'Traitement et transformation des produits intermédiaires vendus par des tiers avant usage final',
     icon: Settings, ademe_factor: 0.5, ademe_unit: 'kgCO₂e/tonne transformée',
     placeholder: 'ex : 65', tooltip: 'Source : Estimation GHG Protocol — Processus de transformation standard',
-    value: null, aiEstimate: null, ...CAT_COLORS[10],
+    value: null, ...CAT_COLORS[10],
   },
   {
     id: 11, num: 'Cat. 11', name: 'Utilisation des produits vendus', upstream: false,
     description: 'Émissions générées lors de l\'utilisation des produits par les clients (électricité consommée, carburant, etc.)',
     icon: Flame, ademe_factor: 2.37, ademe_unit: 'kgCO₂e/litre carburant utilisé',
     placeholder: 'ex : 4 200', tooltip: 'Source : ADEME — Gazole usage, facteur CO₂ seul (hors ACV)',
-    value: null, aiEstimate: null, ...CAT_COLORS[11],
+    value: null, ...CAT_COLORS[11],
   },
   {
     id: 12, num: 'Cat. 12', name: 'Fin de vie des produits vendus', upstream: false,
     description: 'Traitement en fin de vie des produits vendus (recyclage, enfouissement, incinération)',
     icon: Trash2, ademe_factor: 0.449, ademe_unit: 'kgCO₂e/tonne en fin de vie',
     placeholder: 'ex : 80', tooltip: 'Source : ADEME — Mix de traitement déchets ménagers France',
-    value: null, aiEstimate: null, ...CAT_COLORS[12],
+    value: null, ...CAT_COLORS[12],
   },
   {
     id: 13, num: 'Cat. 13', name: 'Actifs en leasing (aval)', upstream: false,
     description: 'Émissions des biens loués par l\'entreprise à d\'autres entités (locataires, clients)',
     icon: Package, ademe_factor: 0.025, ademe_unit: 'kgCO₂e/m².an',
     placeholder: 'ex : 15', tooltip: 'Source : ADEME — Bâtiment tertiaire chauffage gaz, norme RT2012',
-    value: null, aiEstimate: null, ...CAT_COLORS[13],
+    value: null, ...CAT_COLORS[13],
   },
   {
     id: 14, num: 'Cat. 14', name: 'Franchises', upstream: false,
     description: 'Émissions opérationnelles des franchisés (non consolidées dans le Scope 1 & 2 de la maison mère)',
     icon: BarChart3, ademe_factor: 0.85, ademe_unit: 'kgCO₂e/€ d\'achats franchisés',
     placeholder: 'ex : 520', tooltip: 'Source : Estimation GHG Protocol — Calquée sur Scope 1+2 moyen des franchisés',
-    value: null, aiEstimate: null, ...CAT_COLORS[14],
+    value: null, ...CAT_COLORS[14],
   },
   {
     id: 15, num: 'Cat. 15', name: 'Investissements', upstream: false,
     description: 'Émissions des participations financières, prêts et investissements en capital (financed emissions)',
     icon: TrendingUp, ademe_factor: 0.3, ademe_unit: 'kgCO₂e/k€ investi',
     placeholder: 'ex : 280', tooltip: 'Source : PCAF Standard — Financed Emissions Equity & Bonds (pondéré par intensité)',
-    value: null, aiEstimate: null, ...CAT_COLORS[15],
+    value: null, ...CAT_COLORS[15],
   },
 ];
 
@@ -314,14 +313,25 @@ export default function BilanCarbone() {
   const [activeTab, setActiveTab] = useState<'overview' | 'scope3' | 'decomposition' | 'sankey'>('overview');
   const [showUpstream, setShowUpstream] = useState(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [applyingAI, setApplyingAI] = useState<number | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [savingS12, setSavingS12] = useState(false);
   const [hasRealData, setHasRealData] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // ── Load real data from backend ───────────────────────────────────────────────
   useEffect(() => {
+    let cancelled = false;
+    // Repart d'une page vierge à chaque changement d'exercice (sinon les valeurs
+    // de l'année précédente restent affichées sous la nouvelle année).
+    setCategories(initialCategories);
+    setScope1(0);
+    setScope2(0);
+    setHasRealData(false);
+    setLoadError(false);
     api.get('/carbon/scope-summary', { params: { year } })
       .then(res => {
+        if (cancelled) return;
         const d = res.data;
         const s1 = d?.scope1?.total_tco2e ?? 0;
         const s2 = d?.scope2?.total_tco2e ?? 0;
@@ -335,22 +345,23 @@ export default function BilanCarbone() {
           }));
         }
       })
-      .catch(() => {});
-  }, [year]);
+      .catch(() => { if (!cancelled) setLoadError(true); });
+    return () => { cancelled = true; };
+  }, [year, reloadKey]);
 
   // ── Derived values ─────────────────────────────────────────────────────────────
   const scope3Total = useMemo(() => categories.reduce((acc, c) => acc + (c.value ?? 0), 0), [categories]);
   const grandTotal = scope1 + scope2 + scope3Total;
   const completedCount = categories.filter(c => c.value !== null).length;
-  const aiAvailable = categories.filter(c => c.value === null && c.aiEstimate !== null).length;
   const completenessRate = Math.round((completedCount / 15) * 100);
 
-  // SBTi 1.5°C target (−42% from current)
-  const sbtiTarget2030 = grandTotal > 0 ? Math.round(grandTotal * 0.58) : 0;
-  const requiredReduction = grandTotal > 0 ? grandTotal - sbtiTarget2030 : 0;
-  // Simplified on-track heuristic: scope3 < 80% of total (good practice)
+  // Repère SBTi (trajectoire 1,5 °C) : −4,2 %/an sur les Scopes 1+2, linéaire
+  // jusqu'en 2030. Repère méthodologique, pas un engagement validé.
   const scope3Pct = grandTotal > 0 ? (scope3Total / grandTotal) * 100 : 0;
-  const onTrack = scope3Pct < 80 && grandTotal > 0;
+  const scope12 = scope1 + scope2;
+  const yearsTo2030 = Math.max(0, 2030 - year);
+  const sbtiTarget2030 = Math.round(scope12 * Math.max(0, 1 - 0.042 * yearsTo2030));
+  const requiredReduction = Math.max(0, scope12 - sbtiTarget2030);
 
   // Donut parts
   const donutParts = grandTotal > 0 ? [
@@ -365,19 +376,6 @@ export default function BilanCarbone() {
   const updateValue = (id: number, raw: string) => {
     const num = parseFloat(raw.replace(/\s/g, '').replace(',', '.'));
     setCategories(prev => prev.map(c => c.id === id ? { ...c, value: isNaN(num) ? null : num } : c));
-  };
-
-  const applyAI = (id: number) => {
-    setApplyingAI(id);
-    setTimeout(() => {
-      setCategories(prev => prev.map(c => c.id === id && c.aiEstimate !== null ? { ...c, value: c.aiEstimate } : c));
-      setApplyingAI(null);
-    }, 600);
-  };
-
-  const applyAllAI = () => {
-    setCategories(prev => prev.map(c => (c.value === null && c.aiEstimate !== null) ? { ...c, value: c.aiEstimate } : c));
-    toast.success(t('carbon.toastAIFilled', '{{n}} catégorie(s) remplies par les estimations IA', { n: aiAvailable }));
   };
 
   const saveScope3 = async () => {
@@ -401,6 +399,19 @@ export default function BilanCarbone() {
     }
   };
 
+  const saveScope12 = async () => {
+    setSavingS12(true);
+    try {
+      await api.post('/carbon/save-scope12', { year, scope1, scope2 });
+      toast.success(t('carbon.toastScope12Saved', 'Scope 1 et 2 enregistrés pour {{year}}', { year }));
+      setHasRealData(scope1 > 0 || scope2 > 0 || scope3Total > 0);
+    } catch {
+      toast.error(t('carbon.toastSaveError', 'Erreur lors de la sauvegarde. Réessayez.'));
+    } finally {
+      setSavingS12(false);
+    }
+  };
+
   const exportCSV = () => {
     const header = ['Catégorie', 'Nom', 'Type', 'tCO₂e', 'Statut', 'Facteur ADEME', 'Unité'];
     const rows = categories.map(c => [
@@ -408,7 +419,12 @@ export default function BilanCarbone() {
       c.value ?? '', c.value !== null ? 'Complété' : 'Non renseigné',
       c.ademe_factor, c.ademe_unit,
     ]);
-    const csv = [header, ...rows].map(r => r.join(';')).join('\n');
+    const esc = (v: unknown) => {
+      let x = String(v ?? '');
+      if (/^[=+\-@]/.test(x)) x = "'" + x; // neutralise l'injection de formule Excel
+      return /[";\n]/.test(x) ? `"${x.replace(/"/g, '""')}"` : x;
+    };
+    const csv = [header, ...rows].map(r => r.map(esc).join(';')).join('\n');
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -457,7 +473,7 @@ export default function BilanCarbone() {
                 {[
                   { label: t('carbon.pillTotal', 'Total {{val}} tCO₂e', { val: fmt(grandTotal) }), bg: 'rgba(255,255,255,0.15)', text: 'white' },
                   { label: t('carbon.pillScope3Count', 'Scope 3 : {{n}}/15 cat.', { n: completedCount }), bg: grandTotal > 0 ? '#bbf7d0' : 'rgba(255,255,255,0.15)', text: grandTotal > 0 ? '#166534' : 'white' },
-                  { label: hasRealData ? t('carbon.pillRealData', 'Données réelles {{year}}', { year }) : t('carbon.pillEstimates', 'Estimations {{year}}', { year }), bg: hasRealData ? '#a7f3d0' : 'rgba(255,255,255,0.12)', text: hasRealData ? '#065f46' : 'white' },
+                  { label: hasRealData ? t('carbon.pillRealData', 'Données saisies {{year}}', { year }) : t('carbon.pillEmpty', 'Aucune donnée {{year}}', { year }), bg: hasRealData ? '#a7f3d0' : 'rgba(255,255,255,0.12)', text: hasRealData ? '#065f46' : 'white' },
                 ].map(p => (
                   <div key={p.label} className="px-3 py-1.5 rounded-full text-xs font-semibold"
                     style={{ backgroundColor: p.bg, color: p.text }}>
@@ -491,14 +507,6 @@ export default function BilanCarbone() {
                   <Upload className="h-4 w-4" />
                   {t('carbon.importFEC', 'Import FEC')}
                 </button>
-                {aiAvailable > 0 && (
-                  <button onClick={applyAllAI}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors"
-                    style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.25)' }}>
-                    <Sparkles className="h-4 w-4" />
-                    {t('carbon.aiBtn', 'IA ({{n}})', { n: aiAvailable })}
-                  </button>
-                )}
                 <button onClick={exportCSV}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors"
                   style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.25)' }}>
@@ -552,6 +560,15 @@ export default function BilanCarbone() {
           </div>
         </div>
       </div>
+
+      {loadError && (
+        <div role="alert" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm"
+          style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b' }}>
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+          <span className="flex-1">{t('carbon.loadError', 'Impossible de charger vos données {{year}}. Ce que vous voyez peut être incomplet.', { year })}</span>
+          <button onClick={() => setReloadKey(k => k + 1)} className="font-semibold underline">{t('carbon.retry', 'Réessayer')}</button>
+        </div>
+      )}
 
       {/* ── Data banner ───────────────────────────────────────────────────────── */}
       {hasRealData && (
@@ -650,57 +667,47 @@ export default function BilanCarbone() {
                 </div>
               ))}
 
-              {/* Benchmark note */}
-              <div className="p-3 rounded-xl flex items-start gap-2.5" style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a' }}>
-                <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: '#d97706' }} />
-                <p className="text-xs" style={{ color: '#92400e' }}>
-                  <strong>{t('carbon.benchmarkLabel', 'Benchmark sectoriel :')}</strong> {t('carbon.benchmarkNote', 'Le Scope 3 représente en moyenne 78% des émissions totales des entreprises. Vos émissions Scope 3 représentent actuellement {{pct}}%.', { pct: grandTotal > 0 ? scope3Pct.toFixed(0) : 0 })}
-                </p>
-              </div>
+              <button onClick={saveScope12} disabled={savingS12}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-60"
+                style={{ backgroundColor: '#059669' }}>
+                {savingS12 ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                {t('carbon.saveScope12', 'Enregistrer Scope 1 & 2')}
+              </button>
             </div>
           </div>
 
-          {/* SBTi Trajectory */}
-          {grandTotal > 0 && (
+          {/* Repère SBTi */}
+          {scope12 > 0 && (
             <div className="rounded-2xl border p-6" style={{ background: 'linear-gradient(135deg, #ecfdf5, #f0fdf4)', borderColor: '#a7f3d0' }}>
               <div className="flex items-center gap-2 mb-5">
                 <Target className="h-5 w-5" style={{ color: '#059669' }} />
-                <h3 className="text-base font-bold text-gray-900">{t('carbon.sbtiTitle', 'Trajectoire de réduction — SBTi 1,5°C')}</h3>
-                <span className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full"
-                  style={{ backgroundColor: onTrack ? '#dcfce7' : '#fef3c7', color: onTrack ? '#166534' : '#92400e' }}>
-                  {onTrack ? t('carbon.onTrack', '✓ Sur la bonne trajectoire') : t('carbon.offTrack', '⚠ Efforts supplémentaires requis')}
+                <h3 className="text-base font-bold text-gray-900">{t('carbon.sbtiTitle', 'Repère de réduction — trajectoire 1,5 °C')}</h3>
+                <span className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
+                  {t('carbon.sbtiIndicative', 'Indicatif')}
                 </span>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                 {[
-                  { label: t('carbon.sbtiCurrent', 'Empreinte actuelle'), value: fmt(grandTotal), unit: 'tCO₂e/an', color: '#374151', soft: '#f9fafb', border: '#e5e7eb' },
-                  { label: t('carbon.sbtiTarget', 'Objectif SBTi 2030'), value: fmt(sbtiTarget2030), unit: t('carbon.sbtiTargetUnit', '−42% vs aujourd\'hui'), color: '#059669', soft: '#ecfdf5', border: '#a7f3d0' },
-                  { label: t('carbon.sbtiReduction', 'Réduction à réaliser'), value: fmt(requiredReduction), unit: t('carbon.sbtiReductionUnit', "tCO₂e à éliminer d'ici 2030"), color: onTrack ? '#059669' : '#d97706', soft: onTrack ? '#ecfdf5' : '#fffbeb', border: onTrack ? '#a7f3d0' : '#fde68a' },
-                ].map(s => (
-                  <div key={s.label} className="rounded-xl p-4 text-center" style={{ backgroundColor: s.soft, border: `1px solid ${s.border}` }}>
-                    <p className="text-xs text-gray-500 mb-1">{s.label}</p>
-                    <p className="text-2xl font-bold tabular-nums" style={{ color: s.color }}>{s.value}</p>
-                    <p className="text-xs mt-0.5" style={{ color: s.color }}>{s.unit}</p>
+                  { label: t('carbon.sbtiCurrent', 'Scopes 1+2 {{year}}', { year }), value: fmt(scope12), unit: 'tCO₂e/an', color: '#374151', soft: '#f9fafb', border: '#e5e7eb' },
+                  { label: t('carbon.sbtiTarget', 'Repère 2030 (Scopes 1+2)'), value: fmt(sbtiTarget2030), unit: 'tCO₂e/an', color: '#059669', soft: '#ecfdf5', border: '#a7f3d0' },
+                  { label: t('carbon.sbtiReduction', 'Réduction correspondante'), value: fmt(requiredReduction), unit: 'tCO₂e/an', color: '#d97706', soft: '#fffbeb', border: '#fde68a' },
+                ].map(c => (
+                  <div key={c.label} className="rounded-xl p-4 text-center" style={{ backgroundColor: c.soft, border: `1px solid ${c.border}` }}>
+                    <p className="text-xs text-gray-500 mb-1">{c.label}</p>
+                    <p className="text-2xl font-bold tabular-nums" style={{ color: c.color }}>{c.value}</p>
+                    <p className="text-xs mt-0.5" style={{ color: c.color }}>{c.unit}</p>
                   </div>
                 ))}
               </div>
-
-              {/* Progress bar */}
-              <div>
-                <div className="flex justify-between text-xs text-gray-500 mb-1.5">
-                  <span>{t('carbon.sbtiProgress', "Progression vers l'objectif 2030")}</span>
-                  <span className="font-bold" style={{ color: '#059669' }}>{t('carbon.sbtiProgressBaseline', 'Baseline établie — démarrez les réductions')}</span>
-                </div>
-                <div className="h-3 rounded-full overflow-hidden" style={{ backgroundColor: '#d1fae5' }}>
-                  <div className="h-3 rounded-full transition-all duration-700"
-                    style={{ width: '5%', background: 'linear-gradient(90deg, #059669, #10b981)' }} />
-                </div>
-                <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
-                  <Info className="h-3.5 w-3.5 flex-shrink-0" />
-                  {t('carbon.sbtiNote', "Science-Based Targets initiative (SBTi) — trajectoire 1,5°C, réduction cumulée −42% d'ici 2030 vs baseline")}
+              <p className="text-xs text-gray-500 flex items-start gap-1.5">
+                <Info className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+                {t('carbon.sbtiNote', "Calcul linéaire à −4,2 %/an sur les Scopes 1+2, repère de la trajectoire 1,5 °C de la SBTi. Ce n'est pas un objectif validé : définissez le vôtre dans le module SBTi.")}
+              </p>
+              {scope3Total > 0 && (
+                <p className="text-xs text-gray-500 mt-2">
+                  {t('carbon.scope3Share', 'Le Scope 3 représente {{pct}} % de votre bilan saisi.', { pct: scope3Pct.toFixed(0) })}
                 </p>
-              </div>
+              )}
             </div>
           )}
 
@@ -1000,11 +1007,6 @@ export default function BilanCarbone() {
                 <div className="flex items-center gap-1.5 font-medium" style={{ color: '#d97706' }}>
                   <Clock className="h-4 w-4" />{t('carbon.scope3Remaining', '{{n}} restantes', { n: 15 - completedCount })}
                 </div>
-                {aiAvailable > 0 && (
-                  <div className="flex items-center gap-1.5 font-medium" style={{ color: '#7c3aed' }}>
-                    <Sparkles className="h-4 w-4" />{t('carbon.scope3AIAvail', '{{n}} estimations IA disponibles', { n: aiAvailable })}
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -1037,7 +1039,7 @@ export default function BilanCarbone() {
               const Icon = cat.icon;
               const isExpanded = expandedId === cat.id;
               const pct = scope3Total > 0 && cat.value !== null ? ((cat.value / scope3Total) * 100) : 0;
-              const status: 'done' | 'ai' | 'missing' = cat.value !== null ? 'done' : cat.aiEstimate !== null ? 'ai' : 'missing';
+              const status: 'done' | 'missing' = cat.value !== null ? 'done' : 'missing';
 
               return (
                 <div key={cat.id}
@@ -1066,7 +1068,6 @@ export default function BilanCarbone() {
                         </span>
                         <span className="font-semibold text-gray-900 text-sm truncate">{cat.name}</span>
                         {status === 'done' && <CheckCircle className="h-4 w-4 flex-shrink-0" style={{ color: '#059669' }} />}
-                        {status === 'ai' && <Sparkles className="h-4 w-4 flex-shrink-0" style={{ color: '#7c3aed' }} />}
                         {status === 'missing' && <AlertTriangle className="h-4 w-4 flex-shrink-0" style={{ color: '#d97706' }} />}
                       </div>
 
@@ -1088,11 +1089,6 @@ export default function BilanCarbone() {
                         <div>
                           <span className="text-lg font-bold text-gray-900 tabular-nums">{fmt(cat.value)}</span>
                           <span className="text-xs text-gray-400 ml-1">tCO₂e</span>
-                        </div>
-                      ) : cat.aiEstimate !== null ? (
-                        <div>
-                          <span className="text-sm font-medium tabular-nums" style={{ color: '#7c3aed' }}>~{fmt(cat.aiEstimate)}</span>
-                          <span className="text-xs ml-1" style={{ color: '#7c3aed' }}>IA</span>
                         </div>
                       ) : (
                         <span className="text-sm text-gray-300 italic">—</span>
@@ -1139,36 +1135,7 @@ export default function BilanCarbone() {
                         </div>
                       </div>
 
-                      {/* AI suggestion */}
-                      {cat.aiEstimate !== null && (
-                        <div className="flex items-center gap-4 p-4 rounded-xl"
-                          style={{ backgroundColor: '#faf5ff', border: '1px solid #e9d5ff' }}>
-                          <Sparkles className="h-5 w-5 flex-shrink-0" style={{ color: '#7c3aed' }} />
-                          <div className="flex-1">
-                            <p className="text-sm font-semibold" style={{ color: '#6d28d9' }}>{t('carbon.aiEstimateTitle', 'Estimation IA disponible')}</p>
-                            <p className="text-xs mt-0.5" style={{ color: '#7c3aed' }}>
-                              {t('carbon.aiEstimateDesc', 'Valeur estimée :')} <strong>{fmt(cat.aiEstimate!)} tCO₂e</strong>{t('carbon.aiEstimateSrc', ' — basée sur vos données sectorielles')}
-                            </p>
-                          </div>
-                          <button onClick={() => applyAI(cat.id)} disabled={applyingAI === cat.id}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-60"
-                            style={{ backgroundColor: '#7c3aed' }}>
-                            {applyingAI === cat.id
-                              ? <RefreshCw className="h-4 w-4 animate-spin" />
-                              : <Sparkles className="h-4 w-4" />}
-                            {t('carbon.applyBtn', 'Appliquer')}
-                          </button>
-                        </div>
-                      )}
-
                       {/* Status banners */}
-                      {cat.aiEstimate === null && cat.value === null && (
-                        <div className="flex items-center gap-3 p-3 rounded-xl text-sm"
-                          style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', color: '#92400e' }}>
-                          <AlertTriangle className="h-4 w-4 flex-shrink-0" style={{ color: '#d97706' }} />
-                          {t('carbon.noAIBanner', 'Aucune estimation IA disponible — saisie manuelle requise (données trop spécifiques à votre secteur).')}
-                        </div>
-                      )}
                       {cat.value !== null && (
                         <div className="flex items-center gap-3 p-3 rounded-xl text-sm"
                           style={{ backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', color: '#065f46' }}>
@@ -1197,18 +1164,9 @@ export default function BilanCarbone() {
                 </p>
                 <p className="text-emerald-400 text-sm mt-1">
                   {t('carbon.footerCatCount', '{{n}} catégories sur 15 complétées', { n: completedCount })}
-                  {aiAvailable > 0 && ` · ${t('carbon.footerAICount', '{{n}} estimations IA disponibles', { n: aiAvailable })}`}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                {aiAvailable > 0 && (
-                  <button onClick={applyAllAI}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', color: 'white' }}>
-                    <Sparkles className="h-4 w-4" />
-                    {t('carbon.applyAllAI', "Compléter avec l'IA ({{n}})", { n: aiAvailable })}
-                  </button>
-                )}
                 <button onClick={saveScope3} disabled={saving}
                   className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-60"
                   style={{ backgroundColor: '#10b981', color: 'white' }}>
