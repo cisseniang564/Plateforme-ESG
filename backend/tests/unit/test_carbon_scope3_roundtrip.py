@@ -28,3 +28,13 @@ def test_plus_de_facteur_location_based_invente():
 
 def test_endpoint_scope12_present():
     assert '"/save-scope12"' in SRC
+
+
+def test_calcul_domicile_travail_est_compte_en_cat7():
+    assert _scope3_cat_id("scope3_cat7_commuting", "Émissions GES — Scope 3 catégorie 7") == 7
+
+
+def test_commute_push_remplace_au_lieu_d_empiler():
+    src = (Path(__file__).parents[2] / "app/api/v1/endpoints/commute_emissions.py").read_text()
+    assert "delete(DataEntry)" in src
+    assert "scope3_cat7_commuting" in SRC  # save-scope3 évite le double comptage
