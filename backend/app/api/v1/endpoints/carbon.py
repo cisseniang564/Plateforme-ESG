@@ -7,7 +7,7 @@ from datetime import datetime, date
 import json
 import logging
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, extract, delete, and_
@@ -40,6 +40,31 @@ def _scope_keywords(scope: int) -> list[str]:
     else:
         return ['scope 3', 'scope3', 'amont', 'aval', 'chaîne de valeur', 'achats', 'transport amont',
                 'déplacements professionnels', 'télétravail', 'déchets', 'produits vendus']
+
+
+import re as _re_mod
+
+_SCOPE3_CAT_RE = _re_mod.compile(r'scope\s*3\s*cat\.?\s*(\d+)')
+_CAT_RE = _re_mod.compile(r'\bcat\.?\s*(\d+)')
+
+
+def _scope3_cat_id(metric_name: str, category: str) -> Optional[int]:
+    """Numéro de catégorie Scope 3 (1-15) d'une saisie, sinon None.
+
+    Reconnaît « Scope 3 Cat.4 … » (imports) ET « Cat. 4 - … » avec la
+    catégorie « Scope 3 » (format écrit par /save-scope3, qui n'était
+    auparavant jamais relu).
+    """
+    m = _SCOPE3_CAT_RE.search((metric_name or '').lower())
+    if m:
+        n = int(m.group(1))
+        return n if 1 <= n <= 15 else None
+    if 'scope 3' in (category or '').lower() or 'scope3' in (category or '').lower():
+        m = _CAT_RE.search((metric_name or '').lower())
+        if m:
+            n = int(m.group(1))
+            return n if 1 <= n <= 15 else None
+    return None
 
 
 def _matches_scope(metric_name: str, category: str, scope: int) -> bool:
@@ -113,10 +138,9 @@ async def get_scope_summary(
         if unit == 'kgco2e':
             val = val / 1000
 
-        # Scope 3 detection via "Scope 3 Cat.N" pattern
-        m = _re.search(r'scope\s*3\s*cat\.?\s*(\d+)', metric.lower())
-        if m:
-            cat_id = int(m.group(1))
+        # Scope 3 : « Scope 3 Cat.N » ou « Cat. N - … » (catégorie « Scope 3 »)
+        cat_id = _scope3_cat_id(metric, cat)
+        if cat_id is not None:
             scope3_by_cat[cat_id] = scope3_by_cat.get(cat_id, 0.0) + val
             continue
 
@@ -138,8 +162,6 @@ async def get_scope_summary(
         },
         "scope2": {
             "total_tco2e": round(scope2_total, 2),
-            "market_based": round(scope2_total, 2),
-            "location_based": round(scope2_total * 1.05, 2),
         },
         "scope3": {
             "total_tco2e": round(scope3_total, 2),
@@ -223,8 +245,7 @@ async def get_emissions_history(
                 continue
             if unit == 'kgco2e':
                 val = val / 1000
-            m = _re.search(r'scope\s*3\s*cat\.?\s*(\d+)', metric.lower())
-            if m:
+            if _scope3_cat_id(metric, cat) is not None:
                 s3 += val
                 continue
             if _matches_scope(metric, cat, 1):
@@ -330,6 +351,60 @@ async def save_scope3(
         db.add(entry)
         inserted += 1
 
+    await db.commit()
+    return {"saved": True, "inserted": inserted, "year": year}
+
+
+class SaveScope12Payload(BaseModel):
+    year: int
+    scope1: float = 0.0
+    scope2: float = 0.0
+
+
+@router.post("/save-scope12", response_model=Dict[str, Any])
+async def save_scope12(
+    payload: SaveScope12Payload,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Enregistre les totaux Scope 1 et Scope 2 saisis (remplace la saisie manuelle de l'année)."""
+    if payload.scope1 < 0 or payload.scope2 < 0:
+        raise HTTPException(status_code=422, detail="Les émissions ne peuvent pas être négatives.")
+
+    year = payload.year
+    await db.execute(
+        delete(DataEntry).where(
+            and_(
+                DataEntry.tenant_id == current_user.tenant_id,
+                DataEntry.pillar == "environmental",
+                DataEntry.collection_method == "manual_scope12",
+                extract("year", DataEntry.period_start) == year,
+            )
+        )
+    )
+    inserted = 0
+    for label, category, value in (
+        ("Scope 1 - Émissions directes", "Scope 1", payload.scope1),
+        ("Scope 2 - Énergie achetée", "Scope 2", payload.scope2),
+    ):
+        if value <= 0:
+            continue
+        db.add(DataEntry(
+            tenant_id=current_user.tenant_id,
+            created_by=current_user.id,
+            pillar="environmental",
+            category=category,
+            metric_name=label,
+            value_numeric=value,
+            unit="tCO2e",
+            period_start=date(year, 1, 1),
+            period_end=date(year, 12, 31),
+            period_type="annual",
+            data_source="Saisie manuelle",
+            collection_method="manual_scope12",
+            verification_status="pending",
+        ))
+        inserted += 1
     await db.commit()
     return {"saved": True, "inserted": inserted, "year": year}
 
