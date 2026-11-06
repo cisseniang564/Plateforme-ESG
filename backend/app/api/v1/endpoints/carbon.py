@@ -45,7 +45,7 @@ def _scope_keywords(scope: int) -> list[str]:
 import re as _re_mod
 
 _SCOPE3_CAT_RE = _re_mod.compile(r'scope\s*3\s*cat\.?\s*(\d+)')
-_CAT_RE = _re_mod.compile(r'\bcat\.?\s*(\d+)')
+_CAT_RE = _re_mod.compile(r'(?:cat(?:[ée]gorie)?\.?\s*|cat)(\d+)')
 
 
 def _scope3_cat_id(metric_name: str, category: str) -> Optional[int]:
@@ -59,8 +59,10 @@ def _scope3_cat_id(metric_name: str, category: str) -> Optional[int]:
     if m:
         n = int(m.group(1))
         return n if 1 <= n <= 15 else None
-    if 'scope 3' in (category or '').lower() or 'scope3' in (category or '').lower():
-        m = _CAT_RE.search((metric_name or '').lower())
+    cat_l = (category or '').lower()
+    if 'scope 3' in cat_l or 'scope3' in cat_l:
+        # « Cat. 4 - … », « scope3_cat7_commuting », ou « … Scope 3 catégorie 7 » en catégorie
+        m = _CAT_RE.search((metric_name or '').lower()) or _CAT_RE.search(cat_l)
         if m:
             n = int(m.group(1))
             return n if 1 <= n <= 15 else None
@@ -322,6 +324,17 @@ async def save_scope3(
                 DataEntry.pillar == "environmental",
                 DataEntry.category == "Scope 3",
                 DataEntry.collection_method == "manual_scope3",
+                extract("year", DataEntry.period_start) == year,
+            )
+        )
+    )
+    # La page affiche déjà la valeur Cat. 7 issue du calcul domicile-travail :
+    # on la remplace pour ne pas la compter deux fois.
+    await db.execute(
+        delete(DataEntry).where(
+            and_(
+                DataEntry.tenant_id == current_user.tenant_id,
+                DataEntry.metric_name == "scope3_cat7_commuting",
                 extract("year", DataEntry.period_start) == year,
             )
         )

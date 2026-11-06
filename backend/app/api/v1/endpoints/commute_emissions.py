@@ -13,6 +13,7 @@ from typing import Dict, Optional
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import delete
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -104,6 +105,18 @@ async def push_to_data_entry(
     today = datetime.utcnow().date()
     period_start = body.period_start or date(today.year, 1, 1)
     period_end = body.period_end or date(today.year, 12, 31)
+
+    # Un seul calcul domicile-travail par exercice : on remplace le précédent
+    # (sinon chaque clic ajoutait une ligne et le total était multiplié).
+    await db.execute(
+        delete(DataEntry).where(
+            DataEntry.tenant_id == current_user.tenant_id,
+            DataEntry.metric_name == "scope3_cat7_commuting",
+            DataEntry.period_start == period_start,
+            DataEntry.period_end == period_end,
+            DataEntry.collection_method == "calculated",
+        )
+    )
 
     entry = DataEntry(
         id=uuid4(),

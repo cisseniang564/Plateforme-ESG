@@ -124,7 +124,7 @@ class CommuteResult:
     annual_kgco2e_total: float
     annual_tco2e_total: float
     by_mode: List[ModeContribution]
-    methodology: str = "GHG Protocol Scope 3 Cat. 7 (activity-based) · INSEE 2022 · ADEME BE v23.0"
+    methodology: str = "GHG Protocol Scope 3 Cat. 7 (activity-based) · répartition modale indicative · facteurs ADEME Base Empreinte"
 
     def to_dict(self) -> dict:
         return {

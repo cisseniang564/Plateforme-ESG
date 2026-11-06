@@ -6,7 +6,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Flame, Plus, Trash2, Download, Sparkles, AlertCircle,
+  Flame, Plus, Trash2, Download, Calculator, AlertCircle,
   TrendingUp, Database, Loader2, Search, BookOpen,
   Users, MapPin, Bike, Car, Train, Briefcase, CheckCircle2, ArrowRight,
 } from 'lucide-react';
@@ -85,14 +85,19 @@ export default function Scope3Calculator() {
   const [calculating, setCalculating] = useState(false);
   const [showFactors, setShowFactors] = useState(false);
   const [search, setSearch]           = useState('');
+  const [loadError, setLoadError]     = useState(false);
+  const [reloadKey, setReloadKey]     = useState(0);
+  const [stale, setStale]             = useState(false);
 
   // Load factors
   useEffect(() => {
+    setLoading(true);
+    setLoadError(false);
     api.get<FactorsResponse>('/scope3/factors')
       .then(res => setFactors(res.data))
-      .catch(() => setFactors(null))
+      .catch(() => { setFactors(null); setLoadError(true); })
       .finally(() => setLoading(false));
-  }, []);
+  }, [reloadKey]);
 
   const allFactors = useMemo(() => {
     if (!factors) return [];
@@ -109,14 +114,20 @@ export default function Scope3Calculator() {
     );
   }, [allFactors, search]);
 
-  const updateLine = (id: string, patch: Partial<Line>) =>
+  const updateLine = (id: string, patch: Partial<Line>) => {
+    setStale(true);
     setLines(prev => prev.map(l => (l.id === id ? { ...l, ...patch } : l)));
+  };
 
-  const addLine = () =>
+  const addLine = () => {
+    setStale(true);
     setLines(prev => [...prev, { id: newId(), factor_code: 'services_informatiques', quantity: 0, label: '' }]);
+  };
 
-  const removeLine = (id: string) =>
+  const removeLine = (id: string) => {
+    setStale(true);
     setLines(prev => prev.filter(l => l.id !== id));
+  };
 
   const runCalculation = async () => {
     const valid = lines.filter(l => l.factor_code && l.quantity > 0);
@@ -134,6 +145,7 @@ export default function Scope3Calculator() {
         })),
       });
       setResult(res.data);
+      setStale(false);
     } catch (err: any) {
       const detail = err?.response?.data?.detail;
       toast.error(typeof detail === 'string' ? detail : t('scope3.calcError', 'Erreur lors du calcul'));
@@ -144,6 +156,11 @@ export default function Scope3Calculator() {
 
   const exportCsv = () => {
     if (!result) return;
+    const esc = (v: unknown) => {
+      let x = String(v ?? '');
+      if (/^[=+\-@]/.test(x)) x = "'" + x; // neutralise l'injection de formule Excel
+      return /[";\n]/.test(x) ? `"${x.replace(/"/g, '""')}"` : x;
+    };
     const rows = [
       ['Catégorie ID', 'Catégorie', 'Facteur', 'Libellé', 'Quantité', 'Unité facteur', 'Facteur', 'kgCO2e', 'tCO2e'].join(';'),
       ...result.details.map(d => [
@@ -156,7 +173,7 @@ export default function Scope3Calculator() {
         d.factor_value,
         d.emissions_kgco2e,
         d.emissions_tco2e,
-      ].join(';')),
+      ].map(esc).join(';')),
       '',
       ['', '', '', '', '', '', 'Total', result.total_kgco2e, result.total_tco2e].join(';'),
     ];
@@ -211,6 +228,14 @@ export default function Scope3Calculator() {
           </div>
         </div>
       </div>
+
+      {loadError && (
+        <div role="alert" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm bg-red-50 border border-red-200 text-red-800">
+          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+          <span className="flex-1">{t('scope3.factorsLoadError', 'Impossible de charger les facteurs d’émission : le calcul est indisponible pour le moment.')}</span>
+          <button onClick={() => setReloadKey(k => k + 1)} className="font-semibold underline">{t('scope3.retry', 'Réessayer')}</button>
+        </div>
+      )}
 
       {/* Factors catalog */}
       {showFactors && factors && (
@@ -326,10 +351,10 @@ export default function Scope3Calculator() {
             <button
               type="button"
               onClick={runCalculation}
-              disabled={calculating}
+              disabled={calculating || !factors}
               className="inline-flex items-center gap-2 px-5 h-10 text-sm font-bold text-white bg-gradient-to-br from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 rounded-lg transition-all disabled:opacity-50 shadow-sm hover:shadow-md"
             >
-              {calculating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {calculating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />}
               {t('scope3.calcEmissions', 'Calculer les émissions')}
             </button>
           </div>
@@ -339,6 +364,12 @@ export default function Scope3Calculator() {
         <div className="space-y-4">
           {result ? (
             <>
+              {stale && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 flex items-center gap-1.5">
+                  <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                  {t('scope3.staleResult', 'Vos lignes ont changé : relancez le calcul pour mettre à jour ce résultat.')}
+                </div>
+              )}
               <div className="bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl p-6 text-white shadow-lg">
                 <p className="text-xs font-bold uppercase tracking-wide opacity-80 mb-2">{t('scope3.totalEmissions', 'Émissions totales Scope 3')}</p>
                 <p className="text-4xl font-black tabular-nums">{result.total_tco2e.toFixed(2)}</p>
@@ -434,7 +465,7 @@ interface CommuteResult {
 
 // code stays literal (stored value); label + hint translated
 const getGeographicProfiles = (t: TFunction) => [
-  { code: 'national_avg', label: t('scope3.geoNationalLabel', 'Moyenne nationale'), hint: t('scope3.geoNationalHint', 'Référence INSEE pour France entière') },
+  { code: 'national_avg', label: t('scope3.geoNationalLabel', 'Moyenne nationale'), hint: t('scope3.geoNationalHint', 'Hypothèse de répartition moyenne France') },
   { code: 'dense_urban',  label: t('scope3.geoUrbanLabel', 'Urbain dense'),         hint: t('scope3.geoUrbanHint', 'Paris, Lyon centre, transports en commun forts') },
   { code: 'suburban',     label: t('scope3.geoSuburbanLabel', 'Périurbain'),        hint: t('scope3.geoSuburbanHint', 'Villes moyennes, mix voiture/transports') },
   { code: 'rural',        label: t('scope3.geoRuralLabel', 'Rural'),                hint: t('scope3.geoRuralHint', 'Petites villes, voiture dominante') },
@@ -481,7 +512,7 @@ function CommuteAutoCalculator() {
         teleworking_days_per_week: teleworking,
       });
       toast.success(
-        t('scope3.pushSuccess', '{{value}} tCO₂eq ajouté à vos données Scope 3', { value: res.data.value_numeric.toLocaleString(numLocale()) }),
+        t('scope3.pushSuccess', '{{value}} tCO₂eq enregistré en Scope 3 Cat. 7 (remplace le calcul précédent de l’exercice)', { value: res.data.value_numeric.toLocaleString(numLocale()) }),
         { duration: 5000 },
       );
     } catch (err: any) {
@@ -505,7 +536,7 @@ function CommuteAutoCalculator() {
             {t('scope3.commuteTitle', 'Émissions domicile-travail')}
           </h2>
           <p className="text-sm text-gray-600 max-w-2xl">
-            {t('scope3.commuteDescA', 'Calcul automatique ')}<strong>activity-based</strong>{t('scope3.commuteDescB', ' selon GHG Protocol — utilise vos ETP, le split modal INSEE et les facteurs ADEME. Pas de saisie ligne par ligne.')}
+            {t('scope3.commuteDescA', 'Calcul automatique ')}<strong>activity-based</strong>{t('scope3.commuteDescB', ' selon GHG Protocol — utilise vos ETP, une répartition modale indicative et les facteurs ADEME. Pas de saisie ligne par ligne.')}
           </p>
         </div>
       </div>
@@ -540,7 +571,7 @@ function CommuteAutoCalculator() {
         </div>
         <div>
           <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wide mb-1">
-            {t('scope3.lblDistance', 'Distance (km A/R)')}
+            {t('scope3.lblDistance', 'Distance aller simple (km)')}
           </label>
           <input
             type="number"
@@ -587,7 +618,7 @@ function CommuteAutoCalculator() {
           disabled={loading || headcount <= 0}
           className="inline-flex items-center gap-1.5 px-4 h-10 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-semibold disabled:opacity-50 transition-colors"
         >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />}
           {t('scope3.calculate', 'Calculer')}
         </button>
         {result && (
@@ -601,7 +632,7 @@ function CommuteAutoCalculator() {
           </button>
         )}
         <p className="text-[11px] text-gray-500 max-w-md">
-          {t('scope3.defaultsHint', 'Défauts : 14 km A/R, 215 j/an (INSEE 2022, DARES 2023). Modifiez selon votre HR.')}
+          {t('scope3.defaultsHint', 'Hypothèses indicatives (14 km aller simple, 215 j/an, répartition modale type). Remplacez-les par vos données RH ou une enquête salariés.')}
         </p>
       </div>
 
