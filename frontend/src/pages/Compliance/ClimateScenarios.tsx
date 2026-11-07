@@ -24,8 +24,6 @@ interface ClimateScenario {
   tempTarget: number;
   description: string;
   color: string;
-  gdpImpact: string;
-  carbonPrice2030: string;
 }
 
 interface PhysicalRisk {
@@ -58,15 +56,15 @@ interface TransitionRisk {
 
 function getSCENARIOS(t: TFunction): ClimateScenario[] {
   return [
-    { id: 'nze', source: 'IEA', name: 'Net Zero Emissions 2050', shortName: 'IEA NZE', tempTarget: 1.5, description: t('compliance.climateScenarios.scenario.nze.description', "Trajectoire de neutralité carbone mondiale à horizon 2050. Prix carbone atteignant 250 $/tCO2 en 2030 dans les économies avancées. Fin des nouvelles approbations de projets pétroliers et gaziers."), color: '#16a34a', gdpImpact: t('compliance.climateScenarios.scenario.nze.gdpImpact', '+3% PIB (bénéfices santé + évitement dommages)'), carbonPrice2030: '250 $/tCO2' },
-    { id: 'aps', source: 'IEA', name: 'Announced Pledges Scenario', shortName: 'IEA APS', tempTarget: 1.7, description: t('compliance.climateScenarios.scenario.aps.description', "Tous les engagements climatiques gouvernementaux (NDCs, net-zero) sont atteints dans les délais prévus. Trajectoire vers 1,7°C."), color: '#2563eb', gdpImpact: t('compliance.climateScenarios.scenario.aps.gdpImpact', 'Neutre à légèrement positif'), carbonPrice2030: '135 $/tCO2' },
-    { id: 'steps', source: 'IEA', name: 'Stated Policies Scenario', shortName: 'IEA STEPS', tempTarget: 2.5, description: t('compliance.climateScenarios.scenario.steps.description', "Seules les politiques actuellement en vigueur sont maintenues. Trajectoire vers 2,5°C à l'horizon 2100."), color: '#d97706', gdpImpact: t('compliance.climateScenarios.scenario.steps.gdpImpact', '-3% PIB vs NZE (dommages climatiques)'), carbonPrice2030: '80 $/tCO2' },
-    { id: 'ngfs_nz', source: 'NGFS', name: 'Net Zero 2050', shortName: 'NGFS NZ', tempTarget: 1.5, description: t('compliance.climateScenarios.scenario.ngfs_nz.description', "Transition ordonnée et immédiate vers la neutralité carbone. Politiques climatiques ambitieuses, prévisibles et crédibles."), color: '#059669', gdpImpact: t('compliance.climateScenarios.scenario.ngfs_nz.gdpImpact', '-2% PIB (coûts transition)'), carbonPrice2030: '190 $/tCO2' },
-    { id: 'ngfs_dt', source: 'NGFS', name: 'Delayed Transition', shortName: 'NGFS DT', tempTarget: 1.8, description: t('compliance.climateScenarios.scenario.ngfs_dt.description', "Transition retardée avec politiques plus abruptes après 2030. Risques de transition élevés sur courte période."), color: '#ea580c', gdpImpact: t('compliance.climateScenarios.scenario.ngfs_dt.gdpImpact', '-4% PIB (transition brutale + dommages)'), carbonPrice2030: '320 $/tCO2 (après 2030)' },
-    { id: 'ngfs_hhw', source: 'NGFS', name: 'Hot House World', shortName: 'NGFS HHW', tempTarget: 3.0, description: t('compliance.climateScenarios.scenario.ngfs_hhw.description', "Absence d'action climatique additionnelle. Risques physiques très élevés, impacts irréversibles sur les écosystèmes."), color: '#dc2626', gdpImpact: t('compliance.climateScenarios.scenario.ngfs_hhw.gdpImpact', '-10% PIB (dommages climatiques sévères)'), carbonPrice2030: '10 $/tCO2' },
-    { id: 'rcp26', source: 'IPCC', name: t('compliance.climateScenarios.scenario.rcp26.name', 'RCP 2.6 — Scénario ambitieux'), shortName: 'RCP 2.6', tempTarget: 2.0, description: t('compliance.climateScenarios.scenario.rcp26.description', "Forçage radiatif plafonné à 2,6 W/m². Compatible avec l'objectif 2°C de l'Accord de Paris."), color: '#0891b2', gdpImpact: t('compliance.climateScenarios.scenario.rcp26.gdpImpact', 'Légèrement négatif à court terme'), carbonPrice2030: '100 $/tCO2' },
-    { id: 'rcp45', source: 'IPCC', name: t('compliance.climateScenarios.scenario.rcp45.name', 'RCP 4.5 — Scénario intermédiaire'), shortName: 'RCP 4.5', tempTarget: 2.4, description: t('compliance.climateScenarios.scenario.rcp45.description', "Forçage radiatif stabilisé à 4,5 W/m². Pic d'émissions vers 2040 puis déclin."), color: '#f59e0b', gdpImpact: t('compliance.climateScenarios.scenario.rcp45.gdpImpact', '-1 à -2% PIB (risques physiques modérés)'), carbonPrice2030: '50 $/tCO2' },
-    { id: 'rcp85', source: 'IPCC', name: t('compliance.climateScenarios.scenario.rcp85.name', 'RCP 8.5 — Scénario tendanciel'), shortName: 'RCP 8.5', tempTarget: 4.0, description: t('compliance.climateScenarios.scenario.rcp85.description', "Forçage radiatif de 8,5 W/m² en 2100. Hausse de température de 4°C. Risques physiques catastrophiques."), color: '#7f1d1d', gdpImpact: t('compliance.climateScenarios.scenario.rcp85.gdpImpact', '-15% PIB (dommages climatiques extrêmes)'), carbonPrice2030: '5 $/tCO2' },
+    { id: 'nze', source: 'IEA', name: 'Net Zero Emissions 2050', shortName: 'IEA NZE', tempTarget: 1.5, description: t('compliance.climateScenarios.scenario.nze.description', "Trajectoire de neutralité carbone mondiale à horizon 2050. Fin des nouvelles approbations de projets pétroliers et gaziers."), color: '#16a34a' },
+    { id: 'aps', source: 'IEA', name: 'Announced Pledges Scenario', shortName: 'IEA APS', tempTarget: 1.7, description: t('compliance.climateScenarios.scenario.aps.description', "Tous les engagements climatiques gouvernementaux (NDCs, net-zero) sont atteints dans les délais prévus. Trajectoire vers 1,7°C."), color: '#2563eb' },
+    { id: 'steps', source: 'IEA', name: 'Stated Policies Scenario', shortName: 'IEA STEPS', tempTarget: 2.5, description: t('compliance.climateScenarios.scenario.steps.description', "Seules les politiques actuellement en vigueur sont maintenues. Trajectoire vers 2,5°C à l'horizon 2100."), color: '#d97706' },
+    { id: 'ngfs_nz', source: 'NGFS', name: 'Net Zero 2050', shortName: 'NGFS NZ', tempTarget: 1.5, description: t('compliance.climateScenarios.scenario.ngfs_nz.description', "Transition ordonnée et immédiate vers la neutralité carbone. Politiques climatiques ambitieuses, prévisibles et crédibles."), color: '#059669' },
+    { id: 'ngfs_dt', source: 'NGFS', name: 'Delayed Transition', shortName: 'NGFS DT', tempTarget: 1.8, description: t('compliance.climateScenarios.scenario.ngfs_dt.description', "Transition retardée avec politiques plus abruptes après 2030. Risques de transition élevés sur courte période."), color: '#ea580c' },
+    { id: 'ngfs_hhw', source: 'NGFS', name: 'Hot House World', shortName: 'NGFS HHW', tempTarget: 3.0, description: t('compliance.climateScenarios.scenario.ngfs_hhw.description', "Absence d'action climatique additionnelle. Risques physiques très élevés, impacts irréversibles sur les écosystèmes."), color: '#dc2626' },
+    { id: 'rcp26', source: 'IPCC', name: t('compliance.climateScenarios.scenario.rcp26.name', 'RCP 2.6 — Scénario ambitieux'), shortName: 'RCP 2.6', tempTarget: 2.0, description: t('compliance.climateScenarios.scenario.rcp26.description', "Forçage radiatif plafonné à 2,6 W/m². Compatible avec l'objectif 2°C de l'Accord de Paris."), color: '#0891b2' },
+    { id: 'rcp45', source: 'IPCC', name: t('compliance.climateScenarios.scenario.rcp45.name', 'RCP 4.5 — Scénario intermédiaire'), shortName: 'RCP 4.5', tempTarget: 2.4, description: t('compliance.climateScenarios.scenario.rcp45.description', "Forçage radiatif stabilisé à 4,5 W/m². Pic d'émissions vers 2040 puis déclin."), color: '#f59e0b' },
+    { id: 'rcp85', source: 'IPCC', name: t('compliance.climateScenarios.scenario.rcp85.name', 'RCP 8.5 — Scénario tendanciel'), shortName: 'RCP 8.5', tempTarget: 4.0, description: t('compliance.climateScenarios.scenario.rcp85.description', "Forçage radiatif de 8,5 W/m² en 2100. Hausse de température de 4°C. Risques physiques catastrophiques."), color: '#7f1d1d' },
   ];
 }
 
@@ -95,6 +93,14 @@ function getDefaultTransitionRisks(t: TFunction): TransitionRisk[] {
 }
 
 const LS_KEY = 'climate_scenarios_data';
+
+// Pas de chiffres de PIB ni de prix du carbone ici : ils dépendent du modèle, de la région et de
+// la version publiée. On renvoie vers la publication d'origine.
+const SOURCE_URLS: Record<'IEA' | 'NGFS' | 'IPCC', string> = {
+  IEA: 'https://www.iea.org/topics/world-energy-outlook',
+  NGFS: 'https://www.ngfs.net/ngfs-scenarios-portal/',
+  IPCC: 'https://www.ipcc.ch/assessment-report/ar6/',
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -331,14 +337,18 @@ export default function ClimateScenarios() {
       if (d.physicalRisks) setPhysicalRisks(d.physicalRisks as PhysicalRisk[]);
       if (d.transitionRisks) setTransitionRisks(d.transitionRisks as TransitionRisk[]);
     };
+    const loadLocal = () => {
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (raw) applyData(JSON.parse(raw));
+      } catch { /* ignore */ }
+    };
     api.get('/framework-data/climate_scenarios')
-      .then(r => { if (r.data?.data && Object.keys(r.data.data).length > 0) applyData(r.data.data); })
-      .catch(() => {
-        try {
-          const raw = localStorage.getItem(LS_KEY);
-          if (raw) applyData(JSON.parse(raw));
-        } catch { /* ignore */ }
-      });
+      .then(r => {
+        if (r.data?.data && Object.keys(r.data.data).length > 0) { applyData(r.data.data); return; }
+        loadLocal();
+      })
+      .catch(() => loadLocal());
   }, []);
 
   const handleSave = useCallback(async () => {
@@ -348,12 +358,15 @@ export default function ClimateScenarios() {
       physicalRisks,
       transitionRisks,
     };
-    localStorage.setItem(LS_KEY, JSON.stringify(payload));
+    try { localStorage.setItem(LS_KEY, JSON.stringify(payload)); } catch { /* stockage local indisponible */ }
     try {
       await api.post('/framework-data/climate_scenarios', { data: payload });
-    } catch { /* silent — localStorage already saved */ }
-    setSaving(false);
-    toast.success(t('compliance.climateScenarios.savedToast', 'Analyse climatique sauvegardée'));
+      toast.success(t('compliance.climateScenarios.savedToast', 'Analyse climatique sauvegardée'));
+    } catch {
+      toast.error(t('compliance.climateScenarios.saveFailed', "Enregistrement serveur impossible : l'analyse n'est gardée que dans ce navigateur. Réessayez."));
+    } finally {
+      setSaving(false);
+    }
   }, [selectedScenarios, physicalRisks, transitionRisks, t]);
 
   const toggleScenario = useCallback((id: ScenarioId) => {
@@ -535,8 +548,10 @@ export default function ClimateScenarios() {
                     }}>{s.description}</p>
 
                     <div style={{ fontSize: 11, color: '#374151', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      <div><span style={{ color: '#9ca3af' }}>{t('compliance.climateScenarios.gdpImpactLabel', 'Impact PIB :')}</span> {s.gdpImpact}</div>
-                      <div><span style={{ color: '#9ca3af' }}>{t('compliance.climateScenarios.carbonPriceLabel', 'Prix carbone 2030 :')}</span> {s.carbonPrice2030}</div>
+                      <a href={SOURCE_URLS[s.source]} target="_blank" rel="noopener noreferrer"
+                        style={{ color: SOURCE_COLORS[s.source], fontWeight: 600, textDecoration: 'underline' }}>
+                        {t('compliance.climateScenarios.seeSource', 'Voir la publication {{source}} (PIB, prix du carbone)', { source: s.source })}
+                      </a>
                     </div>
                   </div>
                 );
@@ -556,8 +571,7 @@ export default function ClimateScenarios() {
                         t('compliance.climateScenarios.colScenario', 'Scénario'),
                         t('compliance.climateScenarios.colSource', 'Source'),
                         t('compliance.climateScenarios.colTarget', 'Cible °C'),
-                        t('compliance.climateScenarios.colCarbonPrice', 'Prix carbone 2030'),
-                        t('compliance.climateScenarios.colGdpImpact', 'Impact PIB'),
+                        t('compliance.climateScenarios.colSourceLink', 'Publication'),
                         t('compliance.climateScenarios.colDominantRisks', 'Risques dominants'),
                       ].map(h => (
                         <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600, color: '#6b7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid #e5e7eb' }}>{h}</th>
@@ -579,8 +593,9 @@ export default function ClimateScenarios() {
                             <span style={{ color: SOURCE_COLORS[s.source], fontWeight: 600, fontSize: 11 }}>{s.source}</span>
                           </td>
                           <td style={{ padding: '8px 12px', borderBottom: '1px solid #f3f4f6', fontWeight: 700, color: s.color }}>{s.tempTarget}°C</td>
-                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #f3f4f6' }}>{s.carbonPrice2030}</td>
-                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #f3f4f6', fontSize: 12, color: '#4b5563' }}>{s.gdpImpact}</td>
+                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #f3f4f6', fontSize: 12 }}>
+                            <a href={SOURCE_URLS[s.source]} target="_blank" rel="noopener noreferrer" style={{ color: SOURCE_COLORS[s.source], textDecoration: 'underline' }}>{s.source} ↗</a>
+                          </td>
                           <td style={{ padding: '8px 12px', borderBottom: '1px solid #f3f4f6' }}>
                             <span style={{ fontSize: 11, background: '#f3f4f6', padding: '2px 8px', borderRadius: 99 }}>{dominant}</span>
                           </td>
@@ -604,6 +619,9 @@ export default function ClimateScenarios() {
         ════════════════════════════════════════ */}
         {tab === 'physical' && (
           <>
+            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: '#92400e' }}>
+              {t('compliance.climateScenarios.defaultsNote', "Les risques listés et leurs notes de probabilité et de gravité sont des valeurs de départ génériques, pas une évaluation de votre activité : ajustez-les, et renseignez vos propres impacts financiers (ils partent de 0).")}
+            </div>
             {/* Info banner */}
             <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '12px 16px', marginBottom: 20, display: 'flex', gap: 10 }}>
               <Shield size={16} style={{ color: '#2563eb', flexShrink: 0, marginTop: 1 }} />
@@ -728,6 +746,9 @@ export default function ClimateScenarios() {
         ════════════════════════════════════════ */}
         {tab === 'transition' && (
           <>
+            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: '#92400e' }}>
+              {t('compliance.climateScenarios.defaultsNote', "Les risques listés et leurs notes de probabilité et de gravité sont des valeurs de départ génériques, pas une évaluation de votre activité : ajustez-les, et renseignez vos propres impacts financiers (ils partent de 0).")}
+            </div>
             {/* Info banner */}
             <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', borderRadius: 10, padding: '12px 16px', marginBottom: 20, display: 'flex', gap: 10 }}>
               <Zap size={16} style={{ color: '#7c3aed', flexShrink: 0, marginTop: 1 }} />
