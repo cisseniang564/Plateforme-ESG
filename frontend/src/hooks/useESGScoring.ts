@@ -212,30 +212,11 @@ export const useESGScoring = () => {
     }
   };
 
-  const populateSampleData = async (): Promise<{
-    populated: number;
-    data_points_created: number;
-    message: string;
-  } | null> => {
-    try {
-      setLoading(true);
-      const response = await api.post('/esg-scoring/populate-sample-data');
-      return response.data;
-    } catch (error: any) {
-      console.error('Error populating sample data:', error);
-      toast.error('Erreur lors de la génération des données de démo');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return {
     loading,
     calculateScore,
     calculateHistorical,
     recalculateAll,
-    populateSampleData,
     getDashboard,
     getOrganizationScores,
     checkDataQuality,

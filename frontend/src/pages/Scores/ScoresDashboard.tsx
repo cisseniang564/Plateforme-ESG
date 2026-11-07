@@ -22,7 +22,6 @@ import {
   ShieldCheck,
   ChevronRight,
   ExternalLink,
-  DatabaseZap,
   Info,
   Leaf,
   Users,
@@ -140,11 +139,10 @@ function ConfirmModal({
 export default function ScoresDashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { loading, getDashboard, recalculateAll, populateSampleData } = useESGScoring();
+  const { loading, getDashboard, recalculateAll } = useESGScoring();
 
   const [dashboard, setDashboard] = useState<any>(null);
   const [recalculating, setRecalculating] = useState(false);
-  const [populating, setPopulating] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [lastLoadedAt, setLastLoadedAt] = useState<Date | null>(null);
   const [skippedCount, setSkippedCount] = useState(0);
@@ -235,26 +233,6 @@ export default function ScoresDashboard() {
     });
   };
 
-  const handlePopulateSampleData = () => {
-    setConfirmModal({
-      open: true,
-      message: `Générer des données de démonstration pour les ${skippedCount} organisations sans données ? Ces données sont simulées (is_estimated=true).`,
-      onConfirm: async () => {
-        setConfirmModal(m => ({ ...m, open: false }));
-        try {
-          setPopulating(true);
-          const result = await populateSampleData();
-          if (result) {
-            toast.success(`✅ ${result.populated} organisations renseignées (${result.data_points_created} points de données)`);
-            setSkippedCount(0);
-          }
-        } finally {
-          setPopulating(false);
-        }
-      },
-    });
-  };
-
   const handleExportCSV = () => {
     const performers = dashboard?.top_performers || [];
     if (!performers.length) return;
@@ -266,7 +244,12 @@ export default function ScoresDashboard() {
       org.social?.toFixed(0) || '0',
       org.governance?.toFixed(0) || '0',
     ]);
-    const csv = [headers, ...rows].map(r => r.join(';')).join('\n');
+    const esc = (v: unknown) => {
+      let x = String(v ?? '');
+      if (/^[=+\-@\t\r]/.test(x)) x = `'${x}`;
+      return `"${x.replace(/"/g, '""')}"`;
+    };
+    const csv = '\uFEFF' + [headers, ...rows].map(r => r.map(esc).join(';')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -578,14 +561,6 @@ export default function ScoresDashboard() {
             >
               <BarChart3 className="h-4 w-4" />
               {t('scores.enterData')}
-            </button>
-            <button
-              onClick={handlePopulateSampleData}
-              disabled={populating}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
-            >
-              {populating ? <Spinner size="sm" /> : <DatabaseZap className="h-4 w-4" />}
-              {t('scores.demoData')}
             </button>
           </div>
         </div>

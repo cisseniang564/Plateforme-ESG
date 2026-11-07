@@ -1,10 +1,9 @@
 """
 ESG Scoring endpoints - Calcul et consultation des scores ESG.
 """
-from uuid import UUID, uuid4
+from uuid import UUID
 from typing import Optional
-from datetime import date, timedelta
-import random
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -666,134 +665,6 @@ async def batch_calculate_scores(
         'results': results
     }
 
-
-@router.post("/populate-sample-data")
-async def populate_sample_data(
-    _: None = Depends(require_role(Roles.TENANT_ADMIN)),
-    user_id: UUID = Depends(get_current_user_id),
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    Générer des données ESG de démonstration pour les organisations sans données.
-
-    Crée des IndicatorData réalistes avec des dates dans les 12 derniers mois
-    pour toutes les organisations qui n'ont aucune donnée récente.
-    Utile en environnement de démo pour permettre le calcul de tous les scores.
-    """
-    from sqlalchemy.orm import selectinload
-    user_result = await db.execute(
-        select(User).where(User.id == user_id).options(selectinload(User.role))
-    )
-    user = user_result.scalar_one_or_none()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    # Only admin roles may generate demo data
-    role_name = (user.role.name if user.role else "").lower()
-    if "admin" not in role_name:
-        raise HTTPException(
-            status_code=403,
-            detail="Accès réservé aux administrateurs. Cet endpoint génère des données de démonstration.",
-        )
-
-    tenant_id = user.tenant_id
-    today = date.today()
-    cutoff = today - timedelta(days=365)
-
-    # 1) Organisations sans données récentes
-    orgs_without_data = await db.execute(text("""
-        SELECT o.id, o.name, o.industry
-        FROM organizations o
-        WHERE o.tenant_id = :tenant_id
-          AND NOT EXISTS (
-              SELECT 1 FROM indicator_data id2
-              WHERE id2.organization_id = o.id
-                AND id2.tenant_id = :tenant_id
-                AND id2.date >= :cutoff
-          )
-        ORDER BY o.name
-    """), {"tenant_id": str(tenant_id), "cutoff": cutoff})
-    orgs = orgs_without_data.fetchall()
-
-    if not orgs:
-        return {"populated": 0, "message": "Toutes les organisations ont déjà des données récentes."}
-
-    # 2) Indicateurs actifs disponibles
-    indicators_result = await db.execute(text("""
-        SELECT id, code, pillar, unit
-        FROM indicators
-        WHERE tenant_id = :tenant_id AND is_active = true
-        ORDER BY pillar, code
-        LIMIT 20
-    """), {"tenant_id": str(tenant_id)})
-    indicators = indicators_result.fetchall()
-
-    if not indicators:
-        raise HTTPException(
-            status_code=400,
-            detail="Aucun indicateur actif trouvé. Créez d'abord des indicateurs.",
-        )
-
-    # 3) Valeurs de démo par pilier (réalistes mais variées par org)
-    DEMO_VALUES: dict = {
-        "environmental": {"min": 500.0,  "max": 50000.0},
-        "social":        {"min": 50.0,   "max": 5000.0},
-        "governance":    {"min": 1.0,    "max": 100.0},
-    }
-
-    # Générer 3 points de données par an (mars, juillet, décembre)
-    data_dates = [
-        today - timedelta(days=270),  # ~9 mois
-        today - timedelta(days=180),  # ~6 mois
-        today - timedelta(days=30),   # ~1 mois
-    ]
-
-    inserted = 0
-    for org in orgs:
-        org_id, org_name, industry = org
-        # Facteur de variation par organisation (60-140% de la valeur de base)
-        org_factor = random.uniform(0.6, 1.4)
-
-        for ind in indicators:
-            ind_id, ind_code, pillar, unit = ind
-            bounds = DEMO_VALUES.get(pillar, {"min": 10.0, "max": 1000.0})
-            base_value = random.uniform(bounds["min"], bounds["max"]) * org_factor
-
-            for i, data_date in enumerate(data_dates):
-                # Légère progression dans le temps (amélioration de 2-5% par période)
-                trend_factor = 1.0 - (0.03 * (len(data_dates) - 1 - i))
-                value = round(max(0.1, base_value * trend_factor), 2)
-
-                await db.execute(text("""
-                    INSERT INTO indicator_data (
-                        id, tenant_id, organization_id, indicator_id,
-                        date, value, unit, source,
-                        is_verified, is_estimated, created_at, updated_at
-                    ) VALUES (
-                        :id, :tenant_id, :org_id, :ind_id,
-                        :date, :value, :unit, 'demo_generated',
-                        false, true, NOW(), NOW()
-                    )
-                    ON CONFLICT DO NOTHING
-                """), {
-                    "id": str(uuid4()),
-                    "tenant_id": str(tenant_id),
-                    "org_id": str(org_id),
-                    "ind_id": str(ind_id),
-                    "date": data_date,
-                    "value": value,
-                    "unit": unit or "",
-                })
-                inserted += 1
-
-    await db.commit()
-
-    return {
-        "populated": len(orgs),
-        "data_points_created": inserted,
-        "message": f"{len(orgs)} organisations renseignées avec {inserted} points de données de démonstration.",
-        "organizations": [{"id": str(o[0]), "name": o[1]} for o in orgs],
-    }
 
 @router.post("/data-quality")
 async def check_data_quality(
