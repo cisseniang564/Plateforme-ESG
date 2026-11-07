@@ -50,7 +50,7 @@ export default function PrivacyPolicy() {
             <p>
               <strong>GreenConnect SAS</strong><br />
               Siège social : 12 Vieux chemin de meaux, 93190 Livry-Gargan, France<br />
-              SIRET : [À renseigner]<br />
+              SIRET : <mark className="bg-amber-100 text-amber-900 rounded px-1">[À renseigner]</mark><br />
               Email : privacy@greenconnect.cloud
             </p>
 
