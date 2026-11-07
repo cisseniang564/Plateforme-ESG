@@ -201,7 +201,8 @@ export default function CDPReporting() {
       };
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
-        api.post('/cdp/climate', { responses: updated }).catch(() => {});
+        api.post('/cdp/climate', { responses: updated }).catch(() =>
+          toast.error(t('compliance.cdp.autosaveError', "Sauvegarde automatique impossible : vos réponses sont conservées sur cet appareil. Cliquez sur « Sauvegarder » pour réessayer."), { id: 'cdp-autosave' }));
         localStorage.setItem('cdp_climate_responses', JSON.stringify(updated));
       }, 2000);
       return updated;
@@ -225,7 +226,7 @@ export default function CDPReporting() {
       if (res.data?.responses && Object.keys(res.data.responses).length > 0) {
         setResponses(res.data.responses);
       }
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch(() => toast.error(t('compliance.cdp.loadError', "Impossible de charger le questionnaire enregistré : seules les réponses locales de cet appareil sont affichées."), { id: 'cdp-load' })).finally(() => setLoading(false));
     api.get('/cdp/climate/score-estimate').then(res => {
       setScoreEstimate({ band: res.data.estimated_band, pct: res.data.completion_pct });
     }).catch(() => {});

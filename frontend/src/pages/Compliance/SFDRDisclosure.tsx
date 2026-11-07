@@ -208,9 +208,12 @@ export default function SFDRDisclosure() {
       api.patch(`/sfdr/reports/${reportId}`, {
         article: key,
         ...(policyEdited ? {} : { policy_text: POLICY_PLACEHOLDERS[key], policy_edited: false }),
-      }).catch(() => {});
+      }).catch(patchFailed);
     }
   };
+
+  const patchFailed = () =>
+    toast.error(t('compliance.sfdr.autosaveError', "Modification non enregistrée sur le serveur. Vérifiez votre connexion et réessayez."), { id: 'sfdr-save' });
 
   const handlePolicyChange = (val: string) => {
     setPolicyText(val);
@@ -219,7 +222,7 @@ export default function SFDRDisclosure() {
     if (savePolicyRef.current) clearTimeout(savePolicyRef.current);
     savePolicyRef.current = setTimeout(() => {
       if (reportId) {
-        api.patch(`/sfdr/reports/${reportId}`, { policy_text: val, policy_edited: true }).catch(() => {});
+        api.patch(`/sfdr/reports/${reportId}`, { policy_text: val, policy_edited: true }).catch(patchFailed);
       }
     }, 1500);
   };
@@ -229,7 +232,7 @@ export default function SFDRDisclosure() {
     setPolicyText(defaultText);
     setPolicyEdited(false);
     if (reportId) {
-      api.patch(`/sfdr/reports/${reportId}`, { policy_text: defaultText, policy_edited: false }).catch(() => {});
+      api.patch(`/sfdr/reports/${reportId}`, { policy_text: defaultText, policy_edited: false }).catch(patchFailed);
     }
   };
 

@@ -125,7 +125,7 @@ export default function CSDDD() {
         });
         return next;
       });
-    }).catch(() => {});
+    }).catch(() => toast.error(t('compliance.csddd.toast.catalogError', 'Catalogue de risques indisponible.'), { id: 'csddd-catalog' }));
 
     const local = localStorage.getItem('csddd_assessment');
     if (local) {
@@ -144,7 +144,7 @@ export default function CSDDD() {
         setAssessments(prev => ({ ...prev, ...fromApi }));
       }
       if (res.data?.grievances?.length > 0) setGrievances(res.data.grievances);
-    }).catch(() => {});
+    }).catch(() => toast.error(t('compliance.csddd.toast.loadError', "Impossible de charger l'évaluation enregistrée : seules les données locales de cet appareil sont affichées."), { id: 'csddd-load' }));
   }, []);
 
   // ── Save ──────────────────────────────────────────────────────────────────
