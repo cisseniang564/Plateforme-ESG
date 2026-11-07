@@ -498,7 +498,10 @@ export default function TenantSettings() {
           billingEmail: tenant.billing_email || DEFAULT_EMAIL,
         }));
       })
-      .catch(() => {})
+      .catch(() => {
+        // Sans les vraies données, enregistrer écraserait le nom par une valeur vide.
+        toast.error(t('settings.tenant.toast.loadError', "Impossible de charger les paramètres de l'organisation. Rechargez la page."), { id: 'tenant-load-error' });
+      })
       .finally(() => setTenantLoading(false));
   }, []);
 
@@ -771,7 +774,7 @@ export default function TenantSettings() {
       <div className="pt-5">
         <button
           onClick={handleSave}
-          disabled={saving || tenantLoading}
+          disabled={saving || tenantLoading || !tenantData}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm transition-colors disabled:opacity-60"
           style={{ background: '#7c3aed', color: 'white' }}
         >

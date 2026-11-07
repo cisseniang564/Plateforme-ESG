@@ -17,11 +17,9 @@ interface Methodology {
   icon: React.ElementType;
   gradient: string;
   bgLight: string;
-  active: boolean;
-  coverage: number;
   indicators: number;
   lastUpdate: string;
-  categories: { name: string; count: number; configured: number }[];
+  categories: { name: string; count: number }[];
   docsUrl: string;
 }
 
@@ -35,14 +33,13 @@ function getDefaultMethodologies(t: TFunction): Methodology[] {
       icon: BookOpen,
       gradient: 'from-green-500 to-emerald-600',
       bgLight: 'bg-green-50',
-      active: true,
-      coverage: 87,
+      
       indicators: 34,
       lastUpdate: t('settings.methodology.gri.lastUpdate', 'janv. 2026'),
       categories: [
-        { name: t('settings.methodology.catEnvironnement', 'Environnement'), count: 12, configured: 10 },
-        { name: t('settings.methodology.catSocial', 'Social'), count: 14, configured: 12 },
-        { name: t('settings.methodology.catGouvernance', 'Gouvernance'), count: 8, configured: 7 },
+        { name: t('settings.methodology.catEnvironnement', 'Environnement'), count: 12 },
+        { name: t('settings.methodology.catSocial', 'Social'), count: 14 },
+        { name: t('settings.methodology.catGouvernance', 'Gouvernance'), count: 8 },
       ],
       docsUrl: 'https://www.globalreporting.org',
     },
@@ -54,14 +51,13 @@ function getDefaultMethodologies(t: TFunction): Methodology[] {
       icon: BarChart3,
       gradient: 'from-blue-500 to-blue-600',
       bgLight: 'bg-blue-50',
-      active: true,
-      coverage: 72,
+      
       indicators: 27,
       lastUpdate: t('settings.methodology.sasb.lastUpdate', 'déc. 2025'),
       categories: [
-        { name: t('settings.methodology.catFinance', 'Finance'), count: 9, configured: 7 },
-        { name: t('settings.methodology.catCapitalHumain', 'Capital humain'), count: 10, configured: 6 },
-        { name: t('settings.methodology.catEnvironnement', 'Environnement'), count: 8, configured: 6 },
+        { name: t('settings.methodology.catFinance', 'Finance'), count: 9 },
+        { name: t('settings.methodology.catCapitalHumain', 'Capital humain'), count: 10 },
+        { name: t('settings.methodology.catEnvironnement', 'Environnement'), count: 8 },
       ],
       docsUrl: 'https://sasb.org',
     },
@@ -73,14 +69,13 @@ function getDefaultMethodologies(t: TFunction): Methodology[] {
       icon: Thermometer,
       gradient: 'from-purple-500 to-indigo-600',
       bgLight: 'bg-purple-50',
-      active: true,
-      coverage: 91,
+      
       indicators: 19,
       lastUpdate: t('settings.methodology.tcfd.lastUpdate', 'févr. 2026'),
       categories: [
-        { name: t('settings.methodology.catGouvernance', 'Gouvernance'), count: 5, configured: 5 },
-        { name: t('settings.methodology.catStrategie', "Stratégie"), count: 6, configured: 5 },
-        { name: t('settings.methodology.catRisques', 'Risques'), count: 8, configured: 7 },
+        { name: t('settings.methodology.catGouvernance', 'Gouvernance'), count: 5 },
+        { name: t('settings.methodology.catStrategie', "Stratégie"), count: 6 },
+        { name: t('settings.methodology.catRisques', 'Risques'), count: 8 },
       ],
       docsUrl: 'https://www.fsb-tcfd.org',
     },
@@ -92,14 +87,13 @@ function getDefaultMethodologies(t: TFunction): Methodology[] {
       icon: Settings,
       gradient: 'from-orange-500 to-red-500',
       bgLight: 'bg-orange-50',
-      active: false,
-      coverage: 41,
+      
       indicators: 48,
       lastUpdate: t('settings.methodology.csrd.lastUpdate', 'mars 2026'),
       categories: [
-        { name: t('settings.methodology.catEnvironnementE', 'Environnement (E)'), count: 18, configured: 8 },
-        { name: t('settings.methodology.catSocialS', 'Social (S)'), count: 16, configured: 7 },
-        { name: t('settings.methodology.catGouvernanceG', 'Gouvernance (G)'), count: 14, configured: 5 },
+        { name: t('settings.methodology.catEnvironnementE', 'Environnement (E)'), count: 18 },
+        { name: t('settings.methodology.catSocialS', 'Social (S)'), count: 16 },
+        { name: t('settings.methodology.catGouvernanceG', 'Gouvernance (G)'), count: 14 },
       ],
       docsUrl: 'https://efrag.org/esrs',
     },
@@ -109,14 +103,14 @@ function getDefaultMethodologies(t: TFunction): Methodology[] {
 export default function MethodologyConfig() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [methodologies, setMethodologies] = useState<Methodology[]>(() => getDefaultMethodologies(t));
+  const methodologies = getDefaultMethodologies(t);
   const [expanded, setExpanded] = useState<string | null>('gri');
-  const [saving, setSaving] = useState(false);
 
   // ── ESG Pillar Weights ──────────────────────────────────────────────────────
   const [weights, setWeights] = useState({ env: 40, soc: 35, gov: 25 }); // in %
   const [weightsSaved, setWeightsSaved] = useState(false);
   const [savingWeights, setSavingWeights] = useState(false);
+  const [weightsState, setWeightsState] = useState<'loading' | 'ready' | 'error'>('loading');
   const weightSum = weights.env + weights.soc + weights.gov;
 
   useEffect(() => {
@@ -124,8 +118,9 @@ export default function MethodologyConfig() {
       .then(res => {
         const w = res.data?.weights;
         if (w) setWeights({ env: Math.round(w.env * 100), soc: Math.round(w.soc * 100), gov: Math.round(w.gov * 100) });
+        setWeightsState('ready');
       })
-      .catch(() => {});
+      .catch(() => setWeightsState('error'));
   }, []);
 
   const handleSaveWeights = async () => {
@@ -142,66 +137,6 @@ export default function MethodologyConfig() {
       setSavingWeights(false);
     }
   };
-
-  // Fetch real data completeness to calibrate coverage indicators
-  useEffect(() => {
-    api.get('/data-entry/stats')
-      .then(res => {
-        const d = res.data
-        if (!d || (d.total ?? 0) === 0) return
-        const totalEntries = d.total ?? 0
-        const envEntries   = d.by_pillar?.['environmental'] ?? Math.round(totalEntries * 0.40)
-        const socEntries   = d.by_pillar?.['social']        ?? Math.round(totalEntries * 0.35)
-        const govEntries   = d.by_pillar?.['governance']    ?? Math.round(totalEntries * 0.25)
-
-        setMethodologies(prev => prev.map(m => {
-          // Compute real coverage: actual entries vs total methodology indicators
-          const totalIndicators = m.categories.reduce((s, c) => s + c.count, 0)
-          const realConfigured = Math.min(totalEntries, totalIndicators)
-          const realCoverage = Math.round((realConfigured / totalIndicators) * 100)
-
-          // Distribute configured counts proportionally across E/S/G categories
-          const updatedCategories = m.categories.map(cat => {
-            const catNameLower = cat.name.toLowerCase()
-            let entries: number
-            if (catNameLower.includes('env') || catNameLower.includes('climat') || catNameLower.includes('risque')) {
-              entries = envEntries
-            } else if (catNameLower.includes('soc') || catNameLower.includes('capital') || catNameLower.includes('rh') || catNameLower.includes('travail')) {
-              entries = socEntries
-            } else {
-              // Gouvernance, stratégie, finance, compliance
-              entries = govEntries
-            }
-            const configured = Math.min(cat.count, Math.round(entries * (cat.count / 20)))
-            return { ...cat, configured: Math.max(0, configured) }
-          })
-
-          return {
-            ...m,
-            coverage: realCoverage,
-            categories: updatedCategories,
-          }
-        }))
-      })
-      .catch(() => {}) // Keep defaults on error
-  }, [])
-
-  const toggleActive = (id: string) => {
-    setMethodologies(prev =>
-      prev.map(m => m.id === id ? { ...m, active: !m.active } : m)
-    );
-    const m = methodologies.find(m => m.id === id);
-    if (m) toast.success(`${m.name} ${m.active ? t('methodology.deactivated') : t('methodology.activated')}`);
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    await new Promise(r => setTimeout(r, 900));
-    setSaving(false);
-    toast.success(t('methodology.saveSuccess'));
-  };
-
-  const activeCount = methodologies.filter(m => m.active).length;
 
   return (
     <div className="space-y-6">
@@ -225,42 +160,18 @@ export default function MethodologyConfig() {
             <h1 className="text-3xl font-bold mb-1">{t('methodology.title')}</h1>
             <p className="text-emerald-100">{t('methodology.subtitle')}</p>
           </div>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-2 px-5 py-2.5 bg-white text-emerald-700 rounded-xl text-sm font-bold hover:bg-emerald-50 disabled:opacity-60 transition-all shadow-md"
-          >
-            {saving
-              ? <><div className="animate-spin h-4 w-4 border-2 border-emerald-600 border-t-transparent rounded-full" />{t('methodology.saving')}</>
-              : <><Save className="h-4 w-4" />{t('methodology.save')}</>
-            }
-          </button>
         </div>
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white border-2 border-green-100 rounded-2xl p-5">
-          <p className="text-3xl font-black text-gray-900">{activeCount}</p>
-          <p className="text-sm font-semibold text-gray-500 mt-1">{t('methodology.active')}</p>
-        </div>
+      <div className="grid grid-cols-2 gap-4">
         <div className="bg-white border-2 border-gray-100 rounded-2xl p-5">
           <p className="text-3xl font-black text-gray-900">{methodologies.length}</p>
           <p className="text-sm font-semibold text-gray-500 mt-1">{t('methodology.available')}</p>
         </div>
         <div className="bg-white border-2 border-blue-100 rounded-2xl p-5">
-          <p className="text-3xl font-black text-gray-900">
-            {methodologies.filter(m => m.active).reduce((s, m) => s + m.indicators, 0)}
-          </p>
-          <p className="text-sm font-semibold text-gray-500 mt-1">{t('methodology.activeIndicators')}</p>
-        </div>
-        <div className="bg-white border-2 border-purple-100 rounded-2xl p-5">
-          <p className="text-3xl font-black text-gray-900">
-            {activeCount > 0
-              ? Math.round(methodologies.filter(m => m.active).reduce((s, m) => s + m.coverage, 0) / activeCount)
-              : 0}%
-          </p>
-          <p className="text-sm font-semibold text-gray-500 mt-1">{t('methodology.avgCoverage')}</p>
+          <p className="text-3xl font-black text-gray-900">{methodologies.reduce((s, m) => s + m.indicators, 0)}</p>
+          <p className="text-sm font-semibold text-gray-500 mt-1">{t('settings.methodology.totalCatalog', "Indicateurs au catalogue")}</p>
         </div>
       </div>
 
@@ -308,6 +219,11 @@ export default function MethodologyConfig() {
           ))}
         </div>
 
+        {weightsState === 'error' && (
+          <p className="mt-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+            {t('settings.methodology.weightsLoadError', "Impossible de charger vos pondérations : les valeurs ci-dessus ne sont pas celles enregistrées. Rechargez la page avant de modifier.")}
+          </p>
+        )}
         <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
           <p className="text-xs text-gray-400">
             {Math.abs(weightSum - 100) > 1
@@ -316,7 +232,7 @@ export default function MethodologyConfig() {
           </p>
           <button
             onClick={handleSaveWeights}
-            disabled={savingWeights || Math.abs(weightSum - 100) > 1}
+            disabled={savingWeights || weightsState !== 'ready' || Math.abs(weightSum - 100) > 1}
             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 transition-all"
           >
             {savingWeights
@@ -338,7 +254,7 @@ export default function MethodologyConfig() {
             <div
               key={m.id}
               className={`bg-white border-2 rounded-2xl overflow-hidden transition-all duration-200 ${
-                m.active ? 'border-green-200' : 'border-gray-100'
+                'border-gray-100'
               }`}
             >
               {/* Header row */}
@@ -351,43 +267,9 @@ export default function MethodologyConfig() {
                   <div className="flex items-center gap-3 mb-0.5">
                     <h3 className="font-bold text-gray-900">{m.name}</h3>
                     <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full font-mono">{m.version}</span>
-                    {m.active ? (
-                      <span className="text-xs font-bold px-2.5 py-0.5 bg-green-100 text-green-700 rounded-full flex items-center gap-1">
-                        <CheckCircle className="h-3 w-3" /> {t('methodology.active')}
-                      </span>
-                    ) : (
-                      <span className="text-xs font-bold px-2.5 py-0.5 bg-gray-100 text-gray-500 rounded-full">{t('methodology.inactive')}</span>
-                    )}
                   </div>
                   <p className="text-sm text-gray-500 truncate">{m.description}</p>
                 </div>
-
-                {/* Coverage */}
-                <div className="hidden md:flex flex-col items-end gap-1 flex-shrink-0 w-28">
-                  <span className="text-xs text-gray-400">{t('methodology.coverage')}</span>
-                  <div className="flex items-center gap-2">
-                    <div className="h-1.5 w-16 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full bg-gradient-to-r ${m.gradient} rounded-full`}
-                        style={{ width: `${m.coverage}%` }}
-                      />
-                    </div>
-                    <span className="text-sm font-bold text-gray-900">{m.coverage}%</span>
-                  </div>
-                </div>
-
-                {/* Toggle switch */}
-                <button
-                  type="button"
-                  onClick={() => toggleActive(m.id)}
-                  className={`relative w-11 h-6 rounded-full transition-colors duration-300 flex-shrink-0 ${
-                    m.active ? 'bg-green-500' : 'bg-gray-200'
-                  }`}
-                >
-                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-300 ${
-                    m.active ? 'translate-x-6' : 'translate-x-1'
-                  }`} />
-                </button>
 
                 {/* Expand */}
                 <button
@@ -403,24 +285,12 @@ export default function MethodologyConfig() {
               {isExpanded && (
                 <div className="border-t border-gray-100 px-5 pb-5 pt-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-                    {m.categories.map((cat) => {
-                      const pct = Math.round((cat.configured / cat.count) * 100);
-                      return (
-                        <div key={cat.name} className="p-4 bg-gray-50 rounded-xl">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-semibold text-gray-700">{cat.name}</span>
-                            <span className="text-xs text-gray-500">{cat.configured}/{cat.count}</span>
-                          </div>
-                          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full bg-gradient-to-r ${m.gradient} rounded-full transition-all duration-500`}
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                          <p className="text-xs text-gray-400 mt-1.5">{pct}% {t('methodology.configured')}</p>
-                        </div>
-                      );
-                    })}
+                    {m.categories.map((cat) => (
+                      <div key={cat.name} className="p-4 bg-gray-50 rounded-xl flex items-center justify-between">
+                        <span className="text-sm font-semibold text-gray-700">{cat.name}</span>
+                        <span className="text-xs text-gray-500">{cat.count} {t('settings.methodology.indicatorsShort', 'indicateurs')}</span>
+                      </div>
+                    ))}
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -436,11 +306,6 @@ export default function MethodologyConfig() {
                       >
                         <ExternalLink className="h-3.5 w-3.5" /> {t('methodology.documentation')}
                       </a>
-                      <button
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-gray-800 px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        <Settings className="h-3.5 w-3.5" /> {t('methodology.configure')}
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -455,9 +320,9 @@ export default function MethodologyConfig() {
         <div className="flex items-start gap-3">
           <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
           <div>
-            <p className="font-semibold text-blue-900 mb-1">{t('methodology.complianceTitle')}</p>
+            <p className="font-semibold text-blue-900 mb-1">{t('settings.methodology.noteTitle', 'Catalogue de référentiels')}</p>
             <p className="text-sm text-blue-700">
-              {t('methodology.complianceDesc')}
+              {t('settings.methodology.noteDesc', "Cette page présente les référentiels pris en charge par la plateforme. Seule la pondération des piliers ESG est un réglage enregistré ; elle s'applique au calcul de votre score.")}
             </p>
           </div>
         </div>
