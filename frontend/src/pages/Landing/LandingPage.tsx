@@ -787,7 +787,7 @@ function PreviewWebhooks() {
         ))}
       </div>
       <div className="grid grid-cols-3 gap-2 text-xs text-center mt-2">
-        {[{ l: 'Appels 24h', v: '1 248', c: 'text-violet-300' }, { l: 'Taux succès', v: '99.2%', c: 'text-green-300' }, { l: 'Latence', v: '< 200ms', c: 'text-blue-300' }].map((s, i) => (
+        {[{ l: 'Signature', v: 'HMAC-SHA256', c: 'text-violet-300' }, { l: 'Historique', v: 'des envois', c: 'text-green-300' }, { l: 'Durée', v: 'mesurée', c: 'text-blue-300' }].map((s, i) => (
           <div key={i} className="bg-white/5 rounded-lg p-2">
             <div className={`font-bold ${s.c}`}>{s.v}</div>
             <div className="text-slate-400">{s.l}</div>
@@ -2117,19 +2117,19 @@ export default function LandingPage() {
 
             {/* Pépite 3 : Préflight SBTi */}
             <div className="group relative p-8 bg-white rounded-3xl border-2 border-violet-100 hover:border-violet-300 hover:shadow-2xl hover:shadow-violet-500/10 transition-all duration-300 flex flex-col">
-              <div className="absolute -top-3 left-6 px-3 py-1 bg-gradient-to-r from-violet-500 to-purple-600 text-white text-[10px] font-extrabold tracking-widest rounded-full shadow-md">{t('landing.lp.diff.cards.2.badge', 'ÉCONOMISE 9 500 $')}</div>
+              <div className="absolute -top-3 left-6 px-3 py-1 bg-gradient-to-r from-violet-500 to-purple-600 text-white text-[10px] font-extrabold tracking-widest rounded-full shadow-md">{t('landing.lp.diff.cards.2.badge', 'PRÉPARATION SBTi')}</div>
               <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center mb-5 shadow-lg">
                 <Target className="h-6 w-6 text-white" />
               </div>
-              <h3 className="text-xl font-extrabold text-gray-900 mb-2">{t('landing.lp.diff.cards.2.title', 'Préflight SBTi v5.2')}</h3>
-              <div className="text-xs font-bold text-violet-700 mb-4">{t('landing.lp.diff.cards.2.subtitle', 'Validation avant paiement du fee 9 500 $')}</div>
+              <h3 className="text-xl font-extrabold text-gray-900 mb-2">{t('landing.lp.diff.cards.2.title', 'Préparation du dossier SBTi')}</h3>
+              <div className="text-xs font-bold text-violet-700 mb-4">{t('landing.lp.diff.cards.2.subtitle', 'Vérifications indicatives avant soumission')}</div>
               <p className="text-sm text-gray-600 leading-relaxed mb-5 flex-1">
                 <Trans i18nKey="landing.lp.diff.cards.2.body">
-                  Avant de soumettre vos objectifs au Science-Based Targets initiative (et de payer 9 500 $ de frais), nous validons les critères v5.2 et vous évitons les <strong>30 % de rejets</strong> à la première revue.
+                  Avant de soumettre vos objectifs au Science-Based Targets initiative, ESGFlow vous aide à préparer votre dossier avec des repères indicatifs. Les critères SBTi évoluent (Net-Zero Standard V2.0) : <strong>la validation reste prononcée par la SBTi</strong>.
                 </Trans>
               </p>
               <div className="space-y-2 mb-6">
-                {['Critères v5.2 vérifiés', 'Trajectoire 1.5°C : 4.2%/an', 'Scope 3 ≥ 40 % requis', 'Net-zero ≤ 2050'].map((p, i) => (
+                {['Repère de trajectoire 1,5 °C (indicatif)', 'Périmètre Scope 1, 2 et 3 à documenter', 'Cible et année de référence suivies', 'Critères à confirmer auprès de la SBTi'].map((p, i) => (
                   <div key={i} className="flex items-center gap-2 text-sm text-gray-700">
                     <Check className="h-4 w-4 text-violet-500 flex-shrink-0" />
                     {t(`landing.lp.diff.cards.2.points.${i}`, p)}
@@ -2953,7 +2953,7 @@ export default function LandingPage() {
               {[
                 {
                   problem: 'Données ESG fragmentées dans des tableurs',
-                  problemDesc: 'Les équipes RSE passent 60% de leur temps à consolider des fichiers Excel épars, sans traçabilité ni contrôle des versions.',
+                  problemDesc: 'Consolider des fichiers Excel épars prend du temps aux équipes RSE, sans traçabilité ni contrôle des versions.',
                   solution: 'Plateforme centralisée avec 22 modules connectés',
                   solutionDesc: 'Un seul endroit pour saisir, valider, approuver et exporter toutes vos données ESG — avec circuit d\'approbation et signature SHA-256.',
                   problemIcon: AlertTriangle,

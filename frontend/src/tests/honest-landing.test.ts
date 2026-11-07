@@ -125,3 +125,16 @@ describe('pages /compare retirées', () => {
     expect(routes).toMatch(/path="\/compare\/:slug"[^>]*Navigate to="\/"/);
   });
 });
+
+describe('page publique : pas de métriques d’exploitation ni d’économies SBTi inventées', () => {
+  it('l’aperçu Webhooks n’affiche plus de volume d’appels, taux de succès ou latence factices', () => {
+    expect(landing).not.toMatch(/Appels 24h|1 248|99\.2%|< 200ms/);
+  });
+  it('la carte SBTi ne promet ni économie de frais ni taux de rejet chiffré', () => {
+    expect(landing).not.toMatch(/ÉCONOMISE|9 500 \$|30 % de rejets/);
+    expect(JSON.stringify((en as any).landing.lp.diff.cards[2])).not.toMatch(/SAVES|9,500|30%/);
+  });
+  it('plus de statistique non sourcée sur le temps passé par les équipes RSE', () => {
+    expect(landing).not.toMatch(/passent 60% de leur temps/);
+  });
+});
