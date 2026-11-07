@@ -10,6 +10,7 @@ from app.dependencies import get_db, get_current_user
 from app.models.data_entry import DataEntry
 from app.models.user import User
 from app.services.audit_service import log_change
+from app.utils.spreadsheet_safe import safe_cell
 
 router = APIRouter()
 
@@ -467,6 +468,9 @@ async def export_data_entries(
             "notes": e.notes or "",
             "created_at": str(e.created_at)[:19] if e.created_at else "",
         })
+
+    # Champs libres : neutralise l'injection de formules (=, +, -, @) à l'ouverture dans Excel
+    rows = [{k: safe_cell(v) for k, v in r.items()} for r in rows]
 
     if format == "csv":
         import csv, io

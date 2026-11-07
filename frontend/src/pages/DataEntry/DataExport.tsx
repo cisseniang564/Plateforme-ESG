@@ -76,16 +76,16 @@ export default function DataExport() {
 
   const loadStats = async () => {
     try { setLoadingStats(true); const res = await api.get('/data-entry/stats'); setStats(res.data) }
-    catch { /* silently ignore */ }
+    catch { setStats(null) } // le compteur est facultatif : l'export reste utilisable
     finally { setLoadingStats(false) }
   }
 
+  // Nombre affiché uniquement s'il est exact : les stats ne permettent pas de
+  // croiser statut ou année, on n'extrapole donc jamais (pas de "~N lignes").
   const countForFilter = () => {
-    if (!stats) return null
-    let count = stats.total
-    if (pillar && stats.by_pillar) count = stats.by_pillar[pillar] ?? 0
-    if (status && stats.by_verification_status) count = Math.round(count * ((stats.by_verification_status[status] ?? 0) / Math.max(stats.total, 1)))
-    return count
+    if (!stats || status || year) return null
+    if (pillar) return stats.by_pillar ? (stats.by_pillar[pillar] ?? 0) : null
+    return stats.total
   }
 
   const handleExport = async (fmt: 'xlsx' | 'csv') => {
@@ -223,7 +223,7 @@ export default function DataExport() {
               <button onClick={e => { e.stopPropagation(); handleExport(fmt.id as 'xlsx' | 'csv') }} disabled={isExporting || stats?.total === 0}
                 className={`mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white transition-all ${fmt.id === 'xlsx' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'} disabled:opacity-50 disabled:cursor-not-allowed`}>
                 {isExporting ? <><RefreshCw size={14} className="animate-spin" />{t('dexp.exporting', 'Export en cours…')}</>
-                  : <><FileDown size={14} />{t('dexp.downloadBtn', 'Télécharger {{label}}', { label: fmt.label })}{estimatedCount !== null && <span className="bg-white/20 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">~{estimatedCount.toLocaleString(numLocale())} {t('dexp.lines','lignes')}</span>}</>}
+                  : <><FileDown size={14} />{t('dexp.downloadBtn', 'Télécharger {{label}}', { label: fmt.label })}{estimatedCount !== null && <span className="bg-white/20 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{estimatedCount.toLocaleString(numLocale())} {t('dexp.lines','lignes')}</span>}</>}
               </button>
             </div>
           )

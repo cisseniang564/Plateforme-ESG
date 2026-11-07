@@ -17,6 +17,7 @@ from uuid import UUID
 
 from app.services import gaia_service as gaia
 from app.services.gaia_service import GaiaError
+from app.utils.spreadsheet_safe import safe_cell
 
 logger = logging.getLogger(__name__)
 
@@ -442,8 +443,8 @@ def export_xlsx(title: str, client_name: Optional[str], questions: List[Dict[str
             f"{s['label']} = {s['value']}{(' ' + s['unit']) if s.get('unit') else ''}{(' (' + s['period'] + ')') if s.get('period') else ''}"
             f"{'' if s.get('verified') else ' [non vérifié]'}" for s in q.get("sources") or []
         )
-        ws.append([n, q.get("section") or "", q["text"], q.get("answer") or "", STATUS_LABEL.get(q.get("status"), ""),
-                   sources, q.get("confidence") or ""])
+        ws.append([n, safe_cell(q.get("section") or ""), safe_cell(q["text"]), safe_cell(q.get("answer") or ""), STATUS_LABEL.get(q.get("status"), ""),
+                   safe_cell(sources), q.get("confidence") or ""])
         ws.cell(row=ws.max_row, column=5).fill = PatternFill("solid", fgColor=fills.get(q.get("status"), "FFFFFF"))
     for col, width in zip("ABCDEFG", (5, 22, 60, 45, 22, 55, 11)):
         ws.column_dimensions[col].width = width
