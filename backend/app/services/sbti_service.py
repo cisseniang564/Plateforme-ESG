@@ -4,7 +4,7 @@ SBTi Target Validation Service.
 Two responsibilities:
 
 1. **Pre-flight validation** — checks a commitment against the SBTi Criteria
-   v5.2 *before* it's submitted, so users know it'll pass before paying the
+   Near-Term Criteria v5.x *before* it's submitted, so users know it'll pass before paying the
    USD 9,500 validation fee:
      - Near-term target year is 5-10 years from submission year
      - Reduction rate matches the method (1.5°C requires ≥ 4.2%/yr linear,
@@ -21,7 +21,8 @@ Two responsibilities:
 
 References
 ----------
-- SBTi Criteria and Recommendations v5.2 (June 2024)
+- SBTi Near-Term Criteria v5.x (en vigueur pour les validations jusqu'au 31 janvier 2027)
+- SBTi Corporate Net-Zero Standard V2.0 (11 juin 2026) : applicable aux validations à partir du 1er février 2027
 - SBTi Net-Zero Standard v1.2 (March 2024)
 - SBTi Corporate Manual v5.2
 """
@@ -36,7 +37,7 @@ from app.models.sbti_commitment import SBTiCommitment
 
 
 # ────────────────────────────────────────────────────────────────────────────
-# Validation rules (SBTi Criteria v5.2)
+# Validation rules (SBTi Near-Term Criteria v5.x — V2.0 : voir _v2_readiness_notes)
 # ────────────────────────────────────────────────────────────────────────────
 
 # Minimum annual linear reduction rate per method
@@ -85,6 +86,30 @@ class ValidationResult:
             "issues": [asdict(i) for i in self.issues],
             "summary_fr": self.summary_fr,
         }
+
+
+def _v2_readiness_notes(c: SBTiCommitment, horizon: int) -> List[ValidationIssue]:
+    """Points à anticiper pour la norme Corporate Net-Zero V2.0 (validations dès le 1er février 2027).
+
+    Informatif uniquement : ne bloque jamais, ne modifie pas les contrôles v5.x.
+    """
+    notes: List[ValidationIssue] = []
+    if horizon != 5:
+        notes.append(ValidationIssue(
+            "info", "V2.0",
+            f"Norme V2.0 (dès le 01/02/2027) : les cibles court terme couvrent 5 ans à compter de la "
+            f"soumission ; votre cible est à {horizon} an(s).",
+            "near_term_target_year",
+        ))
+    notes.append(ValidationIssue(
+        "info", "V2.0",
+        "Norme V2.0 : des cibles distinctes pour le scope 1 et le scope 2 (cible combinée supprimée), "
+        "année de base = année la plus récente disposant de données complètes, scope 3 obligatoire "
+        "seulement pour les entreprises de catégorie A. Les taux annuels ne sont plus un seuil fixe : "
+        "utilisez l'outil officiel de la SBTi.",
+        None,
+    ))
+    return notes
 
 
 def validate_commitment(c: SBTiCommitment) -> ValidationResult:
@@ -200,6 +225,8 @@ def validate_commitment(c: SBTiCommitment) -> ValidationResult:
             "Email de contact manquant — requis pour la communication SBTi.",
             "contact_email",
         ))
+
+    issues.extend(_v2_readiness_notes(c, horizon))
 
     blockers = sum(1 for i in issues if i.severity == "blocker")
     warnings = sum(1 for i in issues if i.severity == "warning")
@@ -390,7 +417,7 @@ def generate_dossier_pdf(c: SBTiCommitment, validation: ValidationResult) -> byt
 
     # ── §6 Validation checklist ────────────────────────────────────────
     story.append(PageBreak())
-    story.append(Paragraph("§6 — Pré-validation des critères SBTi v5.2", h2))
+    story.append(Paragraph("§6 — Pré-contrôle indicatif des critères SBTi (Near-Term v5.x)", h2))
     if validation.is_submission_ready:
         story.append(Paragraph(
             f"<font color='#0d6e3a'><b>✓ Dossier prêt pour soumission.</b></font> "

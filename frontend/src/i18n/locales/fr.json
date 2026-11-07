@@ -2186,7 +2186,7 @@
   },
   "ia": {
     "title": "IA & Automatisation",
-    "subtitle": "Chatbot ESG · OCR · Détection d'anomalies · Prédictions",
+    "subtitle": "Assistant ESG · Détection d'anomalies · Prévisions",
     "tabs": {
       "chatbot": "Chatbot ESG",
       "ocr": "Import OCR",

@@ -1855,7 +1855,7 @@ function SBTiDossierButton({
             📄 {tr('decarb.sbtiDossierTitle', 'Dossier officiel de validation SBTi')}
           </p>
           <p className="text-xs text-emerald-700 leading-relaxed">
-            {tr('decarb.sbtiDossierDesc', "Génère le PDF prêt à joindre à votre soumission sur sciencebasedtargets.org — inclut la pré-validation contre les critères v5.2 (réduction min, Scope 3, net-zéro ≤ 2050).")}
+            {tr('decarb.sbtiDossierDesc', "Génère le PDF prêt à joindre à votre soumission sur sciencebasedtargets.org — inclut la pré-validation contre les critères Near-Term v5.x (réduction min, Scope 3, net-zéro ≤ 2050).")}
           </p>
         </div>
         <button
