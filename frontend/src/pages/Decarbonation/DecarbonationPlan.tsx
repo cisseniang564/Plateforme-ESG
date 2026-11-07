@@ -40,7 +40,6 @@ interface Action {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const DEFAULT_BASE_EMISSIONS = 12_500;
 const NET_ZERO_2050 = 800;
 
 function buildTrajectory(baseEmissions: number) {
@@ -130,6 +129,9 @@ const DIFF_CFG: Record<Difficulty, string> = {
 // ─── Mini SVG trajectory chart ────────────────────────────────────────────────
 function TrajectoryChart({ planReduction, baseEmissions, trajectory, historicalData = [] }: { planReduction: number; baseEmissions: number; trajectory: ReturnType<typeof buildTrajectory>; historicalData?: HistoricalPoint[] }) {
   const { t: tr } = useTranslation();
+  if (baseEmissions <= 0) {
+    return <p className="text-sm text-gray-500 py-6 text-center">{tr('decarb.noTrajectory', 'Trajectoire indisponible : aucune émission enregistrée. Renseignez votre Bilan carbone.')}</p>;
+  }
   const W = 700, H = 260, PAD = { t: 20, r: 20, b: 40, l: 60 };
   const cw = W - PAD.l - PAD.r;
   const ch = H - PAD.t - PAD.b;
@@ -222,12 +224,21 @@ function TrajectoryChart({ planReduction, baseEmissions, trajectory, historicalD
 }
 
 // ─── Action card ──────────────────────────────────────────────────────────────
-function ActionCard({ action, onTogglePlan, onStatusChange }: {
+function ActionCard({ action, onTogglePlan, onStatusChange, onEdit }: {
   action: Action;
   onTogglePlan: (id: string) => void;
   onStatusChange: (id: string, s: ActionStatus) => void;
+  onEdit: (id: string, patch: { impact: number; cost: number }) => void;
 }) {
   const { t: tr } = useTranslation();
+  const [editing, setEditing] = useState(false);
+  const [impactDraft, setImpactDraft] = useState(String(action.impact));
+  const [costDraft, setCostDraft] = useState(String(action.cost));
+  const commitEdit = () => {
+    const i = parseFloat(impactDraft), c = parseFloat(costDraft);
+    if (Number.isFinite(i) && i >= 0 && Number.isFinite(c) && c >= 0) onEdit(action.id, { impact: i, cost: c });
+    setEditing(false);
+  };
   const Icon = CATEGORY_ICONS[action.category] || Leaf;
   const sc = STATUS_CFG[action.status];
   const SIcon = sc.icon;
@@ -270,7 +281,20 @@ function ActionCard({ action, onTogglePlan, onStatusChange }: {
       <p className="text-xs text-gray-500 leading-relaxed mb-4">{action.description}</p>
 
       {/* Metrics */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
+      {editing ? (
+        <div className="grid grid-cols-2 gap-2 mb-4">
+          <label className="text-xs text-green-700">{tr('decarb.editImpact', 'Gain (tCO₂e/an)')}
+            <input type="number" min="0" value={impactDraft} onChange={e => setImpactDraft(e.target.value)}
+              className="mt-1 w-full border border-green-200 rounded-lg px-2 py-1 text-sm text-gray-900" />
+          </label>
+          <label className="text-xs text-blue-700">{tr('decarb.editCost', 'Investissement (k€)')}
+            <input type="number" min="0" value={costDraft} onChange={e => setCostDraft(e.target.value)}
+              className="mt-1 w-full border border-blue-200 rounded-lg px-2 py-1 text-sm text-gray-900" />
+          </label>
+          <button onClick={commitEdit} className="col-span-2 text-xs font-semibold text-white bg-green-600 rounded-lg py-1.5">{tr('decarb.editSave', 'Valider')}</button>
+        </div>
+      ) : (
+      <div className="grid grid-cols-3 gap-2 mb-1">
         <div className="bg-green-50 rounded-xl p-2.5 text-center">
           <div className="text-base font-bold text-green-700">{action.impact}</div>
           <div className="text-xs text-green-600">{tr('decarbonation.metricImpact')}</div>
@@ -284,25 +308,13 @@ function ActionCard({ action, onTogglePlan, onStatusChange }: {
           <div className="text-xs text-amber-600">{tr('decarbonation.metricRoi')}</div>
         </div>
       </div>
-
-      {/* Progress bar */}
-      <div className="mb-3">
-        <div className="flex justify-between text-xs text-gray-400 mb-1">
-          <span>{tr('decarb.progress', 'Avancement')}</span>
-          <span className="font-semibold">
-            {action.status === 'terminé' ? '100%' : action.status === 'en_cours' ? '50%' : '0%'}
-          </span>
-        </div>
-        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ${
-              action.status === 'terminé' ? 'bg-green-500' :
-              action.status === 'en_cours' ? 'bg-blue-400' : 'bg-gray-200'
-            }`}
-            style={{ width: action.status === 'terminé' ? '100%' : action.status === 'en_cours' ? '50%' : '4%' }}
-          />
-        </div>
-      </div>
+      )}
+      {!editing && (
+        <button onClick={() => { setImpactDraft(String(action.impact)); setCostDraft(String(action.cost)); setEditing(true); }}
+          className="text-xs text-gray-400 hover:text-gray-700 underline mb-3">
+          {tr('decarb.editEstimates', 'Ajuster ces estimations à mon cas')}
+        </button>
+      )}
 
       {/* Status */}
       <div className="flex items-center justify-between">
@@ -339,7 +351,7 @@ export default function DecarbonationPlan() {
   const [scenarioSelected, setScenarioSelected] = useState<string[]>([]);
 
   // ── Real emissions from API ──────────────────────────────────────────────
-  const [baseEmissions, setBaseEmissions] = useState(DEFAULT_BASE_EMISSIONS);
+  const [baseEmissions, setBaseEmissions] = useState(0);
   const [scope1, setScope1] = useState(0);
   const [scope2, setScope2] = useState(0);
   const [scope3, setScope3] = useState(0);
@@ -348,6 +360,8 @@ export default function DecarbonationPlan() {
   const [historicalData, setHistoricalData] = useState<HistoricalPoint[]>([]);
   const [planLoaded, setPlanLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Load real emissions (current year)
@@ -367,9 +381,9 @@ export default function DecarbonationPlan() {
           setHasRealData(true);
         }
       })
-      .catch(() => {})
+      .catch(() => setLoadError(true))
       .finally(() => setLoadingEmissions(false));
-  }, []);
+  }, [reloadKey]);
 
   // Load historical emissions (last 5 years)
   useEffect(() => {
@@ -377,24 +391,28 @@ export default function DecarbonationPlan() {
       .then(res => {
         setHistoricalData(res.data?.history || []);
       })
-      .catch(() => {});
-  }, []);
+      .catch(() => setLoadError(true));
+  }, [reloadKey]);
 
   // Load saved plan from API
   useEffect(() => {
     api.get('/carbon/plan')
       .then(res => {
-        const savedActions: { id: string; inPlan: boolean; status: ActionStatus }[] = res.data?.actions || [];
+        const savedActions: { id: string; inPlan: boolean; status: ActionStatus; impact?: number; cost?: number }[] = res.data?.actions || [];
         if (savedActions.length > 0) {
           setActions(prev => prev.map(a => {
             const saved = savedActions.find(s => s.id === a.id);
-            return saved ? { ...a, inPlan: saved.inPlan, status: saved.status } : a;
+            return saved ? {
+              ...a, inPlan: saved.inPlan, status: saved.status,
+              impact: typeof saved.impact === 'number' ? saved.impact : a.impact,
+              cost: typeof saved.cost === 'number' ? saved.cost : a.cost,
+            } : a;
           }));
         }
+        setPlanLoaded(true);
       })
-      .catch(() => {})
-      .finally(() => setPlanLoaded(true));
-  }, []);
+      .catch(() => { setLoadError(true); /* plan non chargé : on n'écrase pas la sauvegarde existante */ })
+  }, [reloadKey]);
 
   // Auto-save plan (debounced 1.5s) after plan is loaded
   const savePlan = useCallback((currentActions: Action[]) => {
@@ -403,10 +421,11 @@ export default function DecarbonationPlan() {
     saveTimerRef.current = setTimeout(() => {
       setSaving(true);
       const payload = {
-        actions: currentActions.map(a => ({ id: a.id, inPlan: a.inPlan, status: a.status })),
+        actions: currentActions.map(a => ({ id: a.id, inPlan: a.inPlan, status: a.status, impact: a.impact, cost: a.cost })),
         saved_at: new Date().toISOString(),
       };
       api.post('/carbon/plan', payload)
+        .then(res => { if (res.data?.saved === false) toast.error(tr('decarb.savePlanError', 'Impossible de sauvegarder le plan')); })
         .catch(() => toast.error(tr('decarb.savePlanError', 'Impossible de sauvegarder le plan')))
         .finally(() => setSaving(false));
     }, 1500);
@@ -432,7 +451,7 @@ export default function DecarbonationPlan() {
   const planCost = useMemo(() => planActions.reduce((s, a) => s + a.cost, 0), [planActions]);
   const planPct = Math.min(Math.round((planReduction / Math.max(baseEmissions - sbtiTarget2030, 1)) * 100), 100);
   const projected2030 = Math.max(baseEmissions - planReduction, sbtiTarget2030);
-  const onTrack = projected2030 <= sbtiTarget2030;
+  const onTrack = baseEmissions > 0 && projected2030 <= sbtiTarget2030;
 
   const completedActions = actions.filter(a => a.status === 'terminé').length;
   const inProgressActions = actions.filter(a => a.status === 'en_cours').length;
@@ -453,6 +472,7 @@ export default function DecarbonationPlan() {
   const sortedFiltered = useMemo(() => [...filtered].sort((a, b) => b.impact - a.impact), [filtered]);
 
   const togglePlan = (id: string) => setActions(prev => prev.map(a => a.id === id ? { ...a, inPlan: !a.inPlan } : a));
+  const editAction = (id: string, patch: { impact: number; cost: number }) => setActions(prev => prev.map(a => a.id === id ? { ...a, ...patch } : a));
   const setStatus = (id: string, status: ActionStatus) => setActions(prev => prev.map(a => a.id === id ? { ...a, status } : a));
 
   // Scenario quick-add
@@ -564,6 +584,24 @@ export default function DecarbonationPlan() {
         {/* ── Overview tab ── */}
         {tab === 'overview' && (
           <div className="space-y-8">
+            {loadError && (
+              <div role="alert" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm bg-red-50 border border-red-200 text-red-800">
+                <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                <span className="flex-1">{tr('decarb.loadError', 'Certaines données (émissions, historique ou plan) n’ont pas pu être chargées : les valeurs affichées peuvent être incomplètes et votre plan n’est pas enregistré tant que le chargement échoue.')}</span>
+                <button onClick={() => { setLoadError(false); setReloadKey(k => k + 1); }} className="font-semibold underline">{tr('decarb.retry', 'Réessayer')}</button>
+              </div>
+            )}
+            {!loadingEmissions && baseEmissions <= 0 && (
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm bg-amber-50 border border-amber-200 text-amber-800">
+                <Info className="h-4 w-4 flex-shrink-0" />
+                <span className="flex-1">{tr('decarb.noBaseline', 'Aucune émission enregistrée pour cette année : les objectifs et trajectoires ne peuvent pas être calculés. Renseignez d’abord votre Bilan carbone.')}</span>
+                <a href="/carbon" className="font-semibold underline">{tr('decarb.goCarbon', 'Ouvrir le Bilan carbone')}</a>
+              </div>
+            )}
+            <div className="flex items-start gap-2 px-4 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 text-slate-600">
+              <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
+              <span>{tr('decarb.catalogNote', 'Les gains, coûts et retours du catalogue sont des estimations types, pas des calculs sur votre entreprise. Utilisez « Ajuster ces estimations » sur chaque action avant de vous en servir.')}</span>
+            </div>
             {/* Source données */}
             {hasRealData && (
               <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700">
@@ -578,8 +616,8 @@ export default function DecarbonationPlan() {
             {/* KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: tr('decarbonation.kpiBase2024'), value: `${(baseEmissions / 1000).toFixed(1)}k`, unit: 'tCO₂e', variant: 'kpi-card-amber' },
-                { label: tr('decarbonation.kpiSbtiTarget'), value: `${(sbtiTarget2030 / 1000).toFixed(1)}k`, unit: 'tCO₂e (−42%)', variant: 'kpi-card-green' },
+                { label: tr('decarbonation.kpiBase2024'), value: baseEmissions > 0 ? `${(baseEmissions / 1000).toFixed(1)}k` : '—', unit: 'tCO₂e', variant: 'kpi-card-amber' },
+                { label: tr('decarbonation.kpiSbtiTarget'), value: baseEmissions > 0 ? `${(sbtiTarget2030 / 1000).toFixed(1)}k` : '—', unit: 'tCO₂e (repère −42 %)', variant: 'kpi-card-green' },
                 { label: tr('decarbonation.kpiPlanReduction'), value: planReduction.toLocaleString(), unit: 'tCO₂e/an', variant: 'kpi-card-blue' },
                 { label: tr('decarbonation.kpiTotalInvestment'), value: `${planCost}k`, unit: '€ investis', variant: 'kpi-card-purple' },
               ].map((k, i) => (
@@ -967,7 +1005,7 @@ export default function DecarbonationPlan() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {sortedFiltered.map(a => (
-                <ActionCard key={a.id} action={a} onTogglePlan={togglePlan} onStatusChange={setStatus} />
+                <ActionCard key={a.id} action={a} onTogglePlan={togglePlan} onStatusChange={setStatus} onEdit={editAction} />
               ))}
             </div>
           </div>
@@ -1030,7 +1068,7 @@ export default function DecarbonationPlan() {
               <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                 <div>
                   <h2 className="text-lg font-bold text-gray-900">{tr('decarb.tcfdTitle', 'Analyse de scénarios climatiques — TCFD')}</h2>
-                  <p className="text-sm text-gray-500 mt-0.5">{tr('decarb.tcfdSubtitle', 'Risques physiques & de transition selon les trajectoires IPCC AR6 · Conforme TCFD/IFRS S2')}</p>
+                  <p className="text-sm text-gray-500 mt-0.5">{tr('decarb.tcfdSubtitle', 'Risques physiques & de transition selon les trajectoires IPCC AR6 · inspiré TCFD/IFRS S2')}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 border border-blue-200 text-blue-700">IPCC AR6</span>
@@ -1043,31 +1081,31 @@ export default function DecarbonationPlan() {
                   {
                     label: 'Scénario 1,5°C',
                     subtitle: 'SSP1-1.9 — Transition rapide',
-                    horizon2030: { physicalRisk: 'Faible', transitionRisk: 'Élevé', capex: baseEmissions * 0.12 },
-                    horizon2050: { physicalRisk: 'Modéré', transitionRisk: 'Très élevé', capex: baseEmissions * 0.45 },
+                    horizon2030: { physicalRisk: 'Faible', transitionRisk: 'Élevé' },
+                    horizon2050: { physicalRisk: 'Modéré', transitionRisk: 'Très élevé' },
                     color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-300',
                     desc: 'Neutralité carbone avant 2050. Forte pression réglementaire (taxe carbone >150€/t d\'ici 2035). Actifs carbone-intensifs stranded.',
-                    risks: ['Taxe carbone +150€/t d\'ici 2035', 'Réglementation CSRD/SFDR contraignante', 'Dépréciation actifs fossiles', 'Compétitivité produits bas-carbone'],
-                    opportunities: ['Marchés verts ×3 d\'ici 2030', 'Green bonds & financement ESG', 'Avantage concurrentiel SBTi'],
+                    risks: ['Hausse du prix du carbone', 'Réglementation CSRD/SFDR contraignante', 'Dépréciation actifs fossiles', 'Compétitivité produits bas-carbone'],
+                    opportunities: ['Croissance des marchés verts', 'Green bonds & financement ESG', 'Avantage concurrentiel SBTi'],
                   },
                   {
                     label: 'Scénario 2°C',
                     subtitle: 'SSP2-4.5 — Transition modérée',
-                    horizon2030: { physicalRisk: 'Modéré', transitionRisk: 'Modéré', capex: baseEmissions * 0.07 },
-                    horizon2050: { physicalRisk: 'Élevé', transitionRisk: 'Modéré', capex: baseEmissions * 0.28 },
+                    horizon2030: { physicalRisk: 'Modéré', transitionRisk: 'Modéré' },
+                    horizon2050: { physicalRisk: 'Élevé', transitionRisk: 'Modéré' },
                     color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-300',
                     desc: 'Réchauffement de 2°C en 2100. Politiques climatiques progressives. Risques physiques croissants (inondations, canicules).',
-                    risks: ['Interruptions opérationnelles (canicules)', 'Sinistres assurance +40%', 'Stress hydrique sur chaîne d\'approvisionnement', 'Taxe carbone ~80€/t'],
+                    risks: ['Interruptions opérationnelles (canicules)', 'Hausse des sinistres et des primes d\'assurance', 'Stress hydrique sur chaîne d\'approvisionnement', 'Prix du carbone modéré'],
                     opportunities: ['Efficacité énergétique rentable', 'Adaptation produits & services'],
                   },
                   {
                     label: 'Scénario 3°C+ / BAU',
                     subtitle: 'SSP5-8.5 — Statu quo',
-                    horizon2030: { physicalRisk: 'Modéré', transitionRisk: 'Faible', capex: baseEmissions * 0.02 },
-                    horizon2050: { physicalRisk: 'Très élevé', transitionRisk: 'Faible', capex: baseEmissions * 0.85 },
+                    horizon2030: { physicalRisk: 'Modéré', transitionRisk: 'Faible' },
+                    horizon2050: { physicalRisk: 'Très élevé', transitionRisk: 'Faible' },
                     color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-300',
                     desc: 'Aucune action climatique significative. +3°C à +4°C en 2100. Dommages physiques catastrophiques, risques systémiques.',
-                    risks: ['Événements météo extrêmes +300%', 'Montée des eaux (actifs côtiers)', 'Disruption supply chain globale', 'Inassurabilité de certains actifs'],
+                    risks: ['Multiplication des événements météo extrêmes', 'Montée des eaux (actifs côtiers)', 'Disruption supply chain globale', 'Inassurabilité de certains actifs'],
                     opportunities: ['Marché de l\'adaptation climatique'],
                   },
                 ].map(sc => (
@@ -1088,8 +1126,8 @@ export default function DecarbonationPlan() {
                         <div className={`text-xs font-bold ${sc.color}`}>{sc.horizon2030.transitionRisk}</div>
                       </div>
                       <div className="bg-white/70 rounded-lg p-2 text-center">
-                        <div className="text-xs text-gray-500 mb-1">{tr('decarb.tcfdCapex2050', 'Investissement adaptation 2050')}</div>
-                        <div className={`text-sm font-extrabold ${sc.color}`}>~{Math.round(sc.horizon2050.capex / 1000)}M€</div>
+                        <div className="text-xs text-gray-500 mb-1">{tr('decarb.tcfdTransRisk2050', 'Risque transition 2050')}</div>
+                        <div className={`text-xs font-bold ${sc.color}`}>{sc.horizon2050.transitionRisk}</div>
                       </div>
                       <div className="bg-white/70 rounded-lg p-2 text-center">
                         <div className="text-xs text-gray-500 mb-1">{tr('decarb.tcfdPhysRisk2050', 'Risque physique 2050')}</div>
@@ -1117,7 +1155,7 @@ export default function DecarbonationPlan() {
 
               <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-700">
                 <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                <span>{tr('decarb.scenarioSources', 'Sources : IPCC AR6 (2021–2023), TCFD Guidance (2022), IFRS S2 Climate Disclosures (2023). Les estimations financières sont calculées proportionnellement à votre empreinte carbone ({{n}} tCO₂e) et sont indicatives — adaptez-les à votre secteur.', { n: baseEmissions.toLocaleString() })}</span>
+                <span>{tr('decarb.scenarioSources', 'Sources : IPCC AR6 (2021–2023), TCFD Guidance (2022), IFRS S2 Climate Disclosures (2023). Analyse qualitative et générique : elle n’est pas calculée sur votre activité. Pour un rapport TCFD/IFRS S2, quantifiez vos propres risques.')}</span>
               </div>
             </div>
 
@@ -1498,16 +1536,16 @@ export default function DecarbonationPlan() {
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(11);
                 doc.setTextColor(59, 130, 246);
-                doc.text('Recommandation de financement', 12, y);
+                doc.text('Pistes de financement', 12, y);
                 y += 4;
                 autoTable(doc, {
                   startY: y,
                   margin: { left: 12, right: 12 },
                   head: [['Source', 'Détail']],
                   body: [
-                    ['Financement bancaire (crédit vert BPI)', `Couvre 70% — Part à financer : ${Math.round(totalInvestment * 0.3)} k€`],
-                    ["CEE — Certificats d'Économies d'Énergie", `Bonus estimé : ${Math.round(totalInvestment * 0.15)} k€`],
-                    ["Crédit d'impôt & suramortissement fiscal", 'Certains investissements déductibles à 140%'],
+                    ['Financement bancaire (prêt vert)', 'À étudier avec votre banque (montant et taux non estimés ici)'],
+                    ["CEE — Certificats d'Économies d'Énergie", "À étudier selon l'éligibilité de chaque action (montant non estimé ici)"],
+                    ["Crédit d'impôt & suramortissement fiscal", 'À étudier avec votre conseil fiscal (dispositifs variables selon l\'année)'],
                   ],
                   headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold' },
                   bodyStyles: { fontSize: 8 },
@@ -1649,7 +1687,7 @@ export default function DecarbonationPlan() {
               {/* Section 3 — Recommandation de financement */}
               {nbActions > 0 && (
                 <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                  <h3 className="text-base font-bold text-gray-900 mb-4">{tr('decarb.finTitle', 'Recommandation de financement')}</h3>
+                  <h3 className="text-base font-bold text-gray-900 mb-4">{tr('decarb.finTitle', 'Pistes de financement')}</h3>
                   <div className="space-y-4">
                     <div className="flex items-start gap-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
                       <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
@@ -1657,7 +1695,7 @@ export default function DecarbonationPlan() {
                       </div>
                       <div>
                         <div className="text-sm font-bold text-gray-900 mb-0.5">{tr('decarb.finBank', 'Financement bancaire (crédit vert BPI)')}</div>
-                        <p className="text-sm text-gray-600">{tr('decarb.finBankDesc', 'Un crédit vert BPI/banque couvre typiquement 70% du montant. Part à financer :')} <strong className="text-blue-700">{Math.round(totalInvestment * 0.3)} k€</strong></p>
+                        <p className="text-sm text-gray-600">{tr('decarb.finBankDesc2', 'Piste à étudier avec votre banque ou Bpifrance : conditions et part financée non estimées ici.')}</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-4 p-4 bg-green-50 border border-green-200 rounded-xl">
@@ -1666,7 +1704,7 @@ export default function DecarbonationPlan() {
                       </div>
                       <div>
                         <div className="text-sm font-bold text-gray-900 mb-0.5">{tr('decarb.finCee', "CEE — Certificats d'Économies d'Énergie")}</div>
-                        <p className="text-sm text-gray-600">{tr('decarb.finCeeDesc', 'Actions énergie éligibles aux CEE pour un bonus estimé de')} <strong className="text-green-700">{Math.round(totalInvestment * 0.15)} k€</strong></p>
+                        <p className="text-sm text-gray-600">{tr('decarb.finCeeDesc2', 'Certaines actions énergie peuvent être éligibles aux CEE : à vérifier action par action (montant non estimé ici).')}</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
@@ -1675,7 +1713,7 @@ export default function DecarbonationPlan() {
                       </div>
                       <div>
                         <div className="text-sm font-bold text-gray-900 mb-0.5">{tr('decarb.finTax', "Crédit d'impôt & suramortissement fiscal")}</div>
-                        <p className="text-sm text-gray-600">{tr('decarb.finTaxDesc', 'Certains investissements verts sont éligibles au suramortissement fiscal (déductible à 140%)')}</p>
+                        <p className="text-sm text-gray-600">{tr('decarb.finTaxDesc2', 'Les dispositifs fiscaux varient selon les années : à vérifier avec votre conseil.')}</p>
                       </div>
                     </div>
                   </div>
