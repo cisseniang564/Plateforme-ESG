@@ -396,7 +396,7 @@ const MODULES = [
     name: 'API & Portail Développeur',
     tagline: 'REST API · Clés · Swagger · OAuth2',
     desc: 'Accédez à l\'ensemble de vos données ESG via notre API REST sécurisée. Générez des clés API, explorez la documentation Swagger interactive et intégrez ESGFlow à vos outils sur mesure.',
-    badges: ['API REST complète', 'Clés API par scope', 'Documentation Swagger', 'OAuth2 & SSO'],
+    badges: ['API REST complète', 'Clés API par scope', 'Documentation Swagger', 'OAuth2'],
     preview: 'apiportal',
   },
   {
@@ -1184,7 +1184,7 @@ function PreviewAPIPortal() {
         ))}
       </div>
       <div className="flex gap-2 mt-2">
-        {['API Keys', 'OAuth2', 'SSO OpenID Connect', 'Swagger'].map(f => (
+        {['API Keys', 'OAuth2', 'SSO (bientôt disponible)', 'Swagger'].map(f => (
           <div key={f} className="flex-1 text-center py-1 bg-indigo-500/20 text-indigo-300 text-xs rounded-lg">{f}</div>
         ))}
       </div>
@@ -1374,7 +1374,7 @@ export default function LandingPage() {
         'Plan décarbonation SBTi',
         'Support email 5j/7',
       ],
-      missing: ['IA narrative', 'Connecteurs avancés', 'SSO OpenID Connect'],
+      missing: ['IA narrative', 'Connecteurs avancés', 'SSO (bientôt disponible)'],
       cta: 'Essai gratuit 14 jours', primary: false,
     },
     {
@@ -1393,7 +1393,7 @@ export default function LandingPage() {
         'Piste d\'audit détaillée + SHA-256',
         'Support prioritaire 7j/7',
       ],
-      missing: ['SSO OpenID Connect', 'Marque blanche'],
+      missing: ['SSO (bientôt disponible)', 'Marque blanche'],
       cta: 'Essai gratuit 14 jours', primary: true,
     },
     {
@@ -1404,7 +1404,7 @@ export default function LandingPage() {
         '500 utilisateurs · orgs illimitées',
         '5 000 000 appels API / mois',
         'Tout ETI inclus',
-        'SSO OpenID Connect (Azure AD, Okta)',
+        'SSO (bientôt disponible)',
         'Marque blanche & branding',
         'Consolidation IFRS 10 multi-entités',
         'Onboarding dédié',
@@ -2326,7 +2326,7 @@ export default function LandingPage() {
               { icon: FileText, color: 'from-sky-600 to-blue-700', title: t('landing.lp.news.cards.0.title', 'CSRD Report Builder'), desc: t('landing.lp.news.cards.0.desc', 'Construisez votre rapport CSRD section par section (E1→G1), suivez la complétion et exportez en PDF, Word, Excel ou JSON en 1 clic.'), badge: t('landing.lp.news.cards.0.badge', 'Nouveau') },
               { icon: GitMerge, color: 'from-teal-500 to-teal-700', title: t('landing.lp.news.cards.1.title', 'Mapping Multi-Référentiels'), desc: t('landing.lp.news.cards.1.desc', 'Saisissez une seule fois et mappez automatiquement vers GRI, CDP, TCFD et SDG. Identifiez les lacunes par référentiel.'), badge: t('landing.lp.news.cards.1.badge', 'Nouveau') },
               { icon: Bell, color: 'from-orange-500 to-red-600', title: t('landing.lp.news.cards.2.title', 'Alertes Intelligentes'), desc: t('landing.lp.news.cards.2.desc', 'Créez des alertes personnalisées sur seuils, KPIs et échéances réglementaires avec notifications email et webhook temps réel.'), badge: t('landing.lp.news.cards.2.badge', 'Nouveau') },
-              { icon: Code2, color: 'from-indigo-500 to-violet-600', title: t('landing.lp.news.cards.3.title', 'API & Portail Développeur'), desc: t('landing.lp.news.cards.3.desc', 'API REST complète avec gestion des clés API, documentation Swagger interactive, OAuth2 et SSO OpenID Connect pour les intégrations sur mesure.'), badge: t('landing.lp.news.cards.3.badge', 'Nouveau') },
+              { icon: Code2, color: 'from-indigo-500 to-violet-600', title: t('landing.lp.news.cards.3.title', 'API & Portail Développeur'), desc: t('landing.lp.news.cards.3.desc', 'API REST complète avec gestion des clés API, documentation Swagger interactive, OAuth2 et SSO (bientôt disponible) pour les intégrations sur mesure.'), badge: t('landing.lp.news.cards.3.badge', 'Nouveau') },
               { icon: Activity, color: 'from-violet-500 to-purple-700', title: t('landing.lp.news.cards.4.title', 'Qualité des Données'), desc: t('landing.lp.news.cards.4.desc', "Score de complétude par pilier E/S/G, détection d'anomalies automatique, données manquantes ESRS et recommandations IA."), badge: t('landing.lp.news.cards.4.badge', 'Nouveau') },
               { icon: Upload, color: 'from-cyan-500 to-teal-600', title: t('landing.lp.news.cards.5.title', 'Import FEC Scope 3'), desc: t('landing.lp.news.cards.5.desc', 'Calculez vos émissions Scope 3 directement depuis votre fichier comptable FEC (Sage, Cegid, Pennylane).'), badge: t('landing.lp.news.cards.5.badge', 'Populaire') },
             ].map((f, i) => (
@@ -2728,7 +2728,7 @@ export default function LandingPage() {
                   { icon: Hash, title: 'Empreintes SHA-256', items: ['Empreinte par validation', 'Horodatage UTC', 'Détection des modifications'] },
                   { icon: Server, title: 'Hébergement européen', items: ['Prestataire européen', 'Données de chaque client cloisonnées', 'IA : texte envoyé à OpenAI, signalé avant envoi'] },
                   { icon: Eye, title: 'Traçabilité', items: ['Journal d\'audit détaillé', 'Qui, quoi, quand', 'Export des données'] },
-                  { icon: Users, title: 'Contrôle d\'accès', items: ['RBAC multi-niveaux', 'SSO OpenID Connect / OAuth2', 'Isolation tenant (RLS)'] },
+                  { icon: Users, title: 'Contrôle d\'accès', items: ['RBAC multi-niveaux', 'SSO (bientôt disponible)', 'Isolation tenant (RLS)'] },
                 ].map(({ icon: Icon, title, items }, i) => (
                   <div key={title} className="p-5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/8 transition-colors">
                     <div className="flex items-center gap-3 mb-4">

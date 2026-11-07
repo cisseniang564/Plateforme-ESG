@@ -3903,7 +3903,7 @@
         "f9": "Support email prioritaire",
         "n1": "Audit trail avancé",
         "n2": "API dédiée",
-        "n3": "SSO OpenID Connect"
+        "n3": "SSO (bientôt disponible)"
       },
       "eti": {
         "desc": "Solution complète pour les ETI",
@@ -3926,7 +3926,7 @@
         "f4": "Toutes les fonctionnalités ETI",
         "f5": "Consolidation groupe",
         "f6": "API dédiée & webhooks",
-        "f7": "SSO OpenID Connect",
+        "f7": "SSO (bientôt disponible)",
         "f8": "Account manager dédié"
       },
       "enterprise": {

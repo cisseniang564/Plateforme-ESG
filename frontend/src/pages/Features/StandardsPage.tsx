@@ -137,7 +137,7 @@ const SECURITY = [
   { label: 'Audit trail SHA-256 (immuable)', icon: FileText },
   { label: 'RGPD Art. 30 — registre traitements', icon: ShieldCheck },
   { label: 'Rate limiting & protection DDoS', icon: Lock },
-  { label: 'Authentification SSO / MFA-ready', icon: Users },
+  { label: 'Authentification à deux facteurs (TOTP)', icon: Users },
 ];
 
 const FAQS = [

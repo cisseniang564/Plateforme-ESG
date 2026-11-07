@@ -122,7 +122,7 @@ export default function SecurityPage() {
                 { key: 'encryption_tls',  value: t('security.page.posture.encryptionTls',  "TLS 1.2/1.3 (nginx + Let's Encrypt)"),                   ok: true },
                 { key: 'audit_trail',     value: t('security.page.posture.auditTrail',     'Journal détaillé + empreintes SHA-256 par entrée'),   ok: true },
                 { key: 'db_isolation',    value: t('security.page.posture.dbIsolation',    'Row-Level Security PostgreSQL (RLS)'),                ok: true },
-                { key: 'auth',            value: t('security.page.posture.auth',           'JWT (HS256) + 2FA TOTP + SSO OIDC'),               ok: true },
+                { key: 'auth',            value: t('security.page.posture.auth',           'JWT (HS256) + 2FA TOTP'),               ok: true },
                 { key: 'secrets',         value: t('security.page.posture.secrets',        'Aucun secret dans le code source'),    ok: true },
                 { key: 'backups',         value: t('security.page.posture.backups',        'Quotidiennes, rétention 30 jours'),            ok: true },
                 { key: 'iso_27001',       value: t('security.page.posture.iso27001',       "En cours d'obtention (2026)"),                       ok: false },
@@ -165,7 +165,7 @@ export default function SecurityPage() {
             <SecurityCard icon={Key} color="amber" title={t('security.page.card4Title', 'Authentification & sessions')}>
               <p><strong>JWT (HS256)</strong> {t('security.page.card4p1', ': jeton d\'accès de 30 min, jeton de rafraîchissement de 7 jours, révocation par')} <code className="text-xs">jti</code>.</p>
               <p><strong>2FA TOTP</strong> {t('security.page.card4p2', 'disponible sur tous les comptes (Google Authenticator, Authy, 1Password).')}</p>
-              <p><strong>SSO OIDC</strong> {t('security.page.card4p3', 'pour les plans Groupe & Enterprise (fournisseurs OpenID Connect : Azure AD, Okta, Google Workspace).')}</p>
+              <p><strong>SSO</strong> {t('security.page.card4p3', "(OpenID Connect puis SAML 2.0) : pas encore disponible, prévu sur la feuille de route.")}</p>
               <p>{t('security.page.card4p4', "Blocage d'une adresse IP après 10 échecs de connexion en 15 minutes · limitation de débit par IP et par organisation.")}</p>
             </SecurityCard>
 

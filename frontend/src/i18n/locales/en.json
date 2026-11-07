@@ -6841,7 +6841,7 @@
             "Full REST API",
             "Scoped API keys",
             "Swagger documentation",
-            "OAuth2 & SSO"
+            "OAuth2"
           ]
         },
         "dataquality": {
@@ -7098,7 +7098,7 @@
           {
             "title": "API & Developer Portal",
             "badge": "New",
-            "desc": "Full REST API with API-key management, interactive Swagger documentation, OAuth2 and OpenID Connect SSO for custom integrations."
+            "desc": "Full REST API with API-key management, interactive Swagger documentation, OAuth2 for custom integrations."
           },
           {
             "title": "Data Quality",
@@ -7225,7 +7225,7 @@
             "missing": [
               "Narrative AI",
               "Advanced connectors",
-              "SSO OpenID Connect"
+              "SSO (coming soon)"
             ]
           },
           {
@@ -7245,7 +7245,7 @@
               "Priority support 7 days/week"
             ],
             "missing": [
-              "SSO OpenID Connect",
+              "SSO (coming soon)",
               "White-label"
             ]
           },
@@ -7257,7 +7257,7 @@
               "500 users · unlimited orgs",
               "5,000,000 API calls / month",
               "Everything in ETI",
-              "SSO OpenID Connect (Azure AD, Okta)",
+              "SSO (coming soon)",
               "White-label & branding",
               "IFRS 10 multi-entity consolidation",
               "Dedicated onboarding",
@@ -7351,7 +7351,7 @@
             "title": "Access control",
             "items": [
               "Multi-level RBAC",
-              "OpenID Connect / OAuth2 SSO",
+              "SSO (coming soon)",
               "Tenant isolation (RLS)"
             ]
           }
@@ -9063,7 +9063,7 @@
         "f9": "Priority email support",
         "n1": "Advanced audit trail",
         "n2": "Dedicated API",
-        "n3": "SSO OpenID Connect"
+        "n3": "SSO (coming soon)"
       },
       "eti": {
         "desc": "Complete solution for mid-size companies",
@@ -9086,7 +9086,7 @@
         "f4": "All mid-size features",
         "f5": "Group consolidation",
         "f6": "Dedicated API & webhooks",
-        "f7": "SSO OpenID Connect",
+        "f7": "SSO (coming soon)",
         "f8": "Dedicated account manager"
       },
       "enterprise": {
@@ -9353,7 +9353,7 @@
         "encryptionTls": "TLS 1.2/1.3 (nginx + Let's Encrypt)",
         "auditTrail": "Journal détaillé + empreintes SHA-256 par entrée",
         "dbIsolation": "Row-Level Security PostgreSQL (RLS)",
-        "auth": "JWT (HS256) + 2FA TOTP + SSO OpenID Connect",
+        "auth": "JWT (HS256) + 2FA TOTP",
         "secrets": "No secrets in the source code",
         "backups": "Daily, retained 30 days",
         "iso27001": "En cours d'obtention (2026)",
@@ -11183,7 +11183,7 @@
           "desc": "Custom logo, domain, colors (Group plan)."
         },
         "18": {
-          "title": "SAML 2.0 SSO",
+          "title": "SSO (OpenID Connect & SAML 2.0)",
           "desc": "Azure AD, Okta, Google Workspace (Group plan)."
         },
         "19": {

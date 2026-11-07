@@ -13,6 +13,7 @@ from app.db.session import get_db
 from app.dependencies import get_current_user
 from app.models.sso_config import SSOConfig
 from app.models.user import User
+from app.services import secret_vault
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/sso", tags=["SSO"])
@@ -50,12 +51,14 @@ class SSOConfigResponse(BaseModel):
 
 
 def _encrypt_secret(secret: str) -> str:
-    """Simple base64 encoding — replace with Fernet in production."""
-    import base64
-    return base64.b64encode(secret.encode()).decode()
+    """Chiffre le secret client avec le coffre Fernet de la plateforme."""
+    return secret_vault.encrypt(secret)
 
 
 def _decrypt_secret(enc: str) -> str:
+    """Lit un secret chiffré ; les anciennes valeurs (simple base64) restent lisibles."""
+    if secret_vault.is_encrypted(enc):
+        return secret_vault.decrypt(enc)
     import base64
     return base64.b64decode(enc.encode()).decode()
 
