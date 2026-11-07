@@ -212,6 +212,8 @@ export default function BillingPage() {
   const [success, setSuccess]       = useState<string | null>(null);
   const [billingCycle, setCycle]    = useState<'monthly' | 'yearly'>('monthly');
   const [isWelcome, setIsWelcome]   = useState(false);
+  const [subFailed, setSubFailed]     = useState(false);
+  const [invFailed, setInvFailed]     = useState(false);
   const navigate                    = useNavigate();
   const userId                      = useSelector((s: RootState) => s.auth.user?.id);
   const didInit = useRef(false);
@@ -247,6 +249,10 @@ export default function BillingPage() {
         api.get('/billing/invoices'),
         api.get('/api/usage/summary'),
       ]);
+      // Sans abonnement chargé on n'affiche pas « Free » par défaut : ce serait
+      // un état inventé, avec des boutons d'upgrade/downgrade actifs.
+      setSubFailed(subRes.status === 'rejected');
+      setInvFailed(invRes.status === 'rejected');
       if (subRes.status === 'fulfilled') setSub(subRes.value.data);
       if (invRes.status === 'fulfilled') setInvoices(invRes.value.data?.invoices || invRes.value.data || []);
       if (usageRes.status === 'fulfilled') setUsage(usageRes.value.data);
@@ -372,6 +378,17 @@ export default function BillingPage() {
   };
 
   if (loading) return <div className="flex items-center justify-center h-96"><Spinner size="lg" /></div>;
+
+  if (subFailed && !sub) return (
+    <div className="max-w-xl mx-auto mt-16 text-center space-y-4 p-8 rounded-2xl border border-red-200 bg-red-50">
+      <AlertCircle className="h-8 w-8 text-red-500 mx-auto" />
+      <p className="font-semibold text-red-800">{t('billing.loadError', "Impossible de charger votre abonnement.")}</p>
+      <p className="text-sm text-red-700">{t('billing.loadErrorHint', "Votre formule n'est pas affichée pour éviter toute action sur un état inconnu. Réessayez dans un instant.")}</p>
+      <button onClick={loadAll} className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700">
+        <Repeat className="h-4 w-4" /> {t('billing.retry', 'Réessayer')}
+      </button>
+    </div>
+  );
 
   const tier = sub?.plan_tier || 'free';
   const isPaid = !!sub?.stripe_subscription_id;
@@ -728,7 +745,13 @@ export default function BillingPage() {
         </div>
       )}
 
-      {!loading && invoices.length === 0 && (
+      {!loading && invFailed && (
+        <p className="text-center text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-2xl py-3">
+          {t('billing.invoicesLoadError', "Impossible de charger vos factures pour le moment.")}
+        </p>
+      )}
+
+      {!loading && !invFailed && invoices.length === 0 && (
         <div className="text-center py-10 rounded-2xl border border-dashed border-gray-200">
           <CreditCard className="h-10 w-10 text-gray-200 mx-auto mb-3" />
           <p className="text-gray-500 text-sm font-medium">{t('billing.noInvoicesTitle')}</p>

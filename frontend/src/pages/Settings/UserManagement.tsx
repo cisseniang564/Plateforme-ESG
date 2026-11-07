@@ -493,6 +493,7 @@ export default function UserManagement() {
         api.get('/users/roles'),
       ]);
       if (usersRes.status === 'fulfilled') setUsers(usersRes.value.data.items || []);
+      else toast.error(t('settings.userMgmt.loadError', "Impossible de charger la liste des utilisateurs : la liste affichée peut être vide ou incomplète."), { id: 'users-load-error' });
       const fetchedRoles: Role[] = rolesRes.status === 'fulfilled' ? rolesRes.value.data.roles || [] : [];
       setRoles(mergeRoles(fetchedRoles, t));
     } finally {
