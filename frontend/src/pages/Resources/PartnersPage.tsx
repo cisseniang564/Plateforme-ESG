@@ -19,9 +19,9 @@ const getTiers = (t: TFunction) => [
     commission: t('resources.partners.tiers.0.commission', '15 %'),
     duration: t('resources.partners.tiers.0.duration', 'sur 12 mois'),
     benefits: [
-      t('resources.partners.tiers.0.benefits.0', 'Formation gratuite (3 h en ligne)'),
+      t('resources.partners.tiers.0.benefits.0', 'Présentation de la plateforme et ressources commerciales'),
       t('resources.partners.tiers.0.benefits.1', "Compte ESGFlow démo offert (jusqu'à 3 organisations)"),
-      t('resources.partners.tiers.0.benefits.2', 'Référencement dans notre annuaire public'),
+      t('resources.partners.tiers.0.benefits.2', 'Interlocuteur direct côté ESGFlow'),
       t('resources.partners.tiers.0.benefits.3', 'Co-rédaction de cas clients'),
     ],
     color: 'emerald',
@@ -35,11 +35,11 @@ const getTiers = (t: TFunction) => [
     badge: t('resources.partners.tiers.1.badge', 'Le plus choisi'),
     benefits: [
       t('resources.partners.tiers.1.benefits.0', "Tout ce qu'inclut Référent"),
-      t('resources.partners.tiers.1.benefits.1', "Mise en avant prioritaire dans l'annuaire"),
+      t('resources.partners.tiers.1.benefits.1', 'Traitement prioritaire de vos demandes'),
       t('resources.partners.tiers.1.benefits.2', 'Account manager dédié'),
       t('resources.partners.tiers.1.benefits.3', 'Co-organisation de webinaires (2/an)'),
       t('resources.partners.tiers.1.benefits.4', 'Accès anticipé aux nouvelles fonctionnalités'),
-      t('resources.partners.tiers.1.benefits.5', 'Tableau de bord partenaire (clients référés, MRR, commissions)'),
+      t('resources.partners.tiers.1.benefits.5', 'Point de suivi régulier de vos clients référés'),
     ],
     color: 'blue',
     cta: t('resources.partners.tiers.1.cta', 'Devenir Premium'),
@@ -92,7 +92,7 @@ export default function PartnersPage() {
 
   const url = 'https://greenconnect.cloud/partenaires';
   const img = 'https://greenconnect.cloud/api/v1/og/partenaires.png';
-  const desc = t('resources.partners.seo.description', "Devenez partenaire ESGFlow : commission jusqu'à 20% récurrente, formation gratuite, annuaire public. Pour cabinets RSE, experts-comptables, ESN.");
+  const desc = t('resources.partners.seo.description', "Devenez partenaire ESGFlow : commission jusqu'à 20% récurrente, présentation de la plateforme, ressources commerciales. Pour cabinets RSE, experts-comptables, ESN.");
 
   usePageSeo({
     id: 'partenaires',
@@ -128,7 +128,7 @@ export default function PartnersPage() {
       <section className="py-20 bg-gradient-to-br from-emerald-50 via-white to-blue-50 border-b border-gray-100">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold mb-6">
-            <Sparkles className="h-3.5 w-3.5" /> {t('resources.partners.hero.badge', 'PROGRAMME PARTENAIRES · OUVERT 2026')}
+            <Sparkles className="h-3.5 w-3.5" /> {t('resources.partners.hero.badge', 'PROGRAMME PARTENAIRES · EN LANCEMENT')}
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 leading-tight mb-6">
             {t('resources.partners.hero.titleLine1', "Développez votre chiffre d'affaires")}<br />{t('resources.partners.hero.titleLine2', 'en démocratisant la CSRD')}
@@ -152,7 +152,7 @@ export default function PartnersPage() {
 
       {/* Numbers */}
       <section className="py-16 border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 grid sm:grid-cols-3 gap-8 text-center">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 grid sm:grid-cols-2 gap-8 text-center">
           <div>
             <p className="text-4xl font-extrabold text-emerald-600">{t('resources.partners.numbers.0.value', '20 %')}</p>
             <p className="text-sm text-gray-500 mt-2">{t('resources.partners.numbers.0.label', 'Commission max récurrente')}</p>
@@ -160,10 +160,6 @@ export default function PartnersPage() {
           <div>
             <p className="text-4xl font-extrabold text-emerald-600">{t('resources.partners.numbers.1.value', '24 mois')}</p>
             <p className="text-sm text-gray-500 mt-2">{t('resources.partners.numbers.1.label', 'Durée de versement (niveau Premium)')}</p>
-          </div>
-          <div>
-            <p className="text-4xl font-extrabold text-emerald-600">{t('resources.partners.numbers.2.value', '~480 €/an')}</p>
-            <p className="text-sm text-gray-500 mt-2">{t('resources.partners.numbers.2.label', 'Commission moyenne par client ETI référé')}</p>
           </div>
         </div>
       </section>
@@ -196,7 +192,8 @@ export default function PartnersPage() {
       <section id="tiers" className="py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-gray-900 text-center mb-4">{t('resources.partners.tiers.heading', '3 niveaux de partenariat')}</h2>
-          <p className="text-gray-500 text-center mb-12">{t('resources.partners.tiers.subtext', 'Choisissez celui qui correspond à votre structure.')}</p>
+          <p className="text-gray-500 text-center mb-12">{t('resources.partners.tiers.subtext', 'Choisissez celui qui correspond à votre structure.')}
+            {' '}{t('resources.partners.tiers.disclaimer', "Conditions indicatives, confirmées par écrit à votre inscription.")}</p>
           <div className="grid lg:grid-cols-3 gap-6">
             {TIERS.map((tier, i) => (
               <div
@@ -245,8 +242,8 @@ export default function PartnersPage() {
           <div className="grid sm:grid-cols-4 gap-6">
             {[
               { n: 1, title: t('resources.partners.how.0.title', 'Postulez'), desc: t('resources.partners.how.0.desc', 'Remplissez le formulaire (3 min). Nous validons sous 5 jours ouvrés.') },
-              { n: 2, title: t('resources.partners.how.1.title', 'Formez-vous'), desc: t('resources.partners.how.1.desc', 'Formation 3h en ligne sur ESGFlow + ressources commerciales.') },
-              { n: 3, title: t('resources.partners.how.2.title', 'Référez'), desc: t('resources.partners.how.2.desc', 'Partagez votre lien partenaire ou vendez ESGFlow comme outil de mission.') },
+              { n: 2, title: t('resources.partners.how.1.title', 'Formez-vous'), desc: t('resources.partners.how.1.desc', 'Présentation de la plateforme et ressources commerciales.') },
+              { n: 3, title: t('resources.partners.how.2.title', 'Référez'), desc: t('resources.partners.how.2.desc', 'Recommandez ESGFlow à vos clients ou utilisez-le comme outil de mission ; nous suivons les clients référés avec vous.') },
               { n: 4, title: t('resources.partners.how.3.title', 'Touchez'), desc: t('resources.partners.how.3.desc', 'Commission versée trimestriellement pendant 12-24 mois par client.') },
             ].map((s, i) => (
               <div key={i} className="text-center">
@@ -269,7 +266,7 @@ export default function PartnersPage() {
             {[
               { icon: Coins, title: t('resources.partners.why.0.title', 'Tarif accessible'), desc: t('resources.partners.why.0.desc', 'À partir de 249 €/mois — sans cabinet à 30 k€.') },
               { icon: Sparkles, title: t('resources.partners.why.1.title', 'Démarrage en self-service'), desc: t('resources.partners.why.1.desc', 'Pas de projet d’intégration à prévoir.') },
-              { icon: TrendingUp, title: t('resources.partners.why.2.title', 'Conforme CSRD'), desc: t('resources.partners.why.2.desc', '12 modules ESRS, iXBRL, audit trail SHA-256.') },
+              { icon: TrendingUp, title: t('resources.partners.why.2.title', 'Pensé pour la CSRD'), desc: t('resources.partners.why.2.desc', 'Modules ESRS, export iXBRL, journal d’audit.') },
             ].map((r, i) => {
               const I = r.icon;
               return (
