@@ -4,7 +4,7 @@ import type { TFunction } from 'i18next';
 import { useNavigate } from 'react-router-dom';
 import {
   CheckCircle2, ChevronLeft, ChevronRight, ExternalLink, Printer, Target,
-  Shield, AlertCircle, Download, Share2, Home, Calendar, Sparkles,
+  Shield, AlertCircle, Download, Share2, Home, Calendar,
   ArrowRight, FileText, Clock, BarChart3, Leaf, Zap, Building2,
   Users, TrendingDown, Globe, ThermometerSun, Award, Info,
   type LucideIcon,
@@ -184,8 +184,8 @@ function SelectField({ className = '', children, ...props }: React.SelectHTMLAtt
 function Step1({ state, onChange }: { state: WorkflowState; onChange: (p: Partial<WorkflowState>) => void }) {
   const { t } = useTranslation();
   const SECTORS = getSectors(t);
-  const eligible = state.hasScope12 === true && state.hasScope3 === true;
-  const incomplete = state.hasScope12 === null || state.hasScope3 === null;
+  const eligible = state.hasScope12 === true;
+  const incomplete = state.hasScope12 === null;
 
   const YesNoCard = ({ label, desc, value, field }: { label: string; desc: string; value: boolean | null; field: 'hasScope12' | 'hasScope3' }) => (
     <SectionCard>
@@ -230,7 +230,7 @@ function Step1({ state, onChange }: { state: WorkflowState; onChange: (p: Partia
         field="hasScope12"
       />
       <YesNoCard
-        label={t('compliance.sbti.step1.scope3Label', 'Scope 3 significatif calculé ?')}
+        label={t('compliance.sbti.step1.scope3Label', 'Scope 3 calculé ? (requis si ≥ 40 % de vos émissions totales)')}
         desc={t('compliance.sbti.step1.scope3Desc', 'Émissions indirectes : achats, transports, usage des produits vendus, etc.')}
         value={state.hasScope3}
         field="hasScope3"
@@ -297,7 +297,7 @@ function Step1({ state, onChange }: { state: WorkflowState; onChange: (p: Partia
             <p className={`text-xs ${eligible ? 'text-emerald-600' : 'text-amber-600'}`}>
               {eligible
                 ? t('compliance.sbti.step1.eligibleDesc', 'Votre entreprise remplit les conditions pour soumettre des objectifs SBTi.')
-                : t('compliance.sbti.step1.missingPrereqsDesc', 'Complétez vos calculs de Scope avant de soumettre votre dossier.')}
+                : t('compliance.sbti.step1.missingPrereqsDesc', 'Calculez d’abord vos Scopes 1 et 2 avant de préparer votre dossier.')}
             </p>
           </div>
         </div>
@@ -330,8 +330,8 @@ function Step2({ state, onChange }: { state: WorkflowState; onChange: (p: Partia
     {
       val: '2' as const,
       label: 'Well-below 2°C',
-      badge: t('compliance.sbti.step2.ambition.standard.badge', 'Trajectoire standard'),
-      desc: t('compliance.sbti.step2.ambition.standard.desc', 'Réduction annuelle ≥ 2,5 % sur le Scope 1+2. Minimum accepté par SBTi.'),
+      badge: t('compliance.sbti.step2.ambition.standard.badge', 'Hors critères SBTi (Scope 1+2)'),
+      desc: t('compliance.sbti.step2.ambition.standard.desc', 'Réduction annuelle de 2,5 % sur le Scope 1+2. Plus acceptée par la SBTi pour les Scopes 1+2 depuis le 15 juillet 2022 (1,5 °C obligatoire) : simulation interne uniquement.'),
       icon: Globe,
       gradient: 'from-blue-500 to-cyan-500',
       bg: 'bg-blue-50',
@@ -454,7 +454,8 @@ function Step3({ state, onChange }: { state: WorkflowState; onChange: (p: Partia
   const reductionRate = state.ambition === '1.5' ? 4.2 : 2.5;
   const yearsTo2030 = 2030 - parseInt(state.referenceYear || String(LAST_YEAR));
   const totalReduction = Math.round(reductionRate * yearsTo2030 * 10) / 10;
-  const s3Rate = 25;
+  // Scope 3 : repère linéaire 2,5 %/an (taux minimal historique), pas un objectif validé.
+  const s3Rate = Math.max(0, Math.round(2.5 * yearsTo2030 * 10) / 10);
 
   const defaultText = t(
     'compliance.sbti.step3.defaultCommitment',
@@ -481,7 +482,7 @@ function Step3({ state, onChange }: { state: WorkflowState; onChange: (p: Partia
             <FileText size={16} className="text-indigo-600" />
           </div>
           <div>
-            <p className="text-sm font-bold text-gray-900">{t('compliance.sbti.step3.commitmentTitle', "Texte d'engagement officiel")}</p>
+            <p className="text-sm font-bold text-gray-900">{t('compliance.sbti.step3.commitmentTitle', "Projet de texte d'engagement")}</p>
             <p className="text-xs text-gray-500">{t('compliance.sbti.step3.commitmentDesc', 'Ce texte sera inclus dans votre dossier de soumission SBTi. Vous pouvez le personnaliser.')}</p>
           </div>
         </div>
@@ -610,18 +611,19 @@ function Step4({ state }: { state: WorkflowState }) {
     return {
       method: state.ambition === '1.5' ? '1.5C' : 'WB2C',
       baseline_year: baselineYear,
-      baseline_scope1_tco2e: scope12 ? scope12 * 0.55 : null,
-      baseline_scope2_tco2e: scope12 ? scope12 * 0.45 : null,
+      // Répartition Scope 1 / Scope 2 non saisie ici : on ne l'invente pas.
+      baseline_scope1_tco2e: null,
+      baseline_scope2_tco2e: null,
       baseline_scope3_tco2e: scope3 || null,
       baseline_total_tco2e: total || scope12 || 1,
-      near_term_target_year: baselineYear + 7,
-      near_term_reduction_pct: state.ambition === '1.5' ? 42 : 25,
+      near_term_target_year: 2030,
+      near_term_reduction_pct: Math.max(0, Math.round((state.ambition === '1.5' ? 4.2 : 2.5) * (2030 - baselineYear) * 10) / 10),
       near_term_scope_coverage: 'scope1+2',
       net_zero_year: 2050,
       long_term_reduction_pct: 90,
       scope3_pct_of_total: total > 0 ? (scope3 / total) * 100 : 0,
       scope3_screening_completed: !!state.hasScope3,
-      scope3_target_pct: state.hasScope3 ? 25 : null,
+      scope3_target_pct: null,
       sector: state.sector || undefined,
       employees: state.employees ? parseInt(state.employees) : undefined,
       revenue_meur: state.revenue ? parseFloat(state.revenue) : undefined,
@@ -641,22 +643,16 @@ function Step4({ state }: { state: WorkflowState }) {
       const url = URL.createObjectURL(new Blob([dossier.data], { type: 'application/pdf' }));
       const a = document.createElement('a');
       a.href = url;
-      a.download = `SBTi_Dossier_Officiel_${CURRENT_YEAR}.pdf`;
+      a.download = `SBTi_Dossier_Preparation_${CURRENT_YEAR}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success(t('compliance.sbti.step4.toast.dossierGenerated', 'Dossier officiel généré et engagement persisté'));
+      toast.success(t('compliance.sbti.step4.toast.dossierGenerated', 'Dossier de préparation généré et engagement enregistré'));
     } catch (err: any) {
       toast.error(err?.response?.data?.detail || t('compliance.sbti.step4.toast.generationError', 'Erreur lors de la génération'));
     } finally {
       setBackendBusy(false);
     }
   };
-
-  // Auto-run validation on mount (after generateBackendDossier is defined)
-  useEffect(() => {
-    generateBackendDossier();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const rows = [
     { label: t('compliance.sbti.step4.rows.scope12', 'Scope 1+2 calculé'), value: state.hasScope12 ? t('compliance.sbti.yes', 'Oui') : t('compliance.sbti.no', 'Non'), ok: !!state.hasScope12 },
@@ -674,13 +670,13 @@ function Step4({ state }: { state: WorkflowState }) {
   return (
     <div className="space-y-5">
 
-      {/* ── 💰 Savings banner ──────────────────────────────────────────────── */}
-      <div className="rounded-2xl bg-emerald-50 border border-emerald-200 flex items-start gap-3 px-5 py-4">
-        <span className="text-2xl flex-shrink-0">💰</span>
+      {/* ── Avertissement critères SBTi ─────────────────────────────────────── */}
+      <div className="rounded-2xl bg-amber-50 border border-amber-200 flex items-start gap-3 px-5 py-4">
+        <AlertCircle size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-bold text-emerald-900">{t('compliance.sbti.step4.savingsBanner', "Ce pré-vol vous fait économiser jusqu'à 9 500 $")}</p>
-          <p className="text-xs text-emerald-700 mt-0.5 leading-relaxed">
-            {t('compliance.sbti.step4.savingsBannerDesc', 'Le SBTi facture ce montant pour la validation officielle — rejetée si les critères ne sont pas respectés. Notre wizard détecte automatiquement les blockers avant soumission.')}
+          <p className="text-sm font-bold text-amber-900">{t('compliance.sbti.step4.criteriaNoticeTitle', 'Pré-contrôle indicatif — pas un avis de la SBTi')}</p>
+          <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
+            {t('compliance.sbti.step4.criteriaNotice', "Les critères SBTi évoluent (appendice d'avril 2026 sur le taux de réduction ; norme Net-Zero V2.0 publiée en juin 2026, applicable aux validations à partir de février 2027). Ce contrôle utilise un repère linéaire et ne remplace ni l'outil officiel de la SBTi ni sa validation. Vérifiez sur sciencebasedtargets.org avant de soumettre.")}
           </p>
         </div>
       </div>
@@ -694,7 +690,7 @@ function Step4({ state }: { state: WorkflowState }) {
         <div>
           <p className="text-sm font-bold text-gray-900">
             {backendBusy ? t('compliance.sbti.step4.prevalidating', 'Pré-validation en cours…') : validation
-              ? (validation.is_submission_ready ? t('compliance.sbti.step4.dossierReady', 'Dossier prêt pour soumission SBTi ✓') : t('compliance.sbti.step4.blockingCriteria', '{{count}} critère(s) bloquant(s)', { count: validation.blockers }))
+              ? (validation.is_submission_ready ? t('compliance.sbti.step4.dossierReady', 'Pré-contrôle ESGFlow : aucun point bloquant') : t('compliance.sbti.step4.blockingCriteria', '{{count}} critère(s) bloquant(s)', { count: validation.blockers }))
               : t('compliance.sbti.step4.dossierSummary', 'Récapitulatif de votre dossier')}
           </p>
           <p className="text-xs text-gray-500">
@@ -804,7 +800,7 @@ function Step4({ state }: { state: WorkflowState }) {
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(11);
                 doc.setTextColor(67, 56, 202);
-                doc.text(t('compliance.sbti.step3.commitmentTitle', "Texte d'engagement officiel"), 12, y);
+                doc.text(t('compliance.sbti.step3.commitmentTitle', "Projet de texte d'engagement"), 12, y);
                 y += 4;
                 autoTable(doc, {
                   startY: y,
@@ -836,7 +832,7 @@ function Step4({ state }: { state: WorkflowState }) {
           className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors disabled:opacity-60 shadow-sm"
         >
           <Shield size={14} />
-          {backendBusy ? t('compliance.sbti.step4.generating', 'Génération…') : t('compliance.sbti.step4.officialDossierBtn', 'Dossier officiel + pré-validation')}
+          {backendBusy ? t('compliance.sbti.step4.generating', 'Génération…') : t('compliance.sbti.step4.officialDossierBtn', 'Pré-contrôle + dossier de préparation (PDF)')}
         </button>
       </div>
 
@@ -862,7 +858,7 @@ function Step4({ state }: { state: WorkflowState }) {
             <div className="flex-1 min-w-0">
               <p className={`text-sm font-bold ${validation.is_submission_ready ? 'text-emerald-900' : 'text-amber-900'}`}>
                 {validation.is_submission_ready
-                  ? t('compliance.sbti.step4.submissionReady', 'Dossier prêt pour soumission SBTi')
+                  ? t('compliance.sbti.step4.submissionReady', 'Pré-contrôle ESGFlow sans point bloquant (la validation reste celle de la SBTi)')
                   : t('compliance.sbti.step4.blockersCount', '{{count}} critère(s) bloquant(s)', { count: validation.blockers })}
                 {validation.warnings > 0 && ` · ${t('compliance.sbti.step4.warningsCount', '{{count}} avertissement(s)', { count: validation.warnings })}`}
               </p>
@@ -893,7 +889,7 @@ function Step4({ state }: { state: WorkflowState }) {
       )}
 
       <p className="text-xs text-gray-400">
-        {t('compliance.sbti.step4.footerNote', 'La soumission finale se fait sur le portail SBTi. Le dossier officiel contient la pré-validation contre les critères SBTi v5.2.')}
+        {t('compliance.sbti.step4.footerNote', 'La soumission et la validation se font uniquement sur le portail de la SBTi. Ce dossier sert à vous préparer ; il n’a aucune valeur officielle.')}
       </p>
     </div>
   );
@@ -911,17 +907,16 @@ function Step5({ state, onChange }: { state: WorkflowState; onChange: (p: Partia
     ? Math.max(0, Math.floor((Date.now() - new Date(state.submissionDate).getTime()) / 86400000))
     : null;
 
-  const expectedDays = 120;
-  const progressPct = daysSinceSubmission !== null ? Math.min(100, (daysSinceSubmission / expectedDays) * 100) : 0;
 
   return (
     <div className="space-y-5">
       {/* Tracking form */}
       <SectionCard>
-        <p className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <p className="text-sm font-bold text-gray-900 mb-1 flex items-center gap-2">
           <Calendar size={16} className="text-gray-400" />
           {t('compliance.sbti.step5.trackingTitle', 'Suivi de la soumission')}
         </p>
+        <p className="text-xs text-gray-500 mb-4">{t('compliance.sbti.step5.trackingNote', "Ce suivi est saisi par vous : ESGFlow n'est pas relié à la SBTi et ne reçoit pas son statut. Il n'est enregistré que dans ce navigateur.")}</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <FieldLabel icon={Calendar}>{t('compliance.sbti.step5.submissionDateLabel', 'Date de soumission')}</FieldLabel>
@@ -964,7 +959,7 @@ function Step5({ state, onChange }: { state: WorkflowState; onChange: (p: Partia
               <div>
                 <h3 className="text-lg font-bold text-white">{t('compliance.sbti.step5.validatedTitle', 'Objectifs SBTi validés')}</h3>
                 <p className="text-sm text-emerald-100">
-                  {t('compliance.sbti.step5.validatedDesc', 'Engagement officiellement reconnu par la Science Based Targets initiative.')}
+                  {t('compliance.sbti.step5.validatedDesc', 'Statut renseigné par vous : engagement reconnu par la Science Based Targets initiative.')}
                 </p>
               </div>
             </div>
@@ -1011,25 +1006,11 @@ function Step5({ state, onChange }: { state: WorkflowState; onChange: (p: Partia
               <div className="flex-1">
                 <h3 className="text-base font-bold text-amber-900 mb-1">{t('compliance.sbti.step5.pendingTitle', 'En attente de validation SBTi')}</h3>
                 <p className="text-sm text-amber-800 leading-relaxed mb-3">
-                  {t('compliance.sbti.step5.pendingDesc', 'La validation prend en moyenne 3 à 6 mois.')}
+                  {t('compliance.sbti.step5.pendingDesc', 'Les délais de validation varient : consultez votre espace SBTi.')}
                   {daysSinceSubmission !== null && (
                     <> {t('compliance.sbti.step5.submittedDaysAgo', 'Soumis il y a {{count}} jour(s).', { count: daysSinceSubmission })}</>
                   )}
                 </p>
-                {daysSinceSubmission !== null && (
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between text-xs text-amber-700 mb-1">
-                      <span>{t('compliance.sbti.step5.dayCount', 'Jour {{n}}', { n: daysSinceSubmission })}</span>
-                      <span>{t('compliance.sbti.step5.estimatedDays', '~{{n}} jours (estimation)', { n: expectedDays })}</span>
-                    </div>
-                    <div className="h-2 bg-amber-200 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-700"
-                        style={{ width: `${progressPct}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
                 <ActionButton icon={BarChart3} label={t('compliance.sbti.step5.startDecarbonatePlan', 'Démarrer le plan de décarbonation')} onClick={() => navigate('/app/decarbonation')} variant="amber" />
               </div>
             </div>
@@ -1046,7 +1027,7 @@ function Step5({ state, onChange }: { state: WorkflowState; onChange: (p: Partia
             <div className="flex-1">
               <h3 className="text-base font-bold text-red-900 mb-1">{t('compliance.sbti.step5.rejectedTitle', 'Soumission rejetée')}</h3>
               <p className="text-sm text-red-800 leading-relaxed mb-3">
-                {t('compliance.sbti.step5.rejectedDesc', 'Corrigez les écarts signalés dans le retour SBTi, puis re-soumettez. Notre dossier officiel pré-valide contre les 7 critères v5.2.')}
+                {t('compliance.sbti.step5.rejectedDesc', 'Corrigez les écarts signalés dans le retour de la SBTi, puis re-soumettez.')}
               </p>
               <ActionButton icon={ArrowRight} label={t('compliance.sbti.step5.regenerateDossier', 'Régénérer le dossier')} onClick={() => navigate('/app/decarbonation')} variant="danger" />
             </div>
