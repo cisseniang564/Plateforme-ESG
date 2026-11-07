@@ -94,7 +94,7 @@ export default function SecurityPage() {
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Badge ok label={t('security.page.badgeHostedFrance', 'IONOS — région France')} />
             <Badge ok label={t('security.page.badgeGdpr', 'RGPD natif')} />
-            <Badge ok label="TLS 1.3 (HTTPS)" />
+            <Badge ok label="TLS 1.2/1.3 (HTTPS)" />
             <Badge ok label="SHA-256 audit trail" />
             <Badge ok label="RLS PostgreSQL" />
             <Badge ok={false} label={t('security.page.badgeIso27001', 'ISO 27001 — non certifié')} />
@@ -119,10 +119,10 @@ export default function SecurityPage() {
             <div className="p-6 font-mono text-sm space-y-2">
               {[
                 { key: 'hosting',         value: t('security.page.posture.hosting',        'IONOS (France)'),                     ok: true },
-                { key: 'encryption_tls',  value: t('security.page.posture.encryptionTls',  "TLS 1.3 (nginx + Let's Encrypt)"),                   ok: true },
+                { key: 'encryption_tls',  value: t('security.page.posture.encryptionTls',  "TLS 1.2/1.3 (nginx + Let's Encrypt)"),                   ok: true },
                 { key: 'audit_trail',     value: t('security.page.posture.auditTrail',     'Journal détaillé + empreintes SHA-256 par entrée'),   ok: true },
                 { key: 'db_isolation',    value: t('security.page.posture.dbIsolation',    'Row-Level Security PostgreSQL (RLS)'),                ok: true },
-                { key: 'auth',            value: t('security.page.posture.auth',           'JWT RS256 + 2FA TOTP + SSO SAML 2.0'),               ok: true },
+                { key: 'auth',            value: t('security.page.posture.auth',           'JWT (HS256) + 2FA TOTP + SSO OIDC'),               ok: true },
                 { key: 'secrets',         value: t('security.page.posture.secrets',        'Aucun secret dans le code source'),    ok: true },
                 { key: 'backups',         value: t('security.page.posture.backups',        'Quotidiennes, rétention 30 jours'),            ok: true },
                 { key: 'iso_27001',       value: t('security.page.posture.iso27001',       "En cours d'obtention (2026)"),                       ok: false },
@@ -153,20 +153,20 @@ export default function SecurityPage() {
             </SecurityCard>
 
             <SecurityCard icon={Lock} color="violet" title={t('security.page.card2Title', 'Chiffrement en transit')}>
-              <p><strong>{t('security.page.card2transit', 'En transit :')}</strong> {t('security.page.card2transitDesc', "TLS 1.3 uniquement sur toutes les connexions (nginx + Let's Encrypt). HSTS activé, HTTPS forcé.")}</p>
+              <p><strong>{t('security.page.card2transit', 'En transit :')}</strong> {t('security.page.card2transitDesc', "TLS 1.2 et 1.3 sur toutes les connexions (nginx + Let's Encrypt). HSTS activé, HTTPS forcé.")}</p>
               <p><strong>{t('security.page.card2rest', 'Au repos :')}</strong> {t('security.page.card2restDesc', "Les identifiants de vos connecteurs sont chiffrés avant stockage. Le reste de la base n'est pas chiffré au niveau applicatif.")}</p>
             </SecurityCard>
 
             <SecurityCard icon={Database} color="blue" title={t('security.page.card3Title', 'Isolation multi-tenant RLS')}>
-              <p>{t('security.page.card3p1a', 'Chaque organisation est')} <strong>{t('security.page.card3p1b', 'isolée au niveau base de données')}</strong> {t('security.page.card3p1c', 'via PostgreSQL Row-Level Security (RLS) sur 19 tables.')}</p>
+              <p>{t('security.page.card3p1a', 'Chaque organisation est')} <strong>{t('security.page.card3p1b', 'isolée au niveau base de données')}</strong> {t('security.page.card3p1c', 'via PostgreSQL Row-Level Security (RLS) sur les tables de données clients.')}</p>
               <p>{t('security.page.card3p2', "Même en cas de bug applicatif, aucune fuite de données croisée entre tenants n'est possible. Les politiques RLS sont forcées (")} <code>FORCE ROW LEVEL SECURITY</code>).</p>
             </SecurityCard>
 
             <SecurityCard icon={Key} color="amber" title={t('security.page.card4Title', 'Authentification & sessions')}>
-              <p><strong>JWT RS256</strong> {t('security.page.card4p1', '(clés asymétriques) avec rotation automatique et révocation par')} <code className="text-xs">jti</code>.</p>
+              <p><strong>JWT (HS256)</strong> {t('security.page.card4p1', ': jeton d\'accès de 30 min, jeton de rafraîchissement de 7 jours, révocation par')} <code className="text-xs">jti</code>.</p>
               <p><strong>2FA TOTP</strong> {t('security.page.card4p2', 'disponible sur tous les comptes (Google Authenticator, Authy, 1Password).')}</p>
-              <p><strong>SSO SAML 2.0</strong> {t('security.page.card4p3', 'pour les plans Groupe & Enterprise (Azure AD, Okta, Google Workspace).')}</p>
-              <p>{t('security.page.card4p4', "Verrouillage après 5 tentatives échouées · sessions expirées automatiquement à 8h d'inactivité · rate limiting par IP & user.")}</p>
+              <p><strong>SSO OIDC</strong> {t('security.page.card4p3', 'pour les plans Groupe & Enterprise (fournisseurs OpenID Connect : Azure AD, Okta, Google Workspace).')}</p>
+              <p>{t('security.page.card4p4', "Blocage d'une adresse IP après 10 échecs de connexion en 15 minutes · limitation de débit par IP et par organisation.")}</p>
             </SecurityCard>
 
             <SecurityCard icon={FileText} color="emerald" title={t('security.page.card5Title', 'Auditabilité & journal détaillé')}>
@@ -191,8 +191,8 @@ export default function SecurityPage() {
 
           <div className="grid sm:grid-cols-2 gap-5">
             <SecurityCard icon={Users} color="blue" title={t('security.page.card7Title', 'RGPD & Privacy by Design')}>
-              <p>{t('security.page.card7p1', 'GreenConnect SAS est responsable de traitement. Un DPO est désigné.')}</p>
-              <p>{t('security.page.card7p2', 'Accord de traitement des données (DPA) signé avec chaque client Pro/Enterprise.')}</p>
+              <p>{t('security.page.card7p1', 'GreenConnect SAS est responsable de traitement.')}</p>
+              <p>{t('security.page.card7p2', 'Accord de traitement des données (DPA) disponible sur demande.')}</p>
               <p>{t('security.page.card7p3', 'Droits RGPD exercés via')} <a href="mailto:privacy@greenconnect.cloud" className="text-emerald-600 hover:underline">privacy@greenconnect.cloud</a> : {t('security.page.card7p3b', 'accès, rectification, effacement, portabilité sous 30 jours.')}</p>
             </SecurityCard>
 
@@ -233,7 +233,7 @@ export default function SecurityPage() {
                 detail: t('security.page.cert2Detail', 'Hébergement chez IONOS (région France). Aucune certification HDS : ne pas déposer de données de santé.'),
               },
               {
-                cert:   t('security.page.cert3Name',   'TLS 1.3 + HSTS'),
+                cert:   t('security.page.cert3Name',   'TLS 1.2/1.3 + HSTS'),
                 status: t('security.page.cert3Status', 'Actif'),
                 statusColor: 'emerald',
                 detail: t('security.page.cert3Detail', 'Chiffrement des échanges en TLS, HSTS activé.'),
