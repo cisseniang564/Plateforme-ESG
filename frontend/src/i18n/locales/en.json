@@ -6959,15 +6959,15 @@
             "footerText": "a time saving to measure on your own data."
           },
           {
-            "badge": "SAVES $9,500",
-            "title": "SBTi v5.2 pre-flight",
-            "subtitle": "Validation before paying the $9,500 fee",
-            "body": "Before submitting your targets to the Science-Based Targets initiative (and paying the $9,500 fee), we validate the v5.2 criteria and spare you the <strong>30% rejection rate</strong> at first review.",
+            "badge": "SBTi PREPARATION",
+            "title": "SBTi submission preparation",
+            "subtitle": "Indicative checks before you submit",
+            "body": "Before submitting your targets to the Science-Based Targets initiative, ESGFlow helps you prepare your file with indicative benchmarks. SBTi criteria are evolving (Net-Zero Standard V2.0): <strong>validation remains the SBTi's decision</strong>.",
             "points": [
-              "v5.2 criteria checked",
-              "1.5°C pathway: 4.2%/yr",
-              "Scope 3 ≥ 40% required",
-              "Net-zero ≤ 2050"
+              "Indicative 1.5°C pathway benchmark",
+              "Scope 1, 2 and 3 boundary to document",
+              "Target and base year tracked",
+              "Criteria to confirm with the SBTi"
             ],
             "footerLabel": "Upstream check:",
             "footerText": "the pre-flight flags gaps before any submission."
