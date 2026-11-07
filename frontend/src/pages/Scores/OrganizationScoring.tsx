@@ -125,7 +125,10 @@ export default function OrganizationScoring() {
     try {
       const [orgRes, scoresRes, qualityRes] = await Promise.all([
         api.get(`/organizations/${id}`),
-        api.get(`/esg-scoring/organization/${id}`).catch(() => ({ data: { scores: [] } })),
+        api.get(`/esg-scoring/organization/${id}`).catch(() => {
+          toast.error(t('scores.loadScoresError', "Impossible de charger les scores de l'organisation."));
+          return { data: { scores: [] } };
+        }),
         api.post('/esg-scoring/data-quality', { organization_id: id }).catch(() => ({ data: null })),
       ]);
       setOrganization(orgRes.data);
@@ -134,6 +137,7 @@ export default function OrganizationScoring() {
       setDataQuality(qualityRes.data);
     } catch (err) {
       console.error('Error loading data:', err);
+      toast.error(t('scores.loadError', 'Impossible de charger les données.'));
     } finally {
       setLoading(false);
     }
