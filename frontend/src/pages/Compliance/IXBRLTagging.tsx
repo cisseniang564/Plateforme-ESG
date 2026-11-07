@@ -996,10 +996,13 @@ ${taggedText}
                     }
                     <div className="flex-1">
                       <p className={`text-sm font-bold ${serverReport.passed ? 'text-emerald-800' : 'text-red-800'}`}>
-                        {serverReport.passed ? '✅ Rapport valide — prêt pour dépôt ESEF' : `❌ ${serverReport.summary.errors} erreur(s) bloquante(s)`}
+                        {serverReport.passed ? t('compliance.ixbrl.report.passed', '✅ Aucune erreur bloquante sur les contrôles exécutés') : `❌ ${serverReport.summary.errors} erreur(s) bloquante(s)`}
                       </p>
                       <p className={`text-xs mt-0.5 ${serverReport.passed ? 'text-emerald-600' : 'text-red-600'}`}>
                         Couches exécutées : {serverReport.layers_run.join(' → ')}
+                        {serverReport.passed && (
+                          <span className="block mt-0.5">{t('compliance.ixbrl.report.notOfficial', "Ne remplace pas la validation par un outil ESEF officiel avant tout dépôt.")}</span>
+                        )}
                       </p>
                     </div>
                     <div className="flex gap-3 text-xs">

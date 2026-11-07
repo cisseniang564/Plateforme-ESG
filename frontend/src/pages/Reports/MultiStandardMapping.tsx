@@ -16,55 +16,55 @@ interface MappedIndicator { esrs_code: string; esrs_name: string; pillar: 'E'|'S
 interface MappingResponse { year: number; indicators: MappedIndicator[]; coverage: { csrd: number; gri: number; cdp: number; tcfd: number }; summary: { total: number; validated: number; partial: number; missing: number; data_available: boolean }; }
 
 const MAPPING_DATA: MappedIndicator[] = [
-  { esrs_code: 'E1 / GHG-S1', esrs_name: 'Émissions GES Scope 1', pillar: 'E', value: '2 450 tCO2e', status: 'validated', gri: 'GRI 305-1', cdp: 'C6.1', tcfd: 'Metrics & Targets', sdg: 'SDG 13' },
-  { esrs_code: 'E1 / GHG-S2', esrs_name: 'Émissions GES Scope 2', pillar: 'E', value: '1 890 tCO2e', status: 'validated', gri: 'GRI 305-2', cdp: 'C6.3', tcfd: 'Metrics & Targets', sdg: 'SDG 13' },
-  { esrs_code: 'E1 / GHG-S3', esrs_name: 'Émissions GES Scope 3', pillar: 'E', value: '8 210 tCO2e', status: 'partial',   gri: 'GRI 305-3', cdp: 'C6.5', tcfd: 'Metrics & Targets', sdg: 'SDG 13' },
-  { esrs_code: 'E1 / ENR-%',  esrs_name: 'Part énergie renouvelable', pillar: 'E', value: '34%', status: 'validated', gri: 'GRI 302-1', cdp: 'C8.2', tcfd: 'Metrics & Targets', sdg: 'SDG 7' },
+  { esrs_code: 'E1 / GHG-S1', esrs_name: 'Émissions GES Scope 1', pillar: 'E', value: null, status: 'missing', gri: 'GRI 305-1', cdp: 'C6.1', tcfd: 'Metrics & Targets', sdg: 'SDG 13' },
+  { esrs_code: 'E1 / GHG-S2', esrs_name: 'Émissions GES Scope 2', pillar: 'E', value: null, status: 'missing', gri: 'GRI 305-2', cdp: 'C6.3', tcfd: 'Metrics & Targets', sdg: 'SDG 13' },
+  { esrs_code: 'E1 / GHG-S3', esrs_name: 'Émissions GES Scope 3', pillar: 'E', value: null, status: 'missing',   gri: 'GRI 305-3', cdp: 'C6.5', tcfd: 'Metrics & Targets', sdg: 'SDG 13' },
+  { esrs_code: 'E1 / ENR-%',  esrs_name: 'Part énergie renouvelable', pillar: 'E', value: null, status: 'missing', gri: 'GRI 302-1', cdp: 'C8.2', tcfd: 'Metrics & Targets', sdg: 'SDG 7' },
   { esrs_code: 'E1 / INT-C',  esrs_name: 'Intensité carbone', pillar: 'E', value: null, status: 'missing', gri: 'GRI 305-4', cdp: 'C6.10', tcfd: 'Metrics & Targets', sdg: 'SDG 13' },
-  { esrs_code: 'E2 / POL-AIR',esrs_name: 'Émissions polluants atmosphériques', pillar: 'E', value: '12.4 t', status: 'validated', gri: 'GRI 305-7', cdp: 'C7.1', sdg: 'SDG 3' },
-  { esrs_code: 'E3 / EAU-CONS',esrs_name: "Consommation d'eau", pillar: 'E', value: '45 200 m³', status: 'validated', gri: 'GRI 303-5', cdp: 'W1.2', sdg: 'SDG 6' },
+  { esrs_code: 'E2 / POL-AIR',esrs_name: 'Émissions polluants atmosphériques', pillar: 'E', value: null, status: 'missing', gri: 'GRI 305-7', cdp: 'C7.1', sdg: 'SDG 3' },
+  { esrs_code: 'E3 / EAU-CONS',esrs_name: "Consommation d'eau", pillar: 'E', value: null, status: 'missing', gri: 'GRI 303-5', cdp: 'W1.2', sdg: 'SDG 6' },
   { esrs_code: 'E3 / EAU-REC',esrs_name: 'Eau recyclée', pillar: 'E', value: null, status: 'missing', gri: 'GRI 303-3', cdp: 'W1.2b', sdg: 'SDG 6' },
-  { esrs_code: 'E4 / BIO-SITE',esrs_name: 'Sites zones protégées', pillar: 'E', value: '2', status: 'validated', gri: 'GRI 304-1', cdp: 'B1.1', tcfd: 'Risks', sdg: 'SDG 15' },
-  { esrs_code: 'E5 / DEC-REC',esrs_name: 'Taux de recyclage déchets', pillar: 'E', value: '67%', status: 'validated', gri: 'GRI 306-4', cdp: 'W5.2', sdg: 'SDG 12' },
-  { esrs_code: 'S1 / EFF-TOT',esrs_name: 'Effectif total', pillar: 'S', value: '1 234 ETP', status: 'validated', gri: 'GRI 102-8', sdg: 'SDG 8' },
-  { esrs_code: 'S1 / EFF-F',  esrs_name: 'Part des femmes', pillar: 'S', value: '44%', status: 'validated', gri: 'GRI 405-1', sdg: 'SDG 5' },
-  { esrs_code: 'S1 / EFF-HAP',esrs_name: 'Écart salarial H/F', pillar: 'S', value: '8.2%', status: 'validated', gri: 'GRI 405-2', sdg: 'SDG 5' },
-  { esrs_code: 'S1 / EFF-TF', esrs_name: 'Taux fréquence accidents', pillar: 'S', value: '2.1', status: 'validated', gri: 'GRI 403-9', sdg: 'SDG 3' },
-  { esrs_code: 'S1 / FORM-H', esrs_name: 'Heures formation/salarié', pillar: 'S', value: '28h', status: 'validated', gri: 'GRI 404-1', sdg: 'SDG 4' },
-  { esrs_code: 'S1 / EFF-TUR',esrs_name: 'Taux de turnover', pillar: 'S', value: '12%', status: 'validated', gri: 'GRI 401-1', sdg: 'SDG 8' },
-  { esrs_code: 'S2 / CHV-AUD',esrs_name: 'Audits fournisseurs droits humains', pillar: 'S', value: '45%', status: 'partial', gri: 'GRI 414-2', sdg: 'SDG 10' },
-  { esrs_code: 'G1 / ANTI-COR',esrs_name: 'Politique anti-corruption', pillar: 'G', value: 'Oui', status: 'validated', gri: 'GRI 205-1', tcfd: 'Governance', sdg: 'SDG 16' },
-  { esrs_code: 'G1 / COMP',   esrs_name: 'Formation compliance', pillar: 'G', value: '78%', status: 'validated', gri: 'GRI 205-2', tcfd: 'Governance', sdg: 'SDG 16' },
-  { esrs_code: 'G1 / RISK',   esrs_name: 'Processus gestion des risques ESG', pillar: 'G', value: 'Documenté', status: 'validated', gri: 'GRI 102-30', cdp: 'C1.1', tcfd: 'Risk Management', sdg: 'SDG 17' },
+  { esrs_code: 'E4 / BIO-SITE',esrs_name: 'Sites zones protégées', pillar: 'E', value: null, status: 'missing', gri: 'GRI 304-1', cdp: 'B1.1', tcfd: 'Risks', sdg: 'SDG 15' },
+  { esrs_code: 'E5 / DEC-REC',esrs_name: 'Taux de recyclage déchets', pillar: 'E', value: null, status: 'missing', gri: 'GRI 306-4', cdp: 'W5.2', sdg: 'SDG 12' },
+  { esrs_code: 'S1 / EFF-TOT',esrs_name: 'Effectif total', pillar: 'S', value: null, status: 'missing', gri: 'GRI 102-8', sdg: 'SDG 8' },
+  { esrs_code: 'S1 / EFF-F',  esrs_name: 'Part des femmes', pillar: 'S', value: null, status: 'missing', gri: 'GRI 405-1', sdg: 'SDG 5' },
+  { esrs_code: 'S1 / EFF-HAP',esrs_name: 'Écart salarial H/F', pillar: 'S', value: null, status: 'missing', gri: 'GRI 405-2', sdg: 'SDG 5' },
+  { esrs_code: 'S1 / EFF-TF', esrs_name: 'Taux fréquence accidents', pillar: 'S', value: null, status: 'missing', gri: 'GRI 403-9', sdg: 'SDG 3' },
+  { esrs_code: 'S1 / FORM-H', esrs_name: 'Heures formation/salarié', pillar: 'S', value: null, status: 'missing', gri: 'GRI 404-1', sdg: 'SDG 4' },
+  { esrs_code: 'S1 / EFF-TUR',esrs_name: 'Taux de turnover', pillar: 'S', value: null, status: 'missing', gri: 'GRI 401-1', sdg: 'SDG 8' },
+  { esrs_code: 'S2 / CHV-AUD',esrs_name: 'Audits fournisseurs droits humains', pillar: 'S', value: null, status: 'missing', gri: 'GRI 414-2', sdg: 'SDG 10' },
+  { esrs_code: 'G1 / ANTI-COR',esrs_name: 'Politique anti-corruption', pillar: 'G', value: null, status: 'missing', gri: 'GRI 205-1', tcfd: 'Governance', sdg: 'SDG 16' },
+  { esrs_code: 'G1 / COMP',   esrs_name: 'Formation compliance', pillar: 'G', value: null, status: 'missing', gri: 'GRI 205-2', tcfd: 'Governance', sdg: 'SDG 16' },
+  { esrs_code: 'G1 / RISK',   esrs_name: 'Processus gestion des risques ESG', pillar: 'G', value: null, status: 'missing', gri: 'GRI 102-30', cdp: 'C1.1', tcfd: 'Risk Management', sdg: 'SDG 17' },
   { esrs_code: 'G1 / DIV-CA', esrs_name: "Diversité Conseil d'administration", pillar: 'G', value: null, status: 'missing', gri: 'GRI 405-1', tcfd: 'Governance', sdg: 'SDG 5' },
   // ── Extension GRI — Environnement ──
-  { esrs_code: 'E1 / ENE-TOT', esrs_name: "Consommation totale d'énergie", pillar: 'E', value: '7 200 MWh', status: 'validated', gri: 'GRI 302-1', cdp: 'C8.2', tcfd: 'Metrics & Targets', sdg: 'SDG 7' },
+  { esrs_code: 'E1 / ENE-TOT', esrs_name: "Consommation totale d'énergie", pillar: 'E', value: null, status: 'missing', gri: 'GRI 302-1', cdp: 'C8.2', tcfd: 'Metrics & Targets', sdg: 'SDG 7' },
   { esrs_code: 'E1 / INT-E', esrs_name: 'Intensité énergétique', pillar: 'E', value: null, status: 'missing', gri: 'GRI 302-3', tcfd: 'Metrics & Targets', sdg: 'SDG 7' },
   { esrs_code: 'E3 / EAU-STRESS', esrs_name: 'Eau prélevée en zones de stress hydrique', pillar: 'E', value: null, status: 'missing', gri: 'GRI 303-3', cdp: 'W4.1', tcfd: 'Risks', sdg: 'SDG 6' },
   { esrs_code: 'E3 / EAU-REJ', esrs_name: "Rejets d'eau (effluents)", pillar: 'E', value: null, status: 'missing', gri: 'GRI 303-4', cdp: 'W1.2', sdg: 'SDG 6' },
-  { esrs_code: 'E5 / DEC-TOT', esrs_name: 'Déchets totaux générés', pillar: 'E', value: '128 t', status: 'partial', gri: 'GRI 306-3', cdp: 'W5.1', sdg: 'SDG 12' },
-  { esrs_code: 'E5 / DEC-DAN', esrs_name: 'Déchets dangereux générés', pillar: 'E', value: '22 t', status: 'validated', gri: 'GRI 306-3', cdp: 'W5.1a', sdg: 'SDG 12' },
+  { esrs_code: 'E5 / DEC-TOT', esrs_name: 'Déchets totaux générés', pillar: 'E', value: null, status: 'missing', gri: 'GRI 306-3', cdp: 'W5.1', sdg: 'SDG 12' },
+  { esrs_code: 'E5 / DEC-DAN', esrs_name: 'Déchets dangereux générés', pillar: 'E', value: null, status: 'missing', gri: 'GRI 306-3', cdp: 'W5.1a', sdg: 'SDG 12' },
   { esrs_code: 'E5 / MAT-PREM', esrs_name: 'Matières premières utilisées', pillar: 'E', value: null, status: 'missing', gri: 'GRI 301-1', sdg: 'SDG 12' },
   // ── Extension GRI — Social ──
-  { esrs_code: 'S1 / EMB-NEW', esrs_name: 'Nouvelles embauches', pillar: 'S', value: '86', status: 'validated', gri: 'GRI 401-1', sdg: 'SDG 8' },
+  { esrs_code: 'S1 / EMB-NEW', esrs_name: 'Nouvelles embauches', pillar: 'S', value: null, status: 'missing', gri: 'GRI 401-1', sdg: 'SDG 8' },
   { esrs_code: 'S1 / CONG-PAR', esrs_name: 'Retour de congé parental', pillar: 'S', value: null, status: 'missing', gri: 'GRI 401-3', sdg: 'SDG 5' },
-  { esrs_code: 'S1 / CONV-COLL', esrs_name: 'Couverture par convention collective', pillar: 'S', value: '100%', status: 'validated', gri: 'GRI 2-30', sdg: 'SDG 8' },
+  { esrs_code: 'S1 / CONV-COLL', esrs_name: 'Couverture par convention collective', pillar: 'S', value: null, status: 'missing', gri: 'GRI 2-30', sdg: 'SDG 8' },
   { esrs_code: 'S1 / MAL-PRO', esrs_name: 'Maladies professionnelles', pillar: 'S', value: null, status: 'missing', gri: 'GRI 403-10', sdg: 'SDG 3' },
-  { esrs_code: 'S1 / DECES', esrs_name: 'Décès liés au travail', pillar: 'S', value: '0', status: 'validated', gri: 'GRI 403-9', sdg: 'SDG 3' },
-  { esrs_code: 'S1 / DISCRIM', esrs_name: 'Incidents de discrimination', pillar: 'S', value: '0', status: 'validated', gri: 'GRI 406-1', sdg: 'SDG 10' },
+  { esrs_code: 'S1 / DECES', esrs_name: 'Décès liés au travail', pillar: 'S', value: null, status: 'missing', gri: 'GRI 403-9', sdg: 'SDG 3' },
+  { esrs_code: 'S1 / DISCRIM', esrs_name: 'Incidents de discrimination', pillar: 'S', value: null, status: 'missing', gri: 'GRI 406-1', sdg: 'SDG 10' },
   { esrs_code: 'S1 / SAL-MIN', esrs_name: "Ratio salaire d'entrée / salaire minimum", pillar: 'S', value: null, status: 'missing', gri: 'GRI 202-1', sdg: 'SDG 1' },
-  { esrs_code: 'S2 / CHV-SOC', esrs_name: 'Fournisseurs évalués sur critères sociaux', pillar: 'S', value: '38%', status: 'partial', gri: 'GRI 414-1', sdg: 'SDG 10' },
+  { esrs_code: 'S2 / CHV-SOC', esrs_name: 'Fournisseurs évalués sur critères sociaux', pillar: 'S', value: null, status: 'missing', gri: 'GRI 414-1', sdg: 'SDG 10' },
   { esrs_code: 'S3 / COMM-LOC', esrs_name: 'Programmes communautés locales', pillar: 'S', value: null, status: 'missing', gri: 'GRI 413-1', sdg: 'SDG 11' },
-  { esrs_code: 'S4 / SEC-PROD', esrs_name: 'Incidents sécurité produits', pillar: 'S', value: '0', status: 'validated', gri: 'GRI 416-2', sdg: 'SDG 12' },
-  { esrs_code: 'S4 / DATA-PRIV', esrs_name: 'Violations de données personnelles', pillar: 'S', value: '0', status: 'validated', gri: 'GRI 418-1', sdg: 'SDG 16' },
+  { esrs_code: 'S4 / SEC-PROD', esrs_name: 'Incidents sécurité produits', pillar: 'S', value: null, status: 'missing', gri: 'GRI 416-2', sdg: 'SDG 12' },
+  { esrs_code: 'S4 / DATA-PRIV', esrs_name: 'Violations de données personnelles', pillar: 'S', value: null, status: 'missing', gri: 'GRI 418-1', sdg: 'SDG 16' },
   // ── Extension GRI — Gouvernance & économique ──
-  { esrs_code: 'G1 / COR-COND', esrs_name: 'Condamnations pour corruption', pillar: 'G', value: '0', status: 'validated', gri: 'GRI 205-3', tcfd: 'Governance', sdg: 'SDG 16' },
-  { esrs_code: 'G1 / ANTI-CONC', esrs_name: 'Actions anti-concurrentielles', pillar: 'G', value: '0', status: 'validated', gri: 'GRI 206-1', sdg: 'SDG 16' },
+  { esrs_code: 'G1 / COR-COND', esrs_name: 'Condamnations pour corruption', pillar: 'G', value: null, status: 'missing', gri: 'GRI 205-3', tcfd: 'Governance', sdg: 'SDG 16' },
+  { esrs_code: 'G1 / ANTI-CONC', esrs_name: 'Actions anti-concurrentielles', pillar: 'G', value: null, status: 'missing', gri: 'GRI 206-1', sdg: 'SDG 16' },
   { esrs_code: 'G1 / POL-CONTRIB', esrs_name: 'Contributions politiques', pillar: 'G', value: null, status: 'missing', gri: 'GRI 415-1', sdg: 'SDG 16' },
   { esrs_code: 'G1 / REM-RATIO', esrs_name: 'Ratio rémunération dirigeant / médiane', pillar: 'G', value: null, status: 'missing', gri: 'GRI 2-21', tcfd: 'Governance', sdg: 'SDG 10' },
   { esrs_code: 'G1 / ECO-VAL', esrs_name: 'Valeur économique distribuée', pillar: 'G', value: null, status: 'missing', gri: 'GRI 201-1', sdg: 'SDG 8' },
   { esrs_code: 'G1 / TAX-PAYS', esrs_name: 'Impôts payés', pillar: 'G', value: null, status: 'missing', gri: 'GRI 207-4', sdg: 'SDG 16' },
-  { esrs_code: 'G1 / CHV-ENV', esrs_name: 'Fournisseurs évalués sur critères environnementaux', pillar: 'G', value: '31%', status: 'partial', gri: 'GRI 308-1', sdg: 'SDG 12' },
+  { esrs_code: 'G1 / CHV-ENV', esrs_name: 'Fournisseurs évalués sur critères environnementaux', pillar: 'G', value: null, status: 'missing', gri: 'GRI 308-1', sdg: 'SDG 12' },
 ];
 
 const STANDARDS_META = [
@@ -102,13 +102,15 @@ export default function MultiStandardMapping() {
   const [filterStatus, setFilterStatus] = useState<'all'|'validated'|'partial'|'missing'>('all');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [mappingData, setMappingData] = useState<MappedIndicator[]>(MAPPING_DATA);
-  const [coverage, setCoverage] = useState({ csrd: 100, gri: 90, cdp: 43, tcfd: 43 });
+  const [coverage, setCoverage] = useState({ csrd: 0, gri: 0, cdp: 0, tcfd: 0 });
+  const [loadError, setLoadError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [dataAvailable, setDataAvailable] = useState<boolean | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   const fetchMapping = async (y: number) => {
     setLoading(true);
+    setLoadError(false);
     try {
       const res = await api.get<MappingResponse>(`/reports/multi-standards?year=${y}`);
       const d = res.data;
@@ -117,16 +119,19 @@ export default function MultiStandardMapping() {
         setDataAvailable(d.summary.data_available);
         setLastUpdated(new Date().toLocaleTimeString(dtLocale(), { hour: '2-digit', minute: '2-digit' }));
       } else {
+        setMappingData(MAPPING_DATA); setCoverage({ csrd: 0, gri: 0, cdp: 0, tcfd: 0 });
         setDataAvailable(false); setLastUpdated(null);
-        toast(t('multi.noDataToast', 'Aucune donnée saisie — affichage des indicateurs de référence'), { icon: 'ℹ️' });
       }
-    } catch { setDataAvailable(false); setLastUpdated(null); toast(t('multi.offlineToast', 'Données de référence (mode hors-ligne)'), { icon: '📋' }); }
+    } catch {
+      setMappingData(MAPPING_DATA); setCoverage({ csrd: 0, gri: 0, cdp: 0, tcfd: 0 });
+      setDataAvailable(false); setLastUpdated(null); setLoadError(true);
+    }
     finally { setLoading(false); }
   };
 
   useEffect(() => { fetchMapping(year); }, [year]);
 
-  const standards = STANDARDS_META.map(s => ({ ...s, coverage: coverage[s.id as keyof typeof coverage] ?? 100, description: t(s.descKey, s.descFR) }));
+  const standards = STANDARDS_META.map(s => ({ ...s, coverage: coverage[s.id as keyof typeof coverage] ?? 0, description: t(s.descKey, s.descFR) }));
   const toggleRow = (code: string) => { setExpandedRows(prev => { const next = new Set(prev); next.has(code) ? next.delete(code) : next.add(code); return next; }); };
   const filteredData = mappingData.filter(m => {
     if (filterPillar !== 'all' && m.pillar !== filterPillar) return false;
@@ -235,8 +240,8 @@ export default function MultiStandardMapping() {
         <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
           <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-amber-800">{t('multi.noDataBanner','Aucune donnée saisie pour {{year}}',{year})}</p>
-            <p className="text-xs text-amber-600 mt-0.5">{t('multi.noDataHint','Les valeurs affichées sont des exemples. Saisissez vos données dans')}{' '}
+            <p className="text-sm font-medium text-amber-800">{loadError ? t('multi.loadError','Impossible de charger vos indicateurs') : t('multi.noDataBanner','Aucune donnée saisie pour {{year}}',{year})}</p>
+            <p className="text-xs text-amber-600 mt-0.5">{t('multi.noDataHint','Ci-dessous, la correspondance de référence ESRS / GRI / CDP / TCFD : aucune valeur n’est affichée tant que vous n’avez pas saisi de données. Saisissez-les dans')}{' '}
               <a href="/app/data-entry" className="underline hover:text-amber-800">{t('multi.dataEntryLink','Saisie de données')}</a>{' '}
               {t('multi.noDataHint2','pour voir vos indicateurs réels mappés vers GRI, CDP et TCFD.')}
             </p>
