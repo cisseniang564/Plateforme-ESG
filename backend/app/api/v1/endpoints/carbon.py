@@ -11,10 +11,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, extract, delete, and_
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.dependencies import get_db, get_current_user
 from app.models.user import User
 from app.models.data_entry import DataEntry
+from app.models.framework_assessment import FrameworkAssessment
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -270,20 +272,74 @@ async def get_emissions_history(
     return {"history": history, "years": years}
 
 
+_PLAN_FRAMEWORK = "decarb_plan"
+_PLAN_MAX_BYTES = 512 * 1024  # garde-fou : un plan réaliste fait quelques Ko
+
+
+async def _load_plan(db: AsyncSession, tenant_id: Any) -> Optional[Dict[str, Any]]:
+    result = await db.execute(
+        select(FrameworkAssessment).where(
+            FrameworkAssessment.tenant_id == tenant_id,
+            FrameworkAssessment.framework == _PLAN_FRAMEWORK,
+        ).order_by(FrameworkAssessment.updated_at.desc()).limit(1)
+    )
+    row = result.scalar_one_or_none()
+    return row.data if row and isinstance(row.data, dict) else None
+
+
+async def _store_plan(db: AsyncSession, tenant_id: Any, payload: Dict[str, Any]) -> None:
+    """Upsert du plan du tenant (une seule ligne par tenant, user_id NULL)."""
+    existing = await db.execute(
+        select(FrameworkAssessment).where(
+            FrameworkAssessment.tenant_id == tenant_id,
+            FrameworkAssessment.framework == _PLAN_FRAMEWORK,
+        ).order_by(FrameworkAssessment.updated_at.desc()).limit(1)
+    )
+    row = existing.scalar_one_or_none()
+    if row:
+        row.data = payload
+    else:
+        await db.execute(
+            pg_insert(FrameworkAssessment)
+            .values(tenant_id=tenant_id, user_id=None, framework=_PLAN_FRAMEWORK, data=payload)
+            .on_conflict_do_nothing()
+        )
+    await db.commit()
+
+
 @router.get("/plan", response_model=Dict[str, Any])
 async def get_decarb_plan(
     current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Load the tenant's saved decarbonization plan from Redis."""
+    """Charge le plan de décarbonation du tenant (PostgreSQL).
+
+    Reprise de l'existant : si aucun plan n'est en base mais qu'un ancien plan
+    existe encore dans Redis (ancien stockage), il est renvoyé et recopié en base.
+    """
+    try:
+        plan = await _load_plan(db, current_user.tenant_id)
+    except Exception as e:
+        logger.error("get_decarb_plan DB error: %s", e)
+        raise HTTPException(status_code=503, detail="Plan de décarbonation momentanément indisponible")
+    if plan is not None:
+        return plan
+
     r = _get_redis()
     if r:
         try:
-            key = f"decarb:plan:{current_user.tenant_id}"
-            data = r.get(key)
-            if data:
-                return json.loads(data)
+            legacy = r.get(f"decarb:plan:{current_user.tenant_id}")
+            if legacy:
+                data = json.loads(legacy)
+                if isinstance(data, dict):
+                    try:
+                        await _store_plan(db, current_user.tenant_id, data)
+                    except Exception as e:  # la reprise ne doit pas bloquer la lecture
+                        await db.rollback()
+                        logger.warning("decarb plan legacy copy failed: %s", e)
+                    return data
         except Exception as e:
-            logger.warning("get_decarb_plan Redis error: %s", e)
+            logger.warning("get_decarb_plan Redis (legacy) error: %s", e)
     return {"actions": []}
 
 
@@ -426,17 +482,18 @@ async def save_scope12(
 async def save_decarb_plan(
     payload: Dict[str, Any],
     current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Save the tenant's decarbonization plan to Redis (TTL 1 year)."""
-    r = _get_redis()
-    if r:
-        try:
-            key = f"decarb:plan:{current_user.tenant_id}"
-            r.set(key, json.dumps(payload), ex=365 * 24 * 3600)
-            return {"saved": True}
-        except Exception as e:
-            logger.warning("save_decarb_plan Redis error: %s", e)
-    return {"saved": False}
+    """Enregistre le plan de décarbonation du tenant dans PostgreSQL."""
+    if len(json.dumps(payload, default=str)) > _PLAN_MAX_BYTES:
+        raise HTTPException(status_code=413, detail="Plan trop volumineux")
+    try:
+        await _store_plan(db, current_user.tenant_id, payload)
+        return {"saved": True}
+    except Exception as e:
+        await db.rollback()
+        logger.error("save_decarb_plan DB error: %s", e)
+        return {"saved": False}
 
 
 @router.get("/beges-export.xlsx", summary="Export BEGES.xlsx au format ADEME (Art. L229-25)")

@@ -268,6 +268,11 @@ async def init_db() -> None:
         "CREATE INDEX IF NOT EXISTS ix_framework_assessments_tenant_id ON framework_assessments (tenant_id)",
         "CREATE INDEX IF NOT EXISTS ix_framework_assessments_user_id   ON framework_assessments (user_id)",
         "CREATE INDEX IF NOT EXISTS ix_framework_assessments_framework  ON framework_assessments (framework)",
+        # Plan de décarbonation : une seule ligne par tenant (user_id NULL)
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_framework_assessments_decarb_plan
+            ON framework_assessments (tenant_id) WHERE framework = 'decarb_plan'
+        """,
 
         # ── Gaïa : analyses de rapports existants ─────────────────────────────
         """
