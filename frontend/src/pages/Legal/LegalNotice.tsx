@@ -31,22 +31,22 @@ export default function LegalNotice() {
             </div>
           </div>
 
-          <div className="prose prose-gray max-w-none">
+          <div className="prose prose-gray max-w-none [&_mark]:bg-amber-100 [&_mark]:text-amber-900 [&_mark]:rounded [&_mark]:px-1">
             <h2>1. Éditeur du Site</h2>
             <p>
               <strong>Raison sociale :</strong> GreenConnect SAS<br />
-              <strong>Forme juridique :</strong> Société par Actions Simplifiée<br />
-              <strong>Capital social :</strong> 1 000 €<br />
-              <strong>SIRET :</strong> [À renseigner]<br />
-              <strong>RCS :</strong> [À renseigner]<br />
-              <strong>TVA intracommunautaire :</strong> [À renseigner]<br />
+              <strong>Forme juridique :</strong> <mark>[À renseigner]</mark><br />
+              <strong>Capital social :</strong> <mark>[À renseigner]</mark><br />
+              <strong>SIRET :</strong> <mark>[À renseigner]</mark><br />
+              <strong>RCS :</strong> <mark>[À renseigner]</mark><br />
+              <strong>TVA intracommunautaire :</strong> <mark>[À renseigner]</mark><br />
               <strong>Siège social :</strong> 12 Vieux chemin de meaux, 93190 Livry-Gargan, France<br />
               <strong>Email :</strong> contact@greenconnect.cloud
             </p>
 
             <h3>Directeur de la publication</h3>
             <p>
-              [À renseigner — Directeur de la publication]<br />
+              <mark>[À renseigner — Directeur de la publication]</mark><br />
               Email : direction@greenconnect.cloud
             </p>
 
@@ -72,9 +72,8 @@ export default function LegalNotice() {
 
             <h3>Marques</h3>
             <p>
-              Les marques "GreenConnect" et "ESGFlow" ainsi que les logos associés sont des marques
-              déposées. Toute utilisation non autorisée constitue une contrefaçon sanctionnée par les
-              articles L.335-2 et suivants du Code de la Propriété Intellectuelle.
+              Les noms "GreenConnect" et "ESGFlow" ainsi que les logos associés sont la propriété de
+              l'éditeur. Toute utilisation non autorisée est interdite.
             </p>
 
             <h2>4. Protection des Données Personnelles</h2>
