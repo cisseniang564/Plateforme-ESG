@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Brain, TrendingUp, TrendingDown, AlertTriangle, Lightbulb,
   RefreshCw, Sparkles, Activity, CheckCircle, ArrowRight, Zap,
-  Target, Minus, MessageSquare, Send, FileText, Upload,
+  Target, Minus, MessageSquare, Send, FileText,
   Leaf, BarChart2, ChevronRight, ChevronLeft, Download, Loader2, Globe,
   Building2, Factory, Truck, Users, Package, Flame,
 } from 'lucide-react';
@@ -179,55 +179,7 @@ const TREND_CONFIG = {
 
 const CURRENT_YEAR = new Date().getFullYear();
 
-// ─── Chatbot responses ────────────────────────────────────────────────────────
-
-const ESG_KB: Array<{ keywords: string[]; response: string }> = [
-  {
-    keywords: ['csrd', 'conformité', 'directive', 'réglementation'],
-    response: `**Conformité CSRD** ✅\n\nLa Corporate Sustainability Reporting Directive (CSRD) impose depuis 2024 un reporting ESG standardisé selon les **European Sustainability Reporting Standards (ESRS)**.\n\n**Calendrier d'application :**\n- 2024 : Grandes entreprises >500 salariés (rapport 2025)\n- 2025 : Entreprises >250 salariés ou >40M€ CA\n- 2026 : PME cotées\n\n**Ce que nous couvrons :** 100+ indicateurs ESRS pré-configurés, double matérialité documentée, export rapport conforme.\n\nSouhaitez-vous un audit de votre complétude ESRS ?`,
-  },
-  {
-    keywords: ['scope 3', 'scope3', 'émissions indirectes', 'chaîne de valeur'],
-    response: `**Scope 3 — Émissions indirectes** 🌍\n\nLe Scope 3 représente **70 à 90% des émissions** d'une entreprise. Il couvre 15 catégories GHG Protocol :\n\n**Amont :**\n1. Achats de biens & services\n2. Biens d'équipement\n3. Activités liées à l'énergie\n4. Transport & distribution amont\n5. Déchets d'exploitation\n6. Déplacements professionnels\n7. Trajets domicile-travail\n8. Actifs en location-bail (amont)\n\n**Aval :**\n9. Transport & distribution aval\n10. Transformation des produits vendus\n11. Utilisation des produits vendus\n12. Fin de vie des produits vendus\n13. Actifs en location-bail (aval)\n14. Franchises\n15. Investissements\n\nAccédez au **Bilan Carbone** pour saisir vos données par catégorie avec les facteurs ADEME.`,
-  },
-  {
-    keywords: ['score', 'notation', 'performance', 'kpi', 'indicateur'],
-    response: `**Score ESG** 📊\n\nVotre score ESG est calculé automatiquement sur 3 piliers :\n\n- **E - Environnemental** : Émissions GES, énergie, eau, biodiversité\n- **S - Social** : Emploi, formation, diversité, santé-sécurité\n- **G - Gouvernance** : Éthique, transparence, lutte corruption\n\n**Méthodologie :** Chaque indicateur est pondéré selon son importance ESRS. Le score global est une moyenne pondérée de 0 à 100.\n\n**Améliorer votre score :**\n→ Complétez les données manquantes (impact direct +5 à +15 pts)\n→ Réduisez vos émissions Scope 1 & 2\n→ Mettez en place un programme de formation\n\nConsultez votre **Dashboard Exécutif** pour le détail complet.`,
-  },
-  {
-    keywords: ['rapport', 'rapport', 'gri', 'tcfd', 'pdf', 'générer', 'publier'],
-    response: `**Génération de rapports** 📄\n\nESGFlow génère automatiquement 3 types de rapports conformes :\n\n| Standard | Couverture | Usage |\n|---------|-----------|-------|
-| **CSRD/ESRS** | Tous piliers E,S,G | Réglementaire EU |
-| **GRI** | Universel | Parties prenantes |
-| **TCFD** | Climat & risques | Investisseurs |
-
-**Pour générer :** Allez dans **Rapports → Générer un rapport**, sélectionnez le standard et la période. Le PDF est prêt en moins d'1 minute.
-
-💡 *Conseil IA :* Votre taux de complétude doit dépasser 70% pour un rapport de qualité. Vérifiez l'onglet **Données manquantes** ci-dessus.`,
-  },
-  {
-    keywords: ['matérialité', 'double matérialité', 'enjeux', 'parties prenantes'],
-    response: `**Double Matérialité CSRD** 🎯\n\nLa CSRD exige une analyse de double matérialité selon 2 dimensions :\n\n**1. Matérialité d'impact** (Outside-in)\nComment votre entreprise **impacte** l'environnement et la société ?\n→ Émissions CO₂, conditions de travail, droits humains...\n\n**2. Matérialité financière** (Inside-out)\nComment les enjeux ESG **affectent financièrement** votre entreprise ?\n→ Risques climatiques, transition énergétique, réputation...\n\n**Notre outil de matérialité :**\n✅ Questionnaire parties prenantes intégré\n✅ Matrice drag & drop\n✅ Suggestions d'enjeux par secteur\n✅ Export rapport de matérialité\n\nAccédez à la **Matrice de Matérialité** dans le menu Analyse.`,
-  },
-  {
-    keywords: ['anomalie', 'erreur', 'incohérence', 'données incorrectes'],
-    response: `**Détection d'anomalies IA** 🔍\n\nNotre moteur IA analyse vos données ESG en temps réel et détecte :\n\n**Types d'anomalies détectées :**\n- Valeurs hors plage normale (>2σ de la moyenne historique)\n- Données manquantes sur des indicateurs obligatoires ESRS\n- Incohérences entre indicateurs corrélés\n- Valeurs aberrantes vs benchmarks sectoriels\n\n**Sévérité :**\n🔴 **Critique** : Impact sur la conformité CSRD\n🟡 **Modéré** : Qualité des données à vérifier\n\nConsultez l'onglet **Anomalies** pour voir les alertes actives sur vos données.`,
-  },
-  {
-    keywords: ['réduire', 'réduction', 'améliorer', 'optimiser', 'conseil'],
-    response: `**Leviers de réduction ESG** ♻️\n\n**Quick wins (impact rapide) :**\n1. ⚡ Passer aux LED & éclairage intelligent → -15% conso électrique\n2. 🚗 Programme télétravail 2j/semaine → -30% émissions déplacements\n3. 💡 Optimisation HVAC & isolation → -20% énergie bâtiments\n\n**Actions structurelles :**\n4. 🌱 Approvisionnement fournisseurs locaux → Scope 3 cat.1 -25%\n5. 🔋 Installation panneaux solaires → Scope 2 -40 à -80%\n6. 🚛 Optimisation logistique → Scope 3 cat.4 -20%\n\n**Impact formation :**\n7. 📚 Programmes formation ESG → +8 pts score Social\n8. 👥 Politique diversité & inclusion → +6 pts score Social\n\nConsultez l'onglet **Réduction Carbone** pour une analyse personnalisée avec benchmarks sectoriels.`,
-  },
-];
-
-function getESGResponse(input: string): string {
-  const lower = input.toLowerCase();
-  for (const entry of ESG_KB) {
-    if (entry.keywords.some(kw => lower.includes(kw))) {
-      return entry.response;
-    }
-  }
-  return `**Bonne question !** 🤖\n\nJe suis l'assistant ESG d'ESGFlow. Je peux vous aider sur :\n\n- 📋 **Conformité CSRD/ESRS** — indicateurs requis, calendrier\n- 🌍 **Bilan carbone** — Scope 1, 2, 3 et catégories GHG Protocol\n- 📊 **Score ESG** — méthodologie et amélioration\n- 📄 **Rapports** — GRI, CSRD, TCFD\n- 🎯 **Matérialité** — double matérialité, parties prenantes\n- 🔍 **Anomalies** — interprétation des alertes\n- ♻️ **Réduction** — leviers d'action concrets\n\nPosez-moi une question plus précise ou utilisez les suggestions ci-dessus.`;
-}
+const CHAT_UNAVAILABLE = "L'assistant est momentanément indisponible. Réessayez dans un instant.";
 
 // ─── Reduction levers data ────────────────────────────────────────────────────
 
@@ -250,17 +202,10 @@ const sectorBenchmarks_BASE = [
   { sector: 'Finance', score: 68, color: '#22c55e' },
 ];
 
-const MISSING_DATA_EXAMPLES = [
-  { category: 'Environnement', indicator: 'Consommation d\'eau (m³)', priority: 'high', esrs: 'E3-4' },
-  { category: 'Social', indicator: 'Heures de formation par salarié', priority: 'high', esrs: 'S1-13' },
-  { category: 'Gouvernance', indicator: 'Politique anti-corruption', priority: 'medium', esrs: 'G1-3' },
-  { category: 'Environnement', indicator: 'Déchets valorisés (%)', priority: 'medium', esrs: 'E5-5' },
-  { category: 'Social', indicator: 'Écart de rémunération H/F', priority: 'medium', esrs: 'S1-16' },
-];
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-type TabId = 'ml' | 'predictions' | 'anomalies' | 'insights' | 'suggestions' | 'chatbot' | 'generation' | 'reduction' | 'simulator';
+type TabId = 'ml' | 'predictions' | 'anomalies' | 'insights' | 'suggestions' | 'chatbot' | 'generation' | 'reduction';
 
 export default function IntelligenceDashboard() {
   const { t } = useTranslation();
@@ -298,10 +243,6 @@ export default function IntelligenceDashboard() {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Generation state
-  const [generatingReport, setGeneratingReport] = useState(false);
-  const [reportGenerated, setReportGenerated] = useState(false);
-  const [ocrUploading, setOcrUploading] = useState(false);
-  const [ocrResult, setOcrResult] = useState<{ vendor: string; amount: number; category: string; co2: number } | null>(null);
 
   // Reduction state
   const [selectedSector, setSelectedSector] = useState('Services');
@@ -309,15 +250,9 @@ export default function IntelligenceDashboard() {
   const [sectorBenchmarksLive, setSectorBenchmarksLive] = useState<typeof sectorBenchmarks_BASE | null>(null);
   const [benchmarkIsReference, setBenchmarkIsReference] = useState(true);
   // Missing data state (real indicators from DB)
-  const [missingDataItems, setMissingDataItems] = useState(MISSING_DATA_EXAMPLES);
+  const [missingDataItems, setMissingDataItems] = useState<any[]>([]);
   const [missingDataIsReal, setMissingDataIsReal] = useState(false);
 
-  // Simulator state
-  const [simRenewable, setSimRenewable] = useState(30);      // % énergie renouvelable
-  const [simTelework, setSimTelework] = useState(2);         // jours télétravail / sem
-  const [simSupplierAudit, setSimSupplierAudit] = useState(40); // % fournisseurs audités
-  const [simScope1Reduction, setSimScope1Reduction] = useState(15); // % réduction Scope 1
-  const [simBaseScore] = useState<number>(58); // base score (updated from real data)
   const [dynamicLevers, setDynamicLevers] = useState(REDUCTION_LEVERS);
 
   // ── Header data (lightweight, fetched immediately) ───────────────────────
@@ -522,10 +457,10 @@ export default function IntelligenceDashboard() {
         .slice(-10) // max 10 messages
         .map(m => ({ role: m.role, content: m.content }));
       const res = await api.post('/analytics/chat', { messages: payload });
-      const response: string = res.data?.response || getESGResponse(text);
+      const response: string = res.data?.response || CHAT_UNAVAILABLE;
       setChatMessages(prev => [...prev, { role: 'assistant', content: response, timestamp: new Date() }]);
     } catch {
-      const response = getESGResponse(text);
+      const response = CHAT_UNAVAILABLE;
       setChatMessages(prev => [...prev, { role: 'assistant', content: response, timestamp: new Date() }]);
     }
     setChatLoading(false);
@@ -539,29 +474,6 @@ export default function IntelligenceDashboard() {
     t('ia.quickPrompt5'),
     t('ia.quickPrompt6'),
   ];
-
-  // ── OCR simulation ──
-  const simulateOCR = async () => {
-    setOcrUploading(true);
-    setOcrResult(null);
-    await new Promise(r => setTimeout(r, 2200));
-    setOcrResult({
-      vendor: 'Transport Express SA',
-      amount: 12450,
-      category: 'Transport & distribution amont (Cat. 4)',
-      co2: 3.8,
-    });
-    setOcrUploading(false);
-  };
-
-  // ── Report generation simulation ──
-  const simulateGeneration = async () => {
-    setGeneratingReport(true);
-    setReportGenerated(false);
-    await new Promise(r => setTimeout(r, 2800));
-    setGeneratingReport(false);
-    setReportGenerated(true);
-  };
 
   // ── Render markdown-ish ──
   const renderMarkdown = (text: string) => {
@@ -597,7 +509,6 @@ export default function IntelligenceDashboard() {
     { id: 'insights', label: t('ia.tabInsights'), icon: Lightbulb, count: insights?.recommendations?.length ?? 0 },
     { id: 'suggestions', label: t('ia.tabSuggestions'), icon: Sparkles, count: suggestions.length },
     { id: 'chatbot', label: t('ia.tabAssistant'), icon: MessageSquare, isNew: true },
-    { id: 'simulator', label: 'Simulateur', icon: Target, isNew: true },
     { id: 'generation', label: t('ia.tabGeneration'), icon: FileText, isNew: true },
     { id: 'reduction', label: t('ia.tabReduction'), icon: Leaf, isNew: true },
   ];
@@ -1491,231 +1402,11 @@ export default function IntelligenceDashboard() {
       )}
 
       {/* ── SIMULATEUR D'IMPACT ── */}
-      {activeTab === 'simulator' && (() => {
-        // Compute projected score delta from sliders
-        const deltaEnv =
-          (simRenewable / 100) * 12 +        // renewable energy → Env score
-          (simScope1Reduction / 100) * 8;    // Scope 1 reduction → Env score
-        const deltaSocial =
-          (simTelework / 5) * 5 +            // telework days → Social score (max 5j)
-          (simSupplierAudit / 100) * 4;      // supplier audit → Social
-        const deltaGov = (simSupplierAudit / 100) * 3; // supplier audit → Gov
-        const totalDelta = Math.round(deltaEnv * 0.4 + deltaSocial * 0.35 + deltaGov * 0.25);
-        const projectedScore = Math.min(100, (myScore ?? simBaseScore) + totalDelta);
-
-        return (
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                <Target className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Simulateur d'impact ESG</h2>
-                <p className="text-sm text-gray-500">Modélisez l'impact de vos actions sur votre score ESG global</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Sliders panel */}
-              <div className="lg:col-span-2 space-y-5">
-
-                {/* Renewable energy */}
-                <div className="bg-white border border-gray-200 rounded-2xl p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Flame className="h-5 w-5 text-orange-500" />
-                      <div>
-                        <p className="font-semibold text-gray-900 text-sm">Part d'énergie renouvelable</p>
-                        <p className="text-xs text-gray-500">Impact sur Scope 2 et score Environnement</p>
-                      </div>
-                    </div>
-                    <span className="text-2xl font-bold text-orange-600">{simRenewable}%</span>
-                  </div>
-                  <input
-                    type="range" min={0} max={100} step={5}
-                    value={simRenewable}
-                    onChange={e => setSimRenewable(Number(e.target.value))}
-                    className="w-full accent-orange-500"
-                  />
-                  <div className="flex justify-between text-xs text-gray-400 mt-1">
-                    <span>0% (fossile)</span><span>50%</span><span>100% (zéro carbone)</span>
-                  </div>
-                  <p className="text-xs text-green-700 mt-2 font-medium">
-                    ↑ +{Math.round((simRenewable / 100) * 12)} pts score Environnement · -45% Scope 2 estimé
-                  </p>
-                </div>
-
-                {/* Telework */}
-                <div className="bg-white border border-gray-200 rounded-2xl p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-5 w-5 text-purple-500" />
-                      <div>
-                        <p className="font-semibold text-gray-900 text-sm">Télétravail (jours / semaine)</p>
-                        <p className="text-xs text-gray-500">Réduction émissions déplacements domicile-travail</p>
-                      </div>
-                    </div>
-                    <span className="text-2xl font-bold text-purple-600">{simTelework}j</span>
-                  </div>
-                  <input
-                    type="range" min={0} max={5} step={1}
-                    value={simTelework}
-                    onChange={e => setSimTelework(Number(e.target.value))}
-                    className="w-full accent-purple-500"
-                  />
-                  <div className="flex justify-between text-xs text-gray-400 mt-1">
-                    <span>0j</span><span>2j</span><span>5j (full remote)</span>
-                  </div>
-                  <p className="text-xs text-green-700 mt-2 font-medium">
-                    ↑ +{Math.round((simTelework / 5) * 5)} pts score Social · -{Math.round((simTelework / 5) * 30)}% émissions déplacements
-                  </p>
-                </div>
-
-                {/* Supplier audit */}
-                <div className="bg-white border border-gray-200 rounded-2xl p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Truck className="h-5 w-5 text-teal-500" />
-                      <div>
-                        <p className="font-semibold text-gray-900 text-sm">Fournisseurs audités ESG</p>
-                        <p className="text-xs text-gray-500">Impact sur Scope 3 amont et score Gouvernance</p>
-                      </div>
-                    </div>
-                    <span className="text-2xl font-bold text-teal-600">{simSupplierAudit}%</span>
-                  </div>
-                  <input
-                    type="range" min={0} max={100} step={5}
-                    value={simSupplierAudit}
-                    onChange={e => setSimSupplierAudit(Number(e.target.value))}
-                    className="w-full accent-teal-500"
-                  />
-                  <div className="flex justify-between text-xs text-gray-400 mt-1">
-                    <span>0%</span><span>50%</span><span>100%</span>
-                  </div>
-                  <p className="text-xs text-green-700 mt-2 font-medium">
-                    ↑ +{Math.round((simSupplierAudit / 100) * 4)} pts Social · +{Math.round((simSupplierAudit / 100) * 3)} pts Gouvernance
-                  </p>
-                </div>
-
-                {/* Scope 1 reduction */}
-                <div className="bg-white border border-gray-200 rounded-2xl p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Factory className="h-5 w-5 text-red-500" />
-                      <div>
-                        <p className="font-semibold text-gray-900 text-sm">Réduction Scope 1 (émissions directes)</p>
-                        <p className="text-xs text-gray-500">Via efficience industrielle, électrification process</p>
-                      </div>
-                    </div>
-                    <span className="text-2xl font-bold text-red-600">-{simScope1Reduction}%</span>
-                  </div>
-                  <input
-                    type="range" min={0} max={60} step={5}
-                    value={simScope1Reduction}
-                    onChange={e => setSimScope1Reduction(Number(e.target.value))}
-                    className="w-full accent-red-500"
-                  />
-                  <div className="flex justify-between text-xs text-gray-400 mt-1">
-                    <span>0% (statu quo)</span><span>-30%</span><span>-60%</span>
-                  </div>
-                  <p className="text-xs text-green-700 mt-2 font-medium">
-                    ↑ +{Math.round((simScope1Reduction / 100) * 8)} pts score Environnement
-                  </p>
-                </div>
-              </div>
-
-              {/* Score preview panel */}
-              <div className="space-y-4">
-                <div className="bg-gradient-to-br from-violet-600 to-indigo-700 rounded-2xl p-6 text-white sticky top-6">
-                  <p className="text-sm font-medium text-violet-200 mb-1">Score ESG projeté</p>
-                  <div className="flex items-end gap-2 mb-4">
-                    <span className="text-5xl font-bold">{projectedScore}</span>
-                    <span className="text-xl text-violet-300 mb-1">/100</span>
-                  </div>
-                  <div className="flex items-center gap-2 mb-5">
-                    <TrendingUp className="h-5 w-5 text-green-300" />
-                    <span className="text-sm font-semibold text-green-300">
-                      +{totalDelta} pts vs score actuel ({myScore ?? simBaseScore})
-                    </span>
-                  </div>
-                  <div className="space-y-3 text-sm">
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-violet-200">Environnement</span>
-                        <span className="font-semibold">+{Math.round(deltaEnv)} pts</span>
-                      </div>
-                      <div className="h-1.5 bg-white/20 rounded-full">
-                        <div className="h-1.5 bg-green-400 rounded-full" style={{ width: `${Math.min(100, deltaEnv * 5)}%` }} />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-violet-200">Social</span>
-                        <span className="font-semibold">+{Math.round(deltaSocial)} pts</span>
-                      </div>
-                      <div className="h-1.5 bg-white/20 rounded-full">
-                        <div className="h-1.5 bg-blue-300 rounded-full" style={{ width: `${Math.min(100, deltaSocial * 10)}%` }} />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-violet-200">Gouvernance</span>
-                        <span className="font-semibold">+{Math.round(deltaGov)} pts</span>
-                      </div>
-                      <div className="h-1.5 bg-white/20 rounded-full">
-                        <div className="h-1.5 bg-yellow-300 rounded-full" style={{ width: `${Math.min(100, deltaGov * 15)}%` }} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Rating projection */}
-                <div className="bg-white border border-gray-200 rounded-2xl p-4">
-                  <p className="text-sm font-semibold text-gray-700 mb-3">Projection notation</p>
-                  {[
-                    { min: 80, label: 'AAA', color: 'text-green-700 bg-green-100' },
-                    { min: 65, label: 'AA', color: 'text-teal-700 bg-teal-100' },
-                    { min: 50, label: 'A', color: 'text-blue-700 bg-blue-100' },
-                    { min: 35, label: 'BBB', color: 'text-amber-700 bg-amber-100' },
-                    { min: 0, label: 'BB', color: 'text-red-700 bg-red-100' },
-                  ].map((r, idx, arr) => {
-                    const nextThreshold = idx > 0 ? arr[idx - 1].min : 101;
-                    const isCurrent = projectedScore >= r.min && projectedScore < nextThreshold;
-                    const active = projectedScore >= r.min;
-                    return (
-                      <div key={r.label} className={`flex items-center justify-between px-3 py-2 rounded-lg mb-1 ${active ? r.color : 'text-gray-300 bg-gray-50'}`}>
-                        <span className="font-bold text-sm">{r.label}</span>
-                        <span className="text-xs">≥ {r.min} pts</span>
-                        {isCurrent && projectedScore === (myScore ?? simBaseScore) + totalDelta && (
-                          <span className="text-xs font-bold">← vous</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <button
-                  onClick={() => {
-                    setSimRenewable(30);
-                    setSimTelework(2);
-                    setSimSupplierAudit(40);
-                    setSimScope1Reduction(15);
-                  }}
-                  className="w-full py-2.5 border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl text-sm font-medium transition"
-                >
-                  Réinitialiser
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
       {/* ── GÉNÉRATION IA ── */}
       {activeTab === 'generation' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          {/* Génération rapport automatique */}
+          {/* Rapports */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border border-gray-200 shadow-sm">
             <div className="flex items-center gap-3 mb-5">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
@@ -1726,50 +1417,15 @@ export default function IntelligenceDashboard() {
                 <p className="text-xs text-gray-500">{t('ia.generationReportDesc')}</p>
               </div>
             </div>
-
-            <div className="space-y-3 mb-5">
-              {[
-                { label: t('ia.reportFieldStandard'), options: ['CSRD / ESRS 2024', 'GRI Standards', 'TCFD'] },
-                { label: t('ia.reportFieldPeriod'), options: [t('ia.reportPeriod2025'), t('ia.reportPeriod2024'), 'Q1 2025'] },
-                { label: t('ia.reportFieldLanguage'), options: [t('ia.reportLangFr'), t('ia.reportLangEn'), t('ia.reportLangDe')] },
-              ].map(field => (
-                <div key={field.label}>
-                  <label className="text-xs font-semibold text-gray-600 mb-1 block">{field.label}</label>
-                  <select className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    {field.options.map(o => <option key={o}>{o}</option>)}
-                  </select>
-                </div>
-              ))}
-            </div>
-
+            <p className="mb-4 text-sm text-gray-600">
+              {t('ia.reportRealNote', "Choisissez le référentiel, la période et la langue dans le générateur de rapports : le document est produit à partir de vos données saisies.")}
+            </p>
             <button
-              onClick={simulateGeneration}
-              disabled={generatingReport}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl transition text-sm"
+              onClick={() => navigate('/app/reports/generate')}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition"
             >
-              {generatingReport ? <><Loader2 className="h-4 w-4 animate-spin" /> {t('ia.generating')}</> : <><Sparkles className="h-4 w-4" /> {t('ia.generateReportBtn')}</>}
+              <FileText className="h-4 w-4" /> {t('ia.openReportGenerator', 'Ouvrir le générateur de rapports')}
             </button>
-
-            {reportGenerated && (
-              <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl">
-                <div className="flex items-center gap-2 mb-3">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <p className="font-semibold text-green-900 text-sm">{t('ia.reportGeneratedSuccess')}</p>
-                </div>
-                <div className="space-y-2 text-xs text-gray-700">
-                  <p>📄 <strong>{t('ia.reportSectionExecutive')}</strong> — {t('ia.reportSectionExecutiveDesc')}</p>
-                  <p>🌍 <strong>{t('ia.reportSectionEnv')}</strong> — {t('ia.reportSectionEnvDesc')}</p>
-                  <p>👥 <strong>{t('ia.reportSectionSocial')}</strong> — {t('ia.reportSectionSocialDesc')}</p>
-                  <p>⚖️ <strong>{t('ia.reportSectionGov')}</strong> — {t('ia.reportSectionGovDesc')}</p>
-                </div>
-                <button
-                  onClick={() => navigate('/app/reports')}
-                  className="mt-3 flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition"
-                >
-                  <Download className="h-3.5 w-3.5" /> {t('ia.downloadPdf')}
-                </button>
-              </div>
-            )}
           </div>
 
           {/* Données manquantes */}
@@ -1789,6 +1445,9 @@ export default function IntelligenceDashboard() {
               )}
             </div>
 
+            {missingDataItems.length === 0 && (
+              <p className="mb-4 text-sm text-gray-500">{t('ia.noMissingData', "Aucune donnée manquante détectée pour le moment, ou analyse indisponible.")}</p>
+            )}
             <div className="space-y-3 mb-4">
               {missingDataItems.map((item, i) => (
                 <div key={i} className={`flex items-center gap-3 p-3 rounded-xl border ${item.priority === 'high' ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`}>
@@ -1809,109 +1468,6 @@ export default function IntelligenceDashboard() {
             >
               <ArrowRight className="h-4 w-4" /> {t('ia.completeMissingData')}
             </button>
-          </div>
-
-          {/* OCR Factures fournisseurs */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border border-gray-200 shadow-sm lg:col-span-2">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                <Upload className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h3 className="font-bold text-gray-900">{t('ia.generationOcrTitle')}</h3>
-                <p className="text-xs text-gray-500">{t('ia.generationOcrDesc')}</p>
-              </div>
-              <span className="ml-auto bg-green-100 text-green-700 text-xs px-2.5 py-1 rounded-full font-bold">{t('ia.likeGreenly')}</span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <div
-                  onClick={simulateOCR}
-                  className="border-2 border-dashed border-gray-300 hover:border-purple-400 rounded-2xl p-8 text-center cursor-pointer transition-all hover:bg-purple-50 group"
-                >
-                  {ocrUploading ? (
-                    <div className="flex flex-col items-center gap-3">
-                      <Loader2 className="h-10 w-10 text-purple-500 animate-spin" />
-                      <p className="text-sm font-medium text-purple-700">{t('ia.ocrAnalyzing')}</p>
-                      <p className="text-xs text-gray-500">{t('ia.ocrAnalyzingDesc')}</p>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-3">
-                      <Upload className="h-10 w-10 text-gray-300 group-hover:text-purple-400 transition-colors" />
-                      <p className="text-sm font-medium text-gray-700 group-hover:text-purple-700">{t('ia.ocrUploadTitle')}</p>
-                      <p className="text-xs text-gray-400">{t('ia.ocrUploadFormats')}</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {['Transport SA.pdf', 'Electricité EDF.pdf', 'Achat matériaux.pdf'].map(f => (
-                    <button key={f} onClick={simulateOCR} className="text-xs px-3 py-1.5 bg-gray-100 hover:bg-purple-100 hover:text-purple-700 rounded-lg transition text-gray-600">
-                      {f}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-3">{t('ia.ocrResult')}</h4>
-                {!ocrResult && !ocrUploading && (
-                  <div className="h-40 flex items-center justify-center border border-gray-100 rounded-xl bg-gray-50">
-                    <p className="text-sm text-gray-400">{t('ia.ocrUploadButton')}</p>
-                  </div>
-                )}
-                {ocrResult && (
-                  <div className="space-y-3">
-                    {[
-                      { label: t('ia.ocrFieldVendor'), value: ocrResult.vendor, icon: Building2 },
-                      { label: t('ia.ocrFieldAmount'), value: `${ocrResult.amount.toLocaleString('fr-FR')} €`, icon: BarChart2 },
-                      { label: t('ia.ocrFieldScope3Cat'), value: ocrResult.category, icon: Globe },
-                      { label: t('ia.ocrFieldEmissions'), value: `${ocrResult.co2} tCO₂e`, icon: Leaf },
-                    ].map((item, i) => {
-                      const Icon = item.icon;
-                      return (
-                        <div key={i} className="flex items-center gap-3 p-3 bg-purple-50 border border-purple-100 rounded-xl">
-                          <Icon className="h-4 w-4 text-purple-600 flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs text-gray-500">{item.label}</p>
-                            <p className="text-sm font-semibold text-gray-900 truncate">{item.value}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    <button
-                      onClick={async () => {
-                        if (!ocrResult) return;
-                        const year = new Date().getFullYear();
-                        try {
-                          await api.post('/data-entry/', {
-                            pillar: 'environmental',
-                            category: 'Scope 3',
-                            metric_name: ocrResult.category,
-                            value_numeric: ocrResult.co2,
-                            unit: 'tCO2e',
-                            period_start: `${year}-01-01`,
-                            period_end: `${year}-12-31`,
-                            period_type: 'annual',
-                            data_source: `OCR - ${ocrResult.vendor}`,
-                            notes: `Montant facture : ${ocrResult.amount.toLocaleString('fr-FR')} €`,
-                            collection_method: 'ocr',
-                          });
-                          toast.success('Données enregistrées dans le Bilan Carbone ✓');
-                          navigate('/app/carbon');
-                        } catch {
-                          toast.error('Erreur lors de l\'enregistrement. Réessayez.');
-                        }
-                      }}
-                      className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold rounded-xl transition"
-                    >
-                      {t('ia.saveToCarbone')}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
         </div>
       )}
