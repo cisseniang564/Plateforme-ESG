@@ -15,8 +15,8 @@ import { useNavigate } from 'react-router-dom';
 import {
   Package, Plus, Leaf, Factory, Truck, Zap, Archive, Recycle,
   Trash2, RefreshCw, AlertCircle, ChevronRight, Box, Calendar,
-  TrendingUp, Sparkles, BarChart3, Lightbulb, GitCompare, Battery,
-  Download, ArrowDown, ArrowUp, Minus, Target, CheckCircle,
+  TrendingUp, BarChart3, Lightbulb, GitCompare, Battery,
+  Download, X, ArrowDown, ArrowUp, Minus, Target, CheckCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/services/api';
@@ -132,6 +132,7 @@ export default function LCADashboard() {
   const [factors, setFactors] = useState<FactorCategory[]>([]);
   const [factorsSource, setFactorsSource] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [selected, setSelected] = useState<LCAProduct | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('catalog');
@@ -144,6 +145,7 @@ export default function LCADashboard() {
 
   const loadAll = async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const [productsRes, factorsRes] = await Promise.all([
         api.get<{ items: LCAProduct[] }>('/lca/products'),
@@ -154,6 +156,7 @@ export default function LCADashboard() {
       setFactorsSource(factorsRes.data.source || '');
     } catch (err) {
       console.error('LCA load failed', err);
+      setLoadError(true);
       toast.error(t('lca.toast.loadFail', 'Impossible de charger les produits LCA'));
     } finally {
       setLoading(false);
@@ -183,10 +186,13 @@ export default function LCADashboard() {
     setCompareIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : prev.length < 5 ? [...prev, id] : prev);
   };
 
+  // Empreinte annuelle = impact unitaire × volume annuel. Un produit sans volume
+  // renseigné n'est pas comptabilisé (avant : compté pour 1 unité, ce qui faussait le total).
   const totalCarbon = useMemo(
-    () => products.reduce((sum, p) => sum + (p.cached_total_kgco2e || 0) * (p.annual_volume || 1), 0),
+    () => products.reduce((sum, p) => sum + (p.annual_volume ? (p.cached_total_kgco2e || 0) * p.annual_volume : 0), 0),
     [products],
   );
+  const withoutVolume = products.filter(p => !p.annual_volume).length;
 
   const deleteProduct = async (id: string) => {
     if (!window.confirm(t('lca.confirm.delete', 'Supprimer ce produit définitivement ?'))) return;
@@ -205,7 +211,7 @@ export default function LCADashboard() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* ── Hero (signature) ──────────────────────────────────── */}
         <PageHero
-          badge={t('lca.hero.badge', 'Analyse du Cycle de Vie · ISO 14040/14044 · PEF')}
+          badge={t('lca.hero.badge', 'Analyse du cycle de vie · approche ISO 14040/14044')}
           badgeIcon={Package}
           icon={Package}
           title={t('lca.hero.title', 'Empreinte carbone produit')}
@@ -224,6 +230,7 @@ export default function LCADashboard() {
             { label: t('lca.kpi.tracked', 'Produits suivis'), value: products.length },
             {
               label: t('lca.kpi.annualAgg', 'Empreinte annuelle agrégée'),
+              sub: withoutVolume > 0 ? t('lca.kpi.noVolume', '{{n}} produit(s) sans volume annuel non comptés', { n: withoutVolume }) : undefined,
               value: totalCarbon >= 1000
                 ? `${(totalCarbon / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} t CO₂eq`
                 : `${totalCarbon.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} kg CO₂eq`,
@@ -231,6 +238,18 @@ export default function LCADashboard() {
             { label: t('lca.kpi.factorRef', 'Référentiel facteurs'), value: 'ADEME Base Empreinte', sub: 'v23.0 · 2024' },
           ]}
         />
+
+        {loadError && (
+          <div role="alert" className="flex items-center gap-3 px-4 py-3 mb-4 rounded-xl text-sm bg-red-50 border border-red-200 text-red-800">
+            <AlertCircle size={16} className="flex-shrink-0" />
+            <span className="flex-1">{t('lca.loadError', 'Impossible de charger vos produits : la liste affichée peut être incomplète.')}</span>
+            <button onClick={loadAll} className="font-semibold underline">{t('lca.retry', 'Réessayer')}</button>
+          </div>
+        )}
+        <p className="text-xs text-gray-500 mb-4 flex items-start gap-1.5">
+          <AlertCircle size={13} className="flex-shrink-0 mt-0.5" />
+          {t('lca.disclaimer', "Calcul indicatif à partir d'un sous-ensemble de facteurs ADEME : il ne remplace pas une ACV certifiée (EPD, PEF) réalisée par un tiers.")}
+        </p>
 
         {/* ── View mode tabs ─────────────────────────────────────── */}
         <div className="flex items-center gap-2 mb-6 border-b border-gray-200 pb-3">
@@ -505,7 +524,7 @@ function ProductDetail({
       {/* Stage breakdown */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Sparkles size={16} className="text-emerald-600" />
+          <BarChart3 size={16} className="text-emerald-600" />
           <h3 className="text-base font-bold text-gray-900">{t('lca.detail.breakdown', 'Répartition par étape de cycle de vie')}</h3>
         </div>
 
@@ -626,13 +645,23 @@ function CreateProductModal({
       toast.error(t('lca.toast.nameRequired', 'Le nom du produit est requis.'));
       return;
     }
+    const vol = annualVolume ? parseFloat(annualVolume) : undefined;
+    if (vol !== undefined && (!Number.isFinite(vol) || vol <= 0)) {
+      toast.error(t('lca.toast.volumeInvalid', 'Le volume annuel doit être un nombre positif.'));
+      return;
+    }
+    const hasInput = Object.values(stages).some(items => (items || []).some(i => Number(i.quantity) > 0));
+    if (!hasInput) {
+      toast.error(t('lca.toast.noInput', 'Ajoutez au moins une entrée avec une quantité > 0 : sinon l’empreinte vaut 0.'));
+      return;
+    }
     setSaving(true);
     try {
       await api.post('/lca/products', {
         name: name.trim(),
         sku: sku.trim() || undefined,
         functional_unit: functionalUnit.trim() || '1 unité',
-        annual_volume: annualVolume ? parseFloat(annualVolume) : undefined,
+        annual_volume: vol,
         description: description.trim() || undefined,
         stages,
       });
@@ -653,8 +682,8 @@ function CreateProductModal({
             <h2 className="text-lg font-bold text-gray-900">{t('lca.modal.title', 'Nouveau produit LCA')}</h2>
             <p className="text-xs text-gray-500">{t('lca.modal.subtitle', "Renseignez les entrées par étape — l'impact sera calculé automatiquement")}</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500">
-            <Trash2 size={18} />
+          <button onClick={onClose} aria-label={t('lca.btn.close', 'Fermer')} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500">
+            <X size={18} />
           </button>
         </div>
 
@@ -959,7 +988,8 @@ function EcoDesignView({ tips, onBack }: { tips: Record<string, any[]>; onBack: 
             <Lightbulb size={18} className="text-amber-600" />
             {t('lca.eco.title', "Guide d'éco-conception")}
           </h2>
-          <p className="text-sm text-gray-500 mt-0.5">{t('lca.eco.subtitle', 'Recommandations par étape du cycle de vie · ISO 14006')}</p>
+          <p className="text-sm text-gray-500 mt-0.5">{t('lca.eco.subtitle', 'Pistes génériques par étape du cycle de vie')}</p>
+          <p className="text-xs text-gray-400 mt-1">{t('lca.eco.disclaimer', "Les gains indiqués sont des ordres de grandeur issus de la littérature, pas des calculs sur vos produits : mesurez-les avec votre propre analyse.")}</p>
         </div>
         <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-700 font-medium">
           {t('lca.btn.backCatalog', '← Retour au catalogue')}
