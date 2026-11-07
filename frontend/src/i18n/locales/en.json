@@ -3583,12 +3583,6 @@
           }
         }
       },
-      "status": {
-        "ineligible": "Not eligible",
-        "inProgress": "In progress",
-        "eligible": "Eligible for certification",
-        "leader": "B Corp Leader"
-      },
       "pdf": {
         "reportTitle": "B Corp Assessment — Score Report",
         "colSection": "Section",
@@ -3607,7 +3601,7 @@
       },
       "hero": {
         "title": "B Corp Assessment — B Impact Assessment",
-        "subtitle": "International certification for impact-driven companies",
+        "subtitle": "Indicative self-assessment inspired by the B Impact Assessment",
         "exportPdf": "Export PDF"
       },
       "print": {
@@ -3616,7 +3610,13 @@
       },
       "summary": {
         "sectionRecap": "Section breakdown"
-      }
+      },
+      "level": {
+        "initial": "Initial level",
+        "progress": "In progress",
+        "advanced": "Advanced level (indicative)"
+      },
+      "disclaimer": "Indicative self-assessment tool based on the former 200-point scale. Since 2026, B Lab has replaced the 80-point threshold with minimum requirements across seven impact topics, verified by a third party: this score does not predict your eligibility for B Corp certification."
     },
     "cdp": {
       "section": {

@@ -468,10 +468,10 @@ function computeScore(answers: Answers): number {
 }
 
 function scoreLabel(score: number, t: (key: string, def: string) => string): { text: string; color: string } {
-  if (score < 40) return { text: t('compliance.bcorp.status.ineligible', 'Non éligible'), color: 'text-red-400' };
-  if (score < 80) return { text: t('compliance.bcorp.status.inProgress', 'En progression'), color: 'text-amber-400' };
-  if (score < 100) return { text: t('compliance.bcorp.status.eligible', 'Éligible à la certification'), color: 'text-green-400' };
-  return { text: t('compliance.bcorp.status.leader', 'Leader B Corp'), color: 'text-emerald-300' };
+  // Niveaux descriptifs de l'auto-évaluation : aucun verdict d'éligibilité à la certification B Corp.
+  if (score < 40) return { text: t('compliance.bcorp.level.initial', 'Niveau initial'), color: 'text-red-400' };
+  if (score < 80) return { text: t('compliance.bcorp.level.progress', 'En progression'), color: 'text-amber-400' };
+  return { text: t('compliance.bcorp.level.advanced', 'Niveau avancé (indicatif)'), color: 'text-green-400' };
 }
 
 function barColor(score: number): string {
@@ -628,7 +628,7 @@ export default function BCorp() {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const pageW = 210;
     const dateStr = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
-    const statusLabel = score >= 100 ? t('compliance.bcorp.status.leader', 'Leader B Corp') : score >= 80 ? t('compliance.bcorp.status.eligible', 'Éligible à la certification') : score >= 40 ? t('compliance.bcorp.status.inProgress', 'En progression') : t('compliance.bcorp.status.ineligible', 'Non éligible');
+    const statusLabel = scoreLabel(score, t).text;
 
     // Header
     doc.setFillColor(67, 56, 202);
@@ -641,7 +641,7 @@ export default function BCorp() {
     doc.text(t('compliance.bcorp.pdf.reportTitle', 'Évaluation B Corp — Rapport de scores'), 12, 12);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Score global : ${score.toFixed(1)} / 200 pts  ·  Statut : ${statusLabel}  ·  ${dateStr}`, 12, 22);
+    doc.text(`Score global : ${score.toFixed(1)} / 200 pts  ·  Niveau indicatif : ${statusLabel}  ·  ${dateStr}`, 12, 22);
 
     let y = 38;
     const GREEN: [number,number,number] = [22, 163, 74];
@@ -755,7 +755,7 @@ export default function BCorp() {
                   </h1>
                 </div>
                 <p className="text-indigo-200 text-sm ml-1 mb-4">
-                  {t('compliance.bcorp.hero.subtitle', 'Certification internationale pour les entreprises à impact')}
+                  {t('compliance.bcorp.hero.subtitle', "Auto-évaluation indicative inspirée du B Impact Assessment")}
                 </p>
 
                 {/* Score gauge */}
@@ -774,8 +774,6 @@ export default function BCorp() {
                   {/* Thresholds */}
                   <div className="flex justify-between text-[10px] text-indigo-300 mb-2">
                     <span>0</span>
-                    <span>40</span>
-                    <span>80</span>
                     <span>100</span>
                     <span>200</span>
                   </div>
@@ -795,6 +793,10 @@ export default function BCorp() {
               </div>
             </div>
           </div>
+        </div>
+
+        <div role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 print:border-gray-300">
+          {t('compliance.bcorp.disclaimer', "Outil d'auto-évaluation indicatif, fondé sur l'ancien barème de 200 points. Depuis 2026, B Lab a remplacé le seuil de 80 points par des exigences minimales sur sept thèmes d'impact, vérifiées par un tiers : ce score ne préjuge pas de votre éligibilité à la certification B Corp.")}
         </div>
 
         {/* ── Print header (visible only on print) ─────────────────────────── */}
