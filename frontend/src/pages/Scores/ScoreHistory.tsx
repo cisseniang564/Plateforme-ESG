@@ -18,6 +18,7 @@ import {
 } from 'recharts';
 import BackButton from '@/components/common/BackButton';
 import api from '@/services/api';
+import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n/config';
 
@@ -176,7 +177,8 @@ export default function ScoreHistory() {
   useEffect(() => {
     api.get('/organizations?limit=200')
       .then(r => setOrgs(r.data?.items ?? r.data?.organizations ?? []))
-      .catch(() => {});
+      .catch(() => toast.error(t('scores.loadOrgsError', 'Impossible de charger les organisations.')));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadHistory = useCallback(async () => {

@@ -150,18 +150,26 @@ export default function ScoreBreakdown() {
   const [score, setScore] = useState<Score | null>(null);
   const [indicators, setIndicators] = useState<Indicator[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'radar' | 'bars'>('overview');
 
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
+    setLoading(true);
+    setLoadError(false);
     try {
       const [scoreRes, indRes] = await Promise.all([
-        api.get('/scores/latest').catch(() => null),
+        api.get('/scores/latest').catch((e: any) => {
+          if (e?.response?.status === 404) return null; // aucun score calculé
+          throw e;
+        }),
         api.get('/indicators/').catch(() => ({ data: { items: [] } })),
       ]);
-      if (scoreRes) setScore(scoreRes.data);
+      setScore(scoreRes ? scoreRes.data : null);
       setIndicators(indRes.data.items || []);
+    } catch {
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -173,6 +181,28 @@ export default function ScoreBreakdown() {
       <div className="flex flex-col items-center justify-center gap-3 py-24">
         <Spinner size="lg" />
         <p className="text-sm text-gray-400">Chargement du score…</p>
+      </div>
+    );
+  }
+
+  if (loadError || !score) {
+    return (
+      <div className="mx-auto max-w-lg space-y-4 py-24 text-center">
+        <p className="text-sm text-gray-600">
+          {loadError
+            ? t('sbd.loadError', 'Impossible de charger le score. Réessayez.')
+            : t('sbd.noScore', "Aucun score ESG n'a encore été calculé. Calculez un score pour voir son détail.")}
+        </p>
+        <div className="flex justify-center gap-2">
+          {loadError && (
+            <button onClick={loadData} className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium hover:bg-gray-50">
+              {t('common.retry', 'Réessayer')}
+            </button>
+          )}
+          <button onClick={() => navigate('/app/scores')} className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700">
+            {t('sbd.goToScores', 'Aller aux scores')}
+          </button>
+        </div>
       </div>
     );
   }
@@ -190,7 +220,7 @@ export default function ScoreBreakdown() {
     color: p.color,
   }));
 
-  const gradeMeta = score ? getGradeMeta(score.grade, t) : getGradeMeta('C', t);
+  const gradeMeta = getGradeMeta(score.grade, t);
 
   return (
     <div className="space-y-6">
