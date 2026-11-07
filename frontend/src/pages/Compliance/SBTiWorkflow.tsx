@@ -728,11 +728,11 @@ function Step4({ state }: { state: WorkflowState }) {
         </div>
       )}
 
-      {/* ── SBTi v5.2 Criteria Checklist ───────────────────────────────────── */}
+      {/* ── SBTi Near-Term criteria checklist ───────────────────────────────────── */}
       <div className="rounded-2xl border border-gray-200 overflow-hidden">
         <div className="px-5 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
           <Shield size={14} className="text-indigo-600" />
-          <span className="text-sm font-bold text-gray-800">{t('compliance.sbti.step4.criteriaTitle', 'Critères SBTi v5.2 — Résultats du pré-vol')}</span>
+          <span className="text-sm font-bold text-gray-800">{t('compliance.sbti.step4.criteriaTitle', 'Critères SBTi (Near-Term v5.x) — Résultats du pré-vol')}</span>
           {backendBusy && <span className="text-xs text-gray-400 ml-auto">{t('compliance.sbti.step4.analysing', 'Analyse en cours…')}</span>}
         </div>
         <table className="w-full text-sm">
@@ -1115,7 +1115,7 @@ export default function SBTiWorkflow() {
             <div>
               <div className="flex items-center gap-2 mb-0.5">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
-                  SBTi · Criteria v5.2
+                  SBTi · Near-Term criteria v5.x
                 </span>
               </div>
               <h1 className="text-2xl font-bold text-gray-900">{t('compliance.sbti.hero.title', 'Workflow SBTi')}</h1>

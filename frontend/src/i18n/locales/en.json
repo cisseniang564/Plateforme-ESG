@@ -2965,7 +2965,7 @@
   },
   "ia": {
     "title": "AI & Automation",
-    "subtitle": "ESG Chatbot · OCR · Anomaly detection · Predictions",
+    "subtitle": "ESG assistant · Anomaly detection · Forecasts",
     "tabs": {
       "chatbot": "ESG Chatbot",
       "ocr": "OCR Import",
@@ -5460,7 +5460,7 @@
         "dossierSummary": "Summary of your package",
         "allFieldsFilled": "All fields are filled in — your package is complete.",
         "missingFields": "{{count}} field(s) missing — complete the previous steps.",
-        "criteriaTitle": "SBTi v5.2 criteria — Pre-flight results",
+        "criteriaTitle": "SBTi Near-Term v5.x criteria — Pre-flight results",
         "analysing": "Analysis in progress…",
         "submitPortal": "Submit on the SBTi portal",
         "pdf": {
@@ -5471,7 +5471,7 @@
         "quickPdf": "Quick PDF",
         "generating": "Generating…",
         "officialDossierBtn": "Official package + pre-validation",
-        "footerNote": "Final submission takes place on the SBTi portal. The official package contains the pre-validation against the SBTi v5.2 criteria.",
+        "footerNote": "Final submission takes place on the SBTi portal. The official package contains the pre-validation against the SBTi Near-Term v5.x criteria.",
         "rows": {
           "scope12": "Scope 1+2 calculated",
           "scope3": "Scope 3 calculated",
@@ -5511,7 +5511,7 @@
         "estimatedDays": "~{{n}} days (estimate)",
         "startDecarbonatePlan": "Start the decarbonisation plan",
         "rejectedTitle": "Submission rejected",
-        "rejectedDesc": "Address the gaps flagged in the SBTi feedback, then resubmit. Our official package pre-validates against the 7 v5.2 criteria.",
+        "rejectedDesc": "Address the gaps flagged in the SBTi feedback, then resubmit. Our official package pre-validates against the Near-Term v5.x criteria.",
         "regenerateDossier": "Regenerate the package",
         "notYetSubmitted": "Not yet submitted",
         "notSubmittedDesc": "Once your package is submitted on sciencebasedtargets.org, enter the date above and set the status to \"Awaiting validation\".",
@@ -6659,11 +6659,10 @@
         },
         "ia": {
           "name": "AI & Automation",
-          "tagline": "ESG chatbot · OCR · Anomalies · Predictions",
-          "desc": "Generative artificial intelligence for your ESG: expert chatbot, supplier-invoice OCR, real-time anomaly detection and trend predictions.",
+          "tagline": "ESG assistant · Anomalies · Forecasts",
+          "desc": "Generative artificial intelligence for your ESG: regulatory assistant, anomaly detection and trend forecasts.",
           "badges": [
             "Expert ESG chatbot",
-            "Invoice OCR",
             "Anomaly detection",
             "AI predictions"
           ]
@@ -6884,12 +6883,12 @@
           },
           {
             "title": "End-to-end artificial intelligence",
-            "desc": "Expert ESG chatbot, real-time anomaly detection, trend predictions, sector suggestions and supplier-invoice OCR — AI works for you.",
+            "desc": "ESG assistant, anomaly detection, trend forecasts and sector suggestions — aids for your teams to validate.",
             "points": [
               "Generative ESG chatbot",
               "Real-time anomalies",
               "ML predictions",
-              "OCR & automation"
+              "Sector suggestions"
             ]
           },
           {
@@ -9491,51 +9490,43 @@
     "aiAutomation": {
       "title": "ESG AI & Automation",
       "subtitle": "Generative artificial intelligence serving your ESG reporting",
-      "description": "Accelerate your ESG approach with AI: expert regulatory chatbot, OCR of invoices and supplier certifications, real-time anomaly detection, CSRD narrative generation and trend predictions. The AI that understands ESG.",
+      "description": "Speed up your ESG work with AI: a regulatory assistant, statistical anomaly detection, trend forecasts and draft CSRD narratives. Every output is an aid to be validated by a human.",
       "benefits": {
         "0": {
           "title": "Expert ESG chatbot",
-          "description": "Ask your questions in natural language: CSRD regulation, ESRS interpretation, sector best practices. Sourced and contextualized answers."
+          "description": "Ask questions in natural language: CSRD rules, ESRS interpretation, sector good practice. Answers use your latest ESG scores as context."
         },
         "1": {
-          "title": "Document OCR",
-          "description": "Scan energy bills, supplier certifications and auditor reports. Automatic extraction of relevant ESG data without re-entry."
+          "title": "Anomaly detection",
+          "description": "A statistical analysis (Z-score) flags outliers in your ESG indicators."
         },
         "2": {
-          "title": "Anomaly detection",
-          "description": "The AI continuously monitors your ESG indicators and detects outliers, abnormal trends and inconsistencies between data sources."
-        },
-        "3": {
           "title": "Predictions and trends",
-          "description": "Anticipate the evolution of your ESG KPIs with machine learning. 12-month projections with confidence intervals and influencing factors."
+          "description": "Anticipate how your ESG KPIs evolve with forecasting models (ARIMA, Holt-Winters, regression), with 95% confidence intervals."
         }
       },
       "capabilities": {
         "0": {
           "title": "Regulatory chatbot",
-          "description": "AI assistant trained on the full body of CSRD, ESRS, EU Taxonomy, Sapin II Law and Duty of Vigilance texts. Answers with citations of source articles and paragraphs."
+          "description": "AI assistant answering on CSRD, ESRS, EU Taxonomy, Sapin II and the Duty of Vigilance, with your scores as context. Always verify the references it cites."
         },
         "1": {
           "title": "CSRD narrative generation",
           "description": "The AI generates draft narrative sections for your CSRD report compliant with ESRS terminology. Policy, actions, metrics and targets per standard."
         },
         "2": {
-          "title": "Invoice and certification OCR",
-          "description": "Upload energy bills (EDF, Enedis), ISO 14001/50001 certifications, EcoVadis labels. Automatic extraction of kWh, tCO2e, scores and validity dates."
+          "title": "Real-time anomaly detection",
+          "description": "Statistical detection of outliers (Z-score) on your ESG indicators, with the observed value and the gap."
         },
         "3": {
-          "title": "Real-time anomaly detection",
-          "description": "Outlier detection algorithms on your ESG time series. Automatic alerts with context: expected value, gap, probable causes and recommended action."
+          "title": "ML predictions",
+          "description": "Statistical forecasting (ARIMA, Holt-Winters or regression) on your indicators' history, from 3 data points, with a 95% confidence interval."
         },
         "4": {
-          "title": "ML predictions",
-          "description": "Machine learning models trained on your historical data and sector benchmarks. Projection of emissions, scores and indicators at 3, 6 and 12 months."
-        },
-        "5": {
           "title": "Improvement recommendations",
           "description": "The AI analyzes your compliance gaps and your scores by pillar to propose improvement actions prioritized by impact and ease of implementation."
         },
-        "6": {
+        "5": {
           "title": "Automatic executive summary",
           "description": "Automatic generation of an executive summary of your ESG situation for the management committee: highlights, alerts, progress and next steps."
         }
@@ -9546,8 +9537,8 @@
           "description": "The AI activates as soon as your ESG data is imported. No configuration required. The chatbot assistant is available immediately."
         },
         "1": {
-          "title": "Import your documents",
-          "description": "Upload invoices, certifications and reports. The OCR extracts the data automatically and integrates it into your ESG base."
+          "title": "Import your data",
+          "description": "Enter or import your ESG data: the analyses rely on your history."
         },
         "2": {
           "title": "Leverage the insights",
@@ -9557,7 +9548,7 @@
       "faqs": {
         "0": {
           "question": "Which AI models are used?",
-          "answer": "ESGFlow uses latest-generation language models (GPT-4, Claude) for the chatbot and text generation, computer vision models for OCR, and classic machine learning algorithms (Isolation Forest, Prophet) for anomaly detection and predictions."
+          "answer": "A GPT-type language model powers the assistant and text generation; anomaly detection and forecasts use classic statistical methods (Z-score, ARIMA, Holt-Winters)."
         },
         "1": {
           "question": "Is my data used to train the models?",
@@ -9566,10 +9557,6 @@
         "2": {
           "question": "Can the AI be wrong?",
           "answer": "Yes. The AI is an assistance tool, not a decision-maker. Every AI output (narrative, prediction, recommendation) is clearly marked as AI-generated and must be validated by a human before publication. Sources are cited for verification."
-        },
-        "3": {
-          "question": "Does the OCR work with all invoice formats?",
-          "answer": "The OCR supports PDF, JPEG and PNG formats. It is optimized for invoices from the main French energy providers (EDF, Enedis, Engie, TotalEnergies) and standard ISO certifications. For unrecognized formats, a manual mapping is offered."
         }
       },
       "related": {
@@ -15732,7 +15719,7 @@
     "noOffsetDesc": "Add your VCS, Gold Standard or CDR project purchases to calculate your net emissions.",
     "savePlanError": "Unable to save the plan",
     "sbtiDossierTitle": "Official SBTi Validation Dossier",
-    "sbtiDossierDesc": "Generates the PDF ready to attach to your submission on sciencebasedtargets.org — includes pre-validation against v5.2 criteria (minimum reduction, Scope 3, net-zero ≤ 2050).",
+    "sbtiDossierDesc": "Generates the PDF ready to attach to your submission on sciencebasedtargets.org — includes pre-validation against Near-Term v5.x criteria (minimum reduction, Scope 3, net-zero ≤ 2050).",
     "generating": "Generating…",
     "generateDossier": "Generate dossier",
     "dossierReady": "✓ Dossier ready",
