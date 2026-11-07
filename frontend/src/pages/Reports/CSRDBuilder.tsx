@@ -1,7 +1,7 @@
 /**
  * CSRD Builder — Constructeur de rapport CSRD/ESRS pas-à-pas.
  * Guide l'utilisateur à travers les 4 étapes de structuration
- * d'une déclaration de durabilité conforme ESRS.
+ * d'une déclaration de durabilité structurée selon les ESRS.
  */
 import { useState, useMemo, useEffect } from 'react';
 import api from '@/services/api';
@@ -20,7 +20,7 @@ import type { TFunction } from 'i18next';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type SectionStatus = 'included' | 'excluded' | 'mandatory';
-type DataStatus = 'complete' | 'partial' | 'missing';
+type DataStatus = 'complete' | 'partial' | 'missing' | 'unknown';
 
 interface ESRSSection {
   code: string;
@@ -31,7 +31,7 @@ interface ESRSSection {
   defaultIncluded: boolean;
   disclosureCount: number;
   dataStatus: DataStatus;
-  completionPct: number;
+  completionPct: number | null;   // null = non évalué (aucune analyse d'écart disponible)
   description: string;
   keyTopics: string[];
 }
@@ -42,77 +42,77 @@ const getEsrsSections = (t: TFunction): ESRSSection[] => [
   {
     code: 'ESRS 2', label: t('csrd.sec.esrs2.label', 'Informations générales'), shortLabel: 'ESRS 2 Général',
     pillar: 'cross', mandatory: true, defaultIncluded: true,
-    disclosureCount: 10, dataStatus: 'partial', completionPct: 65,
+    disclosureCount: 10, dataStatus: 'unknown', completionPct: null,
     description: t('csrd.sec.esrs2.desc', 'Gouvernance, stratégie, gestion des IRO et DMA. Requis pour toutes les entreprises CSRD.'),
     keyTopics: [t('csrd.kt.gov15', 'GOV-1 à GOV-5'), t('csrd.kt.sbm13', 'SBM-1 à SBM-3'), 'IRO-1 & IRO-2'],
   },
   {
     code: 'E1', label: t('csrd.sec.e1.label', 'Changement climatique'), shortLabel: 'E1 Climat',
     pillar: 'E', mandatory: false, defaultIncluded: true,
-    disclosureCount: 9, dataStatus: 'partial', completionPct: 72,
+    disclosureCount: 9, dataStatus: 'unknown', completionPct: null,
     description: t('csrd.sec.e1.desc', 'Émissions GES Scope 1/2/3, plan de transition climatique, risques physiques et de transition.'),
     keyTopics: ['Scope 1, 2, 3', t('csrd.kt.transitionPlan', 'Plan de transition'), t('csrd.kt.sbtiTargets', 'Objectifs SBTi')],
   },
   {
     code: 'E2', label: t('csrd.sec.e2.label', 'Pollution'), shortLabel: 'E2 Pollution',
     pillar: 'E', mandatory: false, defaultIncluded: false,
-    disclosureCount: 6, dataStatus: 'missing', completionPct: 15,
+    disclosureCount: 6, dataStatus: 'unknown', completionPct: null,
     description: t('csrd.sec.e2.desc', "Émissions polluantes dans l'air, l'eau et les sols. Substances préoccupantes (REACH)."),
     keyTopics: [t('csrd.kt.airPollutants', 'Polluants atmosphériques'), t('csrd.kt.reachSubstances', 'Substances REACH'), t('csrd.kt.soilWater', 'Sols et eaux')],
   },
   {
     code: 'E3', label: t('csrd.sec.e3.label', 'Eau et ressources marines'), shortLabel: 'E3 Eau',
     pillar: 'E', mandatory: false, defaultIncluded: true,
-    disclosureCount: 5, dataStatus: 'partial', completionPct: 55,
+    disclosureCount: 5, dataStatus: 'unknown', completionPct: null,
     description: t('csrd.sec.e3.desc', "Consommation d'eau, zones à stress hydrique, ressources marines."),
     keyTopics: [t('csrd.kt.waterConsumption', 'Consommation eau'), t('csrd.kt.waterStress', 'Stress hydrique'), t('csrd.kt.marineResources', 'Ressources marines')],
   },
   {
     code: 'E4', label: t('csrd.sec.e4.label', 'Biodiversité et écosystèmes'), shortLabel: 'E4 Biodiversité',
     pillar: 'E', mandatory: false, defaultIncluded: false,
-    disclosureCount: 6, dataStatus: 'missing', completionPct: 5,
+    disclosureCount: 6, dataStatus: 'unknown', completionPct: null,
     description: t('csrd.sec.e4.desc', 'Impacts sur la biodiversité, sites Natura 2000, déforestation, espèces menacées.'),
     keyTopics: [t('csrd.kt.protectedSites', 'Sites protégés'), 'TNFD', t('csrd.kt.deforestation', 'Déforestation')],
   },
   {
     code: 'E5', label: t('csrd.sec.e5.label', 'Utilisation des ressources'), shortLabel: 'E5 Ressources',
     pillar: 'E', mandatory: false, defaultIncluded: false,
-    disclosureCount: 6, dataStatus: 'missing', completionPct: 20,
+    disclosureCount: 6, dataStatus: 'unknown', completionPct: null,
     description: t('csrd.sec.e5.desc', 'Économie circulaire, flux de ressources entrants/sortants, déchets.'),
     keyTopics: [t('csrd.kt.circularEconomy', 'Économie circulaire'), t('csrd.kt.waste', 'Déchets'), t('csrd.kt.rawMaterials', 'Matières premières')],
   },
   {
     code: 'S1', label: t('csrd.sec.s1.label', 'Effectifs propres'), shortLabel: 'S1 Effectifs',
     pillar: 'S', mandatory: false, defaultIncluded: true,
-    disclosureCount: 17, dataStatus: 'partial', completionPct: 68,
+    disclosureCount: 17, dataStatus: 'unknown', completionPct: null,
     description: t('csrd.sec.s1.desc', 'Caractéristiques des employés, diversité, santé & sécurité, rémunération, formation.'),
     keyTopics: [t('csrd.kt.diversityInclusion', 'Diversité & inclusion'), t('csrd.kt.healthSafety', 'Santé & sécurité'), t('csrd.kt.genderPayGap', 'Écart salarial H/F')],
   },
   {
     code: 'S2', label: t('csrd.sec.s2.label', 'Travailleurs chaîne de valeur'), shortLabel: 'S2 Chaîne valeur',
     pillar: 'S', mandatory: false, defaultIncluded: false,
-    disclosureCount: 5, dataStatus: 'missing', completionPct: 10,
+    disclosureCount: 5, dataStatus: 'unknown', completionPct: null,
     description: t('csrd.sec.s2.desc', 'Conditions de travail et droits humains chez les fournisseurs et sous-traitants.'),
     keyTopics: [t('csrd.kt.humanRights', 'Droits humains'), t('csrd.kt.supplierAudit', 'Audit fournisseurs'), t('csrd.kt.dutyVigilance', 'Devoir de vigilance')],
   },
   {
     code: 'S3', label: t('csrd.sec.s3.label', 'Communautés affectées'), shortLabel: 'S3 Communautés',
     pillar: 'S', mandatory: false, defaultIncluded: false,
-    disclosureCount: 5, dataStatus: 'missing', completionPct: 0,
+    disclosureCount: 5, dataStatus: 'unknown', completionPct: null,
     description: t('csrd.sec.s3.desc', "Impact sur les communautés locales, populations autochtones, accès à l'eau."),
     keyTopics: [t('csrd.kt.localCommunities', 'Communautés locales'), 'FPIC', t('csrd.kt.territorialImpacts', 'Impacts territoriaux')],
   },
   {
     code: 'S4', label: t('csrd.sec.s4.label', 'Consommateurs'), shortLabel: 'S4 Consommateurs',
     pillar: 'S', mandatory: false, defaultIncluded: false,
-    disclosureCount: 5, dataStatus: 'missing', completionPct: 8,
+    disclosureCount: 5, dataStatus: 'unknown', completionPct: null,
     description: t('csrd.sec.s4.desc', 'Sécurité des produits, vie privée, accès équitable, pratiques marketing.'),
     keyTopics: [t('csrd.kt.productSafety', 'Sécurité produits'), t('csrd.kt.personalData', 'Données personnelles'), t('csrd.kt.responsibleMarketing', 'Marketing responsable')],
   },
   {
     code: 'G1', label: t('csrd.sec.g1.label', 'Conduite des affaires'), shortLabel: 'G1 Gouvernance',
     pillar: 'G', mandatory: false, defaultIncluded: true,
-    disclosureCount: 6, dataStatus: 'complete', completionPct: 88,
+    disclosureCount: 6, dataStatus: 'unknown', completionPct: null,
     description: t('csrd.sec.g1.desc', 'Anti-corruption, lobbying, relations fournisseurs, délais de paiement.'),
     keyTopics: ['Anti-corruption Sapin II', 'Whistleblowing', t('csrd.kt.supplierPaymentTerms', 'Délais fournisseurs')],
   },
@@ -129,6 +129,7 @@ const getDataStatusCfg = (t: TFunction): Record<DataStatus, { label: string; cls
   complete: { label: t('csrd.ds.complete', 'Complet'),  cls: 'bg-green-100 text-green-700',  icon: CheckCircle2 },
   partial:  { label: t('csrd.ds.partial', 'Partiel'),  cls: 'bg-amber-100 text-amber-700',  icon: AlertCircle },
   missing:  { label: t('csrd.ds.missing', 'Manquant'), cls: 'bg-red-100 text-red-700',      icon: XCircle },
+  unknown:  { label: t('csrd.ds.unknown', 'Non évalué'), cls: 'bg-gray-100 text-gray-600',   icon: AlertCircle },
 });
 
 const getSteps = (t: TFunction) => [
@@ -154,11 +155,12 @@ export default function CSRDBuilder() {
   );
   // Dynamic sections — start with static data, overwrite with real gap-analysis if available
   const [sections, setSections] = useState<ESRSSection[]>(ESRS_SECTIONS);
+  const [gapState, setGapState] = useState<'loading' | 'ok' | 'empty' | 'error'>('loading');
 
   useEffect(() => {
     api.get('/esrs/gap-analysis').then(res => {
       const items: any[] = res.data?.items ?? res.data ?? [];
-      if (!items.length) return;
+      if (!items.length) { setGapState('empty'); return; }
       // Build a lookup map by ESRS code
       const byCode: Record<string, any> = {};
       for (const item of items) {
@@ -168,20 +170,19 @@ export default function CSRDBuilder() {
       setSections(prev => prev.map(sec => {
         const gap = byCode[sec.code];
         if (!gap) return sec;
-        // Derive completionPct from API fields
-        let completionPct = sec.completionPct;
+        // Complétion issue uniquement de l'analyse d'écart ; sinon la section reste « non évaluée »
+        let completionPct: number | null = null;
         if (typeof gap.completion_pct === 'number') {
           completionPct = Math.round(gap.completion_pct);
         } else if (typeof gap.data_count === 'number' && typeof gap.required_count === 'number' && gap.required_count > 0) {
           completionPct = Math.min(100, Math.round((gap.data_count / gap.required_count) * 100));
         }
-        // Derive dataStatus from completionPct
+        if (completionPct === null) return sec;
         const dataStatus: DataStatus = completionPct >= 80 ? 'complete' : completionPct > 0 ? 'partial' : 'missing';
         return { ...sec, completionPct, dataStatus };
       }));
-    }).catch(() => {
-      // Silently keep static fallback data
-    });
+      setGapState('ok');
+    }).catch(() => setGapState('error'));
   }, []);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [generating, setGenerating]       = useState(false);
@@ -285,12 +286,13 @@ export default function CSRDBuilder() {
     includedSections.reduce((s, sec) => s + sec.disclosureCount, 0),
   [includedSections]);
 
-  const avgCompletion = useMemo(() => {
-    if (!includedSections.length) return 0;
-    return Math.round(includedSections.reduce((s, sec) => s + sec.completionPct, 0) / includedSections.length);
+  const avgCompletion = useMemo((): number | null => {
+    const measured = includedSections.filter(sec => sec.completionPct !== null);
+    if (!measured.length) return null;
+    return Math.round(measured.reduce((s, sec) => s + (sec.completionPct as number), 0) / measured.length);
   }, [includedSections]);
 
-  const readinessColor = avgCompletion >= 70 ? 'text-green-600' : avgCompletion >= 40 ? 'text-amber-600' : 'text-red-600';
+  const readinessColor = avgCompletion === null ? 'text-gray-500' : avgCompletion >= 70 ? 'text-green-600' : avgCompletion >= 40 ? 'text-amber-600' : 'text-red-600';
 
   const toggleSection = (code: string) => {
     if (sectionStatuses[code] === 'mandatory') return;
@@ -325,7 +327,7 @@ export default function CSRDBuilder() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white">CSRD Builder</h1>
-              <p className="text-sm text-green-100 mt-0.5">{t('csrd.hdr.subtitle', 'Construisez votre déclaration de durabilité conforme ESRS')}</p>
+              <p className="text-sm text-green-100 mt-0.5">{t('csrd.hdr.subtitle', 'Construisez votre déclaration de durabilité, structurée selon les ESRS')}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 text-sm text-green-100">
@@ -474,7 +476,7 @@ export default function CSRDBuilder() {
               <h3 className="font-bold text-green-900 mb-3">{t('csrd.s1.createTitle', '📋 Ce que vous allez créer')}</h3>
               <div className="space-y-2 text-sm text-green-800">
                 {[
-                  t('csrd.s1.create1', 'Déclaration de durabilité conforme ESRS'),
+                  t('csrd.s1.create1', 'Déclaration de durabilité structurée selon les ESRS'),
                   t('csrd.s1.create2', 'Double analyse de matérialité (DMA)'),
                   t('csrd.s1.create3', 'Données vérifiées par section ESRS'),
                   t('csrd.s1.create4', 'Export PDF + annexes tabulaires'),
@@ -520,6 +522,17 @@ export default function CSRDBuilder() {
             </div>
           </div>
 
+          {gapState !== 'loading' && gapState !== 'ok' && (
+            <div role="status" className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+              <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div>
+                {gapState === 'error'
+                  ? t('csrd.s2.gapError', "Impossible de charger l'analyse d'écart : la complétude des sections n'est pas évaluée.")
+                  : t('csrd.s2.gapEmpty', "Aucune analyse d'écart disponible : la complétude des sections n'est pas évaluée. Saisissez vos données pour la calculer.")}
+              </div>
+            </div>
+          )}
+
           {/* Stats row */}
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-white border border-gray-100 rounded-xl p-4 text-center shadow-sm">
@@ -531,7 +544,7 @@ export default function CSRDBuilder() {
               <p className="text-xs text-gray-500 mt-0.5">{t('csrd.s2.statDisclosures', 'Exigences ESRS')}</p>
             </div>
             <div className="bg-white border border-gray-100 rounded-xl p-4 text-center shadow-sm">
-              <p className={`text-2xl font-bold ${readinessColor}`}>{avgCompletion}%</p>
+              <p className={`text-2xl font-bold ${readinessColor}`}>{avgCompletion === null ? '—' : `${avgCompletion}%`}</p>
               <p className="text-xs text-gray-500 mt-0.5">{t('csrd.s2.statComplete', 'Données complètes')}</p>
             </div>
           </div>
@@ -621,12 +634,12 @@ export default function CSRDBuilder() {
                               <div>
                                 <div className="flex justify-between text-xs text-gray-500 mb-1">
                                   <span>{t('csrd.s2.dataFilled', 'Données renseignées')}</span>
-                                  <span className="font-semibold">{sec.completionPct}%</span>
+                                  <span className="font-semibold">{sec.completionPct === null ? '—' : `${sec.completionPct}%`}</span>
                                 </div>
                                 <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                                   <div
-                                    className={`h-2 rounded-full ${sec.completionPct >= 70 ? 'bg-green-500' : sec.completionPct >= 30 ? 'bg-amber-400' : 'bg-red-400'}`}
-                                    style={{ width: `${sec.completionPct}%` }}
+                                    className={`h-2 rounded-full ${(sec.completionPct ?? 0) >= 70 ? 'bg-green-500' : (sec.completionPct ?? 0) >= 30 ? 'bg-amber-400' : 'bg-red-400'}`}
+                                    style={{ width: `${sec.completionPct ?? 0}%` }}
                                   />
                                 </div>
                               </div>
@@ -690,11 +703,11 @@ export default function CSRDBuilder() {
                       <div className="flex items-center gap-2 mt-1">
                         <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                           <div
-                            className={`h-1.5 rounded-full ${sec.completionPct >= 70 ? 'bg-green-500' : sec.completionPct >= 30 ? 'bg-amber-400' : 'bg-red-400'}`}
-                            style={{ width: `${sec.completionPct}%` }}
+                            className={`h-1.5 rounded-full ${(sec.completionPct ?? 0) >= 70 ? 'bg-green-500' : (sec.completionPct ?? 0) >= 30 ? 'bg-amber-400' : 'bg-red-400'}`}
+                            style={{ width: `${sec.completionPct ?? 0}%` }}
                           />
                         </div>
-                        <span className="text-xs text-gray-500 flex-shrink-0">{sec.completionPct}%</span>
+                        <span className="text-xs text-gray-500 flex-shrink-0">{sec.completionPct === null ? '—' : `${sec.completionPct}%`}</span>
                       </div>
                     </div>
                     <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${dsCfg.cls}`}>
@@ -753,7 +766,7 @@ export default function CSRDBuilder() {
                 { label: t('csrd.s4.entity', 'Entité'),          val: entityName || t('csrd.s4.notSpecified', 'Non renseignée') },
                 { label: t('csrd.s4.exercise', 'Exercice'),         val: String(reportYear) },
                 { label: t('csrd.s4.scope', 'Périmètre'),        val: reportingScope === 'consolidated' ? t('csrd.s1.consolidated', 'Consolidé') : t('csrd.s1.individual', 'Individuel') },
-                { label: t('csrd.s4.avgCompletion', 'Complétude moy.'),  val: `${avgCompletion}%` },
+                { label: t('csrd.s4.avgCompletion', 'Complétude moy.'),  val: avgCompletion === null ? '—' : `${avgCompletion}%` },
               ].map(k => (
                 <div key={k.label} className="bg-gray-50 rounded-xl p-3">
                   <p className="text-xs text-gray-400">{k.label}</p>
@@ -771,8 +784,8 @@ export default function CSRDBuilder() {
                     <span className="text-xs text-gray-400 w-5 text-right">{i + 1}.</span>
                     <span className={`px-2 py-0.5 rounded text-xs font-bold ${ps.badge}`}>{sec.code}</span>
                     <span className="text-sm text-gray-700 flex-1">{sec.label}</span>
-                    <span className={`text-xs font-medium ${sec.completionPct >= 70 ? 'text-green-600' : sec.completionPct >= 30 ? 'text-amber-600' : 'text-red-500'}`}>
-                      {sec.completionPct}%
+                    <span className={`text-xs font-medium ${(sec.completionPct ?? 0) >= 70 ? 'text-green-600' : (sec.completionPct ?? 0) >= 30 ? 'text-amber-600' : 'text-red-500'}`}>
+                      {sec.completionPct === null ? '—' : `${sec.completionPct}%`}
                     </span>
                   </div>
                 );
