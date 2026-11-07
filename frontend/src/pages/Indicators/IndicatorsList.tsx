@@ -154,11 +154,6 @@ export default function IndicatorsList() {
     return { label: 'ESRS', className: 'bg-gray-100 text-gray-500' };
   };
 
-  const getCompletion = (indicator: Indicator): number => {
-    if (!indicator.is_active) return 0;
-    return (((indicator.code?.charCodeAt(0) ?? 65) % 40) + 60);
-  };
-
   return (
     <div className="space-y-6">
       {/* Hero */}

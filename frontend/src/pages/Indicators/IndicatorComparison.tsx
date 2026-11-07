@@ -95,21 +95,28 @@ export default function IndicatorComparison() {
       }
 
       const limited = indicators.slice(0, 20);
+      if (indicators.length > limited.length) {
+        toast(t('indicators.comparisonTruncated', 'Comparaison limitée aux 20 premiers indicateurs sur {{total}}.', { total: indicators.length }));
+      }
 
       const statsResults = await Promise.allSettled(
         limited.map(ind =>
-          api.get(`/indicator-data/indicators/${ind.id}/stats`).catch(() => null)
+          api.get(`/indicator-data/indicators/${ind.id}/stats`).catch((e: any) => (e?.response?.status === 404 ? { data: null } : null))
         )
       );
 
+      let failedStats = 0;
       const rows: ComparisonRow[] = limited
         .map((ind, idx) => {
           const statsResult = statsResults[idx];
           let currentAvg = 0;
 
           if (statsResult.status === 'fulfilled' && statsResult.value) {
-            const stats: IndicatorStats = statsResult.value.data;
-            currentAvg = stats.avg ?? 0;
+            // 404 = indicateur sans donnée : valeur 0 légitime, pas une erreur
+            const stats: IndicatorStats | null = statsResult.value.data;
+            currentAvg = stats?.avg ?? 0;
+          } else {
+            failedStats += 1;
           }
 
           const target = ind.target_value ?? 0;
@@ -132,7 +139,11 @@ export default function IndicatorComparison() {
         .filter(r => r.current > 0 || r.target > 0);
 
       setComparisonData(rows);
-      toast.success(t('indicators.comparisonLoaded'));
+      if (failedStats > 0) {
+        toast.error(t('indicators.statsPartialError', '{{n}} indicateur(s) sans statistiques (erreur de chargement) : valeurs incomplètes.', { n: failedStats }));
+      } else {
+        toast.success(t('indicators.comparisonLoaded'));
+      }
     } catch (error) {
       console.error('Error loading comparison data:', error);
       toast.error(t('indicators.comparisonLoadError'));
@@ -180,10 +191,11 @@ export default function IndicatorComparison() {
 
   const stats = {
     total: filtered.length,
-    onTrack: filtered.filter(r => r.current >= r.target).length,
+    onTrack: filtered.filter(r => r.target > 0 && r.current >= r.target).length,
     belowTarget: filtered.filter(r => r.current < r.target && r.target > 0).length,
-    avgCompletion: filtered.length > 0
-      ? filtered.reduce((sum, r) => sum + r.percentage, 0) / filtered.length
+    // Moyenne sur les seuls indicateurs qui ont une cible
+    avgCompletion: filtered.some(r => r.target > 0)
+      ? filtered.filter(r => r.target > 0).reduce((sum, r) => sum + r.percentage, 0) / filtered.filter(r => r.target > 0).length
       : 0
   };
 
