@@ -9676,11 +9676,11 @@
     "bilanCarbone": {
       "title": "Carbon Footprint Scope 1, 2 & 3",
       "subtitle": "Calculate your company's complete carbon footprint with ADEME emission factors",
-      "description": "Measure your greenhouse gas emissions across the 3 scopes of the GHG Protocol. ESGFlow natively integrates ADEME Base Carbone emission factors and covers the 15 Scope 3 categories for a regulatory, auditable carbon footprint.",
+      "description": "Measure your greenhouse gas emissions across the 3 GHG Protocol scopes, with ADEME Base Carbone factors and the 15 Scope 3 categories. A BEGES export in the ADEME format is available; results must be reviewed before any filing.",
       "benefits": {
         "0": {
-          "title": "Built-in ADEME factors",
-          "description": "Over 600 emission factors from the ADEME Base Carbone, updated automatically. No manual entry of coefficients."
+          "title": "ADEME emission factors",
+          "description": "About fifty emission factors from the ADEME Base Carbone (v23) for Scope 3 and commuting. You can enter your own activity data."
         },
         "1": {
           "title": "15 Scope 3 categories",
@@ -9688,11 +9688,11 @@
         },
         "2": {
           "title": "Sector benchmarks",
-          "description": "Compare your emissions to your industry averages using ADEME, CDP and MSCI data. Identify your gaps."
+          "description": "Compare your emissions with public sector references (ADEME, CDP, MSCI) or, when the cohort is large enough, with other organisations on the platform."
         },
         "3": {
-          "title": "Automatic import",
-          "description": "Connect your energy bills (Enedis, EDF), your accounting data (FEC) and your ERP for automated calculation without re-entry."
+          "title": "Data imports",
+          "description": "Import your Enedis consumption (CSV), your accounting FEC or CSV/Excel files to limit re-entry. Other connectors are being prepared."
         }
       },
       "capabilities": {
@@ -9710,19 +9710,19 @@
         },
         "3": {
           "title": "Accounting FEC import",
-          "description": "Import your General Ledger file (FEC) and automatically calculate your Scope 3 categories 1-2 emissions from your expense accounts."
+          "description": "Import your accounting entries file (FEC): expense accounts are converted into spend-based emission estimates, to be reviewed before use."
         },
         "4": {
           "title": "Interactive charts",
           "description": "Visualize the breakdown of your emissions by scope, category, site and period. Time evolution and year-over-year comparison."
         },
         "5": {
-          "title": "Regulatory export",
-          "description": "Generate your regulatory GHG assessment in ADEME format (Art. L.229-25 of the French Environment Code) as a publication-ready PDF."
+          "title": "BEGES export (.xlsx)",
+          "description": "Export a BEGES.xlsx file in the ADEME format (Art. L.229-25 of the French Environmental Code) that you upload yourself on the ADEME platform."
         },
         "6": {
-          "title": "Custom factors",
-          "description": "Add your own specific emission factors (supplier data, life-cycle analyses) on top of the ADEME database."
+          "title": "Your own activity data",
+          "description": "Enter your activity data (consumption, spend, distances) per category; emission factors remain those of the built-in database."
         },
         "7": {
           "title": "Traceable data",
@@ -9746,15 +9746,15 @@
       "faqs": {
         "0": {
           "question": "Which emission factors are included?",
-          "answer": "ESGFlow natively integrates the ADEME Base Carbone (v23.0) with over 600 factors covering energy, transport, materials, food and services. Factors are updated automatically when ADEME publishes new releases."
+          "answer": "ESGFlow includes about fifty factors from the ADEME Base Carbone (v23) for Scope 3 and commuting. They are updated with each platform release, not automatically on every ADEME publication."
         },
         "1": {
           "question": "Is the carbon footprint compliant with French regulations?",
-          "answer": "Yes. The assessment produced by ESGFlow complies with Article L.229-25 of the French Environment Code (regulatory GHG assessment), the GHG Protocol Corporate Standard and the ISO 14064-1 standard. It is accepted by ADEME for publication on the Bilans GES platform."
+          "answer": "The method follows the GHG Protocol Corporate Standard and the BEGES export uses the ADEME format (Art. L.229-25). ESGFlow is not ISO 14064-1 certified and files nothing on your behalf: the file must be reviewed and uploaded by you."
         },
         "2": {
           "question": "Can I import my accounting data for Scope 3?",
-          "answer": "Yes. ESGFlow can import your General Ledger file (FEC) and automatically convert your expense accounts into Scope 3 categories 1 (purchases) and 2 (capital goods) emissions using the ADEME monetary method."
+          "answer": "Yes. The FEC is converted into spend-based emission estimates from the chart of accounts. These estimates are indicative and should be reviewed before use."
         },
         "3": {
           "question": "What does ESGFlow's carbon footprint cover?",
@@ -9890,53 +9890,53 @@
     "decarbonation": {
       "title": "SBTi Decarbonization Plan",
       "subtitle": "Build your Net Zero trajectory aligned with Science Based Targets",
-      "description": "Define and steer your decarbonization strategy with an SBTi-validatable 1.5°C trajectory. 24 pre-configured actions with ROI, interactive what-if scenarios and 2024–2050 progress tracking to reach Net Zero.",
+      "description": "Build your decarbonisation plan from a 1.5°C reference trajectory: action catalogue with estimated ROI, predefined scenarios and tracking through 2050. Target validation is carried out by the SBTi.",
       "benefits": {
         "0": {
           "title": "SBTi 1.5°C trajectory",
-          "description": "Model your reduction trajectory aligned with the SBTi 1.5°C scenario. Near-term (2030) and long-term (Net Zero 2050) targets."
+          "description": "Compare your plan with a reference trajectory aligned with a 1.5°C scenario (-42% by 2030 versus the base year). The plan is not an SBTi validation."
         },
         "1": {
-          "title": "24 pre-configured actions",
-          "description": "Library of 24 decarbonization levers with estimated reduction potential, cost, ROI and implementation timeline by sector."
+          "title": "Action catalogue",
+          "description": "A catalogue of about thirty decarbonisation levers with estimated reduction potential, cost, ROI and difficulty. These are orders of magnitude to adapt to your situation."
         },
         "2": {
           "title": "What-if scenarios",
-          "description": "Simulate the impact of different combinations of actions on your trajectory. Compare scenarios and identify the optimal cost/reduction mix."
+          "description": "Build your plan by selecting actions and applying predefined scenarios (quick wins, -42% target, Net Zero) to see the effect on your trajectory."
         },
         "3": {
-          "title": "Progress tracking",
-          "description": "Real-time tracking dashboard: actual emissions vs. target trajectory, gaps, deviation alerts and corrective recommendations."
+          "title": "Plan tracking",
+          "description": "Track the progress of each action (to do, in progress, done) and compare your recorded emissions with the reference trajectory."
         }
       },
       "capabilities": {
         "0": {
           "title": "2024–2050 trajectory chart",
-          "description": "Visualize your reduction curve with intermediate milestones, the SBTi compliance zone and comparison to sector trajectories."
+          "description": "Visualise your reference trajectory, your business-as-usual scenario and the effect of your plan, through 2050."
         },
         "1": {
           "title": "Actions by scope and category",
-          "description": "Each action is tied to a scope (1, 2 or 3) and an emission category. Automatic prioritization by reduction potential and ease of implementation."
+          "description": "Each action is linked to a scope (1, 2 or 3) and an emission category, with an estimate of its impact."
         },
         "2": {
           "title": "ROI calculation per action",
           "description": "Estimate the return on investment of each lever: upfront investment, annual savings, payback time and tonnes of CO2e avoided."
         },
         "3": {
-          "title": "Comparative scenarios",
-          "description": "Create up to 5 decarbonization scenarios with different assumptions. Comparison matrix: total cost, cumulative reduction, SBTi alignment."
+          "title": "Predefined scenarios",
+          "description": "Apply one of the predefined scenarios (quick wins, -42% target, Net Zero) to pre-select actions. Scenarios cannot be customised."
         },
         "4": {
           "title": "Carbon Footprint integration",
-          "description": "Your decarbonization plan draws directly from your ESGFlow carbon footprint. The baseline emissions and annual tracking are synchronized automatically."
+          "description": "The plan starts from the emissions recorded in the Carbon Footprint; without data, the trajectory stays unavailable."
         },
         "5": {
-          "title": "Validatable SBTi targets",
-          "description": "Format your targets per the SBTi Target Validation Protocol requirements: base year, scope, ambition, calculation method (sectoral decarbonization approach or absolute contraction)."
+          "title": "SBTi commitment tracking",
+          "description": "Track the stage of your SBTi process (commitment, targets set, validation). Validation itself is carried out by the SBTi."
         },
         "6": {
           "title": "Decarbonization plan export",
-          "description": "Export your full plan as a PDF with charts, actions, budget and timeline. Format compatible with CSRD reporting requirements (ESRS E1)."
+          "description": "Export your plan as a PDF with actions and estimated budget, as a working basis for your transition plan (ESRS E1)."
         }
       },
       "steps": {
@@ -9963,12 +9963,12 @@
           "answer": "Yes. The decarbonization plan requires a base year with a complete carbon footprint (at minimum Scope 1 and 2, ideally Scope 3). ESGFlow lets you produce your carbon footprint and move straight on to the decarbonization plan."
         },
         "2": {
-          "question": "Are the 24 actions customizable?",
-          "answer": "Yes. The 24 pre-configured actions cover the most common levers (energy efficiency, renewables, mobility, responsible purchasing, etc.). You can customize them (potential, cost, timeline) and add your own specific actions."
+          "question": "Can the catalogue actions be customised?",
+          "answer": "The catalogue of about thirty actions covers common levers (energy efficiency, renewables, mobility, responsible purchasing...). The figures are generic estimates to adapt to your context."
         },
         "3": {
           "question": "Is the plan compatible with CSRD reporting?",
-          "answer": "Yes. The ESGFlow decarbonization plan covers the ESRS E1 (Climate change) requirements for a transition plan: reduction targets, actions, investments and timeline. The data is exportable for your CSRD report."
+          "answer": "The plan can feed your thinking on the ESRS E1 transition plan (targets, actions, budget), but it does not on its own cover the requirements of ESRS E1."
         }
       },
       "related": {
@@ -10000,12 +10000,12 @@
           "description": "Send materiality questionnaires to your internal and external stakeholders. Automated collection and aggregation of results."
         },
         "2": {
-          "title": "AI sector suggestions",
-          "description": "The AI analyzes your industry (NAF code) and proposes a pre-selection of material topics based on the GRI standards and sector benchmarks."
+          "title": "Sector suggestions",
+          "description": "Typical issue lists by sector serve as a starting point. These are static suggestions, not an AI analysis."
         },
         "3": {
-          "title": "Certifiable export",
-          "description": "Generate a materiality report PDF with detailed methodology, consultation results and justification for each topic. Ready for your external auditor's review."
+          "title": "Working basis for audit",
+          "description": "Document your issues, ratings and validations to prepare your auditor's review. No materiality report PDF is generated automatically."
         }
       },
       "capabilities": {
@@ -10022,26 +10022,26 @@
           "description": "Create targeted consultation campaigns: employees, investors, customers, suppliers, NGOs, local communities. Weighting by stakeholder category."
         },
         "3": {
-          "title": "Automatic scoring",
-          "description": "Automatic calculation of the materiality score per topic based on the collected answers, with confidence intervals and detection of divergences between groups."
+          "title": "Response aggregation",
+          "description": "Stakeholder survey responses are aggregated by issue and respondent category in the survey analysis."
         },
         "4": {
           "title": "Interactive matrix",
-          "description": "Drag & drop interface to position and adjust topics on the matrix. Zoom, filters by E/S/G pillar and visualization of materiality thresholds."
+          "description": "Interactive matrix: positioning of issues on the impact and financial axes, with E/S/G pillar filters."
         },
         "5": {
           "title": "Link with the ESRS standards",
           "description": "Each material topic is automatically linked to the corresponding ESRS standards. Only material standards are required in your CSRD report."
         },
         "6": {
-          "title": "History and comparison",
-          "description": "Compare your year-over-year materiality analyses. Identify emerging topics, positioning shifts and sector trends."
+          "title": "Validation tracking",
+          "description": "Record validations of your materiality analysis and check their status. No automatic year-over-year comparison."
         }
       },
       "steps": {
         "0": {
           "title": "Identify your topics",
-          "description": "Start from the ESRS library or the AI sector suggestions. Add your specific topics and define your scope."
+          "description": "Start from the ESRS library or the sector suggestions. Add your specific issues and define your scope."
         },
         "1": {
           "title": "Consult your stakeholders",
@@ -10063,11 +10063,11 @@
         },
         "2": {
           "question": "How many stakeholders should I consult?",
-          "answer": "EFRAG recommends consulting a representative panel of affected and interested stakeholders. In practice, 50 to 200 respondents covering 4 to 6 categories (employees, customers, suppliers, investors, experts, communities) yield statistically robust results."
+          "answer": "EFRAG guidance asks you to consult relevant stakeholders without setting a number of respondents. Adapt the panel to your context and document your approach."
         },
         "3": {
           "question": "Does the AI replace stakeholder consultation?",
-          "answer": "No. The AI suggestions provide a sector starting point to speed up the identification of potential topics. Stakeholder consultation remains essential to validate and weight the topics according to your specific context."
+          "answer": "Sector suggestions are a static starting list, without AI. Stakeholder consultation remains essential to validate and weight the issues."
         }
       },
       "related": {
@@ -10191,7 +10191,7 @@
       "benefits": {
         "0": {
           "title": "6 environmental objectives",
-          "description": "Full coverage of the 6 objectives: climate change mitigation, adaptation, water, circular economy, pollution and biodiversity."
+          "description": "The 6 environmental objectives are available for data entry: mitigation, adaptation, water, circular economy, pollution and biodiversity."
         },
         "1": {
           "title": "Alignment KPIs",
@@ -10202,14 +10202,14 @@
           "description": "Guided checklist for each Do No Significant Harm criterion. Verify that your contribution to one objective does not harm the other 5."
         },
         "3": {
-          "title": "Art. 8 report ready",
-          "description": "Generate the regulatory tables of Article 8 of the Taxonomy Regulation with the eligibility and alignment KPIs, ready for publication."
+          "title": "Article 8 preparation",
+          "description": "Track your eligibility and alignment KPIs (turnover, CapEx, OpEx) to prepare the Article 8 tables. Final regulatory formatting remains your responsibility."
         }
       },
       "capabilities": {
         "0": {
           "title": "Activity classification",
-          "description": "Identify your eligible activities among those listed in the delegated acts. Search by NACE code, description or industry."
+          "description": "Identify eligible activities in a catalogue of about fifty common activities (search by NACE code, description or sector). The catalogue is not exhaustive: check it against the delegated acts."
         },
         "1": {
           "title": "Substantial contribution criteria",
@@ -10221,19 +10221,19 @@
         },
         "3": {
           "title": "Minimum social safeguards",
-          "description": "Verification of the 4 minimum safeguards (OECD, UN, ILO, EU Charter of Fundamental Rights) with a self-assessment questionnaire and required documentation."
+          "description": "Record whether the minimum safeguards (OECD, UN, ILO, EU Charter of Fundamental Rights) are met for each activity. Supporting evidence must be kept on your side."
         },
         "4": {
           "title": "Automatic KPI calculation",
           "description": "Enter your financial data (revenue, CapEx, OpEx) per activity. ESGFlow automatically calculates the eligibility and alignment percentages."
         },
         "5": {
-          "title": "Regulatory tables",
-          "description": "Automatic generation of the 5 mandatory tables of Article 8: eligible activities, aligned activities, nuclear/gas, and consolidated KPIs."
+          "title": "Taxonomy KPIs",
+          "description": "Calculation of your eligibility and alignment percentages for turnover, CapEx and OpEx from the financial data entered per activity."
         },
         "6": {
-          "title": "Delegated acts updates",
-          "description": "The technical criteria are updated with each new Complementary Delegated Act published by the European Commission. Version history retained."
+          "title": "Activity catalogue",
+          "description": "The activity and criteria catalogue is maintained by the ESGFlow team. It may lag behind the latest delegated acts: always check the applicable version."
         }
       },
       "steps": {
@@ -10247,7 +10247,7 @@
         },
         "2": {
           "title": "Publish your KPIs",
-          "description": "Calculate your alignment KPIs (revenue %, CapEx %, OpEx %) and generate the Art. 8 regulatory tables for your annual report."
+          "description": "Calculate your alignment KPIs (turnover %, CapEx %, OpEx %) and prepare the Article 8 tables for your annual report."
         }
       },
       "faqs": {
@@ -10265,7 +10265,7 @@
         },
         "3": {
           "question": "How does ESGFlow handle gas and nuclear activities?",
-          "answer": "ESGFlow integrates the Complementary Delegated Act (Regulation 2022/1214) that includes natural gas and nuclear under strict conditions. The specific criteria and dedicated reporting tables are supported."
+          "answer": "Fossil gas and nuclear activities fall under a complementary delegated act (Regulation 2022/1214) with dedicated disclosure tables. ESGFlow does not support them today: these activities must be handled outside the tool."
         }
       },
       "related": {
