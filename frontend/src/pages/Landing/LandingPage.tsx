@@ -1418,7 +1418,7 @@ export default function LandingPage() {
 
   const faqs = [
     { q: 'Combien de temps pour déployer la plateforme ?', a: 'La plateforme est en self-service : vous créez votre compte, puis saisissez ou importez vos données (FEC, CSV, Excel) vous-même. Aucun délai de mise en service n’est promis à ce stade.' },
-    { q: 'La plateforme est-elle vraiment conforme CSRD ?', a: 'ESGFlow couvre les standards ESRS principaux (E1-E5, S1-S4, G1) et génère le format iXBRL/ESEF exigé par l\'ESMA. Notre journal d\'audit détaillé avec empreintes SHA-256 et export pour auditeurs facilite vos revues internes et externes.' },
+    { q: 'La plateforme est-elle vraiment conforme CSRD ?', a: 'ESGFlow couvre les standards ESRS principaux (E1-E5, S1-S4, G1) et propose un aperçu iXBRL (XHTML) à valider avec Arelle ; le dépôt ESEF reste à faire avec vos conseils. Notre journal d\'audit détaillé avec empreintes SHA-256 et export pour auditeurs facilite vos revues internes et externes.' },
     { q: 'Peut-on importer nos données depuis Excel ou ERP ?', a: 'Oui. La plateforme accepte les imports CSV, Excel et FEC (Sage, Cegid, Pennylane) ainsi que les exports RH de Silae, Lucca ou PayFit. Les connexions API Pennylane, Qonto et Enedis sont en bêta. Pour SAP, Oracle ou Workday, dites-nous votre besoin : ils ne sont pas disponibles en standard. Notre API REST permet des intégrations sur mesure.' },
     { q: 'Où sont hébergées les données ?', a: "La plateforme est hébergée chez un prestataire européen. Les fonctions d'IA (Gaïa, questionnaires clients) envoient le texte analysé à OpenAI, un prestataire américain : ce point est indiqué avant chaque envoi, et le fichier lui-même n'est pas conservé. Aucun engagement de certification n'est affiché tant qu'il n'est pas documenté." },
     { q: 'Que couvre le module Supply Chain ESG ?', a: 'Le module couvre l\'évaluation des fournisseurs sur 6 dimensions ESG, l\'envoi de questionnaires automatisés, la gestion de la due diligence et le suivi du plan de vigilance conformément à la Loi 2017-399.' },
@@ -1741,7 +1741,7 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <div className="text-[12px] font-bold text-gray-900">CSRD Conforme</div>
-                  <div className="text-[10px] text-gray-400">ESRS 2024 · iXBRL ready</div>
+                  <div className="text-[10px] text-gray-400">ESRS 2024</div>
                 </div>
               </div>
             </div>
@@ -2065,19 +2065,19 @@ export default function LandingPage() {
 
             {/* Pépite 1 : iXBRL/ESEF réel */}
             <div className="group relative p-8 bg-white rounded-3xl border-2 border-emerald-100 hover:border-emerald-300 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 flex flex-col">
-              <div className="absolute -top-3 left-6 px-3 py-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-[10px] font-extrabold tracking-widest rounded-full shadow-md">{t('landing.lp.diff.cards.0.badge', 'EXIGENCE ESMA 2026')}</div>
+              <div className="absolute -top-3 left-6 px-3 py-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-[10px] font-extrabold tracking-widest rounded-full shadow-md">{t('landing.lp.diff.cards.0.badge', 'BALISAGE iXBRL')}</div>
               <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center mb-5 shadow-lg">
                 <FileText className="h-6 w-6 text-white" />
               </div>
-              <h3 className="text-xl font-extrabold text-gray-900 mb-2">{t('landing.lp.diff.cards.0.title', 'Vrai iXBRL / ESEF')}</h3>
-              <div className="text-xs font-bold text-emerald-700 mb-4">{t('landing.lp.diff.cards.0.subtitle', 'Namespace EFRAG 2024-12-31 · 150 concepts ESRS au catalogue')}</div>
+              <h3 className="text-xl font-extrabold text-gray-900 mb-2">{t('landing.lp.diff.cards.0.title', 'Aperçu iXBRL (XHTML)')}</h3>
+              <div className="text-xs font-bold text-emerald-700 mb-4">{t('landing.lp.diff.cards.0.subtitle', 'Namespace EFRAG 2024-12-31 · catalogue de concepts ESRS')}</div>
               <p className="text-sm text-gray-600 leading-relaxed mb-5 flex-1">
                 <Trans i18nKey="landing.lp.diff.cards.0.body">
-                  Nous produisons un <strong>XHTML balisé en iXBRL</strong>, le format visé par l'ESMA pour les rapports de durabilité des sociétés cotées.
+                  Nous produisons un <strong>XHTML balisé en iXBRL</strong>, le format visé par l'ESMA pour les rapports de durabilité des sociétés cotées. Le dépôt ESEF final reste à faire avec vos conseils.
                 </Trans>
               </p>
               <div className="space-y-2 mb-6">
-                {['XHTML EFRAG 2024-12-31', 'Catalogue de 150 concepts ESRS', 'Validation namespace stricte', 'Validation Arelle intégrée'].map((p, i) => (
+                {['XHTML EFRAG 2024-12-31', 'Catalogue de concepts ESRS', 'Validation namespace stricte', 'Validation Arelle intégrée'].map((p, i) => (
                   <div key={i} className="flex items-center gap-2 text-sm text-gray-700">
                     <Check className="h-4 w-4 text-emerald-500 flex-shrink-0" />
                     {t(`landing.lp.diff.cards.0.points.${i}`, p)}
@@ -2085,25 +2085,25 @@ export default function LandingPage() {
                 ))}
               </div>
               <div className="pt-5 border-t border-gray-100 text-xs text-gray-500">
-                <strong className="text-gray-900">{t('landing.lp.diff.cards.0.footerLabel', 'Démontrable :')}</strong> {t('landing.lp.diff.cards.0.footerText', 'export en 1 clic depuis CSRD Builder, ouvrable dans Arelle.')}
+                <strong className="text-gray-900">{t('landing.lp.diff.cards.0.footerLabel', 'Démontrable :')}</strong> {t('landing.lp.diff.cards.0.footerText', 'aperçu depuis CSRD Builder, vérifiable dans Arelle.')}
               </div>
             </div>
 
             {/* Pépite 2 : FEC → Scope 3 */}
             <div className="group relative p-8 bg-white rounded-3xl border-2 border-blue-100 hover:border-blue-300 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 flex flex-col">
-              <div className="absolute -top-3 left-6 px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-[10px] font-extrabold tracking-widest rounded-full shadow-md">{t('landing.lp.diff.cards.1.badge', 'GAIN 200-400 h/an')}</div>
+              <div className="absolute -top-3 left-6 px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-[10px] font-extrabold tracking-widest rounded-full shadow-md">{t('landing.lp.diff.cards.1.badge', 'ESTIMATION SPEND-BASED')}</div>
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-5 shadow-lg">
                 <Database className="h-6 w-6 text-white" />
               </div>
-              <h3 className="text-xl font-extrabold text-gray-900 mb-2">{t('landing.lp.diff.cards.1.title', 'Import FEC → Scope 3 auto')}</h3>
+              <h3 className="text-xl font-extrabold text-gray-900 mb-2">{t('landing.lp.diff.cards.1.title', 'Import FEC → estimation Scope 3')}</h3>
               <div className="text-xs font-bold text-blue-700 mb-4">{t('landing.lp.diff.cards.1.subtitle', 'Parser 18 colonnes · Mapping PCG → ADEME')}</div>
               <p className="text-sm text-gray-600 leading-relaxed mb-5 flex-1">
                 <Trans i18nKey="landing.lp.diff.cards.1.body">
-                  Téléversez votre <strong>FEC (Sage, Cegid, Pennylane…)</strong>, nous calculons votre Scope 3 en <strong>5 minutes au lieu de 3 mois</strong> de saisie manuelle. Mapping automatique des classes 60, 61, 62 aux 47 facteurs ADEME.
+                  Téléversez votre <strong>FEC</strong> : nous estimons votre Scope 3 par <strong>méthode monétaire</strong> à partir des comptes de charges (classes 60 à 62) avec des facteurs ADEME. Estimation à relire avant usage.
                 </Trans>
               </p>
               <div className="space-y-2 mb-6">
-                {['Parser FEC 18 colonnes officiel', '47 facteurs ADEME embarqués', 'Mapping PCG automatique', 'Compatible Sage/Cegid/Pennylane'].map((p, i) => (
+                {['Parser FEC 18 colonnes officiel', 'Facteurs ADEME embarqués', 'Mapping PCG automatique', 'Format FEC normalisé'].map((p, i) => (
                   <div key={i} className="flex items-center gap-2 text-sm text-gray-700">
                     <Check className="h-4 w-4 text-blue-500 flex-shrink-0" />
                     {t(`landing.lp.diff.cards.1.points.${i}`, p)}
@@ -2188,10 +2188,10 @@ export default function LandingPage() {
                 detail: ['Scopes 1/2/3 automatiques', 'Anomalies temps réel', 'Chatbot ESG expert'],
               },
               {
-                num: '03', title: 'Publiez et certifiez',
-                desc: "Générez votre rapport CSRD (iXBRL/ESEF), GRI ou TCFD en 1 clic. Le journal d'audit avec empreintes SHA-256 et le workflow de validation facilitent vos revues auditeurs.",
+                num: '03', title: 'Préparez et partagez',
+                desc: "Générez votre rapport (PDF, Word, Excel, JSON) avec aperçu iXBRL. Le journal d'audit avec empreintes SHA-256 et le workflow de validation facilitent vos revues auditeurs.",
                 icon: FileText, color: 'from-blue-500 to-indigo-600',
-                detail: ['Rapport PDF/Word/Excel/JSON', 'iXBRL/ESEF EFRAG 2024', 'Partage sécurisé auditeurs'],
+                detail: ['Rapport PDF/Word/Excel/JSON', 'Aperçu iXBRL (EFRAG 2024)', 'Partage sécurisé auditeurs'],
               },
             ].map((s, i) => (
               <div key={i} className="relative flex flex-col bg-white rounded-3xl border border-gray-200 p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
@@ -3065,7 +3065,7 @@ export default function LandingPage() {
               { icon: ClipboardList, title: "Piste d'audit SHA-256", desc: "Chaque donnée et chaque modification est chaînée cryptographiquement (SHA-256), pour une assurance ISAE 3000 facilitée.", path: '/features/audit-trail', color: '#374151', light: '#f9fafb' },
               { icon: ShieldAlert, title: 'Plan de vigilance & alerte éthique', desc: "Cartographie des risques, plan d'actions et canal de signalement public conforme à la directive lanceurs d'alerte.", path: '/features/vigilance', color: '#dc2626', light: '#fef2f2' },
               { icon: Building2, title: 'Mode Cabinet multi-clients', desc: 'Pilotez tous vos clients depuis un espace unique, avec isolation stricte des données et comparateur intégré.', path: '/features/cabinet', color: '#4f46e5', light: '#eef2ff' },
-              { icon: Code2, title: 'Reporting iXBRL & validation Arelle', desc: 'Générez et validez votre rapport CSRD au format numérique ESEF, prêt pour le dépôt réglementaire.', path: '/features/ixbrl', color: '#0891b2', light: '#ecfeff' },
+              { icon: Code2, title: 'Reporting iXBRL & validation Arelle', desc: 'Générez un aperçu iXBRL de votre rapport CSRD et validez-le avec Arelle. Le dépôt réglementaire reste à votre charge.', path: '/features/ixbrl', color: '#0891b2', light: '#ecfeff' },
             ].map(({ icon: Icon, title, desc, path, color, light }, i) => (
               <Link key={path} to={path} className="group p-6 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col">
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: light }}>
