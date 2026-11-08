@@ -32,6 +32,7 @@ _SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 # Endpoints authenticated by mechanism other than session cookies
 EXEMPT_PATH_PREFIXES: tuple[str, ...] = (
     "/api/v1/webhooks/",      # Stripe & co. — verified via signature
+    "/api/v1/sso/callback",   # SSO callback (GET, état chiffré)
     "/api/v1/sso/callback/",  # SSO callbacks
 )
 

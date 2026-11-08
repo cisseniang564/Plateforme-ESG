@@ -123,7 +123,7 @@ export const gestion: DocArticle[] = [
     about: 'Les paramètres sont organisés en rubriques : Général, Membres, Notifications, Intégrations, Compte, Facturation, Sécurité, Clés API, Sessions, Avancé et Zone de danger.',
     shows: [
       'Des raccourcis vers les notifications en temps réel, les données d\'entreprises françaises, l\'enrichissement ESG, les connecteurs (Pennylane, Qonto, Enedis…) et les méthodologies (GRI, SASB, TCFD, ESRS).',
-      'Une rubrique SSO d\'information : l\'authentification unique (OpenID Connect puis SAML 2.0) n\'est pas encore disponible.',
+      'Une rubrique SSO (administrateurs) : connexion unique OpenID Connect pour les utilisateurs déjà invités, sur les domaines e-mail déclarés ; SAML 2.0 n\'est pas pris en charge.',
       'La zone de danger : actions irréversibles, à manier avec précaution.',
     ],
     tips: [],

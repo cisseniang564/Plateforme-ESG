@@ -171,7 +171,20 @@
     "alreadyVerifiedDesc": "This email address has already been verified. You can access your account.",
     "invalidLink": "Invalid link",
     "linkExpiredHint": "The link may have expired (valid for 24h). Log in again to receive a new one.",
-    "resendVerification": "Resend verification email"
+    "resendVerification": "Resend verification email",
+    "sso": {
+      "button": "Sign in with SSO",
+      "needEmail": "Enter your work email address first.",
+      "err": {
+        "denied": "SSO sign-in was refused or interrupted.",
+        "expired": "The SSO session expired, please try again.",
+        "config": "SSO is not configured for this workspace.",
+        "failed": "Verification with your identity provider failed.",
+        "domain": "This email address does not belong to an allowed domain.",
+        "noAccount": "No active account matches this address: ask your administrator for an invitation.",
+        "start": "Unable to start SSO sign-in."
+      }
+    }
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -2025,8 +2038,8 @@
       },
       "sso": {
         "active": "Active",
-        "allowedDomains": "Allowed domains (optional)",
-        "allowedDomainsHint": "Separate domains with commas",
+        "allowedDomains": "Allowed email domains *",
+        "allowedDomainsHint": "Required. Separate domains with commas; a domain can belong to one workspace only.",
         "allowedDomainsPlaceholder": "mycompany.com, subsidiary.com",
         "attrEmail": "Email",
         "attrFirstName": "First name",
@@ -2041,16 +2054,18 @@
         "disabled": "SSO disabled",
         "enableForTenant": "Enable SSO for this tenant",
         "error": "Error",
+        "existingOnly": "Only users already invited to your workspace can sign in with SSO: no account is created automatically. Two-factor authentication is then that of your provider.",
         "inactive": "Inactive",
         "issuerUrl": "Issuer URL (Discovery) *",
         "prefillFor": "Prefill for:",
         "providerName": "Provider name *",
         "providerNamePlaceholder": "e.g. Okta, Microsoft Entra...",
+        "redirectUri": "Redirect URL to register with your provider",
         "save": "Save",
         "saved": "SSO configuration saved",
         "saving": "Saving…",
         "scopes": "Scopes",
-        "subtitle": "Connect your OIDC identity provider (Okta, Microsoft Entra, Google Workspace, Keycloak...)",
+        "subtitle": "Connect your OpenID Connect identity provider (Okta, Microsoft Entra, Google Workspace, Keycloak...). SAML is not supported.",
         "testConnection": "Test connection",
         "testFailed": "Test failed",
         "testOk": "Connection OK — Provider: {{issuer}}",
@@ -7226,7 +7241,7 @@
             "missing": [
               "Narrative AI",
               "Advanced connectors",
-              "SSO (coming soon)"
+              "SSO OpenID Connect"
             ]
           },
           {
@@ -7246,7 +7261,7 @@
               "Priority support 7 days/week"
             ],
             "missing": [
-              "SSO (coming soon)",
+              "SSO OpenID Connect",
               "White-label"
             ]
           },
@@ -7258,7 +7273,7 @@
               "500 users · unlimited orgs",
               "5,000,000 API calls / month",
               "Everything in ETI",
-              "SSO (coming soon)",
+              "SSO OpenID Connect",
               "White-label & branding",
               "IFRS 10 multi-entity consolidation",
               "Dedicated onboarding",
@@ -7352,7 +7367,7 @@
             "title": "Access control",
             "items": [
               "Multi-level RBAC",
-              "SSO (coming soon)",
+              "SSO OpenID Connect",
               "Tenant isolation (RLS)"
             ]
           }
@@ -9064,7 +9079,7 @@
         "f9": "Priority email support",
         "n1": "Advanced audit trail",
         "n2": "Dedicated API",
-        "n3": "SSO (coming soon)"
+        "n3": "SSO OpenID Connect"
       },
       "eti": {
         "desc": "Complete solution for mid-size companies",
@@ -9087,7 +9102,7 @@
         "f4": "All mid-size features",
         "f5": "Group consolidation",
         "f6": "Dedicated API & webhooks",
-        "f7": "SSO (coming soon)",
+        "f7": "SSO OpenID Connect",
         "f8": "Dedicated account manager"
       },
       "enterprise": {
@@ -11169,8 +11184,8 @@
           "desc": "Custom logo, domain, colors (Group plan)."
         },
         "18": {
-          "title": "SSO (OpenID Connect & SAML 2.0)",
-          "desc": "Azure AD, Okta, Google Workspace (Group plan)."
+          "title": "SSO SAML 2.0",
+          "desc": "Complements OpenID Connect SSO, already available."
         },
         "19": {
           "title": "iOS / Android mobile app",

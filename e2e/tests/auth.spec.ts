@@ -7,7 +7,7 @@ test.describe('Authentification', () => {
   test('la page de connexion s\'affiche', async ({ page }) => {
     await page.goto('/login');
     await expect(page.getByRole('heading', { name: /bienvenue/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /se connecter/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^se connecter$/i })).toBeVisible();
   });
 
   test('des identifiants incorrects affichent une erreur', async ({ page }) => {

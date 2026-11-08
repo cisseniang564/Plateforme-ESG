@@ -165,7 +165,7 @@ export default function SecurityPage() {
             <SecurityCard icon={Key} color="amber" title={t('security.page.card4Title', 'Authentification & sessions')}>
               <p><strong>JWT (HS256)</strong> {t('security.page.card4p1', ': jeton d\'accès de 30 min, jeton de rafraîchissement de 7 jours, révocation par')} <code className="text-xs">jti</code>.</p>
               <p><strong>2FA TOTP</strong> {t('security.page.card4p2', 'disponible sur tous les comptes (Google Authenticator, Authy, 1Password).')}</p>
-              <p><strong>SSO</strong> {t('security.page.card4p3', "(OpenID Connect puis SAML 2.0) : pas encore disponible, prévu sur la feuille de route.")}</p>
+              <p><strong>SSO</strong> {t('security.page.card4p3', "OpenID Connect (Okta, Microsoft Entra, Google Workspace, Keycloak…) pour les utilisateurs déjà invités, sur les domaines e-mail que vous déclarez. SAML 2.0 n'est pas pris en charge.")}</p>
               <p>{t('security.page.card4p4', "Blocage d'une adresse IP après 10 échecs de connexion en 15 minutes · limitation de débit par IP et par organisation.")}</p>
             </SecurityCard>
 
