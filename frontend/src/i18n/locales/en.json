@@ -10895,9 +10895,9 @@
           "commission": "15%",
           "duration": "over 12 months",
           "benefits": {
-            "0": "Free training (3 h online)",
+            "0": "Platform walkthrough and sales resources",
             "1": "Free ESGFlow demo account (up to 3 organizations)",
-            "2": "Listing in our public directory",
+            "2": "Direct contact at ESGFlow",
             "3": "Co-authoring of customer case studies"
           },
           "cta": "Become a Referrer"
@@ -10910,11 +10910,11 @@
           "badge": "Most chosen",
           "benefits": {
             "0": "Everything in Referrer",
-            "1": "Priority placement in the directory",
+            "1": "Priority handling of your requests",
             "2": "Dedicated account manager",
             "3": "Co-hosted webinars (2/year)",
             "4": "Early access to new features",
-            "5": "Partner dashboard (referred clients, MRR, commissions)"
+            "5": "Regular review of your referred clients"
           },
           "cta": "Become Premium"
         },
@@ -10933,7 +10933,8 @@
           "cta": "Let's talk"
         },
         "heading": "3 partnership tiers",
-        "subtext": "Choose the one that fits your organization."
+        "subtext": "Choose the one that fits your organization.",
+        "disclaimer": "Indicative terms, confirmed in writing when you join."
       },
       "types": {
         "0": {
@@ -10957,7 +10958,7 @@
       },
       "seo": {
         "title": "Partner Program — ESGFlow",
-        "description": "Become an ESGFlow partner: up to 20% recurring commission, free training, public directory. For ESG consultancies, accountants, IT services companies.",
+        "description": "Become an ESGFlow partner: up to 20% recurring commission, platform walkthrough, sales resources. For ESG consultancies, accountants, IT services companies.",
         "keywords": "ESG partners, ESG consultancy, accountant, affiliate program, white label CSRD, recurring commission",
         "ogTitle": "ESGFlow Partner Program — up to 20% commission",
         "ogImageAlt": "ESGFlow Partner Program — Referrer, Premium, Integrator"
@@ -10972,7 +10973,7 @@
         "freeTrial": "Free trial"
       },
       "hero": {
-        "badge": "PARTNER PROGRAM · OPEN 2026",
+        "badge": "PARTNER PROGRAM · LAUNCHING",
         "titleLine1": "Grow your revenue",
         "titleLine2": "by democratizing the CSRD",
         "subtitle": "ESG consulting firm, accountant or IT services company: become an ESGFlow partner and earn up to <strong>20% recurring commission</strong> on every referred client.",
@@ -10987,10 +10988,6 @@
         "1": {
           "value": "24 months",
           "label": "Payout duration (Premium tier)"
-        },
-        "2": {
-          "value": "~€480/yr",
-          "label": "Average commission per referred mid-cap client"
         }
       },
       "how": {
@@ -11000,11 +10997,11 @@
         },
         "1": {
           "title": "Get trained",
-          "desc": "3 h online training on ESGFlow + sales resources."
+          "desc": "Platform walkthrough and sales resources."
         },
         "2": {
           "title": "Refer",
-          "desc": "Share your partner link or sell ESGFlow as an engagement tool."
+          "desc": "Recommend ESGFlow to your clients or use it as an engagement tool; we track referred clients with you."
         },
         "3": {
           "title": "Get paid",
@@ -11022,8 +11019,8 @@
           "desc": "No integration project to plan."
         },
         "2": {
-          "title": "CSRD-compliant",
-          "desc": "12 ESRS modules, iXBRL, SHA-256 audit trail."
+          "title": "Built for the CSRD",
+          "desc": "ESRS modules, iXBRL export, audit trail."
         },
         "heading": "Why recommend ESGFlow?"
       },
