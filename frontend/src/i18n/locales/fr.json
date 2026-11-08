@@ -247,7 +247,7 @@
       "aiInsights": "Insights IA",
       "aiInsightsDesc": "Analyses intelligentes",
       "decarbonation": "Plan Décarbonation",
-      "decarbonationDesc": "SBTi · Net Zero 2050 · 24 actions ROI",
+      "decarbonationDesc": "SBTi · Net Zero 2050 · actions et ROI estimé",
       "bilanCarbone": "Bilan Carbone Scope 3",
       "bilanCarboneDesc": "15 catégories GHG Protocol · ADEME",
       "taxonomieUE": "Taxonomie UE",
@@ -2075,7 +2075,7 @@
   },
   "decarbonation": {
     "title": "Plan de Décarbonation",
-    "subtitle": "SBTi 1.5°C · Net Zero 2050 · 24 actions préconfigurées avec ROI",
+    "subtitle": "SBTi 1.5°C · Net Zero 2050 · catalogue d’actions avec ROI estimé",
     "tabs": {
       "overview": "Vue d'ensemble",
       "catalogue": "Catalogue actions",

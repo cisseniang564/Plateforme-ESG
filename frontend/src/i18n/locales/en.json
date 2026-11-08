@@ -2854,7 +2854,7 @@
   },
   "decarbonation": {
     "title": "Decarbonization Plan",
-    "subtitle": "SBTi 1.5°C · Net Zero 2050 · 24 pre-configured actions with ROI",
+    "subtitle": "SBTi 1.5°C · Net Zero 2050 · action catalogue with estimated ROI",
     "tabs": {
       "overview": "Overview",
       "catalogue": "Action catalogue",
@@ -6649,10 +6649,10 @@
         "decarb": {
           "name": "Decarbonization Plan",
           "tagline": "SBTi · Net Zero 2050 · 24 ROI actions",
-          "desc": "Build your decarbonization pathway aligned with SBTi 1.5°C. 24 pre-configured actions with ROI, what-if scenarios and a 2024–2050 chart.",
+          "desc": "Build your decarbonization pathway aligned with SBTi 1.5°C. an action catalogue with estimated ROI, what-if scenarios and a 2024–2050 chart.",
           "badges": [
             "SBTi 1.5°C pathway",
-            "24 actions + ROI",
+            "Actions + estimated ROI",
             "What-if scenarios",
             "Net Zero 2050"
           ]

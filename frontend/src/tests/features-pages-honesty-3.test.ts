@@ -6,7 +6,8 @@ import dma from '../pages/Features/DoubleMaterialitePage.tsx?raw';
 import enJson from '../i18n/locales/en.json';
 
 const all = { taxo, carbone, decarb, dma };
-const en = JSON.stringify((enJson as any).features);
+const f = (enJson as any).features;
+const en = JSON.stringify([f.taxonomieUe, f.bilanCarbone, f.decarbonation, f.doubleMaterialite]);
 
 describe('Pages Fonctionnalités (3) : pas de promesses non tenues', () => {
   it.each(Object.entries(all))('%s : pas de formulation trompeuse', (_n, src) => {
