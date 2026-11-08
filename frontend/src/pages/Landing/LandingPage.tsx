@@ -2177,9 +2177,9 @@ export default function LandingPage() {
             {[
               {
                 num: '01', title: 'Connectez vos sources',
-                desc: 'Importez vos fichiers FEC, CSV ou Excel, ou saisissez à la main. 150 concepts ESRS pré-configurés vous guident dès le premier jour.',
+                desc: 'Importez vos fichiers FEC, CSV ou Excel, ou saisissez à la main. Un catalogue de concepts ESRS vous guide dès le premier jour.',
                 icon: Database, color: 'from-emerald-500 to-green-600',
-                detail: ['Import CSV · FEC · Excel', 'Exports RH', '150 concepts ESRS'],
+                detail: ['Import CSV · FEC · Excel', 'Exports RH', 'Catalogue de concepts ESRS'],
               },
               {
                 num: '02', title: "L'IA analyse et calcule",
