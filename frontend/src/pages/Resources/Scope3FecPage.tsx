@@ -93,10 +93,10 @@ export default function Scope3FecPage() {
 
           <h1 className="text-4xl lg:text-5xl font-extrabold text-white mb-5 leading-tight">
             {t('resources.scope3Fec.hero.titleLine1', 'Scope 3 par import FEC :')}<br />
-            <span className="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">{t('resources.scope3Fec.hero.titleLine2', 'calculez vos émissions indirectes en 1 clic')}</span>
+            <span className="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">{t('resources.scope3Fec.hero.titleLine2', 'estimez vos émissions indirectes depuis votre FEC')}</span>
           </h1>
           <p className="text-xl text-slate-300 max-w-3xl leading-relaxed mb-8">
-            {t('resources.scope3Fec.hero.subtitle', 'Importez votre Fichier des Écritures Comptables depuis Sage, Cegid ou Pennylane et obtenez automatiquement vos 15 catégories GHG Protocol avec les facteurs ADEME 2024.')}
+            {t('resources.scope3Fec.hero.subtitle', "Importez votre Fichier des Écritures Comptables et obtenez une première estimation de vos émissions Scope 3 par méthode monétaire, avec les facteurs ADEME.")}
           </p>
 
           <div className="flex flex-wrap gap-3">
@@ -104,10 +104,10 @@ export default function Scope3FecPage() {
               {t('resources.scope3Fec.hero.pill1', '15 catégories GHG Protocol')} <ChevronDown className="h-3.5 w-3.5" />
             </a>
             <a href="#probleme" className="inline-flex items-center gap-1.5 px-4 py-2 bg-white/10 border border-white/20 text-white text-sm font-medium rounded-xl hover:bg-white/20 transition-colors">
-              {t('resources.scope3Fec.hero.pill2', 'Facteurs ADEME 2024')} <ChevronDown className="h-3.5 w-3.5" />
+              {t('resources.scope3Fec.hero.pill2', "Facteurs ADEME")} <ChevronDown className="h-3.5 w-3.5" />
             </a>
             <a href="#comment" className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-xl hover:bg-emerald-400 transition-colors">
-              {t('resources.scope3Fec.hero.pill3', 'Sage · Cegid · Pennylane')} <ArrowRight className="h-3.5 w-3.5" />
+              {t('resources.scope3Fec.hero.pill3', "Format FEC normalisé")} <ArrowRight className="h-3.5 w-3.5" />
             </a>
           </div>
         </div>
@@ -226,10 +226,10 @@ export default function Scope3FecPage() {
               </div>
               <ul className="space-y-2.5 text-sm text-gray-700">
                 <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />{t('resources.scope3Fec.probleme.fec1', 'Export FEC depuis votre logiciel comptable existant')}</li>
-                <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />{t('resources.scope3Fec.probleme.fec2', 'Import glisser-déposer dans ESGFlow')}</li>
-                <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />{t('resources.scope3Fec.probleme.fec3', 'Lecture automatique des comptes 60x, 61x, 62x')}</li>
-                <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />{t('resources.scope3Fec.probleme.fec4', 'Facteurs ADEME 2024 appliqués automatiquement')}</li>
-                <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" /><Trans i18nKey="resources.scope3Fec.probleme.fec5"><strong>15 catégories complètes en 1 clic</strong></Trans></li>
+                <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />{t('resources.scope3Fec.probleme.fec2', "Import d'un fichier FEC dans ESGFlow")}</li>
+                <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />{t('resources.scope3Fec.probleme.fec3', "Lecture des comptes de charges (60x à 62x)")}</li>
+                <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />{t('resources.scope3Fec.probleme.fec4', "Facteurs ADEME appliqués par ratio monétaire")}</li>
+                <li className="flex items-start gap-2"><CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" /><Trans i18nKey="resources.scope3Fec.probleme.fec5"><strong>Estimation à relire avant usage</strong></Trans></li>
               </ul>
             </div>
           </div>
@@ -248,7 +248,7 @@ export default function Scope3FecPage() {
               </div>
               <div className="space-y-2">
                 <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wider mb-2">{t('resources.scope3Fec.probleme.afterLabel', 'Après')}</div>
-                {[t('resources.scope3Fec.probleme.after1', '1 clic'), t('resources.scope3Fec.probleme.after2', 'FEC importé'), t('resources.scope3Fec.probleme.after3', '15 catégories'), t('resources.scope3Fec.probleme.after4', 'Facteurs ADEME 2024')].map(v => (
+                {[t('resources.scope3Fec.probleme.after1', "Import"), t('resources.scope3Fec.probleme.after2', 'FEC importé'), t('resources.scope3Fec.probleme.after3', "Estimation"), t('resources.scope3Fec.probleme.after4', "Facteurs ADEME")].map(v => (
                   <div key={v} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold mr-1">
                     {v}
                   </div>
@@ -263,13 +263,7 @@ export default function Scope3FecPage() {
               {t('resources.scope3Fec.probleme.fecBoxTitle', "Qu'est-ce que le FEC (Fichier des Écritures Comptables) ?")}
             </h3>
             <p className="text-sm text-blue-800 leading-relaxed">
-              <Trans i18nKey="resources.scope3Fec.probleme.fecBoxBody">
-                Le FEC est un fichier normalisé (NF Z55-002) que <strong>tout logiciel de comptabilité certifié en France</strong> doit
-                pouvoir générer. Instauré par la loi de finances 2014 pour la vérification fiscale, il contient
-                l'intégralité des écritures comptables d'un exercice. ESGFlow lit les comptes <strong>60x</strong> (achats de
-                matières et marchandises), <strong>61x</strong> (services extérieurs) et <strong>62x</strong> (autres services extérieurs)
-                pour en extraire les dépenses par catégorie GHG Protocol et appliquer les <strong>facteurs d'émission ADEME 2024</strong>.
-              </Trans>
+              <Trans i18nKey="resources.scope3Fec.probleme.fecBoxBody">Le FEC est un fichier normalisé (NF Z55-002) que <strong>tout logiciel de comptabilité certifié en France</strong> doit pouvoir générer. Instauré par la loi de finances 2014 pour la vérification fiscale, il contient l'intégralité des écritures comptables d'un exercice. ESGFlow lit les comptes de charges (<strong>60x</strong> à <strong>62x</strong>) et applique des facteurs d'émission monétaires issus de la Base Carbone ADEME.</Trans>
             </p>
           </div>
         </section>
@@ -283,7 +277,7 @@ export default function Scope3FecPage() {
             {t('resources.scope3Fec.comment.title', "Comment fonctionne l'import FEC")}
           </h2>
           <p className="text-gray-600 leading-relaxed mb-8 text-lg">
-            {t('resources.scope3Fec.comment.intro', 'Quatre étapes suffisent pour passer de votre logiciel comptable à un bilan Scope 3 complet et certifiable.')}
+            {t('resources.scope3Fec.comment.intro', "Quatre étapes suffisent pour passer de votre logiciel comptable à une première estimation Scope 3, à compléter et à relire.")}
           </p>
 
           <div className="space-y-4">
@@ -300,21 +294,21 @@ export default function Scope3FecPage() {
                 icon: Upload,
                 color: 'violet',
                 title: t('resources.scope3Fec.comment.step2.title', 'Importez le fichier dans ESGFlow'),
-                desc: t('resources.scope3Fec.comment.step2.desc', 'Glissez-déposez votre fichier FEC dans ESGFlow ou cliquez sur "Parcourir". ESGFlow valide automatiquement la structure du fichier (colonnes NF Z55-002) et vous informe si des données sont manquantes ou mal formatées.'),
+                desc: t('resources.scope3Fec.comment.step2.desc', "Importez votre fichier FEC dans ESGFlow. La structure du fichier est vérifiée (colonnes NF Z55-002) et les anomalies de format sont signalées."),
               },
               {
                 n: 3,
                 icon: Zap,
                 color: 'amber',
-                title: t('resources.scope3Fec.comment.step3.title', 'ESGFlow analyse les comptes et applique les facteurs ADEME 2024'),
-                desc: t('resources.scope3Fec.comment.step3.desc', "Le moteur de calcul lit les comptes 60x (achats), 61x (services) et 62x (autres services), les associe aux 15 catégories GHG Protocol et multiplie chaque montant par le facteur d'émission ADEME 2024 correspondant. Une note de qualité est attribuée à chaque catégorie."),
+                title: t('resources.scope3Fec.comment.step3.title', "ESGFlow convertit les comptes de charges en estimations"),
+                desc: t('resources.scope3Fec.comment.step3.desc', "Le moteur lit les comptes de charges, les associe à des catégories du GHG Protocol et applique un facteur d'émission monétaire à chaque montant. Les résultats sont des ordres de grandeur."),
               },
               {
                 n: 4,
                 icon: BarChart3,
                 color: 'emerald',
                 title: t('resources.scope3Fec.comment.step4.title', 'Obtenez votre bilan Scope 3 complet'),
-                desc: t('resources.scope3Fec.comment.step4.desc', 'ESGFlow génère votre bilan Scope 3 avec ventilation par catégorie, graphiques interactifs, comparaison année-sur-année et export PDF / Excel certifiable. Vous pouvez enrichir les catégories avec des données physiques complémentaires pour améliorer la précision.'),
+                desc: t('resources.scope3Fec.comment.step4.desc', "Consultez votre estimation Scope 3 par catégorie. Vous pouvez la compléter avec des données physiques (kWh, km, tonnes) pour gagner en précision."),
               },
             ].map(step => (
               <div key={step.n} className="flex gap-5 p-5 bg-white border border-gray-200 rounded-2xl hover:shadow-md hover:border-gray-300 transition-all">
@@ -344,12 +338,12 @@ export default function Scope3FecPage() {
             {t('resources.scope3Fec.categories.title', 'Les 15 catégories GHG Protocol couvertes')}
           </h2>
           <p className="text-gray-600 leading-relaxed mb-4 text-lg">
-            {t('resources.scope3Fec.categories.intro', 'ESGFlow calcule automatiquement les catégories disponibles depuis le FEC et indique les catégories nécessitant des données complémentaires.')}
+            {t('resources.scope3Fec.categories.intro', "Le FEC alimente surtout les catégories liées aux achats et dépenses ; les autres catégories demandent des données complémentaires.")}
           </p>
 
           <div className="flex flex-wrap gap-3 mb-6">
             {[
-              { cls: 'bg-emerald-100 text-emerald-700 border-emerald-200', label: t('resources.scope3Fec.categories.legend.auto', 'Auto FEC ✓ — calculé automatiquement') },
+              { cls: 'bg-emerald-100 text-emerald-700 border-emerald-200', label: t('resources.scope3Fec.categories.legend.auto', "Estimable depuis le FEC") },
               { cls: 'bg-amber-100 text-amber-700 border-amber-200',       label: t('resources.scope3Fec.categories.legend.partial', 'Partiel FEC — données mixtes') },
               { cls: 'bg-gray-100 text-gray-500 border-gray-200',          label: t('resources.scope3Fec.categories.legend.required', 'Données requises — saisie complémentaire') },
             ].map(l => (
@@ -378,7 +372,7 @@ export default function Scope3FecPage() {
           </div>
 
           <p className="text-xs text-gray-400 mt-4">
-            {t('resources.scope3Fec.categories.note', 'Les catégories marquées "Données requises" peuvent être saisies manuellement ou importées depuis d\'autres sources (RH, logistique, données produit). ESGFlow génère une note de qualité de 0 à 100 pour votre bilan global.')}
+            {t('resources.scope3Fec.categories.note', "Les catégories « Données requises » se renseignent manuellement ou par import (RH, logistique, données produit). Aucune note de qualité automatique n'est calculée.")}
           </p>
         </section>
 
@@ -480,7 +474,7 @@ export default function Scope3FecPage() {
                 n: '03',
                 color: 'violet',
                 title: t('resources.scope3Fec.reglementation.item3.title', 'CDP — Questionnaire Climat : Scope 3 noté'),
-                desc: t('resources.scope3Fec.reglementation.item3.desc', 'Le questionnaire Climat CDP inclut une section dédiée au Scope 3. Les entreprises qui ne le déclarent pas perdent des points et risquent une note C ou D. ESGFlow génère les tableaux CDP-ready pour votre soumission annuelle.'),
+                desc: t('resources.scope3Fec.reglementation.item3.desc', "Le questionnaire Climat CDP inclut une section dédiée au Scope 3. Les données d'ESGFlow peuvent servir de base de travail ; ESGFlow ne génère pas de tableaux CDP prêts à soumettre."),
               },
               {
                 n: '04',
@@ -502,20 +496,15 @@ export default function Scope3FecPage() {
           </div>
         </section>
 
-        {/* ── ADEME 2024 ────────────────────────────────────────────────────── */}
+        {/* ── ADEME ────────────────────────────────────────────────────── */}
         <section>
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-4">
               <TrendingDown className="h-6 w-6 text-emerald-600 flex-shrink-0" />
-              <h3 className="font-bold text-gray-900 text-lg">{t('resources.scope3Fec.ademe.title', 'Pourquoi les facteurs ADEME 2024 ?')}</h3>
+              <h3 className="font-bold text-gray-900 text-lg">{t('resources.scope3Fec.ademe.title', "Pourquoi les facteurs ADEME ?")}</h3>
             </div>
             <p className="text-sm text-gray-600 leading-relaxed mb-4">
-              <Trans i18nKey="resources.scope3Fec.ademe.body">
-                La Base Empreinte® de l'ADEME est la référence française pour les facteurs d'émission. Mise à jour
-                annuellement, elle couvre plus de <strong>3 000 postes de dépenses</strong> avec des facteurs validés
-                par des experts sectoriels. ESGFlow intègre la version 2024 et la met à jour dès que l'ADEME publie
-                de nouvelles données.
-              </Trans>
+              <Trans i18nKey="resources.scope3Fec.ademe.body">La Base Empreinte® de l'ADEME est la référence française pour les facteurs d'émission, validés par des experts sectoriels. ESGFlow en intègre une sélection (Base Carbone v23), mise à jour à chaque version de la plateforme.</Trans>
             </p>
             <div className="grid sm:grid-cols-3 gap-4">
               {[
@@ -543,15 +532,15 @@ export default function Scope3FecPage() {
               },
               {
                 q: t('resources.scope3Fec.faq.q2', 'Quelle est la précision du calcul par FEC ?'),
-                a: t('resources.scope3Fec.faq.a2', 'La méthode monétaire (spend-based) via FEC est reconnue par le GHG Protocol comme approche de niveau 1 — la plus accessible. Elle est particulièrement adaptée pour les catégories 1, 3, 4, 5 et 6 du Scope 3. La précision peut être améliorée en remplaçant les facteurs monétaires par des données physiques (kWh, km, tonnes) quand elles sont disponibles. ESGFlow génère une note de qualité de 0 à 100 pour chaque catégorie, indiquant où des améliorations sont possibles.'),
+                a: t('resources.scope3Fec.faq.a2', "La méthode monétaire (spend-based) via FEC est reconnue par le GHG Protocol comme approche de niveau 1, la plus accessible. Elle est adaptée à une première estimation des catégories liées aux achats. La précision s'améliore en remplaçant les facteurs monétaires par des données physiques (kWh, km, tonnes)."),
               },
               {
                 q: t('resources.scope3Fec.faq.q3', 'Les données de mon FEC sont-elles confidentielles ?'),
-                a: t('resources.scope3Fec.faq.a3', 'Oui. Votre fichier FEC est traité dans notre infrastructure hébergée chez IONOS, et jamais partagé avec des tiers ni utilisé pour l\'entraînement de modèles. Vous pouvez supprimer vos données à tout moment depuis votre tableau de bord. ESGFlow s\'engage à respecter le RGPD.'),
+                a: t('resources.scope3Fec.faq.a3', "Votre fichier FEC est traité sur une infrastructure hébergée chez IONOS. Vous pouvez demander la suppression de vos données. Les engagements RGPD détaillés figurent dans la politique de confidentialité."),
               },
               {
                 q: t('resources.scope3Fec.faq.q4', 'Puis-je compléter le FEC par d\'autres sources de données ?'),
-                a: t('resources.scope3Fec.faq.a4', 'Oui. ESGFlow est conçu pour mixer les méthodes : le FEC couvre automatiquement les catégories comptables (1, 2, 3, 4, 5, 6), et vous pouvez ajouter des données physiques pour les autres catégories — données RH (cat. 7 trajets domicile-travail), données logistiques (cat. 9 transport aval), données produit (cat. 11 et 12), données financières (cat. 15 investissements). Vous pouvez aussi importer des facteurs d\'émission personnalisés pour votre secteur.'),
+                a: t('resources.scope3Fec.faq.a4', "Oui. Le FEC couvre surtout les catégories liées aux achats ; vous ajoutez des données physiques pour les autres : données RH (cat. 7), logistiques (cat. 9), produit (cat. 11 et 12) ou financières (cat. 15)."),
               },
             ].map((faq, i) => (
               <Faq key={i} q={faq.q} a={faq.a} />
@@ -566,13 +555,13 @@ export default function Scope3FecPage() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles className="h-5 w-5 text-emerald-400" />
-                <span className="text-emerald-300 text-sm font-semibold">{t('resources.scope3Fec.cta.badge', 'ESGFlow — Bilan Scope 3 en 1 clic')}</span>
+                <span className="text-emerald-300 text-sm font-semibold">{t('resources.scope3Fec.cta.badge', "ESGFlow — Bilan Scope 3")}</span>
               </div>
               <h2 className="text-2xl font-extrabold text-white mb-3">
                 {t('resources.scope3Fec.cta.title', "Importez votre FEC et obtenez votre bilan Scope 3 aujourd'hui")}
               </h2>
               <p className="text-slate-300 text-sm leading-relaxed">
-                {t('resources.scope3Fec.cta.body', "15 catégories GHG Protocol, facteurs ADEME 2024, export PDF certifiable — tout ce qu'il vous faut pour votre CSRD, SBTi et CDP, à partir de 249 €/mois.")}
+                {t('resources.scope3Fec.cta.body', "Les 15 catégories GHG Protocol, des facteurs ADEME et un import FEC pour démarrer votre bilan, à partir de 249 €/mois.")}
               </p>
             </div>
             <div className="flex flex-col gap-3">

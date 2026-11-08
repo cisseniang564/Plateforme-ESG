@@ -10666,7 +10666,7 @@
       },
       "bottomCta": {
         "title": "What if we automated all of this?",
-        "body": "ESGFlow automatically fills 80% of the checklist from your accounting, HR and energy data. 14-day free trial, no credit card.",
+        "body": "ESGFlow helps you track your ESRS indicators from imported accounting, HR and energy data. 14-day free trial, no credit card.",
         "cta": "Start my ESGFlow trial"
       }
     },
@@ -10804,7 +10804,7 @@
         "mnd": {
           "title": "Minimum Disclosure (MND) indicators maintained",
           "body1": "Omnibus I distinguishes <strong>MND (Mandatory Non-discretionary)</strong> indicators — mandatory for all in-scope entities — from optional indicators. The MNDs cover the essential data of the 10 ESRS topics (E1 to G1).",
-          "body2": "ESGFlow already incorporates this distinction: each indicator is marked MND or optional in the ESRS Gap Analysis module and the CSRD Report Builder."
+          "body2": "ESGFlow offers an ESRS Gap Analysis module to track your indicators; check whether each one is mandatory in the ESRS in force."
         }
       },
       "actions": {
@@ -10860,14 +10860,14 @@
           },
           "4": {
             "q": "Is the EU Taxonomy also streamlined by the Omnibus?",
-            "a": "Omnibus I also contains simplifications for EU Taxonomy reporting (Regulation 2020/852), notably by reducing the quantitative reporting obligations for certain activities. Companies subject to the Taxonomy should consult the amended texts for their specific scope. ESGFlow updates its Taxonomy modules in real time according to the official texts."
+            "a": "Omnibus I also contains simplifications for EU Taxonomy reporting (Regulation 2020/852). Affected companies should consult the amended texts for their scope. The ESGFlow Taxonomy catalogue is partial and may lag behind these texts."
           }
         }
       },
       "cta": {
         "badge": "ESGFlow — Ready for post-Omnibus",
         "title": "Prepare your ESG before your clients ask for it",
-        "body": "Carbon footprint, ESRS gap analysis, double materiality, CSRD report and EU Taxonomy — everything you need to respond to post-Omnibus pressures, starting at €249/month.",
+        "body": "Carbon footprint, ESRS gap analysis, double materiality, CSRD report preparation and EU Taxonomy tracking, from €249/month.",
         "button1": "Start free — 14 days",
         "button2": "Compare with competitors",
         "demoNote": "Or book a 30-min demo with a CSRD expert"
@@ -11054,8 +11054,8 @@
         },
         "2": {
           "category": "Carbon Footprint",
-          "title": "Scope 3 via FEC import: calculate your emissions in 1 click",
-          "excerpt": "Import your accounting entries file (FEC) from Sage or Pennylane and get your 15 GHG Protocol categories with the ADEME 2024 factors.",
+          "title": "Scope 3 via FEC import: a first estimate of your emissions",
+          "excerpt": "Import your accounting entries file and get a first spend-based estimate of your Scope 3 with ADEME factors.",
           "date": "May 8, 2026",
           "readTime": "8 min"
         },
@@ -11261,7 +11261,7 @@
         "heading": "What is the EU Taxonomy?",
         "body": "The EU Taxonomy (Regulation 2020/852/EU) is a classification system that defines what counts as an environmentally sustainable economic activity. It is the foundation of the European Green Deal, sustainable finance and the reporting obligations of Article 8 of the CSRD.",
         "warningTitle": "Only objectives 1 and 2 are operational at this stage",
-        "warningBody": "Only objectives 1 (mitigation) and 2 (adaptation) have detailed, enforceable technical criteria. Objectives 3 to 6 received their first delegated acts in 2023, but their criteria remain less comprehensive. ESGFlow integrates them progressively as the official texts are published."
+        "warningBody": "Only objectives 1 (mitigation) and 2 (adaptation) have detailed technical criteria. Objectives 3 to 6 received their first delegated acts in 2023 but remain less detailed. The ESGFlow catalogue is partial: always check it against the official texts."
       },
       "objectives": {
         "0": "Climate change mitigation",
@@ -11373,20 +11373,20 @@
         "intro": "A guided Taxonomy module, from NACE qualification to the final regulatory export.",
         "features": {
           "0": {
-            "title": "Wizard guided by economic activity (NACE code)",
-            "desc": "Identify your Taxonomy-eligible activities from your NACE code. The wizard guides you step-by-step for each activity."
+            "title": "Activity search by NACE code",
+            "desc": "Identify eligible activities in a catalogue of about fifty common activities, by NACE code, sector or description."
           },
           "1": {
-            "title": "SC + DNSH + MinSafeguards checklist per objective",
-            "desc": "For each activity, ESGFlow checks the 3 cumulative conditions with criteria updated in real time according to the official texts."
+            "title": "SC + DNSH + minimum safeguards tracking",
+            "desc": "For each activity, you record whether the three cumulative conditions are met; ESGFlow derives the alignment status. Criteria are not updated automatically."
           },
           "2": {
-            "title": "Automatic calculation of the 3 KPIs (revenue, CapEx, OpEx)",
-            "desc": "In accordance with Delegated Regulation 2021/2178/EU. ESGFlow automatically calculates and breaks down your KPIs by activity and by objective."
+            "title": "Calculation of the 3 KPIs (turnover, CapEx, OpEx)",
+            "desc": "ESGFlow calculates your eligibility and alignment percentages from the amounts entered per activity. Formatting the regulatory tables remains your responsibility."
           },
           "3": {
-            "title": "Evidence Vault: link your supporting documents to each criterion",
-            "desc": "Attach certifications, energy assessments and attestations directly to each Taxonomy criterion for a complete, auditable documentary trail."
+            "title": "Evidence link per activity",
+            "desc": "Attach a link to your supporting document (certification, energy audit, attestation) to each activity."
           }
         }
       },
@@ -11405,7 +11405,7 @@
         },
         "3": {
           "q": "Are objectives 3 to 6 already applicable?",
-          "a": "The Water (3), Circular economy (4), Pollution (5) and Biodiversity (6) objectives received their first delegated acts in 2023. They are applicable but still less detailed compared to objectives 1 and 2, whose criteria cover the vast majority of sectors. ESGFlow integrates them as the official technical texts are published."
+          "a": "The Water (3), Circular economy (4), Pollution (5) and Biodiversity (6) objectives received their first delegated acts in 2023. They apply but are less detailed than objectives 1 and 2. The ESGFlow catalogue remains partial for these objectives."
         },
         "4": {
           "q": "How did Omnibus I change Taxonomy reporting?",
@@ -11416,7 +11416,7 @@
       "cta": {
         "label": "ESGFlow — EU Taxonomy Module",
         "title": "Your Taxonomy reporting, with no confusion between eligibility and alignment",
-        "body": "NACE wizard, SC + DNSH + MinSafeguards checklist, automatic calculation of the 3 KPIs and Evidence Vault — everything you need for an auditable Taxonomy report, from €249/month.",
+        "body": "NACE search, SC + DNSH + minimum safeguards tracking, calculation of the 3 KPIs and links to your evidence, from €249/month.",
         "button1": "Start for free — 14 days",
         "button2": "Read also: Omnibus CSRD Guide"
       },
@@ -11772,33 +11772,33 @@
       },
       "esgflow": {
         "title": "Build your carbon footprint with ESGFlow",
-        "intro": "ESGFlow includes a carbon-footprint module <strong>compliant with the GHG Protocol and BEGES</strong> in all paid plans (from €249/month). The benefits:",
+        "intro": "ESGFlow includes a carbon footprint module <strong>based on the GHG Protocol, with a BEGES export</strong> in all paid plans (from €249/month). It offers:",
         "feat0": {
           "t": "Scopes 1/2/3 GHG Protocol",
-          "d": "All 3 scopes with the 15 Scope 3 categories per the global standard."
+          "d": "The 3 scopes, with the 15 GHG Protocol Scope 3 categories available for data entry."
         },
         "feat1": {
-          "t": "ADEME 2024 factors",
-          "d": "French Base Carbone® integrated + Climatiq for international Scope 3."
+          "t": "ADEME factors (v23)",
+          "d": "About fifty factors from the ADEME Base Carbone® for Scope 3 and commuting."
         },
         "feat2": {
-          "t": "FEC import scope 3 spend",
-          "d": "Import your accounting FEC, the spend-based Scope 3 is calculated in 2 min."
+          "t": "FEC import (spend-based)",
+          "d": "Import your FEC: expense accounts are converted into emission estimates, to be reviewed before use."
         },
         "feat3": {
-          "t": "Enedis Scope 2 connector",
-          "d": "Electricity consumption automated per site, location & market-based method."
+          "t": "Enedis import (CSV)",
+          "d": "Import your Enedis electricity consumption exports to feed Scope 2."
         },
         "feat4": {
-          "t": "BEGES + ESRS E1 report",
-          "d": "PDF export compatible with the ADEME BEGES platform and audited CSRD."
+          "t": "BEGES export (.xlsx)",
+          "d": "BEGES.xlsx file in the ADEME format, to be reviewed and uploaded by you."
         },
         "feat5": {
-          "t": "SBTi trajectory alerts",
-          "d": "Automatic tracking of your 1.5°C alignment with annual reminders."
+          "t": "Decarbonisation plan",
+          "d": "Compare your plan with a 1.5°C reference trajectory; SBTi validation remains up to the SBTi."
         },
         "ctaTitle": "Test on your real data",
-        "ctaBody": "Import your FEC, we calculate your Scope 3 in less than 5 minutes. 14-day free trial for mid-caps, no card required.",
+        "ctaBody": "Import your FEC to get a first spend-based Scope 3 estimate. 14-day free trial, no credit card.",
         "ctaButton": "Start my trial"
       },
       "faq": {
@@ -11828,7 +11828,7 @@
         },
         "6": {
           "q": "Which software to do your carbon footprint?",
-          "a": "ESGFlow includes the GHG Protocol carbon footprint with ADEME 2024 factors from the SME plan (€249/month)."
+          "a": "ESGFlow includes a GHG Protocol-based carbon footprint with ADEME factors and a BEGES export from the SME plan (€249/month)."
         },
         "7": {
           "q": "How long does a complete carbon footprint take?",
@@ -11893,7 +11893,7 @@
         "badge": "EXPERT GUIDE · 18 MIN READ",
         "titleLine1": "CSDDD — the due diligence duty",
         "titleLine2": "that forces the whole supply chain",
-        "subtitle": "EU directive 2024/1760 requires large groups to audit their suppliers on human rights and the environment. Direct consequence: <strong>even your SME will receive a questionnaire</strong> from 2027. Here's how to prepare.",
+        "subtitle": "EU Directive 2024/1760, amended by Omnibus I (Directive 2026/470), requires very large groups to carry out due diligence on their chains of activities. Possible consequence: <strong>even an SME may receive a questionnaire</strong> from its in-scope customers. Here is how to prepare.",
         "meta0": "Updated May 2026",
         "meta1": "Directive 2024/1760",
         "meta2": "Link ESRS S2 / 2017 law"
@@ -11909,11 +11909,11 @@
         "heading": "In 30 seconds",
         "tldrLabel": "⚡ TL;DR",
         "item0": "The <strong>CSDDD</strong> (Corporate Sustainability Due Diligence Directive, EU 2024/1760) requires large companies to exercise a <strong>due diligence duty across their entire value chain</strong> — human rights AND the environment.",
-        "item1": "Wave 1 applicable on <strong>26 July 2027</strong> (5,000+ employees or €1.5bn revenue), then 2028 and 2029.",
-        "item2": "Penalties: fines up to <strong>5% of global revenue</strong> + expanded civil liability + public naming and shaming.",
-        "item3": "The trickle-down effect: the large groups concerned will <strong>audit their SME/mid-cap suppliers</strong> via standardized questionnaires (EcoVadis, Sedex, VendorESG type).",
+        "item1": "Since Omnibus I, the CSDDD only targets companies with <strong>more than 5,000 employees AND more than €1.5bn net worldwide turnover</strong>. Transposition by <strong>26 July 2028</strong> at the latest, application from <strong>26 July 2029</strong>.",
+        "item2": "Penalties: fines capped at <strong>3% of net worldwide turnover</strong> + publication of the decision (naming and shaming). The harmonised EU civil liability regime was removed: national law applies.",
+        "item3": "The trickle-down effect: in-scope groups may ask their <strong>SME/mid-cap suppliers</strong> for information through questionnaires (EcoVadis, Sedex type). With the narrower scope, such requests will be fewer than first announced.",
         "item4": "Strong link with <strong>ESRS S2</strong> (CSRD): 'Value-chain workers' — same data, dual use.",
-        "item5": "The French <strong>2017 due diligence law</strong> remains applicable until full CSDDD transposition (~2027)."
+        "item5": "The French <strong>2017 duty of vigilance law</strong> remains applicable until the CSDDD is transposed."
       },
       "definition": {
         "heading": "What is the CSDDD?",
@@ -11925,13 +11925,13 @@
       },
       "periodes": {
         "heading": "Application timeline",
-        "intro": "The CSDDD enters into application progressively over 3 years, according to company size:",
+        "intro": "After Omnibus I, the CSDDD applies on a single date, from 26 July 2029:",
         "colWave": "Wave",
         "colScope": "Scope",
         "colDate": "Application date",
-        "wave1": "Wave 1",
-        "wave1Scope": "<strong>5,000+ employees</strong> AND €1,500M net global revenue",
-        "wave1Date": "26 July <strong>2027</strong>",
+        "wave1": "EU companies",
+        "wave1Scope": "<strong>5,000+ employees</strong> AND €1.5bn net worldwide turnover",
+        "wave1Date": "26 July <strong>2029</strong>",
         "wave2": "Wave 2",
         "wave2Scope": "3,000+ employees AND €900M revenue",
         "wave2Date": "26 July 2028",
@@ -11939,20 +11939,20 @@
         "wave3Scope": "1,000+ employees AND €450M revenue",
         "wave3Date": "26 July 2029",
         "nonEu": "Non-EU companies",
-        "nonEuScope": "EU revenue > €450M",
-        "nonEuDate": "per equivalent wave",
-        "note": "Note: the transposition of the CSDDD into French law must take place before 26 July 2026. The French 2017 due diligence law will be amended or replaced on that occasion."
+        "nonEuScope": "EU turnover > €1.5bn",
+        "nonEuDate": "26 July 2029",
+        "note": "Note: transposition into French law is due by 26 July 2028 at the latest. Check progress with official sources; the 2017 law applies until then."
       },
       "qui": {
         "heading": "Who is concerned?",
-        "directHeading": "Directly (~6,000 EU companies)",
+        "directHeading": "Directly (a small number of very large groups)",
         "directIntro": "All EU companies that, over 2 consecutive financial years, exceed <strong>cumulatively</strong>:",
-        "directItem0": "The <em>annual average</em> employee threshold (1,000+ in the final wave)",
-        "directItem1": "The net global revenue threshold (€450M+ in the final wave)",
-        "directFooter": "Plus non-EU companies generating > €450M revenue in the EU.",
+        "directItem0": "More than <em>5,000 employees</em> on annual average",
+        "directItem1": "More than €1.5bn net worldwide turnover",
+        "directFooter": "Plus non-EU companies with more than €1.5bn turnover in the EU.",
         "indirectHeading": "Indirectly (~several hundred thousand EU companies — including your SME)",
         "dominoTitle": "⚠ The domino effect that concerns you",
-        "dominoBody": "Companies concerned must identify and audit their <strong>direct AND indirect business partners</strong>. In concrete terms, if you supply Carrefour, Total, EDF, Orange, Decathlon or Bouygues, they will send you a CSDDD audit questionnaire from 2027 — and make contract renewal conditional on your compliance.",
+        "dominoBody": "In-scope companies must identify and address risks among their <strong>business partners</strong>, prioritising where risks are most severe. If you supply a very large group, it may send you a due diligence questionnaire and take it into account in its business relationship.",
         "sectorsHeading": "Sectors with very high exposure",
         "sectors": {
           "0": {
@@ -12054,15 +12054,15 @@
       "sanctions": {
         "heading": "Penalties and civil liability",
         "adminHeading": "Administrative penalties",
-        "adminItem0": "Fine up to <strong>5% of consolidated net global revenue</strong> (art. 27)",
+        "adminItem0": "Fine capped at <strong>3% of net worldwide turnover</strong> (cap set by the final Omnibus I text)",
         "adminItem1": "Publication of the decision and the company's name (\"naming and shaming\")",
-        "adminItem2": "Decision by a designated <strong>national supervisory authority</strong> (in France: DGCCRF + ACPR expected)",
-        "civilHeading": "Expanded civil liability (art. 29)",
-        "civilP1": "This is the major legal novelty: the victims of the harm (wronged workers, affected communities, mandated NGOs) can take legal action <strong>directly against the French company</strong>, even when the harm occurred at a third-party supplier abroad.",
+        "adminItem2": "Decision by a <strong>national supervisory authority</strong> designated by each Member State",
+        "civilHeading": "Civil liability",
+        "civilP1": "Omnibus I removed the originally planned harmonised EU civil liability regime. Corporate liability therefore remains governed by each Member State's national law (in France, ordinary law and the 2017 law).",
         "civilItem0": "Minimum limitation period: <strong>5 years</strong> (instead of the usual 2-3 years)",
         "civilItem1": "Eased burden of proof for claimants",
         "civilItem2": "Possibility of collective action via unions and NGOs",
-        "civilFooter": "In concrete terms: a worker exploited at an Indian subcontractor of a large French group will be able to sue it before the French labour court (Prud'hommes) or commercial court."
+        "civilFooter": "Document your due diligence approach: it is your best protection, whichever regime applies."
       },
       "methode": {
         "heading": "7-step method to prepare",
@@ -12076,31 +12076,31 @@
       },
       "esgflow": {
         "heading": "Implementing the CSDDD with ESGFlow",
-        "intro": "ESGFlow's <strong>Supply Chain ESG</strong> module covers CSDDD + ESRS S2 obligations in a single tool:",
+        "intro": "The ESGFlow <strong>Supply Chain ESG</strong> module helps prepare a due diligence approach (CSDDD, 2017 law) and ESRS S2 data. It does not replace legal advice or your own audits:",
         "features": {
           "0": {
             "t": "Supplier mapping",
-            "d": "Excel or CSV import of your supplier directory, automatic scoring by country × sector."
+            "d": "Excel import of your supplier directory (template provided), risk levels and a likelihood/impact matrix."
           },
           "1": {
-            "t": "Signed code of conduct",
-            "d": "Ready-to-customize template, automated sending and collection of electronic signatures."
+            "t": "Supplier profile",
+            "d": "Legal information, ESG score, assessment history and supporting documents per supplier."
           },
           "2": {
-            "t": "Audit questionnaires",
-            "d": "EcoVadis-compatible templates, email sending, auto follow-ups, centralized scoring."
+            "t": "Supplier questionnaires",
+            "d": "Send an ESG questionnaire through a secure link (90 days), no account needed for the supplier; response tracking."
           },
           "3": {
             "t": "Complaints register",
-            "d": "Anonymous public portal + internal handling workflow (assignment, deadline, corrective action)."
+            "d": "Anonymous public whistleblowing channel to receive alerts."
           },
           "4": {
             "t": "Corrective action plans",
-            "d": "For each non-compliance, a SMART plan with owner, deadline, monitoring indicators."
+            "d": "Document recommended measures for each at-risk supplier (manual follow-up)."
           },
           "5": {
-            "t": "Annual CSDDD report",
-            "d": "PDF generation + direct integration into the CSRD report ESRS S2 section."
+            "t": "Data for ESRS S2",
+            "d": "Supplier data feeds the preparation of the ESRS S2 section of your report."
           }
         },
         "ctaTitle": "Start your supplier due diligence",
@@ -12110,31 +12110,31 @@
       "faq": {
         "0": {
           "q": "Is my 100-employee SME subject to the CSDDD?",
-          "a": "Directly, no — the CSDDD applies only to companies with >1,000 employees and >€450M revenue. Indirectly, yes if you are a supplier to a large group concerned: they will audit you."
+          "a": "Directly, no — the CSDDD only targets companies with more than 5,000 employees and €1.5bn turnover. Indirectly, you may receive requests from a large in-scope customer."
         },
         "1": {
           "q": "What is the difference between the CSDDD and the French due diligence law?",
-          "a": "The French 2017 law targets ~250 FR companies. The CSDDD extends to ~6,000 EU companies with a harmonized framework, stronger penalties (5% of global revenue) and expanded civil liability. The two coexist until the end of 2027."
+          "a": "The 2017 French law targets very large French companies (5,000 employees in France or 10,000 worldwide). The CSDDD sets a harmonised EU framework, with administrative fines capped at 3% of net worldwide turnover."
         },
         "2": {
           "q": "What is the CSDDD application timeline?",
-          "a": "Wave 1 (5,000+ empl., €1.5bn revenue): 26 July 2027. Wave 2 (3,000+ empl., €900M): 26 July 2028. Wave 3 (1,000+ empl., €450M): 26 July 2029."
+          "a": "Transposition by 26 July 2028 at the latest, application from 26 July 2029 for companies with more than 5,000 employees and €1.5bn net turnover (Omnibus I, Directive 2026/470)."
         },
         "3": {
           "q": "What penalties for non-compliance?",
-          "a": "Fines up to 5% of net global revenue. Mandatory public naming and shaming. Expanded civil liability: victims can act directly against the French company even for harm abroad."
+          "a": "Fines capped at 3% of net worldwide turnover and publication of the decision. The harmonised EU civil liability regime was removed: national law applies."
         },
         "4": {
           "q": "How does ESGFlow help with compliance?",
-          "a": "Supply Chain ESG module included from the mid-cap plan: supplier mapping, audit questionnaires, action-plan tracking, complaints register. Compliant with ESRS S2 and CSDDD."
+          "a": "The Supply Chain ESG module (included from the SME plan) lets you map suppliers, send them questionnaires, track risks and receive reports. It helps prepare the approach but does not guarantee compliance."
         },
         "5": {
           "q": "Does the CSDDD replace the French 2017 law?",
-          "a": "It will replace it after full transposition (~July 2026 in theory). In practice, the 2 regimes coexist and you must comply with the more demanding of the two during the transition period."
+          "a": "Not until the CSDDD is fully transposed (July 2028 at the latest, applying from July 2029). Until then, the 2017 law continues to apply."
         },
         "6": {
           "q": "What documents should I prepare to answer a client CSDDD questionnaire?",
-          "a": "Signed supplier code of conduct, human-rights policy, risk mapping, recent audit results, complaints mechanism, corrective action plan. ESGFlow provides templates for all these documents."
+          "a": "Human rights policy, supplier code of conduct, risk mapping, recent audit results, grievance mechanism, corrective action plan. ESGFlow does not provide templates for these; it helps centralise supplier information."
         },
         "heading": "Frequently asked questions"
       },
@@ -12180,11 +12180,11 @@
         "badge": "Carbon Footprint · May 2026",
         "readTime": "8 min read",
         "titleLine1": "Scope 3 via FEC import:",
-        "titleLine2": "calculate your indirect emissions in 1 click",
-        "subtitle": "Import your Accounting Entries File (FEC) from Sage, Cegid or Pennylane and automatically obtain your 15 GHG Protocol categories with ADEME 2024 emission factors.",
+        "titleLine2": "estimate your indirect emissions from your FEC",
+        "subtitle": "Import your accounting entries file and get a first estimate of your Scope 3 emissions using the spend-based method, with ADEME factors.",
         "pill1": "15 GHG Protocol categories",
-        "pill2": "ADEME 2024 factors",
-        "pill3": "Sage · Cegid · Pennylane"
+        "pill2": "ADEME factors",
+        "pill3": "Standard FEC format"
       },
       "scope3": {
         "badge": "Understanding Scope 3",
@@ -12227,10 +12227,10 @@
         "trad5": "<strong>3 to 6 months of work</strong> for a partial result",
         "fecTitle": "FEC method with ESGFlow",
         "fec1": "FEC export from your existing accounting software",
-        "fec2": "Drag-and-drop import into ESGFlow",
-        "fec3": "Automatic reading of accounts 60x, 61x, 62x",
-        "fec4": "ADEME 2024 factors applied automatically",
-        "fec5": "<strong>15 complete categories in 1 click</strong>",
+        "fec2": "FEC file import in ESGFlow",
+        "fec3": "Reading of expense accounts (60x to 62x)",
+        "fec4": "ADEME factors applied through spend ratios",
+        "fec5": "<strong>Estimate to review before use</strong>",
         "compareTitle": "Quick comparison",
         "beforeLabel": "Before",
         "before1": "6 months",
@@ -12238,40 +12238,40 @@
         "before3": "Missing data",
         "before4": "Frequent errors",
         "afterLabel": "After",
-        "after1": "1 click",
+        "after1": "Import",
         "after2": "FEC imported",
-        "after3": "15 categories",
-        "after4": "ADEME 2024 factors",
+        "after3": "Estimate",
+        "after4": "ADEME factors",
         "fecBoxTitle": "What is the FEC (Accounting Entries File)?",
-        "fecBoxBody": "The FEC is a standardized file (NF Z55-002) that <strong>any accounting software certified in France</strong> must be able to generate. Introduced by the 2014 Finance Act for tax audits, it contains all the accounting entries for a fiscal year. ESGFlow reads accounts <strong>60x</strong> (purchases of materials and goods), <strong>61x</strong> (external services) and <strong>62x</strong> (other external services) to extract expenses by GHG Protocol category and apply the <strong>ADEME 2024 emission factors</strong>."
+        "fecBoxBody": "The FEC is a standardised file (NF Z55-002) that <strong>any certified accounting software in France</strong> must be able to generate. Introduced by the 2014 finance act for tax audits, it contains all of a financial year's accounting entries. ESGFlow reads expense accounts (<strong>60x</strong> to <strong>62x</strong>) and applies spend-based emission factors from the ADEME Base Carbone."
       },
       "comment": {
         "badge": "How it works",
         "title": "How the FEC import works",
-        "intro": "Four steps are enough to go from your accounting software to a complete, certifiable Scope 3 assessment.",
+        "intro": "Four steps are enough to go from your accounting software to a first Scope 3 estimate, to be completed and reviewed.",
         "step1": {
           "title": "Export your FEC from Sage / Cegid / Pennylane",
           "desc": "In your accounting software, open the \"Accounting export\" or \"DGFiP export\" menu and choose the FEC format (.txt or standardized .csv extension). This takes less than 2 minutes on Sage 100, Cegid, Pennylane, EBP or Quadratus."
         },
         "step2": {
           "title": "Import the file into ESGFlow",
-          "desc": "Drag and drop your FEC file into ESGFlow or click \"Browse\". ESGFlow automatically validates the file structure (NF Z55-002 columns) and tells you if any data is missing or malformed."
+          "desc": "Import your FEC file into ESGFlow. The file structure is checked (NF Z55-002 columns) and format anomalies are flagged."
         },
         "step3": {
-          "title": "ESGFlow analyzes the accounts and applies the ADEME 2024 factors",
-          "desc": "The calculation engine reads accounts 60x (purchases), 61x (services) and 62x (other services), maps them to the 15 GHG Protocol categories and multiplies each amount by the corresponding ADEME 2024 emission factor. A quality score is assigned to each category."
+          "title": "ESGFlow converts expense accounts into estimates",
+          "desc": "The engine reads expense accounts, maps them to GHG Protocol categories and applies a spend-based emission factor to each amount. Results are orders of magnitude."
         },
         "step4": {
           "title": "Get your complete Scope 3 assessment",
-          "desc": "ESGFlow generates your Scope 3 assessment with a breakdown by category, interactive charts, year-over-year comparison and a certifiable PDF / Excel export. You can enrich the categories with additional physical data to improve accuracy."
+          "desc": "Review your Scope 3 estimate by category. You can complete it with physical data (kWh, km, tonnes) to improve accuracy."
         }
       },
       "categories": {
         "badge": "Full coverage",
         "title": "The 15 GHG Protocol categories covered",
-        "intro": "ESGFlow automatically calculates the categories available from the FEC and flags the categories requiring additional data.",
+        "intro": "The FEC mainly feeds categories linked to purchases and spending; other categories require additional data.",
         "legend": {
-          "auto": "Auto FEC ✓ — calculated automatically",
+          "auto": "Estimable from the FEC",
           "partial": "Partial FEC — mixed data",
           "required": "Data required — additional entry"
         },
@@ -12290,7 +12290,7 @@
         "cat13": "Downstream leased assets",
         "cat14": "Franchises",
         "cat15": "Financial investments",
-        "note": "Categories marked \"Data required\" can be entered manually or imported from other sources (HR, logistics, product data). ESGFlow generates a quality score from 0 to 100 for your overall assessment."
+        "note": "Categories marked \"Data required\" are entered manually or imported (HR, logistics, product data). No automatic quality score is computed."
       },
       "exemples": {
         "badge": "Real-world cases",
@@ -12334,7 +12334,7 @@
         },
         "item3": {
           "title": "CDP — Climate questionnaire: Scope 3 scored",
-          "desc": "The CDP Climate questionnaire includes a dedicated Scope 3 section. Companies that fail to report it lose points and risk a C or D score. ESGFlow generates CDP-ready tables for your annual submission."
+          "desc": "The CDP Climate questionnaire includes a dedicated Scope 3 section. ESGFlow data can serve as a working basis; ESGFlow does not generate submission-ready CDP tables."
         },
         "item4": {
           "title": "Supply chain: your customers will ask for your data",
@@ -12342,8 +12342,8 @@
         }
       },
       "ademe": {
-        "title": "Why the ADEME 2024 factors?",
-        "body": "ADEME's Base Empreinte® is the French reference for emission factors. Updated annually, it covers more than <strong>3,000 expense items</strong> with factors validated by sector experts. ESGFlow integrates the 2024 version and updates it as soon as ADEME publishes new data.",
+        "title": "Why ADEME factors?",
+        "body": "The ADEME Base Empreinte® is the French reference for emission factors, validated by sector experts. ESGFlow includes a selection (Base Carbone v23), updated with each platform release.",
         "stat1": {
           "label": "Available factors",
           "value": "3,000+"
@@ -12362,16 +12362,16 @@
         "q1": "Does my accounting software generate a FEC?",
         "a1": "Yes. All accounting software certified in France generates the FEC — it has been a legal requirement since 2014 to facilitate tax audits by the DGFiP. Sage 100, Cegid, Pennylane, EBP, Quadratus, Ciel and most ERPs have an \"Export FEC\" or \"Export DGFiP\" menu. If you are unsure where to find it, contact your software vendor or your chartered accountant.",
         "q2": "How accurate is the FEC-based calculation?",
-        "a2": "The monetary (spend-based) method via FEC is recognized by the GHG Protocol as a level 1 approach — the most accessible. It is particularly well suited to Scope 3 categories 1, 3, 4, 5 and 6. Accuracy can be improved by replacing monetary factors with physical data (kWh, km, tonnes) when available. ESGFlow generates a quality score from 0 to 100 for each category, indicating where improvements are possible.",
+        "a2": "The spend-based method via the FEC is recognised by the GHG Protocol as a tier-1 approach, the most accessible. It suits a first estimate of purchase-related categories. Accuracy improves by replacing spend factors with physical data (kWh, km, tonnes).",
         "q3": "Is my FEC data confidential?",
-        "a3": "Yes. Your FEC file is processed on our infrastructure hosted by IONOS, and never shared with third parties or used for model training. You can delete your data at any time from your dashboard. ESGFlow is committed to GDPR compliance.",
+        "a3": "Your FEC file is processed on infrastructure hosted at IONOS. You can request deletion of your data. Detailed GDPR commitments are set out in the privacy policy.",
         "q4": "Can I supplement the FEC with other data sources?",
-        "a4": "Yes. ESGFlow is designed to mix methods: the FEC automatically covers the accounting categories (1, 2, 3, 4, 5, 6), and you can add physical data for the other categories — HR data (cat. 7 commuting), logistics data (cat. 9 downstream transport), product data (cat. 11 and 12), financial data (cat. 15 investments). You can also import custom emission factors for your sector."
+        "a4": "Yes. The FEC mainly covers purchase-related categories; you add physical data for the others: HR (cat. 7), logistics (cat. 9), product (cat. 11 and 12) or financial (cat. 15) data."
       },
       "cta": {
-        "badge": "ESGFlow — Scope 3 assessment in 1 click",
+        "badge": "ESGFlow — Scope 3 footprint",
         "title": "Import your FEC and get your Scope 3 assessment today",
-        "body": "15 GHG Protocol categories, ADEME 2024 factors, certifiable PDF export — everything you need for your CSRD, SBTi and CDP, from €249/month.",
+        "body": "The 15 GHG Protocol categories, ADEME factors and an FEC import to start your footprint, from €249/month.",
         "primaryBtn": "Start free — 14 days",
         "secondaryBtn": "Compare with competitors",
         "demoNote": "Or book a 30-min demo with a carbon footprint expert"
@@ -12405,7 +12405,7 @@
         "heading": "Contents"
       },
       "seo": {
-        "description": "Understand the CSRD, find out whether you are concerned, identify the 12 ESRS standards, conduct double materiality, collect the data and publish your first report. Complete guide for French SMEs and mid-caps, updated for Omnibus 2025.",
+        "description": "Understand the CSRD after Omnibus I, find out whether you are in scope, identify the ESRS, run the double materiality assessment, collect data and prepare your report. Guide for French SMEs and mid-caps.",
         "title": "Complete CSRD Guide for French SMEs and Mid-Caps — ESGFlow",
         "keywords": "CSRD, ESRS, SME, mid-cap, sustainability report, double materiality, EU taxonomy, carbon footprint, EFRAG, directive 2022/2464",
         "ogTitle": "Complete CSRD Guide for French SMEs and Mid-Caps",
@@ -12426,7 +12426,7 @@
         "title": "The complete CSRD guide<br/>for French SMEs and mid-caps",
         "subtitle": "Understand the obligations, find out whether you are concerned, run your first double-materiality analysis, collect the right data and publish your sustainability report — without a consulting firm and without 6 months of implementation.",
         "meta1": "Updated May 2026",
-        "meta2": "Includes Omnibus CSRD 2025",
+        "meta2": "Includes Omnibus I (Directive 2026/470)",
         "meta3": "Compliant with directive 2022/2464"
       },
       "tocCard": {
@@ -12437,9 +12437,9 @@
       "intro": {
         "title": "In 30 seconds: what to remember",
         "tldrLabel": "⚡ TL;DR",
-        "tldr1": "The <strong>CSRD</strong> requires ~50,000 European companies to publish an audited ESG report.",
-        "tldr2": "In France, wave 2 (2026 publication): ~9,500 companies with >250 employees.",
-        "tldr3": "The <strong>Omnibus</strong> of February 2025 raises the threshold to 1,000 employees and €450M revenue — but the “trickle-down” effect forces SMEs to get up to speed for their mid-cap/group customers.",
+        "tldr1": "The <strong>CSRD</strong> requires an audited sustainability report from large European companies; Omnibus I sharply reduced its scope.",
+        "tldr2": "Only companies with more than 1,000 employees AND €450m net turnover are now in scope; wave 2 reports in 2028 (financial year 2027).",
+        "tldr3": "<strong>Omnibus I</strong> (Directive 2026/470, in force 18 March 2026) raised the thresholds. The trickle-down effect may nevertheless lead in-scope customers to ask their SME/mid-cap suppliers for data.",
         "tldr4": "12 <strong>ESRS</strong> standards to cover (E1 to E5, S1 to S4, G1, plus the cross-cutting ESRS 2).",
         "tldr5": "The report must be <strong>audited</strong> (limited assurance) and <strong>structured in iXBRL</strong> for listed companies.",
         "tldr6": "Possible sanctions: administrative fines, being barred from certain public markets.",
@@ -12449,7 +12449,7 @@
         "title": "Understanding the CSRD in 5 minutes",
         "whatTitle": "What is the CSRD?",
         "whatP1": "The <strong>Corporate Sustainability Reporting Directive</strong> (CSRD, EU Directive 2022/2464) came into force on 5 January 2023. It replaces the NFRD (Non-Financial Reporting Directive) and considerably broadens the scope of companies required to publish a non-financial report.",
-        "whatP2": "Whereas the NFRD covered only ~11,700 large European companies, the CSRD ultimately targets ~50,000 companies — roughly 4× more. In France, an estimated <strong>9,500 companies</strong> are directly concerned by the main wave (2024-2026), and several tens of thousands indirectly through pressure from their customers.",
+        "whatP2": "Where the NFRD only covered ~11,700 large European companies, the CSRD originally targeted ~50,000. After Omnibus I the scope is reduced to a fraction of that number, but many companies may be approached indirectly by their customers.",
         "calendarTitle": "The application timeline",
         "cal": {
           "thWave": "Wave",
@@ -12458,36 +12458,36 @@
           "thPub": "Publication",
           "row1": {
             "wave": "Wave 1",
-            "scope": "Large companies already subject to the NFRD (listed, >500 employees)"
+            "scope": "Companies already subject to the NFRD"
           },
           "row2": {
             "wave": "Wave 2",
-            "scope": "<strong>All large companies</strong> (250+ emp., €40M+ revenue, €20M+ balance sheet)"
+            "scope": "<strong>More than 1,000 employees AND more than €450m net turnover</strong>, not previously in scope"
           },
           "row3": {
             "wave": "Wave 3",
             "scope": "Listed SMEs"
           },
           "row4": {
-            "wave": "Wave 4",
-            "scope": "Non-EU companies with significant EU activity"
+            "wave": "Non-EU groups",
+            "scope": "More than €450m EU turnover and an EU subsidiary or branch above €200m"
           }
         },
-        "omniTitle": "The Omnibus simplification (February 2025)",
-        "omniIntro": "In February 2025, the European Commission proposed a package of simplification measures, known as the <strong>“Omnibus”</strong>. The key points for SMEs:",
-        "omni1": "<strong>Raised threshold</strong>: wave 2 now only covers companies with 1,000+ employees (instead of 250) AND €450M+ revenue (instead of €40M)",
-        "omni2": "<strong>2-year postponement</strong>: for waves 2 and 3, pushed back to 2027 and 2028",
-        "omni3": "<strong>Sector-specific standards dropped</strong>: the sector ESRS planned for 2026 are cancelled",
-        "omni4": "<strong>Lighter audit</strong>: limited assurance maintained, the move toward reasonable assurance abandoned",
+        "omniTitle": "Omnibus I (adopted, in force since March 2026)",
+        "omniIntro": "The “Omnibus I” simplification package was adopted (Directive (EU) 2026/470, published 26 February 2026). Key points for SMEs:",
+        "omni1": "<strong>Higher thresholds</strong>: the CSRD now only targets companies with more than 1,000 employees AND more than €450m net turnover",
+        "omni2": "<strong>Two-year delay</strong>: wave 2 reports in 2028 for financial year 2027",
+        "omni3": "<strong>Sector standards removed</strong>: sector-specific ESRS will not be adopted",
+        "omni4": "<strong>Audit</strong>: limited assurance is kept, reasonable assurance is dropped",
         "omniBox": {
           "label": "📌 Implication for SMEs",
-          "body": "Many SMEs are <1>no longer</1> directly required to comply with the CSRD post-Omnibus. <strong>BUT</strong> large groups remain subject to it AND must report ESRS S2 (value chain), which pushes them to demand ESG data from their SME/mid-cap suppliers. The “voluntary” reporting market is therefore booming in parallel. <5>Read our full Omnibus guide →</5>"
+          "body": "Many SMEs are <em>no longer</em> directly required to report under the CSRD. <strong>BUT</strong> in-scope groups report on ESRS S2 (value chain) and may ask suppliers for data; such requests are however capped by the voluntary VSME standard. <Link to=\"/omnibus-csrd\" className=\"font-semibold underline\">Read our Omnibus guide →</Link>"
         }
       },
       "concernes": {
         "title": "Am I concerned?",
-        "thresholdTitle": "Threshold criteria (post-Omnibus 2025)",
-        "thresholdIntro": "A company is concerned if it exceeds <strong>2 of the 3 thresholds</strong> below over 2 consecutive financial years:",
+        "thresholdTitle": "Threshold criteria (after Omnibus I)",
+        "thresholdIntro": "An EU company is in scope if it exceeds <strong>both</strong> of the following thresholds (cumulative):",
         "card1": {
           "value": "1,000+",
           "label": "employees (annual average)"
@@ -12501,15 +12501,15 @@
           "label": "balance sheet total"
         },
         "specialTitle": "Special cases: you are concerned even below the thresholds",
-        "special1": "<strong>Listed SME</strong> on a European regulated market → wave 3 (2027 publication)",
+        "special1": "<strong>Listed SME</strong>: out of CSRD scope; voluntary reporting possible under the VSME standard",
         "special2": "<strong>Subsidiary of a listed group</strong> → consolidated into the group's report",
-        "special3": "<strong>Credit institution or insurer</strong> → obligation regardless of size",
-        "special4": "<strong>Non-EU company with ≥€150M EU revenue + an EU subsidiary or branch</strong> → wave 4",
+        "special3": "<strong>Subsidiary of an in-scope group</strong>: check whether consolidation exempts you from reporting",
+        "special4": "<strong>Non-EU company with more than €450m EU turnover + an EU subsidiary or branch above €200m</strong> → first report in 2029",
         "trickleTitle": "The trickle-down effect (the “real” issue for SMEs)",
         "trickleIntro": "Even if you exceed no threshold, your large-account customers <strong>will ask you for your ESG data</strong>. Why?",
         "trickle1": "They have to report their <strong>Scope 3</strong> (value-chain emissions, i.e. ~70% of their total emissions for a typical B2B service)",
         "trickle2": "ESRS S2 (“value-chain workers”) requires supplier social audits",
-        "trickle3": "The <strong>CSDDD</strong> directive (duty of vigilance) comes into force gradually 2027-2029 and requires human-rights + environmental risk assessments of suppliers",
+        "trickle3": "The <strong>CSDDD</strong> (due diligence) directive will apply from July 2029 to companies with more than 5,000 employees and €1.5bn turnover only",
         "trickle4": "<strong>Public tenders</strong> increasingly require ESG criteria (CSR = a weighted criterion ≥10% in ~40% of French public tenders in 2025)",
         "trickleOutro": "Bottom line: if you are an 80-employee SME supplying Total, EDF, Carrefour, Decathlon, Orano or any large listed group, expect to receive within 12 months an ESG questionnaire such as “VendorESG”, “EcoVadis” or a CSDDD audit. <strong>Having an ESG report ready gives you a concrete commercial advantage.</strong>"
       },
@@ -12659,7 +12659,7 @@
         "ext5": "<strong>INSEE (Sirene)</strong>: company data for supplier mapping",
         "ext6": "<strong>WRI Aqueduct</strong>: site water stress (E3)",
         "useCaseLabel": "🎯 ESGFlow use case",
-        "useCaseBody": "All these sources are pre-connectable in ESGFlow. You import your FEC once → we automatically calculate your spend-based Scope 3 with ADEME factors. You connect your Enedis account → your kWh sync daily. <1>See the demo →</1>"
+        "useCaseBody": "You can import your FEC (spend-based Scope 3 estimate with ADEME factors) and Enedis CSV exports. Other sources are entered or imported by file. <Link to=\"/register\" className=\"font-semibold underline\">Create an account →</Link>"
       },
       "report": {
         "title": "The report: structure and technical requirements",
@@ -12674,14 +12674,14 @@
         "audit2": "<strong>Internal control</strong> over ESG data (segregation of duties, hierarchical validation)",
         "audit3": "<strong>Traceability</strong> allowing source documents to be traced back in under 24 h",
         "auditBoxLabel": "🔒 How ESGFlow helps you pass the audit",
-        "auditBoxBody": "Each report generated in ESGFlow includes a <strong>SHA-256 fingerprint</strong> of the content, an automatic versioning system and a public endpoint <3>/api/v1/reports/verify</3> that your statutory auditor can query to verify the integrity of a received PDF — useful for your limited-assurance (CSRD) or reasonable-assurance (ISA 3410) work.",
+        "auditBoxBody": "Each PDF report generated in ESGFlow includes a <strong>SHA-256 fingerprint</strong>, a version number and a public endpoint <code className=\"bg-blue-100 px-1 rounded text-sm\">/api/v1/reports/verify</code> to verify the integrity of a received PDF. This eases exchanges with your statutory auditor without replacing their assurance work.",
         "deadlineTitle": "Publication deadlines",
         "deadlineBody": "The CSRD report is published with the management report, so <strong>within 6 months of the financial year-end</strong>. For a year ending 31/12, publication by 30/06 of the following year at the latest."
       },
       "sanctions": {
         "title": "Sanctions and risks",
         "intro": "The French legislator (CSRD transposition: ordinance of 6 December 2023) provided several mechanisms to enforce the obligation:",
-        "s1": "<strong>Administrative fine</strong> from the AMF of up to €3.75M (listed companies) or €50,000 (unlisted) in the event of failure or serious deficiency in publication",
+        "s1": "<strong>Penalties</strong> set by each Member State for failure to publish or serious deficiencies (check the French transposition)",
         "s2": "<strong>Statutory-auditor sanctions</strong>: refusal to certify, which blocks the approval of the accounts at the general meeting",
         "s3": "<strong>Legal action</strong> by NGOs or stakeholders for false or misleading information",
         "s4": "<strong>Exclusion from public tenders</strong> with ESG criteria (increasingly common)",
@@ -12691,26 +12691,26 @@
       },
       "esgflow": {
         "title": "How ESGFlow accelerates your CSRD compliance",
-        "intro": "ESGFlow is the French SaaS platform designed for SMEs and mid-caps that want to achieve CSRD compliance <strong>without a €15,000 consulting firm or 6 months of implementation</strong>.",
+        "intro": "ESGFlow is a SaaS platform for SMEs and mid-caps preparing their ESG reporting: data entry and import, ESRS indicator tracking, double materiality and exports. It replaces neither advice nor the audit.",
         "feat1": {
-          "title": "12 ready-made ESRS modules",
-          "desc": "E1 to E5, S1 to S4, G1, plus cross-cutting ESRS 2. All indicators pre-filled to EFRAG standards."
+          "title": "ESRS indicator tracking",
+          "desc": "An ESRS gap analysis (E1 to E5, S1 to S4, G1 and ESRS 2) to spot missing data. Indicators are not pre-filled."
         },
         "feat2": {
           "title": "Double-materiality matrix",
-          "desc": "Built-in tool to map your issues, gather stakeholders and lock down your scope."
+          "desc": "Map your issues, collect stakeholder views through surveys and keep validations."
         },
         "feat3": {
-          "title": "PDF + iXBRL report",
-          "desc": "One-click generation, customizable branding, content ready to insert into your management report."
+          "title": "PDF report and iXBRL preview",
+          "desc": "PDF report, iXBRL preview and validation (XHTML). Final ESEF filing remains to be done with your advisers."
         },
         "feat4": {
-          "title": "Certifiable audit trail",
-          "desc": "SHA-256 hash, automatic versioning, public verification endpoint — your auditor validates in 1 hour."
+          "title": "Audit trail",
+          "desc": "SHA-256 fingerprint, report versions and a public verification endpoint, to ease exchanges with your statutory auditor."
         },
         "feat5": {
-          "title": "Narrative AI (mid-cap+)",
-          "desc": "Assisted drafting for qualitative sections (policies, transition plans, climate governance)."
+          "title": "Assisted drafting (mid-cap plan)",
+          "desc": "Help drafting qualitative sections, to be reviewed and validated by your teams."
         },
         "feat6": {
           "title": "Data hosted by IONOS",
@@ -12724,21 +12724,21 @@
       "faq": {
         "title": "Frequently asked questions",
         "q1": "Is my 60-employee company concerned by the CSRD?",
-        "a1": "Directly, no (post-Omnibus threshold of 1,000 employees). Indirectly, yes if you supply large groups: they will ask you for your ESG data. Voluntary reporting recommended.",
+        "a1": "Directly, no (thresholds at 1,000 employees and €450m turnover). Indirectly, you may receive ESG data requests from large in-scope customers, within the limits of the voluntary VSME standard.",
         "q2": "What's the difference between the CSRD and the DPEF?",
-        "a2": "The DPEF (2017 law) covered ~3,000 French companies. The CSRD extends to the whole EU (~50,000 companies) with uniform technical standards (ESRS), a mandatory audit and an iXBRL format. The CSRD replaces the DPEF for the companies concerned.",
+        "a2": "The DPEF (2017 law) targeted large French companies. The CSRD introduces uniform standards (ESRS), mandatory assurance and a digital tagged format, for a scope reduced by Omnibus I. It replaces the DPEF for companies in scope.",
         "q3": "What budget should I plan for the first CSRD year?",
-        "a3": "Without a tool: €30-80k (consulting firm + statutory auditor). With ESGFlow: €2-5k/year subscription + €5-15k audit. Savings of 70-90%.",
+        "a3": "Cost varies widely with size and the support chosen (advisers, statutory auditor). A tool such as ESGFlow (from €249/month) helps centralise data but does not replace the audit or any adviser.",
         "q4": "How long to produce the first report?",
-        "a4": "With upfront preparation: 3-4 months (materiality matrix = 4-6 weeks, data collection = 6-8 weeks, drafting and audit = 4-6 weeks). ESGFlow speeds up collection and drafting by about 60%.",
+        "a4": "With upfront preparation, plan for several months (materiality matrix, data collection, drafting and audit). ESGFlow helps centralise collection, with no guaranteed timeframe.",
         "q5": "Is iXBRL mandatory for my unlisted SME?",
         "a5": "No. iXBRL is only mandatory for companies listed on a European regulated market. For others, a PDF is enough (but iXBRL helps the audit).",
         "q6": "What happens if I don't publish?",
-        "a6": "If you are legally required to: AMF fine (up to €3.75M listed / €50k unlisted), refusal to certify by the auditor, exclusion from public tenders. If you are not required to: no direct sanction, but loss of B2B opportunities with large accounts.",
+        "a6": "If you are legally required: penalties set by the Member State, possible refusal of certification by the statutory auditor. Otherwise: no direct penalty, but you may lose opportunities with large accounts.",
         "q7": "Can ESGFlow be used only for the carbon footprint?",
-        "a7": "Yes. The SME plan includes the Scope 1/2/3 carbon footprint per the GHG Protocol with the ADEME 2024 factors. You don't have to enable the other ESRS modules.",
+        "a7": "Yes. The SME plan includes a GHG Protocol-based carbon footprint with ADEME factors and a BEGES export. You do not have to use the other ESRS modules.",
         "q8": "How does the audit work with ESGFlow?",
-        "a8": "Each generated report includes a SHA-256 hash and a public verification URL. Your auditor receives the PDF and can verify integrity by opening /api/v1/reports/verify. All source data is traceable down to the accounting entry or the field measurement."
+        "a8": "Each generated PDF report carries a SHA-256 fingerprint and a version number; a public endpoint lets anyone verify its integrity. This eases exchanges with your statutory auditor without guaranteeing the audit outcome."
       },
       "more": {
         "title": "Go further",

@@ -268,7 +268,7 @@ export default function ChecklistCsrdPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-3">{t('resources.checklist.bottomCta.title', 'Et si on automatisait tout ça ?')}</h2>
           <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-            {t('resources.checklist.bottomCta.body', "ESGFlow remplit automatiquement 80 % de la check-list à partir de vos données comptables, RH et énergie. 14 jours d'essai gratuit, sans carte bancaire.")}
+            {t('resources.checklist.bottomCta.body', "ESGFlow vous aide à suivre vos indicateurs ESRS à partir de vos données comptables, RH et énergie importées. Essai gratuit 14 jours, sans carte bancaire.")}
           </p>
           <Link to="/register" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
             {t('resources.checklist.bottomCta.cta', 'Démarrer mon essai ESGFlow')} →

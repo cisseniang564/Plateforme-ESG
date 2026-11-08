@@ -331,7 +331,7 @@ export default function OmnibusCsrdPage() {
               </Trans>
             </p>
             <p className="text-sm text-blue-800 leading-relaxed">
-              {t('resources.omnibus.esrs.mnd.body2', 'ESGFlow intègre déjà cette distinction : chaque indicateur est marqué MND ou optionnel dans le module ESRS Gap Analysis et le CSRD Report Builder.')}
+              {t('resources.omnibus.esrs.mnd.body2', "ESGFlow propose un module ESRS Gap Analysis pour suivre vos indicateurs ; vérifiez le caractère obligatoire de chacun dans les ESRS en vigueur.")}
             </p>
           </div>
         </section>
@@ -416,7 +416,7 @@ export default function OmnibusCsrdPage() {
               },
               {
                 q: t('resources.omnibus.faq.items.4.q', "La Taxonomie UE est-elle aussi allégée par l'Omnibus ?"),
-                a: t('resources.omnibus.faq.items.4.a', "L'Omnibus I contient également des simplifications pour le reporting Taxonomie UE (règlement 2020/852), notamment en réduisant les obligations de reporting quantitatif pour certaines activités. Les entreprises soumises à la Taxonomie doivent consulter les textes amendés pour leur périmètre spécifique. ESGFlow met à jour ses modules Taxonomie en temps réel selon les textes officiels."),
+                a: t('resources.omnibus.faq.items.4.a', "L'Omnibus I contient également des simplifications pour le reporting Taxonomie UE (règlement 2020/852). Les entreprises concernées doivent consulter les textes amendés pour leur périmètre. Le catalogue Taxonomie d'ESGFlow est partiel et peut être en retard sur ces textes."),
               },
             ].map((faq, i) => (
               <Faq key={i} q={faq.q} a={faq.a} />
@@ -437,7 +437,7 @@ export default function OmnibusCsrdPage() {
                 {t('resources.omnibus.cta.title', 'Préparez votre ESG avant que vos clients vous le demandent')}
               </h2>
               <p className="text-slate-300 text-sm leading-relaxed">
-                {t('resources.omnibus.cta.body', "Bilan carbone, gap analysis ESRS, double matérialité, rapport CSRD et EU Taxonomie — tout ce qu'il vous faut pour répondre aux pressions post-Omnibus, à partir de 249 €/mois.")}
+                {t('resources.omnibus.cta.body', "Bilan carbone, gap analysis ESRS, double matérialité, préparation du rapport CSRD et suivi Taxonomie UE, à partir de 249 €/mois.")}
               </p>
             </div>
             <div className="flex flex-col gap-3">
