@@ -9577,7 +9577,7 @@
     "auditTrail": {
       "title": "Audit Trail & Traceability",
       "subtitle": "Detailed audit log with SHA-256 fingerprints per entry",
-      "description": "Trace every ESG action end to end: who changed what, when, why and with which source. Before/after versioning, attached supporting documents, SHA-256 fingerprints per entry and a complete export for your external auditors.",
+      "description": "Trace every ESG action end to end: who changed what, when, why and from which source. Before/after versioning, per-entry SHA-256 fingerprints and an export for your external auditors.",
       "benefits": {
         "0": {
           "title": "Complete log",
@@ -9614,12 +9614,12 @@
           "description": "Search the log by user, entity type (indicator, score, emission, etc.), action (creation, modification, deletion), period and keyword."
         },
         "4": {
-          "title": "Integrity alerts",
-          "description": "Automatic detection of attempts to modify the log. Immediate notification to administrators in case of an integrity anomaly."
+          "title": "Integrity check",
+          "description": "On-demand check of the audit chain: the platform recomputes the SHA-256 fingerprints and flags any break."
         },
         "5": {
-          "title": "Configurable retention",
-          "description": "Set the retention period of the audit log: 3 years (CSRD default), 5 years or 10 years depending on your regulatory and sector obligations."
+          "title": "Append-only log",
+          "description": "No log entry can be edited or deleted from the interface. The retention period is not yet configurable."
         },
         "6": {
           "title": "Dedicated auditor portal",
@@ -9655,7 +9655,7 @@
         },
         "3": {
           "question": "What is the retention period?",
-          "answer": "By default, the log is retained for 3 years in line with CSRD requirements. You can configure a retention of 5 or 10 years depending on your sector obligations (finance, energy, healthcare). Archived data remains viewable and exportable."
+          "answer": "The log is kept as long as your account is active. The retention period is not yet configurable; the retention period applicable to your records depends on your regulatory obligations."
         }
       },
       "related": {
@@ -10088,7 +10088,7 @@
     "supplyChain": {
       "title": "Supply Chain ESG & Due Diligence",
       "subtitle": "Assess, monitor and secure your suppliers' ESG performance",
-      "description": "Comply with the Duty of Vigilance, the CSDDD and the LkSG with a complete tool for supplier scoring, automated questionnaires and supply chain risk mapping. Run due diligence end to end.",
+      "description": "Comply with the Duty of Vigilance and the CSDDD with a supplier scoring, online questionnaire and supply chain risk mapping tool.",
       "benefits": {
         "0": {
           "title": "6-dimension scoring",
@@ -10096,15 +10096,15 @@
         },
         "1": {
           "title": "Automated questionnaires",
-          "description": "Send customized ESG questionnaires to your suppliers via a dedicated portal. Automatic reminders and real-time tracking."
+          "description": "Send ESG questionnaires to your suppliers through a secure link (valid for 90 days) and track the answers."
         },
         "2": {
           "title": "Risk mapping",
-          "description": "Identify at-risk suppliers with a probability/impact matrix. Automatic alerts on critical suppliers."
+          "description": "Identify at-risk suppliers with a probability/impact matrix."
         },
         "3": {
           "title": "Regulatory compliance",
-          "description": "Prepare for your obligations under the Duty of Vigilance (law 2017-399), the European CSDDD and the German LkSG."
+          "description": "Prepare your obligations under the French Duty of Vigilance law (2017-399) and the EU CSDDD."
         }
       },
       "capabilities": {
@@ -10114,23 +10114,23 @@
         },
         "1": {
           "title": "Dedicated supplier portal",
-          "description": "Your suppliers access a secure portal to answer questionnaires, upload their certifications and track their ESG score."
+          "description": "Your suppliers answer the questionnaire through a secure link, without creating an account."
         },
         "2": {
-          "title": "Corrective action plans",
-          "description": "Create improvement plans for each non-compliant supplier with milestones, owners and progress tracking."
+          "title": "Suppliers to follow up",
+          "description": "Spot at-risk suppliers and document the recommended measures in your vigilance plan (manual follow-up)."
         },
         "3": {
           "title": "Documented due diligence",
           "description": "Complete audit trail of your due diligence process: assessment dates, results, measures taken and remediation tracking."
         },
         "4": {
-          "title": "Import and enrichment",
-          "description": "Import your supplier base from your ERP or a CSV file. Automatic enrichment with INSEE and EcoVadis data."
+          "title": "Excel import",
+          "description": "Import your supplier base from an Excel workbook using the provided template, or enter suppliers manually."
         },
         "5": {
-          "title": "Critical supplier alerts",
-          "description": "Receive notifications when a supplier falls below an ESG score threshold or when a certification expires."
+          "title": "Risk levels",
+          "description": "Each supplier gets a risk level (low, medium, high, critical) based on its overall ESG score."
         },
         "6": {
           "title": "Regulatory reporting",
@@ -10140,7 +10140,7 @@
       "steps": {
         "0": {
           "title": "Import your suppliers",
-          "description": "Load your base from your ERP, a CSV or enter them manually. Automatic INSEE enrichment."
+          "description": "Load your base from an Excel workbook or enter it manually."
         },
         "1": {
           "title": "Assess and score",
@@ -10162,7 +10162,7 @@
         },
         "2": {
           "question": "Do my suppliers need to create an account?",
-          "answer": "No. Your suppliers receive a secure link to the ESGFlow supplier portal. They can answer the questionnaire, upload documents and view their score without creating an account."
+          "answer": "No. Your suppliers receive a secure link to the ESGFlow questionnaire and answer it without creating an account."
         },
         "3": {
           "question": "Can I use ESGFlow for the French Duty of Vigilance?",
