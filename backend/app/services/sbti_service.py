@@ -23,6 +23,7 @@ References
 ----------
 - SBTi Near-Term Criteria v5.x (en vigueur pour les validations jusqu'au 31 janvier 2027)
 - SBTi Corporate Net-Zero Standard V2.0 (11 juin 2026) : applicable aux validations à partir du 1er février 2027
+  (jeu de règles "v2" de ce module, sélectionné automatiquement par la date — voir ruleset_for)
 - SBTi Net-Zero Standard v1.2 (March 2024)
 - SBTi Corporate Manual v5.2
 """
@@ -30,7 +31,7 @@ from __future__ import annotations
 
 import io
 from dataclasses import dataclass, asdict
-from datetime import datetime
+from datetime import date, datetime
 from typing import List, Optional
 
 from app.models.sbti_commitment import SBTiCommitment
@@ -60,6 +61,19 @@ MAX_BASELINE_AGE_YEARS = 5
 # Scope 3 inclusion threshold (% of total emissions)
 SCOPE3_INCLUSION_THRESHOLD_PCT = 40.0
 
+# Jeux de règles : la version applicable dépend de la date de validation.
+#   v5 : Near-Term Criteria v5.x, validations jusqu'au 31 janvier 2027
+#   v2 : Corporate Net-Zero Standard V2.0, validations à partir du 1er février 2027
+RULESET_V5 = "v5"
+RULESET_V2 = "v2"
+V2_START = date(2027, 2, 1)
+V2_NEAR_TERM_HORIZON = 5  # V2.0 : cibles court terme sur 5 ans
+
+
+def ruleset_for(on: Optional[date] = None) -> str:
+    """Jeu de règles applicable à une date de soumission (aujourd'hui par défaut)."""
+    return RULESET_V2 if (on or date.today()) >= V2_START else RULESET_V5
+
 
 @dataclass
 class ValidationIssue:
@@ -77,6 +91,7 @@ class ValidationResult:
     warnings: int
     issues: List[ValidationIssue]
     summary_fr: str
+    ruleset: str = RULESET_V5
 
     def to_dict(self) -> dict:
         return {
@@ -85,6 +100,7 @@ class ValidationResult:
             "warnings": self.warnings,
             "issues": [asdict(i) for i in self.issues],
             "summary_fr": self.summary_fr,
+            "ruleset": self.ruleset,
         }
 
 
@@ -112,14 +128,29 @@ def _v2_readiness_notes(c: SBTiCommitment, horizon: int) -> List[ValidationIssue
     return notes
 
 
-def validate_commitment(c: SBTiCommitment) -> ValidationResult:
-    """Run all SBTi Criteria checks against a commitment."""
+def validate_commitment(c: SBTiCommitment, ruleset: Optional[str] = None) -> ValidationResult:
+    """Run all SBTi Criteria checks against a commitment.
+
+    ``ruleset`` : "v5" (Near-Term v5.x) ou "v2" (Net-Zero Standard V2.0). Par défaut,
+    déterminé par la date du jour (V2.0 à partir du 1er février 2027).
+    """
+    ruleset = ruleset or ruleset_for()
+    v2 = ruleset == RULESET_V2
     issues: List[ValidationIssue] = []
     now_year = datetime.utcnow().year
 
     # ── C1: Baseline age ────────────────────────────────────────────────
     baseline_age = now_year - c.baseline_year
-    if baseline_age > MAX_BASELINE_AGE_YEARS:
+    if v2:
+        # V2.0 : année de base = année la plus récente disposant de données complètes.
+        if baseline_age >= 2:
+            issues.append(ValidationIssue(
+                "warning", "C1",
+                f"Norme V2.0 : l'année de base doit être la plus récente disposant de données complètes ; "
+                f"{c.baseline_year} a {baseline_age} ans. Actualisez-la si des données plus récentes existent.",
+                "baseline_year",
+            ))
+    elif baseline_age > MAX_BASELINE_AGE_YEARS:
         issues.append(ValidationIssue(
             "blocker", "C1",
             f"L'année de base ({c.baseline_year}) a plus de {MAX_BASELINE_AGE_YEARS} ans. "
@@ -135,7 +166,15 @@ def validate_commitment(c: SBTiCommitment) -> ValidationResult:
 
     # ── C2: Near-term target horizon ────────────────────────────────────
     horizon = c.near_term_target_year - now_year
-    if horizon < MIN_NEAR_TERM_HORIZON:
+    if v2:
+        if horizon != V2_NEAR_TERM_HORIZON:
+            issues.append(ValidationIssue(
+                "blocker", "C2",
+                f"Norme V2.0 : la cible court terme couvre 5 ans à compter de la soumission "
+                f"({now_year + V2_NEAR_TERM_HORIZON}). Votre cible ({c.near_term_target_year}) est à {horizon} an(s).",
+                "near_term_target_year",
+            ))
+    elif horizon < MIN_NEAR_TERM_HORIZON:
         issues.append(ValidationIssue(
             "blocker", "C2",
             f"La cible court terme ({c.near_term_target_year}) est dans {horizon} an(s). "
@@ -151,7 +190,14 @@ def validate_commitment(c: SBTiCommitment) -> ValidationResult:
         ))
 
     # ── C3: Annual reduction rate matches method ───────────────────────
-    if horizon > 0 and c.near_term_reduction_pct is not None:
+    if v2:
+        issues.append(ValidationIssue(
+            "info", "C3",
+            "Norme V2.0 : plus de taux annuel fixe (ex. 4,2 %/an). L'ambition est calculée avec l'outil "
+            "officiel de la SBTi : vérifiez-y votre cible avant de soumettre.",
+            "near_term_reduction_pct",
+        ))
+    elif horizon > 0 and c.near_term_reduction_pct is not None:
         annual_rate = c.near_term_reduction_pct / horizon
         min_rate = MIN_ANNUAL_REDUCTION.get(c.method, 4.2)
         if c.method != "SDA" and annual_rate < min_rate:
@@ -189,13 +235,24 @@ def validate_commitment(c: SBTiCommitment) -> ValidationResult:
     # ── C7: Scope 3 inclusion ──────────────────────────────────────────
     if c.scope3_pct_of_total is not None and c.scope3_pct_of_total >= SCOPE3_INCLUSION_THRESHOLD_PCT:
         if c.scope3_target_pct is None or c.scope3_target_pct <= 0:
-            issues.append(ValidationIssue(
-                "blocker", "C7",
-                f"Le Scope 3 représente {c.scope3_pct_of_total:.0f}% des émissions totales "
-                f"(seuil SBTi : {SCOPE3_INCLUSION_THRESHOLD_PCT:.0f}%) — une cible Scope 3 "
-                f"distincte est obligatoire.",
-                "scope3_target_pct",
-            ))
+            if v2:
+                # V2.0 : le scope 3 n'est obligatoire que pour les entreprises de catégorie A,
+                # catégorie que ce dossier ne permet pas de déterminer.
+                issues.append(ValidationIssue(
+                    "warning", "C7",
+                    f"Le Scope 3 représente {c.scope3_pct_of_total:.0f}% des émissions totales. "
+                    f"Norme V2.0 : une cible Scope 3 n'est obligatoire que pour les entreprises de "
+                    f"catégorie A — confirmez votre catégorie auprès de la SBTi.",
+                    "scope3_target_pct",
+                ))
+            else:
+                issues.append(ValidationIssue(
+                    "blocker", "C7",
+                    f"Le Scope 3 représente {c.scope3_pct_of_total:.0f}% des émissions totales "
+                    f"(seuil SBTi : {SCOPE3_INCLUSION_THRESHOLD_PCT:.0f}%) — une cible Scope 3 "
+                    f"distincte est obligatoire.",
+                    "scope3_target_pct",
+                ))
         if not c.scope3_screening_completed:
             issues.append(ValidationIssue(
                 "warning", "C7",
@@ -226,12 +283,22 @@ def validate_commitment(c: SBTiCommitment) -> ValidationResult:
             "contact_email",
         ))
 
-    issues.extend(_v2_readiness_notes(c, horizon))
+    if v2:
+        issues.append(ValidationIssue(
+            "warning", "V2.0",
+            "Norme V2.0 : des cibles distinctes pour le scope 1 et le scope 2 sont requises (cible "
+            "combinée supprimée). Ce dossier ne distingue pas les deux : saisissez-les séparément "
+            "dans le portail SBTi.",
+            "near_term_scope_coverage",
+        ))
+    else:
+        issues.extend(_v2_readiness_notes(c, horizon))
 
     blockers = sum(1 for i in issues if i.severity == "blocker")
     warnings = sum(1 for i in issues if i.severity == "warning")
     ready = blockers == 0
 
+    label = "Net-Zero Standard V2.0" if v2 else "Near-Term v5.x"
     if ready and warnings == 0:
         summary = "Dossier prêt pour soumission — toutes les criteres SBTi sont validés."
     elif ready:
@@ -241,6 +308,7 @@ def validate_commitment(c: SBTiCommitment) -> ValidationResult:
             f"Pas encore prêt : {blockers} critère(s) bloquant(s). "
             f"Corrigez les éléments en rouge avant de soumettre."
         )
+    summary = f"[{label}] {summary}"
 
     return ValidationResult(
         is_submission_ready=ready,
@@ -248,6 +316,7 @@ def validate_commitment(c: SBTiCommitment) -> ValidationResult:
         warnings=warnings,
         issues=issues,
         summary_fr=summary,
+        ruleset=ruleset,
     )
 
 
