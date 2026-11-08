@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # ESGFlow Database Backup Script
 # Usage: ./scripts/backup-db.sh [--upload]
+#
+# Chiffrement : définir BACKUP_GPG_RECIPIENT (empreinte ou e-mail d'une clé PUBLIQUE
+# importée sur le serveur, cf. docs/BACKUP_ENCRYPTION.md). La clé privée ne doit PAS
+# rester sur le serveur : sans elle, une sauvegarde volée est illisible.
+# Sans BACKUP_GPG_RECIPIENT, la sauvegarde reste en clair et un avertissement est émis.
 # Schedule: add to crontab → 0 2 * * * /path/to/scripts/backup-db.sh
 
 set -euo pipefail
@@ -21,7 +26,15 @@ DB_HOST="${DATABASE_HOST:-localhost}"
 DB_PORT="${DATABASE_PORT:-5432}"
 
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-BACKUP_FILE="${BACKUP_DIR}/esgflow_${TIMESTAMP}.sql.gz"
+GPG_RECIPIENT="${BACKUP_GPG_RECIPIENT:-}"
+if [[ -n "$GPG_RECIPIENT" ]]; then
+  command -v gpg >/dev/null || { echo "ERREUR : gpg introuvable (apt install gnupg)" >&2; exit 1; }
+  gpg --list-keys "$GPG_RECIPIENT" >/dev/null 2>&1 || { echo "ERREUR : clé publique '${GPG_RECIPIENT}' absente du trousseau" >&2; exit 1; }
+  BACKUP_FILE="${BACKUP_DIR}/esgflow_${TIMESTAMP}.sql.gz.gpg"
+else
+  echo "[$(date)] AVERTISSEMENT : BACKUP_GPG_RECIPIENT non défini, sauvegarde NON chiffrée." >&2
+  BACKUP_FILE="${BACKUP_DIR}/esgflow_${TIMESTAMP}.sql.gz"
+fi
 
 mkdir -p "$BACKUP_DIR"
 
@@ -36,7 +49,21 @@ PGOPTIONS="-c app.bypass_rls=on" PGPASSWORD="${DATABASE_PASSWORD}" pg_dump \
   -d "$DB_NAME" \
   --no-owner \
   --no-acl \
-  | gzip > "$BACKUP_FILE"
+  | gzip \
+  | if [[ -n "$GPG_RECIPIENT" ]]; then
+      gpg --batch --yes --encrypt --recipient "$GPG_RECIPIENT" --trust-model always --output -
+    else
+      cat
+    fi > "$BACKUP_FILE"
+
+# Garde-fou : une sauvegarde vide ou illisible ne doit pas passer pour réussie
+if [[ ! -s "$BACKUP_FILE" ]]; then
+  echo "ERREUR : sauvegarde vide ($BACKUP_FILE)" >&2; rm -f "$BACKUP_FILE"; exit 1
+fi
+if [[ -n "$GPG_RECIPIENT" ]]; then
+  gpg --list-packets "$BACKUP_FILE" >/dev/null 2>&1 || { echo "ERREUR : fichier chiffré invalide" >&2; rm -f "$BACKUP_FILE"; exit 1; }
+fi
+chmod 600 "$BACKUP_FILE"
 
 echo "[$(date)] Backup saved: ${BACKUP_FILE} ($(du -sh "$BACKUP_FILE" | cut -f1))"
 
@@ -47,6 +74,6 @@ if [[ "${1:-}" == "--upload" ]] && command -v mc &>/dev/null; then
 fi
 
 # Retention: delete old backups
-find "$BACKUP_DIR" -name "esgflow_*.sql.gz" -mtime "+${RETENTION_DAYS}" -delete
+find "$BACKUP_DIR" \( -name "esgflow_*.sql.gz" -o -name "esgflow_*.sql.gz.gpg" \) -mtime "+${RETENTION_DAYS}" -delete
 echo "[$(date)] Cleaned up backups older than ${RETENTION_DAYS} days."
 echo "[$(date)] Backup complete."
