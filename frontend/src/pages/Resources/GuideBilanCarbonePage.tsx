@@ -84,7 +84,7 @@ export default function GuideBilanCarbonePage() {
         { "@type": "Question", "name": "Comment calculer son Scope 3 quand on n'a pas toutes les données ?",
           "acceptedAnswer": { "@type": "Answer", "text": "Méthode spend-based : montants d'achat (FEC) × facteur monétaire ADEME. Précision moyenne mais légalement acceptée." } },
         { "@type": "Question", "name": "Quel logiciel pour faire son bilan carbone ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "ESGFlow inclut le bilan carbone GHG Protocol avec facteurs ADEME 2024 dès le plan PME (249 €/mois)." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "ESGFlow inclut un bilan carbone basé sur le GHG Protocol, avec facteurs ADEME et export BEGES, dès le plan PME (249 €/mois)." } },
       ]
     },
   });
@@ -444,15 +444,15 @@ export default function GuideBilanCarbonePage() {
 
           <section id="esgflow" className="scroll-mt-24 mt-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('resources.guideBilanCarbone.esgflow.title', 'Faire son bilan carbone avec ESGFlow')}</h2>
-            <p><Trans i18nKey="resources.guideBilanCarbone.esgflow.intro">ESGFlow inclut un module bilan carbone <strong>conforme GHG Protocol et BEGES</strong> dans tous les plans payants (dès 249 €/mois). Les avantages :</Trans></p>
+            <p><Trans i18nKey="resources.guideBilanCarbone.esgflow.intro">ESGFlow inclut un module bilan carbone <strong>basé sur le GHG Protocol, avec un export BEGES</strong> dans tous les plans payants (dès 249 €/mois). Au programme :</Trans></p>
             <div className="grid md:grid-cols-2 gap-4 my-8">
               {[
-                { icon: Factory,    t: t('resources.guideBilanCarbone.esgflow.feat0.t', 'Scopes 1/2/3 GHG Protocol'),  d: t('resources.guideBilanCarbone.esgflow.feat0.d', 'Les 3 scopes avec les 15 catégories Scope 3 selon le standard mondial.') },
-                { icon: TrendingUp, t: t('resources.guideBilanCarbone.esgflow.feat1.t', 'Facteurs ADEME 2024'),         d: t('resources.guideBilanCarbone.esgflow.feat1.d', 'Base Carbone® française intégrée + Climatiq pour le Scope 3 international.') },
-                { icon: Truck,      t: t('resources.guideBilanCarbone.esgflow.feat2.t', 'Import FEC scope 3 spend'),    d: t('resources.guideBilanCarbone.esgflow.feat2.d', 'Importez votre FEC comptable, le Scope 3 spend-based est calculé en 2 min.') },
-                { icon: Zap,        t: t('resources.guideBilanCarbone.esgflow.feat3.t', 'Connecteur Enedis Scope 2'),   d: t('resources.guideBilanCarbone.esgflow.feat3.d', 'Consommation électrique automatisée par site, méthode location & market based.') },
-                { icon: FileText,   t: t('resources.guideBilanCarbone.esgflow.feat4.t', 'Rapport BEGES + ESRS E1'),     d: t('resources.guideBilanCarbone.esgflow.feat4.d', 'Export PDF compatible plateforme BEGES ADEME et CSRD audité.') },
-                { icon: AlertTriangle, t: t('resources.guideBilanCarbone.esgflow.feat5.t', 'Alertes trajectoire SBTi'), d: t('resources.guideBilanCarbone.esgflow.feat5.d', 'Suivi automatique de votre alignement 1,5°C avec rappels annuels.') },
+                { icon: Factory,    t: t('resources.guideBilanCarbone.esgflow.feat0.t', 'Scopes 1/2/3 GHG Protocol'),  d: t('resources.guideBilanCarbone.esgflow.feat0.d', "Les 3 scopes, avec les 15 catégories Scope 3 du GHG Protocol disponibles à la saisie.") },
+                { icon: TrendingUp, t: t('resources.guideBilanCarbone.esgflow.feat1.t', "Facteurs ADEME (v23)"),         d: t('resources.guideBilanCarbone.esgflow.feat1.d', "Une cinquantaine de facteurs de la Base Carbone® ADEME pour le Scope 3 et les trajets domicile-travail.") },
+                { icon: Truck,      t: t('resources.guideBilanCarbone.esgflow.feat2.t', "Import FEC (spend-based)"),    d: t('resources.guideBilanCarbone.esgflow.feat2.d', "Importez votre FEC : les comptes de charges sont convertis en estimations d'émissions, à relire avant usage.") },
+                { icon: Zap,        t: t('resources.guideBilanCarbone.esgflow.feat3.t', "Import Enedis (CSV)"),   d: t('resources.guideBilanCarbone.esgflow.feat3.d', "Importez vos exports de consommation électrique Enedis pour alimenter le Scope 2.") },
+                { icon: FileText,   t: t('resources.guideBilanCarbone.esgflow.feat4.t', "Export BEGES (.xlsx)"),     d: t('resources.guideBilanCarbone.esgflow.feat4.d', "Fichier BEGES.xlsx au format ADEME, à relire puis à déposer vous-même.") },
+                { icon: AlertTriangle, t: t('resources.guideBilanCarbone.esgflow.feat5.t', "Plan de décarbonation"), d: t('resources.guideBilanCarbone.esgflow.feat5.d', "Comparez votre plan à une trajectoire de référence 1,5°C ; la validation SBTi reste de son ressort.") },
               ].map((f, i) => {
                 const I = f.icon;
                 return (
@@ -468,7 +468,7 @@ export default function GuideBilanCarbonePage() {
             </div>
             <div className="my-8 p-6 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-2xl text-white">
               <h3 className="text-2xl font-bold mb-2">{t('resources.guideBilanCarbone.esgflow.ctaTitle', 'Tester sur vos vraies données')}</h3>
-              <p className="text-emerald-50 mb-5">{t('resources.guideBilanCarbone.esgflow.ctaBody', 'Importez votre FEC, on calcule votre Scope 3 en moins de 5 minutes. Essai 14 jours gratuit ETI, sans CB.')}</p>
+              <p className="text-emerald-50 mb-5">{t('resources.guideBilanCarbone.esgflow.ctaBody', "Importez votre FEC pour obtenir une première estimation Scope 3 spend-based. Essai gratuit 14 jours, sans carte bancaire.")}</p>
               <Link to="/register" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-emerald-700 font-bold text-sm hover:bg-emerald-50">
                 {t('resources.guideBilanCarbone.esgflow.ctaButton', 'Démarrer mon essai')} <ArrowRight className="h-4 w-4" />
               </Link>
@@ -485,7 +485,7 @@ export default function GuideBilanCarbonePage() {
                 { q: t('resources.guideBilanCarbone.faq.3.q', "Faut-il faire le bilan carbone tous les ans ?"), a: t('resources.guideBilanCarbone.faq.3.a', "BEGES tous les 4 ans (entreprises). CSRD : annuel. Mieux : suivi mensuel des principaux postes pour piloter en continu.") },
                 { q: t('resources.guideBilanCarbone.faq.4.q', "Quelle pénalité en cas d'absence de bilan carbone ?"), a: t('resources.guideBilanCarbone.faq.4.a', "Amende administrative jusqu'à 10 000 € (50 000 € en récidive). Appliquée depuis 2019, ~15 entreprises/an sanctionnées.") },
                 { q: t('resources.guideBilanCarbone.faq.5.q', "Comment calculer son Scope 3 quand on n'a pas toutes les données ?"), a: t('resources.guideBilanCarbone.faq.5.a', "Méthode spend-based : montants d'achat (FEC) × facteur monétaire ADEME. Précision moyenne mais légalement acceptée pour un premier bilan.") },
-                { q: t('resources.guideBilanCarbone.faq.6.q', "Quel logiciel pour faire son bilan carbone ?"), a: t('resources.guideBilanCarbone.faq.6.a', "ESGFlow inclut le bilan carbone GHG Protocol avec facteurs ADEME 2024 dès le plan PME (249 €/mois).") },
+                { q: t('resources.guideBilanCarbone.faq.6.q', "Quel logiciel pour faire son bilan carbone ?"), a: t('resources.guideBilanCarbone.faq.6.a', "ESGFlow inclut un bilan carbone basé sur le GHG Protocol, avec facteurs ADEME et export BEGES, dès le plan PME (249 €/mois).") },
                 { q: t('resources.guideBilanCarbone.faq.7.q', "Combien de temps prend un bilan carbone complet ?"), a: t('resources.guideBilanCarbone.faq.7.a', "Premier bilan : 6-10 semaines (collecte = 70 % du temps). Bilans suivants : 2-3 semaines si automatisé via connecteurs.") },
               ].map((item, i) => (
                 <details key={i} className="group border border-gray-200 rounded-xl overflow-hidden hover:border-emerald-300 transition-colors">

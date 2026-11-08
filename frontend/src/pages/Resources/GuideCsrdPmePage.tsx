@@ -32,7 +32,7 @@ export default function GuideCsrdPmePage() {
   const TOC = getTOC(t);
   const url = 'https://greenconnect.cloud/guide/csrd-pme';
   const img = 'https://greenconnect.cloud/api/v1/og/guide-csrd-pme.png';
-  const desc = t('resources.guideCsrdPme.seo.description', "Comprendre la CSRD, savoir si vous êtes concerné·e, identifier les 12 normes ESRS, conduire la double matérialité, collecter les données et publier votre 1er rapport. Guide complet pour PME et ETI françaises, mis à jour Omnibus 2025.");
+  const desc = t('resources.guideCsrdPme.seo.description', "Comprendre la CSRD après l'Omnibus I, savoir si vous êtes concerné·e, identifier les normes ESRS, conduire la double matérialité, collecter les données et préparer votre rapport. Guide pour PME et ETI françaises.");
 
   usePageSeo({
     id: 'guide-csrd-pme',
@@ -77,11 +77,11 @@ export default function GuideCsrdPmePage() {
         { "@type": "Question", "name": "Ma société de 60 salariés est-elle concernée par la CSRD ?",
           "acceptedAnswer": { "@type": "Answer", "text": "Directement, non (seuil post-Omnibus à 1 000 salariés). Indirectement, oui si vous fournissez des grands groupes : ils vont vous demander vos données ESG. Reporting volontaire recommandé." } },
         { "@type": "Question", "name": "Quelle différence entre CSRD et DPEF ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "La DPEF (loi 2017) couvrait ~3 000 sociétés françaises. La CSRD étend à toute l'UE (~50 000 entreprises) avec des standards techniques uniformes (ESRS), un audit obligatoire et un format iXBRL. La CSRD remplace la DPEF pour les sociétés concernées." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "La DPEF (loi 2017) visait les grandes sociétés françaises. La CSRD instaure des standards uniformes (ESRS), un audit obligatoire et un format numérique balisé, pour un périmètre réduit par l'Omnibus I. Elle remplace la DPEF pour les sociétés concernées." } },
         { "@type": "Question", "name": "Quel budget prévoir pour la 1ère année CSRD ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Sans outil : 30-80 k€ (cabinet conseil + commissaire aux comptes). Avec ESGFlow : 2-5 k€/an d'abonnement + 5-15 k€ d'audit. Économie 70-90 %." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "Le coût varie fortement selon la taille et l'accompagnement choisi (conseil, commissaire aux comptes). Un outil comme ESGFlow (dès 249 €/mois) aide à centraliser les données mais ne remplace ni l'audit ni le conseil." } },
         { "@type": "Question", "name": "Combien de temps pour produire le 1er rapport CSRD ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Avec préparation amont : 3-4 mois (matrice de matérialité 4-6 sem, collecte données 6-8 sem, rédaction et audit 4-6 sem). ESGFlow accélère la collecte et la rédaction d'environ 60 %." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "Avec une préparation en amont, comptez plusieurs mois (matrice de matérialité, collecte des données, rédaction et audit). ESGFlow aide à centraliser la collecte, sans durée garantie." } },
         { "@type": "Question", "name": "L'iXBRL est-il obligatoire pour ma PME non cotée ?",
           "acceptedAnswer": { "@type": "Answer", "text": "Non. iXBRL n'est obligatoire que pour les sociétés cotées sur un marché réglementé européen. Pour les autres, un PDF suffit (mais l'iXBRL aide à l'audit)." } }
       ]
@@ -121,7 +121,7 @@ export default function GuideCsrdPmePage() {
           </p>
           <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
             <span className="inline-flex items-center gap-1.5"><Calendar className="h-4 w-4" /> {t('resources.guideCsrdPme.hero.meta1', 'Mis à jour mai 2026')}</span>
-            <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-emerald-600" /> {t('resources.guideCsrdPme.hero.meta2', 'Inclus Omnibus CSRD 2025')}</span>
+            <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-emerald-600" /> {t('resources.guideCsrdPme.hero.meta2', "Inclut l'Omnibus I (directive 2026/470)")}</span>
             <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-emerald-600" /> {t('resources.guideCsrdPme.hero.meta3', 'Conforme directive 2022/2464')}</span>
           </div>
         </div>
@@ -161,9 +161,9 @@ export default function GuideCsrdPmePage() {
             <div className="bg-amber-50 border-l-4 border-amber-500 rounded-r-xl p-5 my-6">
               <p className="font-semibold text-amber-900 mb-2">{t('resources.guideCsrdPme.intro.tldrLabel', '⚡ TL;DR')}</p>
               <ul className="space-y-1.5 text-amber-900 text-base list-disc list-inside">
-                <li><Trans i18nKey="resources.guideCsrdPme.intro.tldr1">La <strong>CSRD</strong> oblige ~50 000 entreprises européennes à publier un rapport ESG audité.</Trans></li>
-                <li>{t('resources.guideCsrdPme.intro.tldr2', 'En France, vague 2 (publication 2026) : ~9 500 entreprises >250 salariés.')}</li>
-                <li><Trans i18nKey="resources.guideCsrdPme.intro.tldr3">L'<strong>Omnibus</strong> de février 2025 relève le seuil à 1 000 salariés et 450 M€ de CA — mais l'effet "ruissellement" force les PME à se mettre à niveau pour leurs clients ETI/groupes.</Trans></li>
+                <li><Trans i18nKey="resources.guideCsrdPme.intro.tldr1">La <strong>CSRD</strong> impose un rapport de durabilité audité aux grandes entreprises européennes ; l'Omnibus I en a fortement réduit le périmètre.</Trans></li>
+                <li>{t('resources.guideCsrdPme.intro.tldr2', "Désormais, seules les entreprises de plus de 1 000 salariés ET 450 M€ de CA net sont concernées ; la vague 2 publie en 2028 (exercice 2027).")}</li>
+                <li><Trans i18nKey="resources.guideCsrdPme.intro.tldr3">L'<strong>Omnibus I</strong> (directive 2026/470, en vigueur le 18 mars 2026) a relevé les seuils. L'effet de ruissellement peut néanmoins amener des clients soumis à demander des données à leurs fournisseurs PME/ETI.</Trans></li>
                 <li><Trans i18nKey="resources.guideCsrdPme.intro.tldr4">12 normes <strong>ESRS</strong> à couvrir (E1 à E5, S1 à S4, G1, plus ESRS 2 transversal).</Trans></li>
                 <li><Trans i18nKey="resources.guideCsrdPme.intro.tldr5">Le rapport doit être <strong>audité</strong> (assurance limitée) et <strong>structuré en iXBRL</strong> pour les sociétés cotées.</Trans></li>
                 <li>{t('resources.guideCsrdPme.intro.tldr6', "Sanctions possibles : amendes administratives, interdiction d'accéder à certains marchés publics.")}</li>
@@ -185,9 +185,7 @@ export default function GuideCsrdPmePage() {
               </Trans>
             </p>
             <p>
-              <Trans i18nKey="resources.guideCsrdPme.comprendre.whatP2">
-                Là où la NFRD ne concernait que ~11 700 grandes entreprises européennes, la CSRD vise à terme ~50 000 entreprises — soit environ 4× plus. En France, on estime que <strong>9 500 entreprises</strong> sont directement concernées par la vague principale (2024-2026), et plusieurs dizaines de milliers indirectement via la pression de leurs clients.
-              </Trans>
+              <Trans i18nKey="resources.guideCsrdPme.comprendre.whatP2">Là où la NFRD ne concernait que ~11 700 grandes entreprises européennes, la CSRD en visait ~50 000 à l'origine. Après l'Omnibus I, le périmètre est réduit à une fraction de ce nombre, mais beaucoup d'entreprises peuvent être sollicitées indirectement par leurs clients.</Trans>
             </p>
 
             <h3 className="text-xl font-bold text-gray-900 mt-8 mb-3">{t('resources.guideCsrdPme.comprendre.calendarTitle', "Le calendrier d'application")}</h3>
@@ -202,32 +200,27 @@ export default function GuideCsrdPmePage() {
                   </tr>
                 </thead>
                 <tbody className="text-gray-600">
-                  <tr className="border-b border-gray-100"><td className="p-3 font-semibold">{t('resources.guideCsrdPme.comprendre.cal.row1.wave', 'Vague 1')}</td><td className="p-3">{t('resources.guideCsrdPme.comprendre.cal.row1.scope', 'Grandes entreprises déjà soumises NFRD (cotées >500 salariés)')}</td><td className="p-3">2024</td><td className="p-3">2025</td></tr>
-                  <tr className="border-b border-gray-100 bg-emerald-50/50"><td className="p-3 font-semibold">{t('resources.guideCsrdPme.comprendre.cal.row2.wave', 'Vague 2')}</td><td className="p-3"><Trans i18nKey="resources.guideCsrdPme.comprendre.cal.row2.scope"><strong>Toutes grandes entreprises</strong> (&gt;250 sal., &gt;40 M€ CA, &gt;20 M€ bilan)</Trans></td><td className="p-3">2025</td><td className="p-3"><strong>2026</strong></td></tr>
-                  <tr className="border-b border-gray-100"><td className="p-3 font-semibold">{t('resources.guideCsrdPme.comprendre.cal.row3.wave', 'Vague 3')}</td><td className="p-3">{t('resources.guideCsrdPme.comprendre.cal.row3.scope', 'PME cotées')}</td><td className="p-3">2026</td><td className="p-3">2027</td></tr>
-                  <tr><td className="p-3 font-semibold">{t('resources.guideCsrdPme.comprendre.cal.row4.wave', 'Vague 4')}</td><td className="p-3">{t('resources.guideCsrdPme.comprendre.cal.row4.scope', 'Sociétés non-UE avec activité significative en UE')}</td><td className="p-3">2028</td><td className="p-3">2029</td></tr>
+                  <tr className="border-b border-gray-100"><td className="p-3 font-semibold">{t('resources.guideCsrdPme.comprendre.cal.row1.wave', 'Vague 1')}</td><td className="p-3">{t('resources.guideCsrdPme.comprendre.cal.row1.scope', 'Entreprises déjà soumises à la NFRD')}</td><td className="p-3">2024</td><td className="p-3">2025</td></tr>
+                  <tr className="border-b border-gray-100 bg-emerald-50/50"><td className="p-3 font-semibold">{t('resources.guideCsrdPme.comprendre.cal.row2.wave', 'Vague 2')}</td><td className="p-3"><Trans i18nKey="resources.guideCsrdPme.comprendre.cal.row2.scope"><strong>Plus de 1 000 salariés ET plus de 450 M€ de CA net</strong>, non soumises avant</Trans></td><td className="p-3">2027</td><td className="p-3"><strong>2028</strong></td></tr>
+                  <tr><td className="p-3 font-semibold">{t('resources.guideCsrdPme.comprendre.cal.row4.wave', 'Groupes hors UE')}</td><td className="p-3">{t('resources.guideCsrdPme.comprendre.cal.row4.scope', 'Plus de 450 M€ de CA dans l\'UE et filiale ou succursale de plus de 200 M€')}</td><td className="p-3">2028</td><td className="p-3">2029</td></tr>
                 </tbody>
               </table>
             </div>
 
-            <h3 className="text-xl font-bold text-gray-900 mt-8 mb-3">{t('resources.guideCsrdPme.comprendre.omniTitle', "L'Omnibus simplification (février 2025)")}</h3>
+            <h3 className="text-xl font-bold text-gray-900 mt-8 mb-3">{t('resources.guideCsrdPme.comprendre.omniTitle', "L'Omnibus I (adopté, en vigueur depuis mars 2026)")}</h3>
             <p>
-              <Trans i18nKey="resources.guideCsrdPme.comprendre.omniIntro">
-                En février 2025, la Commission européenne a proposé un paquet de mesures de simplification, dit <strong>« Omnibus »</strong>. Les points-clés pour les PME :
-              </Trans>
+              <Trans i18nKey="resources.guideCsrdPme.comprendre.omniIntro">Le paquet de simplification « Omnibus I » a été adopté (directive (UE) 2026/470, publiée le 26 février 2026). Les points-clés pour les PME :</Trans>
             </p>
             <ul className="space-y-2 my-4 list-disc list-inside">
-              <li><Trans i18nKey="resources.guideCsrdPme.comprendre.omni1"><strong>Seuil relevé</strong> : la vague 2 ne concerne plus que les entreprises &gt;1 000 salariés (au lieu de 250) ET &gt;450 M€ de CA (au lieu de 40 M€)</Trans></li>
-              <li><Trans i18nKey="resources.guideCsrdPme.comprendre.omni2"><strong>Report de 2 ans</strong> : pour les vagues 2 et 3, repoussées à 2027 et 2028</Trans></li>
-              <li><Trans i18nKey="resources.guideCsrdPme.comprendre.omni3"><strong>Standards sectoriels supprimés</strong> : les ESRS sectoriels prévus pour 2026 sont annulés</Trans></li>
-              <li><Trans i18nKey="resources.guideCsrdPme.comprendre.omni4"><strong>Audit allégé</strong> : maintien de l'assurance limitée, abandon du plan vers l'assurance raisonnable</Trans></li>
+              <li><Trans i18nKey="resources.guideCsrdPme.comprendre.omni1"><strong>Seuils relevés</strong> : la CSRD ne vise plus que les entreprises de plus de 1 000 salariés ET plus de 450 M€ de CA net</Trans></li>
+              <li><Trans i18nKey="resources.guideCsrdPme.comprendre.omni2"><strong>Report de 2 ans</strong> : la vague 2 publie en 2028 sur l'exercice 2027</Trans></li>
+              <li><Trans i18nKey="resources.guideCsrdPme.comprendre.omni3"><strong>Standards sectoriels supprimés</strong> : les ESRS sectoriels ne seront pas adoptés</Trans></li>
+              <li><Trans i18nKey="resources.guideCsrdPme.comprendre.omni4"><strong>Audit</strong> : maintien de l'assurance limitée, abandon de l'assurance raisonnable</Trans></li>
             </ul>
             <div className="bg-blue-50 border-l-4 border-blue-500 p-5 rounded-r-xl my-6">
               <p className="font-semibold text-blue-900 mb-2">{t('resources.guideCsrdPme.comprendre.omniBox.label', '📌 Implication pour les PME')}</p>
               <p className="text-blue-900 text-base">
-                <Trans i18nKey="resources.guideCsrdPme.comprendre.omniBox.body">
-                  Beaucoup de PME ne sont <em>plus</em> directement obligées par la CSRD post-Omnibus. <strong>MAIS</strong> les grands groupes restent soumis ET doivent renseigner les ESRS S2 (chaîne de valeur), ce qui les pousse à exiger des données ESG de leurs fournisseurs PME/ETI. Le marché du reporting "volontaire" explose donc en parallèle. <Link to="/omnibus-csrd" className="font-semibold underline">Lire notre guide Omnibus complet →</Link>
-                </Trans>
+                <Trans i18nKey="resources.guideCsrdPme.comprendre.omniBox.body">Beaucoup de PME ne sont <em>plus</em> directement obligées par la CSRD. <strong>MAIS</strong> les groupes soumis renseignent l'ESRS S2 (chaîne de valeur) et peuvent demander des données à leurs fournisseurs ; les demandes sont toutefois plafonnées par le standard volontaire VSME. <Link to="/omnibus-csrd" className="font-semibold underline">Lire notre guide Omnibus →</Link></Trans>
               </p>
             </div>
           </section>
@@ -236,13 +229,11 @@ export default function GuideCsrdPmePage() {
           <section id="concernes" className="scroll-mt-24 mt-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('resources.guideCsrdPme.concernes.title', 'Suis-je concerné·e ?')}</h2>
 
-            <h3 className="text-xl font-bold text-gray-900 mt-6 mb-3">{t('resources.guideCsrdPme.concernes.thresholdTitle', 'Critères de seuil (post-Omnibus 2025)')}</h3>
+            <h3 className="text-xl font-bold text-gray-900 mt-6 mb-3">{t('resources.guideCsrdPme.concernes.thresholdTitle', "Critères de seuil (après l'Omnibus I)")}</h3>
             <p>
-              <Trans i18nKey="resources.guideCsrdPme.concernes.thresholdIntro">
-                Une entreprise est concernée si elle dépasse <strong>2 des 3 seuils</strong> suivants sur 2 exercices consécutifs :
-              </Trans>
+              <Trans i18nKey="resources.guideCsrdPme.concernes.thresholdIntro">Une entreprise de l'UE est concernée si elle dépasse <strong>les deux seuils</strong> suivants (cumulatifs) :</Trans>
             </p>
-            <div className="grid sm:grid-cols-3 gap-4 my-6">
+            <div className="grid sm:grid-cols-2 gap-4 my-6">
               <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5">
                 <Users className="h-8 w-8 text-emerald-600 mb-2" />
                 <p className="text-2xl font-extrabold text-gray-900">{t('resources.guideCsrdPme.concernes.card1.value', '1 000+')}</p>
@@ -252,20 +243,14 @@ export default function GuideCsrdPmePage() {
                 <TrendingUp className="h-8 w-8 text-blue-600 mb-2" />
                 <p className="text-2xl font-extrabold text-gray-900">{t('resources.guideCsrdPme.concernes.card2.value', '450 M€+')}</p>
                 <p className="text-sm text-gray-600 mt-1">{t('resources.guideCsrdPme.concernes.card2.label', "chiffre d'affaires net")}</p>
-              </div>
-              <div className="bg-violet-50 border border-violet-200 rounded-xl p-5">
-                <Building2 className="h-8 w-8 text-violet-600 mb-2" />
-                <p className="text-2xl font-extrabold text-gray-900">{t('resources.guideCsrdPme.concernes.card3.value', '25 M€+')}</p>
-                <p className="text-sm text-gray-600 mt-1">{t('resources.guideCsrdPme.concernes.card3.label', 'total de bilan')}</p>
-              </div>
-            </div>
+              </div></div>
 
             <h3 className="text-xl font-bold text-gray-900 mt-8 mb-3">{t('resources.guideCsrdPme.concernes.specialTitle', 'Cas particuliers : vous êtes concerné·e même en-dessous des seuils')}</h3>
             <ul className="space-y-2 my-4 list-disc list-inside">
-              <li><Trans i18nKey="resources.guideCsrdPme.concernes.special1"><strong>PME cotée</strong> sur un marché réglementé européen → vague 3 (publication 2027)</Trans></li>
+              <li><Trans i18nKey="resources.guideCsrdPme.concernes.special1"><strong>PME cotée</strong> : sortie du champ de la CSRD ; publication volontaire possible selon le standard VSME</Trans></li>
               <li><Trans i18nKey="resources.guideCsrdPme.concernes.special2"><strong>Filiale d'un groupe coté</strong> → consolidée dans le rapport du groupe</Trans></li>
-              <li><Trans i18nKey="resources.guideCsrdPme.concernes.special3"><strong>Établissement de crédit ou assurance</strong> → obligation indépendamment de la taille</Trans></li>
-              <li><Trans i18nKey="resources.guideCsrdPme.concernes.special4"><strong>Société non-UE avec ≥150 M€ de CA UE + filiale ou succursale UE</strong> → vague 4</Trans></li>
+              <li><Trans i18nKey="resources.guideCsrdPme.concernes.special3"><strong>Filiale d'un groupe soumis</strong> : vérifiez si la consolidation vous dispense de publier</Trans></li>
+              <li><Trans i18nKey="resources.guideCsrdPme.concernes.special4"><strong>Société non-UE avec plus de 450 M€ de CA dans l'UE + filiale ou succursale UE de plus de 200 M€</strong> → premier rapport en 2029</Trans></li>
             </ul>
 
             <h3 className="text-xl font-bold text-gray-900 mt-8 mb-3">{t('resources.guideCsrdPme.concernes.trickleTitle', 'L\'effet de ruissellement (le "vrai" enjeu pour les PME)')}</h3>
@@ -277,7 +262,7 @@ export default function GuideCsrdPmePage() {
             <ol className="space-y-2 my-4 list-decimal list-inside">
               <li><Trans i18nKey="resources.guideCsrdPme.concernes.trickle1">Ils doivent rapporter leur <strong>Scope 3</strong> (émissions de leur chaîne de valeur, soit ~70 % de leurs émissions totales pour un service B2B typique)</Trans></li>
               <li>{t('resources.guideCsrdPme.concernes.trickle2', "L'ESRS S2 (« travailleurs de la chaîne de valeur ») impose des audits sociaux fournisseurs")}</li>
-              <li><Trans i18nKey="resources.guideCsrdPme.concernes.trickle3">La directive <strong>CSDDD</strong> (devoir de vigilance) entre en vigueur progressivement 2027-2029 et impose des évaluations risques droits humains + environnement sur les fournisseurs</Trans></li>
+              <li><Trans i18nKey="resources.guideCsrdPme.concernes.trickle3">La directive <strong>CSDDD</strong> (devoir de vigilance) s'appliquera à partir de juillet 2029 aux seules entreprises de plus de 5 000 salariés et 1,5 Md€ de CA</Trans></li>
               <li><Trans i18nKey="resources.guideCsrdPme.concernes.trickle4">Les <strong>marchés publics</strong> exigent de plus en plus de critères ESG (RSE = critère pondéré ≥10 % sur ~40 % des AO publics français en 2025)</Trans></li>
             </ol>
             <p>
@@ -561,7 +546,7 @@ export default function GuideCsrdPmePage() {
             <div className="bg-emerald-50 border-l-4 border-emerald-500 rounded-r-xl p-5 my-6">
               <p className="font-semibold text-emerald-900 mb-2">{t('resources.guideCsrdPme.data.useCaseLabel', '🎯 Cas d\'usage ESGFlow')}</p>
               <p className="text-emerald-900 text-base">
-                <Trans i18nKey="resources.guideCsrdPme.data.useCaseBody">Toutes ces sources sont pré-connectables dans ESGFlow. Vous importez votre FEC une fois → on calcule automatiquement votre Scope 3 spend-based avec les facteurs ADEME. Vous connectez votre compte Enedis → vos kWh remontent quotidiennement. <Link to="/register" className="font-semibold underline">Voir la démo &nbsp;→</Link></Trans>
+                <Trans i18nKey="resources.guideCsrdPme.data.useCaseBody">Vous pouvez importer votre FEC (estimation Scope 3 spend-based avec facteurs ADEME) et des exports CSV Enedis. D'autres sources sont à saisir ou importer par fichier. <Link to="/register" className="font-semibold underline">Créer un compte →</Link></Trans>
               </p>
             </div>
           </section>
@@ -596,7 +581,7 @@ export default function GuideCsrdPmePage() {
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 my-6">
               <p className="font-semibold text-blue-900 mb-2">{t('resources.guideCsrdPme.report.auditBoxLabel', "🔒 Comment ESGFlow vous aide à passer l'audit")}</p>
               <p className="text-blue-900 text-base">
-                <Trans i18nKey="resources.guideCsrdPme.report.auditBoxBody">Chaque rapport généré dans ESGFlow inclut une <strong>empreinte SHA-256</strong> du contenu, un système de versioning automatique et un endpoint public <code className="bg-blue-100 px-1 rounded text-sm">/api/v1/reports/verify</code> que votre commissaire aux comptes peut interroger pour vérifier l'intégrité d'un PDF reçu — utile pour vos travaux d'assurance limitée (CSRD) ou raisonnable (ISA 3410).</Trans>
+                <Trans i18nKey="resources.guideCsrdPme.report.auditBoxBody">Chaque rapport PDF généré dans ESGFlow inclut une <strong>empreinte SHA-256</strong> du contenu, un numéro de version et un endpoint public <code className="bg-blue-100 px-1 rounded text-sm">/api/v1/reports/verify</code> permettant de vérifier l'intégrité d'un PDF reçu. Cela facilite vos échanges avec le commissaire aux comptes, sans remplacer ses travaux d'assurance.</Trans>
               </p>
             </div>
 
@@ -613,7 +598,7 @@ export default function GuideCsrdPmePage() {
               {t('resources.guideCsrdPme.sanctions.intro', "Le législateur français (transposition CSRD : ordonnance du 6 décembre 2023) a prévu plusieurs mécanismes pour faire respecter l'obligation :")}
             </p>
             <ul className="space-y-2 my-4 list-disc list-inside">
-              <li><Trans i18nKey="resources.guideCsrdPme.sanctions.s1"><strong>Amende administrative</strong> de l'AMF jusqu'à 3,75 M€ (sociétés cotées) ou 50 000 € (non cotées) en cas d'absence ou de défaut grave de publication</Trans></li>
+              <li><Trans i18nKey="resources.guideCsrdPme.sanctions.s1"><strong>Sanctions</strong> fixées par chaque État membre en cas d'absence ou de défaut grave de publication (vérifiez la transposition française)</Trans></li>
               <li><Trans i18nKey="resources.guideCsrdPme.sanctions.s2"><strong>Sanctions du commissaire aux comptes</strong> : refus de certification, qui bloque l'approbation des comptes en AG</Trans></li>
               <li><Trans i18nKey="resources.guideCsrdPme.sanctions.s3"><strong>Action en justice</strong> par les ONG ou parties prenantes pour information mensongère ou trompeuse</Trans></li>
               <li><Trans i18nKey="resources.guideCsrdPme.sanctions.s4"><strong>Exclusion des appels d'offres publics</strong> avec critères ESG (de plus en plus fréquents)</Trans></li>
@@ -631,16 +616,16 @@ export default function GuideCsrdPmePage() {
           <section id="esgflow" className="scroll-mt-24 mt-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('resources.guideCsrdPme.esgflow.title', 'Comment ESGFlow accélère votre conformité CSRD')}</h2>
             <p>
-              <Trans i18nKey="resources.guideCsrdPme.esgflow.intro">ESGFlow est la plateforme SaaS française pensée pour les PME et ETI qui veulent se mettre en conformité CSRD <strong>sans cabinet de conseil à 15 000 € ni 6 mois d'implémentation</strong>.</Trans>
+              <Trans i18nKey="resources.guideCsrdPme.esgflow.intro">ESGFlow est une plateforme SaaS pour les PME et ETI qui préparent leur reporting ESG : saisie et import de données, suivi des indicateurs ESRS, double matérialité et exports. Elle ne remplace ni un conseil ni l'audit.</Trans>
             </p>
 
             <div className="grid md:grid-cols-2 gap-4 my-8">
               {[
-                { icon: CheckCircle2, title: t('resources.guideCsrdPme.esgflow.feat1.title', '12 modules ESRS prêts'), desc: t('resources.guideCsrdPme.esgflow.feat1.desc', 'E1 à E5, S1 à S4, G1, plus ESRS 2 transversal. Tous les indicateurs préremplis selon les standards EFRAG.') },
-                { icon: TrendingUp, title: t('resources.guideCsrdPme.esgflow.feat2.title', 'Matrice de double matérialité'), desc: t('resources.guideCsrdPme.esgflow.feat2.desc', 'Outil intégré pour cartographier vos enjeux, recueillir les parties prenantes et figer votre périmètre.') },
-                { icon: FileText, title: t('resources.guideCsrdPme.esgflow.feat3.title', 'Rapport PDF + iXBRL'), desc: t('resources.guideCsrdPme.esgflow.feat3.desc', 'Génération en un clic, branding personnalisable, contenu prêt à insérer dans votre rapport de gestion.') },
-                { icon: Shield, title: t('resources.guideCsrdPme.esgflow.feat4.title', "Piste d'audit certifiable"), desc: t('resources.guideCsrdPme.esgflow.feat4.desc', 'Hash SHA-256, versioning automatique, endpoint public de vérification — votre CAC valide en 1 heure.') },
-                { icon: Sparkles, title: t('resources.guideCsrdPme.esgflow.feat5.title', 'IA narrative ETI+'), desc: t('resources.guideCsrdPme.esgflow.feat5.desc', 'Rédaction assistée pour les sections qualitatives (politiques, plans de transition, gouvernance climat).') },
+                { icon: CheckCircle2, title: t('resources.guideCsrdPme.esgflow.feat1.title', "Suivi des indicateurs ESRS"), desc: t('resources.guideCsrdPme.esgflow.feat1.desc', "Une analyse d'écart ESRS (E1 à E5, S1 à S4, G1 et ESRS 2) pour repérer les données manquantes. Les indicateurs ne sont pas préremplis.") },
+                { icon: TrendingUp, title: t('resources.guideCsrdPme.esgflow.feat2.title', 'Matrice de double matérialité'), desc: t('resources.guideCsrdPme.esgflow.feat2.desc', "Cartographiez vos enjeux, recueillez les avis de vos parties prenantes par enquête et conservez les validations.") },
+                { icon: FileText, title: t('resources.guideCsrdPme.esgflow.feat3.title', "Rapport PDF et aperçu iXBRL"), desc: t('resources.guideCsrdPme.esgflow.feat3.desc', "Rapport PDF, aperçu et validation iXBRL (XHTML). L'ESEF final et le dépôt restent à faire avec vos conseils.") },
+                { icon: Shield, title: t('resources.guideCsrdPme.esgflow.feat4.title', "Piste d'audit"), desc: t('resources.guideCsrdPme.esgflow.feat4.desc', "Empreinte SHA-256, versions des rapports et endpoint public de vérification, pour faciliter les échanges avec votre commissaire aux comptes.") },
+                { icon: Sparkles, title: t('resources.guideCsrdPme.esgflow.feat5.title', "Rédaction assistée (ETI)"), desc: t('resources.guideCsrdPme.esgflow.feat5.desc', "Aide à la rédaction de sections qualitatives, à relire et valider par vos équipes.") },
                 { icon: Globe, title: t('resources.guideCsrdPme.esgflow.feat6.title', 'Données hébergées chez IONOS'), desc: t('resources.guideCsrdPme.esgflow.feat6.desc', 'Hébergement IONOS, engagement de conformité RGPD, suppression de vos données à la demande.') },
               ].map((f, i) => {
                 const I = f.icon;
@@ -677,14 +662,14 @@ export default function GuideCsrdPmePage() {
             <h2 className="text-3xl font-bold text-gray-900 mb-6">{t('resources.guideCsrdPme.faq.title', 'Questions fréquentes')}</h2>
             <div className="space-y-4">
               {[
-                { q: t('resources.guideCsrdPme.faq.q1', "Ma société de 60 salariés est-elle concernée par la CSRD ?"), a: t('resources.guideCsrdPme.faq.a1', "Directement, non (seuil post-Omnibus à 1 000 salariés). Indirectement, oui si vous fournissez des grands groupes : ils vont vous demander vos données ESG. Reporting volontaire recommandé.") },
-                { q: t('resources.guideCsrdPme.faq.q2', "Quelle différence entre CSRD et DPEF ?"), a: t('resources.guideCsrdPme.faq.a2', "La DPEF (loi 2017) couvrait ~3 000 sociétés françaises. La CSRD étend à toute l'UE (~50 000 entreprises) avec des standards techniques uniformes (ESRS), un audit obligatoire et un format iXBRL. La CSRD remplace la DPEF pour les sociétés concernées.") },
-                { q: t('resources.guideCsrdPme.faq.q3', "Quel budget prévoir pour la 1ère année CSRD ?"), a: t('resources.guideCsrdPme.faq.a3', "Sans outil : 30-80 k€ (cabinet de conseil + commissaire aux comptes). Avec ESGFlow : 2-5 k€/an d'abonnement + 5-15 k€ d'audit. Économie 70-90 %.") },
-                { q: t('resources.guideCsrdPme.faq.q4', "Combien de temps pour produire le 1er rapport ?"), a: t('resources.guideCsrdPme.faq.a4', "Avec préparation amont : 3-4 mois (matrice de matérialité = 4-6 semaines, collecte données = 6-8 semaines, rédaction et audit = 4-6 semaines). ESGFlow accélère la collecte et la rédaction d'environ 60 %.") },
+                { q: t('resources.guideCsrdPme.faq.q1', "Ma société de 60 salariés est-elle concernée par la CSRD ?"), a: t('resources.guideCsrdPme.faq.a1', "Directement, non (seuils à 1 000 salariés et 450 M€ de CA). Indirectement, vous pouvez recevoir des demandes de données ESG de grands clients soumis, dans la limite du standard volontaire VSME.") },
+                { q: t('resources.guideCsrdPme.faq.q2', "Quelle différence entre CSRD et DPEF ?"), a: t('resources.guideCsrdPme.faq.a2', "La DPEF (loi 2017) visait les grandes sociétés françaises. La CSRD instaure des standards uniformes (ESRS), un audit obligatoire et un format numérique balisé, pour un périmètre réduit par l'Omnibus I. Elle remplace la DPEF pour les sociétés concernées.") },
+                { q: t('resources.guideCsrdPme.faq.q3', "Quel budget prévoir pour la 1ère année CSRD ?"), a: t('resources.guideCsrdPme.faq.a3', "Le coût varie fortement selon la taille et l'accompagnement choisi (conseil, commissaire aux comptes). Un outil comme ESGFlow (dès 249 €/mois) aide à centraliser les données, mais ne remplace ni l'audit ni un éventuel conseil.") },
+                { q: t('resources.guideCsrdPme.faq.q4', "Combien de temps pour produire le 1er rapport ?"), a: t('resources.guideCsrdPme.faq.a4', "Avec une préparation en amont, comptez plusieurs mois (matrice de matérialité, collecte des données, rédaction et audit). ESGFlow aide à centraliser la collecte, sans durée garantie.") },
                 { q: t('resources.guideCsrdPme.faq.q5', "L'iXBRL est-il obligatoire pour ma PME non cotée ?"), a: t('resources.guideCsrdPme.faq.a5', "Non. iXBRL n'est obligatoire que pour les sociétés cotées sur un marché réglementé européen. Pour les autres, un PDF suffit (mais l'iXBRL aide à l'audit).") },
-                { q: t('resources.guideCsrdPme.faq.q6', "Que se passe-t-il si je ne publie pas ?"), a: t('resources.guideCsrdPme.faq.a6', "Si vous êtes légalement obligé·e : amende AMF (jusqu'à 3,75 M€ cotées / 50 k€ non-cotées), refus de certification CAC, exclusion AO publics. Si vous n'êtes pas obligé·e : pas de sanction directe, mais perte d'opportunités B2B avec les grands comptes.") },
-                { q: t('resources.guideCsrdPme.faq.q7', "Peut-on utiliser ESGFlow uniquement pour le Bilan Carbone ?"), a: t('resources.guideCsrdPme.faq.a7', "Oui. Le plan PME inclut le Bilan Carbone Scopes 1/2/3 selon GHG Protocol avec les facteurs ADEME 2024. Vous n'êtes pas obligé·e d'activer les autres modules ESRS.") },
-                { q: t('resources.guideCsrdPme.faq.q8', "Comment se passe l'audit avec ESGFlow ?"), a: t('resources.guideCsrdPme.faq.a8', "Chaque rapport généré inclut un hash SHA-256 et une URL de vérification publique. Votre CAC reçoit le PDF et peut vérifier l'intégrité en ouvrant /api/v1/reports/verify. Toutes les données sources sont traçables jusqu'à l'écriture comptable ou la mesure terrain.") },
+                { q: t('resources.guideCsrdPme.faq.q6', "Que se passe-t-il si je ne publie pas ?"), a: t('resources.guideCsrdPme.faq.a6', "Si vous êtes légalement obligé·e : sanctions fixées par l'État membre, refus de certification possible du commissaire aux comptes. Sinon : pas de sanction directe, mais risque de perdre des opportunités avec de grands comptes.") },
+                { q: t('resources.guideCsrdPme.faq.q7', "Peut-on utiliser ESGFlow uniquement pour le Bilan Carbone ?"), a: t('resources.guideCsrdPme.faq.a7', "Oui. Le plan PME inclut un bilan carbone basé sur le GHG Protocol avec facteurs ADEME et export BEGES. Vous n'êtes pas obligé·e d'utiliser les autres modules ESRS.") },
+                { q: t('resources.guideCsrdPme.faq.q8', "Comment se passe l'audit avec ESGFlow ?"), a: t('resources.guideCsrdPme.faq.a8', "Chaque rapport PDF généré contient une empreinte SHA-256 et un numéro de version ; un endpoint public permet d'en vérifier l'intégrité. Cela facilite l'échange avec votre commissaire aux comptes sans garantir l'issue de l'audit.") },
               ].map((item, i) => (
                 <details key={i} className="group border border-gray-200 rounded-xl overflow-hidden hover:border-emerald-300 transition-colors">
                   <summary className="flex items-start justify-between cursor-pointer p-5 hover:bg-gray-50 transition-colors">

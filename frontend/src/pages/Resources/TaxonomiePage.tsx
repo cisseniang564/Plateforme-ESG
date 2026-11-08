@@ -141,7 +141,7 @@ export default function TaxonomiePage() {
             <div>
               <div className="font-bold text-amber-900 mb-1">{t('resources.taxonomie.intro.warningTitle', 'Objectifs 1 et 2 uniquement opérationnels à ce stade')}</div>
               <p className="text-sm text-amber-800 leading-relaxed">
-                {t('resources.taxonomie.intro.warningBody', 'Seuls les objectifs 1 (atténuation) et 2 (adaptation) disposent de critères techniques détaillés et opposables. Les objectifs 3 à 6 ont reçu leurs premiers actes délégués en 2023, mais leurs critères restent moins exhaustifs. ESGFlow les intègre progressivement au fil de la publication des textes officiels.')}
+                {t('resources.taxonomie.intro.warningBody', "Seuls les objectifs 1 (atténuation) et 2 (adaptation) disposent de critères techniques détaillés. Les objectifs 3 à 6 ont reçu leurs premiers actes délégués en 2023 mais restent moins détaillés. Le catalogue d'ESGFlow est partiel : vérifiez-le toujours avec les textes officiels.")}
               </p>
             </div>
           </div>
@@ -410,26 +410,26 @@ export default function TaxonomiePage() {
             {[
               {
                 icon: Layers,
-                title: t('resources.taxonomie.esgflow.features.0.title', 'Wizard guidé par activité économique (code NACE)'),
-                desc: t('resources.taxonomie.esgflow.features.0.desc', 'Identifiez vos activités Taxonomie-éligibles à partir de votre code NACE. Le wizard vous guide step-by-step pour chaque activité.'),
+                title: t('resources.taxonomie.esgflow.features.0.title', "Recherche d'activités par code NACE"),
+                desc: t('resources.taxonomie.esgflow.features.0.desc', "Identifiez vos activités éligibles dans un catalogue d'une cinquantaine d'activités courantes, par code NACE, secteur ou description."),
                 color: 'blue',
               },
               {
                 icon: CheckCircle,
-                title: t('resources.taxonomie.esgflow.features.1.title', 'Check-list SC + DNSH + MinSafeguards par objectif'),
-                desc: t('resources.taxonomie.esgflow.features.1.desc', 'Pour chaque activité, ESGFlow vérifie les 3 conditions cumulatives avec des critères mis à jour en temps réel selon les textes officiels.'),
+                title: t('resources.taxonomie.esgflow.features.1.title', "Suivi SC + DNSH + garanties minimales"),
+                desc: t('resources.taxonomie.esgflow.features.1.desc', "Pour chaque activité, vous indiquez si les trois conditions cumulatives sont remplies ; ESGFlow en déduit le statut d'alignement. Les critères ne sont pas mis à jour automatiquement."),
                 color: 'emerald',
               },
               {
                 icon: Globe,
-                title: t('resources.taxonomie.esgflow.features.2.title', 'Calcul automatique des 3 KPIs (CA, CapEx, OpEx)'),
-                desc: t('resources.taxonomie.esgflow.features.2.desc', 'Conformément au règlement délégué 2021/2178/UE. ESGFlow calcule et ventile automatiquement vos KPIs par activité et par objectif.'),
+                title: t('resources.taxonomie.esgflow.features.2.title', "Calcul des 3 KPIs (CA, CapEx, OpEx)"),
+                desc: t('resources.taxonomie.esgflow.features.2.desc', "ESGFlow calcule vos pourcentages d'éligibilité et d'alignement à partir des montants saisis par activité. La mise en forme des tableaux réglementaires reste à votre charge."),
                 color: 'violet',
               },
               {
                 icon: Shield,
-                title: t('resources.taxonomie.esgflow.features.3.title', 'Evidence Vault : liez vos justificatifs à chaque critère'),
-                desc: t('resources.taxonomie.esgflow.features.3.desc', 'Attachez certifications, bilans énergétiques et attestations directement à chaque critère Taxonomie pour un trail documentaire complet et auditable.'),
+                title: t('resources.taxonomie.esgflow.features.3.title', "Lien vers un justificatif par activité"),
+                desc: t('resources.taxonomie.esgflow.features.3.desc', "Associez un lien vers votre justificatif (certification, bilan énergétique, attestation) à chaque activité."),
                 color: 'orange',
               },
             ].map(feature => (
@@ -463,7 +463,7 @@ export default function TaxonomiePage() {
               },
               {
                 q: t('resources.taxonomie.faq.3.q', 'Les objectifs 3 à 6 sont-ils déjà applicables ?'),
-                a: t('resources.taxonomie.faq.3.a', "Les objectifs Eau (3), Économie circulaire (4), Pollution (5) et Biodiversité (6) ont reçu leurs premiers actes délégués en 2023. Ils sont applicables mais encore moins détaillés par rapport aux objectifs 1 et 2, dont les critères couvrent la grande majorité des secteurs. ESGFlow les intègre au fur et à mesure de la publication des textes techniques officiels."),
+                a: t('resources.taxonomie.faq.3.a', "Les objectifs Eau (3), Économie circulaire (4), Pollution (5) et Biodiversité (6) ont reçu leurs premiers actes délégués en 2023. Ils sont applicables mais moins détaillés que les objectifs 1 et 2. Le catalogue d'ESGFlow reste partiel pour ces objectifs."),
               },
               {
                 q: t('resources.taxonomie.faq.4.q', "Comment l'Omnibus I a-t-il modifié le reporting Taxonomie ?"),
@@ -488,7 +488,7 @@ export default function TaxonomiePage() {
                 {t('resources.taxonomie.cta.title', 'Votre reporting Taxonomie, sans confusion entre éligibilité et alignement')}
               </h2>
               <p className="text-slate-300 text-sm leading-relaxed">
-                {t('resources.taxonomie.cta.body', "Wizard NACE, check-list SC + DNSH + MinSafeguards, calcul automatique des 3 KPIs et Evidence Vault — tout ce qu'il faut pour un rapport Taxonomie auditable, à partir de 249 €/mois.")}
+                {t('resources.taxonomie.cta.body', "Recherche NACE, suivi SC + DNSH + garanties minimales, calcul des 3 KPIs et liens vers vos justificatifs, à partir de 249 €/mois.")}
               </p>
             </div>
             <div className="flex flex-col gap-3">

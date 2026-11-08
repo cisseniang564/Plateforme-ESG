@@ -71,15 +71,15 @@ export default function GuideCsdddPage() {
       "@type": "FAQPage",
       "mainEntity": [
         { "@type": "Question", "name": "Ma PME de 100 salariés est-elle soumise à la CSDDD ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Directement, non — la CSDDD ne s'applique qu'aux entreprises >1 000 salariés et >450 M€ de CA. MAIS si vous êtes fournisseur·euse d'un grand groupe soumis, ce dernier doit auditer ses fournisseurs : vous recevrez un questionnaire CSDDD." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "Directement, non — la CSDDD ne vise que les entreprises de plus de 5 000 salariés et 1,5 Md€ de CA. Mais si vous fournissez un très grand groupe soumis, vous pouvez recevoir un questionnaire de diligence." } },
         { "@type": "Question", "name": "Quelle différence entre CSDDD et loi française devoir de vigilance ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "La loi française de 2017 cible ~250 grandes entreprises FR. La CSDDD étend à ~6 000 entreprises UE avec un cadre harmonisé, des sanctions plus fortes, et une responsabilité civile élargie. Les deux coexistent jusqu'à fin 2027." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "La loi française de 2017 vise les très grandes sociétés françaises. La CSDDD fixe un cadre européen harmonisé avec des amendes plafonnées à 3 % du CA mondial net. La loi de 2017 s'applique jusqu'à la transposition." } },
         { "@type": "Question", "name": "Quel calendrier d'application de la CSDDD ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Vague 1 (5 000+ sal., 1,5 Md€ CA) : 26 juillet 2027. Vague 2 (3 000+ sal., 900 M€) : 26 juillet 2028. Vague 3 (1 000+ sal., 450 M€) : 26 juillet 2029." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "Transposition au plus tard le 26 juillet 2028, application à partir du 26 juillet 2029 pour les entreprises de plus de 5 000 salariés et 1,5 Md€ de CA net." } },
         { "@type": "Question", "name": "Quelles sanctions en cas de manquement à la CSDDD ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Amendes administratives jusqu'à 5 % du chiffre d'affaires mondial net. Naming and shaming public obligatoire. Responsabilité civile élargie : actions en réparation possibles par les victimes du préjudice." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "Amendes administratives plafonnées à 3 % du chiffre d'affaires mondial net et publication de la décision. Le régime européen harmonisé de responsabilité civile a été supprimé : le droit national s'applique." } },
         { "@type": "Question", "name": "Comment ESGFlow aide à se conformer à la CSDDD ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Module Supply Chain ESG inclus dès le plan PME (249 €/mois) : cartographie fournisseurs, questionnaires d'audit social et environnemental, suivi des plans d'action, registre de plaintes. Conforme ESRS S2." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "Module Supply Chain ESG inclus dès le plan PME (249 €/mois) : cartographie fournisseurs, questionnaires par lien sécurisé, suivi des risques, canal de signalement. Aide à préparer la démarche, sans garantir la conformité." } },
       ]
     },
   });
@@ -102,10 +102,7 @@ export default function GuideCsdddPage() {
             {t('resources.guideCsddd.hero.titleLine1', 'CSDDD — le devoir de vigilance')}<br /><span className="text-violet-600">{t('resources.guideCsddd.hero.titleLine2', 'qui force toute la supply chain')}</span>
           </h1>
           <p className="text-xl text-gray-600 leading-relaxed mb-8">
-            <Trans i18nKey="resources.guideCsddd.hero.subtitle">
-              La directive UE 2024/1760 oblige les grands groupes à auditer leurs fournisseurs sur les droits humains et l'environnement.
-              Conséquence directe : <strong>même votre PME va recevoir un questionnaire</strong> dès 2027. Voici comment vous préparer.
-            </Trans>
+            <Trans i18nKey="resources.guideCsddd.hero.subtitle">La directive UE 2024/1760, modifiée par l'Omnibus I (directive 2026/470), impose aux très grands groupes un devoir de vigilance sur leurs chaînes d'activités. Conséquence possible : <strong>même une PME peut recevoir un questionnaire</strong> de ses clients soumis. Voici comment vous préparer.</Trans>
           </p>
           <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
             <span className="inline-flex items-center gap-1.5"><Calendar className="h-4 w-4" /> {t('resources.guideCsddd.hero.meta0', 'Mis à jour mai 2026')}</span>
@@ -143,11 +140,11 @@ export default function GuideCsdddPage() {
               <p className="font-semibold text-violet-900 mb-2">{t('resources.guideCsddd.intro.tldrLabel', '⚡ TL;DR')}</p>
               <ul className="space-y-1.5 text-violet-900 text-base list-disc list-inside">
                 <li><Trans i18nKey="resources.guideCsddd.intro.item0">La <strong>CSDDD</strong> (Corporate Sustainability Due Diligence Directive, UE 2024/1760) impose aux grandes entreprises un <strong>devoir de vigilance sur l'ensemble de leur chaîne de valeur</strong> — droits humains ET environnement.</Trans></li>
-                <li><Trans i18nKey="resources.guideCsddd.intro.item1">Vague 1 applicable au <strong>26 juillet 2027</strong> (5 000+ salariés ou 1,5 Md€ CA), puis 2028 et 2029.</Trans></li>
-                <li><Trans i18nKey="resources.guideCsddd.intro.item2">Sanctions : amendes jusqu'à <strong>5 % du CA mondial</strong> + responsabilité civile élargie + naming and shaming public.</Trans></li>
-                <li><Trans i18nKey="resources.guideCsddd.intro.item3">L'effet de ruissellement : les grands groupes soumis vont <strong>auditer leurs fournisseurs PME/ETI</strong> via des questionnaires standardisés (type EcoVadis, Sedex, VendorESG).</Trans></li>
+                <li><Trans i18nKey="resources.guideCsddd.intro.item1">Depuis l'Omnibus I, la CSDDD ne vise que les entreprises de <strong>plus de 5 000 salariés ET plus de 1,5 Md€ de CA net mondial</strong>. Transposition au plus tard le <strong>26 juillet 2028</strong>, application à partir du <strong>26 juillet 2029</strong>.</Trans></li>
+                <li><Trans i18nKey="resources.guideCsddd.intro.item2">Sanctions : amendes plafonnées à <strong>3 % du CA mondial net</strong> + publication de la décision (naming and shaming). Le régime européen harmonisé de responsabilité civile a été supprimé : le droit national s'applique.</Trans></li>
+                <li><Trans i18nKey="resources.guideCsddd.intro.item3">L'effet de ruissellement : les groupes soumis peuvent demander à leurs <strong>fournisseurs PME/ETI</strong> des informations via des questionnaires (type EcoVadis, Sedex). Le périmètre étant restreint, ces demandes seront moins nombreuses qu'annoncé initialement.</Trans></li>
                 <li><Trans i18nKey="resources.guideCsddd.intro.item4">Lien fort avec <strong>ESRS S2</strong> (CSRD) : « Travailleurs de la chaîne de valeur » — mêmes données, double usage.</Trans></li>
-                <li><Trans i18nKey="resources.guideCsddd.intro.item5">La loi française <strong>devoir de vigilance de 2017</strong> reste applicable jusqu'à transposition complète CSDDD (~2027).</Trans></li>
+                <li><Trans i18nKey="resources.guideCsddd.intro.item5">La loi française sur le <strong>devoir de vigilance de 2017</strong> reste applicable en attendant la transposition de la CSDDD.</Trans></li>
               </ul>
             </div>
           </section>
@@ -168,7 +165,7 @@ export default function GuideCsdddPage() {
 
           <section id="periodes" className="scroll-mt-24 mt-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('resources.guideCsddd.periodes.heading', "Calendrier d'application")}</h2>
-            <p>{t('resources.guideCsddd.periodes.intro', 'La CSDDD entre progressivement en application sur 3 ans, selon la taille des entreprises :')}</p>
+            <p>{t('resources.guideCsddd.periodes.intro', "Après l'Omnibus I, la CSDDD s'applique en une seule échéance, à partir du 26 juillet 2029 :")}</p>
             <div className="overflow-x-auto my-6">
               <table className="w-full text-sm border-collapse">
                 <thead className="bg-gray-50 border-b-2 border-gray-200">
@@ -180,46 +177,36 @@ export default function GuideCsdddPage() {
                 </thead>
                 <tbody>
                   <tr className="border-b border-gray-100 bg-violet-50/30">
-                    <td className="p-3 font-semibold">{t('resources.guideCsddd.periodes.wave1', 'Vague 1')}</td>
-                    <td className="p-3"><Trans i18nKey="resources.guideCsddd.periodes.wave1Scope"><strong>5 000+ salariés</strong> ET 1 500 M€ de CA mondial net</Trans></td>
-                    <td className="p-3"><Trans i18nKey="resources.guideCsddd.periodes.wave1Date">26 juillet <strong>2027</strong></Trans></td>
-                  </tr>
-                  <tr className="border-b border-gray-100">
-                    <td className="p-3 font-semibold">{t('resources.guideCsddd.periodes.wave2', 'Vague 2')}</td>
-                    <td className="p-3">{t('resources.guideCsddd.periodes.wave2Scope', '3 000+ salariés ET 900 M€ de CA')}</td>
-                    <td className="p-3">{t('resources.guideCsddd.periodes.wave2Date', '26 juillet 2028')}</td>
-                  </tr>
-                  <tr className="border-b border-gray-100">
-                    <td className="p-3 font-semibold">{t('resources.guideCsddd.periodes.wave3', 'Vague 3')}</td>
-                    <td className="p-3">{t('resources.guideCsddd.periodes.wave3Scope', '1 000+ salariés ET 450 M€ de CA')}</td>
-                    <td className="p-3">{t('resources.guideCsddd.periodes.wave3Date', '26 juillet 2029')}</td>
+                    <td className="p-3 font-semibold">{t('resources.guideCsddd.periodes.wave1', "Entreprises UE")}</td>
+                    <td className="p-3"><Trans i18nKey="resources.guideCsddd.periodes.wave1Scope"><strong>5 000+ salariés</strong> ET 1,5 Md€ de CA mondial net</Trans></td>
+                    <td className="p-3"><Trans i18nKey="resources.guideCsddd.periodes.wave1Date">26 juillet <strong>2029</strong></Trans></td>
                   </tr>
                   <tr>
                     <td className="p-3 font-semibold">{t('resources.guideCsddd.periodes.nonEu', 'Sociétés non-UE')}</td>
-                    <td className="p-3">{t('resources.guideCsddd.periodes.nonEuScope', 'CA UE > 450 M€')}</td>
-                    <td className="p-3">{t('resources.guideCsddd.periodes.nonEuDate', 'selon vague équivalente')}</td>
+                    <td className="p-3">{t('resources.guideCsddd.periodes.nonEuScope', "CA dans l'UE > 1,5 Md€")}</td>
+                    <td className="p-3">{t('resources.guideCsddd.periodes.nonEuDate', "26 juillet 2029")}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
-            <p className="text-sm text-gray-500 italic">{t('resources.guideCsddd.periodes.note', 'Note : la transposition CSDDD en droit français doit intervenir avant le 26 juillet 2026. La loi française devoir de vigilance de 2017 sera modifiée ou remplacée à cette occasion.')}</p>
+            <p className="text-sm text-gray-500 italic">{t('resources.guideCsddd.periodes.note', "Note : la transposition en droit français doit intervenir au plus tard le 26 juillet 2028. Vérifiez l'état d'avancement auprès des sources officielles ; la loi de 2017 s'applique d'ici là.")}</p>
           </section>
 
           <section id="qui" className="scroll-mt-24 mt-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('resources.guideCsddd.qui.heading', 'Qui est concerné·e ?')}</h2>
 
-            <h3 className="text-xl font-bold text-gray-900 mt-6 mb-3">{t('resources.guideCsddd.qui.directHeading', 'Directement (~6 000 entreprises UE)')}</h3>
+            <h3 className="text-xl font-bold text-gray-900 mt-6 mb-3">{t('resources.guideCsddd.qui.directHeading', "Directement (un nombre restreint de très grands groupes)")}</h3>
             <p><Trans i18nKey="resources.guideCsddd.qui.directIntro">Toutes les entreprises de l'UE qui, sur 2 exercices consécutifs, dépassent <strong>cumulativement</strong> :</Trans></p>
             <ul className="space-y-2 my-4 list-disc list-inside">
-              <li><Trans i18nKey="resources.guideCsddd.qui.directItem0">Le seuil de salariés <em>moyens annuels</em> (1 000+ dans la vague finale)</Trans></li>
-              <li>{t('resources.guideCsddd.qui.directItem1', 'Le seuil de CA mondial net (450 M€+ dans la vague finale)')}</li>
+              <li><Trans i18nKey="resources.guideCsddd.qui.directItem0">Plus de <em>5 000 salariés</em> en moyenne annuelle</Trans></li>
+              <li>{t('resources.guideCsddd.qui.directItem1', "Plus de 1,5 Md€ de CA mondial net")}</li>
             </ul>
-            <p>{t('resources.guideCsddd.qui.directFooter', 'Plus les sociétés non-UE qui réalisent > 450 M€ de CA dans l\'UE.')}</p>
+            <p>{t('resources.guideCsddd.qui.directFooter', "Plus les sociétés non-UE qui réalisent plus de 1,5 Md€ de CA dans l'UE.")}</p>
 
             <h3 className="text-xl font-bold text-gray-900 mt-8 mb-3">{t('resources.guideCsddd.qui.indirectHeading', "Indirectement (~plusieurs centaines de milliers d'entreprises UE — dont votre PME)")}</h3>
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 my-6">
               <p className="font-semibold text-amber-900 mb-2">{t('resources.guideCsddd.qui.dominoTitle', "⚠ L'effet domino qui vous concerne")}</p>
-              <p className="text-amber-900 text-base"><Trans i18nKey="resources.guideCsddd.qui.dominoBody">Les entreprises soumises doivent identifier et auditer leurs <strong>partenaires commerciaux directs ET indirects</strong>. Concrètement, si vous fournissez Carrefour, Total, EDF, Orange, Decathlon ou Bouygues, ils vont vous envoyer un questionnaire d'audit CSDDD dès 2027 — et conditionner le renouvellement du contrat à votre conformité.</Trans></p>
+              <p className="text-amber-900 text-base"><Trans i18nKey="resources.guideCsddd.qui.dominoBody">Les entreprises soumises doivent identifier et traiter les risques chez leurs <strong>partenaires commerciaux</strong>, en priorité là où les risques sont les plus graves. Si vous fournissez un très grand groupe, il peut vous envoyer un questionnaire de diligence et en tenir compte dans ses relations commerciales.</Trans></p>
             </div>
 
             <h3 className="text-xl font-bold text-gray-900 mt-8 mb-3">{t('resources.guideCsddd.qui.sectorsHeading', 'Mes secteurs à très forte exposition')}</h3>
@@ -306,19 +293,14 @@ export default function GuideCsdddPage() {
 
             <h3 className="text-xl font-bold text-gray-900 mt-6 mb-3">{t('resources.guideCsddd.sanctions.adminHeading', 'Sanctions administratives')}</h3>
             <ul className="space-y-2 my-4 list-disc list-inside">
-              <li><Trans i18nKey="resources.guideCsddd.sanctions.adminItem0">Amende jusqu'à <strong>5 % du chiffre d'affaires mondial net</strong> consolidé (art. 27)</Trans></li>
+              <li><Trans i18nKey="resources.guideCsddd.sanctions.adminItem0">Amende plafonnée à <strong>3 % du chiffre d'affaires mondial net</strong> (plafond relevé dans le texte final de l'Omnibus I)</Trans></li>
               <li>{t('resources.guideCsddd.sanctions.adminItem1', 'Publication de la décision et du nom de l\'entreprise (« naming and shaming »)')}</li>
-              <li><Trans i18nKey="resources.guideCsddd.sanctions.adminItem2">Décision par une <strong>autorité de supervision nationale</strong> désignée (en France : DGCCRF + ACPR pressentis)</Trans></li>
+              <li><Trans i18nKey="resources.guideCsddd.sanctions.adminItem2">Décision par une <strong>autorité de supervision nationale</strong> désignée par chaque État membre</Trans></li>
             </ul>
 
-            <h3 className="text-xl font-bold text-gray-900 mt-8 mb-3">{t('resources.guideCsddd.sanctions.civilHeading', 'Responsabilité civile élargie (art. 29)')}</h3>
-            <p><Trans i18nKey="resources.guideCsddd.sanctions.civilP1">C'est la grande nouveauté juridique : les victimes du préjudice (travailleurs lésés, communautés affectées, ONG mandatées) peuvent agir en justice <strong>directement contre l'entreprise française</strong>, même quand le préjudice a eu lieu chez un fournisseur tiers à l'étranger.</Trans></p>
-            <ul className="space-y-2 my-4 list-disc list-inside">
-              <li><Trans i18nKey="resources.guideCsddd.sanctions.civilItem0">Délai de prescription minimum : <strong>5 ans</strong> (au lieu des 2-3 ans habituels)</Trans></li>
-              <li>{t('resources.guideCsddd.sanctions.civilItem1', 'Charge de la preuve facilitée pour les requérants')}</li>
-              <li>{t('resources.guideCsddd.sanctions.civilItem2', "Possibilité d'action collective via syndicats et ONG")}</li>
-            </ul>
-            <p>{t('resources.guideCsddd.sanctions.civilFooter', "Concrètement : un travailleur exploité chez un sous-traitant indien d'un grand groupe français pourra l'attaquer aux Prud'hommes ou au tribunal de commerce français.")}</p>
+            <h3 className="text-xl font-bold text-gray-900 mt-8 mb-3">{t('resources.guideCsddd.sanctions.civilHeading', "Responsabilité civile")}</h3>
+            <p><Trans i18nKey="resources.guideCsddd.sanctions.civilP1">L'Omnibus I a supprimé le régime européen harmonisé de responsabilité civile prévu à l'origine. La responsabilité des entreprises reste donc régie par le droit national de chaque État membre (en France, le droit commun et la loi de 2017).</Trans></p>
+            <p>{t('resources.guideCsddd.sanctions.civilFooter', "Documentez votre démarche de vigilance : c'est votre meilleure protection, quel que soit le régime applicable.")}</p>
           </section>
 
           <section id="methode" className="scroll-mt-24 mt-12">
@@ -336,15 +318,15 @@ export default function GuideCsdddPage() {
 
           <section id="esgflow" className="scroll-mt-24 mt-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('resources.guideCsddd.esgflow.heading', 'Mettre en place la CSDDD avec ESGFlow')}</h2>
-            <p><Trans i18nKey="resources.guideCsddd.esgflow.intro">Le module <strong>Supply Chain ESG</strong> d'ESGFlow couvre les obligations CSDDD + ESRS S2 dans un seul outil :</Trans></p>
+            <p><Trans i18nKey="resources.guideCsddd.esgflow.intro">Le module <strong>Supply Chain ESG</strong> d'ESGFlow aide à préparer une démarche de vigilance (CSDDD, loi de 2017) et les données ESRS S2. Il ne remplace ni un conseil juridique ni vos audits :</Trans></p>
             <div className="grid md:grid-cols-2 gap-4 my-8">
               {[
-                { icon: Users,       t: t('resources.guideCsddd.esgflow.features.0.t', 'Cartographie fournisseurs'),  d: t('resources.guideCsddd.esgflow.features.0.d', 'Importation Excel ou CSV de votre annuaire fournisseurs, scoring automatique par pays × secteur.') },
-                { icon: Shield,      t: t('resources.guideCsddd.esgflow.features.1.t', 'Code de conduite signé'),     d: t('resources.guideCsddd.esgflow.features.1.d', 'Template prêt à personnaliser, envoi automatisé et collecte des signatures électroniques.') },
-                { icon: FileText,    t: t('resources.guideCsddd.esgflow.features.2.t', "Questionnaires d'audit"),    d: t('resources.guideCsddd.esgflow.features.2.d', 'Templates EcoVadis-compatibles, envoi par email, relances auto, scoring centralisé.') },
-                { icon: AlertTriangle, t: t('resources.guideCsddd.esgflow.features.3.t', 'Registre des plaintes'),    d: t('resources.guideCsddd.esgflow.features.3.d', 'Portail public anonyme + workflow de traitement interne (assignation, délai, action corrective).') },
-                { icon: Scale,       t: t('resources.guideCsddd.esgflow.features.4.t', "Plans d'action correctifs"), d: t('resources.guideCsddd.esgflow.features.4.d', 'Pour chaque non-conformité, plan SMART avec responsable, délai, indicateurs de suivi.') },
-                { icon: FileText,    t: t('resources.guideCsddd.esgflow.features.5.t', 'Rapport CSDDD annuel'),       d: t('resources.guideCsddd.esgflow.features.5.d', 'Génération PDF + intégration directe au rapport CSRD section ESRS S2.') },
+                { icon: Users,       t: t('resources.guideCsddd.esgflow.features.0.t', 'Cartographie fournisseurs'),  d: t('resources.guideCsddd.esgflow.features.0.d', "Import Excel de votre annuaire fournisseurs (modèle fourni), niveaux de risque et matrice probabilité/impact.") },
+                { icon: Shield,      t: t('resources.guideCsddd.esgflow.features.1.t', "Fiche fournisseur"),     d: t('resources.guideCsddd.esgflow.features.1.d', "Informations légales, score ESG, historique d'évaluations et documents justificatifs par fournisseur.") },
+                { icon: FileText,    t: t('resources.guideCsddd.esgflow.features.2.t', "Questionnaires fournisseurs"),    d: t('resources.guideCsddd.esgflow.features.2.d', "Envoi d'un questionnaire ESG via un lien sécurisé (90 jours), sans compte pour le fournisseur ; suivi des réponses.") },
+                { icon: AlertTriangle, t: t('resources.guideCsddd.esgflow.features.3.t', 'Registre des plaintes'),    d: t('resources.guideCsddd.esgflow.features.3.d', "Canal de signalement public anonyme pour recueillir les alertes.") },
+                { icon: Scale,       t: t('resources.guideCsddd.esgflow.features.4.t', "Plans d'action correctifs"), d: t('resources.guideCsddd.esgflow.features.4.d', "Documentez les mesures recommandées pour chaque fournisseur à risque (suivi manuel).") },
+                { icon: FileText,    t: t('resources.guideCsddd.esgflow.features.5.t', "Données pour l'ESRS S2"),       d: t('resources.guideCsddd.esgflow.features.5.d', "Les données fournisseurs alimentent la préparation de la section ESRS S2 de votre rapport.") },
               ].map((f, i) => {
                 const I = f.icon;
                 return (
@@ -371,13 +353,13 @@ export default function GuideCsdddPage() {
             <h2 className="text-3xl font-bold text-gray-900 mb-6">{t('resources.guideCsddd.faq.heading', 'Questions fréquentes')}</h2>
             <div className="space-y-4">
               {[
-                { q: t('resources.guideCsddd.faq.0.q', 'Ma PME de 100 salariés est-elle soumise à la CSDDD ?'), a: t('resources.guideCsddd.faq.0.a', "Directement, non — la CSDDD ne s'applique qu'aux entreprises >1 000 salariés et >450 M€ de CA. Indirectement, oui si vous êtes fournisseur d'un grand groupe soumis : ils vont vous auditer.") },
-                { q: t('resources.guideCsddd.faq.1.q', 'Quelle différence entre CSDDD et loi française devoir de vigilance ?'), a: t('resources.guideCsddd.faq.1.a', "La loi française 2017 cible ~250 entreprises FR. La CSDDD étend à ~6 000 entreprises UE avec cadre harmonisé, sanctions plus fortes (5 % CA mondial) et responsabilité civile élargie. Les deux coexistent jusqu'à fin 2027.") },
-                { q: t('resources.guideCsddd.faq.2.q', "Quel calendrier d'application de la CSDDD ?"), a: t('resources.guideCsddd.faq.2.a', 'Vague 1 (5 000+ sal., 1,5 Md€ CA) : 26 juillet 2027. Vague 2 (3 000+ sal., 900 M€) : 26 juillet 2028. Vague 3 (1 000+ sal., 450 M€) : 26 juillet 2029.') },
-                { q: t('resources.guideCsddd.faq.3.q', 'Quelles sanctions en cas de manquement ?'), a: t('resources.guideCsddd.faq.3.a', "Amendes jusqu'à 5 % du CA mondial net. Naming and shaming public obligatoire. Responsabilité civile élargie : victimes peuvent agir directement contre l'entreprise française même pour préjudice à l'étranger.") },
-                { q: t('resources.guideCsddd.faq.4.q', 'Comment ESGFlow aide à se conformer ?'), a: t('resources.guideCsddd.faq.4.a', "Module Supply Chain ESG inclus dès le plan ETI : cartographie fournisseurs, questionnaires d'audit, suivi plans d'action, registre plaintes. Conforme ESRS S2 et CSDDD.") },
-                { q: t('resources.guideCsddd.faq.5.q', 'La CSDDD remplace-t-elle la loi française de 2017 ?'), a: t('resources.guideCsddd.faq.5.a', "Elle s'y substituera après transposition complète (~juillet 2026 en théorie). En pratique, les 2 régimes coexistent et il faut respecter le plus exigeant des deux pendant la période transitoire.") },
-                { q: t('resources.guideCsddd.faq.6.q', 'Quels documents préparer pour répondre à un questionnaire CSDDD client ?'), a: t('resources.guideCsddd.faq.6.a', "Code de conduite fournisseurs signé, politique droits humains, cartographie risques, résultats d'audits récents, mécanisme de plainte, plan d'action correctif. ESGFlow fournit les templates de tous ces documents.") },
+                { q: t('resources.guideCsddd.faq.0.q', 'Ma PME de 100 salariés est-elle soumise à la CSDDD ?'), a: t('resources.guideCsddd.faq.0.a', "Directement, non — la CSDDD ne vise que les entreprises de plus de 5 000 salariés et 1,5 Md€ de CA. Indirectement, vous pouvez recevoir des demandes d'un grand client soumis.") },
+                { q: t('resources.guideCsddd.faq.1.q', 'Quelle différence entre CSDDD et loi française devoir de vigilance ?'), a: t('resources.guideCsddd.faq.1.a', "La loi française de 2017 vise les très grandes sociétés françaises (5 000 salariés en France ou 10 000 dans le monde). La CSDDD fixe un cadre européen harmonisé, avec des sanctions administratives plafonnées à 3 % du CA mondial net.") },
+                { q: t('resources.guideCsddd.faq.2.q', "Quel calendrier d'application de la CSDDD ?"), a: t('resources.guideCsddd.faq.2.a', "Transposition au plus tard le 26 juillet 2028, application à partir du 26 juillet 2029 pour les entreprises de plus de 5 000 salariés et 1,5 Md€ de CA net (Omnibus I, directive 2026/470).") },
+                { q: t('resources.guideCsddd.faq.3.q', 'Quelles sanctions en cas de manquement ?'), a: t('resources.guideCsddd.faq.3.a', "Amendes plafonnées à 3 % du CA mondial net et publication de la décision. Le régime européen harmonisé de responsabilité civile a été supprimé : le droit national s'applique.") },
+                { q: t('resources.guideCsddd.faq.4.q', 'Comment ESGFlow aide à se conformer ?'), a: t('resources.guideCsddd.faq.4.a', "Le module Supply Chain ESG (inclus dès le plan PME) permet de cartographier vos fournisseurs, de leur envoyer des questionnaires, de suivre les risques et de recueillir des signalements. Il aide à préparer la démarche mais ne garantit pas la conformité.") },
+                { q: t('resources.guideCsddd.faq.5.q', 'La CSDDD remplace-t-elle la loi française de 2017 ?'), a: t('resources.guideCsddd.faq.5.a', "Non, pas avant la transposition complète de la CSDDD (au plus tard juillet 2028, application en juillet 2029). D'ici là, la loi de 2017 continue de s'appliquer.") },
+                { q: t('resources.guideCsddd.faq.6.q', 'Quels documents préparer pour répondre à un questionnaire CSDDD client ?'), a: t('resources.guideCsddd.faq.6.a', "Politique droits humains, code de conduite fournisseurs, cartographie des risques, résultats d'audits récents, mécanisme de plainte, plan d'action correctif. ESGFlow n'en fournit pas de modèles ; il aide à centraliser les informations fournisseurs.") },
               ].map((item, i) => (
                 <details key={i} className="group border border-gray-200 rounded-xl overflow-hidden hover:border-violet-300 transition-colors">
                   <summary className="flex items-start justify-between cursor-pointer p-5 hover:bg-gray-50 transition-colors">
