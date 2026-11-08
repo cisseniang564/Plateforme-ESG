@@ -162,7 +162,7 @@ export default function MultiStandardMapping() {
               {dataAvailable && <span className="ml-1 bg-green-400/20 text-green-300 px-1.5 py-0.5 rounded text-xs">✓ {t('multi.realData', 'Données réelles')}</span>}
             </div>
             <h1 className="text-2xl font-bold mb-1">{t('multi.heroTitle', 'Saisir une fois · Exporter partout')}</h1>
-            <p className="text-sm text-white/70 max-w-xl">{t('multi.heroDesc', 'Vos données ESRS sont automatiquement mappées vers GRI, CDP et TCFD. Générez en 1 clic des rapports conformes à chaque standard.')}</p>
+            <p className="text-sm text-white/70 max-w-xl">{t('multi.heroDesc', 'Vos données ESRS sont automatiquement mappées vers GRI, CDP et TCFD. Générez des rapports alignés sur chaque standard, à relire avant usage.')}</p>
             <div className="flex items-center gap-3 mt-3">
               <select value={year} onChange={e => setYear(Number(e.target.value))} className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none">
                 {[currentYear-1,currentYear,currentYear+1].map(y => <option key={y} value={y} className="text-gray-900">{y}</option>)}

@@ -6930,29 +6930,29 @@
         "subtitle": "Concrete capabilities you can check yourself during the free trial.",
         "cards": [
           {
-            "badge": "ESMA 2026 REQUIREMENT",
-            "title": "Real iXBRL / ESEF",
-            "subtitle": "EFRAG 2024-12-31 namespace · 150-concept ESRS catalogue",
-            "body": "We produce <strong>iXBRL-tagged XHTML</strong>, the format targeted by the ESMA for sustainability reports of listed companies.",
+            "badge": "iXBRL TAGGING",
+            "title": "iXBRL preview (XHTML)",
+            "subtitle": "EFRAG 2024-12-31 namespace · ESRS concept catalogue",
+            "body": "We produce <strong>iXBRL-tagged XHTML</strong>, the format targeted by the ESMA for sustainability reports of listed companies. Final ESEF filing remains to be done with your advisers.",
             "points": [
               "XHTML EFRAG 2024-12-31",
-              "150-concept ESRS catalogue",
+              "ESRS concept catalogue",
               "Strict namespace validation",
               "Built-in Arelle validation"
             ],
             "footerLabel": "Demonstrable:",
-            "footerText": "one-click export from CSRD Builder, openable in Arelle."
+            "footerText": "preview from CSRD Builder, checkable in Arelle."
           },
           {
-            "badge": "SAVES 200-400 h/yr",
-            "title": "FEC import → automatic Scope 3",
+            "badge": "SPEND-BASED ESTIMATE",
+            "title": "FEC import → Scope 3 estimate",
             "subtitle": "18-column parser · PCG → ADEME mapping",
-            "body": "Upload your <strong>FEC file (Sage, Cegid, Pennylane…)</strong> and we calculate your Scope 3 in <strong>5 minutes instead of 3 months</strong> of manual entry. Automatic mapping of accounting classes 60, 61, 62 to the 47 ADEME emission factors.",
+            "body": "Upload your <strong>FEC file</strong>: we estimate your Scope 3 with the <strong>spend-based method</strong> from expense accounts (classes 60 to 62) using ADEME factors. Estimate to review before use.",
             "points": [
               "Official 18-column FEC parser",
-              "47 built-in ADEME factors",
+              "Built-in ADEME factors",
               "Automatic PCG mapping",
-              "Sage/Cegid/Pennylane compatible"
+              "Standard FEC format"
             ],
             "footerLabel": "For the CFO:",
             "footerText": "a time saving to measure on your own data."
@@ -15007,7 +15007,7 @@
     "exportPreparing": "{{std}} export being prepared…",
     "exportReady": "{{std}} report ready! Redirecting to Reports…",
     "filterLabel": "Filter:",
-    "heroDesc": "Your ESRS data is automatically mapped to GRI, CDP and TCFD. Generate standard-compliant reports in 1 click.",
+    "heroDesc": "Your ESRS data is automatically mapped to GRI, CDP and TCFD. Generate reports aligned with each standard, to review before use.",
     "heroTitle": "Enter once · Export everywhere",
     "loading": "Loading…",
     "noDataBanner": "No data entered for {{year}}",
