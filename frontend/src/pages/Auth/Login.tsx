@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useAuth } from '@/hooks/useAuth';
 import Button from '@/components/common/Button';
 import LanguageSelector from '@/components/LanguageSelector';
 import { UserPlus, Shield, Loader2, Lock, CheckCircle, ArrowRight, BarChart3, Globe } from 'lucide-react';
 import { authService } from '@/services/authService';
+import api from '@/services/api';
 import { setUser } from '@/store/slices/authSlice';
 import { LogoMark, Wordmark } from '@/components/common/Logo';
 
@@ -19,6 +20,30 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [searchParams] = useSearchParams();
+  const ssoErrors: Record<string, string> = {
+    denied: t('auth.sso.err.denied', "La connexion SSO a été refusée ou interrompue."),
+    expired: t('auth.sso.err.expired', "La session SSO a expiré, recommencez."),
+    config: t('auth.sso.err.config', "Le SSO n'est pas configuré pour cet espace."),
+    failed: t('auth.sso.err.failed', "La vérification auprès de votre fournisseur d'identité a échoué."),
+    domain: t('auth.sso.err.domain', "Cette adresse e-mail n'appartient pas à un domaine autorisé."),
+    no_account: t('auth.sso.err.noAccount', "Aucun compte actif ne correspond à cette adresse : demandez une invitation à votre administrateur."),
+  };
+  const ssoParam = searchParams.get('sso_error');
+  const [ssoLoading, setSsoLoading] = useState(false);
+
+  const handleSso = async () => {
+    setError('');
+    if (!email) { setError(t('auth.sso.needEmail', "Saisissez d'abord votre adresse e-mail professionnelle.")); return; }
+    setSsoLoading(true);
+    try {
+      const res = await api.post('/sso/start', { email });
+      window.location.assign(res.data.authorization_url);
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || t('auth.sso.err.start', "Impossible de démarrer la connexion SSO."));
+      setSsoLoading(false);
+    }
+  };
 
   const [requires2fa, setRequires2fa] = useState(false);
   const [tempToken, setTempToken] = useState('');
@@ -160,10 +185,10 @@ export default function Login() {
                 </div>
 
                 <form onSubmit={handleTotpSubmit} className="space-y-5">
-                  {error && (
+                  {(error || (ssoParam && ssoErrors[ssoParam])) && (
                     <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
                       <svg className="h-4 w-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/></svg>
-                      {error}
+                      {error || (ssoParam ? ssoErrors[ssoParam] : '')}
                     </div>
                   )}
 
@@ -265,6 +290,16 @@ export default function Login() {
                     )}
                   </button>
                 </form>
+
+                <button
+                  type="button"
+                  onClick={handleSso}
+                  disabled={ssoLoading}
+                  className="mt-3 w-full flex items-center justify-center gap-2 px-6 py-3 bg-white border border-gray-200 hover:border-gray-300 disabled:opacity-60 text-gray-700 font-semibold rounded-xl transition-all hover:shadow-sm"
+                >
+                  {ssoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="h-4 w-4" />}
+                  {t('auth.sso.button', 'Se connecter avec le SSO')}
+                </button>
 
                 {/* Divider */}
                 <div className="relative my-8">

@@ -45,7 +45,7 @@ const getItems = (t: TFunction): RoadmapItem[] => [
   { title: t('resources.roadmap.items.15.title', 'Scénarios climat (TCFD avancé)'),         desc: t('resources.roadmap.items.15.desc', 'Modélisation IPCC RCP 2.6 / 4.5 / 8.5 sur 30 ans.'),               quarter: 'Q4 2026', category: 'reports',      status: 'planned' },
   { title: t('resources.roadmap.items.16.title', 'CSDDD — module supply chain due diligence'), desc: t('resources.roadmap.items.16.desc', "Audits fournisseurs, suivi plans d'action."),                   quarter: 'Q4 2026', category: 'core',         status: 'planned' },
   { title: t('resources.roadmap.items.17.title', 'Marque blanche (white-label)'),           desc: t('resources.roadmap.items.17.desc', 'Personnalisation logo, domaine, couleurs (plan Groupe).'),         quarter: 'Q4 2026', category: 'ux',           status: 'planned' },
-  { title: t('resources.roadmap.items.18.title', 'SSO (OpenID Connect & SAML 2.0)'),                           desc: t('resources.roadmap.items.18.desc', 'Azure AD, Okta, Google Workspace (plan Groupe).'),                 quarter: 'Q4 2026', category: 'security',     status: 'planned' },
+  { title: t('resources.roadmap.items.18.title', 'SSO SAML 2.0'),                           desc: t('resources.roadmap.items.18.desc', "Complément de l'SSO OpenID Connect, déjà disponible."),                 quarter: 'Q4 2026', category: 'security',     status: 'planned' },
 
   // 💭 Considering
   { title: t('resources.roadmap.items.19.title', 'Mobile app iOS / Android'),               desc: t('resources.roadmap.items.19.desc', 'Consultation rapports + saisie indicateurs terrain.'),             quarter: '2027',    category: 'ux',           status: 'considering' },

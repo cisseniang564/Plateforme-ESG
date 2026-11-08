@@ -18,6 +18,8 @@ PUBLIC_PATHS = frozenset([
     "/api/v1/auth/2fa/verify",   # 2FA verification uses temp_token, not full JWT
     "/api/v1/auth/forgot-password",  # Password reset request — no auth
     "/api/v1/auth/reset-password",   # Password reset confirmation — no auth
+    "/api/v1/sso/start",        # SSO : démarrage de la connexion (pas encore de session)
+    "/api/v1/sso/callback",     # SSO : retour du fournisseur d'identité (état chiffré, pas de JWT)
     "/api/v1/webhooks/stripe",  # Stripe webhook — signature-verified, no JWT
     "/api/v1/reports/verify",   # Public report hash verification — no PII returned
     "/api/v1/unsubscribe",      # Email unsubscribe — must work without JWT (RFC 8058)
