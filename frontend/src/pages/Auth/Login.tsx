@@ -96,7 +96,7 @@ export default function Login() {
             <div className="grid grid-cols-2 gap-4 mb-10">
               {[
                 { icon: BarChart3, label: '22 modules', sub: 'intégrés' },
-                { icon: Shield, label: '82 exigences', sub: 'ESRS couvertes' },
+                { icon: Shield, label: '80 points de données', sub: 'ESRS suivis' },
                 { icon: Lock, label: 'SHA-256', sub: 'journal détaillé' },
                 { icon: Globe, label: '100% France', sub: 'RGPD natif' },
               ].map(({ icon: Icon, label, sub }) => (

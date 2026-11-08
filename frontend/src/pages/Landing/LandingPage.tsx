@@ -301,9 +301,9 @@ const MODULES = [
     lightBg: 'bg-violet-50',
     lightText: 'text-violet-700',
     name: 'Analyse ESRS / DMA',
-    tagline: 'Gap analysis CSRD · 82 exigences · Roadmap',
-    desc: 'Analysez vos écarts de conformité face aux 82 exigences ESRS. Identifiez les points manquants, priorisez les actions et suivez votre progression vers la conformité CSRD.',
-    badges: ['82 exigences ESRS', 'Gap analysis automatique', 'Roadmap priorisée', 'Export rapport PDF'],
+    tagline: 'Gap analysis CSRD · 80 points de données · Roadmap',
+    desc: 'Analysez vos écarts de conformité face aux 80 points de données ESRS. Identifiez les points manquants, priorisez les actions et suivez votre progression vers la conformité CSRD.',
+    badges: ['80 points de données ESRS', 'Gap analysis automatique', 'Roadmap priorisée', 'Export rapport PDF'],
     preview: 'esrs',
   },
   {
@@ -902,7 +902,7 @@ function PreviewESRS() {
     <div className="p-5 space-y-3">
       <div className="flex items-center justify-between mb-2">
         <div className="text-white font-bold">Analyse ESRS / DMA</div>
-        <div className="text-xs text-violet-300 font-semibold">82 exigences</div>
+        <div className="text-xs text-violet-300 font-semibold">80 points de données</div>
       </div>
       <div className="space-y-2.5">
         {standards.map((s, i) => (
@@ -1278,7 +1278,7 @@ const WHY_PILLARS = [
     border: 'border-emerald-100',
     title: 'Conformité totale, zéro angle mort',
     desc: 'CSRD/ESRS, Taxonomie UE, BEGES ADEME, CSDDD, Devoir de vigilance (Loi 2017-399), Sapin 2, SBTi, SFDR, GRI, TCFD — 10 référentiels ESG/climat/anti-corruption couverts. Un seul outil, aucun oubli.',
-    points: ['82 exigences ESRS mappées', 'Gap analysis automatique', 'Roadmap priorisée', 'Export iXBRL/ESEF audit-ready'],
+    points: ['80 points de données ESRS mappées', 'Gap analysis automatique', 'Roadmap priorisée', 'Document iXBRL à valider (Arelle)'],
   },
   {
     icon: Lock,
@@ -1425,7 +1425,7 @@ export default function LandingPage() {
     { q: 'Y a-t-il un engagement de durée ?', a: 'L\'abonnement mensuel se résilie à tout moment, avec effet à la fin du mois en cours. L\'abonnement annuel bénéficie de 15 % de réduction : l\'année entière est due, et la résiliation prend effet à l\'échéance, sans remboursement au prorata (article 8 des conditions générales). L\'essai de 14 jours est sans carte bancaire ni engagement.' },
     { q: 'Comment fonctionne l\'import FEC pour le Scope 3 ?', a: 'Exportez votre FEC depuis Sage, Cegid ou Pennylane et importez-le directement dans ESGFlow. La plateforme analyse automatiquement vos comptes 60x/61x/62x et calcule vos émissions Scope 3 par catégorie de dépenses en appliquant les facteurs d\'émission ADEME.' },
     { q: 'Comment fonctionne le Workflow de Validation ?', a: 'Chaque saisie ESG passe par 3 étapes : Brouillon → En révision → Approuvé. Les validateurs peuvent approuver ou rejeter avec un motif. Chaque action est automatiquement enregistrée dans la Piste d\'Audit avec date, utilisateur et contexte.' },
-    { q: 'Qu\'est-ce que l\'analyse ESRS / Gap analysis ?', a: 'Ce module compare vos données et processus existants aux 82 exigences des normes ESRS (E1 à G1). Il génère automatiquement une analyse des écarts avec une roadmap priorisée pour atteindre la conformité CSRD.' },
+    { q: 'Qu\'est-ce que l\'analyse ESRS / Gap analysis ?', a: 'Ce module compare vos données et processus existants aux 80 points de données des normes ESRS (E1 à G1). Il génère automatiquement une analyse des écarts avec une roadmap priorisée pour atteindre la conformité CSRD.' },
   ];
 
   usePageSeo({
