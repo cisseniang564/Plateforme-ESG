@@ -23,23 +23,23 @@ def _codes(res):
 
 
 def test_notes_v2_toujours_presentes_et_informatives():
-    res = validate_commitment(_commitment())
+    res = validate_commitment(_commitment(), ruleset="v5")
     v2 = [i for i in res.issues if i.code == "V2.0"]
     assert v2 and all(i.severity == "info" for i in v2)
     assert any("catégorie A" in i.message_fr for i in v2)
 
 
 def test_horizon_different_de_5_ans_signale_en_info():
-    res = validate_commitment(_commitment(near_term_target_year=NOW + 8))
+    res = validate_commitment(_commitment(near_term_target_year=NOW + 8), ruleset="v5")
     assert any(i.code == "V2.0" and "5 ans" in i.message_fr and "8" in i.message_fr for i in res.issues)
 
 
 def test_horizon_5_ans_pas_de_note_horizon():
-    res = validate_commitment(_commitment())
+    res = validate_commitment(_commitment(), ruleset="v5")
     assert not any("votre cible est à" in i.message_fr for i in res.issues)
 
 
 def test_les_notes_v2_ne_comptent_ni_comme_blocage_ni_comme_avertissement():
-    res = validate_commitment(_commitment())
+    res = validate_commitment(_commitment(), ruleset="v5")
     assert res.blockers == sum(1 for i in res.issues if i.severity == "blocker")
     assert res.warnings == sum(1 for i in res.issues if i.severity == "warning")

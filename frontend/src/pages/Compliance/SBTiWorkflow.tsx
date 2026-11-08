@@ -547,6 +547,7 @@ interface BackendValidation {
   warnings: number;
   issues: Array<{ severity: string; code: string; message_fr: string; field?: string }>;
   summary_fr: string;
+  ruleset?: 'v5' | 'v2';
 }
 
 const getSbtiCriteria = (t: TFunction) => [
@@ -863,6 +864,9 @@ function Step4({ state }: { state: WorkflowState }) {
                 {validation.warnings > 0 && ` · ${t('compliance.sbti.step4.warningsCount', '{{count}} avertissement(s)', { count: validation.warnings })}`}
               </p>
               <p className="text-xs text-gray-700 mt-1">{validation.summary_fr}</p>
+              {validation.ruleset && (
+                <p className="text-[11px] text-gray-500 mt-1">{validation.ruleset === 'v2' ? t('compliance.sbti.rulesetV2', 'Règles appliquées : Net-Zero Standard V2.0 (validations dès le 1er février 2027).') : t('compliance.sbti.rulesetV5', 'Règles appliquées : Near-Term v5.x (validations jusqu\'au 31 janvier 2027).')}</p>
+              )}
               {validation.issues && validation.issues.length > 0 && (
                 <ul className="mt-3 space-y-1.5">
                   {validation.issues.slice(0, 6).map((iss, i) => (

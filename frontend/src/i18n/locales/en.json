@@ -5576,7 +5576,9 @@
         "pass": "PASS ✓",
         "blocker": "BLOCKING ✗",
         "warning": "WARNING ⚠"
-      }
+      },
+      "rulesetV2": "Rules applied: Net-Zero Standard V2.0 (validations from 1 February 2027).",
+      "rulesetV5": "Rules applied: Near-Term v5.x (validations until 31 January 2027)."
     },
     "csrdProgress": {
       "status": {
