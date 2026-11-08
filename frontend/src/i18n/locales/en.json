@@ -6757,10 +6757,10 @@
         },
         "esrs": {
           "name": "ESRS / DMA Analysis",
-          "tagline": "CSRD gap analysis · 82 requirements · Roadmap",
-          "desc": "Analyze your compliance gaps against the 82 ESRS requirements. Identify what's missing, prioritize actions and track your progress toward CSRD compliance.",
+          "tagline": "CSRD gap analysis · 80 data points · Roadmap",
+          "desc": "Analyze your compliance gaps against the 80 ESRS data points. Identify what's missing, prioritize actions and track your progress toward CSRD compliance.",
           "badges": [
-            "82 ESRS requirements",
+            "80 ESRS data points",
             "Automatic gap analysis",
             "Prioritized roadmap",
             "PDF report export"
@@ -6865,7 +6865,7 @@
             "title": "Total compliance, zero blind spots",
             "desc": "CSRD/ESRS, EU Taxonomy, GRI, CDP, TCFD, SFDR, ISO 14001/26000, Sapin II Law, Duty of Vigilance — 10 frameworks covered natively. One tool, nothing overlooked.",
             "points": [
-              "82 ESRS requirements mapped",
+              "80 ESRS data points tracked",
               "Automatic gap analysis",
               "Prioritized roadmap",
               "Audit-ready reporting"
@@ -7400,7 +7400,7 @@
           },
           {
             "q": "What is the ESRS / Gap analysis?",
-            "a": "This module compares your existing data and processes against the 82 ESRS requirements (E1 to G1). It automatically generates a gap analysis with a prioritized roadmap to reach CSRD compliance."
+            "a": "This module compares your existing data and processes against the 80 ESRS data points (E1 to G1). It automatically generates a gap analysis with a prioritized roadmap to reach CSRD compliance."
           }
         ]
       },
@@ -9783,10 +9783,10 @@
     "csrdReporting": {
       "title": "CSRD / ESRS Reporting",
       "subtitle": "Build your CSRD sustainability report compliant with the ESRS standards",
-      "description": "ESGFlow covers the 82 requirements of the ESRS (European Sustainability Reporting Standards) with a structured report editor, automatic gap analysis and multi-format exports ready for your auditors.",
+      "description": "ESGFlow covers the 80 ESRS data points (European Sustainability Reporting Standards) with a structured report editor, automatic gap analysis and multi-format exports ready for your auditors.",
       "benefits": {
         "0": {
-          "title": "82 ESRS requirements mapped",
+          "title": "80 ESRS data points tracked",
           "description": "Each ESRS requirement is structured with its required indicators, materiality thresholds and example answers. You never miss anything."
         },
         "1": {
@@ -9795,7 +9795,7 @@
         },
         "2": {
           "title": "Multi-format export",
-          "description": "Generate your report in PDF, Word, Excel or JSON. iXBRL/ESEF format for European regulatory filing."
+          "description": "Generate your report as PDF, Word or Excel. An iXBRL (XHTML) document is produced for validation before filing."
         },
         "3": {
           "title": "Audit-ready",
@@ -9821,7 +9821,7 @@
         },
         "4": {
           "title": "Multi-framework mapping",
-          "description": "Your CSRD data is automatically mapped to GRI, CDP, TCFD and SDG. A single entry for all your reporting."
+          "description": "An indicative mapping table links your ESRS data to GRI, CDP, TCFD and SDG frameworks. Validate before any official use."
         },
         "5": {
           "title": "Validation workflow",
@@ -9829,7 +9829,7 @@
         },
         "6": {
           "title": "iXBRL/ESEF export",
-          "description": "Produce iXBRL tagging compliant with the ESEF format for filing with European market authorities."
+          "description": "Produce an iXBRL (XHTML) document that can be validated with Arelle. The final ESEF package is still to be assembled with your filing provider."
         },
         "7": {
           "title": "Year-over-year comparison",
@@ -9839,7 +9839,7 @@
       "steps": {
         "0": {
           "title": "Run your gap analysis",
-          "description": "ESGFlow analyzes your existing data and identifies the gaps against the 82 ESRS requirements. Instant compliance score."
+          "description": "ESGFlow analyzes your existing data and identifies the gaps against the 80 ESRS data points. Instant compliance score."
         },
         "1": {
           "title": "Complete your report",
@@ -9847,7 +9847,7 @@
         },
         "2": {
           "title": "Export and submit",
-          "description": "Generate your report in PDF/Word for management and in iXBRL for regulatory filing. Everything is auditable."
+          "description": "Generate your report as PDF/Word for management and an iXBRL document for validation before filing. Actions are traced in the audit trail."
         }
       },
       "faqs": {
@@ -9857,7 +9857,7 @@
         },
         "1": {
           "question": "Which ESRS standards are covered?",
-          "answer": "ESGFlow covers the entire ESRS Set 1 published by EFRAG: ESRS 1 (general requirements), ESRS 2 (general disclosures), E1 to E5 (environment), S1 to S4 (social) and G1 (governance). Sector-specific standards will be added as soon as they are published."
+          "answer": "ESGFlow follows the main ESRS data points: general information (ESRS 2), environment (E1 to E5), social (S1 to S4) and governance (G1). It does not replace reading the full standards published by EFRAG; sector standards are not covered."
         },
         "2": {
           "question": "Can the AI write my report?",
@@ -9865,7 +9865,7 @@
         },
         "3": {
           "question": "Is the iXBRL format mandatory?",
-          "answer": "iXBRL tagging in the ESEF format is required for the sustainability reports of listed companies subject to the Transparency Directive. ESGFlow generates the tagging automatically from your structured data."
+          "answer": "iXBRL tagging in ESEF format is required for the sustainability reports of listed companies subject to the Transparency Directive. ESGFlow generates an iXBRL document from your structured data, to be validated with Arelle before filing."
         },
         "4": {
           "question": "Can I use ESGFlow for the DPEF?",
@@ -10415,41 +10415,41 @@
       "capabilities": {
         "0": {
           "title": "Organization selector",
-          "description": "A dedicated selector lets your team switch instantly between clients, remembering the last client viewed and giving quick access to favourites."
+          "description": "A selector lets your team switch from one client to another."
         },
         "1": {
           "title": "Portfolio dashboard",
-          "description": "One screen shows each client's status: overall ESG score, indicator completion rate, validation status and upcoming reporting deadlines."
+          "description": "See each client's ESG score and last calculation date on one screen."
         },
         "2": {
           "title": "Organization comparator",
           "description": "Select several client organizations and compare their pillar scores (Environment, Social, Governance), ESRS coverage rate and decarbonization trajectory."
         },
         "3": {
-          "title": "Per-client access management",
-          "description": "Define precisely which of your staff can access which clients, with differentiated roles (view, contribute, validate) per engagement."
+          "title": "Per-organization access",
+          "description": "Each client is a separate organization with its own users and roles."
         },
         "4": {
           "title": "Tailored reports per client",
           "description": "Generate CSRD reports, carbon footprints or materiality analyses for each client under their own identity (logo, name, scope), while reusing your templates and methodologies."
         },
         "5": {
-          "title": "Shared methodologies and frameworks",
-          "description": "Configure your scoring frameworks, weightings and materiality thresholds once, then apply them consistently across your whole client portfolio."
+          "title": "White label (firm branding)",
+          "description": "Customize the visual identity (name, logo) used to present your deliverables to clients."
         },
         "6": {
-          "title": "Regulatory deadline tracking",
-          "description": "Centralize CSRD filing dates, vigilance plan publication and carbon report deadlines for each client, with automatic reminders."
+          "title": "Per-client reporting",
+          "description": "Generate each client's CSRD reports, carbon footprints and materiality analyses from its own workspace."
         },
         "7": {
-          "title": "Streamlined client onboarding",
-          "description": "Add a new client organization quickly, import its existing data and configure its reporting scope with a guided setup assistant."
+          "title": "Creating a client organization",
+          "description": "Add a new client organization and enter or import its data (Excel templates provided)."
         }
       },
       "steps": {
         "0": {
           "title": "Add your client organizations",
-          "description": "Create a dedicated, isolated and secure space for each client in minutes using the setup assistant."
+          "description": "Create a dedicated workspace for each client with its own data scope, isolated by Row-Level Security."
         },
         "1": {
           "title": "Navigate between clients",
@@ -10471,15 +10471,15 @@
         },
         "2": {
           "question": "Can my clients access their own workspace directly?",
-          "answer": "Yes. You can invite your clients’ teams to access their organization directly, with the roles and permissions of your choice, while your firm keeps supervisory access."
+          "answer": "Yes. Each client is a separate organization: you can invite its teams there with the platform's roles."
         },
         "3": {
           "question": "Can I customize the reports generated for each client?",
-          "answer": "Yes. CSRD reports, carbon footprints and materiality analyses carry the selected client organization’s identity (name, scope, own indicators), while relying on the methodologies and templates configured by your firm."
+          "answer": "Yes. Your reports use the name and logo you configured in white label, with the data of the selected client organization."
         },
         "4": {
           "question": "How do I manage my team’s access across multiple clients?",
-          "answer": "From access management, you assign each member of your firm a role (view, contribute, validate) on each client organization they work with, without creating separate accounts."
+          "answer": "Because each client is a separate organization, its users and their roles are managed from that organization's user management."
         }
       },
       "related": {
@@ -10511,8 +10511,8 @@
           "description": "The open-source Arelle validation engine — the market reference for XBRL/iXBRL checks — is natively integrated to verify the technical compliance of your file before filing."
         },
         "2": {
-          "title": "Filing-ready ESEF export",
-          "description": "Generate an iXBRL/XHTML package compliant with the European Single Electronic Format (ESEF), ready to be submitted to your Officially Appointed Mechanism (OAM) or auditor."
+          "title": "iXBRL document to validate",
+          "description": "Generate an iXBRL-tagged XHTML document to check with Arelle. Assembling the final ESEF package (filing archive) is still to be done with your provider or auditor."
         },
         "3": {
           "title": "Detailed error report",
@@ -10541,8 +10541,8 @@
           "description": "Each detected anomaly is precisely located in the document (element, context, line) with a description of the validation rule concerned, making targeted fixes easy."
         },
         "5": {
-          "title": "Versioning of generated packages",
-          "description": "Keep the history of your generated iXBRL packages across correction iterations, with access to the validation reports for each version."
+          "title": "Validation reports",
+          "description": "Re-run the Arelle validation after each fix and review the resulting validation report."
         },
         "6": {
           "title": "Multi-format export",
@@ -10586,7 +10586,7 @@
         },
         "4": {
           "question": "Is the generated file accepted by national filing mechanisms?",
-          "answer": "The generated package complies with the ESEF format (iXBRL/XHTML) expected by Member States’ Officially Appointed Mechanisms (OAM) for annual report filings. We recommend checking the specific submission procedures of your national mechanism before the final filing."
+          "answer": "The module produces an iXBRL/XHTML document. The ESEF filing package (archive, taxonomy extension, metadata) must still be assembled and submitted according to your officially appointed mechanism (OAM); check its requirements before final filing."
         }
       },
       "related": {
@@ -15240,7 +15240,7 @@
       "dataEntry": "Manual data entry form",
       "dataquality": "Completeness score · Anomalies",
       "decarb": "SBTi · Net Zero 2050",
-      "esrs": "Gap analysis · 82 requirements",
+      "esrs": "Gap analysis · 80 data points",
       "import": "Import a CSV/Excel file",
       "indicators": "ESG indicators list",
       "insee": "10M+ companies · SIREN",

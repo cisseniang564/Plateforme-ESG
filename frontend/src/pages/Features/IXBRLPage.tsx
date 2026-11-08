@@ -37,8 +37,8 @@ export default function IXBRLPage() {
         },
         {
           icon: FileDown,
-          title: t('features.ixbrl.benefits.2.title', "Export ESEF prêt au dépôt"),
-          description: t('features.ixbrl.benefits.2.description', "Générez un package iXBRL/XHTML conforme au format européen unique d'information électronique (ESEF), prêt à être transmis à votre mécanisme officiellement désigné (OAM) ou à votre auditeur."),
+          title: t('features.ixbrl.benefits.2.title', "Document iXBRL à valider"),
+          description: t('features.ixbrl.benefits.2.description', "Générez un document XHTML balisé en iXBRL à contrôler avec Arelle. La constitution du package ESEF final (archive de dépôt) reste à faire avec votre prestataire ou votre auditeur."),
         },
         {
           icon: AlertTriangle,
@@ -52,7 +52,7 @@ export default function IXBRLPage() {
         { title: t('features.ixbrl.capabilities.2.title', "Génération du package iXBRL/XHTML"), description: t('features.ixbrl.capabilities.2.description', "Produisez automatiquement un document XHTML balisé en iXBRL intégrant à la fois la version lisible (mise en forme) et la version structurée (données XBRL) de votre rapport, conformément au format ESEF.") },
         { title: t('features.ixbrl.capabilities.3.title', "Validation technique via Arelle"), description: t('features.ixbrl.capabilities.3.description', "Le moteur Arelle exécute l'ensemble des règles de validation de la taxonomie ESRS sur votre fichier (cohérence des contextes, unités, calculs, dimensions) et produit un journal de validation détaillé.") },
         { title: t('features.ixbrl.capabilities.4.title', "Rapport d'erreurs et d'avertissements localisés"), description: t('features.ixbrl.capabilities.4.description', "Chaque anomalie détectée est localisée précisément dans le document (élément, contexte, ligne) avec une description de la règle de validation concernée, facilitant la correction ciblée.") },
-        { title: t('features.ixbrl.capabilities.5.title', "Versioning des packages générés"), description: t('features.ixbrl.capabilities.5.description', "Conservez l'historique des versions de votre package iXBRL généré au fil des itérations de correction, avec accès aux rapports de validation associés à chaque version.") },
+        { title: t('features.ixbrl.capabilities.5.title', "Rapports de validation"), description: t('features.ixbrl.capabilities.5.description', "Relancez la validation Arelle après chaque correction et consultez le rapport de validation obtenu.") },
         { title: t('features.ixbrl.capabilities.6.title', "Export multi-formats"), description: t('features.ixbrl.capabilities.6.description', "En complément du package iXBRL/ESEF, exportez votre rapport balisé au format PDF ou Excel pour vos besoins internes de relecture, de gouvernance ou de présentation aux instances dirigeantes.") },
         { title: t('features.ixbrl.capabilities.7.title', "Traçabilité complète du balisage"), description: t('features.ixbrl.capabilities.7.description', "Chaque opération de balisage, de modification ou de validation est enregistrée dans la piste d'audit de la plateforme, garantissant la traçabilité requise pour l'assurance par votre commissaire aux comptes.") },
       ]}
@@ -66,7 +66,7 @@ export default function IXBRLPage() {
         { question: t('features.ixbrl.faqs.1.question', "Qu'est-ce que le moteur Arelle ?"), answer: t('features.ixbrl.faqs.1.answer', "Arelle est un moteur open-source de référence pour le traitement et la validation de fichiers XBRL et iXBRL. Il vérifie la conformité d'un document à une taxonomie donnée (cohérence des balises, des contextes, des calculs) et produit un rapport de validation détaillé. Il est utilisé par de nombreux régulateurs et cabinets d'audit dans le monde.") },
         { question: t('features.ixbrl.faqs.2.question', "Puis-je corriger les erreurs de balisage avant le dépôt final ?"), answer: t('features.ixbrl.faqs.2.answer', "Oui. Le rapport de validation Arelle localise précisément chaque erreur ou avertissement. Vous pouvez ajuster les balises concernées dans l'éditeur intégré, puis relancer la validation autant de fois que nécessaire jusqu'à obtenir un fichier conforme.") },
         { question: t('features.ixbrl.faqs.3.question', "Le balisage couvre-t-il l'ensemble des points de données ESRS ?"), answer: t('features.ixbrl.faqs.3.answer', "Le module s'appuie sur la taxonomie ESRS publiée par l'EFRAG et couvre les points de données quantitatifs et les éléments narratifs structurés selon le principe de double matérialité. Le périmètre de balisage suit les évolutions de la taxonomie officielle.") },
-        { question: t('features.ixbrl.faqs.4.question', "Le fichier généré est-il accepté par les mécanismes de dépôt nationaux ?"), answer: t('features.ixbrl.faqs.4.answer', "Le package généré est conforme au format ESEF (iXBRL/XHTML) attendu par les mécanismes officiellement désignés (OAM) des États membres pour le dépôt des rapports annuels. Nous vous recommandons de vérifier les modalités de transmission spécifiques à votre mécanisme national avant le dépôt final.") },
+        { question: t('features.ixbrl.faqs.4.question', "Le fichier généré est-il accepté par les mécanismes de dépôt nationaux ?"), answer: t('features.ixbrl.faqs.4.answer', "Le module produit un document iXBRL/XHTML. Le package de dépôt ESEF (archive, extension de taxonomie, métadonnées) doit encore être constitué et transmis selon les modalités de votre mécanisme officiellement désigné (OAM) ; vérifiez-les avant le dépôt final.") },
       ]}
       relatedModules={[
         { name: t('features.ixbrl.related.0.name', "Reporting CSRD"), path: '/features/csrd-reporting', icon: FileText, color: '#0369a1' },
