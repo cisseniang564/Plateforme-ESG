@@ -15,3 +15,13 @@ def test_configuration_reservee_aux_admins():
         src = inspect.getsource(getattr(sso, name))
         assert "require_role(Roles.TENANT_ADMIN)" in src, name
 
+
+
+def test_config_et_connexions_sont_tracees():
+    assert "log_change" in inspect.getsource(sso.create_or_update_sso_config)
+    assert "log_change" in inspect.getsource(sso.delete_sso_config)
+    assert '"sso_login"' in inspect.getsource(sso.sso_callback)
+
+
+def test_secret_obligatoire_pour_activer():
+    assert "Le Client Secret est obligatoire" in inspect.getsource(sso.create_or_update_sso_config)
