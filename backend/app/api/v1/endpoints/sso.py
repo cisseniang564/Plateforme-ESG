@@ -20,6 +20,7 @@ from app.services.oidc_service import OIDCError
 from app.models.sso_config import SSOConfig
 from app.models.user import User
 from app.services import secret_vault
+from app.services.audit_service import log_change
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/sso", tags=["SSO"])
@@ -125,6 +126,8 @@ async def create_or_update_sso_config(
         select(SSOConfig).where(SSOConfig.tenant_id == current_user.tenant_id)
     )
     config = result.scalar_one_or_none()
+    if body.is_enabled and not body.client_secret and not (config and config.client_secret_enc):
+        raise HTTPException(status_code=400, detail="Le Client Secret est obligatoire.")
 
     enc_secret = _encrypt_secret(body.client_secret) if body.client_secret else None
 
@@ -159,6 +162,12 @@ async def create_or_update_sso_config(
         )
         db.add(config)
 
+    await db.flush()
+    await log_change(
+        db, current_user.tenant_id, "sso_config", config.id, "update", user=current_user,
+        new_values={"provider": body.provider_name, "issuer": body.issuer_url,
+                    "domains": body.allowed_domains, "enabled": body.is_enabled},
+    )
     await db.commit()
     await db.refresh(config)
     return _to_response(config)
@@ -176,6 +185,8 @@ async def delete_sso_config(
     config = result.scalar_one_or_none()
     if config:
         config.is_enabled = False
+        await log_change(db, current_user.tenant_id, "sso_config", config.id, "update", user=current_user,
+                         new_values={"enabled": False})
         await db.commit()
     return {"disabled": True}
 
@@ -319,13 +330,19 @@ async def sso_callback(request: Request, code: Optional[str] = None, state: Opti
         tenant = await db.get(Tenant, user.tenant_id)
         if not tenant or not tenant.is_active:
             return _login_error("no_account")
+        u_email, u_tenant, u_id = user.email, user.tenant_id, user.id
         try:
             user.update_last_login()
+            await log_change(
+                db, user.tenant_id, "sso_login", user.id, "sso_login", user=user,
+                new_values={"provider": config.provider_name},
+                ip_address=request.client.host if request.client else None,
+            )
             await db.commit()
         except Exception:
             await db.rollback()
-        access = create_access_token(subject=user.email, tenant_id=user.tenant_id, user_id=user.id)
-        refresh = create_refresh_token(subject=user.email, tenant_id=user.tenant_id, user_id=user.id)
+        access = create_access_token(subject=u_email, tenant_id=u_tenant, user_id=u_id)
+        refresh = create_refresh_token(subject=u_email, tenant_id=u_tenant, user_id=u_id)
 
     resp = RedirectResponse(f"{settings.APP_URL.rstrip('/')}/app", status_code=302)
     _set_auth_cookies(resp, TokenResponse(
