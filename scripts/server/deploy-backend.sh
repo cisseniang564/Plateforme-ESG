@@ -12,8 +12,13 @@ SAVE="/root/backend-avant-$STAMP"
 NEW="/root/backend-main-$STAMP"
 SITE="${SITE_URL:-https://greenconnect.cloud}"
 COMPOSE=(docker compose -f docker-compose.yml -f docker-compose.prod.yml)
-CONTAINER=esgflow-backend
 REPLACED=0
+# Le conteneur peut s'appeler esgflow-backend (avec docker-compose.yml) ou esgflow-backend-1 (prod seul) :
+# on le retrouve via compose plutôt que par un nom écrit en dur.
+CONTAINER="$("${COMPOSE[@]}" ps -q backend 2>/dev/null | head -1)"
+[ -n "$CONTAINER" ] || CONTAINER="$(docker ps -q --filter name=backend | head -1)"
+[ -n "$CONTAINER" ] || { echo "Conteneur backend introuvable (docker ps ?)"; exit 1; }
+WORKER="$("${COMPOSE[@]}" ps -q celery_worker 2>/dev/null | head -1)"
 
 git fetch -q origin main:refs/remotes/origin/main
 mkdir -p "$NEW" && git archive origin/main backend | tar -x -C "$NEW"
@@ -31,8 +36,8 @@ echo "3/6 Sauvegardes -> $SAVE"
 mkdir -p "$SAVE"; chmod 700 "$SAVE"
 [ -x scripts/backup.sh ] && scripts/backup.sh >/dev/null && echo "   base sauvegardée"
 tar czf "$SAVE/backend-sources.tgz" --exclude=__pycache__ backend
-OLD_IMAGE="$(docker inspect "$CONTAINER" --format '{{.Image}}')"
-IMAGE_NAME="$(docker inspect "$CONTAINER" --format '{{.Config.Image}}')"
+OLD_IMAGE="$(docker inspect --type container "$CONTAINER" --format '{{.Image}}')"
+IMAGE_NAME="$(docker inspect --type container "$CONTAINER" --format '{{.Config.Image}}')"
 docker tag "$OLD_IMAGE" "esgflow-backend-rollback:$STAMP"
 echo "   ancienne image conservée : esgflow-backend-rollback:$STAMP"
 
@@ -54,6 +59,8 @@ rsync -a --exclude='.env*' --exclude='__pycache__' --exclude='logs' --exclude='u
 # le worker Celery et le planificateur embarquent le même code : on les reconstruit avec l'API
 "${COMPOSE[@]}" build backend celery_worker celery_beat
 "${COMPOSE[@]}" up -d --no-deps backend celery_worker celery_beat
+# le conteneur vient d'être recréé : on retrouve le nouveau (son identifiant a changé)
+CONTAINER="$("${COMPOSE[@]}" ps -q backend | head -1)"
 
 echo "5/6 Vérification"
 for i in $(seq 1 30); do
@@ -62,7 +69,8 @@ for i in $(seq 1 30); do
 done
 docker exec "$CONTAINER" python3 -c "import app.main, pypdf; print('   API et lecteur PDF : OK')"
 sleep 8
-if [ "$(docker inspect -f '{{.State.Running}}' esgflow-celery_worker-1 2>/dev/null)" != true ] || docker logs esgflow-celery_worker-1 --tail 20 2>&1 | grep -q "Traceback"; then echo "!! Le worker Celery ne démarre pas : docker logs esgflow-celery_worker-1 --tail 40"; rollback; exit 1; fi
+WORKER="$("${COMPOSE[@]}" ps -q celery_worker 2>/dev/null | head -1)"
+if [ -z "$WORKER" ] || [ "$(docker inspect -f '{{.State.Running}}' "$WORKER" 2>/dev/null)" != true ] || docker logs "$WORKER" --tail 20 2>&1 | grep -q "Traceback"; then echo "!! Le worker Celery ne démarre pas : docker logs <conteneur celery_worker> --tail 40"; rollback; exit 1; fi
 echo "   worker Celery : OK"
 sleep 5
 site="$(curl -s -o /dev/null -w '%{http_code}' "$SITE/")"
