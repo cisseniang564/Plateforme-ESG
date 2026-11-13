@@ -7,13 +7,15 @@ from typing import Optional, List
 from uuid import UUID
 import secrets
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile, File, status
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.dependencies import get_db, get_current_user
+from app.core.permissions import Roles
+from app.dependencies import get_db, get_current_user, require_any_role
+from app.services.audit_service import log_change
 from app.models.user import User
 from app.models.auditor_review import AuditorReview, AuditorComment
 from app.models.report_history import ReportHistory
@@ -74,6 +76,29 @@ class ReviewOut(BaseModel):
     critical_count: int = 0
 
 
+def _client_ip(request: Request) -> Optional[str]:
+    """IP réelle derrière le reverse proxy (nginx pose X-Real-IP / X-Forwarded-For)."""
+    real = request.headers.get("x-real-ip")
+    if real:
+        return real.strip()[:45]
+    fwd = request.headers.get("x-forwarded-for")
+    if fwd:
+        return fwd.split(",")[0].strip()[:45]
+    return request.client.host if request.client else None
+
+
+async def _audit(db, user: User, review, action: str, **new_values) -> None:
+    """Trace l'action dans la piste d'audit chaînée (sans jamais bloquer)."""
+    try:
+        await log_change(
+            db, tenant_id=review.tenant_id, entity_type="auditor_review",
+            entity_id=review.id, action=action, user=user,
+            new_values={"auditor_email": review.auditor_email, **new_values},
+        )
+    except Exception as exc:
+        logger.warning("Audit log failed for auditor_review %s: %s", review.id, exc)
+
+
 def _serialize_review(r: AuditorReview, include_token: bool = False) -> dict:
     # Only count comments if the relationship has been eager-loaded (selectinload)
     # — accessing a non-loaded relationship in async context raises MissingGreenlet.
@@ -109,7 +134,7 @@ def _serialize_review(r: AuditorReview, include_token: bool = False) -> dict:
 async def create_review(
     body: CreateReviewRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_any_role(*Roles.MANAGER_OR_ABOVE)),
 ):
     """Invite an auditor to review a report. Returns the invitation token + URL."""
     # Optional: verify report_history_id belongs to tenant
@@ -138,30 +163,37 @@ async def create_review(
     db.add(review)
     await db.commit()
     await db.refresh(review)
+    await _audit(db, current_user, review, "invite", expires_at=review.expires_at.isoformat())
 
     # Best-effort email send
+    email_queued = False
     try:
+        from app.models.tenant import Tenant
         from app.config import settings as app_settings
         from app.tasks.email_tasks import send_auditor_invitation
+        tenant = await db.get(Tenant, current_user.tenant_id)
+        org_name = (getattr(tenant, "name", None) or "ESGflow")
         public_url = f"{app_settings.APP_URL}/audit/review/{review.invitation_token}"
         send_auditor_invitation.delay(
             email=review.auditor_email,
             name=review.auditor_name or "Auditeur",
             firm=review.auditor_firm,
-            organization_name=current_user.first_name or "ESGflow",
+            organization_name=org_name,
             review_url=public_url,
             expires_at=review.expires_at.isoformat() if review.expires_at else None,
         )
+        email_queued = True
     except Exception as exc:
         logger.warning("Could not send auditor invitation email: %s", exc)
 
-    return _serialize_review(review, include_token=True)
+    # email_queued=False : le lien reste valable, à transmettre manuellement.
+    return {**_serialize_review(review, include_token=True), "email_queued": email_queued}
 
 
 @router.get("")
 async def list_reviews(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_any_role(*Roles.MANAGER_OR_ABOVE)),
 ):
     """List all auditor reviews for the current tenant."""
     stmt = (
@@ -181,7 +213,7 @@ async def list_reviews(
 async def delete_review(
     review_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_any_role(*Roles.ADMIN_OR_ABOVE)),
 ):
     """Cancel/delete an invitation."""
     stmt = select(AuditorReview).where(
@@ -191,6 +223,7 @@ async def delete_review(
     review = (await db.execute(stmt)).scalar_one_or_none()
     if not review:
         raise HTTPException(status_code=404, detail="Revue introuvable.")
+    await _audit(db, current_user, review, "delete_invite")
     await db.delete(review)
     await db.commit()
     return None
@@ -200,12 +233,12 @@ async def delete_review(
 async def lock_after_review(
     review_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_any_role(*Roles.MANAGER_OR_ABOVE)),
 ):
-    """Mark the data underlying this review as locked (audit integrity).
+    """Clôt les échanges avec l'auditeur pour cette revue et date la clôture.
 
-    For now this is a soft lock (timestamp only) — the data isn't physically
-    immutable, but the lock date is preserved for audit traceability.
+    Ce n'est PAS un verrouillage des données de l'entreprise : seules les
+    actions de l'auditeur (commentaires, décision) sont bloquées après la date.
     """
     stmt = select(AuditorReview).where(
         AuditorReview.id == review_id,
@@ -217,61 +250,29 @@ async def lock_after_review(
     if review.status != "approved":
         raise HTTPException(
             status_code=400,
-            detail="Seules les revues approuvées peuvent verrouiller les données.",
+            detail="Seules les revues approuvées peuvent être clôturées.",
         )
     review.data_locked_at = datetime.now(timezone.utc)
     await db.commit()
+    await _audit(db, current_user, review, "lock", locked_at=review.data_locked_at.isoformat())
     return {"locked_at": review.data_locked_at.isoformat()}
 
 
-@router.post("/{review_id}/evidence", status_code=200)
+@router.post("/{review_id}/evidence", status_code=501)
 async def upload_evidence(
     review_id: UUID,
-    file: UploadFile = File(...),
-    section_code: str = Form(..., max_length=20),
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_any_role(*Roles.MANAGER_OR_ABOVE)),
 ):
-    """Upload a supporting document (pièce justificative) for a given ESRS section.
+    """Dépôt de pièces justificatives : pas encore disponible.
 
-    Files are stored under /tmp/esgflow_evidence/{review_id}/.
-    Returns metadata about the saved file (filename, size, section, uploaded_at).
+    L'ancienne version écrivait dans /tmp (perdu au redémarrage) et l'auditeur
+    ne pouvait pas consulter les fichiers : on n'affiche donc plus de fausse
+    « pièce jointe ». À réintroduire avec un stockage durable.
     """
-    import os
-
-    # Verify review belongs to tenant
-    stmt = select(AuditorReview).where(
-        AuditorReview.id == review_id,
-        AuditorReview.tenant_id == current_user.tenant_id,
+    raise HTTPException(
+        status_code=501,
+        detail="Le dépôt de pièces justificatives n'est pas encore disponible.",
     )
-    review = (await db.execute(stmt)).scalar_one_or_none()
-    if not review:
-        raise HTTPException(status_code=404, detail="Revue introuvable.")
-
-    # Sanitize filename
-    original_name = file.filename or "upload"
-    safe_name = "".join(c if c.isalnum() or c in (".", "_", "-") else "_" for c in original_name)
-    if not safe_name:
-        safe_name = "document"
-
-    dest_dir = f"/tmp/esgflow_evidence/{review_id}"
-    os.makedirs(dest_dir, exist_ok=True)
-    dest_path = os.path.join(dest_dir, safe_name)
-
-    content = await file.read()
-    try:
-        with open(dest_path, "wb") as out:
-            out.write(content)
-    except Exception as exc:
-        logger.warning("Could not write evidence file: %s", exc)
-        raise HTTPException(status_code=500, detail="Impossible de sauvegarder le fichier.")
-
-    return {
-        "filename": safe_name,
-        "size": len(content),
-        "section": section_code,
-        "uploaded_at": datetime.now(timezone.utc).isoformat(),
-    }
 
 
 # ───────────────────────────────────────────────────────────────────────────
@@ -351,6 +352,10 @@ async def public_review_download(
 ):
     """Auditor downloads the report being reviewed (re-generated on demand)."""
     review = await _get_active_review_by_token(db, token)
+    # Une revue clôturée reste consultable, mais le lien ne donne plus accès au
+    # rapport une fois la date d'expiration passée.
+    if review.expires_at and review.expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=410, detail="Cette invitation a expiré.")
     if not review.report_history_id:
         raise HTTPException(status_code=404, detail="Aucun rapport associé à cette revue.")
 
@@ -374,7 +379,8 @@ async def public_review_download(
             format=rh.format,
         )
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Génération impossible : {exc}")
+        logger.error("Auditor report generation failed (review %s): %s", review.id, exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Génération du rapport impossible. Réessayez plus tard.")
 
     content_types = {
         'pdf':   'application/pdf',
@@ -430,27 +436,25 @@ async def public_submit_decision(
     body: DecisionRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    """Auditor approves or rejects the report.
+    """L'auditeur approuve ou rejette le rapport.
 
-    On approval, generates a SHA-256 e-signature that cryptographically binds:
-      tenant, review, report, auditor email, decision, timestamp, IP.
-    This is the *external* signature — the strongest piece of audit evidence
-    in the entire CSRD chain (ISAE 3000 § 51, CSRD Art. 29a). Re-computable
-    later from the audit log for legal proof.
+    À l'approbation, on enregistre une empreinte SHA-256 des éléments de la
+    décision (revue, rapport, e-mail de l'auditeur, décision, horodatage). Ce
+    n'est PAS une signature électronique qualifiée : elle ne repose sur aucun
+    secret ni certificat et ne remplace pas l'attestation de l'auditeur.
     """
     import hashlib
 
     review = await _get_active_review_by_token(db, token)
     if review.data_locked_at:
-        raise HTTPException(status_code=403, detail="Données verrouillées — aucune décision autorisée après verrouillage.")
+        raise HTTPException(status_code=403, detail="Revue clôturée — aucune décision autorisée.")
     if review.status not in ("pending", "in_review"):
         raise HTTPException(status_code=400, detail="Cette revue est déjà clôturée.")
 
     now = datetime.now(timezone.utc)
-    client_ip = request.client.host if request.client else None
+    client_ip = _client_ip(request)
     signature_hash: Optional[str] = None
 
-    # ── E-signature only on approval (rejections don't sign off anything) ──
     if body.decision == "approved":
         sig_payload = (
             f"{review.tenant_id}|{review.id}|{review.report_history_id}|"
@@ -459,22 +463,34 @@ async def public_submit_decision(
         signature_hash = hashlib.sha256(sig_payload.encode("utf-8")).hexdigest()
 
         sig_block = (
-            f"\n\n[Signature électronique auditeur externe]\n"
+            f"[Empreinte de décision SHA-256]\n"
             f"  Hash:       {signature_hash}\n"
-            f"  Signé par:  {review.auditor_email}"
+            f"  Approuvé via le lien d'invitation envoyé à : {review.auditor_email}"
             f"{' (' + review.auditor_firm + ')' if review.auditor_firm else ''}\n"
-            f"  Date:       {now.isoformat()}\n"
-            f"  IP:         {client_ip or 'n/a'}\n"
-            f"  Conformité: ISAE 3000 § 51 · CSRD Art. 29a"
+            f"  Date (UTC): {now.isoformat()}\n"
+            f"  IP:         {client_ip or 'n/a'}"
         )
         user_note = (body.note or "").strip()
-        review.decision_note = (user_note + sig_block) if user_note else sig_block.strip()
+        review.decision_note = (user_note + "\n\n" + sig_block) if user_note else sig_block
     else:
         review.decision_note = body.note
 
     review.status = body.decision
     review.completed_at = now
     await db.commit()
+    try:
+        await log_change(
+            db, tenant_id=review.tenant_id, entity_type="auditor_review",
+            entity_id=review.id, action="auditor_decision", user=None,
+            new_values={
+                "auditor_email": review.auditor_email,
+                "decision": body.decision,
+                "decision_hash": signature_hash,
+            },
+            ip_address=client_ip,
+        )
+    except Exception as exc:
+        logger.warning("Audit log failed for auditor decision %s: %s", review.id, exc)
 
     # Notify the inviter (best-effort)
     try:

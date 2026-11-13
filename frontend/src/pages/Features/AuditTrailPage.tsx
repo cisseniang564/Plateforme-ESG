@@ -11,8 +11,8 @@ export default function AuditTrailPage() {
       colorLight="#f9fafb"
       title={t('features.auditTrail.title', "Piste d'Audit & Traçabilité")}
       subtitle={t('features.auditTrail.subtitle', "Journal d'audit détaillé avec empreintes SHA-256 par entrée")}
-      description={t('features.auditTrail.description', "Tracez chaque action ESG de bout en bout : qui a modifié quoi, quand, pourquoi et avec quelle source. Versionning avant/après, empreintes SHA-256 par entrée et export pour vos auditeurs externes.")}
-      frameworks={['CSRD Art. 34', 'RGPD Art. 30']}
+      description={t('features.auditTrail.description', "Tracez chaque action ESG de bout en bout : qui a modifié quoi, quand, pourquoi et avec quelle source. Versionning avant/après, empreintes SHA-256 chaînées et export CSV/JSON pour vos auditeurs externes.")}
+      frameworks={['CSRD Art. 34']}
       appPath="/app/audit-trail"
       benefits={[
         {
@@ -33,22 +33,22 @@ export default function AuditTrailPage() {
         {
           icon: FileSearch,
           title: t('features.auditTrail.benefits.3.title', "Export auditeur"),
-          description: t('features.auditTrail.benefits.3.description', "Exportez la piste d'audit filtrée par période, utilisateur, type de donnée ou action. Formats PDF et CSV."),
+          description: t('features.auditTrail.benefits.3.description', "Exportez la piste d'audit sur une période donnée, avec les empreintes de chaîne. Formats CSV et JSON ; chaque export est lui-même tracé."),
         },
       ]}
       capabilities={[
-        { title: t('features.auditTrail.capabilities.0.title', "Traçabilité granulaire"), description: t('features.auditTrail.capabilities.0.description', "Chaque action est tracée au niveau du champ : utilisateur, date/heure UTC, adresse IP, valeur avant, valeur après, motif de modification et pièce justificative.") },
-        { title: t('features.auditTrail.capabilities.1.title', "Pièces justificatives"), description: t('features.auditTrail.capabilities.1.description', "Attachez des documents sources à chaque donnée ESG : factures, certifications, rapports de mesure, procès-verbaux. Lien direct entre la donnée et sa preuve.") },
+        { title: t('features.auditTrail.capabilities.0.title', "Traçabilité granulaire"), description: t('features.auditTrail.capabilities.0.description', "Chaque action est tracée au niveau du champ : utilisateur, date/heure UTC, adresse IP, valeur avant, valeur après et motif de modification.") },
+        { title: t('features.auditTrail.capabilities.1.title', "Export CSV / JSON"), description: t('features.auditTrail.capabilities.1.description', "Exportez le journal avec les empreintes SHA-256 de chaque entrée : un tiers peut recalculer la chaîne indépendamment de l'interface.") },
         { title: t('features.auditTrail.capabilities.2.title', "Empreintes SHA-256"), description: t('features.auditTrail.capabilities.2.description', "Chaque entrée du journal d'audit porte une empreinte SHA-256 calculée à partir de son contenu et de son horodatage UTC. Toute modification d'une entrée individuelle est détectable.") },
         { title: t('features.auditTrail.capabilities.3.title', "Recherche et filtres avancés"), description: t('features.auditTrail.capabilities.3.description', "Recherchez dans le journal par utilisateur, type d'entité (indicateur, score, émission...), action (création, modification, suppression), période et mot-clé.") },
         { title: t('features.auditTrail.capabilities.4.title', "Vérification d'intégrité"), description: t('features.auditTrail.capabilities.4.description', "Vérification de la chaîne d'audit à la demande : la plateforme recalcule les empreintes SHA-256 et signale toute rupture.") },
         { title: t('features.auditTrail.capabilities.5.title', "Journal en écriture seule"), description: t('features.auditTrail.capabilities.5.description', "Aucune entrée du journal ne peut être modifiée ou supprimée depuis l'interface. La durée de conservation n'est pas encore configurable.") },
-        { title: t('features.auditTrail.capabilities.6.title', "Portail auditeur dédié"), description: t('features.auditTrail.capabilities.6.description', "Donnez un accès en lecture seule à vos auditeurs externes via un lien sécurisé. Ils consultent la piste d'audit, les pièces justificatives et les rapports sans modifier vos données.") },
+        { title: t('features.auditTrail.capabilities.6.title', "Portail auditeur"), description: t('features.auditTrail.capabilities.6.description', "Invitez un auditeur externe par lien personnel et limité dans le temps : il télécharge le rapport, commente par section ESRS et rend sa décision (approbation ou rejet), sans accéder à vos autres données.") },
       ]}
       steps={[
         { step: 1, title: t('features.auditTrail.steps.0.title', "Automatique dès le jour 1"), description: t('features.auditTrail.steps.0.description', "La piste d'audit s'active automatiquement. Chaque action dans ESGFlow est tracée sans configuration ni action de votre part.") },
         { step: 2, title: t('features.auditTrail.steps.1.title', "Consultez et recherchez"), description: t('features.auditTrail.steps.1.description', "Explorez le journal d'audit avec les filtres avancés. Retrouvez l'historique complet de n'importe quelle donnée en un clic.") },
-        { step: 3, title: t('features.auditTrail.steps.2.title', "Exportez pour l'audit"), description: t('features.auditTrail.steps.2.description', "Générez un export filtré de la piste d'audit pour vos auditeurs externes. PDF avec vérification SHA-256 intégrée.") },
+        { step: 3, title: t('features.auditTrail.steps.2.title', "Exportez pour l'audit"), description: t('features.auditTrail.steps.2.description', "Générez un export CSV ou JSON de la piste d'audit pour vos auditeurs externes, avec les empreintes permettant de recalculer la chaîne.") },
       ]}
       faqs={[
         { question: t('features.auditTrail.faqs.0.question', "La piste d'audit est-elle obligatoire pour la CSRD ?"), answer: t('features.auditTrail.faqs.0.answer', "L'Article 34 de la directive CSRD impose que les informations de durabilité soient auditées avec une assurance limitée (puis raisonnable). La piste d'audit ESGFlow fournit les éléments utiles : traçabilité des données, sources, responsables et méthodes de calcul.") },

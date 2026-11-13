@@ -135,7 +135,7 @@ export default function AuditorReview() {
       setReview(prev => prev ? { ...prev, status: res.data.status, completed_at: res.data.completed_at } : prev);
       setDecision(null);
       if (res.data.signature_hash) {
-        toast.success(t('audrev.decisionSigned', 'Décision enregistrée. Signature électronique : {{hash}}…', { hash: res.data.signature_hash.slice(0, 16) }), { duration: 8000 });
+        toast.success(t('audrev.decisionSigned', 'Décision enregistrée. Empreinte de décision : {{hash}}…', { hash: res.data.signature_hash.slice(0, 16) }), { duration: 8000 });
       } else {
         toast.success(t('audrev.decisionOk', 'Décision enregistrée.'));
       }

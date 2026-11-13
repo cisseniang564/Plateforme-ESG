@@ -9623,7 +9623,7 @@
     "auditTrail": {
       "title": "Audit Trail & Traceability",
       "subtitle": "Detailed audit log with SHA-256 fingerprints per entry",
-      "description": "Trace every ESG action end to end: who changed what, when, why and from which source. Before/after versioning, per-entry SHA-256 fingerprints and an export for your external auditors.",
+      "description": "Trace every ESG action end to end: who changed what, when, why and from which source. Before/after versioning, chained SHA-256 fingerprints and CSV/JSON export for your external auditors.",
       "benefits": {
         "0": {
           "title": "Complete log",
@@ -9639,17 +9639,17 @@
         },
         "3": {
           "title": "Auditor export",
-          "description": "Export the audit trail filtered by period, user, data type or action. PDF and CSV formats."
+          "description": "Export the audit trail over a given period, with the chain fingerprints. CSV and JSON formats; every export is itself logged."
         }
       },
       "capabilities": {
         "0": {
           "title": "Granular traceability",
-          "description": "Each action is traced at the field level: user, UTC date/time, IP address, value before, value after, reason for change and supporting document."
+          "description": "Each action is traced: user, UTC date/time, IP address, value before, value after and reason for change."
         },
         "1": {
-          "title": "Supporting documents",
-          "description": "Attach source documents to each ESG data point: invoices, certifications, measurement reports, minutes. Direct link between the data and its evidence."
+          "title": "CSV / JSON export",
+          "description": "Export the log with each entry's SHA-256 fingerprint: a third party can recompute the chain independently of the interface."
         },
         "2": {
           "title": "SHA-256 fingerprints",
@@ -9668,8 +9668,8 @@
           "description": "No log entry can be edited or deleted from the interface. The retention period is not yet configurable."
         },
         "6": {
-          "title": "Dedicated auditor portal",
-          "description": "Give your external auditors read-only access via a secure link. They consult the audit trail, the supporting documents and the reports without modifying your data."
+          "title": "Auditor portal",
+          "description": "Invite an external auditor with a personal, time-limited link: they download the report, comment per ESRS section and give their decision (approval or rejection), without access to your other data."
         }
       },
       "steps": {
@@ -9683,7 +9683,7 @@
         },
         "2": {
           "title": "Export for the audit",
-          "description": "Generate a filtered export of the audit trail for your external auditors. PDF with built-in SHA-256 verification."
+          "description": "Generate a CSV or JSON export of the audit trail for your external auditors, with the fingerprints needed to recompute the chain."
         }
       },
       "faqs": {
@@ -14911,7 +14911,7 @@
     "decisionAt": "Decision rendered on {{date}}",
     "decisionHint": "Once your decision is rendered, the review will be closed and the client will be notified.",
     "decisionOk": "Decision recorded.",
-    "decisionSigned": "Decision recorded. Electronic signature: {{hash}}…",
+    "decisionSigned": "Decision recorded. Decision fingerprint: {{hash}}…",
     "download": "Download",
     "err404": "This invitation cannot be found or has been cancelled.",
     "err410": "This invitation has expired.",
