@@ -77,8 +77,8 @@ async def _entry_rows(db: AsyncSession, entries: list, current_user: User) -> li
     user_ids = {e.submitted_by for e in entries if e.submitted_by}
     users = {}
     if user_ids:
-        rows = (await db.execute(select(User.id, User.email, User.full_name).where(User.id.in_(user_ids)))).all()
-        users = {r.id: (r.full_name or r.email) for r in rows}
+        rows = (await db.execute(select(User).where(User.id.in_(user_ids)))).scalars().all()
+        users = {u.id: (u.full_name or u.email) for u in rows}
     out = []
     for e in entries:
         ind = inds.get(e.indicator_id)
@@ -338,14 +338,15 @@ async def list_team_members(
 ):
     """Validateurs possibles : utilisateurs actifs de l'espace, hors soi-même."""
     result = await db.execute(
-        select(User.id, User.email, User.full_name).where(
+        select(User).where(
             User.tenant_id == current_user.tenant_id,
             User.is_active.is_(True),
             User.id != current_user.id,
         ).order_by(User.email).limit(100)
     )
-    return [{"id": str(r.id), "email": r.email, "full_name": r.full_name, "name": r.full_name or r.email}
-            for r in result.all()]
+    # full_name est une propriété Python (pas une colonne) : on lit l'objet, pas la colonne
+    return [{"id": str(u.id), "email": u.email, "full_name": u.full_name, "name": u.full_name or u.email}
+            for u in result.scalars().all()]
 
 
 @router.get("/stats")

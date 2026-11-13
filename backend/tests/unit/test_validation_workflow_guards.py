@@ -41,3 +41,10 @@ def test_les_brouillons_sont_listes_et_statistiques_coherentes():
 def test_audit_enregistre_l_ip_et_scelle():
     src = _src(vw._write_audit_logs)
     assert "ip_address" in src and "seal_entry" in src
+
+
+def test_full_name_est_une_propriete_pas_une_colonne():
+    """full_name n'est pas sélectionnable en SQL : l'avoir dans un select() faisait planter /pending et /drafts."""
+    src = inspect.getsource(vw)
+    assert "User.full_name" not in src
+    assert "select(User.id" not in src
