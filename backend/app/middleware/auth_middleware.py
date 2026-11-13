@@ -26,6 +26,7 @@ PUBLIC_PATHS = frozenset([
     "/api/v1/status",           # Public status page — must work without JWT (DSI/operator)
     "/api/v1/leads/checklist-csrd",  # Lead magnet form — public capture
     "/api/v1/leads/newsletter",      # Newsletter subscription — public
+    "/api/v1/contact",               # Formulaire de contact — public
     "/api/v1/connectors/enedis/callback",  # Enedis OAuth2 redirect — tenant from state, no JWT
     "/api/v1/connectors/enedis/template",  # Static CSV template download — no user data
 ])

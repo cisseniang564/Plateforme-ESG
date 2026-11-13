@@ -124,7 +124,7 @@ export default function GuideCsdddPage() {
             ))}
             <div className="mt-6 p-4 bg-violet-50 rounded-xl border border-violet-200">
               <p className="text-xs font-semibold text-violet-700 mb-2">{t('resources.guideCsddd.aside.checklistTitle', 'Check-list CSRD/ESRS')}</p>
-              <p className="text-xs text-gray-600 mb-3">{t('resources.guideCsddd.aside.checklistDesc', '47 indicateurs prioritaires dont ESRS S2 (chaîne de valeur) au format PDF.')}</p>
+              <p className="text-xs text-gray-600 mb-3">{t('resources.guideCsddd.aside.checklistDesc', '46 indicateurs prioritaires dont ESRS S2 (chaîne de valeur) au format PDF.')}</p>
               <Link to="/ressources/checklist-csrd" className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-700 hover:text-violet-800">
                 <Download className="h-3.5 w-3.5" />{t('resources.guideCsddd.aside.checklistCta', 'Télécharger')}
               </Link>

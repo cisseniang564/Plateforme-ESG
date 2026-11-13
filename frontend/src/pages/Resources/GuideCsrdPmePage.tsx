@@ -144,7 +144,7 @@ export default function GuideCsrdPmePage() {
             ))}
             <div className="mt-6 p-4 bg-emerald-50 rounded-xl border border-emerald-200">
               <p className="text-xs font-semibold text-emerald-700 mb-2">{t('resources.guideCsrdPme.tocCard.title', 'Check-list gratuite')}</p>
-              <p className="text-xs text-gray-600 mb-3">{t('resources.guideCsrdPme.tocCard.desc', '47 indicateurs ESRS prioritaires à collecter, format PDF.')}</p>
+              <p className="text-xs text-gray-600 mb-3">{t('resources.guideCsrdPme.tocCard.desc', '46 indicateurs ESRS prioritaires à collecter, format PDF.')}</p>
               <Link to="/ressources/checklist-csrd" className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800">
                 <Download className="h-3.5 w-3.5" />{t('resources.guideCsrdPme.tocCard.link', 'Télécharger')}
               </Link>
@@ -711,7 +711,7 @@ export default function GuideCsrdPmePage() {
               </div>
               <div>
                 <h3 className="text-xl font-bold text-gray-900 mb-1">{t('resources.guideCsrdPme.newsletter.title', 'Recevoir la check-list ESRS gratuite')}</h3>
-                <p className="text-sm text-gray-600">{t('resources.guideCsrdPme.newsletter.body', 'PDF de 47 indicateurs ESRS prioritaires, classés par criticité. Idéal pour démarrer votre collecte de données.')}</p>
+                <p className="text-sm text-gray-600">{t('resources.guideCsrdPme.newsletter.body', 'PDF de 46 indicateurs ESRS prioritaires, classés par criticité. Idéal pour démarrer votre collecte de données.')}</p>
               </div>
             </div>
             <Link

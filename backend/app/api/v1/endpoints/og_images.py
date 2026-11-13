@@ -28,7 +28,7 @@ PRESETS: Dict[str, tuple[str, str, str]] = {
     "guide-scope3-fec":            ("Scope 3 par import FEC",      "Calculer son empreinte en 15 min",    "#3b82f6"),
     "guide-taxonomie":             ("Taxonomie UE en pratique",    "Aligner CapEx / OpEx pas à pas",      "#8b5cf6"),
     "omnibus-csrd":                ("Omnibus CSRD 2025",           "Ce qui change concrètement",          "#f59e0b"),
-    "checklist-csrd":              ("Check-list CSRD gratuite",    "47 indicateurs ESRS prioritaires",    "#10b981"),
+    "checklist-csrd":              ("Check-list CSRD gratuite",    "46 indicateurs ESRS prioritaires",    "#10b981"),
     "partenaires":                 ("Programme Partenaires",       "Jusqu'à 20 % de commission",          "#3b82f6"),
     "roadmap":                     ("Roadmap publique",            "Transparence sur notre direction",    "#8b5cf6"),
     "status":                      ("Statut de la plateforme",     "API · DB · Redis · temps réel",       "#10b981"),

@@ -10625,11 +10625,11 @@
   "resources": {
     "checklist": {
       "seo": {
-        "title": "Free CSRD checklist — 47 ESRS indicators · ESGFlow",
-        "description": "Download the free CSRD checklist: 47 priority ESRS indicators ranked by criticality. Print-ready PDF to kick-start your CSRD compliance.",
+        "title": "Free CSRD checklist — 46 ESRS indicators · ESGFlow",
+        "description": "Download the free CSRD checklist: 46 priority ESRS indicators ranked by criticality. Print-ready PDF to kick-start your CSRD compliance.",
         "keywords": "CSRD checklist, ESRS indicators, free PDF, CSRD compliance, EFRAG, lead magnet",
-        "ogTitle": "Free CSRD checklist — 47 ESRS indicators",
-        "ogImageAlt": "CSRD checklist — 47 priority ESRS indicators (free PDF)"
+        "ogTitle": "Free CSRD checklist — 46 ESRS indicators",
+        "ogImageAlt": "CSRD checklist — 46 priority ESRS indicators (free PDF)"
       },
       "breadcrumb": {
         "home": "Home",
@@ -10657,7 +10657,7 @@
       "pitch": {
         "badge": "FREE RESOURCE · 7-PAGE PDF",
         "titleLine1": "The CSRD checklist",
-        "titleLine2": "in 47 ESRS indicators",
+        "titleLine2": "in 46 ESRS indicators",
         "intro": "The reference document to start your CSRD compliance <strong>without missing anything</strong>. Each indicator is ranked by <strong>criticality</strong> (high / medium / low) to help you prioritize your data collection."
       },
       "inside": {
@@ -11495,7 +11495,7 @@
         "tocAria": "Contents",
         "toc": "Contents",
         "ctaTitle": "Free ESRS checklist",
-        "ctaDesc": "47 priority CSRD/ESRS indicators in PDF format.",
+        "ctaDesc": "46 priority CSRD/ESRS indicators in PDF format.",
         "ctaLink": "Download"
       },
       "intro": {
@@ -11919,7 +11919,7 @@
         "tocAria": "Table of contents",
         "tocHeading": "Contents",
         "checklistTitle": "CSRD/ESRS checklist",
-        "checklistDesc": "47 priority indicators including ESRS S2 (value chain) in PDF format.",
+        "checklistDesc": "46 priority indicators including ESRS S2 (value chain) in PDF format.",
         "checklistCta": "Download"
       },
       "intro": {
@@ -12448,7 +12448,7 @@
       },
       "tocCard": {
         "title": "Free checklist",
-        "desc": "47 priority ESRS indicators to collect, PDF format.",
+        "desc": "46 priority ESRS indicators to collect, PDF format.",
         "link": "Download"
       },
       "intro": {
@@ -12774,7 +12774,7 @@
       },
       "newsletter": {
         "title": "Get the free ESRS checklist",
-        "body": "A PDF of 47 priority ESRS indicators, ranked by criticality. Ideal for kicking off your data collection.",
+        "body": "A PDF of 46 priority ESRS indicators, ranked by criticality. Ideal for kicking off your data collection.",
         "cta": "Download for free"
       },
       "footer": {
@@ -12829,7 +12829,7 @@
     },
     "success": {
       "title": "Message sent!",
-      "body": "Thank you for your interest. Our sales team will get back to you within <strong>24 business hours</strong>.",
+      "body": "Thank you for your interest. We will reply by email as soon as possible.",
       "home": "Back to home",
       "seeDemo": "See the demo"
     },
@@ -12858,7 +12858,8 @@
       "messagePh": "Describe your ESG project, the number of entities, your specific needs...",
       "sending": "Sending…",
       "submit": "Send message",
-      "privacyNote": "By submitting this form, you accept our <1>privacy policy</1>. We reply within 24 business hours."
+      "privacyNote": "By submitting this form, you accept our <1>privacy policy</1>. Your data is only used to answer your request.",
+      "error": "Sending failed. Please try again or write to us at contact@greenconnect.cloud."
     },
     "info": {
       "whyTitle": "Why choose Enterprise?",
