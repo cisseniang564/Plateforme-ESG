@@ -27,7 +27,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.audit_log import AuditLog
@@ -135,7 +135,26 @@ async def seal_entry(db: AsyncSession, entry: AuditLog) -> AuditLog:
         logger.warning("seal_entry called on entry without tenant_id (id=%s)", entry.id)
         return entry
 
+    # Sérialise les scellements concurrents d'un même tenant : sans verrou, deux
+    # écritures simultanées lisent le même « dernier hash » et créent une
+    # fourche, que la vérification signalerait ensuite à tort comme une
+    # altération. Le verrou est relâché au commit/rollback de la transaction.
+    try:
+        await db.execute(
+            text("SELECT pg_advisory_xact_lock(hashtextextended(:k, 0))"),
+            {"k": f"audit_chain:{entry.tenant_id}"},
+        )
+    except Exception as exc:  # base non-PostgreSQL (tests) : pas de verrou
+        logger.debug("advisory lock indisponible : %s", exc)
+
     previous_hash = await get_latest_hash(db, entry.tenant_id)
+    # created_at vaut NOW() = début de la transaction : une transaction longue
+    # peut donc porter une date antérieure à une entrée déjà scellée, ce qui
+    # inverserait l'ordre de la chaîne. Sous le verrou, on date l'entrée à
+    # l'instant du scellement pour que l'ordre chronologique = l'ordre de chaîne.
+    entry.created_at = datetime.now(timezone.utc)
+    # L'entrée vient d'être flushée : elle est elle-même sans hash, donc exclue
+    # de get_latest_hash (entry_hash IS NOT NULL).
     entry.previous_hash = previous_hash  # may be None for genesis
     entry.entry_hash = compute_entry_hash(entry, previous_hash)
     return entry
@@ -191,57 +210,60 @@ async def verify_chain(
     if limit:
         rows.reverse()  # back to chronological order
 
-    checked = 0
+    checked = 0       # entrées scellées effectivement vérifiées
+    unsealed = 0      # entrées sans empreinte (antérieures à la chaîne)
     invalid = 0
     first_broken_id: Optional[str] = None
     first_broken_at: Optional[str] = None
 
+    def _mark_broken(entry: AuditLog) -> None:
+        nonlocal invalid, first_broken_id, first_broken_at
+        invalid += 1
+        if first_broken_id is None:
+            first_broken_id = str(entry.id)
+            first_broken_at = entry.created_at.isoformat() if entry.created_at else None
+
     previous_hash: Optional[str] = None
+    is_first_sealed = True
     for entry in rows:
-        # Entries created before the hash-chain rollout may have no hash —
-        # we count them as "skipped" rather than invalid, but they DO break
-        # the chain from that point forward (re-sealing them is part of the
-        # one-time backfill, see backfill_chain()).
+        # Entrées antérieures au déploiement de la chaîne : comptées à part,
+        # elles ne sont ni « valides » ni « invalides » (voir backfill_chain()).
         if entry.entry_hash is None:
-            checked += 1
+            unsealed += 1
             continue
 
-        expected_previous = previous_hash
-        # The very first hashed entry of the tenant may have previous_hash = None.
-        if entry.previous_hash != expected_previous and not (
-            entry.previous_hash is None and expected_previous is None
-        ):
-            invalid += 1
-            if first_broken_id is None:
-                first_broken_id = str(entry.id)
-                first_broken_at = (
-                    entry.created_at.isoformat() if entry.created_at else None
-                )
-            previous_hash = entry.entry_hash
-            checked += 1
-            continue
+        checked += 1
 
-        recomputed = compute_entry_hash(entry, entry.previous_hash)
-        if recomputed != entry.entry_hash:
-            invalid += 1
-            if first_broken_id is None:
-                first_broken_id = str(entry.id)
-                first_broken_at = (
-                    entry.created_at.isoformat() if entry.created_at else None
-                )
+        # Fenêtre partielle (limit) : le premier maillon n'a pas de prédécesseur
+        # dans la fenêtre, on ne peut contrôler que son propre hash.
+        if not (limit and is_first_sealed):
+            if (entry.previous_hash or None) != (previous_hash or None):
+                _mark_broken(entry)
+                previous_hash = entry.entry_hash
+                is_first_sealed = False
+                continue
+        is_first_sealed = False
+
+        if compute_entry_hash(entry, entry.previous_hash) != entry.entry_hash:
+            _mark_broken(entry)
 
         previous_hash = entry.entry_hash
-        checked += 1
 
     return {
         "tenant_id": str(tenant_id),
         "checked": checked,
         "valid": checked - invalid,
         "invalid": invalid,
+        "unsealed": unsealed,
+        "partial": bool(limit),
         "is_valid": invalid == 0 and checked > 0,
         "first_broken_id": first_broken_id,
         "first_broken_at": first_broken_at,
         "checked_at": datetime.now(timezone.utc).isoformat(),
+        # Limite connue de toute chaîne de hachage : la suppression des toutes
+        # dernières entrées n'est pas détectable sans ancrage externe.
+        "limitations": "Détecte la modification ou la suppression d'une entrée antérieure ; "
+                       "ne détecte pas la suppression des dernières entrées sans ancrage externe.",
     }
 
 

@@ -1,13 +1,12 @@
-import { CSSProperties, useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import api from '@/services/api';
 import { useTranslation } from 'react-i18next';
 import {
   ClipboardList, Search, Download, Filter, Eye, CheckCircle,
-  XCircle, AlertTriangle, Clock, ChevronDown, ChevronRight,
-  FileText, Upload, Trash2, Edit3, Plus, LogIn, Send,
+  XCircle, FileText, Upload, Trash2, Edit3, Plus, LogIn, Send,
   RefreshCw, Shield, Lock, Hash, Paperclip, Calendar,
-  User, Database, ArrowRight, X, Check, Info,
-  BookOpen, GitBranch, Star, Stamp, Link, Tag,
+  User, Database, ArrowRight, X, Info,
+  BookOpen, GitBranch, Star,
 } from 'lucide-react';
 import BackButton from '@/components/common/BackButton';
 import PageHero, { PageHeroPrimaryButton } from '@/components/layout/PageHero';
@@ -18,7 +17,7 @@ type ActionType =
   | 'REJECT' | 'IMPORT' | 'EXPORT' | 'LOGIN' | 'COMMENT'
   | 'ATTACH' | 'CALCULATE' | 'PUBLISH';
 
-type TabId = 'journal' | 'versions' | 'documents' | 'export';
+type TabId = 'journal' | 'versions' | 'export';
 
 interface AuditEvent {
   id: string;
@@ -35,22 +34,9 @@ interface AuditEvent {
   ipAddress: string;
   sessionId: string;
   hash: string;
-  signatureHash?: string | null;  // SHA-256 e-signature (ISAE 3000 / CSRD Art. 29a)
+  signatureHash?: string | null;  // SHA-256 approval fingerprint (not a qualified e-signature)
   attachments?: string[];
   comment?: string;
-}
-
-interface Document {
-  id: string;
-  name: string;
-  type: string;
-  size: string;
-  uploadedBy: string;
-  uploadedAt: string;
-  linkedEntity: string;
-  linkedModule: string;
-  status: 'Validé' | 'En attente' | 'Rejeté';
-  hash: string;
 }
 
 // ─── (no static mock data — loaded from API) ──────────────────────────────────
@@ -183,35 +169,28 @@ function EventDetail({ event, onClose }: { event: AuditEvent; onClose: () => voi
             <div className="flex items-center gap-2 mb-2">
               <Hash className="h-4 w-4 text-green-400" />
               <span className="text-xs font-bold text-green-400 uppercase tracking-wider">{t('audit.integrityFootprint')}</span>
-              <span className="ml-auto text-xs text-green-300 flex items-center gap-1"><Check className="h-3 w-3" />{t('audit.valid')}</span>
             </div>
-            <code className="text-xs text-slate-300 font-mono break-all">{event.hash ?? '—'}:{event.entityId}:{event.timestamp}</code>
+            <code className="text-xs text-slate-300 font-mono break-all">{event.hash ?? '—'}</code>
+            <p className="text-[11px] text-slate-400 mt-2">{t('audit.hashHint', "Empreinte SHA-256 de l'entrée, chaînée à la précédente. Utilisez « Vérifier l'intégrité » (onglet Export) pour recalculer la chaîne.")}</p>
           </div>
 
-          {/* E-signature block — only on signed actions (approve / verify) */}
+          {/* Approval fingerprint — only on approval events */}
           {event.signatureHash && (
             <div className="bg-gradient-to-br from-indigo-900 to-blue-900 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <Lock className="h-4 w-4 text-indigo-300" />
                 <span className="text-xs font-bold text-indigo-200 uppercase tracking-wider">
-                  Signature électronique
+                  {t('audit.approvalFingerprint', "Empreinte d'approbation")}
                 </span>
                 <span className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-indigo-100/20 text-indigo-100 border border-indigo-300/30">
                   SHA-256
-                </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-blue-100/20 text-blue-100 border border-blue-300/30">
-                  ISAE 3000
-                </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-100/20 text-emerald-100 border border-emerald-300/30">
-                  CSRD Art. 29a
                 </span>
               </div>
               <code className="block text-xs text-indigo-100 font-mono break-all bg-black/30 px-3 py-2 rounded-lg">
                 {event.signatureHash}
               </code>
               <p className="text-[11px] text-indigo-200 mt-2 leading-relaxed">
-                Empreinte cryptographique liant l'approbateur, la valeur, l'horodatage et l'adresse IP.
-                Recalculable pour preuve légale lors d'un audit externe.
+                {t('audit.approvalFingerprintHint', "Empreinte des éléments de la décision, pour recoupement. Ce n'est pas une signature électronique qualifiée.")}
               </p>
             </div>
           )}
@@ -248,17 +227,20 @@ export default function AuditTrail() {
   const [actionFilter, setActionFilter] = useState<ActionType | 'Tous'>('Tous');
   const [userFilter, setUserFilter] = useState('Tous');
   const [selectedEvent, setSelectedEvent] = useState<AuditEvent | null>(null);
-  const [docSearch, setDocSearch] = useState('');
-  const [exportFormat, setExportFormat] = useState<'csv' | 'pdf' | 'json'>('pdf');
-  const [exportDone, setExportDone] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [uploadedDocs, setUploadedDocs] = useState<Array<{ id: string; name: string; size: string; type: string; status: string; uploadedBy: string; uploadedAt: string; linkedEntity: string; linkedModule: string; hash: string; linkedIndicator?: string; indicatorRef?: string }>>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  // Evidence vault — link modal
-  const [linkingDocId, setLinkingDocId] = useState<string | null>(null);
-  const [linkIndicatorSearch, setLinkIndicatorSearch] = useState('');
-  const [linkIndicatorDraft, setLinkIndicatorDraft] = useState('');
-
+  const [exportFormat, setExportFormat] = useState<'csv' | 'json'>('csv');
+  const [exporting, setExporting] = useState(false);
+  const [exportFrom, setExportFrom] = useState('');
+  const [exportTo, setExportTo] = useState('');
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyReport, setVerifyReport] = useState<null | {
+    checked: number; invalid: number; unsealed: number; is_valid: boolean;
+    first_broken_at: string | null; checked_at: string; limitations?: string;
+  }>(null);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [loadError, setLoadError] = useState(false);
   // ── API state ──
   const [events, setEvents] = useState<AuditEvent[]>([]);
   const [eventsTotal, setEventsTotal] = useState(0);
@@ -270,16 +252,22 @@ export default function AuditTrail() {
     try {
       const params: Record<string, string> = { page: '1', page_size: '100' };
       if (actionFilter !== 'Tous') params.action = actionFilter.toLowerCase();
-      if (search) params.search = search;
+      if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
       const res = await api.get('/audit-trail', { params });
       setEvents(res.data.items ?? []);
       setEventsTotal(res.data.total ?? 0);
+      setLoadError(false);
     } catch {
-      // keep previous state on error
+      setLoadError(true);
     } finally {
       setLoadingEvents(false);
     }
-  }, [actionFilter, search]);
+  }, [actionFilter, debouncedSearch]);
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(id);
+  }, [search]);
 
   useEffect(() => {
     fetchEvents();
@@ -290,78 +278,6 @@ export default function AuditTrail() {
       .then(r => setStatsData(r.data))
       .catch(() => {});
   }, []);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) return;
-    const today = new Date().toISOString().slice(0, 10);
-    const newDocs = files.map((f, i) => ({
-      id: `upload_${Date.now()}_${i}`,
-      name: f.name,
-      size: f.size > 1_000_000 ? `${(f.size / 1_000_000).toFixed(1)} Mo` : `${(f.size / 1000).toFixed(0)} Ko`,
-      type: f.name.endsWith('.pdf') ? 'PDF' : f.name.endsWith('.xlsx') || f.name.endsWith('.xls') ? 'Excel' : f.name.endsWith('.csv') ? 'CSV' : 'Fichier',
-      status: 'Validé',
-      uploadedBy: 'Moi',
-      uploadedAt: today,
-      linkedEntity: '—',
-      linkedModule: 'Pièces justificatives',
-      hash: 'sha256:' + Math.random().toString(36).slice(2, 10),
-    }));
-    setUploadedDocs(prev => [...prev, ...newDocs]);
-    // Reset input so same file can be re-selected
-    e.target.value = '';
-  };
-
-  const INDICATOR_OPTIONS = [
-    // ESRS Environmental
-    { ref: 'ESRS E1 §44', label: 'Émissions GES Scope 1' },
-    { ref: 'ESRS E1 §45', label: 'Émissions GES Scope 2' },
-    { ref: 'ESRS E1 §51', label: 'Émissions GES Scope 3' },
-    { ref: 'ESRS E1 §34', label: 'Objectifs de réduction carbone' },
-    { ref: 'ESRS E2 §28', label: 'Émissions de polluants atmosphériques' },
-    { ref: 'ESRS E3 §28', label: 'Consommation d\'eau' },
-    { ref: 'ESRS E4 §33', label: 'Biodiversité — espèces affectées' },
-    { ref: 'ESRS E5 §25', label: 'Production de déchets' },
-    // ESRS Social
-    { ref: 'ESRS S1 §48', label: 'Effectifs — répartition par contrat' },
-    { ref: 'ESRS S1 §55', label: 'Rémunération — écart de genre' },
-    { ref: 'ESRS S1 §88', label: 'Santé & sécurité — accidents' },
-    { ref: 'ESRS S1 §96', label: 'Formation — heures par salarié' },
-    // ESRS Governance
-    { ref: 'ESRS G1 §25', label: 'Gouvernance — composition du conseil' },
-    { ref: 'ESRS G1 §28', label: 'Lutte contre la corruption — formation' },
-    // GRI
-    { ref: 'GRI 305-1', label: 'Émissions directes GES (Scope 1)' },
-    { ref: 'GRI 305-2', label: 'Émissions indirectes énergie (Scope 2)' },
-    { ref: 'GRI 305-3', label: 'Autres émissions indirectes (Scope 3)' },
-    { ref: 'GRI 302-1', label: 'Énergie — consommation au sein de l\'org.' },
-    { ref: 'GRI 303-5', label: 'Eau — consommation' },
-    { ref: 'GRI 306-3', label: 'Déchets générés' },
-    { ref: 'GRI 401-1', label: 'Embauches et départs' },
-    { ref: 'GRI 403-9', label: 'Accidents du travail' },
-    // TCFD / ISSB S2
-    { ref: 'ISSB S2 §29', label: 'Indicateurs climatiques — GES total' },
-    { ref: 'ISSB S2 §33', label: 'Cibles climatiques' },
-  ];
-
-  const applyIndicatorLink = () => {
-    if (!linkingDocId || !linkIndicatorDraft) return;
-    const found = INDICATOR_OPTIONS.find(o => o.ref === linkIndicatorDraft);
-    setUploadedDocs(prev => prev.map(d =>
-      d.id === linkingDocId
-        ? { ...d, linkedIndicator: found?.label ?? linkIndicatorDraft, indicatorRef: linkIndicatorDraft }
-        : d
-    ));
-    setLinkingDocId(null);
-    setLinkIndicatorSearch('');
-    setLinkIndicatorDraft('');
-  };
-
-  const filteredIndicatorOptions = INDICATOR_OPTIONS.filter(o =>
-    !linkIndicatorSearch ||
-    o.label.toLowerCase().includes(linkIndicatorSearch.toLowerCase()) ||
-    o.ref.toLowerCase().includes(linkIndicatorSearch.toLowerCase())
-  );
 
   // ── Derive unique users from loaded events (replaces hardcoded USERS list) ──
   const uniqueUsers = useMemo(
@@ -378,17 +294,14 @@ export default function AuditTrail() {
   }, [uniqueUsers]);
 
   // KPIs — derived from API stats when available, else from loaded events
-  const totalEvents = statsData?.total ?? eventsTotal;
-  const todayEvents = statsData ? 0 : 0; // not available per-day from stats endpoint
+  const totalEvents = eventsTotal;
+  const last7Events = statsData?.recent_7_days ?? 0;
   const modifyEvents = statsData
     ? ((statsData.by_action['create'] ?? 0) + (statsData.by_action['update'] ?? 0) + (statsData.by_action['delete'] ?? 0))
     : events.filter(e => ['CREATE', 'UPDATE', 'DELETE'].includes(e.action)).length;
   const approvalEvents = statsData
     ? ((statsData.by_action['validate'] ?? 0) + (statsData.by_action['reject'] ?? 0))
     : events.filter(e => ['APPROVE', 'REJECT'].includes(e.action)).length;
-  const docCount = uploadedDocs.filter(d => d.status === 'Validé').length;
-  const pendingDocs = 0;
-
   // Client-side filter on top of server-fetched page (module/user filters applied locally)
   const filtered = useMemo(() => events.filter(e => {
     if (moduleFilter !== 'Tous' && e.module !== moduleFilter) return false;
@@ -396,21 +309,42 @@ export default function AuditTrail() {
     return true;
   }), [events, moduleFilter, userFilter]);
 
-  const allDocs = useMemo(() => [...uploadedDocs], [uploadedDocs]);
-  const filteredDocs = useMemo(() => allDocs.filter(d =>
-    !docSearch || d.name.toLowerCase().includes(docSearch.toLowerCase()) ||
-    d.linkedEntity.toLowerCase().includes(docSearch.toLowerCase())
-  ), [allDocs, docSearch]);
+  const handleExport = async () => {
+    setExporting(true); setExportError(null);
+    try {
+      const params: Record<string, string> = { format: exportFormat };
+      if (exportFrom) params.date_from = `${exportFrom}T00:00:00+00:00`;
+      if (exportTo) params.date_to = `${exportTo}T23:59:59+00:00`;
+      const res = await api.get('/audit-trail/export', { params, responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `piste-audit.${exportFormat}`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setExportError(t('audit.exportError', "L'export a échoué. Réessayez ou contactez le support."));
+    } finally {
+      setExporting(false);
+    }
+  };
 
-  const handleExport = () => {
-    setExportDone(true);
-    setTimeout(() => setExportDone(false), 3000);
+  const handleVerify = async () => {
+    setVerifying(true); setVerifyError(null);
+    try {
+      const res = await api.get('/audit-trail/verify');
+      setVerifyReport(res.data);
+    } catch {
+      setVerifyReport(null);
+      setVerifyError(t('audit.verifyError', 'La vérification a échoué.'));
+    } finally {
+      setVerifying(false);
+    }
   };
 
   const tabs = [
     { id: 'journal' as TabId, label: `${t('audit.tabs.journal')} (${eventsTotal || events.length})` },
     { id: 'versions' as TabId, label: t('audit.tabs.versions') },
-    { id: 'documents' as TabId, label: `${t('audit.tabs.documents')} (${allDocs.length})` },
     { id: 'export' as TabId, label: t('audit.tabs.export') },
   ];
 
@@ -456,13 +390,12 @@ export default function AuditTrail() {
         {tab === 'journal' && (
           <div className="space-y-6">
             {/* KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { label: t('audit.totalEvents'), val: totalEvents, sub: t('audit.kpiSinceStart'), color: 'text-slate-900', bg: 'bg-white border-gray-200' },
-                { label: t('audit.kpiToday'), val: todayEvents, sub: '20 mars 2026', color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
-                { label: t('audit.kpiDataChanges'), val: modifyEvents, sub: t('audit.kpiDataChangesSub'), color: 'text-orange-700', bg: 'bg-orange-50 border-orange-200' },
-                { label: t('audit.kpiValidationDecisions'), val: approvalEvents, sub: t('audit.kpiValidationDecisionsSub'), color: 'text-green-700', bg: 'bg-green-50 border-green-200' },
-                { label: t('audit.kpiDocuments'), val: docCount, sub: t('audit.kpiDocumentsPending', { count: pendingDocs }), color: 'text-indigo-700', bg: 'bg-indigo-50 border-indigo-200' },
+                { label: t('audit.kpiLast7', '7 derniers jours'), val: last7Events, sub: t('audit.kpiLast7Sub', 'événements enregistrés'), color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
+                { label: t('audit.kpiDataChanges'), val: modifyEvents, sub: t('audit.kpiLast30', '30 derniers jours'), color: 'text-orange-700', bg: 'bg-orange-50 border-orange-200' },
+                { label: t('audit.kpiValidationDecisions'), val: approvalEvents, sub: t('audit.kpiLast30', '30 derniers jours'), color: 'text-green-700', bg: 'bg-green-50 border-green-200' },
               ].map((k, i) => (
                 <div key={i} className={`rounded-2xl border-2 ${k.bg} p-4`}>
                   <div className={`text-3xl font-extrabold ${k.color}`}>{k.val}</div>
@@ -471,6 +404,12 @@ export default function AuditTrail() {
                 </div>
               ))}
             </div>
+
+            {loadError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+                {t('audit.loadError', "Impossible de charger le journal d'audit. Réessayez dans un instant.")}
+              </div>
+            )}
 
             {/* Search & Filters */}
             <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
@@ -553,9 +492,9 @@ export default function AuditTrail() {
                             {event.signatureHash && (
                               <span
                                 className="text-xs bg-indigo-600 text-white px-2 py-1 rounded-lg flex items-center gap-1 font-semibold shadow-sm"
-                                title="Signature électronique SHA-256 (ISAE 3000 · CSRD Art. 29a)"
+                                title={t('audit.approvalFingerprint', "Empreinte d'approbation")}
                               >
-                                <Lock className="h-3 w-3" />Signée
+                                <Lock className="h-3 w-3" />{t('audit.fingerprintBadge', 'Empreinte')}
                               </span>
                             )}
                           </div>
@@ -656,264 +595,53 @@ export default function AuditTrail() {
           </div>
         )}
 
-        {/* ── Documents ── */}
-        {tab === 'documents' && (
-          <div className="space-y-6">
-            {/* Upload banner */}
-            {pendingDocs > 0 && (
-              <div className="flex items-start gap-3 p-4 bg-amber-50 border-2 border-amber-200 rounded-2xl">
-                <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-bold text-amber-800">{t('audit.documentsPendingAlert', { count: pendingDocs })}</span>
-                  <span className="text-sm text-amber-700">{t('audit.documentsPendingAlertDesc')}</span>
-                </div>
-              </div>
-            )}
-
-            {/* Upload zone */}
-            <label
-              htmlFor="audit-file-upload"
-              className="border-2 border-dashed border-gray-300 hover:border-slate-400 transition-colors rounded-2xl p-8 text-center bg-white cursor-pointer block"
-              onDragOver={e => e.preventDefault()}
-              onDrop={e => {
-                e.preventDefault();
-                const dt = e.dataTransfer;
-                if (dt?.files?.length) {
-                  const synth = { target: { files: dt.files, value: '' } } as unknown as React.ChangeEvent<HTMLInputElement>;
-                  handleFileChange(synth);
-                }
-              }}
-            >
-              <input
-                id="audit-file-upload"
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept=".pdf,.xlsx,.xls,.csv,.doc,.docx"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-              <Upload className="h-8 w-8 text-gray-400 mx-auto mb-3" />
-              <p className="text-sm font-semibold text-gray-700">{t('audit.dropDocuments')}</p>
-              <p className="text-xs text-gray-400 mt-1">{t('audit.dropDocumentsFormats')}</p>
-              <span className="mt-3 inline-block px-4 py-2 bg-slate-800 text-white rounded-xl text-sm font-semibold hover:bg-slate-900 transition-colors">
-                {t('audit.chooseFiles')}
-              </span>
-            </label>
-
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input value={docSearch} onChange={e => setDocSearch(e.target.value)} placeholder={t('audit.searchDocument')} className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-400" />
-            </div>
-
-            {/* Documents table */}
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider border-b border-gray-200">
-                    <th className="px-5 py-3 text-left">{t('audit.colDocument')}</th>
-                    <th className="px-5 py-3 text-left">{t('audit.colLinkedEntity')}</th>
-                    <th className="px-5 py-3 text-left">{t('audit.colModule')}</th>
-                    <th className="px-5 py-3 text-left">{t('audit.colAddedBy')}</th>
-                    <th className="px-5 py-3 text-center">{t('audit.colDate')}</th>
-                    <th className="px-5 py-3 text-center">{t('audit.colStatus')}</th>
-                    <th className="px-5 py-3 text-center">{t('audit.colIntegrity')}</th>
-                    <th className="px-5 py-3 text-center">{t('audit.colActions')}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {filteredDocs.map(doc => (
-                    <tr key={doc.id} className={`hover:bg-gray-50 transition-colors ${doc.status === 'En attente' ? 'bg-amber-50/30' : ''}`}>
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-2">
-                          <FileText className={`h-4 w-4 flex-shrink-0 ${doc.type === 'PDF' ? 'text-red-500' : doc.type === 'Excel' ? 'text-green-600' : 'text-blue-500'}`} />
-                          <div>
-                            <div className="text-sm font-medium text-gray-900 truncate max-w-xs">{doc.name}</div>
-                            <div className="text-xs text-gray-400">{doc.type} · {doc.size}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3 text-sm text-gray-600">
-                        <div>{doc.linkedEntity}</div>
-                        {doc.linkedIndicator && (
-                          <div className="flex items-center gap-1 mt-1">
-                            <Tag className="h-3 w-3 flex-shrink-0" style={{ color: '#7c3aed' }} />
-                            <span className="text-xs font-semibold" style={{ color: '#7c3aed' }}>{doc.indicatorRef}</span>
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-5 py-3">
-                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg">{doc.linkedModule}</span>
-                        {doc.linkedIndicator && (
-                          <div className="mt-1 text-xs px-2 py-0.5 rounded-lg inline-block truncate max-w-[140px]"
-                            style={{ backgroundColor: '#faf5ff', color: '#7c3aed' }}>
-                            {doc.linkedIndicator}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-5 py-3 text-sm text-gray-600">{doc.uploadedBy || <span className="text-amber-500 text-xs font-semibold">{t('audit.notUploaded')}</span>}</td>
-                      <td className="px-5 py-3 text-center text-sm text-gray-500">{doc.uploadedAt}</td>
-                      <td className="px-5 py-3 text-center">
-                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${doc.status === 'Validé' ? 'bg-green-100 text-green-700' : doc.status === 'En attente' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
-                          {doc.status}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-center">
-                        {doc.hash !== '—'
-                          ? <span className="flex items-center justify-center gap-1 text-xs text-green-600 font-semibold"><Check className="h-3.5 w-3.5" />OK</span>
-                          : <span className="flex items-center justify-center gap-1 text-xs text-gray-400"><X className="h-3.5 w-3.5" />—</span>
-                        }
-                      </td>
-                      <td className="px-5 py-3 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <button className="p-1.5 hover:bg-blue-50 rounded-lg transition-colors" title={t('common.download')}>
-                            <Download className="h-3.5 w-3.5 text-blue-600" />
-                          </button>
-                          <button
-                            className="p-1.5 hover:bg-violet-50 rounded-lg transition-colors"
-                            title="Lier à un indicateur"
-                            onClick={() => { setLinkingDocId(doc.id); setLinkIndicatorDraft(doc.indicatorRef ?? ''); setLinkIndicatorSearch(''); }}>
-                            <Link className="h-3.5 w-3.5" style={{ color: doc.linkedIndicator ? '#7c3aed' : '#9ca3af' }} />
-                          </button>
-                          {doc.status === 'En attente' && (
-                            <button className="p-1.5 hover:bg-amber-50 rounded-lg transition-colors" title={t('common.upload')}>
-                              <Upload className="h-3.5 w-3.5 text-amber-600" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* ── Evidence vault link-to-indicator modal ── */}
-        {linkingDocId && (() => {
-          const doc = uploadedDocs.find(d => d.id === linkingDocId);
-          return (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-                {/* Modal header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#faf5ff' }}>
-                      <Link className="h-4 w-4" style={{ color: '#7c3aed' }} />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-gray-900">Lier à un indicateur ESG</h3>
-                      <p className="text-xs text-gray-400 truncate max-w-[300px]">{doc?.name}</p>
-                    </div>
-                  </div>
-                  <button onClick={() => setLinkingDocId(null)} className="p-1.5 hover:bg-gray-100 rounded-lg">
-                    <X className="h-4 w-4 text-gray-500" />
-                  </button>
-                </div>
-                {/* Search */}
-                <div className="px-6 pt-4 pb-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                      value={linkIndicatorSearch}
-                      onChange={e => setLinkIndicatorSearch(e.target.value)}
-                      placeholder="Rechercher un indicateur ESRS, GRI, ISSB…"
-                      className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2"
-                      style={{ '--tw-ring-color': '#7c3aed' } as CSSProperties}
-                      autoFocus
-                    />
-                  </div>
-                </div>
-                {/* Indicator list */}
-                <div className="px-6 pb-2 max-h-64 overflow-y-auto space-y-1">
-                  {filteredIndicatorOptions.map(opt => (
-                    <button key={opt.ref}
-                      onClick={() => setLinkIndicatorDraft(opt.ref)}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors"
-                      style={linkIndicatorDraft === opt.ref
-                        ? { backgroundColor: '#faf5ff', border: '1px solid #ddd6fe' }
-                        : { backgroundColor: 'transparent', border: '1px solid transparent' }}>
-                      <div className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center"
-                        style={{ backgroundColor: linkIndicatorDraft === opt.ref ? '#7c3aed' : '#f3f4f6' }}>
-                        {linkIndicatorDraft === opt.ref && <Check className="h-3 w-3 text-white" />}
-                      </div>
-                      <div>
-                        <span className="text-xs font-bold" style={{ color: '#7c3aed' }}>{opt.ref}</span>
-                        <span className="text-xs text-gray-600 ml-2">{opt.label}</span>
-                      </div>
-                    </button>
-                  ))}
-                  {filteredIndicatorOptions.length === 0 && (
-                    <p className="text-sm text-gray-400 text-center py-4">Aucun indicateur trouvé</p>
-                  )}
-                </div>
-                {/* Custom ref */}
-                <div className="px-6 pb-4">
-                  <p className="text-xs text-gray-400 mb-1">ou saisissez une référence libre :</p>
-                  <input
-                    value={linkIndicatorDraft.startsWith('ESRS') || linkIndicatorDraft.startsWith('GRI') || linkIndicatorDraft.startsWith('ISSB') ? '' : linkIndicatorDraft}
-                    onChange={e => setLinkIndicatorDraft(e.target.value)}
-                    placeholder="ex : ISO 14064 §4.2.3"
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2"
-                    style={{ '--tw-ring-color': '#7c3aed' } as any}
-                  />
-                </div>
-                {/* Footer */}
-                <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100">
-                  <button onClick={() => setLinkingDocId(null)}
-                    className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">
-                    Annuler
-                  </button>
-                  <button onClick={applyIndicatorLink} disabled={!linkIndicatorDraft}
-                    className="px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-colors"
-                    style={{ backgroundColor: '#7c3aed' }}>
-                    Lier le document
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* ── Export & Certification ── */}
+        {/* ── Export & vérification ── */}
         {tab === 'export' && (
           <div className="space-y-8 max-w-3xl mx-auto">
-            {/* Certification info */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+              <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
-                  <Stamp className="h-6 w-6 text-slate-700" />
+                  <Shield className="h-6 w-6 text-slate-700" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-gray-900">{t('audit.certifiableReport')}</h2>
-                  <p className="text-sm text-gray-500">{t('audit.certifiableReportDesc')}</p>
+                  <h2 className="text-base font-bold text-gray-900">{t('audit.verifyTitle', "Vérifier l'intégrité de la chaîne")}</h2>
+                  <p className="text-sm text-gray-500">{t('audit.verifyDesc', "Recalcule les empreintes SHA-256 de toutes les entrées du journal et signale la première rupture éventuelle.")}</p>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
-                {[
-                  { label: t('audit.miniStatEvents'), val: eventsTotal || events.length, icon: ClipboardList, color: 'text-slate-700', bg: 'bg-slate-50' },
-                  { label: t('audit.miniStatDocuments'), val: uploadedDocs.filter(d => d.status === 'Validé').length, icon: FileText, color: 'text-indigo-700', bg: 'bg-indigo-50' },
-                  { label: t('audit.miniStatIntegrity'), val: '100%', icon: Shield, color: 'text-green-700', bg: 'bg-green-50' },
-                ].map((k, i) => (
-                  <div key={i} className={`${k.bg} rounded-xl p-4 text-center`}>
-                    <k.icon className={`h-5 w-5 mx-auto mb-1 ${k.color}`} />
-                    <div className={`text-2xl font-bold ${k.color}`}>{k.val}</div>
-                    <div className="text-xs text-gray-500 mt-0.5">{k.label}</div>
-                  </div>
-                ))}
-              </div>
+              <button onClick={handleVerify} disabled={verifying}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 disabled:opacity-60 text-white font-semibold rounded-xl text-sm transition-colors">
+                <RefreshCw className={`h-4 w-4 ${verifying ? 'animate-spin' : ''}`} />
+                {verifying ? t('audit.verifying', 'Vérification…') : t('audit.verifyRun', 'Lancer la vérification')}
+              </button>
+              {verifyError && <p className="text-sm text-red-600">{verifyError}</p>}
+              {verifyReport && (
+                <div className={`rounded-xl border p-4 text-sm ${verifyReport.is_valid ? 'bg-green-50 border-green-200 text-green-800' : verifyReport.checked === 0 ? 'bg-gray-50 border-gray-200 text-gray-700' : 'bg-red-50 border-red-200 text-red-800'}`}>
+                  <p className="font-semibold">
+                    {verifyReport.checked === 0
+                      ? t('audit.verifyNone', 'Aucune entrée scellée à vérifier pour le moment.')
+                      : verifyReport.is_valid
+                        ? t('audit.verifyOk', '{{n}} entrée(s) vérifiée(s) : aucune rupture détectée.', { n: verifyReport.checked })
+                        : t('audit.verifyKo', '{{n}} entrée(s) en anomalie sur {{total}}.', { n: verifyReport.invalid, total: verifyReport.checked })}
+                  </p>
+                  {verifyReport.first_broken_at && (
+                    <p className="mt-1">{t('audit.verifyFirstBroken', 'Première rupture : {{date}}', { date: formatDate(verifyReport.first_broken_at) })}</p>
+                  )}
+                  {verifyReport.unsealed > 0 && (
+                    <p className="mt-1">{t('audit.verifyUnsealed', '{{n}} entrée(s) plus anciennes ne sont pas scellées dans la chaîne.', { n: verifyReport.unsealed })}</p>
+                  )}
+                  {verifyReport.limitations && <p className="mt-2 text-xs opacity-80">{verifyReport.limitations}</p>}
+                </div>
+              )}
             </div>
 
-            {/* Export config */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-5">
               <h3 className="font-bold text-gray-900">{t('audit.configureExport')}</h3>
+              <p className="text-sm text-gray-500">{t('audit.exportDesc', "Exporte le journal (utilisateur, action, valeurs avant/après, adresse IP et empreintes de chaîne). L'export est lui-même tracé dans le journal.")}</p>
 
               <div>
                 <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">{t('audit.formatLabel')}</label>
                 <div className="flex gap-3">
-                  {(['pdf', 'csv', 'json'] as const).map(fmt => (
+                  {(['csv', 'json'] as const).map(fmt => (
                     <button key={fmt} onClick={() => setExportFormat(fmt)}
                       className={`flex-1 py-3 rounded-xl font-semibold text-sm border-2 transition-colors uppercase ${exportFormat === fmt ? 'bg-slate-800 text-white border-slate-800' : 'border-gray-200 text-gray-600 hover:border-slate-300'}`}>
                       {fmt}
@@ -923,61 +651,26 @@ export default function AuditTrail() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">{t('audit.contentLabel')}</label>
-                <div className="space-y-2">
-                  {[
-                    { labelKey: 'audit.exportContentJournal', checked: true },
-                    { labelKey: 'audit.exportContentVersions', checked: true },
-                    { labelKey: 'audit.exportContentDocs', checked: true },
-                    { labelKey: 'audit.exportContentHashes', checked: true },
-                    { labelKey: 'audit.exportContentSessions', checked: true },
-                    { labelKey: 'audit.exportContentSummary', checked: true },
-                  ].map((item, i) => (
-                    <label key={i} className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" defaultChecked={item.checked} className="rounded accent-slate-700 w-4 h-4" />
-                      <span className="text-sm text-gray-700">{t(item.labelKey)}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
                 <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">{t('audit.periodLabel')}</label>
                 <div className="grid grid-cols-2 gap-3">
-                  <input type="date" defaultValue="2026-01-01" className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
-                  <input type="date" defaultValue="2026-03-20" className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
+                  <input type="date" value={exportFrom} onChange={e => setExportFrom(e.target.value)} aria-label={t('audit.periodFrom', 'Du')} className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
+                  <input type="date" value={exportTo} onChange={e => setExportTo(e.target.value)} aria-label={t('audit.periodTo', 'Au')} className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
                 </div>
+                <p className="text-xs text-gray-400 mt-1">{t('audit.periodEmpty', 'Laissez vide pour tout exporter.')}</p>
               </div>
 
-              {exportDone ? (
-                <div className="flex items-center gap-2 p-4 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700 font-semibold">
-                  <CheckCircle className="h-5 w-5" /> {t('audit.exportSuccess', { format: exportFormat })}
-                </div>
-              ) : (
-                <button onClick={handleExport} className="w-full flex items-center justify-center gap-2 py-4 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-2xl transition-colors text-base">
-                  <Download className="h-5 w-5" /> {t('audit.generateReport', { format: exportFormat.toUpperCase() })}
-                </button>
-              )}
+              {exportError && <p className="text-sm text-red-600">{exportError}</p>}
+              <button onClick={handleExport} disabled={exporting} className="w-full flex items-center justify-center gap-2 py-4 bg-slate-800 hover:bg-slate-900 disabled:opacity-60 text-white font-bold rounded-2xl transition-colors text-base">
+                <Download className="h-5 w-5" /> {exporting ? t('audit.exporting', 'Export en cours…') : t('audit.generateReport', { format: exportFormat.toUpperCase() })}
+              </button>
             </div>
 
-            {/* Auditeur access */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-2">
               <h3 className="font-bold text-gray-900">{t('audit.auditorAccess')}</h3>
-              <p className="text-sm text-gray-500">{t('audit.auditorAccessDesc')}</p>
-              <div className="flex gap-3">
-                <input type="email" placeholder="email@cabinet-audit.fr" className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
-                <select className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-400">
-                  <option>{t('audit.duration7')}</option>
-                  <option>{t('audit.duration14')}</option>
-                  <option>{t('audit.duration30')}</option>
-                </select>
-                <button className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 text-white rounded-xl font-semibold text-sm hover:bg-slate-900 transition-colors">
-                  <Send className="h-4 w-4" /> {t('audit.invite')}
-                </button>
-              </div>
+              <p className="text-sm text-gray-500">{t('audit.auditorAccessHonest', "Pour donner accès à un auditeur externe, utilisez le Portail Audit CSRD : il reçoit un lien personnel pour commenter le rapport et rendre sa décision.")}</p>
+              <a href="/app/audit/preparation" className="inline-block text-sm font-semibold text-emerald-700 hover:underline">{t('audit.openPortal', 'Ouvrir le Portail Audit CSRD')}</a>
             </div>
 
-            {/* Legal disclaimer */}
             <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700">
               <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
               {t('audit.legalDisclaimer')}

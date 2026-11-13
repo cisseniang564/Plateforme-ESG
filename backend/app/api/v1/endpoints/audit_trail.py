@@ -5,17 +5,26 @@ Required for CSRD compliance and external audits.
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy import func, select, desc
+import csv
+import io
+import json
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import Response
+from sqlalchemy import Text, cast, func, or_, select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.middleware.auth_middleware import get_current_tenant_id
 from app.models.audit_log import AuditLog
 from app.core.permissions import require_role, Roles
+from app.dependencies import get_current_user
+from app.models.user import User
+from app.services.audit_service import log_change
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +142,36 @@ def _serialize_event(log: AuditLog) -> Dict[str, Any]:
 
 # ─── Endpoints ────────────────────────────────────────────────────────────────
 
+def _apply_filters(stmt, *, action, entity_type, user_email, date_from, date_to, search):
+    """Filtres communs à la liste et à l'export (une seule définition)."""
+    if action:
+        stmt = stmt.where(AuditLog.action.ilike(action))
+    if entity_type:
+        stmt = stmt.where(AuditLog.entity_type == entity_type)
+    if user_email:
+        stmt = stmt.where(AuditLog.user_email.ilike(f"%{user_email}%"))
+    for raw, op in ((date_from, "ge"), (date_to, "le")):
+        if not raw:
+            continue
+        try:
+            dt = datetime.fromisoformat(raw)
+        except ValueError:
+            raise HTTPException(status_code=422, detail=f"Date invalide : {raw}")
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        stmt = stmt.where(AuditLog.created_at >= dt if op == "ge" else AuditLog.created_at <= dt)
+    if search and search.strip():
+        like = f"%{search.strip()}%"
+        stmt = stmt.where(or_(
+            AuditLog.entity_type.ilike(like),
+            AuditLog.user_email.ilike(like),
+            AuditLog.change_reason.ilike(like),
+            cast(AuditLog.old_values, Text).ilike(like),
+            cast(AuditLog.new_values, Text).ilike(like),
+        ))
+    return stmt
+
+
 @router.get("", summary="Liste paginée de la piste d'audit")
 async def list_audit_events(
     page: int = Query(1, ge=1),
@@ -148,26 +187,11 @@ async def list_audit_events(
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """Piste d'audit paginée et filtrée (esg_admin / tenant_admin uniquement)."""
-    from datetime import datetime
-
-    stmt = select(AuditLog).where(AuditLog.tenant_id == tenant_id)
-
-    if action:
-        stmt = stmt.where(AuditLog.action.ilike(action))
-    if entity_type:
-        stmt = stmt.where(AuditLog.entity_type == entity_type)
-    if user_email:
-        stmt = stmt.where(AuditLog.user_email.ilike(f"%{user_email}%"))
-    if date_from:
-        try:
-            stmt = stmt.where(AuditLog.created_at >= datetime.fromisoformat(date_from))
-        except ValueError:
-            pass
-    if date_to:
-        try:
-            stmt = stmt.where(AuditLog.created_at <= datetime.fromisoformat(date_to))
-        except ValueError:
-            pass
+    stmt = _apply_filters(
+        select(AuditLog).where(AuditLog.tenant_id == tenant_id),
+        action=action, entity_type=entity_type, user_email=user_email,
+        date_from=date_from, date_to=date_to, search=search,
+    )
 
     # Count total
     count_stmt = select(func.count()).select_from(stmt.subquery())
@@ -197,7 +221,7 @@ async def audit_stats(
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """Return audit event counts grouped by action type for the last N days."""
-    from datetime import datetime, timedelta, timezone
+    from datetime import timedelta
 
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
@@ -300,3 +324,109 @@ async def backfill_audit_chain(
             else "Toutes les entrées sont déjà scellées."
         ),
     }
+
+
+# ─── Export ──────────────────────────────────────────────────────────────────
+
+_EXPORT_MAX_ROWS = 50_000
+_CSV_COLUMNS = [
+    "created_at", "user_email", "action", "entity_type", "entity_id",
+    "change_reason", "old_values", "new_values", "ip_address",
+    "entry_hash", "previous_hash",
+]
+
+
+def _csv_cell(value: Any) -> str:
+    """Neutralise l'injection de formules (=, +, -, @) à l'ouverture dans Excel."""
+    if value is None:
+        return ""
+    if isinstance(value, (dict, list)):
+        value = json.dumps(value, ensure_ascii=False, sort_keys=True, default=str)
+    text_value = str(value)
+    if text_value[:1] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + text_value
+    return text_value
+
+
+@router.get("/export", summary="Exporter la piste d'audit (CSV ou JSON)")
+async def export_audit_trail(
+    request: Request,
+    format: str = Query("csv", pattern="^(csv|json)$"),
+    action: Optional[str] = Query(None),
+    entity_type: Optional[str] = Query(None),
+    user_email: Optional[str] = Query(None),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
+    _: None = Depends(require_role(*Roles.ADMIN_OR_ABOVE)),
+    current_user: User = Depends(get_current_user),
+    tenant_id: UUID = Depends(get_current_tenant_id),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Export réel des entrées filtrées, avec les empreintes de chaîne.
+
+    L'export est lui-même tracé dans le journal. Il contient les `entry_hash` /
+    `previous_hash` permettant à un tiers de recalculer la chaîne ; il ne
+    constitue pas une attestation (celle-ci relève de l'auditeur).
+    """
+    stmt = _apply_filters(
+        select(AuditLog).where(AuditLog.tenant_id == tenant_id),
+        action=action, entity_type=entity_type, user_email=user_email,
+        date_from=date_from, date_to=date_to, search=search,
+    ).order_by(AuditLog.created_at.asc(), AuditLog.id.asc()).limit(_EXPORT_MAX_ROWS + 1)
+    logs = list((await db.execute(stmt)).scalars().all())
+    truncated = len(logs) > _EXPORT_MAX_ROWS
+    logs = logs[:_EXPORT_MAX_ROWS]
+
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    if format == "json":
+        payload = {
+            "exported_at": datetime.now(timezone.utc).isoformat(),
+            "count": len(logs),
+            "truncated": truncated,
+            "entries": [
+                {
+                    "id": str(l.id),
+                    "created_at": l.created_at.isoformat() if l.created_at else None,
+                    "user_email": l.user_email,
+                    "action": l.action,
+                    "entity_type": l.entity_type,
+                    "entity_id": str(l.entity_id) if l.entity_id else None,
+                    "change_reason": l.change_reason,
+                    "old_values": l.old_values,
+                    "new_values": l.new_values,
+                    "ip_address": l.ip_address,
+                    "entry_hash": l.entry_hash,
+                    "previous_hash": l.previous_hash,
+                }
+                for l in logs
+            ],
+        }
+        body = json.dumps(payload, ensure_ascii=False, indent=2, default=str)
+        media = "application/json"
+    else:
+        buf = io.StringIO()
+        writer = csv.writer(buf)
+        writer.writerow(_CSV_COLUMNS)
+        for l in logs:
+            writer.writerow([
+                _csv_cell(l.created_at.isoformat() if l.created_at else None),
+                _csv_cell(l.user_email), _csv_cell(l.action), _csv_cell(l.entity_type),
+                _csv_cell(l.entity_id), _csv_cell(l.change_reason),
+                _csv_cell(l.old_values), _csv_cell(l.new_values), _csv_cell(l.ip_address),
+                _csv_cell(l.entry_hash), _csv_cell(l.previous_hash),
+            ])
+        body = "\ufeff" + buf.getvalue()  # BOM : accents corrects dans Excel
+        media = "text/csv; charset=utf-8"
+
+    await log_change(
+        db, tenant_id=tenant_id, entity_type="audit_export", entity_id=current_user.id,
+        action="export", user=current_user,
+        new_values={"format": format, "rows": len(logs), "truncated": truncated},
+        ip_address=request.client.host if request.client else None,
+    )
+    return Response(
+        content=body,
+        media_type=media,
+        headers={"Content-Disposition": f'attachment; filename="piste-audit-{stamp}.{format}"'},
+    )
