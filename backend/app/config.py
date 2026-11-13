@@ -166,6 +166,8 @@ class Settings(BaseSettings):
     RESEND_API_KEY: str = "re_REPLACE_ME"
     RESEND_FROM_EMAIL: str = "noreply@esgflow.io"
     RESEND_FROM_NAME: str = "ESGFlow Platform"
+    # Boîte qui reçoit les messages du formulaire de contact
+    CONTACT_EMAIL: str = "contact@greenconnect.cloud"
 
     # ========================================================================
     # STRIPE — billing & subscriptions

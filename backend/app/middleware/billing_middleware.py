@@ -63,6 +63,7 @@ _BILLING_EXEMPT_EXACT: frozenset[str] = frozenset([
     # Lead capture — public marketing endpoints
     "/api/v1/leads/checklist-csrd",
     "/api/v1/leads/newsletter",
+    "/api/v1/contact",
 ])
 
 # Public path prefixes also exempted from billing checks

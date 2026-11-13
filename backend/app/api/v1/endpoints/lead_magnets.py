@@ -3,9 +3,8 @@ Lead magnets — capture email contre téléchargement de contenu.
 
 Implémente un opt-in marketing simple (RGPD-friendly) avec :
     1. POST /api/v1/leads/checklist-csrd  → enregistre + envoie email avec PDF
-    2. Génération du PDF check-list 47 indicateurs ESRS à la volée
-    3. Logging du lead dans tenant.settings.lead_magnets OU dans une table
-       leads dédiée si elle existe.
+    2. Génération du PDF check-list 46 indicateurs ESRS à la volée
+    3. Enregistrement du contact dans la table contact_leads.
 
 Le lead est volontairement stocké de façon minimaliste : seul l'email est
 obligatoire ; nom et entreprise sont optionnels. Pas de cookie tracking, pas
@@ -22,6 +21,8 @@ from typing import Optional
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 from pydantic import BaseModel, EmailStr, Field
 
+from app.services.unsubscribe_token import unsubscribe_url
+
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
@@ -36,6 +37,45 @@ class ChecklistRequest(BaseModel):
 class NewsletterRequest(BaseModel):
     email: EmailStr
     source: Optional[str] = Field(None, max_length=50, description="Page d'origine (footer, popup, …)")
+
+
+class ContactRequest(BaseModel):
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
+    email: EmailStr
+    phone: Optional[str] = Field(None, max_length=50)
+    company: str = Field(..., min_length=1, max_length=200)
+    company_size: Optional[str] = Field(None, max_length=100)
+    subject: str = Field(..., min_length=1, max_length=200)
+    message: str = Field(..., min_length=5, max_length=5000)
+    # Champ piège : invisible pour un humain, rempli par les robots.
+    website: Optional[str] = Field(None, max_length=200)
+
+
+async def _store_lead(
+    kind: str, email: str, *, name: str = "", company: str = "", phone: str = "",
+    subject: str = "", message: str = "", source: str = "", consent: bool = False, ip: str = "",
+) -> None:
+    """Enregistre un contact (requêtes paramétrées). Lève en cas d'échec : l'appelant décide."""
+    from sqlalchemy import text as _t
+    from app.db.session import SystemSessionLocal
+
+    async with SystemSessionLocal() as db:
+        await db.execute(
+            _t("""
+            INSERT INTO contact_leads
+                (kind, email, name, company, phone, subject, message, source, consent, ip_address)
+            VALUES (:kind, :email, :name, :company, :phone, :subject, :message, :source, :consent, :ip)
+            """),
+            {"kind": kind, "email": email.strip().lower(), "name": name or None, "company": company or None,
+             "phone": phone or None, "subject": subject or None, "message": message or None,
+             "source": source or None, "consent": consent, "ip": ip or None},
+        )
+        await db.commit()
+
+
+def _client_ip(request: Request) -> str:
+    return request.client.host if request.client else ""
 
 
 # ─── PDF generator ────────────────────────────────────────────────────────────
@@ -112,7 +152,7 @@ ESRS_CHECKLIST: list[dict] = [
 
 
 def _generate_checklist_pdf() -> bytes:
-    """Generate the 47-indicator ESRS checklist PDF using ReportLab."""
+    """Generate the 46-indicator ESRS checklist PDF using ReportLab."""
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.units import mm
     from reportlab.lib import colors
@@ -177,7 +217,7 @@ def _generate_checklist_pdf() -> bytes:
     story.append(HRFlowable(width='100%', thickness=1, color=GREEN, spaceAfter=10))
 
     intro_text = [
-        "Cette check-list récense 47 indicateurs ESRS prioritaires que tout préparateur "
+        "Cette check-list récense 46 indicateurs ESRS prioritaires que tout préparateur "
         "CSRD devrait identifier au moins une fois pendant son analyse de double matérialité. "
         "Tous les indicateurs ne seront pas matériels pour votre activité — c'est à vous "
         "(et à vos parties prenantes) d'arbitrer.",
@@ -275,24 +315,13 @@ async def submit_checklist_lead(
     if not body.consent:
         raise HTTPException(status_code=400, detail="Le consentement marketing est requis.")
 
-    # Log the lead (best-effort — DB optional)
     try:
-        from app.db.session import SystemSessionLocal
-        from sqlalchemy import text as _t
-        ip = request.client.host if request.client else "?"
-        async with SystemSessionLocal() as db:
-            # Best-effort insert into audit_logs (already RLS-aware) as a generic event store
-            await db.execute(
-                _t("""
-                INSERT INTO audit_logs (id, tenant_id, action, resource_type, details, created_at)
-                VALUES (gen_random_uuid(), NULL, 'lead_capture', 'checklist_csrd', :details::jsonb, NOW())
-                ON CONFLICT DO NOTHING
-                """),
-                {"details": f'{{"email":"{body.email}","first_name":"{body.first_name or ""}","company":"{body.company or ""}","ip":"{ip}","source":"checklist-csrd"}}'},
-            )
-            await db.commit()
+        await _store_lead(
+            "checklist", body.email, name=body.first_name or "", company=body.company or "",
+            source="checklist-csrd", consent=True, ip=_client_ip(request),
+        )
     except Exception as exc:
-        logger.warning("Lead capture DB write failed: %s", exc)
+        logger.error("Lead capture DB write failed (checklist): %s", exc)
 
     # Send the PDF in background so the API stays snappy
     def _send():
@@ -325,23 +354,12 @@ async def submit_newsletter(
     Single opt-in via le clic sur le bouton (l'utilisateur peut se désabonner
     à tout moment via le lien dans chaque email — RFC 8058).
     """
-    # Log the lead — best-effort, RLS-safe
     try:
-        from app.db.session import SystemSessionLocal
-        from sqlalchemy import text as _t
-        ip = request.client.host if request.client else "?"
-        async with SystemSessionLocal() as db:
-            await db.execute(
-                _t("""
-                INSERT INTO audit_logs (id, tenant_id, action, resource_type, details, created_at)
-                VALUES (gen_random_uuid(), NULL, 'newsletter_subscribe', 'newsletter', :details::jsonb, NOW())
-                ON CONFLICT DO NOTHING
-                """),
-                {"details": f'{{"email":"{body.email}","source":"{body.source or "footer"}","ip":"{ip}"}}'},
-            )
-            await db.commit()
+        await _store_lead("newsletter", body.email, source=body.source or "footer", consent=True,
+                          ip=_client_ip(request))
     except Exception as exc:
-        logger.warning("Newsletter DB write failed: %s", exc)
+        logger.error("Newsletter DB write failed: %s", exc)
+        raise HTTPException(status_code=500, detail="Inscription impossible pour le moment, réessayez plus tard.")
 
     # Send the confirmation email in background
     def _send():
@@ -377,15 +395,13 @@ def _send_newsletter_welcome(to_email: str) -> None:
       </p>
       <hr style="border:none;border-top:2px solid #10b981;margin:20px 0;"/>
       <h1 style="font-size:22px;color:#0f172a;">Bienvenue dans la newsletter ESGFlow !</h1>
-      <p>Merci de vous être inscrit·e. Chaque mois, vous recevrez :</p>
+      <p>Merci de vous être inscrit·e. Au plus une fois par mois, nous vous écrirons lorsque nous publions :</p>
       <ul style="color:#475569;line-height:1.8;">
         <li>📊 <strong>Une analyse</strong> d'un sujet ESG/CSRD du moment (Omnibus, CSDDD, taxonomie…)</li>
         <li>🛠 <strong>Un outil ou guide pratique</strong> téléchargeable</li>
-        <li>📈 <strong>Les chiffres du marché</strong> ESG B2B en France</li>
-        <li>🚀 <strong>Les nouveautés produit</strong> ESGFlow (sans spam)</li>
+        <li>🚀 <strong>Les nouveautés produit</strong> ESGFlow</li>
       </ul>
-      <p>Sans bullshit, sans jargon, et sans chiffres inventés.</p>
-      <p style="text-align:center;margin:24px 0;">
+            <p style="text-align:center;margin:24px 0;">
         <a href="https://greenconnect.cloud/register" style="display:inline-block;padding:14px 28px;background:#10b981;color:white;text-decoration:none;border-radius:10px;font-weight:700;">
           Essayer ESGFlow gratuitement
         </a>
@@ -399,10 +415,11 @@ def _send_newsletter_welcome(to_email: str) -> None:
     resend.Emails.send({
         "from": f"ESGFlow <noreply@greenconnect.cloud>",
         "to":   [to_email],
+        "reply_to": getattr(settings, "CONTACT_EMAIL", "contact@greenconnect.cloud"),
         "subject": "Bienvenue dans la newsletter ESGFlow",
         "html": html,
         "headers": {
-            "List-Unsubscribe": f"<mailto:unsubscribe@greenconnect.cloud?subject=unsubscribe>, <https://greenconnect.cloud/api/v1/unsubscribe?email={to_email}>",
+            "List-Unsubscribe": f"<mailto:unsubscribe@greenconnect.cloud?subject=unsubscribe>, <{unsubscribe_url(to_email)}>",
             "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         },
     })
@@ -434,7 +451,7 @@ def _send_lead_email(to_email: str, first_name: str, pdf_bytes: bytes) -> None:
       <hr style="border:none;border-top:2px solid #10b981;margin:20px 0;"/>
       <h1 style="font-size:22px;color:#0f172a;">Votre check-list CSRD</h1>
       <p>{greeting}</p>
-      <p>Merci d'avoir demandé notre <strong>check-list CSRD</strong> : 47 indicateurs ESRS prioritaires
+      <p>Merci d'avoir demandé notre <strong>check-list CSRD</strong> : 46 indicateurs ESRS prioritaires
       classés par criticité, pour démarrer votre conformité sans rien oublier.</p>
       <p>Le PDF est en pièce jointe de cet email. Conseil : imprimez-le et cochez les indicateurs au fur
       et à mesure que vous les renseignez dans votre outil ESG.</p>
@@ -454,15 +471,65 @@ def _send_lead_email(to_email: str, first_name: str, pdf_bytes: bytes) -> None:
     resend.Emails.send({
         "from": f"ESGFlow <noreply@greenconnect.cloud>",
         "to":   [to_email],
-        "subject": "📄 Votre check-list CSRD — 47 indicateurs ESRS",
+        "reply_to": getattr(settings, "CONTACT_EMAIL", "contact@greenconnect.cloud"),
+        "subject": "📄 Votre check-list CSRD — 46 indicateurs ESRS",
         "html": html,
         "attachments": [{
-            "filename": "checklist-csrd-47-indicateurs-esrs.pdf",
+            "filename": "checklist-csrd-46-indicateurs-esrs.pdf",
             "content": b64,
         }],
         "headers": {
-            "List-Unsubscribe": f"<mailto:unsubscribe@greenconnect.cloud?subject=unsubscribe>, <https://greenconnect.cloud/api/v1/unsubscribe?email={to_email}>",
+            "List-Unsubscribe": f"<mailto:unsubscribe@greenconnect.cloud?subject=unsubscribe>, <{unsubscribe_url(to_email)}>",
             "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         },
     })
     logger.info("Checklist PDF emailed to %s (%d bytes)", to_email, len(pdf_bytes))
+
+
+# ─── Formulaire de contact ─────────────────────────────────────────────────────
+
+def _contact_email_html(body: "ContactRequest") -> str:
+    from html import escape as e
+    rows = [
+        ("Nom", f"{body.first_name} {body.last_name}"), ("E-mail", body.email), ("Téléphone", body.phone or "—"),
+        ("Entreprise", body.company), ("Taille", body.company_size or "—"), ("Sujet", body.subject),
+    ]
+    table = "".join(f"<tr><td style='padding:4px 12px 4px 0;color:#64748b'>{e(k)}</td><td>{e(v)}</td></tr>" for k, v in rows)
+    msg = e(body.message).replace("\n", "<br/>")
+    return (f"<div style='font-family:system-ui,sans-serif;color:#0f172a'><h2>Nouveau message via le formulaire de contact</h2>"
+            f"<table>{table}</table><hr/><p>{msg}</p></div>")
+
+
+@router.post("/contact", summary="Formulaire de contact (devis, démo, question)")
+async def submit_contact(body: ContactRequest, background_tasks: BackgroundTasks, request: Request):
+    """Enregistre le message puis prévient l'équipe par e-mail (réponse directe au visiteur)."""
+    if body.website:
+        # Robot : on répond comme si tout allait bien, sans rien enregistrer ni envoyer.
+        return {"ok": True}
+    try:
+        await _store_lead(
+            "contact", body.email, name=f"{body.first_name} {body.last_name}", company=body.company,
+            phone=body.phone or "", subject=body.subject, message=body.message, source="contact-page",
+            consent=False, ip=_client_ip(request),
+        )
+    except Exception as exc:
+        logger.error("Contact message DB write failed: %s", exc)
+        raise HTTPException(status_code=500, detail="Envoi impossible pour le moment. Écrivez-nous à contact@greenconnect.cloud.")
+
+    def _notify():
+        try:
+            import resend
+            from app.config import settings
+            resend.api_key = settings.RESEND_API_KEY
+            resend.Emails.send({
+                "from": "ESGFlow <noreply@greenconnect.cloud>",
+                "to": [settings.CONTACT_EMAIL],
+                "reply_to": body.email,
+                "subject": f"[Contact] {body.subject} — {body.company}"[:200],
+                "html": _contact_email_html(body),
+            })
+        except Exception as exc:  # le message est déjà enregistré : on ne perd rien
+            logger.error("Contact notification email failed: %s", exc)
+
+    background_tasks.add_task(_notify)
+    return {"ok": True}

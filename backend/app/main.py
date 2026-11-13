@@ -455,6 +455,9 @@ app.include_router(questionnaires.router, prefix="/api/v1/questionnaires", tags=
 app.include_router(smart_alerts.router, prefix="/api/v1/smart-alerts", tags=["Smart Alerts"])
 app.include_router(api_keys.router, prefix="/api/v1")
 app.include_router(sso.router, prefix="/api/v1")
+from app.api.v1.endpoints import lead_magnets as _lead_magnets, unsubscribe as _unsubscribe
+app.include_router(_lead_magnets.router, prefix="/api/v1", tags=["Leads"])
+app.include_router(_unsubscribe.router, prefix="/api/v1", tags=["Unsubscribe"])
 app.include_router(hr_import.router,         prefix="/api/v1/hr-import",         tags=["HR Import"])
 app.include_router(cabinet.router,           prefix="/api/v1/cabinet",           tags=["Cabinet"])
 app.include_router(sector_templates.router,  prefix="/api/v1",                   tags=["Sector Templates"])

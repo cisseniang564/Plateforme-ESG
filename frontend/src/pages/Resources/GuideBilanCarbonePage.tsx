@@ -130,7 +130,7 @@ export default function GuideBilanCarbonePage() {
             ))}
             <div className="mt-6 p-4 bg-emerald-50 rounded-xl border border-emerald-200">
               <p className="text-xs font-semibold text-emerald-700 mb-2">{t('resources.guideBilanCarbone.aside.ctaTitle', 'Check-list ESRS gratuite')}</p>
-              <p className="text-xs text-gray-600 mb-3">{t('resources.guideBilanCarbone.aside.ctaDesc', '47 indicateurs prioritaires CSRD/ESRS au format PDF.')}</p>
+              <p className="text-xs text-gray-600 mb-3">{t('resources.guideBilanCarbone.aside.ctaDesc', '46 indicateurs prioritaires CSRD/ESRS au format PDF.')}</p>
               <Link to="/ressources/checklist-csrd" className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800">
                 <Download className="h-3.5 w-3.5" />{t('resources.guideBilanCarbone.aside.ctaLink', 'Télécharger')}
               </Link>

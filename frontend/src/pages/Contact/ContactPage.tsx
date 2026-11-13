@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import api from '@/services/api';
 import { useTranslation, Trans } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { usePageSeo } from '@/hooks/usePageSeo';
@@ -75,9 +76,11 @@ export default function ContactPage() {
     companySize: '',
     subject: SUBJECTS[0] as string,
     message: '',
+    website: '', // champ piège anti-robots, doit rester vide
   });
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
 
   // scroll to top + page title on mount
   useEffect(() => {
@@ -93,11 +96,26 @@ export default function ContactPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSending(true);
-
-    // Simulate API call (replace with real endpoint later)
-    await new Promise(r => setTimeout(r, 1200));
-    setSending(false);
-    setSubmitted(true);
+    setError('');
+    try {
+      await api.post('/contact', {
+        first_name: form.firstName,
+        last_name: form.lastName,
+        email: form.email,
+        phone: form.phone || null,
+        company: form.company,
+        company_size: form.companySize || null,
+        subject: form.subject,
+        message: form.message,
+        website: form.website,
+      });
+      setSubmitted(true);
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail;
+      setError(typeof detail === 'string' ? detail : t('contact.form.error', "L'envoi a échoué. Réessayez ou écrivez-nous à contact@greenconnect.cloud."));
+    } finally {
+      setSending(false);
+    }
   }
 
   /* ── Success state ── */
@@ -109,11 +127,11 @@ export default function ContactPage() {
               <CheckCircle2 className="w-10 h-10 text-emerald-600" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900">
-              {t('contact.success.title', 'Message envoye !')}
+              {t('contact.success.title', 'Message envoyé !')}
             </h1>
             <p className="text-gray-600">
               <Trans i18nKey="contact.success.body">
-                Merci pour votre interet. Notre equipe commerciale vous recontactera sous <strong>24 heures ouvrees</strong>.
+                Merci pour votre intérêt. Nous vous répondrons par e-mail dès que possible.
               </Trans>
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
@@ -121,14 +139,14 @@ export default function ContactPage() {
                 to="/"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 transition-colors"
               >
-                {t('contact.success.home', "Retour a l'accueil")}
+                {t('contact.success.home', "Retour à l'accueil")}
               </Link>
               <Link
                 to="/demo"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 <Calendar className="w-4 h-4" />
-                {t('contact.success.seeDemo', 'Voir la demo')}
+                {t('contact.success.seeDemo', 'Voir la démo')}
               </Link>
             </div>
           </div>
@@ -306,6 +324,17 @@ export default function ContactPage() {
                   />
                 </div>
 
+                {/* Champ piège anti-robots : invisible pour un humain */}
+                <input
+                  type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true"
+                  value={form.website} onChange={e => update('website', e.target.value)}
+                  style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+                />
+
+                {error && (
+                  <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+                )}
+
                 {/* Submit */}
                 <button
                   type="submit"
@@ -330,7 +359,7 @@ export default function ContactPage() {
 
                 <p className="text-xs text-gray-500 text-center">
                   <Trans i18nKey="contact.form.privacyNote">
-                    En soumettant ce formulaire, vous acceptez notre <Link to="/privacy-policy" className="underline hover:text-emerald-600">politique de confidentialite</Link>. Nous repondons sous 24 h ouvrees.
+                    En soumettant ce formulaire, vous acceptez notre <Link to="/privacy-policy" className="underline hover:text-emerald-600">politique de confidentialité</Link>. Vos données ne servent qu'à répondre à votre demande.
                   </Trans>
                 </p>
               </form>

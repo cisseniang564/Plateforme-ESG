@@ -249,6 +249,28 @@ async def init_db() -> None:
         "ALTER TABLE materiality_issues ADD COLUMN IF NOT EXISTS time_horizon VARCHAR(20)",
         "ALTER TABLE materiality_issues ADD COLUMN IF NOT EXISTS value_chain VARCHAR(20)",
 
+        # ── Contacts & leads publics (formulaire de contact, newsletter, check-list) ──
+        # Pas de tenant : table lue uniquement par la plateforme (SystemSessionLocal).
+        """
+        CREATE TABLE IF NOT EXISTS contact_leads (
+            id              UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+            kind            VARCHAR(20)  NOT NULL,
+            email           VARCHAR(255) NOT NULL,
+            name            VARCHAR(200),
+            company         VARCHAR(200),
+            phone           VARCHAR(50),
+            subject         VARCHAR(200),
+            message         TEXT,
+            source          VARCHAR(50),
+            consent         BOOLEAN      NOT NULL DEFAULT FALSE,
+            ip_address      VARCHAR(64),
+            unsubscribed_at TIMESTAMPTZ,
+            created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_contact_leads_email ON contact_leads (email)",
+        "CREATE INDEX IF NOT EXISTS ix_contact_leads_kind_created ON contact_leads (kind, created_at DESC)",
+
         # ── Framework assessments (CDP, CSDDD, climate, investor, iXBRL) ─────
         """
         CREATE TABLE IF NOT EXISTS framework_assessments (

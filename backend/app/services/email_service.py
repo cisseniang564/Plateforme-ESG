@@ -49,11 +49,9 @@ def _unsubscribe_email() -> str:
 
 
 def _unsubscribe_url(email: str) -> str:
-    """Public unsubscribe URL — backend honours GET with ?email=… token.
-    Hits the API path so it reaches the backend container (nginx routes / to the SPA).
-    """
-    import urllib.parse
-    return f"{_app_url()}/api/v1/unsubscribe?email={urllib.parse.quote(email)}"
+    """Lien de désabonnement signé (API, pour atteindre le backend et non la SPA)."""
+    from app.services.unsubscribe_token import unsubscribe_url
+    return unsubscribe_url(email, _app_url())
 
 
 # ─── Base template ────────────────────────────────────────────────────────────

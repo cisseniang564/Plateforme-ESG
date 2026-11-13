@@ -1,6 +1,6 @@
 /**
  * Lead magnet landing — /ressources/checklist-csrd
- * Formulaire de capture email → PDF check-list 47 indicateurs ESRS livrée par email.
+ * Formulaire de capture email → PDF check-list 46 indicateurs ESRS livrée par email.
  */
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -28,13 +28,13 @@ export default function ChecklistCsrdPage() {
 
   usePageSeo({
     id: 'checklist-csrd',
-    title: t('resources.checklist.seo.title', 'Check-list CSRD gratuite — 47 indicateurs ESRS · ESGFlow'),
-    description: t('resources.checklist.seo.description', "Téléchargez la check-list CSRD gratuite : 47 indicateurs ESRS prioritaires classés par criticité. PDF prêt à imprimer pour démarrer votre conformité CSRD."),
+    title: t('resources.checklist.seo.title', 'Check-list CSRD gratuite — 46 indicateurs ESRS · ESGFlow'),
+    description: t('resources.checklist.seo.description', "Téléchargez la check-list CSRD gratuite : 46 indicateurs ESRS prioritaires classés par criticité. PDF prêt à imprimer pour démarrer votre conformité CSRD."),
     keywords: t('resources.checklist.seo.keywords', 'check-list CSRD, indicateurs ESRS, PDF gratuit, conformité CSRD, EFRAG, lead magnet'),
     url,
-    ogTitle: t('resources.checklist.seo.ogTitle', 'Check-list CSRD gratuite — 47 indicateurs ESRS'),
+    ogTitle: t('resources.checklist.seo.ogTitle', 'Check-list CSRD gratuite — 46 indicateurs ESRS'),
     ogImage: img,
-    ogImageAlt: t('resources.checklist.seo.ogImageAlt', 'Check-list CSRD — 47 indicateurs ESRS prioritaires (PDF gratuit)'),
+    ogImageAlt: t('resources.checklist.seo.ogImageAlt', 'Check-list CSRD — 46 indicateurs ESRS prioritaires (PDF gratuit)'),
     breadcrumb: [
       { name: t('resources.checklist.breadcrumb.home', 'Accueil'),     url: 'https://greenconnect.cloud/' },
       { name: t('resources.checklist.breadcrumb.resources', 'Ressources'),  url: 'https://greenconnect.cloud/resources' },
@@ -96,7 +96,7 @@ export default function ChecklistCsrdPage() {
 
           <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 leading-tight mb-6">
             {t('resources.checklist.pitch.titleLine1', 'La check-list CSRD')}<br />
-            <span className="text-emerald-600">{t('resources.checklist.pitch.titleLine2', 'en 47 indicateurs ESRS')}</span>
+            <span className="text-emerald-600">{t('resources.checklist.pitch.titleLine2', 'en 46 indicateurs ESRS')}</span>
           </h1>
 
           <p className="text-xl text-gray-600 leading-relaxed mb-8">
