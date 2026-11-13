@@ -8,10 +8,13 @@ from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 
-from app.dependencies import get_db, get_current_user
+from app.core.permissions import Roles
+from app.dependencies import get_db, get_current_user, require_any_role
 from app.models.user import User
+from app.models.indicator import Indicator
 from app.models.indicator_data import IndicatorData
 from app.models.audit_log import AuditLog
+from app.services.audit_chain_service import seal_entry
 
 router = APIRouter(prefix="/validation", tags=["Validation Workflow"])
 
@@ -30,8 +33,9 @@ async def _write_audit_logs(
     notes: Optional[str],
     old_status: str,
     new_status: str,
+    ip_address: Optional[str] = None,
 ):
-    """Insert one AuditLog row per affected IndicatorData entry."""
+    """Insert one AuditLog row per affected IndicatorData entry (scellée dans la chaîne SHA-256)."""
     now = datetime.now(timezone.utc)
     for entry in entries:
         log = AuditLog(
@@ -45,6 +49,7 @@ async def _write_audit_logs(
             old_values={"validation_status": old_status},
             new_values={"validation_status": new_status},
             change_reason=notes,
+            ip_address=ip_address,
             entry_metadata={
                 "indicator_id": str(entry.indicator_id),
                 "value": entry.value,
@@ -52,16 +57,67 @@ async def _write_audit_logs(
             },
         )
         db.add(log)
+        await db.flush()
+        try:
+            await seal_entry(db, log)
+        except Exception:  # ne jamais bloquer la validation pour un problème de scellement
+            pass
+
+
+def _ip(request: Request) -> Optional[str]:
+    return request.client.host if request.client else None
+
+
+async def _entry_rows(db: AsyncSession, entries: list, current_user: User) -> list[dict]:
+    """Enrichit les saisies : nom de l'indicateur, unité, auteur de la soumission, droit d'approuver."""
+    if not entries:
+        return []
+    ind_ids = {e.indicator_id for e in entries}
+    inds = {i.id: i for i in (await db.execute(select(Indicator).where(Indicator.id.in_(ind_ids)))).scalars().all()}
+    user_ids = {e.submitted_by for e in entries if e.submitted_by}
+    users = {}
+    if user_ids:
+        rows = (await db.execute(select(User.id, User.email, User.full_name).where(User.id.in_(user_ids)))).all()
+        users = {r.id: (r.full_name or r.email) for r in rows}
+    out = []
+    for e in entries:
+        ind = inds.get(e.indicator_id)
+        out.append({
+            "id": str(e.id),
+            "indicator_id": str(e.indicator_id),
+            "indicator_code": getattr(ind, "code", None),
+            "indicator_name": getattr(ind, "name", None),
+            "unit": getattr(ind, "unit", None),
+            "date": str(e.date),
+            "value": e.value,
+            "validation_status": e.validation_status or "draft",
+            "submitted_at": e.submitted_at.isoformat() if e.submitted_at else None,
+            "submitted_by": str(e.submitted_by) if e.submitted_by else None,
+            "submitted_by_name": users.get(e.submitted_by),
+            "reviewer_notes": e.reviewer_notes if (e.validation_status or "draft") == "draft" else None,
+            # Principe des 4 yeux : on n'approuve pas ses propres soumissions
+            "can_approve": e.submitted_by != current_user.id,
+        })
+    return out
 
 
 @router.post("/submit-for-review")
 async def submit_for_review(
+    request: Request,
     body: BulkActionRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_any_role(*Roles.ENTRY_OR_ABOVE)),
     db: AsyncSession = Depends(get_db),
 ):
     """Move draft entries to pending_review."""
     from sqlalchemy import or_
+    if body.assigned_to_user_id:
+        if body.assigned_to_user_id == current_user.id:
+            raise HTTPException(status_code=400, detail="Vous ne pouvez pas vous assigner votre propre validation.")
+        assignee = (await db.execute(select(User).where(
+            User.id == body.assigned_to_user_id, User.tenant_id == current_user.tenant_id, User.is_active.is_(True),
+        ))).scalar_one_or_none()
+        if not assignee:
+            raise HTTPException(status_code=400, detail="Validateur introuvable ou inactif.")
     result = await db.execute(
         select(IndicatorData).where(
             and_(
@@ -80,8 +136,7 @@ async def submit_for_review(
         entry.validation_status = "pending_review"
         entry.submitted_by = current_user.id
         entry.submitted_at = datetime.now(timezone.utc)
-        if body.assigned_to_user_id:
-            entry.reviewed_by = body.assigned_to_user_id
+        entry.reviewed_by = body.assigned_to_user_id  # None si non assignée (efface un ancien refus)
 
     await _write_audit_logs(
         db, entries,
@@ -90,6 +145,7 @@ async def submit_for_review(
         notes=body.notes,
         old_status="draft",
         new_status="pending_review",
+        ip_address=_ip(request),
     )
     await db.commit()
     return {"updated": len(entries)}
@@ -99,16 +155,15 @@ async def submit_for_review(
 async def approve_entries(
     request: Request,
     body: BulkActionRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_any_role(*Roles.MANAGER_OR_ABOVE)),
     db: AsyncSession = Depends(get_db),
 ):
     """Approve pending entries.
 
-    Enforces SoD (separation of duties): the user who submitted an entry
-    cannot approve their own entry — this is a hard CSRD / ISAE 3000
-    requirement. Each approved entry gets a SHA-256 signature hash that
-    cryptographically binds the approver, the data values, and the timestamp;
-    re-computable later for legal proof.
+    Principe des 4 yeux : l'auteur d'une soumission ne peut pas l'approuver.
+    Chaque approbation enregistre une empreinte SHA-256 (tenant, saisie, valeur,
+    approbateur, horodatage) dans les notes de revue : c'est un repère de
+    traçabilité recalculable, pas une signature électronique qualifiée (eIDAS).
     """
     import hashlib
 
@@ -139,8 +194,8 @@ async def approve_entries(
     client_ip = request.client.host if request.client else None
 
     for entry in approvable:
-        # ── E-signature: SHA-256 of (tenant + entry + value + approver + ts)
-        # Stored verbatim on the reviewer_notes for legal traceability.
+        # Empreinte SHA-256 de (tenant + saisie + valeur + approbateur + horodatage),
+        # conservée dans reviewer_notes pour la traçabilité.
         sig_payload = (
             f"{entry.tenant_id}|{entry.id}|{entry.indicator_id}|"
             f"{entry.value}|{entry.date}|{current_user.id}|{now.isoformat()}"
@@ -152,12 +207,11 @@ async def approve_entries(
         entry.reviewed_at = now
         # Embed signature in reviewer_notes (preserves user note + adds proof).
         sig_block = (
-            f"\n\n[Signature électronique]\n"
+            f"\n\n[Empreinte d'approbation SHA-256]\n"
             f"  Hash:       {signature}\n"
-            f"  Signé par:  {current_user.email}\n"
+            f"  Approuvé par: {current_user.email}\n"
             f"  Date:       {now.isoformat()}\n"
-            f"  IP:         {client_ip or 'n/a'}\n"
-            f"  Conformité: ISAE 3000 · CSRD Art. 29a"
+            f"  IP:         {client_ip or 'n/a'}"
         )
         user_notes = (body.notes or "").strip()
         entry.reviewer_notes = (user_notes + sig_block) if user_notes else sig_block.strip()
@@ -170,6 +224,7 @@ async def approve_entries(
         notes=body.notes,
         old_status="pending_review",
         new_status="approved",
+        ip_address=client_ip,
     )
     await db.commit()
     return {
@@ -177,7 +232,7 @@ async def approve_entries(
         "skipped_self_approval": len(skipped_sod),
         "skipped_ids": skipped_sod,
         "message": (
-            f"{len(approvable)} entrée(s) approuvée(s) et signée(s)."
+            f"{len(approvable)} entrée(s) approuvée(s)."
             + (f" {len(skipped_sod)} ignorée(s) — vous ne pouvez pas approuver vos propres saisies."
                if skipped_sod else "")
         ),
@@ -186,11 +241,14 @@ async def approve_entries(
 
 @router.post("/reject")
 async def reject_entries(
+    request: Request,
     body: BulkActionRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_any_role(*Roles.MANAGER_OR_ABOVE)),
     db: AsyncSession = Depends(get_db),
 ):
-    """Reject pending entries back to draft."""
+    """Refuse des saisies en attente : retour en brouillon, avec un motif obligatoire."""
+    if len((body.notes or "").strip()) < 3:
+        raise HTTPException(status_code=422, detail="Indiquez le motif du refus pour que l'auteur puisse corriger.")
     result = await db.execute(
         select(IndicatorData).where(
             and_(
@@ -205,7 +263,7 @@ async def reject_entries(
         entry.validation_status = "draft"
         entry.reviewed_by = current_user.id
         entry.reviewed_at = datetime.now(timezone.utc)
-        entry.reviewer_notes = body.notes
+        entry.reviewer_notes = body.notes.strip()
 
     await _write_audit_logs(
         db, entries,
@@ -214,9 +272,28 @@ async def reject_entries(
         notes=body.notes,
         old_status="pending_review",
         new_status="draft",
+        ip_address=_ip(request),
     )
     await db.commit()
     return {"rejected": len(entries)}
+
+
+@router.get("/drafts")
+async def list_drafts(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Brouillons à soumettre (statut « draft » ou absent pour les anciennes saisies)."""
+    from sqlalchemy import or_
+    result = await db.execute(
+        select(IndicatorData).where(
+            and_(
+                IndicatorData.tenant_id == current_user.tenant_id,
+                or_(IndicatorData.validation_status == "draft", IndicatorData.validation_status.is_(None)),
+            )
+        ).order_by(IndicatorData.date.desc()).limit(200)
+    )
+    return await _entry_rows(db, result.scalars().all(), current_user)
 
 
 @router.get("/pending")
@@ -224,27 +301,16 @@ async def list_pending(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """List entries pending review."""
+    """Saisies soumises, en attente de validation."""
     result = await db.execute(
         select(IndicatorData).where(
             and_(
                 IndicatorData.tenant_id == current_user.tenant_id,
                 IndicatorData.validation_status == "pending_review",
             )
-        ).limit(100)
+        ).order_by(IndicatorData.submitted_at.desc()).limit(200)
     )
-    entries = result.scalars().all()
-    return [
-        {
-            "id": str(e.id),
-            "indicator_id": str(e.indicator_id),
-            "date": str(e.date),
-            "value": e.value,
-            "validation_status": e.validation_status,
-            "submitted_at": e.submitted_at.isoformat() if e.submitted_at else None,
-        }
-        for e in entries
-    ]
+    return await _entry_rows(db, result.scalars().all(), current_user)
 
 
 @router.get("/my-queue")
@@ -252,7 +318,7 @@ async def my_queue(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Entries assigned to me for review (pending_review + reviewed_by == me)."""
+    """Saisies qui m'ont été assignées pour validation."""
     result = await db.execute(
         select(IndicatorData).where(
             and_(
@@ -260,21 +326,9 @@ async def my_queue(
                 IndicatorData.validation_status == "pending_review",
                 IndicatorData.reviewed_by == current_user.id,
             )
-        ).limit(200)
+        ).order_by(IndicatorData.submitted_at.desc()).limit(200)
     )
-    entries = result.scalars().all()
-    return [
-        {
-            "id": str(e.id),
-            "indicator_id": str(e.indicator_id),
-            "date": str(e.date),
-            "value": e.value,
-            "validation_status": e.validation_status,
-            "submitted_at": e.submitted_at.isoformat() if e.submitted_at else None,
-            "submitted_by": str(e.submitted_by) if e.submitted_by else None,
-        }
-        for e in entries
-    ]
+    return await _entry_rows(db, result.scalars().all(), current_user)
 
 
 @router.get("/team-members")
@@ -282,14 +336,16 @@ async def list_team_members(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    from app.models.user import User as UserModel
+    """Validateurs possibles : utilisateurs actifs de l'espace, hors soi-même."""
     result = await db.execute(
-        select(UserModel.id, UserModel.email, UserModel.full_name).where(
-            UserModel.tenant_id == current_user.tenant_id
-        ).limit(50)
+        select(User.id, User.email, User.full_name).where(
+            User.tenant_id == current_user.tenant_id,
+            User.is_active.is_(True),
+            User.id != current_user.id,
+        ).order_by(User.email).limit(100)
     )
-    rows = result.all()
-    return [{"id": str(r.id), "email": r.email, "name": r.full_name or r.email} for r in rows]
+    return [{"id": str(r.id), "email": r.email, "full_name": r.full_name, "name": r.full_name or r.email}
+            for r in result.all()]
 
 
 @router.get("/stats")
@@ -297,11 +353,14 @@ async def validation_stats(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Count entries by validation status."""
+    """Nombre de saisies par statut (une saisie sans statut compte comme brouillon)."""
     result = await db.execute(
         select(IndicatorData.validation_status, func.count().label("count"))
         .where(IndicatorData.tenant_id == current_user.tenant_id)
         .group_by(IndicatorData.validation_status)
     )
-    rows = result.all()
-    return {row.validation_status: row.count for row in rows}
+    out = {"draft": 0, "pending_review": 0, "approved": 0}
+    for row in result.all():
+        key = row.validation_status or "draft"
+        out[key] = out.get(key, 0) + row.count
+    return out
