@@ -114,19 +114,19 @@ const ESRS_STANDARDS = [
 ];
 
 const FRAMEWORKS = [
-  { name: 'CSRD / ESRS', desc: 'Directive européenne reporting durabilité', icon: FileText, color: 'text-blue-600', bg: 'bg-blue-50', status: 'Couvert' },
-  { name: 'VSME (EFRAG)', desc: 'Norme volontaire PME — template Module de Base B1–B11 inclus', icon: FileText, color: 'text-lime-600', bg: 'bg-lime-50', status: 'Couvert' },
-  { name: 'GHG Protocol', desc: 'Scopes 1, 2 et 3 complets', icon: Leaf, color: 'text-green-600', bg: 'bg-green-50', status: 'Couvert' },
-  { name: 'Taxonomie UE', desc: 'Alignement activités durables', icon: Globe, color: 'text-emerald-600', bg: 'bg-emerald-50', status: 'Couvert' },
-  { name: 'SFDR', desc: 'Finance durable & PAI indicators', icon: BarChart3, color: 'text-indigo-600', bg: 'bg-indigo-50', status: 'Couvert' },
-  { name: 'SBTi', desc: 'Science Based Targets pre-flight', icon: Award, color: 'text-orange-600', bg: 'bg-orange-50', status: 'Couvert' },
-  { name: 'BEGES', desc: 'Bilan GES réglementaire France', icon: Building2, color: 'text-teal-600', bg: 'bg-teal-50', status: 'Couvert' },
-  { name: 'CSDDD', desc: 'Devoir de vigilance supply chain', icon: Users, color: 'text-rose-600', bg: 'bg-rose-50', status: 'Couvert' },
-  { name: 'iXBRL EFRAG', desc: 'Balisage électronique CSRD Art. 8', icon: Database, color: 'text-gray-600', bg: 'bg-gray-50', status: 'Couvert' },
-  { name: 'GRI', desc: '46 indicateurs ESRS mappés vers 24 séries GRI (201→418)', icon: FileText, color: 'text-yellow-600', bg: 'bg-yellow-50', status: 'Couvert' },
-  { name: 'CDP', desc: 'Carbon Disclosure Project', icon: Leaf, color: 'text-sky-600', bg: 'bg-sky-50', status: 'Couvert' },
-  { name: 'TCFD', desc: 'Task Force Climate-related Disclosures', icon: BarChart3, color: 'text-violet-600', bg: 'bg-violet-50', status: 'Couvert' },
-  { name: 'B Corp', desc: 'Certification entreprise à mission', icon: Award, color: 'text-amber-600', bg: 'bg-amber-50', status: 'Couvert' },
+  { name: 'CSRD / ESRS', desc: 'Directive européenne reporting durabilité', icon: FileText, color: 'text-blue-600', bg: 'bg-blue-50', status: 'Module disponible' },
+  { name: 'VSME (EFRAG)', desc: 'Norme volontaire PME — template Module de Base B1–B11 inclus', icon: FileText, color: 'text-lime-600', bg: 'bg-lime-50', status: 'Module disponible' },
+  { name: 'GHG Protocol', desc: 'Scopes 1, 2 et 3 (facteurs Scope 3 indicatifs, à confronter à la Base Empreinte)', icon: Leaf, color: 'text-green-600', bg: 'bg-green-50', status: 'Module disponible' },
+  { name: 'Taxonomie UE', desc: 'Alignement activités durables', icon: Globe, color: 'text-emerald-600', bg: 'bg-emerald-50', status: 'Module disponible' },
+  { name: 'SFDR', desc: 'Finance durable & PAI indicators', icon: BarChart3, color: 'text-indigo-600', bg: 'bg-indigo-50', status: 'Module disponible' },
+  { name: 'SBTi', desc: 'Science Based Targets pre-flight', icon: Award, color: 'text-orange-600', bg: 'bg-orange-50', status: 'Module disponible' },
+  { name: 'BEGES', desc: 'Bilan GES réglementaire France', icon: Building2, color: 'text-teal-600', bg: 'bg-teal-50', status: 'Module disponible' },
+  { name: 'CSDDD', desc: 'Devoir de vigilance supply chain', icon: Users, color: 'text-rose-600', bg: 'bg-rose-50', status: 'Module disponible' },
+  { name: 'iXBRL EFRAG', desc: 'Balisage électronique CSRD Art. 8', icon: Database, color: 'text-gray-600', bg: 'bg-gray-50', status: 'Module disponible' },
+  { name: 'GRI', desc: '46 indicateurs ESRS mappés vers 24 séries GRI (201→418)', icon: FileText, color: 'text-yellow-600', bg: 'bg-yellow-50', status: 'Module disponible' },
+  { name: 'CDP', desc: 'Carbon Disclosure Project', icon: Leaf, color: 'text-sky-600', bg: 'bg-sky-50', status: 'Module disponible' },
+  { name: 'TCFD', desc: 'Task Force Climate-related Disclosures', icon: BarChart3, color: 'text-violet-600', bg: 'bg-violet-50', status: 'Module disponible' },
+  { name: 'B Corp', desc: 'Préparation à l’évaluation B Impact (ESGFlow ne délivre aucune certification)', icon: Award, color: 'text-amber-600', bg: 'bg-amber-50', status: 'Module disponible' },
 ];
 
 const SECURITY = [
@@ -143,7 +143,7 @@ const SECURITY = [
 const FAQS = [
   {
     q: "ESGFlow est-il conforme à la CSRD ?",
-    a: "ESGFlow est un outil qui vous aide à être conforme à la CSRD. Il implémente nativement les exigences ESRS sur les mandatory disclosures (E1 à G1), génère les rapports de durabilité avec balisage iXBRL EFRAG 2024 et maintient une piste d'audit certifiable. La conformité CSRD reste une démarche d'entreprise — ESGFlow fournit l'infrastructure technologique pour y parvenir."
+    a: "ESGFlow est un outil qui vous aide à être conforme à la CSRD. Il structure la collecte selon les ESRS (E1 à G1), génère des rapports de durabilité avec un aperçu de balisage iXBRL (taxonomie EFRAG 2024) et tient une piste d'audit horodatée avec empreintes SHA-256, facilitant les revues de vos auditeurs. La conformité CSRD reste une démarche d'entreprise — ESGFlow fournit l'infrastructure technologique pour y parvenir."
   },
   {
     q: "Proposez-vous la norme VSME pour les PME non cotées ?",
@@ -155,11 +155,11 @@ const FAQS = [
   },
   {
     q: "Quels ESRS sont couverts à 100% ?",
-    a: "Les mandatory disclosures des standards E1 (Climat), S1 (Effectifs), S2 (Chaîne de valeur), S4 (Consommateurs), G1 (Gouvernance) et ESRS 2 (Informations générales) sont entièrement couverts. E2, E3, S3 sont partiellement couverts. E4 (Biodiversité) est en roadmap 2026."
+    a: "Des modules de saisie existent pour E1 (Climat), S1 (Effectifs), S2 (Chaîne de valeur), S4 (Consommateurs), G1 (Gouvernance) et ESRS 2 (Informations générales) ; la couverture réelle de vos points de données se mesure avec la gap analysis. E2, E3 et S3 sont partiellement couverts. E4 (Biodiversité) est en roadmap 2026."
   },
   {
     q: "L'iXBRL généré est-il valide pour le dépôt réglementaire ?",
-    a: "ESGFlow génère des fichiers iXBRL conformes au namespace EFRAG 2024-12-31 (esrs_cor). Pour un dépôt réglementaire officiel, nous recommandons une validation via Arelle (outil EFRAG). ESGFlow couvre les mandatory disclosures les plus couramment requis — une validation complète XSD reste la responsabilité de votre auditeur externe."
+    a: "ESGFlow génère un aperçu iXBRL balisé avec le namespace EFRAG 2024-12-31 (esrs_cor), sans garantie de conformité ESEF. Pour un dépôt réglementaire officiel, nous recommandons une validation via Arelle (outil EFRAG). ESGFlow couvre les mandatory disclosures les plus couramment requis — une validation complète XSD reste la responsabilité de votre auditeur externe."
   },
   {
     q: "Où sont hébergées mes données ?",
@@ -278,7 +278,7 @@ export default function StandardsPage() {
       {/* ── Légende ────────────────────────────────────────────────── */}
       <div className="bg-gray-50 border-b border-gray-200 py-3 px-4">
         <div className="max-w-6xl mx-auto flex flex-wrap justify-center gap-6 text-sm">
-          <span className="flex items-center gap-1.5 text-green-700"><CheckCircle className="h-4 w-4" /> Couvert — implémenté et en production</span>
+          <span className="flex items-center gap-1.5 text-green-700"><CheckCircle className="h-4 w-4" /> Couvert — module de saisie disponible ; la complétude dépend de vos données</span>
           <span className="flex items-center gap-1.5 text-amber-600"><AlertCircle className="h-4 w-4" /> Partiel — fonctionnel, enrichissement en cours</span>
           <span className="flex items-center gap-1.5 text-gray-400"><XCircle className="h-4 w-4" /> Roadmap — prévu H2 2026</span>
         </div>
