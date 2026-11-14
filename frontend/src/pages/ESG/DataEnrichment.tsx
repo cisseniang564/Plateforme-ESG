@@ -271,7 +271,7 @@ export default function DataEnrichment() {
       const res = await api.post('/esg-enrichment/enrichir-organisation', {
         organization_id: orgId,
         siren,
-        generer_donnees: true,
+        generer_donnees: false,
       });
       setEnrichResult({ success: true, data: res.data });
       setSirenStep('done');
@@ -344,19 +344,19 @@ export default function DataEnrichment() {
               {t('enrich.hero.settings', 'Paramètres')}
             </button>
             <div className="flex items-center gap-2 mb-3">
-              <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide uppercase">{t('enrich.hero.dataAi', 'Données & IA')}</span>
+              <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide uppercase">{t('enrich.hero.dataAi', 'Données officielles')}</span>
               <span className="px-2.5 py-1 bg-teal-400/20 border border-teal-300/30 rounded-full text-xs font-semibold text-teal-100">{t('enrich.sireneBase', 'Base Sirene INSEE')}</span>
             </div>
             <h1 className="text-3xl font-bold mb-1">{t('enrich.hero.title', 'Enrichissement ESG')}</h1>
             <p className="text-teal-100 text-sm max-w-lg">
-              {t('enrich.hero.desc', "Connectez vos organisations aux données officielles INSEE et générez automatiquement 12 mois d'indicateurs ESG")}
+              {t('enrich.hero.desc', "Rattachez vos organisations aux données officielles de la base Sirene (INSEE) : raison sociale, secteur, taille, adresse")}
             </p>
           </div>
           <div className="flex gap-3 flex-wrap">
             {[
               { icon: Building2, label: t('enrich.hero.statOrgs', 'Organisations'), value: organizations.length },
               { icon: Database, label: t('enrich.hero.statSectors', 'Secteurs'), value: secteurs.length },
-              { icon: Sparkles, label: t('enrich.hero.statMonths', 'Mois auto'), value: '12' },
+              { icon: Sparkles, label: t('enrich.hero.statSource', 'Source'), value: 'Sirene' },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex flex-col items-center bg-white/10 backdrop-blur-sm rounded-2xl px-5 py-3.5 border border-white/20 min-w-[88px]">
                 <Icon className="h-5 w-5 text-teal-200 mb-1.5" />
@@ -808,8 +808,8 @@ export default function DataEnrichment() {
                 <ul className="space-y-2">
                   {[
                     t('enrich.confirm.list1', 'Récupération des données officielles INSEE (secteur, taille, adresse)'),
-                    t('enrich.confirm.list2', 'Génération automatique de 12 mois de données ESG réalistes'),
-                    t('enrich.confirm.list3', "Calcul des indicateurs selon le secteur d'activité et la taille"),
+                    t('enrich.confirm.list2', "Mise à jour de la fiche de l'organisation (raison sociale, secteur, taille, adresse)"),
+                    t('enrich.confirm.list3', "Aucune donnée ESG n'est créée : vos indicateurs viennent de vos saisies et imports"),
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2.5 text-sm text-teal-700">
                       <CheckCircle className="h-4 w-4 text-teal-500 mt-0.5 flex-shrink-0" />
@@ -864,23 +864,6 @@ export default function DataEnrichment() {
                     </div>
                   </div>
 
-                  {/* Stats */}
-                  {enrichResult.data?.donnees_generees && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {[
-                        { value: enrichResult.data.donnees_generees.metrics_count ?? enrichResult.data.donnees_generees.indicators_count, label: t('enrich.done.metrics', 'Métriques ESG'), color: 'green' },
-                        { value: enrichResult.data.donnees_generees.data_points_created, label: t('enrich.done.dataPoints', 'Points de données'), color: 'blue' },
-                        { value: enrichResult.data.donnees_generees.months_generated, label: t('enrich.done.monthsGen', 'Mois générés'), color: 'purple' },
-                        { value: enrichResult.data.donnees_generees.secteur, label: t('enrich.done.sector', 'Secteur'), color: 'teal', small: true },
-                      ].map(({ value, label, color, small }) => (
-                        <div key={label} className={`bg-${color}-50 border border-${color}-100 rounded-2xl p-4 text-center`}>
-                          <p className={`${small ? 'text-sm' : 'text-3xl'} font-bold text-${color}-600 mb-1`}>{value ?? '—'}</p>
-                          <p className={`text-xs text-${color}-600 font-medium`}>{label}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
                   <div className="flex gap-3 flex-wrap">
                     <button onClick={() => navigate('/app/organizations')}>
                       <Building2 className="h-4 w-4 mr-2" />
@@ -925,7 +908,7 @@ export default function DataEnrichment() {
               </div>
               <div>
                 <h2 className="text-lg font-bold text-gray-900">{t('enrich.secteur.title', 'Importer un secteur complet')}</h2>
-                <p className="text-sm text-gray-500">{t('enrich.secteur.subtitle', "Crée automatiquement des organisations pour toutes les entreprises d'un secteur")}</p>
+                <p className="text-sm text-gray-500">{t('enrich.secteur.subtitle', "Crée les fiches des entreprises d'un secteur à partir de la base Sirene (sans données ESG)")}</p>
               </div>
             </div>
 
