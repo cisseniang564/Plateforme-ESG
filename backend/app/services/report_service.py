@@ -836,7 +836,7 @@ class ReportService:
             doc.add_heading('Annexe C — Fournisseurs notables (top 20)', level=1)
             doc.add_paragraph(
                 f"Évaluation ESG de {min(len(suppliers), 20)} fournisseurs principaux sur un total de {len(suppliers)}. "
-                "Les scores reflètent la performance ESG auto-déclarée et auditée."
+                "Les scores reflètent la performance ESG auto-déclarée, non auditée sauf mention « vérifié »."
             )
             sup_t = doc.add_table(rows=1 + min(len(suppliers), 20), cols=5)
             sup_t.style = 'Table Grid'
@@ -1946,7 +1946,7 @@ class ReportService:
         # ── 9. Subtitle caption ───────────────────────────────────────────────
         story.append(Spacer(1, 5*mm))
         story.append(Paragraph(
-            'Rapport de durabilité conforme aux exigences CSRD / ESRS',
+            'Rapport de durabilité structuré selon CSRD / ESRS — données non auditées sauf mention',
             ParagraphStyle('cov_sub', fontSize=9, textColor=C_GRAY,
                            alignment=1, leading=13)
         ))
@@ -2586,7 +2586,7 @@ class ReportService:
         story = []
         story += self._section_header('Conformité & Cadres de référence', C_NAVY)
         story.append(Paragraph(
-            'Ce rapport est conforme aux standards internationaux de reporting ESG en vigueur.',
+            'Correspondance indicative avec les cadres de référence ; elle ne vaut pas attestation de conformité.',
             ParagraphStyle('sub', fontSize=9, textColor=C_GRAY, spaceAfter=10)
         ))
 
@@ -2669,7 +2669,7 @@ class ReportService:
         story = self._section_header('KPIs Calculés Automatiquement', C_GREEN)
         story.append(Paragraph(
             "Métriques dérivées automatiquement des données saisies — "
-            "conformes aux exigences ESRS E1-6, E1-4, S1-8, S1-13 et S1-16.",
+            "calculées en référence aux exigences ESRS E1-6, E1-4, S1-8, S1-13 et S1-16 (sans garantie de conformité).",
             ParagraphStyle('kpi_sub', fontSize=8, textColor=C_GRAY, spaceAfter=10, leading=12)
         ))
 
