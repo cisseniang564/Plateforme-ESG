@@ -40,61 +40,60 @@ interface Action {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const NET_ZERO_2050 = 800;
+const START_YEAR = new Date().getFullYear();
+const END_YEAR = 2050;
+// Trajectoire de RÉFÉRENCE SBTi 1,5 °C : contraction absolue linéaire de 4,2 %/an (critère près-terme),
+// plafonnée à -90 % (norme Net-Zero). Ce n'est pas une prévision : aucune courbe « BAU » ni « rythme actuel »
+// n'est inventée, seules vos émissions réelles et les actions que vous renseignez comptent.
+const SBTI_ANNUAL_RATE = 0.042;
+const SBTI_MAX_REDUCTION = 0.9;
 
 function buildTrajectory(baseEmissions: number) {
-  const sbtiTarget2030 = Math.round(baseEmissions * 0.58); // -42% SBTi 1.5°C
-  const years = Array.from({ length: 27 }, (_, i) => 2024 + i);
+  const years = Array.from({ length: END_YEAR - START_YEAR + 1 }, (_, i) => START_YEAR + i);
   return years.map(y => {
-    const t = (y - 2024) / (2050 - 2024);
-    const bau = baseEmissions * (1 + t * 0.08);
-    const sbti = y <= 2030
-      ? baseEmissions * Math.pow(1 - 0.058, y - 2024)
-      : sbtiTarget2030 * Math.pow(1 - 0.08, y - 2030);
-    const current = y <= 2030
-      ? baseEmissions * Math.pow(1 - 0.028, y - 2024)
-      : undefined;
-    return { year: y, bau: Math.round(bau), sbti: Math.round(Math.max(sbti, NET_ZERO_2050)), current };
+    const cut = Math.min((y - START_YEAR) * SBTI_ANNUAL_RATE, SBTI_MAX_REDUCTION);
+    return { year: y, sbti: Math.round(baseEmissions * (1 - cut)) };
   });
 }
 
 // ─── Actions catalog ─────────────────────────────────────────────────────────
+// Pistes génériques : AUCUN impact, coût ni ROI par défaut (ils dépendent de votre situation). À renseigner action par action.
 const CATALOG: Action[] = [
   // Énergie
-  { id: 'e1', category: 'Énergie', title: 'Contrat d\'électricité verte (EnR)', description: 'Passer à un fournisseur d\'énergie renouvelable certifié REGO/GO pour l\'ensemble des sites.', impact: 1800, cost: 5, roi: 3, difficulty: 'Facile', scope: 'Scope 2', status: 'à_faire', inPlan: false, tags: ['Quick win', 'Électricité'] },
-  { id: 'e2', category: 'Énergie', title: 'Audit énergétique & plan d\'efficacité', description: 'Réaliser un audit ISO 50001 sur les 3 principaux sites et déployer les actions prioritaires.', impact: 450, cost: 45, roi: 24, difficulty: 'Moyen', scope: 'Scope 1', status: 'à_faire', inPlan: false, tags: ['ISO 50001'] },
-  { id: 'e3', category: 'Énergie', title: 'Panneaux solaires photovoltaïques', description: 'Installation PV en toiture sur les entrepôts (500 kWc) pour auto-consommation.', impact: 280, cost: 320, roi: 84, difficulty: 'Difficile', scope: 'Scope 2', status: 'à_faire', inPlan: false, tags: ['Investissement'] },
-  { id: 'e4', category: 'Énergie', title: 'Remplacement éclairage LED + détecteurs', description: 'Migration de l\'éclairage fluorescent vers LED avec détecteurs de présence sur tous les sites.', impact: 90, cost: 38, roi: 18, difficulty: 'Facile', scope: 'Scope 2', status: 'en_cours', inPlan: false, tags: ['Quick win'] },
-  { id: 'e5', category: 'Énergie', title: 'Récupération chaleur fatale process', description: 'Récupérer la chaleur des procédés industriels pour préchauffer l\'eau et les locaux.', impact: 350, cost: 80, roi: 30, difficulty: 'Moyen', scope: 'Scope 1', status: 'à_faire', inPlan: false, tags: ['Industrie'] },
+  { id: 'e1', category: 'Énergie', title: 'Contrat d\'électricité verte (EnR)', description: 'Passer à un fournisseur d\'énergie renouvelable certifié REGO/GO pour l\'ensemble des sites.', impact: 0, cost: 0, roi: 0, difficulty: 'Facile', scope: 'Scope 2', status: 'à_faire', inPlan: false, tags: ['Quick win', 'Électricité'] },
+  { id: 'e2', category: 'Énergie', title: 'Audit énergétique & plan d\'efficacité', description: 'Réaliser un audit énergétique (norme ISO 50001) de vos principaux sites et déployer les actions prioritaires.', impact: 0, cost: 0, roi: 0, difficulty: 'Moyen', scope: 'Scope 1', status: 'à_faire', inPlan: false, tags: ['ISO 50001'] },
+  { id: 'e3', category: 'Énergie', title: 'Panneaux solaires photovoltaïques', description: 'Installation de panneaux photovoltaïques en toiture pour l\'auto-consommation.', impact: 0, cost: 0, roi: 0, difficulty: 'Difficile', scope: 'Scope 2', status: 'à_faire', inPlan: false, tags: ['Investissement'] },
+  { id: 'e4', category: 'Énergie', title: 'Remplacement éclairage LED + détecteurs', description: 'Migration de l\'éclairage fluorescent vers LED avec détecteurs de présence sur tous les sites.', impact: 0, cost: 0, roi: 0, difficulty: 'Facile', scope: 'Scope 2', status: 'à_faire', inPlan: false, tags: ['Quick win'] },
+  { id: 'e5', category: 'Énergie', title: 'Récupération chaleur fatale process', description: 'Récupérer la chaleur des procédés industriels pour préchauffer l\'eau et les locaux.', impact: 0, cost: 0, roi: 0, difficulty: 'Moyen', scope: 'Scope 1', status: 'à_faire', inPlan: false, tags: ['Industrie'] },
 
   // Transport & Mobilité
-  { id: 't1', category: 'Transport', title: 'Électrification flotte véhicules légers', description: 'Remplacer les véhicules thermiques du parc (30 VL) par des véhicules électriques sur 3 ans.', impact: 320, cost: 180, roi: 60, difficulty: 'Moyen', scope: 'Scope 1', status: 'en_cours', inPlan: false, tags: ['Flotte', 'Mobilité'] },
-  { id: 't2', category: 'Transport', title: 'Plan de mobilité salariés (PDME)', description: 'Créer un Plan de Déplacements Maison-Entreprise : covoiturage, vélo, transports communs.', impact: 85, cost: 15, roi: 8, difficulty: 'Facile', scope: 'Scope 3', status: 'à_faire', inPlan: false, tags: ['Quick win', 'RH'] },
-  { id: 't3', category: 'Transport', title: 'Optimisation logistique & mutualisation', description: 'Optimiser les tournées (TMS), mutualiser les livraisons, réduire les retours à vide.', impact: 450, cost: 30, roi: 10, difficulty: 'Moyen', scope: 'Scope 3', status: 'à_faire', inPlan: false, tags: ['Logistique'] },
-  { id: 't4', category: 'Transport', title: 'Report modal vers le ferroviaire', description: 'Transférer 30% du transport amont routier vers le ferroviaire ou le fluvial.', impact: 680, cost: 20, roi: 6, difficulty: 'Moyen', scope: 'Scope 3', status: 'à_faire', inPlan: false, tags: ['Logistique', 'Impact élevé'] },
-  { id: 't5', category: 'Transport', title: 'Politique voyage d\'affaires bas-carbone', description: 'Interdire vols intérieurs remplaçables par train, limiter les vols longue distance.', impact: 95, cost: 5, roi: 2, difficulty: 'Facile', scope: 'Scope 3', status: 'à_faire', inPlan: false, tags: ['Quick win', 'Gouvernance'] },
+  { id: 't1', category: 'Transport', title: 'Électrification flotte véhicules légers', description: 'Remplacer progressivement les véhicules thermiques du parc par des véhicules électriques.', impact: 0, cost: 0, roi: 0, difficulty: 'Moyen', scope: 'Scope 1', status: 'à_faire', inPlan: false, tags: ['Flotte', 'Mobilité'] },
+  { id: 't2', category: 'Transport', title: 'Plan de mobilité salariés (PDME)', description: 'Créer un Plan de Déplacements Maison-Entreprise : covoiturage, vélo, transports communs.', impact: 0, cost: 0, roi: 0, difficulty: 'Facile', scope: 'Scope 3', status: 'à_faire', inPlan: false, tags: ['Quick win', 'RH'] },
+  { id: 't3', category: 'Transport', title: 'Optimisation logistique & mutualisation', description: 'Optimiser les tournées (TMS), mutualiser les livraisons, réduire les retours à vide.', impact: 0, cost: 0, roi: 0, difficulty: 'Moyen', scope: 'Scope 3', status: 'à_faire', inPlan: false, tags: ['Logistique'] },
+  { id: 't4', category: 'Transport', title: 'Report modal vers le ferroviaire', description: 'Transférer une part du transport amont routier vers le ferroviaire ou le fluvial.', impact: 0, cost: 0, roi: 0, difficulty: 'Moyen', scope: 'Scope 3', status: 'à_faire', inPlan: false, tags: ['Logistique'] },
+  { id: 't5', category: 'Transport', title: 'Politique voyage d\'affaires bas-carbone', description: 'Interdire vols intérieurs remplaçables par train, limiter les vols longue distance.', impact: 0, cost: 0, roi: 0, difficulty: 'Facile', scope: 'Scope 3', status: 'à_faire', inPlan: false, tags: ['Quick win', 'Gouvernance'] },
 
   // Achats & Chaîne de valeur
-  { id: 'a1', category: 'Achats', title: 'Critères carbone fournisseurs (EcoVadis)', description: 'Intégrer un score carbone EcoVadis dans les critères de sélection des 50 fournisseurs clés.', impact: 2500, cost: 35, roi: 12, difficulty: 'Moyen', scope: 'Scope 3', status: 'à_faire', inPlan: false, tags: ['Impact élevé', 'Achats responsables'] },
-  { id: 'a2', category: 'Achats', title: 'Éco-conception & allongement durée de vie', description: 'Repenser le design produit pour réduire les matières premières et prolonger l\'usage.', impact: 800, cost: 120, roi: 36, difficulty: 'Difficile', scope: 'Scope 3', status: 'à_faire', inPlan: false, tags: ['Économie circulaire'] },
-  { id: 'a3', category: 'Achats', title: 'Réduction & recyclage emballages', description: 'Supprimer les suremballages plastique, passer à des matériaux recyclés/recyclables.', impact: 120, cost: 20, roi: 14, difficulty: 'Facile', scope: 'Scope 3', status: 'terminé', inPlan: false, tags: ['Quick win', 'Économie circulaire'] },
-  { id: 'a4', category: 'Achats', title: 'Clauses contractuelles réduction GHG', description: 'Exiger des engagements de réduction carbone (-5%/an) dans les contrats fournisseurs critiques.', impact: 1200, cost: 8, roi: 6, difficulty: 'Moyen', scope: 'Scope 3', status: 'à_faire', inPlan: false, tags: ['Impact élevé', 'Gouvernance'] },
+  { id: 'a1', category: 'Achats', title: 'Critères carbone fournisseurs (EcoVadis)', description: 'Intégrer un score carbone EcoVadis dans les critères de sélection de vos fournisseurs clés.', impact: 0, cost: 0, roi: 0, difficulty: 'Moyen', scope: 'Scope 3', status: 'à_faire', inPlan: false, tags: ['Achats responsables'] },
+  { id: 'a2', category: 'Achats', title: 'Éco-conception & allongement durée de vie', description: 'Repenser le design produit pour réduire les matières premières et prolonger l\'usage.', impact: 0, cost: 0, roi: 0, difficulty: 'Difficile', scope: 'Scope 3', status: 'à_faire', inPlan: false, tags: ['Économie circulaire'] },
+  { id: 'a3', category: 'Achats', title: 'Réduction & recyclage emballages', description: 'Supprimer les suremballages plastique, passer à des matériaux recyclés/recyclables.', impact: 0, cost: 0, roi: 0, difficulty: 'Facile', scope: 'Scope 3', status: 'à_faire', inPlan: false, tags: ['Quick win', 'Économie circulaire'] },
+  { id: 'a4', category: 'Achats', title: 'Clauses contractuelles réduction GHG', description: 'Exiger des engagements de réduction carbone dans les contrats des fournisseurs critiques.', impact: 0, cost: 0, roi: 0, difficulty: 'Moyen', scope: 'Scope 3', status: 'à_faire', inPlan: false, tags: ['Gouvernance'] },
 
   // Production & Process
-  { id: 'p1', category: 'Production', title: 'Optimisation process & arrêt veilles', description: 'Mettre les équipements en veille profonde hors production, optimiser les cycles process.', impact: 210, cost: 12, roi: 6, difficulty: 'Facile', scope: 'Scope 1', status: 'à_faire', inPlan: false, tags: ['Quick win'] },
-  { id: 'p2', category: 'Production', title: 'Remplacement fluides frigorigènes HFC', description: 'Migrer vers des fluides frigorigènes à faible GWP (CO2, ammoniac, propane) sur les climatisations.', impact: 380, cost: 65, roi: 20, difficulty: 'Moyen', scope: 'Scope 1', status: 'à_faire', inPlan: false, tags: ['Réglementaire'] },
-  { id: 'p3', category: 'Production', title: 'Économie circulaire des déchets process', description: 'Valoriser les déchets de production comme matière première secondaire ou énergie.', impact: 180, cost: 10, roi: 5, difficulty: 'Facile', scope: 'Scope 1', status: 'à_faire', inPlan: false, tags: ['Économie circulaire', 'Quick win'] },
+  { id: 'p1', category: 'Production', title: 'Optimisation process & arrêt veilles', description: 'Mettre les équipements en veille profonde hors production, optimiser les cycles process.', impact: 0, cost: 0, roi: 0, difficulty: 'Facile', scope: 'Scope 1', status: 'à_faire', inPlan: false, tags: ['Quick win'] },
+  { id: 'p2', category: 'Production', title: 'Remplacement fluides frigorigènes HFC', description: 'Migrer vers des fluides frigorigènes à faible GWP (CO2, ammoniac, propane) sur les climatisations.', impact: 0, cost: 0, roi: 0, difficulty: 'Moyen', scope: 'Scope 1', status: 'à_faire', inPlan: false, tags: ['Réglementaire'] },
+  { id: 'p3', category: 'Production', title: 'Économie circulaire des déchets process', description: 'Valoriser les déchets de production comme matière première secondaire ou énergie.', impact: 0, cost: 0, roi: 0, difficulty: 'Facile', scope: 'Scope 1', status: 'à_faire', inPlan: false, tags: ['Économie circulaire', 'Quick win'] },
 
   // Bâtiments
-  { id: 'b1', category: 'Bâtiments', title: 'Rénovation thermique ITE/ITI', description: 'Isolation thermique par l\'extérieur + changement menuiseries sur les bâtiments DPE D/E.', impact: 280, cost: 420, roi: 120, difficulty: 'Difficile', scope: 'Scope 1', status: 'à_faire', inPlan: false, tags: ['Investissement'] },
-  { id: 'b2', category: 'Bâtiments', title: 'Gestion technique centralisée (GTC)', description: 'Déployer une GTC pour piloter le chauffage, la climatisation et l\'éclairage en temps réel.', impact: 150, cost: 55, roi: 30, difficulty: 'Moyen', scope: 'Scope 2', status: 'à_faire', inPlan: false, tags: ['Smart building'] },
-  { id: 'b3', category: 'Bâtiments', title: 'Remplacement chauffage fioul/gaz par pompe à chaleur', description: 'Installer des PAC air/eau ou géothermiques sur les sites les plus consommateurs.', impact: 320, cost: 280, roi: 84, difficulty: 'Difficile', scope: 'Scope 1', status: 'à_faire', inPlan: false, tags: ['Décarbonation profonde'] },
+  { id: 'b1', category: 'Bâtiments', title: 'Rénovation thermique ITE/ITI', description: 'Isolation thermique par l\'extérieur + changement menuiseries sur les bâtiments DPE D/E.', impact: 0, cost: 0, roi: 0, difficulty: 'Difficile', scope: 'Scope 1', status: 'à_faire', inPlan: false, tags: ['Investissement'] },
+  { id: 'b2', category: 'Bâtiments', title: 'Gestion technique centralisée (GTC)', description: 'Déployer une GTC pour piloter le chauffage, la climatisation et l\'éclairage en temps réel.', impact: 0, cost: 0, roi: 0, difficulty: 'Moyen', scope: 'Scope 2', status: 'à_faire', inPlan: false, tags: ['Smart building'] },
+  { id: 'b3', category: 'Bâtiments', title: 'Remplacement chauffage fioul/gaz par pompe à chaleur', description: 'Installer des PAC air/eau ou géothermiques sur les sites les plus consommateurs.', impact: 0, cost: 0, roi: 0, difficulty: 'Difficile', scope: 'Scope 1', status: 'à_faire', inPlan: false, tags: ['Décarbonation profonde'] },
 
   // Digital & RH
-  { id: 'd1', category: 'Digital & RH', title: 'Green IT & sobriété numérique', description: 'Prolonger la durée de vie des équipements, éteindre les serveurs inutilisés, charte numérique.', impact: 60, cost: 5, roi: 3, difficulty: 'Facile', scope: 'Scope 2', status: 'à_faire', inPlan: false, tags: ['Quick win'] },
-  { id: 'd2', category: 'Digital & RH', title: 'Politique télétravail structurée', description: 'Formaliser 2 jours/semaine de télétravail pour les fonctions éligibles (réduction déplacements).', impact: 95, cost: 8, roi: 4, difficulty: 'Facile', scope: 'Scope 3', status: 'terminé', inPlan: false, tags: ['Quick win', 'RH'] },
-  { id: 'd3', category: 'Digital & RH', title: 'Formation & sensibilisation carbone', description: 'Déployer un programme de formation Fresque du Climat + bilan carbone personnel pour 100% des équipes.', impact: 150, cost: 18, roi: 8, difficulty: 'Facile', scope: 'Scope 3', status: 'à_faire', inPlan: false, tags: ['Culture carbone', 'RH'] },
-  { id: 'd4', category: 'Digital & RH', title: 'Intégration carbone dans les KPIs dirigeants', description: 'Lier une partie de la rémunération variable des dirigeants aux objectifs de réduction carbone.', impact: 500, cost: 5, roi: 6, difficulty: 'Moyen', scope: 'Scope 1', status: 'à_faire', inPlan: false, tags: ['Gouvernance', 'Impact élevé'] },
+  { id: 'd1', category: 'Digital & RH', title: 'Green IT & sobriété numérique', description: 'Prolonger la durée de vie des équipements, éteindre les serveurs inutilisés, charte numérique.', impact: 0, cost: 0, roi: 0, difficulty: 'Facile', scope: 'Scope 2', status: 'à_faire', inPlan: false, tags: ['Quick win'] },
+  { id: 'd2', category: 'Digital & RH', title: 'Politique télétravail structurée', description: 'Formaliser une politique de télétravail pour les fonctions éligibles (réduction des déplacements).', impact: 0, cost: 0, roi: 0, difficulty: 'Facile', scope: 'Scope 3', status: 'à_faire', inPlan: false, tags: ['Quick win', 'RH'] },
+  { id: 'd3', category: 'Digital & RH', title: 'Formation & sensibilisation carbone', description: 'Déployer un programme de formation Fresque du Climat + bilan carbone personnel pour l\'ensemble des équipes.', impact: 0, cost: 0, roi: 0, difficulty: 'Facile', scope: 'Scope 3', status: 'à_faire', inPlan: false, tags: ['Culture carbone', 'RH'] },
+  { id: 'd4', category: 'Digital & RH', title: 'Intégration carbone dans les KPIs dirigeants', description: 'Lier une partie de la rémunération variable des dirigeants aux objectifs de réduction carbone.', impact: 0, cost: 0, roi: 0, difficulty: 'Moyen', scope: 'Scope 1', status: 'à_faire', inPlan: false, tags: ['Gouvernance'] },
 ];
 
 const CATEGORIES = ['Toutes', 'Énergie', 'Transport', 'Achats', 'Production', 'Bâtiments', 'Digital & RH'];
@@ -137,19 +136,13 @@ function TrajectoryChart({ planReduction, baseEmissions, trajectory, historicalD
   const ch = H - PAD.t - PAD.b;
   const maxVal = baseEmissions * 1.1;
 
-  const xScale = (year: number) => PAD.l + ((year - 2024) / 26) * cw;
+  const xScale = (year: number) => PAD.l + ((year - START_YEAR) / (END_YEAR - START_YEAR)) * cw;
   const yScale = (v: number) => PAD.t + ch - (v / maxVal) * ch;
 
-  // Build path strings
-  const bauPath = trajectory.map((d, i) => `${i === 0 ? 'M' : 'L'}${xScale(d.year)},${yScale(d.bau)}`).join(' ');
   const sbtiPath = trajectory.map((d, i) => `${i === 0 ? 'M' : 'L'}${xScale(d.year)},${yScale(d.sbti)}`).join(' ');
-  const currentPath = trajectory.filter(d => d.current !== undefined).map((d, i) => `${i === 0 ? 'M' : 'L'}${xScale(d.year)},${yScale(d.current!)}`).join(' ');
-
-  // With plan: current pace + plan reduction
-  const withPlanPath = trajectory.filter(d => d.current !== undefined).map((d, i) => {
-    const val = d.current! - planReduction * Math.min(i / 3, 1);
-    return `${i === 0 ? 'M' : 'L'}${xScale(d.year)},${yScale(Math.max(val, NET_ZERO_2050))}`;
-  }).join(' ');
+  // Après plan : émissions actuelles moins les réductions que VOUS avez renseignées, atteintes en 2030 (hypothèse affichée).
+  const planEnd = Math.max(baseEmissions - planReduction, 0);
+  const withPlanPath = `M${xScale(START_YEAR)},${yScale(baseEmissions)} L${xScale(2030)},${yScale(planEnd)}`;
 
   const milestones = [2030, 2040, 2050];
 
@@ -175,27 +168,17 @@ function TrajectoryChart({ planReduction, baseEmissions, trajectory, historicalD
         </g>
       ))}
 
-      {/* BAU */}
-      <path d={bauPath} fill="none" stroke="#ef4444" strokeWidth={2} strokeDasharray="6 4" opacity={0.7} />
       {/* SBTi 1.5°C */}
       <path d={sbtiPath} fill="none" stroke="#16a34a" strokeWidth={2.5} />
-      {/* Current trajectory */}
-      <path d={currentPath} fill="none" stroke="#f59e0b" strokeWidth={2} strokeDasharray="4 3" />
       {/* With plan */}
       {planReduction > 0 && (
         <path d={withPlanPath} fill="none" stroke="#3b82f6" strokeWidth={2.5} strokeDasharray="6 3" />
       )}
 
-      {/* Net Zero zone */}
-      <rect x={PAD.l} y={yScale(1200)} width={cw} height={yScale(0) - yScale(1200)} fill="#16a34a" opacity={0.05} />
-      <text x={PAD.l + 6} y={yScale(900)} fontSize={9} fill="#16a34a" opacity={0.8}>{tr('decarbonation.legendNetZeroZone')}</text>
-
       {/* Legend */}
       {[
-        { label: tr('decarbonation.legendBau'), color: '#ef4444', dash: '6 4', dot: false },
-        { label: tr('decarbonation.legendSbtiPath'), color: '#16a34a', dash: '', dot: false },
-        { label: tr('decarbonation.legendCurrentPace'), color: '#f59e0b', dash: '4 3', dot: false },
-        ...(planReduction > 0 ? [{ label: tr('decarbonation.legendWithPlan'), color: '#3b82f6', dash: '6 3', dot: false }] : []),
+        { label: tr('decarb.legendSbtiRef', 'Référence SBTi 1,5 °C (−4,2 %/an)'), color: '#16a34a', dash: '', dot: false },
+        ...(planReduction > 0 ? [{ label: tr('decarb.legendPlan2030', 'Après plan, à 2030 (si les actions sont réalisées)'), color: '#3b82f6', dash: '6 3', dot: false }] : []),
         ...(historicalData.some(h => h.has_data) ? [{ label: tr('decarb.legendRealData', 'Données réelles'), color: '#8b5cf6', dash: '', dot: true }] : []),
       ].map((l, i) => (
         <g key={i} transform={`translate(${PAD.l + i * 145}, ${H - 8})`}>
@@ -218,7 +201,7 @@ function TrajectoryChart({ planReduction, baseEmissions, trajectory, historicalD
       ))}
 
       {/* X axis */}
-      <text x={PAD.l} y={H - PAD.b + 14} textAnchor="middle" fontSize={10} fill="#6b7280">2024</text>
+      <text x={PAD.l} y={H - PAD.b + 14} textAnchor="middle" fontSize={10} fill="#6b7280">{START_YEAR}</text>
     </svg>
   );
 }
@@ -232,10 +215,10 @@ function ActionCard({ action, onTogglePlan, onStatusChange, onEdit }: {
 }) {
   const { t: tr } = useTranslation();
   const [editing, setEditing] = useState(false);
-  const [impactDraft, setImpactDraft] = useState(String(action.impact));
-  const [costDraft, setCostDraft] = useState(String(action.cost));
+  const [impactDraft, setImpactDraft] = useState(action.impact ? String(action.impact) : '');
+  const [costDraft, setCostDraft] = useState(action.cost ? String(action.cost) : '');
   const commitEdit = () => {
-    const i = parseFloat(impactDraft), c = parseFloat(costDraft);
+    const i = impactDraft === '' ? 0 : parseFloat(impactDraft), c = costDraft === '' ? 0 : parseFloat(costDraft);
     if (Number.isFinite(i) && i >= 0 && Number.isFinite(c) && c >= 0) onEdit(action.id, { impact: i, cost: c });
     setEditing(false);
   };
@@ -296,23 +279,23 @@ function ActionCard({ action, onTogglePlan, onStatusChange, onEdit }: {
       ) : (
       <div className="grid grid-cols-3 gap-2 mb-1">
         <div className="bg-green-50 rounded-xl p-2.5 text-center">
-          <div className="text-base font-bold text-green-700">{action.impact}</div>
+          <div className="text-base font-bold text-green-700">{action.impact ? action.impact : '—'}</div>
           <div className="text-xs text-green-600">{tr('decarbonation.metricImpact')}</div>
         </div>
         <div className="bg-blue-50 rounded-xl p-2.5 text-center">
-          <div className="text-base font-bold text-blue-700">{action.cost}k€</div>
+          <div className="text-base font-bold text-blue-700">{action.cost ? `${action.cost}k€` : '—'}</div>
           <div className="text-xs text-blue-600">{tr('decarbonation.metricInvestment')}</div>
         </div>
         <div className="bg-amber-50 rounded-xl p-2.5 text-center">
-          <div className="text-base font-bold text-amber-700">{action.roi < 12 ? `${action.roi}m` : `${Math.round(action.roi / 12)}a`}</div>
+          <div className="text-base font-bold text-amber-700">{!action.roi ? '—' : action.roi < 12 ? `${action.roi}m` : `${Math.round(action.roi / 12)}a`}</div>
           <div className="text-xs text-amber-600">{tr('decarbonation.metricRoi')}</div>
         </div>
       </div>
       )}
       {!editing && (
-        <button onClick={() => { setImpactDraft(String(action.impact)); setCostDraft(String(action.cost)); setEditing(true); }}
+        <button onClick={() => { setImpactDraft(action.impact ? String(action.impact) : ''); setCostDraft(action.cost ? String(action.cost) : ''); setEditing(true); }}
           className="text-xs text-gray-400 hover:text-gray-700 underline mb-3">
-          {tr('decarb.editEstimates', 'Ajuster ces estimations à mon cas')}
+          {tr('decarb.editEstimates2', 'Renseigner le gain et l’investissement de cette action')}
         </button>
       )}
 
@@ -436,7 +419,7 @@ export default function DecarbonationPlan() {
   }, [actions, planLoaded, savePlan]);
 
   const trajectory = useMemo(() => buildTrajectory(baseEmissions), [baseEmissions]);
-  const sbtiTarget2030 = Math.round(baseEmissions * 0.58);
+  const sbtiTarget2030 = Math.round(baseEmissions * (1 - Math.max(0, 2030 - START_YEAR) * SBTI_ANNUAL_RATE));
 
   // SBTi commitment tracking state
   type SBTiStatus = 'not_committed' | 'letter_sent' | 'targets_set' | 'validated';
@@ -450,7 +433,7 @@ export default function DecarbonationPlan() {
   const planReduction = useMemo(() => planActions.reduce((s, a) => s + a.impact, 0), [planActions]);
   const planCost = useMemo(() => planActions.reduce((s, a) => s + a.cost, 0), [planActions]);
   const planPct = Math.min(Math.round((planReduction / Math.max(baseEmissions - sbtiTarget2030, 1)) * 100), 100);
-  const projected2030 = Math.max(baseEmissions - planReduction, sbtiTarget2030);
+  const projected2030 = Math.max(baseEmissions - planReduction, 0);
   const onTrack = baseEmissions > 0 && projected2030 <= sbtiTarget2030;
 
   const completedActions = actions.filter(a => a.status === 'terminé').length;
@@ -478,7 +461,6 @@ export default function DecarbonationPlan() {
   // Scenario quick-add
   const SCENARIOS = [
     { id: 'quick', label: `⚡ ${tr('decarbonation.scenarioQuickWins')}`, actionIds: actions.filter(a => a.tags.includes('Quick win')).map(a => a.id) },
-    { id: 'sbti42', label: `🎯 ${tr('decarbonation.scenarioSbti42')}`, actionIds: actions.filter(a => a.impact >= 100).sort((a, b) => b.impact - a.impact).slice(0, 12).map(a => a.id) },
     { id: 'netzero', label: `🌍 ${tr('decarbonation.scenarioNetZero')}`, actionIds: actions.map(a => a.id) },
   ];
 
@@ -493,10 +475,13 @@ export default function DecarbonationPlan() {
     })));
   };
 
+  // Prix du carbone interne, saisi par l'utilisateur (aucune valeur par défaut)
+  const [carbonPrice, setCarbonPrice] = useState('');
+
   // Carbon offsets state
   const [offsets, setOffsets] = useState<Array<{ id: string; type: string; standard: string; volume: number; pricePerTon: number; vintage: number; description: string }>>([]);
   const [showOffsetModal, setShowOffsetModal] = useState(false);
-  const [offsetForm, setOffsetForm] = useState({ type: 'avoidance', standard: 'VCS', volume: 0, pricePerTon: 15, vintage: new Date().getFullYear(), description: '' });
+  const [offsetForm, setOffsetForm] = useState({ type: 'avoidance', standard: 'VCS', volume: 0, pricePerTon: 0, vintage: new Date().getFullYear(), description: '' });
 
   const totalOffsetVolume = offsets.reduce((s, o) => s + o.volume, 0);
   const totalOffsetCost   = offsets.reduce((s, o) => s + o.volume * o.pricePerTon / 1000, 0);
@@ -505,7 +490,7 @@ export default function DecarbonationPlan() {
   const addOffset = () => {
     if (!offsetForm.volume) return;
     setOffsets(prev => [...prev, { id: Date.now().toString(), ...offsetForm }]);
-    setOffsetForm({ type: 'avoidance', standard: 'VCS', volume: 0, pricePerTon: 15, vintage: new Date().getFullYear(), description: '' });
+    setOffsetForm({ type: 'avoidance', standard: 'VCS', volume: 0, pricePerTon: 0, vintage: new Date().getFullYear(), description: '' });
     setShowOffsetModal(false);
   };
 
@@ -616,7 +601,7 @@ export default function DecarbonationPlan() {
             {/* KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: tr('decarbonation.kpiBase2024'), value: baseEmissions > 0 ? `${(baseEmissions / 1000).toFixed(1)}k` : '—', unit: 'tCO₂e', variant: 'kpi-card-amber' },
+                { label: tr('decarb.kpiBaseYear', 'Émissions {{y}}', { y: START_YEAR }), value: baseEmissions > 0 ? `${(baseEmissions / 1000).toFixed(1)}k` : '—', unit: 'tCO₂e', variant: 'kpi-card-amber' },
                 { label: tr('decarbonation.kpiSbtiTarget'), value: baseEmissions > 0 ? `${(sbtiTarget2030 / 1000).toFixed(1)}k` : '—', unit: 'tCO₂e (repère −42 %)', variant: 'kpi-card-green' },
                 { label: tr('decarbonation.kpiPlanReduction'), value: planReduction.toLocaleString(), unit: 'tCO₂e/an', variant: 'kpi-card-blue' },
                 { label: tr('decarbonation.kpiTotalInvestment'), value: `${planCost}k`, unit: '€ investis', variant: 'kpi-card-purple' },
@@ -928,7 +913,7 @@ export default function DecarbonationPlan() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-semibold text-gray-900">{a.title}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">{a.impact} tCO₂e/an · {a.cost}k€ · ROI {a.roi < 12 ? `${a.roi} ${tr('decarbonation.months')}` : `${Math.round(a.roi / 12)} ${tr('decarbonation.years')}`}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">{a.impact} tCO₂e/an · {a.cost}k€ · ROI {!a.roi ? '—' : a.roi < 12 ? `${a.roi} ${tr('decarbonation.months')}` : `${Math.round(a.roi / 12)} ${tr('decarbonation.years')}`}</div>
                       </div>
                       <button onClick={() => togglePlan(a.id)} className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs flex-shrink-0 transition-colors ${a.inPlan ? 'bg-green-500 text-white' : 'bg-white border border-amber-300 text-amber-700 hover:bg-amber-100'}`}>
                         {a.inPlan ? '✓' : '+'}
@@ -1001,6 +986,10 @@ export default function DecarbonationPlan() {
               </label>
             </div>
 
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+              {tr('decarb.catalogNote', 'Ces actions sont des pistes génériques. Aucun gain, coût ni retour sur investissement n’est pré-rempli : renseignez-les pour chaque action retenue, le plan et le business case ne comptent que vos valeurs.')}
+            </div>
+
             <div className="text-xs text-gray-400">{sortedFiltered.length} {tr('decarbonation.actionsSorted')}</div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -1017,7 +1006,7 @@ export default function DecarbonationPlan() {
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-2">{tr('decarbonation.scenariosTitle')}</h2>
               <p className="text-sm text-gray-500 mb-6">{tr('decarbonation.scenariosDesc')}</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {SCENARIOS.map(sc => {
                   const scActions = actions.filter(a => sc.actionIds.includes(a.id));
                   const scImpact = scActions.reduce((s, a) => s + a.impact, 0);
@@ -1084,13 +1073,13 @@ export default function DecarbonationPlan() {
                     horizon2030: { physicalRisk: 'Faible', transitionRisk: 'Élevé' },
                     horizon2050: { physicalRisk: 'Modéré', transitionRisk: 'Très élevé' },
                     color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-300',
-                    desc: 'Neutralité carbone avant 2050. Forte pression réglementaire (taxe carbone >150€/t d\'ici 2035). Actifs carbone-intensifs stranded.',
+                    desc: 'Neutralité carbone avant 2050. Forte pression réglementaire attendue (prix du carbone en hausse). Actifs carbone-intensifs stranded.',
                     risks: ['Hausse du prix du carbone', 'Réglementation CSRD/SFDR contraignante', 'Dépréciation actifs fossiles', 'Compétitivité produits bas-carbone'],
                     opportunities: ['Croissance des marchés verts', 'Green bonds & financement ESG', 'Avantage concurrentiel SBTi'],
                   },
                   {
                     label: 'Scénario 2°C',
-                    subtitle: 'SSP2-4.5 — Transition modérée',
+                    subtitle: 'SSP1-2.6 — Transition modérée',
                     horizon2030: { physicalRisk: 'Modéré', transitionRisk: 'Modéré' },
                     horizon2050: { physicalRisk: 'Élevé', transitionRisk: 'Modéré' },
                     color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-300',
@@ -1104,7 +1093,7 @@ export default function DecarbonationPlan() {
                     horizon2030: { physicalRisk: 'Modéré', transitionRisk: 'Faible' },
                     horizon2050: { physicalRisk: 'Très élevé', transitionRisk: 'Faible' },
                     color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-300',
-                    desc: 'Aucune action climatique significative. +3°C à +4°C en 2100. Dommages physiques catastrophiques, risques systémiques.',
+                    desc: 'Aucune action climatique significative. +3°C ou plus en 2100. Dommages physiques catastrophiques, risques systémiques.',
                     risks: ['Multiplication des événements météo extrêmes', 'Montée des eaux (actifs côtiers)', 'Disruption supply chain globale', 'Inassurabilité de certains actifs'],
                     opportunities: ['Marché de l\'adaptation climatique'],
                   },
@@ -1208,7 +1197,7 @@ export default function DecarbonationPlan() {
                 </div>
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-xl">
                   <Wind className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-semibold text-green-700">{tr('decarbonation.netZeroBadge')} : {NET_ZERO_2050} tCO₂e</span>
+                  <span className="text-sm font-semibold text-green-700">{tr('decarb.sbtiRefBadge', 'Trajectoire de référence, pas une prévision')}</span>
                 </div>
               </div>
               <TrajectoryChart planReduction={planReduction} baseEmissions={baseEmissions} trajectory={trajectory} historicalData={historicalData} />
@@ -1223,15 +1212,14 @@ export default function DecarbonationPlan() {
                 <thead>
                   <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
                     <th className="px-6 py-3 text-left">{tr('decarbonation.milestoneYear')}</th>
-                    <th className="px-6 py-3 text-right">{tr('decarbonation.legendBau')}</th>
                     <th className="px-6 py-3 text-right">{tr('decarbonation.legendSbtiPath')}</th>
                     <th className="px-6 py-3 text-right">{tr('decarbonation.yourPlan')}</th>
                     <th className="px-6 py-3 text-right">{tr('decarbonation.vsSbti')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {trajectory.filter(d => [2024, 2026, 2028, 2030, 2035, 2040, 2045, 2050].includes(d.year)).map(d => {
-                    const planVal = d.current !== undefined ? Math.max(d.current - planReduction, NET_ZERO_2050) : null;
+                  {trajectory.filter(d => [START_YEAR, 2030, 2035, 2040, 2045, 2050].includes(d.year)).map(d => {
+                    const planVal = d.year === 2030 && planReduction > 0 ? Math.max(baseEmissions - planReduction, 0) : null;
                     const diff = planVal !== null ? planVal - d.sbti : null;
                     return (
                       <tr key={d.year} className={`${d.year === 2030 ? 'bg-green-50' : ''}`}>
@@ -1240,7 +1228,6 @@ export default function DecarbonationPlan() {
                           {d.year === 2030 && <span className="ml-2 text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full">{tr('decarbonation.kpiSbtiTarget')}</span>}
                           {d.year === 2050 && <span className="ml-2 text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full">{tr('decarbonation.netZeroBadge')}</span>}
                         </td>
-                        <td className="px-6 py-3 text-right text-red-600 font-medium">{d.bau.toLocaleString()}</td>
                         <td className="px-6 py-3 text-right text-green-700 font-semibold">{d.sbti.toLocaleString()}</td>
                         <td className="px-6 py-3 text-right text-blue-700 font-semibold">{planVal !== null ? planVal.toLocaleString() : '—'}</td>
                         <td className="px-6 py-3 text-right">
@@ -1413,29 +1400,6 @@ export default function DecarbonationPlan() {
                 </table>
               )}
             </div>
-
-            {/* CDR reference */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-2">{tr('decarb.cdrTitle', 'Référentiel CDR — Technologies de retrait carbone')}</h2>
-              <p className="text-sm text-gray-500 mb-4">{tr('decarb.cdrSubtitle', 'Prix indicatifs 2024–2025 · Source : CDR.fyi, Oxford Offsetting Principles')}</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {[
-                  { name: 'Biochar (BECCS)',         price: '80–200€/t',    permanence: '100+ ans',     maturity: 'Disponible', color: 'text-green-700 bg-green-50 border-green-200' },
-                  { name: 'Forêts & sols (NBS)',     price: '10–30€/t',     permanence: '20–50 ans',    maturity: 'Disponible', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
-                  { name: 'Direct Air Capture (DAC)',price: '400–1000€/t',  permanence: '1000+ ans',    maturity: 'Scale-up',   color: 'text-blue-700 bg-blue-50 border-blue-200' },
-                  { name: 'Enhanced Weathering',     price: '150–400€/t',   permanence: '10 000+ ans',  maturity: 'Pilote',     color: 'text-purple-700 bg-purple-50 border-purple-200' },
-                ].map(cdr => (
-                  <div key={cdr.name} className={`rounded-xl border p-4 ${cdr.color}`}>
-                    <div className="font-semibold text-sm mb-2">{cdr.name}</div>
-                    <div className="grid grid-cols-3 gap-2 text-xs">
-                      <div><div className="text-gray-500">{tr('decarb.cdrPrice', 'Prix')}</div><div className="font-bold">{cdr.price}</div></div>
-                      <div><div className="text-gray-500">{tr('decarb.cdrPermanence', 'Permanence')}</div><div className="font-bold">{cdr.permanence}</div></div>
-                      <div><div className="text-gray-500">{tr('decarb.cdrMaturity', 'Maturité')}</div><div className="font-bold">{cdr.maturity}</div></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         )}
 
@@ -1446,7 +1410,8 @@ export default function DecarbonationPlan() {
           const avgPayback = planActions.length > 0
             ? Math.round(planActions.reduce((s, a) => s + a.roi, 0) / planActions.length)
             : 0;
-          const carbonTaxSavings = Math.round(totalCO2Savings * 50);
+          const priceNum = parseFloat(carbonPrice);
+          const carbonTaxSavings = Number.isFinite(priceNum) && priceNum > 0 ? Math.round(totalCO2Savings * priceNum) : null;
           const reductionPercent = baseEmissions > 0 ? Math.round((totalCO2Savings / baseEmissions) * 100) : 0;
           const nbActions = planActions.length;
 
@@ -1480,8 +1445,8 @@ export default function DecarbonationPlan() {
                   ['Investissement total', `${totalInvestment} k€`],
                   ['Réduction CO₂', `${totalCO2Savings.toLocaleString('fr-FR')} tCO₂e/an`],
                   ['Réduction vs empreinte totale', `${reductionPercent}%`],
-                  ['ROI moyen', avgPayback >= 12 ? `${Math.round(avgPayback / 12)} an${Math.round(avgPayback / 12) > 1 ? 's' : ''}` : `${avgPayback} mois`],
-                  ['Économie taxe carbone (EU ETS 50€/t)', `${carbonTaxSavings.toLocaleString('fr-FR')} €/an`],
+                  ['ROI moyen', avgPayback > 0 ? (avgPayback >= 12 ? `${Math.round(avgPayback / 12)} an${Math.round(avgPayback / 12) > 1 ? 's' : ''}` : `${avgPayback} mois`) : 'non renseigné'],
+                  ['Valeur carbone évitée (prix interne saisi)', carbonTaxSavings === null ? 'non renseigné' : `${carbonTaxSavings.toLocaleString('fr-FR')} €/an`],
                 ],
                 headStyles: { fillColor: [22, 163, 74], textColor: [255, 255, 255], fontSize: 9, fontStyle: 'bold' },
                 bodyStyles: { fontSize: 9 },
@@ -1506,7 +1471,7 @@ export default function DecarbonationPlan() {
                     a.scope,
                     `${a.cost} k€`,
                     `${a.impact.toLocaleString('fr-FR')} tCO₂e`,
-                    a.roi < 12 ? `${a.roi} mois` : `${Math.round(a.roi / 12)} ans`,
+                    !a.roi ? '—' : a.roi < 12 ? `${a.roi} mois` : `${Math.round(a.roi / 12)} ans`,
                     a.difficulty,
                   ]),
                   headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold' },
@@ -1618,14 +1583,17 @@ export default function DecarbonationPlan() {
                       <div className="text-xs text-gray-500 mt-0.5">{tr('decarb.bcFootprintPct', "{{pct}}% de l'empreinte totale", { pct: reductionPercent })}</div>
                     </div>
                     <div className="rounded-2xl border-2 border-amber-200 bg-amber-50 p-5">
-                      <div className="text-3xl font-extrabold text-amber-700">{avgPayback} mois</div>
+                      <div className="text-3xl font-extrabold text-amber-700">{avgPayback > 0 ? `${avgPayback} mois` : '—'}</div>
                       <div className="text-sm font-semibold text-gray-700 mt-2">{tr('decarb.bcAvgROI', 'Retour sur investissement moyen')}</div>
                       <div className="text-xs text-gray-500 mt-0.5">{avgPayback >= 12 ? tr('decarb.bcROIYears', '{{n}} an{{s}}', { n: Math.round(avgPayback / 12), s: Math.round(avgPayback / 12) > 1 ? 's' : '' }) : tr('decarb.bcROIUnderYear', "Moins d'un an")}</div>
                     </div>
                     <div className="rounded-2xl border-2 border-violet-200 bg-violet-50 p-5">
-                      <div className="text-3xl font-extrabold text-violet-700">{carbonTaxSavings.toLocaleString()} €/an</div>
-                      <div className="text-sm font-semibold text-gray-700 mt-2">{tr('decarb.bcCarbonTaxSaving', 'Économie taxe carbone')}</div>
-                      <div className="text-xs text-gray-500 mt-0.5">{tr('decarb.bcEtsPrice', 'au prix EU ETS 50€/t')}</div>
+                      <div className="text-3xl font-extrabold text-violet-700">{carbonTaxSavings === null ? '—' : `${carbonTaxSavings.toLocaleString('fr-FR')} €/an`}</div>
+                      <div className="text-sm font-semibold text-gray-700 mt-2">{tr('decarb.bcCarbonValue', 'Valeur carbone évitée')}</div>
+                      <label className="mt-1 block text-xs text-gray-500">{tr('decarb.bcCarbonPriceLabel', 'Votre prix du carbone (€/tCO₂e)')}
+                        <input type="number" min="0" value={carbonPrice} onChange={e => setCarbonPrice(e.target.value)} placeholder="ex. à définir"
+                          className="mt-1 w-full rounded-lg border border-violet-200 bg-white px-2 py-1 text-sm text-gray-900" />
+                      </label>
                     </div>
                   </div>
                 )}
@@ -1660,7 +1628,7 @@ export default function DecarbonationPlan() {
                           </td>
                           <td className="px-6 py-3 text-right font-semibold text-blue-700">{a.cost} k€</td>
                           <td className="px-6 py-3 text-right font-semibold text-green-700">{a.impact.toLocaleString()} tCO₂e</td>
-                          <td className="px-6 py-3 text-right font-semibold text-amber-700">{a.roi < 12 ? `${a.roi} ${tr('decarbonation.months')}` : `${Math.round(a.roi / 12)} ${tr('decarbonation.years')}`}</td>
+                          <td className="px-6 py-3 text-right font-semibold text-amber-700">{!a.roi ? '—' : a.roi < 12 ? `${a.roi} ${tr('decarbonation.months')}` : `${Math.round(a.roi / 12)} ${tr('decarbonation.years')}`}</td>
                           <td className="px-6 py-3">
                             <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
                               a.difficulty === 'Facile' ? 'bg-green-100 text-green-700' :

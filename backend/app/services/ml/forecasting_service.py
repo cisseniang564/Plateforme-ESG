@@ -29,6 +29,10 @@ logger = logging.getLogger(__name__)
 
 # ── Lazy imports (ML libs may not be present in all envs) ─────────────────────
 
+# En dessous, une « prévision » n'est qu'une droite tracée sur quelques points : on n'en affiche pas.
+MIN_FORECAST_POINTS = 6
+
+
 def _try_import_statsmodels():
     try:
         from statsmodels.tsa.arima.model import ARIMA
@@ -221,7 +225,7 @@ class ForecastingService:
         results: List[Dict[str, Any]] = []
 
         for indicator, data_points in rows.items():
-            if len(data_points) < 3:
+            if len(data_points) < MIN_FORECAST_POINTS:
                 continue
             forecast_result = self._forecast_series(
                 indicator=indicator,

@@ -75,8 +75,6 @@ function RecoCard({ reco, expanded, onToggle }: { reco: Recommendation; expanded
           <p className="text-sm font-semibold text-gray-900 leading-snug">{reco.title}</p>
           <div className="flex items-center gap-3 mt-1.5 text-xs">
             <span className={IMPACT_COLOR[reco.impact]}>{t('ai.impactLabel', 'Impact')} {reco.impact_label}</span>
-            <span className="text-gray-300">·</span>
-            <span className="text-emerald-600 font-medium">{t('ai.gainIndicative', 'Gain indicatif')} : +{reco.score_gain_est} {t('ai.pts', 'pts')}</span>
           </div>
         </div>
         <ChevronRight size={16} className={`flex-shrink-0 text-gray-400 transition-transform duration-200 mt-1 ${expanded ? 'rotate-90' : ''}`} />
@@ -134,7 +132,7 @@ export default function AIInsights({ embedded = false }: { embedded?: boolean } 
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">{t('ai.recoTitle', 'Recommandations')}</h2>
-            <p className="mt-1 text-sm text-gray-600">{t('ai.recoSub', 'Actions prioritaires classées par impact et par effort, avec un gain de score indicatif.')}</p>
+            <p className="mt-1 text-sm text-gray-600">{t('ai.recoSub', 'Actions prioritaires classées par impact et par effort. Aucun gain de score n’est promis : recalculez votre score après chaque action.')}</p>
           </div>
           <button onClick={() => fetchInsights(true)} disabled={refreshing}
             className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-gray-300 bg-white px-3.5 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60">
@@ -210,7 +208,7 @@ export default function AIInsights({ embedded = false }: { embedded?: boolean } 
                 <div>
                   <p className="font-semibold text-gray-900">{t('ai.priorityCount', '{{count}} actions identifiées', { count: data.total_recommendations })}</p>
                   <p className="text-sm text-gray-600">
-                    {t('ai.gainNote', 'Les gains de points sont des ordres de grandeur indicatifs, fixes par type d’action : ils ne sont pas calculés à partir de vos données et ne s’additionnent pas. Recalculez votre score après chaque action pour mesurer l’effet réel.')}
+                    {t('ai.gainNote', 'Ces actions sont classées d’après vos scores par pilier, sans estimation de gain de points (aucun calcul ne la justifierait). Recalculez votre score après chaque action pour mesurer l’effet réel.')}
                   </p>
                 </div>
               </div>

@@ -206,4 +206,4 @@ async def ai_chat(
     )
     messages = [{"role": m.role, "content": m.content} for m in body.messages]
     response = await svc.chat(current_user.tenant_id, messages)
-    return {"response": response}
+    return {"response": response, "source": svc.last_source}

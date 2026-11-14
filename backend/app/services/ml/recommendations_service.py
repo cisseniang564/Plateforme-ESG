@@ -12,8 +12,8 @@ Format de sortie
     "id": "rec_001",
     "title": "...",
     "description": "...",
-    "gain_tco2e": 450.0,       # tonnes CO2e économisées/an (null si non applicable)
-    "gain_eur": 28000.0,       # économies annuelles estimées €  (null si non applicable)
+    "gain_tco2e": null,        # toujours null
+    "gain_eur": null,          # toujours null
     "difficulty": 3,           # 1 (facile) → 5 (très difficile)
     "timeline": "court",       # court (<6 mois) / moyen (6-18 mois) / long (>18 mois)
     "pillar": "environmental", # environmental / social / governance
@@ -64,12 +64,12 @@ FALLBACK_RECOMMENDATIONS = [
             "identifier les gisements de réduction (isolation, éclairage LED, "
             "systèmes HVAC). Levier majeur pour réduire Scope 1 & 2."
         ),
-        "gain_tco2e":  350.0,
-        "gain_eur":    25000.0,
+        "gain_tco2e":  None,
+        "gain_eur":    None,
         "difficulty":  2,
         "timeline":    "court",
         "pillar":      "environmental",
-        "resources":   ["Responsable HSE", "Bureau d'études énergie", "Budget audit ~8 000 €"],
+        "resources":   ["Responsable HSE", "Bureau d'études énergie"],
         "kpi":         "Consommation énergie (MWh)",
         "priority":    "high",
         "tags":        ["énergie", "scope1", "scope2", "bâtiment"],
@@ -82,12 +82,12 @@ FALLBACK_RECOMMENDATIONS = [
             "2j/sem. Réduction directe des émissions Scope 3 Catégorie 7 "
             "(trajets domicile-travail) et amélioration du bien-être collaborateurs."
         ),
-        "gain_tco2e":  120.0,
-        "gain_eur":    9000.0,
+        "gain_tco2e":  None,
+        "gain_eur":    None,
         "difficulty":  2,
         "timeline":    "court",
         "pillar":      "social",
-        "resources":   ["DRH", "Communication interne", "Budget forfaits ~12 000 €/an"],
+        "resources":   ["DRH", "Communication interne"],
         "kpi":         "Émissions Scope 3 Cat.7 (tCO2e)",
         "priority":    "medium",
         "tags":        ["mobilité", "scope3", "rh", "bien-être"],
@@ -124,7 +124,7 @@ RÈGLES IMPÉRATIVES :
 1. Retourne UNIQUEMENT un tableau JSON valide de 3 objets, sans texte avant ou après.
 2. Chaque objet respecte EXACTEMENT le schéma JSON fourni.
 3. Les recommandations sont adaptées au secteur, à la taille et aux piliers ESG faibles.
-4. Les gains (gain_tco2e, gain_eur) sont réalistes pour le contexte donné (null si non chiffrable).
+4. Ne chiffre JAMAIS les gains : gain_tco2e et gain_eur valent toujours null (aucune donnée ne permet de les calculer).
 5. difficulty est un entier entre 1 et 5.
 6. timeline est exactement "court", "moyen" ou "long".
 7. priority est exactement "high", "medium" ou "low".
@@ -336,8 +336,9 @@ class ESGRecommendationService:
             r.setdefault("id",         f"rec_{i+1:03d}")
             r.setdefault("title",      "Recommandation ESG")
             r.setdefault("description","")
-            r.setdefault("gain_tco2e", None)
-            r.setdefault("gain_eur",   None)
+            # Jamais de gain chiffré : un modèle de langage ne peut pas le calculer à partir du profil.
+            r["gain_tco2e"] = None
+            r["gain_eur"] = None
             r["difficulty"] = max(1, min(5, int(r.get("difficulty", 3))))
             r["timeline"]   = r.get("timeline", "moyen") if r.get("timeline") in ("court", "moyen", "long") else "moyen"
             r["pillar"]     = r.get("pillar", "environmental") if r.get("pillar") in ("environmental", "social", "governance") else "environmental"

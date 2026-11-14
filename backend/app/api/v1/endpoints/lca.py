@@ -309,35 +309,35 @@ async def lca_stats(
 
 ECO_DESIGN_TIPS = {
     "raw_material": [
-        {"tip": "Privilégier les matières recyclées (rPET, acier EAF, alu recyclé)", "impact": "-40 à -80% vs vierge", "effort": "moyen"},
-        {"tip": "Substituer les plastiques par des biomatériaux (PLA, chanvre, lin)", "impact": "-20 à -50%", "effort": "élevé"},
-        {"tip": "Réduire la masse matière par éco-conception (topologie, nervures)", "impact": "-10 à -30%", "effort": "moyen"},
-        {"tip": "Sourcer localement pour réduire le transport amont", "impact": "-5 à -15%", "effort": "faible"},
+        {"tip": "Privilégier les matières recyclées (rPET, acier EAF, alu recyclé)", "impact": "à quantifier pour votre produit", "effort": "moyen"},
+        {"tip": "Substituer les plastiques par des biomatériaux (PLA, chanvre, lin)", "impact": "à quantifier pour votre produit", "effort": "élevé"},
+        {"tip": "Réduire la masse matière par éco-conception (topologie, nervures)", "impact": "à quantifier pour votre produit", "effort": "moyen"},
+        {"tip": "Sourcer localement pour réduire le transport amont", "impact": "à quantifier pour votre produit", "effort": "faible"},
     ],
     "manufacturing": [
-        {"tip": "Optimiser le taux de chute matière (nesting, réutilisation chutes)", "impact": "-5 à -15%", "effort": "faible"},
-        {"tip": "Électrifier les process thermiques (fours, séchage)", "impact": "-20 à -60%", "effort": "élevé"},
-        {"tip": "Basculer sur de l'énergie renouvelable (PPA, autoconsommation)", "impact": "-30 à -80%", "effort": "moyen"},
+        {"tip": "Optimiser le taux de chute matière (nesting, réutilisation chutes)", "impact": "à quantifier pour votre produit", "effort": "faible"},
+        {"tip": "Électrifier les process thermiques (fours, séchage)", "impact": "à quantifier pour votre produit", "effort": "élevé"},
+        {"tip": "Basculer sur de l'énergie renouvelable (PPA, autoconsommation)", "impact": "à quantifier pour votre produit", "effort": "moyen"},
     ],
     "transport": [
-        {"tip": "Optimiser le taux de remplissage des camions (palettisation)", "impact": "-10 à -25%", "effort": "faible"},
-        {"tip": "Basculer du routier vers le ferroviaire ou le maritime", "impact": "-60 à -90%", "effort": "moyen"},
-        {"tip": "Relocaliser la production pour raccourcir les flux", "impact": "-30 à -70%", "effort": "élevé"},
+        {"tip": "Optimiser le taux de remplissage des camions (palettisation)", "impact": "à quantifier pour votre produit", "effort": "faible"},
+        {"tip": "Basculer du routier vers le ferroviaire ou le maritime", "impact": "à quantifier pour votre produit", "effort": "moyen"},
+        {"tip": "Relocaliser la production pour raccourcir les flux", "impact": "à quantifier pour votre produit", "effort": "élevé"},
     ],
     "packaging": [
-        {"tip": "Réduire le poids d'emballage (film vs carton, suppression suremballage)", "impact": "-20 à -50%", "effort": "faible"},
-        {"tip": "Passer aux emballages réutilisables ou consignés", "impact": "-60 à -90%", "effort": "moyen"},
-        {"tip": "Utiliser du carton recyclé ou des matériaux biosourcés", "impact": "-30 à -60%", "effort": "faible"},
+        {"tip": "Réduire le poids d'emballage (film vs carton, suppression suremballage)", "impact": "à quantifier pour votre produit", "effort": "faible"},
+        {"tip": "Passer aux emballages réutilisables ou consignés", "impact": "à quantifier pour votre produit", "effort": "moyen"},
+        {"tip": "Utiliser du carton recyclé ou des matériaux biosourcés", "impact": "à quantifier pour votre produit", "effort": "faible"},
     ],
     "use_phase": [
-        {"tip": "Réduire la consommation énergétique en usage (efficacité, veille)", "impact": "-10 à -40%", "effort": "moyen"},
-        {"tip": "Allonger la durée de vie (réparabilité, modularité)", "impact": "-20 à -50%", "effort": "moyen"},
-        {"tip": "Proposer un service de maintenance / reconditionnement", "impact": "-15 à -30%", "effort": "moyen"},
+        {"tip": "Réduire la consommation énergétique en usage (efficacité, veille)", "impact": "à quantifier pour votre produit", "effort": "moyen"},
+        {"tip": "Allonger la durée de vie (réparabilité, modularité)", "impact": "à quantifier pour votre produit", "effort": "moyen"},
+        {"tip": "Proposer un service de maintenance / reconditionnement", "impact": "à quantifier pour votre produit", "effort": "moyen"},
     ],
     "end_of_life": [
-        {"tip": "Concevoir pour le démontage et le tri des matériaux", "impact": "-10 à -30%", "effort": "moyen"},
-        {"tip": "Privilégier les matériaux mono-matière (recyclabilité)", "impact": "-15 à -40%", "effort": "moyen"},
-        {"tip": "Mettre en place une filière de reprise / collecte", "impact": "-20 à -50%", "effort": "élevé"},
+        {"tip": "Concevoir pour le démontage et le tri des matériaux", "impact": "à quantifier pour votre produit", "effort": "moyen"},
+        {"tip": "Privilégier les matériaux mono-matière (recyclabilité)", "impact": "à quantifier pour votre produit", "effort": "moyen"},
+        {"tip": "Mettre en place une filière de reprise / collecte", "impact": "à quantifier pour votre produit", "effort": "élevé"},
     ],
 }
 

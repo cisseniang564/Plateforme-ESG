@@ -28,7 +28,7 @@ const SECTORS: { value: SectorKey; labelKey: string; emoji: string }[] = [
 
 interface Quartiles { p25: number; median: number; p75: number; top10: number }
 interface SectorRef {
-  source: 'cross_tenant' | 'public_reference' | null
+  source: 'cross_tenant' | 'insufficient_cohort' | null
   cohort_size: number | null
   distinct_tenants: number | null
   reference_source: string | null
@@ -115,9 +115,9 @@ export default function BenchmarkingDashboard() {
     try {
       const res = await api.get(`/benchmarks/sector/${s}`)
       const d = res.data
-      if (!d?.environmental) throw new Error('shape')
+      if (d?.source !== 'insufficient_cohort' && !d?.environmental) throw new Error('shape')
       setRef({
-        source: d.source || 'public_reference',
+        source: d.source === 'cross_tenant' ? 'cross_tenant' : 'insufficient_cohort',
         cohort_size: d.cohort_size ?? null,
         distinct_tenants: d.distinct_tenants ?? null,
         reference_source: d.reference_source || null,
@@ -207,7 +207,7 @@ export default function BenchmarkingDashboard() {
     const lines: string[] = [
       esc(`Rapport Benchmarking ESG — ${sectorLabel}`),
       esc(`Généré le : ${date}`),
-      esc(`Source du référentiel : ${ref?.source === 'cross_tenant' ? `agrégats plateforme (${ref.cohort_size} organisations)` : (ref?.reference_source || 'référentiel public')}`),
+      esc(`Source du référentiel : ${ref?.source === 'cross_tenant' ? `agrégats plateforme (${ref.cohort_size} organisations)` : 'cohorte insuffisante : aucune comparaison'}`),
       '',
       ['Pilier', 'Votre score', 'Médiane secteur', '75e centile', 'Top 10 %'].map(esc).join(','),
       ...pillars.map(p => [p.name, p.your ?? 'n/d', p.q?.median ?? 'n/d', p.q?.p75 ?? 'n/d', p.q?.top10 ?? 'n/d'].map(esc).join(',')),
@@ -255,8 +255,8 @@ export default function BenchmarkingDashboard() {
             </div>
           ) : (
             <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 ring-1 ring-amber-200"
-              title={ref.anonymization_note || t('benchmarking.publicRefWaiting', "Référentiel public utilisé en attente d'une cohorte suffisante.")}>
-              {t('benchmarking.publicRefPill', 'Référentiel public · {{src}}', { src: ref.reference_source || 'CDP / MSCI / ADEME' })}
+              title={ref.anonymization_note || undefined}>
+              {t('benchmarking.insufficientPill', 'Comparaison indisponible · cohorte insuffisante')}
             </div>
           )}
         </div>
@@ -307,6 +307,12 @@ export default function BenchmarkingDashboard() {
           <button onClick={() => loadSector(sector)} className="rounded-lg border border-red-200 bg-white px-3 py-1 font-medium hover:bg-red-100">
             {t('benchmarking.retry', 'Réessayer')}
           </button>
+        </div>
+      )}
+
+      {ref?.source === 'insufficient_cohort' && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          {ref.anonymization_note || t('benchmarking.insufficientNote', "Pas encore assez d'organisations comparables dans ce secteur : aucune comparaison n'est affichée plutôt que des valeurs de référence non vérifiables.")}
         </div>
       )}
 
@@ -392,7 +398,7 @@ export default function BenchmarkingDashboard() {
         <div className="border-b border-gray-100 px-6 py-4">
           <h2 className="text-base font-semibold text-gray-800">{t('benchmarking.refIndicators', 'Indicateurs de référence du secteur')}</h2>
           <p className="mt-1 text-xs text-gray-500">
-            {t('benchmarking.refIndicatorsNote', "Valeurs de référence issues de sources publiques. Elles ne sont pas comparées à vos propres données : renseignez vos indicateurs dans la saisie de données pour les suivre.")}
+            {t('benchmarking.refIndicatorsNote', "Valeurs de référence. Elles ne sont pas comparées à vos propres données : renseignez vos indicateurs dans la saisie de données pour les suivre.")}
           </p>
         </div>
         {refIndicators.length ? (
