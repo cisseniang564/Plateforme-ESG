@@ -93,39 +93,17 @@ const getDocCategories = (t: TFunction): Record<DataRoomDoc['category'], { label
   autre:         { label: t('inv.cat.other', 'Autre'),               color: '#6b7280' },
 });
 
-// ─── Demo data ────────────────────────────────────────────────────────────────
+// ─── Valeurs initiales : vides (aucune donnée inventée) ─────────────────────
 
-const DEMO_RATINGS: ESGRating[] = [
-  { id: '1', provider: 'MSCI',           score: 'AA',              date: '2024-09-15', trend: 'up',     previousScore: 'A',              notes: 'Amélioration gouvernance',                        url: '' },
-  { id: '2', provider: 'SP_CSA',         score: '61/100',          date: '2024-11-01', trend: 'stable', previousScore: '60/100',          notes: 'Score dans le 3ème quartile sectoriel',          url: '' },
-  { id: '3', provider: 'Sustainalytics', score: 'Medium (28.4)',   date: '2024-08-20', trend: 'down',   previousScore: 'Medium (24.1)',   notes: "Hausse exposition risque eau",                    url: '' },
-  { id: '4', provider: 'CDP',            score: 'B',               date: '2024-07-10', trend: 'up',     previousScore: 'C',              notes: 'Premier B obtenu grâce au module CDP',            url: '' },
-  { id: '5', provider: 'EcoVadis',       score: 'Silver (58/100)', date: '2024-06-01', trend: 'stable', previousScore: 'Silver (55/100)', notes: '',                                               url: '' },
-];
-
-const DEMO_QUESTS: IRQuestionnaire[] = [
-  { id: '1', provider: 'CDP',            year: 2025, status: 'in_progress',  deadline: '2025-07-31', score: '', completionPct: 65,  notes: 'Section C6 à compléter',    contactEmail: '' },
-  { id: '2', provider: 'MSCI',           year: 2025, status: 'not_started',  deadline: '2025-05-31', score: '', completionPct: 0,   notes: '',                           contactEmail: 'esg@msci.com' },
-  { id: '3', provider: 'SP_CSA',         year: 2025, status: 'submitted',    deadline: '2025-04-30', score: '', completionPct: 100, notes: 'Soumis le 28/04/2025',       contactEmail: '' },
-  { id: '4', provider: 'Sustainalytics', year: 2025, status: 'not_started',  deadline: '2025-09-15', score: '', completionPct: 0,   notes: '',                           contactEmail: '' },
-];
-
-const DEMO_DOCS: DataRoomDoc[] = [
-  { id: '1', name: 'Rapport ESG 2024 — VF',              category: 'rapport_esg',   uploadDate: '2025-04-15', size: '4.2 MB', format: 'PDF',   accessLevel: 'public',       description: 'Rapport annuel de développement durable 2024' },
-  { id: '2', name: 'Politique Climatique 2030',           category: 'politique',     uploadDate: '2025-01-10', size: '0.8 MB', format: 'PDF',   accessLevel: 'public',       description: 'Politique Net Zéro et décarbonation' },
-  { id: '3', name: 'Données GES vérifiées 2024 (BV)',    category: 'donnees',       uploadDate: '2025-03-20', size: '1.1 MB', format: 'Excel', accessLevel: 'restricted',   description: 'Données Scope 1/2/3 avec rapport de vérification Bureau Veritas' },
-  { id: '4', name: 'Certification ISO 14001 — 2024',     category: 'certification', uploadDate: '2024-12-01', size: '0.3 MB', format: 'PDF',   accessLevel: 'public',       description: "Certificat ISO 14001 valide jusqu'en 2027" },
-  { id: '5', name: 'Présentation IR ESG — Mai 2025',     category: 'presentation',  uploadDate: '2025-05-01', size: '3.6 MB', format: 'PDF',   accessLevel: 'restricted',   description: 'Présentation roadshow ESG pour investisseurs institutionnels' },
-];
+const DEMO_RATINGS: ESGRating[] = [];
+const DEMO_QUESTS: IRQuestionnaire[] = [];
+const DEMO_DOCS: DataRoomDoc[] = [];
 
 const DEFAULT_FACTSHEET: IRFactsheetData = {
-  companyName: 'Votre Entreprise SA', reportingYear: '2024', sector: 'Industrie manufacturière',
-  employees: '1 250', revenue: '320 M€',
-  scope1: '4 200 tCO₂e', scope2: '1 800 tCO₂e', scope3: '28 500 tCO₂e',
-  intensityCarbone: '19,5 tCO₂e/M€', energieRenouvelable: '42%',
-  eau: '85 000 m³', dechets: '78% recyclés',
-  femmes: '34%', accidents: '2,1', formationHeures: '28h/ETP',
-  objectifSBTi: 'Engagé', noteGlobale: 'B+', engagementCDP: 'B', taxonomieAlignment: '18%',
+  companyName: '', reportingYear: '', sector: '', employees: '', revenue: '',
+  scope1: '', scope2: '', scope3: '', intensityCarbone: '', energieRenouvelable: '',
+  eau: '', dechets: '', femmes: '', accidents: '', formationHeures: '',
+  objectifSBTi: '', noteGlobale: '', engagementCDP: '', taxonomieAlignment: '',
 };
 
 // ─── Helper utilities ─────────────────────────────────────────────────────────
