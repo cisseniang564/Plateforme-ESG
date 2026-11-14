@@ -5,19 +5,19 @@ ADEME (Base Empreinte / Base Carbone).
 Méthode reconnue par le GHG Protocol et compatible Bilan Carbone ADEME :
   émissions (kgCO₂e) = dépense (€) × facteur d'émission (kgCO₂e/€)
 
-Les 15 catégories Scope 3 du GHG Protocol sont implémentées avec des facteurs
-moyens issus de Base Empreinte (ADEME, mise à jour novembre 2024). Pour une
-production stricte, les facteurs doivent être affinés par sous-catégorie
-(NACE / NAF) — la structure le permet via le champ `nace_code`.
-
-⚠️ Les facteurs ci-dessous sont des **moyennes sectorielles** France 2024.
-Pour un Bilan Carbone réglementaire (>500 salariés), un audit avec facteurs
-spécifiques est recommandé.
+Les 15 catégories Scope 3 du GHG Protocol sont prévues. ⚠️ Les facteurs ci-dessous sont des
+valeurs INDICATIVES NON AUDITÉES (ordres de grandeur) : ils n'ont pas été vérifiés contre la Base
+Empreinte ADEME et ne doivent pas servir tels quels à un reporting réglementaire.
 """
 from __future__ import annotations
 
 from typing import Optional, Dict, List, Any
 from dataclasses import dataclass
+
+FACTORS_DISCLAIMER = (
+    "Facteurs indicatifs, non audités : ils n'ont pas été vérifiés ligne à ligne contre la Base Empreinte ADEME. "
+    "Ne pas utiliser tels quels pour un reporting réglementaire (CSRD, Bilan GES)."
+)
 
 
 # ─── Catégories GHG Protocol Scope 3 ──────────────────────────────────────────
@@ -32,7 +32,7 @@ class EmissionFactor:
     category_name: str
     unit: str           # "kgCO2e/EUR" | "kgCO2e/km" | "kgCO2e/kWh" | "kgCO2e/t"
     factor: float       # the actual factor
-    source: str = "ADEME Base Empreinte 2024"
+    source: str = "Valeurs indicatives non auditées — à confronter à la Base Empreinte ADEME"
     notes: Optional[str] = None
 
 
@@ -254,6 +254,7 @@ def calculate(lines: List[LineItem]) -> Dict[str, Any]:
         "by_category":  sorted(by_cat.values(), key=lambda c: c["category_id"]),
         "details":      details,
         "warnings":     warnings,
-        "source":       "ADEME Base Empreinte 2024",
+        "source":       "Valeurs indicatives non auditées — à confronter à la Base Empreinte ADEME",
+        "disclaimer":   FACTORS_DISCLAIMER,
         "method":       "spend-based + activity-based mix",
     }

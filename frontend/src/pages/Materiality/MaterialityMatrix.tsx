@@ -184,7 +184,7 @@ export default function MaterialityMatrix() {
   const [ratings, setRatings]           = useState<Rating[]>([]);
   const [questApplied, setQuestApplied] = useState(false);
 
-  // Suggestions IA
+  // Enjeux types (liste statique, sans IA)
   const [selectedSector, setSelectedSector] = useState(Object.keys(SECTORS)[0]);
   const [addedSuggestions, setAddedSuggestions] = useState<Set<string>>(new Set());
 
@@ -290,10 +290,10 @@ export default function MaterialityMatrix() {
     } catch { toast.error(t('materiality.toastQuestError')); }
   };
 
-  // ── Suggestions IA ───────────────────────────────────────────────────────────
+  // ── Enjeux types ───────────────────────────────────────────────────────────
   const addSuggestion = async (s: typeof SECTORS[string][number]) => {
     try {
-      await api.post('/materiality/issues', { name: s.name, description: s.description, category: s.category, financial_impact: s.financial_impact, esg_impact: s.esg_impact, stakeholders: '' });
+      await api.post('/materiality/issues', { name: s.name, description: s.description, category: s.category, financial_impact: 50, esg_impact: 50, stakeholders: '' });
       setAddedSuggestions(prev => new Set([...prev, s.name]));
       toast.success(t('materiality.toastAddedToMatrix', { name: s.name }));
       await loadAll();
@@ -1180,7 +1180,6 @@ export default function MaterialityMatrix() {
             {SECTORS[selectedSector].map((s, idx) => {
               const already  = issues.some(i => i.name === s.name);
               const justAdded = addedSuggestions.has(s.name);
-              const q = quadrant(s.financial_impact, s.esg_impact);
               return (
                 <div key={idx} className={`flex flex-col p-5 bg-white rounded-2xl border-2 transition-all ${already || justAdded ? 'border-green-200 bg-green-50/30' : 'border-gray-100 hover:border-indigo-200 hover:shadow-md'}`}>
                   <div className="flex items-start justify-between gap-3 mb-3">
@@ -1192,20 +1191,7 @@ export default function MaterialityMatrix() {
                   </div>
                   <p className="text-xs text-gray-500 mb-4 flex-1">{s.description}</p>
                   <div className="flex items-center justify-between">
-                    <div className="flex gap-2">
-                      <div className="bg-orange-50 rounded-lg px-2.5 py-1.5 text-center">
-                        <p className="text-[10px] text-gray-500">{t('materiality.tooltipFin')}</p>
-                        <p className="text-xs font-bold text-orange-600">{s.financial_impact}</p>
-                      </div>
-                      <div className="bg-blue-50 rounded-lg px-2.5 py-1.5 text-center">
-                        <p className="text-[10px] text-gray-500">ESG</p>
-                        <p className="text-xs font-bold text-blue-600">{s.esg_impact}</p>
-                      </div>
-                      <div className={`rounded-lg px-2.5 py-1.5 text-center ${q.bg}`}>
-                        <p className="text-[10px] text-gray-500">{t('materiality.suggZone')}</p>
-                        <p className={`text-[10px] font-bold ${q.text}`}>{t(q.labelKey)}</p>
-                      </div>
-                    </div>
+                    <p className="text-[11px] text-gray-400">{t('materiality.suggNote', 'Ajouté avec des impacts neutres (50/50), à ajuster.')}</p>
                     {already || justAdded ? (
                       <div className="flex items-center gap-1.5 text-green-600 text-xs font-semibold">
                         <CheckCircle className="h-4 w-4" /> {t('materiality.iaSuggAdded')}
@@ -1444,7 +1430,7 @@ export default function MaterialityMatrix() {
                     ? t('materiality.coverageSolid', 'Couverture ESRS solide — votre DMA couvre les principales thématiques pour un rapport CSRD de première divulgation.')
                     : coveragePct >= 60
                     ? t('materiality.coveragePartial', 'Couverture partielle — complétez les topics manquants avant la soumission de votre CSRD.')
-                    : t('materiality.coverageInsufficient', 'Couverture insuffisante — au moins 6/10 topics ESRS doivent être couverts. Utilisez Suggestions IA ou le Questionnaire pour identifier vos enjeux matériels.')
+                    : t('materiality.coverageInsufficient', 'Couverture insuffisante — au moins 6/10 topics ESRS doivent être couverts. Utilisez les Enjeux types ou le Questionnaire pour identifier vos enjeux matériels.')
                   }
                 </div>
               </div>
