@@ -139,7 +139,7 @@ const CONNECTORS: Connector[] = [
   },
   {
     id: 'pennylane', name: 'Pennylane', category: 'ERP',
-    description: 'Comptabilité française cloud — import FEC + calcul Scope 3 ADEME',
+    description: 'Comptabilité française cloud — import FEC + estimation Scope 3 sur dépenses de services',
     status: 'available', backendStatus: 'demo', color: '#7c3aed', authType: 'apikey',
     coverage: { emissions: true, energy: false, hr: false, finance: true, waste: false, water: false },
     version: 'API v1', endpoint: 'https://app.pennylane.com/api/external/v1'
@@ -153,7 +153,7 @@ const CONNECTORS: Connector[] = [
   },
   {
     id: 'sage', name: 'Sage', category: 'ERP',
-    description: 'Logiciel de gestion Sage — fichier FEC → émissions Scope 3 ADEME',
+    description: 'Logiciel de gestion Sage — fichier FEC → estimation Scope 3 sur dépenses de services',
     status: 'available', backendStatus: 'demo', color: '#16a34a', authType: 'apikey',
     coverage: { emissions: true, energy: false, hr: false, finance: true, waste: false, water: false },
     version: 'FEC Import', endpoint: 'Export FEC depuis Sage'
@@ -1049,7 +1049,7 @@ function FECImportPanel({ connectorId }: { connectorId: string }) {
       <div className="flex items-center gap-2 border-b border-blue-100 pb-3">
         <FileText size={16} className="text-blue-600" />
         <h3 className="font-semibold text-gray-800">Import FEC — Fichier des Écritures Comptables</h3>
-        <span className="ml-auto text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">ADEME Scope 3</span>
+        <span className="ml-auto text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">Estimation Scope 3</span>
       </div>
 
       {/* ── Step indicator ── */}
@@ -1076,7 +1076,7 @@ function FECImportPanel({ connectorId }: { connectorId: string }) {
           <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
             <Info size={14} className="text-blue-500 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-blue-700">
-              {t('conn.fecInfoBanner', 'Importez votre FEC (export Sage, Cegid, Pennylane…) pour calculer automatiquement les émissions Scope 3 par catégorie de dépenses selon les facteurs ADEME.')}
+              {t('conn.fecInfoBanner', 'Importez votre FEC (export Sage, Cegid, Pennylane…) pour estimer les émissions Scope 3 des dépenses de services (ratios monétaires ADEME, incertitude 80 %). Énergie, matières et transport : saisissez vos données physiques.')}
             </p>
           </div>
 
@@ -1185,7 +1185,7 @@ function FECImportPanel({ connectorId }: { connectorId: string }) {
               <table className="w-full text-xs">
                 <thead className="bg-gray-50">
                   <tr>
-                    {[t('conn.fecTblAccount','Compte'), t('conn.fecTblLabel','Libellé'), t('conn.fecTblDebit','Débit (€)'), t('conn.fecTblCO2e','CO₂e'), t('conn.fecTblCat','Catégorie ADEME')].map(h => (
+                    {[t('conn.fecTblAccount','Compte'), t('conn.fecTblLabel','Libellé'), t('conn.fecTblDebit','Débit (€)'), t('conn.fecTblCO2e','CO₂e'), t('conn.fecTblCat','Catégorie')].map(h => (
                       <th key={h} className="px-3 py-2.5 text-left font-semibold text-gray-600 whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -1372,7 +1372,7 @@ function SageCegidFECPanel() {
       <div className="flex items-center gap-2 border-b border-orange-100 pb-3">
         <span className="text-lg">📊</span>
         <h3 className="font-semibold text-gray-800">Sage / Cegid — Import FEC</h3>
-        <span className="ml-auto text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">ADEME Scope 3</span>
+        <span className="ml-auto text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">Estimation Scope 3</span>
       </div>
 
       {/* Step indicator */}
@@ -1398,7 +1398,7 @@ function SageCegidFECPanel() {
           <div className="flex items-start gap-2 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2.5">
             <Info size={14} className="text-orange-500 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-orange-700">
-              {t('conn.sageInfoBanner', "Importez votre export FEC (Sage 100, Cegid, EBP…) pour calculer automatiquement les émissions Scope 3 selon les facteurs d'émission ADEME par catégorie PCG.")}
+              {t('conn.sageInfoBanner', "Importez votre export FEC (Sage 100, Cegid, EBP…) pour estimer les émissions Scope 3 des dépenses de services (ratios monétaires ADEME, incertitude 80 %). Énergie, matières et transport : saisissez vos données physiques.")}
             </p>
           </div>
 
@@ -2536,7 +2536,7 @@ export default function ConnectorsPage() {
             <h2 className="text-lg font-bold text-gray-800">Import FEC — Comptabilité française</h2>
             <p className="text-sm text-gray-500 mt-1">
               Importez votre Fichier des Écritures Comptables (Sage, Cegid, Pennylane) pour calculer automatiquement
-              vos émissions Scope 3 par catégorie de dépenses selon les facteurs ADEME.
+              vos émissions Scope 3 des dépenses de services (ratios monétaires ADEME, ordre de grandeur).
             </p>
           </div>
           <FECImportPanel connectorId="fec" />

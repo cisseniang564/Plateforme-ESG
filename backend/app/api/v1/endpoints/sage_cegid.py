@@ -17,7 +17,7 @@ from app.dependencies import get_db, get_current_user, require_any_role
 from app.services.audit_service import log_change
 from app.models.user import User
 from app.services.fec_parser import parse_fec
-from app.services.pcg_emission_mapper import aggregate_by_category
+from app.services.pcg_emission_mapper import RATIO_SOURCE, aggregate_by_category, unconverted_spend
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -30,12 +30,17 @@ class FECParseResult(BaseModel):
     total_amount_eur: float
     categories: List[dict]
     year: Optional[int]
+    # Achats laissés sans estimation (aucun ratio publié adapté) et source des ratios utilisés
+    not_converted: List[dict] = []
+    ratio_source: str = RATIO_SOURCE
 
 
 class FECSyncResult(BaseModel):
     entries_created: int
     total_co2e_kgco2e: float
     categories: List[str]
+    not_converted: List[dict] = []
+    ratio_source: str = RATIO_SOURCE
 
 
 @router.post("/parse", response_model=FECParseResult)
@@ -59,7 +64,8 @@ async def parse_fec_file(
     try:
         rows = parse_fec(content, file.filename)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Erreur de parsing FEC: {str(e)}")
+        logger.warning("FEC illisible (%s) : %s", file.filename, e)
+        raise HTTPException(status_code=400, detail="Ce fichier n'a pas pu être lu comme un FEC. Vérifiez l'export de votre logiciel comptable.")
 
     if not rows:
         raise HTTPException(status_code=400, detail="Aucune écriture valide trouvée dans le fichier")
@@ -83,6 +89,7 @@ async def parse_fec_file(
         total_amount_eur=round(total_amount, 2),
         categories=aggregated,
         year=year,
+        not_converted=unconverted_spend(rows),
     )
 
 
@@ -142,8 +149,8 @@ async def sync_fec_to_entries(
                 pass
 
         note = (
-            f"FEC Import (Sage/Cegid) — {agg['entry_count']} écritures — "
-            f"{agg['note']} — Montant: {agg['total_amount_eur']}€"
+            f"Import FEC — {agg['entry_count']} écritures — montant {agg['total_amount_eur']} € HT — "
+            f"{agg['note']}"
         )
 
         entry_kwargs: dict = {
@@ -195,6 +202,7 @@ async def sync_fec_to_entries(
         entries_created=created_count,
         total_co2e_kgco2e=round(total_co2e, 2),
         categories=category_names,
+        not_converted=unconverted_spend(rows),
     )
 
 

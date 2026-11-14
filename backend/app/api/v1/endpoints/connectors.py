@@ -753,18 +753,14 @@ class FECImportPayload(BaseModel):
     dry_run: bool = False  # Si True : aperçu sans import
 
 
-# Mapping comptes → catégories ESG + facteurs d'émission ADEME (kgCO2e/€)
+# Comptes convertis et ratios : une seule table, sourcée, partagée avec les autres
+# imports FEC (voir app/services/pcg_emission_mapper.py). Les comptes sans ratio
+# publié adapté (énergie, matières, transport…) ne sont pas convertis.
+from app.services.pcg_emission_mapper import PCG_EMISSION_MAP as _PCG_MAP, RATIO_SOURCE as _RATIO_SOURCE
+
 _FEC_ACCOUNT_MAP = [
-    ("601",  "environmental", "Achats matières premières",     "scope3_cat1_raw_materials",    0.000150),
-    ("602",  "environmental", "Achats consommables",           "scope3_cat1_consumables",       0.000080),
-    ("604",  "environmental", "Achats énergie",                "scope3_cat2_energy_purchased",  0.000200),
-    ("6061", "environmental", "Carburants (Scope 1)",          "scope1_fuel_vehicles",          0.002500),
-    ("606",  "environmental", "Fournitures générales",         "scope3_cat1_supplies",          0.000060),
-    ("60",   "environmental", "Achats de marchandises",        "scope3_cat1_goods",             0.000110),
-    ("61",   "environmental", "Services extérieurs",           "scope3_cat1_services",          0.000040),
-    ("6251", "environmental", "Voyages & déplacements",        "scope3_cat6_business_travel",   0.000400),
-    ("6256", "environmental", "Missions professionnelles",     "scope3_cat6_missions",          0.000120),
-    ("62",   "environmental", "Autres services extérieurs",    "scope3_cat1_other_services",    0.000035),
+    (prefix, m["pillar"], m["metric_name"], f"fec_{prefix}", m["ratio_kgco2e_per_keur"] / 1000.0)
+    for prefix, m in _PCG_MAP.items()
 ]
 
 
@@ -841,7 +837,7 @@ async def import_fec(
             "lines_parsed": lines_total, "lines_matched": 0,
             "total_debit_eur": 0, "total_co2e_kg": 0,
             "skipped_lines": skipped,
-            "message": "Aucune écriture comptable ESG détectée. Vérifiez le séparateur et les comptes 60x/61x/62x.",
+            "message": "Aucune dépense convertible détectée (assurances, honoraires, entretien, publicité, télécoms, missions). Les achats d'énergie, de matières et de transport sont à saisir en données physiques.",
             "preview": [],
         }
 
@@ -890,6 +886,8 @@ async def import_fec(
                 and_(
                     DataEntry.tenant_id == current_user.tenant_id,
                     DataEntry.collection_method == "fec_import",
+                    # Une saisie vérifiée est verrouillée : un réimport ne l'efface pas.
+                    DataEntry.verification_status != "verified",
                     extract("year", DataEntry.period_start) == payload.year,
                 )
             )
@@ -912,7 +910,7 @@ async def import_fec(
                 collection_method="fec_import",
                 verification_status="pending",
                 data_source="FEC Import",
-                notes=f"Montant comptable : {row['value_eur']:,.0f} € · Facteur ADEME : {row['factor_kgco2e_per_eur']} kgCO2e/€",
+                notes=f"Montant comptable : {row['value_eur']:,.0f} € HT · ratio monétaire {round(row['factor_kgco2e_per_eur'] * 1000)} kgCO2e/k€ ({_RATIO_SOURCE})",
             )
             db.add(entry)
             inserted += 1
@@ -920,7 +918,7 @@ async def import_fec(
     except Exception as e:
         await db.rollback()
         logger.error("FEC import DB error: %s", e)
-        raise HTTPException(status_code=500, detail=f"Erreur import base de données : {e}")
+        raise HTTPException(status_code=500, detail="L'import a échoué : aucune donnée n'a été enregistrée.")
 
     # Update connector status in Redis
     r = _get_redis()

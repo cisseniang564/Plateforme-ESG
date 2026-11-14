@@ -182,15 +182,19 @@ async def get_scope3_categories(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Return Scope 3 category reference data with ADEME emission factors."""
+    """Catégories Scope 3 (référentiel GHG Protocol) — sans facteur d'émission.
+
+    Aucun facteur n'est publié ici : les facteurs réels dépendent du poste
+    (Base Empreinte ADEME) et doivent être choisis par l'utilisateur.
+    """
     return [
-        {"id": 1, "name": "Achats de biens & services",       "factor": 0.85, "unit": "kgCO2e/€"},
-        {"id": 2, "name": "Biens d'équipement",                "factor": 0.45, "unit": "kgCO2e/€"},
-        {"id": 3, "name": "Énergie (non incluse scope 1&2)",   "factor": 0.23, "unit": "kgCO2e/kWh"},
-        {"id": 4, "name": "Transport amont (fret)",            "factor": 0.062,"unit": "kgCO2e/tkm"},
-        {"id": 5, "name": "Déchets générés",                   "factor": 0.44, "unit": "kgCO2e/kg"},
-        {"id": 6, "name": "Déplacements professionnels",       "factor": 0.184,"unit": "kgCO2e/km"},
-        {"id": 7, "name": "Immobilisations",                   "factor": 0.38, "unit": "kgCO2e/€"},
+        {"id": 1, "name": "Achats de biens & services"},
+        {"id": 2, "name": "Biens d'équipement"},
+        {"id": 3, "name": "Énergie (non incluse scope 1&2)"},
+        {"id": 4, "name": "Transport amont (fret)"},
+        {"id": 5, "name": "Déchets générés"},
+        {"id": 6, "name": "Déplacements professionnels"},
+        {"id": 7, "name": "Immobilisations"},
     ]
 
 

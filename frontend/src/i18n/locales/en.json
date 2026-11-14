@@ -14725,7 +14725,11 @@
     "thCategory": "Category",
     "thEntries": "Entries",
     "top10Title": "Top 10 by carbon impact",
-    "uncheckHint": "Uncheck categories to exclude from import"
+    "uncheckHint": "Uncheck categories to exclude from import",
+    "notConvertedTitle": "Expenses not converted into CO2e",
+    "notConvertedHint": "Only expenses covered by a published ADEME monetary ratio are estimated. For the items below, enter your physical data: the estimate would be too imprecise.",
+    "ratioSource": "Ratios used",
+    "labelScope3Partial": "Estimated Scope 3 (converted items)"
   },
   "integ": {
     "active": "Active",
@@ -15998,7 +16002,10 @@
     "errorRow": "Row {{row}}",
     "errorsMore": "… and {{n}} more.",
     "open": "Open: {{label}}",
-    "again": "Import another file"
+    "again": "Import another file",
+    "fecExplain3": "Service expenses (insurance, fees, maintenance, advertising, telecoms, business trips) are converted into emissions with the ADEME Base Carbone monetary ratios: an order of magnitude, with 80% uncertainty. Energy, materials and transport purchases are not converted: they will be listed so you can enter physical data.",
+    "notConvertedTitle": "Expenses not converted into CO2e",
+    "notConvertedHint": "No published ratio represents these items correctly: enter your physical data."
   },
   "myd": {
     "verifiedSolo": "Entry verified (you are the only user on this account).",
