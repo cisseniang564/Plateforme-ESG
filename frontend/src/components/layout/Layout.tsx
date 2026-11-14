@@ -143,8 +143,7 @@ export default function Layout() {
           <footer className="flex-shrink-0 border-t border-gray-100 bg-white px-6 py-2">
             <div className="flex items-center justify-between text-[11px] text-gray-400 max-w-[1600px] mx-auto">
               <div className="flex items-center gap-1.5">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                <span className="text-gray-400">Tous les services opérationnels</span>
+                <Link to="/status" className="hover:text-gray-600 transition-colors">État des services</Link>
               </div>
               <div className="hidden sm:flex gap-4">
                 <Link to="/privacy-policy"   className="hover:text-gray-600 transition-colors">Confidentialité</Link>
