@@ -86,40 +86,6 @@ function randomHex(len: number): string {
     .slice(0, len);
 }
 
-function randomBetween(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function buildDemoSurvey(): Survey {
-  const demoTopics = ['E1', 'E2', 'S1', 'G1'];
-  const responses: SurveyResponse[] = ['Alice Martin', 'Bruno Silva', 'Claire Dupont'].map(
-    (name, i) => ({
-      id: `resp-${i}`,
-      stakeholder_name: name,
-      stakeholder_category: (['employee', 'investor', 'client'] as const)[i],
-      submitted_at: new Date(Date.now() - i * 86400000).toISOString(),
-      ratings: Object.fromEntries(
-        demoTopics.map((t) => [t, { impact: randomBetween(2, 5), financial: randomBetween(2, 5) }])
-      ),
-    })
-  );
-  return {
-    id: 'demo-1',
-    name: 'Consultation parties prenantes 2025',
-    description: 'Sondage annuel de double matérialité pour le rapport CSRD.',
-    topics: demoTopics,
-    stakeholders: [
-      { id: 'sh-1', name: 'Alice Martin', email: 'alice@example.com', organization: 'Interne', category: 'employee' },
-      { id: 'sh-2', name: 'Bruno Silva', email: 'bruno@fund.io', organization: 'GreenFund', category: 'investor' },
-      { id: 'sh-3', name: 'Claire Dupont', email: 'claire@client.fr', organization: 'ClientCo', category: 'client' },
-    ],
-    status: 'active',
-    created_at: new Date(Date.now() - 7 * 86400000).toISOString(),
-    responses,
-    token: randomHex(16),
-  };
-}
-
 function loadFromStorage(): Survey[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -807,16 +773,8 @@ export default function StakeholderSurveys() {
     initialized.current = true;
 
     const stored = loadFromStorage();
-    if (stored.length === 0) {
-      const demo = buildDemoSurvey();
-      const initial = [demo];
-      setSurveys(initial);
-      saveToStorage(initial);
-      setSelectedSurveyId(demo.id);
-    } else {
-      setSurveys(stored);
-      setSelectedSurveyId(stored[0]?.id ?? null);
-    }
+    setSurveys(stored);
+    setSelectedSurveyId(stored[0]?.id ?? null);
 
     // Try API merge — new API returns {items: [...], count: N}
     api.get<{ items: any[]; count: number } | any[]>('/stakeholder-surveys')
