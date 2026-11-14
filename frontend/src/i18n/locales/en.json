@@ -741,7 +741,7 @@
     "emptyCatalogue": "Your ESG catalogue is empty. Initialize it with standard indicators (ESRS, GRI, CSRD).",
     "initCatalogue": "Initialize ESG Catalogue",
     "initializing": "Initializing...",
-    "initNote": "14 standard indicators (ENV, SOC, GOV) will be created automatically.",
+    "initNote": "The standard indicators (ENV, SOC, GOV) suggested for your profile will be added. Your organisation name is not changed.",
     "errorLoading": "Error loading indicators",
     "initSuccess": "Indicator catalogue initialized!",
     "initError": "Error during initialization",
@@ -834,7 +834,8 @@
     "esrsSocDesc": "S1→S4: Own workforce, Value chain, Affected communities, Consumers",
     "esrsGov": "Governance ESRS",
     "esrsGovDesc": "G1: Business conduct, Anti-corruption, Transparency",
-    "exportCsv": "Export CSV"
+    "exportCsv": "Export CSV",
+    "initSuccessCount": "{{count}} indicator(s) added"
   },
   "upload": {
     "title": "Upload ESG Data",
