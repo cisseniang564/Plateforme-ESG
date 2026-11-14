@@ -37,7 +37,7 @@ from app.dependencies import get_current_user
 from app.models.user import User
 from app.models.organization import Organization
 from app.services.fec_parser import parse_fec
-from app.services.pcg_emission_mapper import aggregate_by_category
+from app.services.pcg_emission_mapper import RATIO_SOURCE, aggregate_by_category, unconverted_spend
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/carbon/fec-wizard", tags=["FEC Wizard"])
@@ -213,6 +213,9 @@ async def fec_preview(
             }
             for g in env_groups
         ],
+        # Achats sans ratio publié adapté : non convertis, à saisir en données physiques.
+        "not_converted": unconverted_spend(entries),
+        "ratio_source": RATIO_SOURCE,
         "all_other_categories": [
             {
                 "category": g["category"],
@@ -323,7 +326,8 @@ async def fec_commit(
 
         # 1. DataEntry
         notes = (
-            f"Import FEC — {g.get('entry_count', 0)} écritures · {amount_eur:,.0f} €".replace(",", " ")
+            f"Import FEC — {g.get('entry_count', 0)} écritures · {amount_eur:,.0f} € HT".replace(",", " ")
+            + (f" · {g['note']}" if g.get("note") else "")
         )
         de = DataEntry(
             tenant_id=current_user.tenant_id,
@@ -342,7 +346,8 @@ async def fec_commit(
             quality_flags={
                 "estimated": True,
                 "requires_review": True,
-                "method": "FEC × ADEME PCG",
+                "method": "Ratio monétaire ADEME appliqué au montant comptable",
+                "ratio_source": RATIO_SOURCE,
                 "entry_count": g.get("entry_count", 0),
                 "amount_eur": amount_eur,
             },

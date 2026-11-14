@@ -83,7 +83,7 @@ export const collecter: DocArticle[] = [
     summary: 'Transformer votre Fichier des Écritures Comptables en émissions Scope 3 estimées.',
     routes: [{ label: 'Assistant FEC', to: '/app/carbon/fec-wizard' }],
     feature: 'fec_import',
-    about: 'Vous déposez le FEC exporté de votre logiciel comptable (Sage, Cegid, Pennylane…) ; la plateforme classe vos dépenses par poste et estime les émissions Scope 3 avec les facteurs ADEME. Les valeurs obtenues sont des estimations que vous pouvez corriger.',
+    about: 'Vous déposez le FEC exporté de votre logiciel comptable (Sage, Cegid, Pennylane…) ; la plateforme classe vos dépenses par poste et estime les émissions Scope 3 des seules dépenses de services (assurances, honoraires, maintenance, télécoms, missions…) avec les ratios monétaires ADEME, incertains à 80 %. Les achats d\'énergie, de matières et de transport ne sont pas convertis : saisissez vos données physiques.',
     shows: [
       'Un assistant en 3 étapes : Téléverser, Vérifier, Confirmer.',
       'Format attendu : fichier .txt (FEC officiel) ou .csv ; un fichier de plus de 30 Mo doit être découpé par exercice fiscal.',

@@ -30,6 +30,7 @@ interface ImportResult {
   target?: string;
   fec?: boolean;
   scores_recalculated?: number;
+  not_converted?: { account: string; label: string; amount_eur: number; advice: string }[];
 }
 interface Organization { id: string; name: string }
 
@@ -169,7 +170,7 @@ export default function ImportCSV() {
       const { data } = await api.post('/connectors/sage-cegid/sync', body, { headers: { 'Content-Type': 'multipart/form-data' } });
       setResult({
         imported: data.entries_created ?? 0,
-        errors: 0, error_details: [], fec: true,
+        errors: 0, error_details: [], fec: true, not_converted: data.not_converted ?? [],
       });
       setStep(3);
     } catch (e) {
@@ -260,7 +261,7 @@ export default function ImportCSV() {
                 {isFec ? (
                   <div className="space-y-4">
                     <p className="text-sm text-gray-600">
-                      {t('imp.fecExplain2', "Les écritures de charges sont regroupées par catégorie de dépense et par mois, puis converties en émissions à l'aide de ratios monétaires. C'est un ordre de grandeur : une saisie est créée par catégorie, à remplacer dès que possible par vos données physiques (kWh, litres, km).")}
+                      {t('imp.fecExplain3', "Les dépenses de services (assurances, honoraires, entretien, publicité, télécoms, missions) sont converties en émissions avec les ratios monétaires de la Base Carbone ADEME : un ordre de grandeur, incertain à 80 %. Les achats d'énergie, de matières et de transport ne sont pas convertis : ils vous seront listés pour une saisie en données physiques.")}
                     </p>
                     <div className="max-w-sm">
                       <label htmlFor="imp-fec-org" className="mb-1 block text-sm font-medium text-gray-700">{t('imp.orgOptional', 'Organisation (facultatif)')}</label>
@@ -463,6 +464,18 @@ export default function ImportCSV() {
                 {result.error_details!.slice(0, 8).map((e, i) => <li key={i}>{t('imp.errorRow', 'Ligne {{row}}', { row: e.row })} — {e.error}</li>)}
               </ul>
               {result.error_details!.length > 8 && <p className="mt-2 text-xs">{t('imp.errorsMore', '… et {{n}} autre(s).', { n: result.errors - 8 })}</p>}
+            </div>
+          )}
+
+          {(result.not_converted?.length ?? 0) > 0 && (
+            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+              <p className="font-medium">{t('imp.notConvertedTitle', 'Dépenses non converties en CO2e')}</p>
+              <p className="mt-1 text-xs">{t('imp.notConvertedHint', 'Aucun ratio publié ne représente correctement ces postes : saisissez vos données physiques.')}</p>
+              <ul className="mt-2 space-y-1 text-xs">
+                {result.not_converted!.map(n => (
+                  <li key={n.account}><span className="font-medium">{n.label}</span> — {n.amount_eur.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} € · {n.advice}</li>
+                ))}
+              </ul>
             </div>
           )}
 

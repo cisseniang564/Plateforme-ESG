@@ -53,6 +53,8 @@ interface Preview {
   top_10_env: EnvCategory[];
   all_env_categories: EnvCategory[];
   all_other_categories: OtherCategory[];
+  not_converted?: { account: string; label: string; amount_eur: number; advice: string }[];
+  ratio_source?: string;
 }
 
 interface CommitResult {
@@ -395,7 +397,7 @@ export default function FECWizard() {
           />
           <Stat
             n={`${preview.stats.total_co2e_t.toLocaleString(numLocale())} tCO2e`}
-            label={t('fec.labelScope3', 'Scope 3 estimé')}
+            label={t('fec.labelScope3Partial', 'Scope 3 estimé (postes convertis)')}
             color="emerald"
           />
           <Stat
@@ -409,6 +411,22 @@ export default function FECWizard() {
             color="amber"
           />
         </div>
+
+        {/* Dépenses laissées sans estimation : aucun ratio publié ne les représente correctement */}
+        {(preview.not_converted?.length ?? 0) > 0 && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <p className="font-semibold">{t('fec.notConvertedTitle', 'Dépenses non converties en CO2e')}</p>
+            <p className="mt-1 text-xs">{t('fec.notConvertedHint', "Seules les dépenses couvertes par un ratio monétaire ADEME publié sont estimées. Pour les postes ci-dessous, saisissez vos données physiques : l'estimation serait trop imprécise.")}</p>
+            <ul className="mt-3 space-y-1.5 text-xs">
+              {preview.not_converted!.map(n => (
+                <li key={n.account}>
+                  <span className="font-medium">{n.label}</span> — {n.amount_eur.toLocaleString(numLocale(), { maximumFractionDigits: 0 })} € · {n.advice}
+                </li>
+              ))}
+            </ul>
+            {preview.ratio_source && <p className="mt-3 text-[11px] opacity-80">{t('fec.ratioSource', 'Ratios utilisés')} : {preview.ratio_source}</p>}
+          </div>
+        )}
 
         {/* Top 10 by impact */}
         <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden">
