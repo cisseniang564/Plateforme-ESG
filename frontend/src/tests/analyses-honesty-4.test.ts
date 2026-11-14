@@ -18,3 +18,11 @@ describe('Enquêtes parties prenantes — pas de sondage de démo', () => {
     expect(surveys).not.toContain('@example.com');
   });
 });
+
+import ixbrl from '@/pages/Compliance/IXBRLTagging.tsx?raw';
+describe('iXBRL — texte de rapport', () => {
+  it("n'est pas pré-rempli avec un texte d'exemple", () => {
+    expect(ixbrl).toContain("saved?.reportText ?? ''");
+    expect(ixbrl).not.toContain('saved?.reportText ?? DEMO_TEXT');
+  });
+});

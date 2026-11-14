@@ -200,7 +200,7 @@ export default function IXBRLTagging() {
   const [search, setSearch] = useState('');
   const [nsFilter, setNsFilter] = useState<string>('all');
   const [reqFilter, setReqFilter] = useState<'all' | 'required' | 'optional'>('all');
-  const [reportText, setReportText] = useState<string>(saved?.reportText ?? DEMO_TEXT);
+  const [reportText, setReportText] = useState<string>(saved?.reportText ?? '');
   const [tags, setTags] = useState<TaggedSegment[]>(saved?.tags ?? []);
   const [selectedConcept, setSelectedConcept] = useState<XBRLConcept | null>(null);
   const [tagValue, setTagValue] = useState('');
@@ -720,10 +720,10 @@ ${taggedText}
                     {t('compliance.ixbrl.tagging.reportTextTitle', 'Texte du rapport CSRD')}
                   </h3>
                   <button
-                    onClick={() => { setReportText(DEMO_TEXT); persist(tags, DEMO_TEXT); toast.success(t('compliance.ixbrl.toast.demoLoaded', 'Texte démo chargé.')); }}
+                    onClick={() => { setReportText(DEMO_TEXT); persist(tags, DEMO_TEXT); toast.success(t('compliance.ixbrl.toast.demoLoaded', 'Texte d’exemple fictif chargé — à remplacer par votre rapport.')); }}
                     className="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1"
                   >
-                    <RefreshCw className="h-3 w-3" /> {t('compliance.ixbrl.tagging.demo', 'Démo')}
+                    <RefreshCw className="h-3 w-3" /> {t('compliance.ixbrl.tagging.demo', 'Charger un exemple fictif')}
                   </button>
                 </div>
                 <textarea
