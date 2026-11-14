@@ -1,7 +1,8 @@
 import { Button, ConfirmDialog, Modal } from '@/components/common';
+import CollectHeader, { btnPrimary } from './CollectHeader';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  buildListParams, displayName, formatValue, looksLikeYear, pillarCompleteness, totalPages, verifiedRate,
+  buildListParams, displayName, errorDetail, formatValue, sourceLabel, looksLikeYear, pillarCompleteness, totalPages, verifiedRate,
   type PillarCompleteness,
   type PillarFilter, type SortKey, type SortOrder, type VerifFilter,
 } from './dataEntryHelpers';
@@ -9,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Database, Plus, Save, Leaf, Users, Scale, AlertCircle, Trash2, Download,
   ChevronRight, ChevronLeft, RefreshCw, Search, Lock, ArrowUp, ArrowDown, ArrowUpDown,
-  Upload, AlertTriangle,
+  AlertTriangle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -58,7 +59,6 @@ function getPillarCfg(pillar: string): PillarCfg {
 }
 
 const PAGE_SIZES = [25, 50, 100];
-const SOURCE_LABEL: Record<string, string> = { manual: 'Saisie', csv_import: 'Import CSV', api: 'API', connector: 'Connecteur' };
 
 // ─── Sub-components ────────────────────────────────────────────────────────
 function PillarBadge({ pillar }: { pillar: string }) {
@@ -272,7 +272,7 @@ export default function DataEntryForm() {
     try {
       await api.post('/data-entry/', {
         ...formData,
-        value_numeric: formData.value_numeric ? parseFloat(formData.value_numeric as any) : null,
+        value_numeric: formData.value_numeric !== '' ? parseFloat(formData.value_numeric as any) : null,
         organization_id: formData.organization_id || null,
       });
       toast.success(t('dataEntry.savedSuccess'));
@@ -281,7 +281,7 @@ export default function DataEntryForm() {
       setSortBy('created_at'); setOrder('desc'); setPage(1);
       await refreshAll();
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || t('dataEntry.saveError'));
+      toast.error(errorDetail(error, t('dataEntry.saveError')));
     } finally {
       setSubmitting(false);
     }
@@ -319,7 +319,7 @@ export default function DataEntryForm() {
       setDetail(null);
       await refreshAll();
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || t('dataEntry.saveError'));
+      toast.error(errorDetail(error, t('dataEntry.saveError')));
     } finally {
       setSaving(false);
     }
@@ -331,6 +331,7 @@ export default function DataEntryForm() {
       if (pillarFilter !== 'all') params.pillar = pillarFilter;
       if (verifFilter !== 'all') params.verification_status = verifFilter;
       if (year) params.year = year;
+      if (search.trim()) params.search = search.trim();
       const res = await api.get('/data-entry/export', { params, responseType: 'blob' });
       const url = URL.createObjectURL(res.data);
       const a = document.createElement('a'); a.href = url; a.download = 'saisies-esg.csv'; a.click();
@@ -375,25 +376,21 @@ export default function DataEntryForm() {
     <div className="space-y-5">
 
       {/* ─── En-tête ───────────────────────────────────────────────────── */}
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">{t('dataEntry.title')}</h1>
-          <p className="text-sm text-gray-500 mt-1">{t('dataEntry.subtitle')}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={refreshAll} aria-label={t('dataEntry.refresh')} title={t('dataEntry.refresh')}
-            className="p-2.5 rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-gray-900 hover:bg-gray-50">
-            <RefreshCw className={`h-4 w-4 ${listLoading ? 'animate-spin' : ''}`} />
-          </button>
-          <Link to="/app/import-csv" className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-            <Upload className="h-4 w-4" aria-hidden="true" />Importer un CSV
-          </Link>
-          <button type="button" onClick={() => { setShowModal(true); setStep(1); }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-sm font-semibold text-white hover:bg-emerald-700 shadow-sm">
-            <Plus className="h-4 w-4" aria-hidden="true" />{t('dataEntry.newEntry')}
-          </button>
-        </div>
-      </header>
+      <CollectHeader
+        title={t('dataEntry.title')}
+        subtitle={t('dataEntry.subtitle')}
+        actions={
+          <>
+            <button type="button" onClick={refreshAll} aria-label={t('dataEntry.refresh')} title={t('dataEntry.refresh')}
+              className="p-2.5 rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-gray-900 hover:bg-gray-50">
+              <RefreshCw className={`h-4 w-4 ${listLoading ? 'animate-spin' : ''}`} />
+            </button>
+            <button type="button" onClick={() => { setShowModal(true); setStep(1); }} className={btnPrimary}>
+              <Plus className="h-4 w-4" aria-hidden="true" />{t('dataEntry.newEntry')}
+            </button>
+          </>
+        }
+      />
 
       {/* ─── KPI (calculés sur toutes les saisies, pas sur la page affichée) ─── */}
       <section aria-label="Indicateurs clés" className="grid grid-cols-2 lg:grid-cols-5 gap-3">
@@ -533,7 +530,7 @@ export default function DataEntryForm() {
                         </span>
                       </td>
                       <td className="px-3 py-2.5 text-xs text-gray-500 whitespace-nowrap">
-                        {SOURCE_LABEL[entry.collection_method ?? ''] ?? entry.collection_method ?? '—'}
+                        {sourceLabel(entry.collection_method)}
                         {entry.data_source && <span className="block text-gray-400 max-w-[10rem] truncate">{entry.data_source}</span>}
                       </td>
                       <td className="px-3 py-2.5"><StatusBadge status={entry.verification_status} /></td>

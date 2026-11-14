@@ -57,17 +57,17 @@ export const collecter: DocArticle[] = [
     ],
     about: 'Deux pages permettent d\'importer un fichier. « Import CSV/Excel » analyse le fichier, détecte les colonnes, vous laisse corriger l\'association avec les champs ESG, puis importe. La page « Téléverser » est une version plus simple qui contrôle les lignes et affiche un aperçu avant l\'import.',
     shows: [
-      'Formats acceptés : CSV, Excel, TXT et FEC, 10 Mo maximum.',
-      'Un modèle de fichier CSV à télécharger et la liste des colonnes attendues.',
-      'Après analyse : les colonnes détectées automatiquement, les colonnes requises manquantes et un aperçu des premières lignes.',
-      'Une configuration manuelle pour associer vos colonnes aux champs ESG quand la détection ne suffit pas.',
-      'Un récapitulatif après import : lignes totales, valides, invalides et qualité.',
+      'Formats acceptés : CSV, Excel (.xlsx, .xls) et FEC (.txt), 10 Mo maximum.',
+      'Un modèle de fichier CSV à télécharger et la liste des fichiers reconnus (indicateurs, matérialité, risques, fournisseurs).',
+      'Après analyse : la destination du fichier, la correspondance des colonnes proposée et un aperçu des premières lignes.',
+      'Une correspondance des colonnes modifiable quand la détection ne suffit pas.',
+      'Un récapitulatif après import : lignes importées, lignes en erreur et détail des erreurs.',
     ],
     steps: [
       { title: 'Choisir le fichier', text: 'Déposez-le dans la zone prévue ou cliquez pour le parcourir.' },
       { title: 'Vérifier l\'analyse', text: 'Contrôlez les colonnes détectées et l\'organisation concernée ; corrigez-les manuellement si besoin.' },
       { title: 'Importer', text: 'Lancez l\'import puis consultez le récapitulatif.' },
-      { title: 'Contrôler les données', text: 'Ouvrez « Voir mes données » pour vérifier ce qui a été créé.' },
+      { title: 'Contrôler les données', text: 'Ouvrez la destination indiquée (par exemple « Mes données ») pour vérifier ce qui a été créé.' },
     ],
     tips: [
       'Si le fichier est un FEC (comptabilité), la page vous propose d\'utiliser l\'import FEC dédié, plus adapté.',
@@ -192,13 +192,13 @@ export const collecter: DocArticle[] = [
     shows: [
       'Des compteurs : total des entrées, entrées vérifiées, taux de vérification.',
       'Des filtres : nom de métrique, pilier, source (saisie manuelle, import, Scope 3…), statut. Un bouton réinitialise les filtres.',
-      'Le statut de chaque donnée : Vérifié, En attente ou Rejeté, avec la mention Auto IA ou Manuel selon l\'origine.',
+      'Le statut de chaque donnée (À vérifier, Signalée, Vérifiée, Rejetée) et son origine (saisie, import, calcul, estimation sectorielle…).',
       'Les actions : vérifier ✓, rejeter ✕, supprimer, exporter.',
     ],
     steps: [
       { title: 'Filtrer', text: 'Réduisez la liste par pilier, source ou statut.' },
-      { title: 'Vérifier', text: 'Validez ou rejetez chaque donnée en attente. En mode mono-utilisateur, vous pouvez la vérifier vous-même.' },
-      { title: 'Exporter', text: 'Téléchargez la liste filtrée pour l\'analyser ailleurs.' },
+      { title: 'Vérifier', text: 'Validez ou rejetez chaque donnée en attente (rôle manager ou administrateur) ; un rejet demande un motif. Si vous êtes seul sur le compte, vous pouvez vérifier vos propres saisies.' },
+      { title: 'Exporter', text: 'Téléchargez en Excel toutes les données correspondant aux filtres affichés.' },
     ],
     tips: [
       'La suppression est définitive pour la donnée concernée.',

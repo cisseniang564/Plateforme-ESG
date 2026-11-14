@@ -7,7 +7,8 @@ from uuid import UUID
 from pydantic import BaseModel
 import hashlib
 
-from app.dependencies import get_db, get_current_user
+from app.core.permissions import Roles
+from app.dependencies import get_db, get_current_user, require_any_role
 from app.models.data_entry import DataEntry
 from app.models.audit_log import AuditLog
 from app.models.user import User
@@ -97,16 +98,12 @@ def _sign_and_verify_entry(
         "signer_email": current_user.email,
         "signed_at": now.isoformat(),
         "ip":        client_ip,
-        "standard":  "ISAE 3000 · CSRD Art. 29a",
         "solo_mode": solo_mode,
     }
     if solo_mode:
         e_signature["note"] = (
-            "Validation effectuée en mode mono-utilisateur (TPE) : aucun "
-            "second collaborateur actif n'était disponible sur ce compte. "
-            "Conformément aux modalités allégées prévues pour les petites "
-            "entités, l'auteur de la saisie a procédé lui-même à la "
-            "vérification."
+            "Validation en mode mono-utilisateur : aucun autre utilisateur actif "
+            "sur ce compte, l'auteur de la saisie l'a vérifiée lui-même."
         )
     flags["e_signature"] = e_signature
     entry.quality_flags = flags
@@ -121,7 +118,7 @@ async def validate_entry(
     validation: ValidationAction,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_any_role(*Roles.ENTRY_OR_ABOVE)),
 ):
     """Validate, reject, or flag a data entry"""
     
@@ -136,6 +133,16 @@ async def validate_entry(
 
     if not entry:
         raise HTTPException(status_code=404, detail="Entry not found")
+
+    # Vérifier ou rejeter est une décision de contrôle : réservée aux managers
+    # et au-dessus. Signaler un doute (« flag ») reste ouvert aux contributeurs.
+    if validation.action in ("verify", "reject"):
+        from app.dependencies import get_user_role_names
+        role_names = await get_user_role_names(current_user, db)
+        if not role_names.intersection(Roles.MANAGER_OR_ABOVE):
+            raise HTTPException(status_code=403, detail="Seul un manager ou un administrateur peut vérifier ou rejeter une saisie.")
+    if validation.action == "reject" and len((validation.reason or "").strip()) < 3:
+        raise HTTPException(status_code=400, detail="Indiquez le motif du rejet.")
 
     # ── Separation of duties ────────────────────────────────────────────
     # The user who created an entry should not self-verify or self-reject it
@@ -170,8 +177,7 @@ async def validate_entry(
         raise HTTPException(
             status_code=403,
             detail=(
-                "Cette entrée est déjà vérifiée et verrouillée. "
-                "Pour la modifier, un administrateur doit révoquer la vérification."
+                "Cette entrée est déjà vérifiée et verrouillée."
             ),
         )
 
@@ -236,7 +242,7 @@ async def validate_entry(
 async def batch_validate(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_any_role(*Roles.MANAGER_OR_ABOVE)),
 ):
     """Vérifie en un clic toutes les entrées « en attente » du tenant.
 
