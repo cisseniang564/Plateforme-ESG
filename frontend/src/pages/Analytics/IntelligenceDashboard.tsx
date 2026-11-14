@@ -94,6 +94,7 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  source?: 'ai' | 'kb';
 }
 
 // ── ML / AI types ─────────────────────────────────────────────────────────────
@@ -183,24 +184,20 @@ const CHAT_UNAVAILABLE = "L'assistant est momentanément indisponible. Réessaye
 
 // ─── Reduction levers data ────────────────────────────────────────────────────
 
-const REDUCTION_LEVERS = [
-  { icon: Flame, category: 'Énergie', label: 'Passage énergies renouvelables', impact: 85, effort: 'Élevé', saving: '-45% Scope 2', color: 'orange', timeframe: '12-24 mois', roi: '4-7 ans' },
-  { icon: Leaf, category: 'Bâtiment', label: 'Isolation & optimisation HVAC', impact: 72, effort: 'Moyen', saving: '-20% conso bâtiment', color: 'green', timeframe: '6-12 mois', roi: '3-5 ans' },
-  { icon: Truck, category: 'Logistique', label: 'Optimisation des tournées', impact: 65, effort: 'Faible', saving: '-18% Scope 3 cat.4', color: 'blue', timeframe: '1-3 mois', roi: '< 1 an' },
-  { icon: Users, category: 'Mobilité', label: 'Politique télétravail 2j/sem', saving: '-30% déplacements', impact: 60, effort: 'Faible', color: 'purple', timeframe: '1 mois', roi: 'Immédiat' },
-  { icon: Package, category: 'Achats', label: 'Sourcing fournisseurs locaux', impact: 55, effort: 'Moyen', saving: '-25% Scope 3 cat.1', color: 'teal', timeframe: '6-18 mois', roi: 'Variable' },
-  { icon: Globe, category: 'Déplacements', label: 'Politique voyages d\'affaires', impact: 48, effort: 'Faible', saving: '-35% déplacements pro', color: 'indigo', timeframe: '1 mois', roi: 'Immédiat' },
-  { icon: Building2, category: 'Bâtiment', label: 'Panneaux solaires sur site', impact: 78, effort: 'Élevé', saving: '-40 à -80% Scope 2', color: 'yellow', timeframe: '12-18 mois', roi: '5-8 ans' },
-  { icon: Factory, category: 'Production', label: 'Efficience process industriels', impact: 70, effort: 'Élevé', saving: '-15% Scope 1', color: 'red', timeframe: '12-36 mois', roi: '3-6 ans' },
+// Pistes génériques de décarbonation, NON chiffrées : ni gain, ni délai, ni ROI. Les ordres de
+// grandeur dépendent de votre situation ; seule la priorité est déduite de votre bilan réel.
+type LeverScope = 'scope1' | 'scope2' | 'scope3';
+const REDUCTION_LEVERS: { icon: any; category: string; label: string; effort: string; color: string; scope: LeverScope }[] = [
+  { icon: Flame, category: 'Énergie', label: 'Passage aux énergies renouvelables', effort: 'Élevé', color: 'orange', scope: 'scope2' },
+  { icon: Leaf, category: 'Bâtiment', label: 'Isolation & optimisation HVAC', effort: 'Moyen', color: 'green', scope: 'scope2' },
+  { icon: Truck, category: 'Logistique', label: 'Optimisation des tournées', effort: 'Faible', color: 'blue', scope: 'scope3' },
+  { icon: Users, category: 'Mobilité', label: 'Politique de télétravail', effort: 'Faible', color: 'purple', scope: 'scope3' },
+  { icon: Package, category: 'Achats', label: 'Sourcing de fournisseurs plus proches', effort: 'Moyen', color: 'teal', scope: 'scope3' },
+  { icon: Globe, category: 'Déplacements', label: "Politique de voyages d'affaires", effort: 'Faible', color: 'indigo', scope: 'scope3' },
+  { icon: Building2, category: 'Bâtiment', label: 'Production solaire sur site', effort: 'Élevé', color: 'yellow', scope: 'scope2' },
+  { icon: Factory, category: 'Production', label: 'Efficience des process industriels', effort: 'Élevé', color: 'red', scope: 'scope1' },
 ];
 
-const sectorBenchmarks_BASE = [
-  { sector: 'Industrie', score: 42, color: '#ef4444' },
-  { sector: 'Services', score: 61, color: '#f59e0b' },
-  { sector: 'Distribution', score: 54, color: '#f59e0b' },
-  { sector: 'Tech', score: 73, color: '#22c55e' },
-  { sector: 'Finance', score: 68, color: '#22c55e' },
-];
 
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -247,13 +244,13 @@ export default function IntelligenceDashboard() {
   // Reduction state
   const [selectedSector, setSelectedSector] = useState('Services');
   const [myScore, setMyScore] = useState<number | null>(null);
-  const [sectorBenchmarksLive, setSectorBenchmarksLive] = useState<typeof sectorBenchmarks_BASE | null>(null);
-  const [benchmarkIsReference, setBenchmarkIsReference] = useState(true);
+  const [sectorRef, setSectorRef] = useState<{ source: string; cohort: number | null; median: number; p75: number; top10: number } | null>(null);
   // Missing data state (real indicators from DB)
   const [missingDataItems, setMissingDataItems] = useState<any[]>([]);
   const [missingDataIsReal, setMissingDataIsReal] = useState(false);
 
-  const [dynamicLevers, setDynamicLevers] = useState(REDUCTION_LEVERS);
+  const [priorityScope, setPriorityScope] = useState<LeverScope | null>(null);
+  const dynamicLevers = REDUCTION_LEVERS;
 
   // ── Header data (lightweight, fetched immediately) ───────────────────────
   // Only 2 fast endpoints. Page chrome shows instantly while these load.
@@ -268,17 +265,9 @@ export default function IntelligenceDashboard() {
         const scope2 = data?.scope2?.total_tco2e ?? data?.scope2_total ?? 0;
         const scope3 = data?.scope3?.total_tco2e ?? data?.scope3_total ?? 0;
         const total = scope1 + scope2 + scope3 || 1;
-        const scope2Pct = scope2 / total;
-        const scope3Pct = scope3 / total;
-        const scope1Pct = scope1 / total;
-        setDynamicLevers(REDUCTION_LEVERS.map(lever => {
-          let boost = 0;
-          if (lever.category === 'Énergie' && scope2Pct > 0.3) boost = 10;
-          else if (lever.category === 'Logistique' && scope3Pct > 0.4) boost = 8;
-          else if (lever.category === 'Production' && scope1Pct > 0.3) boost = 10;
-          else if (lever.category === 'Achats' && scope3Pct > 0.5) boost = 8;
-          return boost > 0 ? { ...lever, impact: Math.min(100, lever.impact + boost), saving: lever.saving + ' ⭐' } : lever;
-        }));
+        const shares: [LeverScope, number][] = [['scope1', scope1 / total], ['scope2', scope2 / total], ['scope3', scope3 / total]];
+        const top = shares.sort((x, y) => y[1] - x[1])[0];
+        setPriorityScope(scope1 + scope2 + scope3 > 0 ? top[0] : null);
       })
       .catch(() => {});
   }, []);
@@ -294,24 +283,14 @@ export default function IntelligenceDashboard() {
     const sectorKey = sectorMap[selectedSector] ?? selectedSector.toLowerCase();
     cachedGet<any>(`/benchmarks/sector/${sectorKey}`)
       .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          const mapped = data.map((b: any) => ({
-            sector: b.sector_name ?? b.sector ?? b.name,
-            score: Math.round(b.overall_score ?? b.score ?? 0),
-            color: (b.overall_score ?? b.score ?? 0) >= 70 ? '#22c55e' : (b.overall_score ?? b.score ?? 0) >= 50 ? '#f59e0b' : '#ef4444',
-          }));
-          setSectorBenchmarksLive([...mapped, { sector: 'Votre score', score: myScore ?? 0, color: '#7c3aed' }]);
-          setBenchmarkIsReference(false);
+        if (data?.source === 'cross_tenant' && data.overall) {
+          setSectorRef({ source: data.source, cohort: data.cohort_size ?? null, median: Math.round(data.overall.median), p75: Math.round(data.overall.p75), top10: Math.round(data.overall.top10) });
         } else {
-          setSectorBenchmarksLive(null);
-          setBenchmarkIsReference(true);
+          setSectorRef(null);
         }
       })
-      .catch(() => {
-        setSectorBenchmarksLive(null);
-        setBenchmarkIsReference(true);
-      });
-  }, [selectedSector, myScore]);
+      .catch(() => setSectorRef(null));
+  }, [selectedSector]);
 
   // ── Missing data — non-blocking, runs in background ──────────────────────
   useEffect(() => {
@@ -336,10 +315,14 @@ export default function IntelligenceDashboard() {
       .catch(() => {});
   }, []);
 
-  const sectorBenchmarks = sectorBenchmarksLive ?? [
-    ...sectorBenchmarks_BASE,
-    { sector: 'Votre score', score: myScore ?? 0, color: '#7c3aed' },
-  ];
+  const sectorBenchmarks = sectorRef
+    ? [
+        { sector: 'Médiane du secteur', score: sectorRef.median, color: '#f59e0b' },
+        { sector: 'Top 25 %', score: sectorRef.p75, color: '#22c55e' },
+        { sector: 'Top 10 %', score: sectorRef.top10, color: '#22c55e' },
+        ...(myScore ? [{ sector: 'Votre score', score: myScore, color: '#7c3aed' }] : []),
+      ]
+    : [];
 
   // ── Chat init (one-time, cheap) ──────────────────────────────────────────
   useEffect(() => {
@@ -458,7 +441,7 @@ export default function IntelligenceDashboard() {
         .map(m => ({ role: m.role, content: m.content }));
       const res = await api.post('/analytics/chat', { messages: payload });
       const response: string = res.data?.response || CHAT_UNAVAILABLE;
-      setChatMessages(prev => [...prev, { role: 'assistant', content: response, timestamp: new Date() }]);
+      setChatMessages(prev => [...prev, { role: 'assistant', content: response, timestamp: new Date(), source: res.data?.source === 'ai' ? 'ai' : 'kb' }]);
     } catch {
       const response = CHAT_UNAVAILABLE;
       setChatMessages(prev => [...prev, { role: 'assistant', content: response, timestamp: new Date() }]);
@@ -1355,6 +1338,7 @@ export default function IntelligenceDashboard() {
                     }
                     <p className={`text-xs mt-2 ${msg.role === 'user' ? 'text-violet-200' : 'text-gray-400'}`}>
                       {msg.timestamp.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                      {msg.role === 'assistant' && msg.source === 'kb' && ' · Réponse type (assistant IA non configuré)'}
                     </p>
                   </div>
                 </div>
@@ -1496,17 +1480,17 @@ export default function IntelligenceDashboard() {
                 <BarChart2 className="h-5 w-5 text-green-600" />
                 {t('ia.benchmarkTitle')}
               </h3>
-              {benchmarkIsReference && (
-                <span className="text-xs px-2.5 py-1 bg-amber-100 text-amber-700 rounded-full font-medium">
-                  Données de référence sectorielles
-                </span>
-              )}
-              {!benchmarkIsReference && (
+              {sectorRef && (
                 <span className="text-xs px-2.5 py-1 bg-green-100 text-green-700 rounded-full font-medium">
-                  ✓ Données réelles
+                  Agrégats plateforme{sectorRef.cohort ? ` · ${sectorRef.cohort} organisations` : ''}
                 </span>
               )}
             </div>
+            {!sectorRef ? (
+              <p className="py-10 text-center text-sm text-gray-500">
+                Pas encore assez d'organisations comparables dans ce secteur : aucune comparaison n'est affichée plutôt que des valeurs non vérifiables.
+              </p>
+            ) : (<>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={sectorBenchmarks} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
@@ -1526,11 +1510,12 @@ export default function IntelligenceDashboard() {
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-green-500 inline-block" />{t('ia.legendScoreGood')}</span>
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-violet-600 inline-block" />{t('ia.legendYourScore')}</span>
             </div>
+            </>)}
           </div>
 
           {/* Leviers */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[...dynamicLevers].sort((a, b) => b.impact - a.impact).map((lever, i) => {
+            {[...dynamicLevers].sort((a, b) => Number(b.scope === priorityScope) - Number(a.scope === priorityScope)).map((lever, i) => {
               const Icon = lever.icon;
               const effortLabel = lever.effort === 'Faible' ? t('ia.effortLow') : lever.effort === 'Moyen' ? t('ia.effortMedium') : t('ia.effortHigh');
               const effortColor = lever.effort === 'Faible' ? 'bg-green-100 text-green-700' : lever.effort === 'Moyen' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700';
@@ -1545,29 +1530,15 @@ export default function IntelligenceDashboard() {
                         <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{lever.category}</span>
                         <p className="font-semibold text-gray-900 text-sm">{lever.label}</p>
                       </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-lg font-bold text-green-700">{lever.saving}</p>
-                      </div>
-                    </div>
-
-                    {/* Impact bar */}
-                    <div className="mb-3">
-                      <div className="flex justify-between text-xs text-gray-500 mb-1">
-                        <span>{t('ia.impactLabel')}</span>
-                        <span className="font-semibold text-gray-700">{lever.impact}/100</span>
-                      </div>
-                      <div className="h-2 bg-gray-100 rounded-full">
-                        <div
-                          className="h-2 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all"
-                          style={{ width: `${lever.impact}%` }}
-                        />
-                      </div>
+                      {priorityScope === lever.scope && (
+                        <span className="flex-shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
+                          Prioritaire d'après votre bilan
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex flex-wrap gap-2 text-xs">
                       <span className={`px-2 py-0.5 rounded-full font-medium ${effortColor}`}>{effortLabel}</span>
-                      <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">⏱ {lever.timeframe}</span>
-                      <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">ROI {lever.roi}</span>
                     </div>
                   </div>
                 </div>
@@ -1575,15 +1546,10 @@ export default function IntelligenceDashboard() {
             })}
           </div>
 
-          {/* Export */}
-          <div className="flex justify-end">
-            <button
-              onClick={() => { toast.success('Plan de décarbonation exporté !'); }}
-              className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition text-sm"
-            >
-              <Download className="h-4 w-4" /> {t('decarbonation.exportPlan')}
-            </button>
-          </div>
+          <p className="text-xs text-gray-500">
+            Pistes génériques, non chiffrées : les gains, délais et retours sur investissement dépendent de votre situation.
+            Chiffrez vos actions dans le plan de décarbonation.
+          </p>
         </div>
       )}
     </div>

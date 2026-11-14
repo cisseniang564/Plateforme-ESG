@@ -36,8 +36,9 @@ describe('recommandations : plus de promesse de score', () => {
     expect(aiInsights).not.toMatch(/pourrait atteindre/);
     expect(aiInsights).not.toMatch(/Math\.min\(Math\.round\(data\.scores\.overall\)/);
   });
-  it('les gains par action sont étiquetés « indicatif »', () => {
-    expect(aiInsights).toContain("'ai.gainIndicative'");
-    expect(aiInsights).toContain('ne sont pas calculés à partir de vos données');
+  it('aucun gain de points par action n’est affiché (valeur fixe non calculée)', () => {
+    expect(aiInsights).not.toContain('score_gain_est}');
+    expect(aiInsights).not.toContain("'ai.gainIndicative'");
+    expect(aiInsights).toContain('sans estimation de gain de points');
   });
 });

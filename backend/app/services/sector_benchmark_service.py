@@ -1,13 +1,9 @@
 """
 Production-grade sector benchmarking service.
 
-Combines two data sources:
-  1. **Real cross-tenant aggregates** — when a sector has ≥ ``MIN_COHORT_SIZE``
-     organizations contributing scores. We aggregate at the score-level only
-     (no organization IDs returned) so individual companies are never exposed.
-  2. **Public reference baselines** (``benchmark_baselines.py``) — CDP/MSCI/ADEME
-     published sector medians used as fallback for smaller cohorts and for
-     reference indicators (carbon intensity, gender pay gap, etc.).
+Source unique : agrégats réels inter-comptes (anonymisés), publiés seulement quand la
+cohorte atteint ``MIN_COHORT_SIZE`` organisations. Sinon, aucune valeur de comparaison n'est
+renvoyée (``source: "insufficient_cohort"``) : plus de référentiels « publics » inventés.
 
 Anonymization (k-anonymity):
   Real aggregates are only returned when the cohort contains at least 5
@@ -62,7 +58,7 @@ class SectorBenchmarkService:
             {
               "sector":            "tech",
               "sector_label":      "Tech / Logiciels",
-              "source":            "cross_tenant" | "public_reference",
+              "source":            "cross_tenant" | "insufficient_cohort",
               "cohort_size":       12,                    # only when source=cross_tenant
               "distinct_tenants":  4,                     # only when source=cross_tenant
               "computed_at":       "2026-05-23T08:15:00Z",
@@ -91,9 +87,7 @@ class SectorBenchmarkService:
                 "source":         "cross_tenant",
                 "computed_at":    datetime.utcnow().isoformat() + "Z",
                 "year":           year or "latest",
-                # Reference indicators always come from public baselines
-                # (we don't store per-indicator data in esg_scores).
-                "indicators":     baseline["indicators"],
+                "indicators":     {},
                 "anonymization":  {
                     "k_anonymity_threshold":     MIN_COHORT_SIZE,
                     "tenant_diversity_threshold": MIN_DISTINCT_TENANTS,
@@ -110,38 +104,30 @@ class SectorBenchmarkService:
             })
             return real
 
-        # Fallback: public reference
+        # Cohorte insuffisante : aucune valeur de comparaison n'est fabriquée.
         return {
             "sector":         sector_key,
             "sector_label":   baseline["label"],
-            "source":         "public_reference",
-            "reference_source": baseline["source"],
+            "source":         "insufficient_cohort",
+            "reference_source": None,
             "cohort_size":    None,
             "computed_at":    datetime.utcnow().isoformat() + "Z",
             "year":           year or "latest",
-            "overall":        baseline["overall"],
-            "environmental":  baseline["environmental"],
-            "social":         baseline["social"],
-            "governance":     baseline["governance"],
-            "indicators":     baseline["indicators"],
+            "overall":        None,
+            "environmental":  None,
+            "social":         None,
+            "governance":     None,
+            "indicators":     {},
             "anonymization":  {
                 "k_anonymity_threshold":     MIN_COHORT_SIZE,
                 "tenant_diversity_threshold": MIN_DISTINCT_TENANTS,
-                "data_returned":             "public_baseline",
+                "data_returned":             "none",
                 "note": (
-                    f"Cohorte cross-tenant insuffisante (< {MIN_COHORT_SIZE} orgs ou "
-                    f"< {MIN_DISTINCT_TENANTS} tenants distincts) — référentiel "
-                    f"public {baseline['source']} utilisé en remplacement."
+                    f"Pas encore assez d'organisations comparables (il en faut au moins "
+                    f"{MIN_COHORT_SIZE}, issues d'au moins {MIN_DISTINCT_TENANTS} comptes distincts) : "
+                    "aucune comparaison sectorielle n'est affichée."
                 ),
             },
-            # Backwards-compat aliases
-            "p25":   baseline["overall"]["p25"],
-            "p50":   baseline["overall"]["median"],
-            "p75":   baseline["overall"]["p75"],
-            "average": baseline["overall"]["median"],
-            "top25": baseline["overall"]["p75"],
-            "top10": baseline["overall"]["top10"],
-            "companies_count": 0,
         }
 
     async def get_company_position(
@@ -156,7 +142,7 @@ class SectorBenchmarkService:
             return None
 
         benchmarks = await self.get_sector_benchmarks(sector, year)
-        if not benchmarks:
+        if not benchmarks or not benchmarks.get("overall"):
             return None
 
         overall = benchmarks["overall"]
@@ -361,6 +347,6 @@ class SectorBenchmarkService:
 def list_available_sectors() -> List[Dict]:
     """Return all sector keys with their human labels — used by UI selectors."""
     return [
-        {"code": k, "label": v["label"], "source": v["source"]}
+        {"code": k, "label": v["label"]}
         for k, v in SECTOR_BASELINES.items() if k != "default"
     ]

@@ -151,7 +151,7 @@ Tes domaines d'expertise :
 Règles :
 1. Réponds en français, de façon concise et actionnable (max 200 mots).
 2. Formate ta réponse avec du markdown simple (**, -, →).
-3. Cite des données chiffrées quand c'est pertinent.
+3. Ne cite un chiffre que s'il figure dans le contexte entreprise ou s'il s'agit d'un texte réglementaire que tu peux situer précisément ; sinon dis que tu ne sais pas. N'invente jamais de valeur, de seuil ou de référence.
 4. Si le contexte entreprise est fourni, personnalise ta réponse avec ces données.
 5. Termine par une suggestion d'action concrète dans ESGFlow si applicable.
 6. Ne réponds qu'aux sujets ESG/développement durable/conformité.
@@ -168,6 +168,7 @@ class ESGChatService:
         self.db      = db
         self.api_key = openai_api_key
         self.model   = model
+        self.last_source = "kb"  # "ai" si la dernière réponse vient du modèle, "kb" si base de réponses figée
 
     async def chat(
         self,
@@ -183,7 +184,9 @@ class ESGChatService:
 
         if self.api_key:
             try:
-                return await self._openai_chat(messages, context)
+                answer = await self._openai_chat(messages, context)
+                self.last_source = "ai"
+                return answer
             except Exception as e:
                 logger.warning("OpenAI chat error: %s — falling back to KB", e)
 

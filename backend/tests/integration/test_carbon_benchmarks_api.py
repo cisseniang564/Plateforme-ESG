@@ -194,13 +194,13 @@ class TestBenchmarksSector:
         assert resp.status_code in (200, 404)
 
     def test_invalid_sector_falls_back_to_default(self, client):
-        """Unknown sectors fall back to the 'default' public-reference baseline (200), not 404."""
+        """Unknown sectors use the generic sector bucket (200), never invented baselines."""
         resp = client.get(
             "/api/v1/benchmarks/sector/completely_unknown_sector_xyz",
             headers=AUTH_HEADERS,
         )
         assert resp.status_code == 200
-        assert resp.json()["source"] == "public_reference"
+        assert resp.json()["source"] in ("insufficient_cohort", "cross_tenant")
 
     def test_with_year_filter(self, client):
         resp = client.get(
