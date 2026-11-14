@@ -52,6 +52,8 @@ describe('Landing — pas de chiffre ni de badge de popularité non justifiés',
     expect(landing).not.toContain('10M+');
     expect(landing).not.toContain('Le plus populaire');
     expect(partners).not.toContain('Le plus choisi');
+  });
+});
 
 import vigilanceFeat from '@/pages/Features/VigilancePage.tsx?raw';
 import ixbrlFeat from '@/pages/Features/IXBRLPage.tsx?raw';
