@@ -222,7 +222,7 @@ export const gestion: DocArticle[] = [
     slug: 'enrichissement-esg',
     section: 'parametres',
     title: 'Enrichissement ESG',
-    summary: 'Compléter les données d\'une organisation à partir de son SIREN ou de son nom.',
+    summary: 'Rattacher une organisation à la base officielle Sirene (INSEE) à partir de son SIREN ou de son nom. Aucune donnée ESG n\'est créée.',
     routes: [{ label: 'Enrichissement', to: '/app/settings/esg-enrichment' }],
     about: 'Un assistant en quatre étapes : Recherche, Aperçu INSEE, Confirmation, Terminé.',
     shows: [

@@ -19,7 +19,7 @@ router = APIRouter()
 class EnrichOrganizationRequest(BaseModel):
     organization_id: Optional[UUID] = None   # None = créer nouvelle org depuis INSEE
     siren: str
-    generer_donnees: bool = True
+    generer_donnees: bool = False  # ignoré : aucune donnée ESG n'est fabriquée
 
 
 class ImportSecteurRequest(BaseModel):
@@ -38,12 +38,11 @@ async def enrichir_organisation(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Enrichir une organisation avec les données INSEE et générer des données ESG.
+    Enrichir une organisation avec les données officielles INSEE (aucune donnée ESG n'est générée).
     
     **Workflow:**
     1. Récupère les infos INSEE (SIREN)
     2. Met à jour les métadonnées de l'organisation
-    3. Génère automatiquement 12 mois de données ESG basées sur le secteur
     """
     
     # Get user's tenant
@@ -62,7 +61,7 @@ async def enrichir_organisation(
             tenant_id=user.tenant_id,
             organization_id=data.organization_id,
             siren=data.siren,
-            generer_donnees=data.generer_donnees,
+            generer_donnees=False,
         )
         
         return result
@@ -117,9 +116,7 @@ async def generer_donnees_demo(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Générer des données de démonstration ESG pour une organisation.
-    
-    **Note:** Génère 12 mois de données basées sur le secteur et la taille de l'entreprise
+    Désactivé : ESGFlow ne fabrique plus de données ESG (410 Gone).
     """
     
     from sqlalchemy import select
@@ -129,18 +126,27 @@ async def generer_donnees_demo(
     
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
-    service = ESGDataEnrichmentService(db)
-    
-    try:
-        result = await service.generer_donnees_indicateurs_demo(
-            tenant_id=user.tenant_id,
-            organization_id=data.organization_id,
-        )
-        
-        return result
-    
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
+
+    raise HTTPException(
+        status_code=410,
+        detail="La génération de données ESG est désactivée : saisissez ou importez vos données réelles.",
+    )
+
+
+@router.delete("/donnees-generees")
+async def supprimer_donnees_generees(
+    user_id: UUID = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    """Supprime les anciennes données fabriquées (source « INSEE + ESGFlow AI »). Admin uniquement."""
+    from sqlalchemy import select
+    from app.dependencies import get_user_role_names
+    from app.core.permissions import Roles
+
+    user = (await db.execute(select(User).where(User.id == user_id))).scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    roles = await get_user_role_names(user, db)
+    if not (set(Roles.ADMIN_OR_ABOVE) & set(roles)) and "tenant_admin" not in roles:
+        raise HTTPException(status_code=403, detail="Réservé aux administrateurs")
+    return await ESGDataEnrichmentService(db).supprimer_donnees_generees(user.tenant_id)

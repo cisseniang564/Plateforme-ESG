@@ -13217,12 +13217,13 @@
     "importFailed": "Import failed",
     "hero": {
       "settings": "Settings",
-      "dataAi": "Data & AI",
+      "dataAi": "Official data",
       "title": "ESG Enrichment",
-      "desc": "Connect your organizations to official INSEE data and automatically generate 12 months of ESG indicators",
+      "desc": "Link your organizations to official Sirene (INSEE) data: company name, sector, size, address",
       "statOrgs": "Organizations",
       "statSectors": "Sectors",
-      "statMonths": "Auto months"
+      "statMonths": "Auto months",
+      "statSource": "Source"
     },
     "sireneBase": "INSEE Sirene database",
     "mode": {
@@ -13272,8 +13273,8 @@
       "selectOrgOption": "— Select an organization —",
       "whatHappens": "What will happen",
       "list1": "Retrieval of official INSEE data (sector, size, address)",
-      "list2": "Automatic generation of 12 months of realistic ESG data",
-      "list3": "Indicator calculation based on business sector and size",
+      "list2": "Update the organization record (company name, sector, size, address)",
+      "list3": "No ESG data is created: your indicators come from your entries and imports",
       "back": "Back",
       "enriching": "Enriching…",
       "launch": "Launch ESG enrichment"
@@ -13291,7 +13292,7 @@
     "viewOrgs": "View organizations",
     "secteur": {
       "title": "Import a complete sector",
-      "subtitle": "Automatically creates organizations for all companies in a sector",
+      "subtitle": "Creates company records for a sector from the Sirene database (no ESG data)",
       "sectorLabel": "Business sector",
       "selectOption": "— Select a sector —",
       "deptLabel": "Department",
