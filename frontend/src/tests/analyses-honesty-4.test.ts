@@ -66,3 +66,13 @@ describe('Pages Features — pas de garantie absolue non tenable', () => {
     expect(aiFeat).not.toContain('ne sont jamais utilisées pour entraîner');
   });
 });
+
+import standards from '@/pages/Features/StandardsPage.tsx?raw';
+describe('Page Normes — pas de certification ni de couverture absolue', () => {
+  it('ne parle ni de piste « certifiable », ni de standards « entièrement couverts », ni de certification B Corp', () => {
+    expect(standards).not.toContain('piste d\'audit certifiable');
+    expect(standards).not.toContain('sont entièrement couverts');
+    expect(standards).not.toContain("'Certification entreprise à mission'");
+    expect(standards).not.toContain('implémenté et en production');
+  });
+});
