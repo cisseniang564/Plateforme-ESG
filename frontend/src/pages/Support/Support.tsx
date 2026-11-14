@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Mail, Phone, MessageCircle, ExternalLink, ChevronDown, ChevronUp,
-  CheckCircle, Clock, BookOpen, Zap, Shield, LifeBuoy,
-  FileText, Video, ArrowRight,
+  Mail, ChevronDown, ChevronUp,
+  BookOpen, Shield, LifeBuoy, FileText,
+  ArrowRight,
 } from 'lucide-react';
 
 const FAQ = [
@@ -17,7 +17,7 @@ const FAQ = [
   },
   {
     q: 'Mes données CSRD sont-elles conformes ESRS ?',
-    a: "Oui — ESGFlow implémente les normes ESRS E1-E5, S1-S4 et G1. Consultez la page Conformité pour voir votre score de conformité par référentiel.",
+    a: "ESGFlow structure la collecte selon les normes ESRS (E1-E5, S1-S4, G1), mais la conformité de votre déclaration dépend de la qualité de vos données et de leur vérification. La page Conformité indique votre taux de couverture par référentiel ; elle ne vaut pas attestation.",
   },
   {
     q: 'Comment ajouter un nouvel utilisateur à mon espace ?',
@@ -25,15 +25,13 @@ const FAQ = [
   },
   {
     q: 'Quelle est la fréquence de calcul des scores ESG ?',
-    a: "Les scores sont recalculés en temps réel à chaque nouvelle saisie ou import de données. Vous pouvez aussi déclencher un recalcul manuel depuis Scores → Calcul.",
+    a: "Les scores sont calculés à partir de vos données ; relancez un calcul depuis Scores → Calcul après une nouvelle saisie ou un import.",
   },
 ];
 
 const RESOURCES = [
-  { icon: BookOpen, title: 'Documentation complète', desc: 'Guides détaillés pour chaque fonctionnalité', color: 'bg-blue-50 text-blue-600', link: '#' },
-  { icon: Video, title: 'Tutoriels vidéo', desc: 'Vidéos pas-à-pas pour démarrer rapidement', color: 'bg-purple-50 text-purple-600', link: '#' },
-  { icon: FileText, title: 'Notes de version', desc: 'Nouveautés et corrections de bugs', color: 'bg-green-50 text-green-600', link: '#' },
-  { icon: Zap, title: 'API & Webhooks', desc: 'Documentation technique pour intégrateurs', color: 'bg-orange-50 text-orange-600', link: '#' },
+  { icon: BookOpen, title: 'Centre d’aide', desc: 'Guides et réponses aux questions courantes', color: 'bg-blue-50 text-blue-600', link: '/help' },
+  { icon: Shield, title: 'État des services', desc: 'Disponibilité mesurée en direct', color: 'bg-green-50 text-green-600', link: '/status' },
 ];
 
 export default function Support() {
@@ -52,62 +50,40 @@ export default function Support() {
               <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide uppercase">
                 Centre d'Assistance
               </span>
-              <span className="flex items-center gap-1.5 px-3 py-1 bg-green-400/20 border border-green-300/30 rounded-full text-xs font-semibold text-green-200">
-                <CheckCircle className="h-3 w-3" />
-                Tous les services opérationnels
-              </span>
             </div>
             <h1 className="text-3xl font-bold mb-1 flex items-center gap-3">
               <LifeBuoy className="h-8 w-8" />
               Support ESGFlow
             </h1>
-            <p className="text-emerald-100">Notre équipe est disponible pour vous accompagner</p>
-          </div>
-          <div className="flex items-center gap-2 px-4 py-3 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20">
-            <Clock className="h-5 w-5 text-emerald-200" />
-            <div>
-              <p className="text-sm font-bold">Temps de réponse</p>
-              <p className="text-xs text-emerald-200">Moyen : &lt; 4 heures</p>
-            </div>
+            <p className="text-emerald-100">Contactez-nous par e-mail ou consultez le centre d’aide</p>
           </div>
         </div>
       </div>
 
       {/* ── Contact channels ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {[
           {
             icon: Mail,
             title: 'Email',
-            value: 'support@esgflow.com',
-            sub: 'Réponse sous 4h en jours ouvrés',
+            value: 'support@greenconnect.cloud',
+            sub: 'Nous répondons dès que possible',
             action: 'Envoyer un email',
-            href: 'mailto:support@esgflow.com',
+            href: 'mailto:support@greenconnect.cloud',
             color: 'from-blue-500 to-blue-600',
             bg: 'bg-blue-50',
             text: 'text-blue-600',
           },
           {
-            icon: Phone,
-            title: 'Téléphone',
-            value: '+33 1 23 45 67 89',
-            sub: 'Lun–Ven, 9h–18h (CET)',
-            action: 'Appeler maintenant',
-            href: 'tel:+33123456789',
+            icon: BookOpen,
+            title: 'Centre d’aide',
+            value: 'Guides et questions fréquentes',
+            sub: 'Pas-à-pas pour les fonctions courantes',
+            action: 'Ouvrir le centre d’aide',
+            href: '/help',
             color: 'from-emerald-500 to-teal-600',
             bg: 'bg-emerald-50',
             text: 'text-emerald-600',
-          },
-          {
-            icon: MessageCircle,
-            title: 'Chat en direct',
-            value: 'Chat disponible',
-            sub: 'Réponse instantanée en semaine',
-            action: 'Démarrer un chat',
-            href: '#',
-            color: 'from-violet-500 to-purple-600',
-            bg: 'bg-violet-50',
-            text: 'text-violet-600',
           },
         ].map(ch => {
           const Icon = ch.icon;
@@ -177,7 +153,7 @@ export default function Support() {
               </div>
               <h2 className="text-base font-bold text-gray-900">Ressources</h2>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {RESOURCES.map(r => {
                 const Icon = r.icon;
                 return (
@@ -196,38 +172,6 @@ export default function Support() {
                   </a>
                 );
               })}
-            </div>
-          </div>
-
-          {/* System Status */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-green-50 rounded-xl">
-                  <Shield className="h-5 w-5 text-green-600" />
-                </div>
-                <h2 className="text-base font-bold text-gray-900">Statut des services</h2>
-              </div>
-              <span className="flex items-center gap-1.5 text-xs font-semibold text-green-600 bg-green-50 px-2.5 py-1 rounded-full">
-                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                Opérationnel
-              </span>
-            </div>
-            <div className="space-y-2.5">
-              {[
-                { name: 'API & Backend',       status: 'ok' },
-                { name: 'Calcul des scores',   status: 'ok' },
-                { name: 'Génération rapports', status: 'ok' },
-                { name: 'Connecteurs données', status: 'ok' },
-              ].map(s => (
-                <div key={s.name} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">{s.name}</span>
-                  <span className="flex items-center gap-1.5 text-xs font-semibold text-green-600">
-                    <CheckCircle className="h-3.5 w-3.5" />
-                    Opérationnel
-                  </span>
-                </div>
-              ))}
             </div>
           </div>
         </div>
