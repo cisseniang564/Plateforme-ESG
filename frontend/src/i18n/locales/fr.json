@@ -726,7 +726,7 @@
     "emptyCatalogue": "Votre catalogue ESG est vide. Initialisez-le avec les indicateurs standards (ESRS, GRI, CSRD).",
     "initCatalogue": "Initialiser le catalogue ESG",
     "initializing": "Initialisation...",
-    "initNote": "14 indicateurs standards (ENV, SOC, GOV) seront créés automatiquement.",
+    "initNote": "Les indicateurs standards (ENV, SOC, GOV) proposés pour votre profil seront ajoutés. Votre nom d’organisation n’est pas modifié.",
     "errorLoading": "Erreur lors du chargement des indicateurs",
     "initSuccess": "Catalogue d'indicateurs initialisé !",
     "initError": "Erreur lors de l'initialisation",
@@ -819,7 +819,8 @@
     "esrsSocDesc": "S1→S4 : Effectifs propres, Chaîne de valeur, Communautés, Consommateurs",
     "esrsGov": "ESRS Gouvernance",
     "esrsGovDesc": "G1 : Conduite des affaires, Anti-corruption, Transparence",
-    "exportCsv": "Exporter CSV"
+    "exportCsv": "Exporter CSV",
+    "initSuccessCount": "{{count}} indicateur(s) ajouté(s)"
   },
   "upload": {
     "title": "Importer des données ESG",

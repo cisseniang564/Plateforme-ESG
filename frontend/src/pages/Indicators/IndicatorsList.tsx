@@ -130,8 +130,13 @@ export default function IndicatorsList() {
   const initializeIndicators = async () => {
     setInitializing(true);
     try {
-      await api.post('/onboarding/setup', { org_name: 'Mon Organisation', sector: 'general' });
-      toast.success(t('indicators.initSuccess'));
+      // Ne touche ni au nom de l'organisation ni à l'état d'onboarding : on
+      // ajoute seulement les indicateurs standards proposés pour le profil.
+      const suggested = await api.get('/onboarding/indicators/suggested');
+      const codes: string[] = (suggested.data?.indicators ?? []).map((i: { code: string }) => i.code);
+      const res = await api.post('/onboarding/indicators', { codes });
+      const created: number = res.data?.indicators_created ?? 0;
+      toast.success(t('indicators.initSuccessCount', '{{count}} indicateur(s) ajouté(s)', { count: created }));
       await loadIndicators();
     } catch (err: any) {
       toast.error(err.response?.data?.detail || t('indicators.initError'));
