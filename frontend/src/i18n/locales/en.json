@@ -5274,7 +5274,7 @@
         "tagApplied": "Tag « {{label}} » applied.",
         "ixbrlExported": "iXBRL file exported.",
         "idCopied": "ID copied",
-        "demoLoaded": "Demo text loaded.",
+        "demoLoaded": "Fictional sample text loaded — replace it with your report.",
         "jsonExported": "JSON exported."
       },
       "tabs": {
@@ -5328,7 +5328,7 @@
       },
       "tagging": {
         "reportTextTitle": "CSRD report text",
-        "demo": "Demo",
+        "demo": "Load a fictional sample",
         "reportTextPlaceholder": "Paste the text of your CSRD sustainability statement here…",
         "selection": "Selection ({{count}} char.):",
         "appliedTagsTitle": "Applied tags ({{count}})",
