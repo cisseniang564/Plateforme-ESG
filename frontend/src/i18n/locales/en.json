@@ -6762,13 +6762,13 @@
         },
         "insee": {
           "name": "INSEE Enrichment",
-          "tagline": "10M+ companies · SIREN · Real-time",
+          "tagline": "SIREN / SIRET search · Real-time",
           "desc": "Automatically enrich your ESG data with the official Sirene database: search by SIREN/SIRET, legal data, NAF activity, headcount and geolocation in real time.",
           "badges": [
-            "10M+ companies",
+            "Official INSEE API",
             "SIREN/SIRET search",
             "Official data",
-            "Free & real-time"
+            "On-demand lookup"
           ]
         },
         "webhooks": {
@@ -7277,7 +7277,7 @@
             ]
           },
           {
-            "badge": "Most popular",
+            "badge": "Recommended",
             "desc": "Mid-sized companies in ESG transformation",
             "cta": "Free 14-day trial",
             "features": [
@@ -8979,7 +8979,7 @@
     "exportCSV": "Export CSV",
     "filterActive": "Active ({{n}})",
     "filterAll": "All ({{n}})",
-    "heroDesc": "Search in the Sirene database · More than 10 million establishments",
+    "heroDesc": "Search the Sirene database through the official INSEE API",
     "heroTitle": "French Companies (INSEE)",
     "hq": "HQ",
     "noActiveResults": "{{n}} company found{{s}} but none active",
@@ -14759,7 +14759,7 @@
     "heroDesc": "Connect ESGFlow to your favorite tools and sync your ESG data in real time",
     "import": "Import",
     "inactive": "Inactive",
-    "inseeCount": "10M+ companies",
+    "inseeCount": "Official INSEE API",
     "inseeDesc": "Access the official SIREN/SIRET database — search and enrich your ESG data with official information on French companies",
     "integCount": "{{n}} integration{{s}}",
     "myInteg": "My integrations",
@@ -15312,7 +15312,7 @@
       "esrs": "Gap analysis · 80 data points",
       "import": "Import a CSV/Excel file",
       "indicators": "ESG indicators list",
-      "insee": "10M+ companies · SIREN",
+      "insee": "SIREN / SIRET search",
       "lca": "LCA / life cycle analysis",
       "materiality": "CSRD double materiality",
       "multi": "GRI · CDP · TCFD · SDG mapping",

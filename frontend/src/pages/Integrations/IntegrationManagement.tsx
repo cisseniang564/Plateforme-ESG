@@ -325,7 +325,7 @@ export default function IntegrationManagement() {
             </p>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
-            <span className="text-xs text-gray-400 hidden sm:block">{t('integ.inseeCount', '10M+ entreprises')}</span>
+            <span className="text-xs text-gray-400 hidden sm:block">{t('integ.inseeCount', 'API officielle INSEE')}</span>
             <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all" />
           </div>
         </div>

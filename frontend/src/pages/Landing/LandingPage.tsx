@@ -128,7 +128,7 @@ const MODULES = [
     name: 'Dashboard Exécutif',
     tagline: 'Pilotage ESG en temps réel',
     desc: 'Vue d\'ensemble de vos 3 piliers ESG, KPIs clés, alertes IA et tendances. Tout en un coup d\'œil pour vos comités de direction.',
-    badges: ['Score global /100', 'Tendances temps réel', 'Alertes intelligentes', 'Benchmarking secteur'],
+    badges: ['Score global /100', 'Tendances', 'Alertes', 'Benchmark anonymisé'],
     preview: 'dashboard',
   },
   {
@@ -141,7 +141,7 @@ const MODULES = [
     name: 'Bilan Carbone Scope 3',
     tagline: '15 catégories GHG Protocol + ADEME',
     desc: 'Calculez vos émissions indirectes en amont et aval selon les 15 catégories officielles du GHG Protocol avec les facteurs d\'émission ADEME intégrés.',
-    badges: ['15 catégories Scope 3', 'Facteurs ADEME', 'Calcul automatique', 'Benchmarks sectoriels'],
+    badges: ['15 catégories Scope 3', 'Facteurs indicatifs', 'Calcul automatique', 'Détail par catégorie'],
     preview: 'scope3',
     featurePath: '/features/bilan-carbone',
   },
@@ -249,9 +249,9 @@ const MODULES = [
     lightBg: 'bg-blue-50',
     lightText: 'text-blue-700',
     name: 'Enrichissement INSEE',
-    tagline: '10M+ entreprises · SIREN · Temps réel',
+    tagline: 'API Sirene · Recherche SIREN / SIRET',
     desc: 'Enrichissez automatiquement vos données ESG avec la base officielle Sirene : recherche par SIREN/SIRET, données légales, activité NAF, effectifs et géolocalisation en temps réel.',
-    badges: ['10M+ entreprises', 'Recherche SIREN/SIRET', 'Données officielles', 'Gratuit & temps réel'],
+    badges: ['Base Sirene (INSEE)', 'Recherche SIREN/SIRET', 'Données officielles'],
     preview: 'insee',
   },
   {
@@ -714,7 +714,7 @@ function PreviewINSEE() {
         <div className="text-white font-bold flex items-center gap-2">
           <Building2 className="h-4 w-4 text-blue-400" /> INSEE Sirene
         </div>
-        <div className="text-xs text-blue-300 font-semibold">10M+ entreprises</div>
+        <div className="text-xs text-blue-300 font-semibold">API officielle</div>
       </div>
       <div className="flex items-center gap-2 bg-white/10 rounded-xl px-3 py-2 mb-3">
         <Search className="h-3.5 w-3.5 text-slate-400" />
@@ -1380,7 +1380,7 @@ export default function LandingPage() {
     {
       name: 'ETI', desc: 'ETI en transformation ESG',
       monthly: 599, annual: 509,
-      color: 'border-green-500', badge: 'Le plus populaire', badgeStyle: 'bg-green-500 text-white',
+      color: 'border-green-500', badge: 'Recommandé', badgeStyle: 'bg-green-500 text-white',
       features: [
         '100 utilisateurs · 250 organisations',
         '1 000 000 appels API / mois',
@@ -1634,10 +1634,9 @@ export default function LandingPage() {
             </div>
 
             {/* Stats */}
-            <div ref={heroRef} className="grid grid-cols-4 gap-4 pt-8 border-t border-white/10">
+            <div ref={heroRef} className="grid grid-cols-3 gap-4 pt-8 border-t border-white/10">
               <StatCounter value={22} suffix="" label={t('landing.lp.hero.stat1', 'Modules ESG')} started={heroInView} />
               <StatCounter value={100} suffix="+" label={t('landing.lp.hero.stat2', 'Indicateurs')} started={heroInView} />
-              <StatCounter value={10} suffix="M+" label={t('landing.lp.hero.stat3', 'Entreprises INSEE')} started={heroInView} />
               <StatCounter value={10} suffix="" label={t('landing.lp.hero.stat4', 'Référentiels')} started={heroInView} />
             </div>
           </div>
@@ -1860,11 +1859,10 @@ export default function LandingPage() {
         <div className="absolute pointer-events-none" style={{ top: '50%', left: '20%', transform: 'translateY(-50%)', width: 600, height: 300, borderRadius: '50%', filter: 'blur(80px)', background: 'radial-gradient(ellipse, rgba(16,185,129,0.18) 0%, transparent 65%)' }} />
         <div className="absolute pointer-events-none" style={{ top: '50%', right: '15%', transform: 'translateY(-50%)', width: 400, height: 300, borderRadius: '50%', filter: 'blur(70px)', background: 'radial-gradient(ellipse, rgba(5,150,105,0.12) 0%, transparent 65%)' }} />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 lg:gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 lg:gap-8">
             {[
               { value: 22, suffix: '', label: t('landing.lp.stats.modules', 'Modules intégrés'), icon: Layers },
               { value: 100, suffix: '+', label: t('landing.lp.stats.indicators', 'Indicateurs ESRS'), icon: FileCheck },
-              { value: 10, suffix: 'M+', label: t('landing.lp.stats.companies', 'Entreprises INSEE'), icon: Database },
               { value: 24, suffix: '', label: t('landing.lp.stats.actions', 'Actions décarbonation'), icon: Flame },
               { value: 10, suffix: '', label: t('landing.lp.stats.frameworks', 'Référentiels couverts'), icon: BookOpen },
             ].map(({ value, suffix, label, icon: Icon }) => (
@@ -2378,10 +2376,10 @@ export default function LandingPage() {
                     <div className="text-blue-200 text-xs">{t('landing.lp.eco.insee.subtitle', 'Base officielle française')}</div>
                   </div>
                 </div>
-                <div className="text-3xl font-extrabold mb-1">10M+</div>
-                <div className="text-blue-200 text-sm mb-6">{t('landing.lp.eco.insee.indexed', 'entreprises françaises indexées')}</div>
+                <div className="text-3xl font-extrabold mb-1">API</div>
+                <div className="text-blue-200 text-sm mb-6">{t('landing.lp.eco.insee.indexed', 'interrogée à la demande, sans copie locale de la base')}</div>
                 <div className="space-y-2.5">
-                  {['Recherche par SIREN / SIRET', 'Données légales officielles', 'Activité NAF/APE · Effectifs', 'Enrichissement ESG automatique', 'Gratuit · Temps réel'].map((f, i) => (
+                  {['Recherche par SIREN / SIRET', 'Données légales officielles', 'Activité NAF/APE · Effectifs', 'Pré-remplissage de la fiche entreprise', 'Interrogation à la demande'].map((f, i) => (
                     <div key={i} className="flex items-center gap-2 text-sm text-blue-100">
                       <CheckCircle className="h-4 w-4 text-blue-300 flex-shrink-0" />
                       {t(`landing.lp.eco.insee.features.${i}`, f)}
