@@ -213,7 +213,7 @@ export default function Scope3Calculator() {
               {t('scope3.heroTitle', 'Calculateur Scope 3')}
             </h1>
             <p className="text-sm text-gray-600 max-w-2xl">
-              {t('scope3.heroDescA', 'Évaluez les émissions des ')}<strong>{t('scope3.heroDescStrong', '15 catégories Scope 3')}</strong>{t('scope3.heroDescB', ' du GHG Protocol selon la méthodologie ADEME Base Empreinte 2024. Spend-based (€) ou activity-based (km, kWh, tonne).')}
+              {t('scope3.heroDescA', 'Évaluez les émissions des ')}<strong>{t('scope3.heroDescStrong', '15 catégories Scope 3')}</strong>{t('scope3.heroDescB', ' du GHG Protocol. Spend-based (€) ou activity-based (km, kWh, tonne), avec des facteurs indicatifs.')}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -227,6 +227,10 @@ export default function Scope3Calculator() {
             </button>
           </div>
         </div>
+      </div>
+
+      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        {t('scope3.factorsDisclaimer', "Facteurs indicatifs, non audités : ils n’ont pas été vérifiés contre la Base Empreinte ADEME. Résultats = ordres de grandeur, à ne pas utiliser tels quels pour un reporting réglementaire (CSRD, Bilan GES).")}
       </div>
 
       {loadError && (

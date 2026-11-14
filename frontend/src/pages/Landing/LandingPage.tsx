@@ -155,7 +155,7 @@ const MODULES = [
     name: 'Matrice de Matérialité',
     tagline: 'Double matérialité CSRD · Drag & drop',
     desc: 'Outil interactif de double matérialité : questionnaire parties prenantes, matrice drag & drop, suggestions IA sectorielles et export PDF.',
-    badges: ['Drag & drop', 'Questionnaire parties prenantes', 'Suggestions IA', 'Export rapport'],
+    badges: ['Drag & drop', 'Questionnaire parties prenantes', 'Enjeux types par secteur', 'Export rapport'],
     preview: 'materiality',
     featurePath: '/features/double-materialite',
   },

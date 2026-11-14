@@ -1897,7 +1897,7 @@
     "kpiCriticalRisks": "Risques critiques",
     "tabMatrix": "Matrice",
     "tabQuestionnaire": "Questionnaire",
-    "tabIaSuggestions": "Suggestions IA",
+    "tabIaSuggestions": "Enjeux types",
     "tabRisks": "Registre des risques",
     "viewMatrix": "Matrice",
     "viewList": "Liste",
@@ -2006,8 +2006,8 @@
     "step2DescFull": "Pour chaque partie prenante, notez l'importance de chaque enjeu de 1 (faible) à 10 (critique).",
     "step3HeadingFull": "Étape 4 · Résultats & Pondération",
     "step3DescFull": "Scores moyens calculés à partir des {{count}} évaluations. Cliquez sur \"Appliquer\" pour mettre à jour la matrice.",
-    "iaTabSectorTitle": "Suggestions IA · Enjeux sectoriels",
-    "iaTabSectorDesc": "Sélectionnez votre secteur pour obtenir des enjeux ESG pré-configurés selon les standards CSRD/ESRS.",
+    "iaTabSectorTitle": "Enjeux types par secteur",
+    "iaTabSectorDesc": "Sélectionnez votre secteur pour parcourir des enjeux ESG fréquents. Ce sont des idées de départ, pas une évaluation : leurs impacts sont à évaluer pour votre entreprise après ajout.",
     "iaSuggAdded": "Ajouté",
     "iaBenchmarkTitle": "Note sur les scores pré-configurés",
     "iaBenchmarkDesc": "Les impacts financiers et ESG proposés sont des benchmarks sectoriels basés sur les référentiels ESRS, GRI et SASB. Ils sont personnalisables via le questionnaire parties prenantes ou directement dans la matrice.",
@@ -2045,7 +2045,7 @@
     "toastQuestError": "Erreur lors de l'application des résultats",
     "toastLoadError": "Erreur lors du chargement",
     "toastExportCsv": "Export CSV téléchargé",
-    "toastAddedToMatrix": "\"{{name}}\" ajouté à la matrice",
+    "toastAddedToMatrix": "\"{{name}}\" ajouté au centre de la matrice : évaluez ses impacts",
     "confirmDeleteIssue": "Supprimer l'enjeu \"{{name}}\" ?",
     "confirmDeleteRisk": "Supprimer le risque \"{{name}}\" ?",
     "listStakeholdersFull": "Parties prenantes :",
@@ -2071,7 +2071,8 @@
     "csvHeaderPriority": "Priorité",
     "csvHeaderStakeholders": "Parties prenantes",
     "csvYes": "Oui",
-    "csvNo": "Non"
+    "csvNo": "Non",
+    "suggNote": "Ajouté avec des impacts neutres (50/50), à ajuster."
   },
   "decarbonation": {
     "title": "Plan de Décarbonation",

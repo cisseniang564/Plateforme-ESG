@@ -2594,7 +2594,8 @@
     "show": "Show",
     "teamPkm": "i.e. {{value}}k team pkm",
     "theFactors": "factors",
-    "warnings": "Warnings"
+    "warnings": "Warnings",
+    "factorsDisclaimer": "Indicative, unaudited factors: not checked against the ADEME Base Empreinte. Results are orders of magnitude, not to be used as-is for regulatory reporting (CSRD, GHG inventory)."
   },
   "materiality": {
     "title": "Materiality Matrix",
@@ -2629,7 +2630,7 @@
     "kpiCriticalRisks": "Critical risks",
     "tabMatrix": "Matrix",
     "tabQuestionnaire": "Questionnaire",
-    "tabIaSuggestions": "AI Suggestions",
+    "tabIaSuggestions": "Typical issues",
     "tabRisks": "Risk register",
     "viewMatrix": "Matrix",
     "viewList": "List",
@@ -2738,8 +2739,8 @@
     "step2DescFull": "For each stakeholder, rate the importance of each issue from 1 (low) to 10 (critical).",
     "step3HeadingFull": "Step 4 · Results & Weighting",
     "step3DescFull": "Average scores calculated from {{count}} evaluations. Click \"Apply\" to update the matrix.",
-    "iaTabSectorTitle": "AI Suggestions · Sector issues",
-    "iaTabSectorDesc": "Select your sector to get pre-configured ESG issues based on CSRD/ESRS standards.",
+    "iaTabSectorTitle": "Typical issues by sector",
+    "iaTabSectorDesc": "Select your sector to browse common ESG issues. These are starting ideas, not an assessment: their impacts must be assessed for your company after adding.",
     "iaSuggAdded": "Added",
     "iaBenchmarkTitle": "Note on pre-configured scores",
     "iaBenchmarkDesc": "The proposed financial and ESG impacts are sector benchmarks based on ESRS, GRI and SASB frameworks. They can be customised via the stakeholder questionnaire or directly in the matrix.",
@@ -2777,7 +2778,7 @@
     "toastQuestError": "Error applying results",
     "toastLoadError": "Error loading data",
     "toastExportCsv": "CSV export downloaded",
-    "toastAddedToMatrix": "\"{{name}}\" added to matrix",
+    "toastAddedToMatrix": "\"{{name}}\" added at the center of the matrix: assess its impacts",
     "confirmDeleteIssue": "Delete issue \"{{name}}\"?",
     "confirmDeleteRisk": "Delete risk \"{{name}}\"?",
     "listStakeholdersFull": "Stakeholders:",
@@ -2865,7 +2866,8 @@
     "esrsTopic_s2": "S2 — Value chain workers",
     "esrsTopic_s3": "S3 — Communities",
     "esrsTopic_s4": "S4 — Consumers",
-    "esrsTopic_g1": "G1 — Business conduct"
+    "esrsTopic_g1": "G1 — Business conduct",
+    "suggNote": "Added with neutral impacts (50/50), to be adjusted."
   },
   "decarbonation": {
     "title": "Decarbonization Plan",

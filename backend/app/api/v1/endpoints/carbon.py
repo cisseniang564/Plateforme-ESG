@@ -402,9 +402,7 @@ async def save_scope3(
 
     inserted = 0
     for e in payload.entries:
-        notes_parts = []
-        if e.ademe_factor is not None:
-            notes_parts.append(f"Facteur ADEME : {e.ademe_factor} {e.ademe_unit or ''}")
+        notes_parts = []  # aucun facteur n'est écrit : la valeur est saisie par l'utilisateur
         entry = DataEntry(
             tenant_id=current_user.tenant_id,
             created_by=current_user.id,
@@ -500,7 +498,7 @@ async def save_decarb_plan(
         return {"saved": False}
 
 
-@router.get("/beges-export.xlsx", summary="Export BEGES.xlsx au format ADEME (Art. L229-25)")
+@router.get("/beges-export.xlsx", summary="Export de travail BEGES.xlsx (à vérifier avant dépôt)")
 async def export_beges_xlsx(
     year: Optional[int] = Query(None, description="Année de reporting (défaut: N-1)"),
     organization_id: Optional[str] = Query(None, description="UUID de l'organisation (défaut: première du tenant)"),
@@ -508,7 +506,10 @@ async def export_beges_xlsx(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Génère et télécharge un fichier .xlsx prêt à soumettre sur bilans-ges.ademe.fr.
+    Génère un fichier .xlsx de travail pour préparer la déclaration sur bilans-ges.ademe.fr.
+
+    Ce n'est PAS un dépôt officiel : les valeurs sont celles saisies dans ESGFlow, sans facteurs
+    d'émission documentés ; l'organisation doit les vérifier et les compléter avant tout dépôt.
 
     Le fichier contient 6 feuilles :
       1. Identité     — raison sociale, SIREN, NACE, périmètre

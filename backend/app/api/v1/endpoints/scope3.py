@@ -3,7 +3,7 @@ Scope 3 Calculator API
 ======================
 
 Endpoints:
-  GET  /scope3/factors           — catalogue complet des facteurs ADEME
+  GET  /scope3/factors           — catalogue des facteurs indicatifs (non audités)
   GET  /scope3/categories        — 15 catégories GHG Protocol structurées
   POST /scope3/calculate         — calcul à partir d'une liste de lignes
   POST /scope3/import-from-spend — import en masse depuis le FEC comptable
@@ -16,8 +16,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_db, get_current_user
 from app.models.user import User
 from app.services.scope3_calculator import (
-    SPEND_FACTORS, ACTIVITY_FACTORS, list_categories, calculate, LineItem,
+    SPEND_FACTORS, ACTIVITY_FACTORS, list_categories, calculate, LineItem, FACTORS_DISCLAIMER,
 )
+
+FACTORS_SOURCE = "Valeurs indicatives non auditées — à confronter à la Base Empreinte ADEME"
 
 router = APIRouter()
 
@@ -60,11 +62,11 @@ def _factor_to_dict(f) -> Dict[str, Any]:
 async def get_factors(
     current_user: User = Depends(get_current_user),
 ):
-    """Return the full ADEME emission factors catalog (spend + activity)."""
+    """Return the indicative (unaudited) emission factors catalog (spend + activity)."""
     return {
         "spend_based": [_factor_to_dict(f) for f in SPEND_FACTORS],
         "activity_based": [_factor_to_dict(f) for f in ACTIVITY_FACTORS],
-        "source": "ADEME Base Empreinte 2024",
+        "source": FACTORS_SOURCE, "disclaimer": FACTORS_DISCLAIMER,
         "total_factors": len(SPEND_FACTORS) + len(ACTIVITY_FACTORS),
     }
 
@@ -77,7 +79,7 @@ async def get_categories(
     return {
         "categories": list_categories(),
         "framework": "GHG Protocol Corporate Value Chain (Scope 3) Standard",
-        "source": "ADEME Base Empreinte 2024",
+        "source": FACTORS_SOURCE, "disclaimer": FACTORS_DISCLAIMER,
     }
 
 

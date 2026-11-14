@@ -146,9 +146,9 @@ class BEGESExportService:
             ("Date de clôture exercice", f"31/12/{year}"),
             ("Périmètre opérationnel", "Contrôle opérationnel (recommandation GHG Protocol)"),
             ("Périmètre organisationnel", "Toutes les entités sous contrôle"),
-            ("Méthode de calcul", "Facteurs d'émission Base Carbone ADEME v23"),
+            ("Méthode de calcul", "Valeurs saisies ou importées dans ESGFlow — méthode et facteurs d'émission à documenter par l'organisation"),
             ("", ""),
-            ("Date de soumission", date.today().isoformat()),
+            ("Date d'export (fichier non déposé)", date.today().isoformat()),
             ("Outil utilisé", "ESGFlow — greenconnect.cloud"),
         ]
         self._write_kv_block(ws, start_row=4, rows=rows)
@@ -232,9 +232,9 @@ class BEGESExportService:
             ws.cell(row=r_idx, column=2, value=item.get("activity", "—"))
             ws.cell(row=r_idx, column=3, value=item.get("quantity", 0)).number_format = '#,##0.0'
             ws.cell(row=r_idx, column=4, value=item.get("unit", "—"))
-            ws.cell(row=r_idx, column=5, value=item.get("emission_factor", 0)).number_format = '0.0000'
+            ws.cell(row=r_idx, column=5, value=item.get("emission_factor") if item.get("emission_factor") is not None else "—").number_format = '0.0000'
             ws.cell(row=r_idx, column=6, value=item.get("tco2e", 0)).number_format = '#,##0.0'
-            ws.cell(row=r_idx, column=7, value=item.get("source", "ADEME Base Carbone v23"))
+            ws.cell(row=r_idx, column=7, value=item.get("source", "Saisie ESGFlow"))
             for c in range(1, 8):
                 ws.cell(row=r_idx, column=c).border = _BORDER
 
@@ -390,9 +390,9 @@ class BEGESExportService:
                 "activity": indicator.name,
                 "quantity": value,
                 "unit": indicator.unit or "tCO2e",
-                "emission_factor": 1.0,
+                "emission_factor": None,
                 "tco2e": value if (indicator.unit or "").lower() in ("tco2e", "tco2") else value,
-                "source": "Base Carbone ADEME v23",
+                "source": "Saisie ESGFlow (facteur non renseigné)",
             }
 
             if "scope 1" in name or "scope1" in name or code.startswith("ENV-001"):

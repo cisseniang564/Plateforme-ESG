@@ -19,7 +19,6 @@ interface Scope3Category {
   description: string;
   icon: any;
   upstream: boolean;
-  ademe_factor: number;
   ademe_unit: string;
   placeholder: string;
   tooltip: string;
@@ -53,106 +52,106 @@ const initialCategories: Scope3Category[] = [
   {
     id: 1, num: 'Cat. 1', name: 'Achats de biens & services', upstream: true,
     description: 'Émissions liées à la production des biens et services achetés par l\'entreprise (matières premières, fournitures, sous-traitance...)',
-    icon: ShoppingBag, ademe_factor: 0.85, ademe_unit: 'kgCO₂e/€ d\'achats',
-    placeholder: 'ex : 1 250', tooltip: 'Source : Base Empreinte® ADEME — Facteur moyen tous secteurs confondus',
+    icon: ShoppingBag, ademe_unit: 'kgCO₂e/€ d\'achats',
+    placeholder: 'ex : 1 250', tooltip: 'Repère : Base Empreinte® ADEME — Facteur moyen tous secteurs confondus',
     value: null, ...CAT_COLORS[1],
   },
   {
     id: 2, num: 'Cat. 2', name: 'Biens d\'équipement (immobilisations)', upstream: true,
     description: 'Émissions associées à la fabrication des biens d\'équipements utilisés (machines, bâtiments, véhicules...)',
-    icon: Settings, ademe_factor: 1.2, ademe_unit: 'kgCO₂e/€ d\'immobilisations',
-    placeholder: 'ex : 340', tooltip: 'Source : Base Empreinte® ADEME — Secteur équipements industriels',
+    icon: Settings, ademe_unit: 'kgCO₂e/€ d\'immobilisations',
+    placeholder: 'ex : 340', tooltip: 'Repère : Base Empreinte® ADEME — Secteur équipements industriels',
     value: null, ...CAT_COLORS[2],
   },
   {
     id: 3, num: 'Cat. 3', name: 'Activités liées à l\'énergie', upstream: true,
     description: 'Émissions en amont de la production d\'énergie (extraction, raffinage, transport du gaz/fioul), non incluses en Scope 1 & 2',
-    icon: Zap, ademe_factor: 0.084, ademe_unit: 'kgCO₂e/kWh énergie',
-    placeholder: 'ex : 45', tooltip: 'Source : ADEME / RTE — Facteur résidu réseau électrique français',
+    icon: Zap, ademe_unit: 'kgCO₂e/kWh énergie',
+    placeholder: 'ex : 45', tooltip: 'Repère : ADEME / RTE — Facteur résidu réseau électrique français',
     value: null, ...CAT_COLORS[3],
   },
   {
     id: 4, num: 'Cat. 4', name: 'Transport & distribution amont', upstream: true,
     description: 'Transport des matières premières et marchandises vers l\'entreprise (fret routier, maritime, aérien, ferroviaire)',
-    icon: Truck, ademe_factor: 0.089, ademe_unit: 'kgCO₂e/tonne.km',
-    placeholder: 'ex : 180', tooltip: 'Source : Base Empreinte® ADEME — Poids lourd <26t, gazole Euro VI',
+    icon: Truck, ademe_unit: 'kgCO₂e/tonne.km',
+    placeholder: 'ex : 180', tooltip: 'Repère : Base Empreinte® ADEME — Poids lourd <26t, gazole Euro VI',
     value: null, ...CAT_COLORS[4],
   },
   {
     id: 5, num: 'Cat. 5', name: 'Déchets générés par l\'exploitation', upstream: true,
     description: 'Traitement des déchets produits par les opérations internes (déchets ménagers, industriels, dangereux...)',
-    icon: Trash2, ademe_factor: 0.449, ademe_unit: 'kgCO₂e/tonne de déchets',
-    placeholder: 'ex : 22', tooltip: 'Source : ADEME — Enfouissement centre de stockage déchets ménagers',
+    icon: Trash2, ademe_unit: 'kgCO₂e/tonne de déchets',
+    placeholder: 'ex : 22', tooltip: 'Repère : ADEME — Enfouissement centre de stockage déchets ménagers',
     value: null, ...CAT_COLORS[5],
   },
   {
     id: 6, num: 'Cat. 6', name: 'Déplacements professionnels', upstream: true,
     description: 'Voyages d\'affaires (avion, train, voiture de location, taxi) effectués par les employés',
-    icon: Briefcase, ademe_factor: 0.186, ademe_unit: 'kgCO₂e/km (avion court-courrier)',
-    placeholder: 'ex : 95', tooltip: 'Source : ADEME — Avion court-courrier classe éco, incluant traînées condensation ×2',
+    icon: Briefcase, ademe_unit: 'kgCO₂e/km (avion court-courrier)',
+    placeholder: 'ex : 95', tooltip: 'Repère : ADEME — Avion court-courrier classe éco, incluant traînées condensation ×2',
     value: null, ...CAT_COLORS[6],
   },
   {
     id: 7, num: 'Cat. 7', name: 'Trajets domicile-travail', upstream: true,
     description: 'Émissions des déplacements quotidiens des salariés entre leur domicile et leur lieu de travail',
-    icon: Users, ademe_factor: 0.218, ademe_unit: 'kgCO₂e/km (voiture thermique moy.)',
-    placeholder: 'ex : 140', tooltip: 'Source : ADEME — Véhicule particulier thermique moyen France 2023',
+    icon: Users, ademe_unit: 'kgCO₂e/km (voiture thermique moy.)',
+    placeholder: 'ex : 140', tooltip: 'Repère : ADEME — Véhicule particulier thermique moyen France 2023',
     value: null, ...CAT_COLORS[7],
   },
   {
     id: 8, num: 'Cat. 8', name: 'Actifs en leasing (amont)', upstream: true,
     description: 'Émissions opérationnelles des biens loués par l\'entreprise (immeubles, équipements, véhicules de fonction)',
-    icon: Home, ademe_factor: 0.025, ademe_unit: 'kgCO₂e/m².an (bâtiment RT2012)',
-    placeholder: 'ex : 35', tooltip: 'Source : ADEME — Bâtiment tertiaire chauffage gaz, norme RT2012',
+    icon: Home, ademe_unit: 'kgCO₂e/m².an (bâtiment RT2012)',
+    placeholder: 'ex : 35', tooltip: 'Repère : ADEME — Bâtiment tertiaire chauffage gaz, norme RT2012',
     value: null, ...CAT_COLORS[8],
   },
   {
     id: 9, num: 'Cat. 9', name: 'Transport & distribution aval', upstream: false,
     description: 'Transport des produits vendus vers les clients finaux (fret et logistique aval)',
-    icon: ArrowDownRight, ademe_factor: 0.089, ademe_unit: 'kgCO₂e/tonne.km',
-    placeholder: 'ex : 210', tooltip: 'Source : Base Empreinte® ADEME — Poids lourd <26t, gazole Euro VI',
+    icon: ArrowDownRight, ademe_unit: 'kgCO₂e/tonne.km',
+    placeholder: 'ex : 210', tooltip: 'Repère : Base Empreinte® ADEME — Poids lourd <26t, gazole Euro VI',
     value: null, ...CAT_COLORS[9],
   },
   {
     id: 10, num: 'Cat. 10', name: 'Traitement des produits vendus', upstream: false,
     description: 'Traitement et transformation des produits intermédiaires vendus par des tiers avant usage final',
-    icon: Settings, ademe_factor: 0.5, ademe_unit: 'kgCO₂e/tonne transformée',
-    placeholder: 'ex : 65', tooltip: 'Source : Estimation GHG Protocol — Processus de transformation standard',
+    icon: Settings, ademe_unit: 'kgCO₂e/tonne transformée',
+    placeholder: 'ex : 65', tooltip: 'Repère : Estimation GHG Protocol — Processus de transformation standard',
     value: null, ...CAT_COLORS[10],
   },
   {
     id: 11, num: 'Cat. 11', name: 'Utilisation des produits vendus', upstream: false,
     description: 'Émissions générées lors de l\'utilisation des produits par les clients (électricité consommée, carburant, etc.)',
-    icon: Flame, ademe_factor: 2.37, ademe_unit: 'kgCO₂e/litre carburant utilisé',
-    placeholder: 'ex : 4 200', tooltip: 'Source : ADEME — Gazole usage, facteur CO₂ seul (hors ACV)',
+    icon: Flame, ademe_unit: 'kgCO₂e/litre carburant utilisé',
+    placeholder: 'ex : 4 200', tooltip: 'Repère : ADEME — Gazole usage, facteur CO₂ seul (hors ACV)',
     value: null, ...CAT_COLORS[11],
   },
   {
     id: 12, num: 'Cat. 12', name: 'Fin de vie des produits vendus', upstream: false,
     description: 'Traitement en fin de vie des produits vendus (recyclage, enfouissement, incinération)',
-    icon: Trash2, ademe_factor: 0.449, ademe_unit: 'kgCO₂e/tonne en fin de vie',
-    placeholder: 'ex : 80', tooltip: 'Source : ADEME — Mix de traitement déchets ménagers France',
+    icon: Trash2, ademe_unit: 'kgCO₂e/tonne en fin de vie',
+    placeholder: 'ex : 80', tooltip: 'Repère : ADEME — Mix de traitement déchets ménagers France',
     value: null, ...CAT_COLORS[12],
   },
   {
     id: 13, num: 'Cat. 13', name: 'Actifs en leasing (aval)', upstream: false,
     description: 'Émissions des biens loués par l\'entreprise à d\'autres entités (locataires, clients)',
-    icon: Package, ademe_factor: 0.025, ademe_unit: 'kgCO₂e/m².an',
-    placeholder: 'ex : 15', tooltip: 'Source : ADEME — Bâtiment tertiaire chauffage gaz, norme RT2012',
+    icon: Package, ademe_unit: 'kgCO₂e/m².an',
+    placeholder: 'ex : 15', tooltip: 'Repère : ADEME — Bâtiment tertiaire chauffage gaz, norme RT2012',
     value: null, ...CAT_COLORS[13],
   },
   {
     id: 14, num: 'Cat. 14', name: 'Franchises', upstream: false,
     description: 'Émissions opérationnelles des franchisés (non consolidées dans le Scope 1 & 2 de la maison mère)',
-    icon: BarChart3, ademe_factor: 0.85, ademe_unit: 'kgCO₂e/€ d\'achats franchisés',
-    placeholder: 'ex : 520', tooltip: 'Source : Estimation GHG Protocol — Calquée sur Scope 1+2 moyen des franchisés',
+    icon: BarChart3, ademe_unit: 'kgCO₂e/€ d\'achats franchisés',
+    placeholder: 'ex : 520', tooltip: 'Repère : Estimation GHG Protocol — Calquée sur Scope 1+2 moyen des franchisés',
     value: null, ...CAT_COLORS[14],
   },
   {
     id: 15, num: 'Cat. 15', name: 'Investissements', upstream: false,
     description: 'Émissions des participations financières, prêts et investissements en capital (financed emissions)',
-    icon: TrendingUp, ademe_factor: 0.3, ademe_unit: 'kgCO₂e/k€ investi',
-    placeholder: 'ex : 280', tooltip: 'Source : PCAF Standard — Financed Emissions Equity & Bonds (pondéré par intensité)',
+    icon: TrendingUp, ademe_unit: 'kgCO₂e/k€ investi',
+    placeholder: 'ex : 280', tooltip: 'Repère : PCAF Standard — Financed Emissions Equity & Bonds (pondéré par intensité)',
     value: null, ...CAT_COLORS[15],
   },
 ];
@@ -387,7 +386,7 @@ export default function BilanCarbone() {
         year,
         entries: filled.map(c => ({
           cat_id: c.id, name: c.name, num: c.num, value: c.value,
-          unit: 'tCO2e', ademe_factor: c.ademe_factor, ademe_unit: c.ademe_unit,
+          unit: 'tCO2e',
         })),
       });
       toast.success(t('carbon.toastSaved', '✅ {{n}} catégorie(s) Scope 3 sauvegardées pour {{year}}', { n: res.data.inserted, year }));
@@ -413,11 +412,11 @@ export default function BilanCarbone() {
   };
 
   const exportCSV = () => {
-    const header = ['Catégorie', 'Nom', 'Type', 'tCO₂e', 'Statut', 'Facteur ADEME', 'Unité'];
+    const header = ['Catégorie', 'Nom', 'Type', 'tCO₂e', 'Statut', 'Unité de calcul usuelle'];
     const rows = categories.map(c => [
       c.num, c.name, c.upstream ? 'Amont' : 'Aval',
       c.value ?? '', c.value !== null ? 'Complété' : 'Non renseigné',
-      c.ademe_factor, c.ademe_unit,
+      c.ademe_unit,
     ]);
     const esc = (v: unknown) => {
       let x = String(v ?? '');
@@ -465,7 +464,7 @@ export default function BilanCarbone() {
                 <h1 className="text-3xl font-bold text-white">{t('carbon.title', 'Bilan Carbone — Scope 3')}</h1>
               </div>
               <p className="text-emerald-200 text-sm ml-1 mb-5">
-                {t('carbon.subtitle15cat', '15 catégories GHG Protocol • Base Empreinte® ADEME')}
+                {t('carbon.subtitle15cat', '15 catégories GHG Protocol')}
               </p>
 
               {/* Stat pills */}
@@ -533,7 +532,7 @@ export default function BilanCarbone() {
                   }}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors"
                   style={{ background: 'rgba(16,185,129,0.95)', color: 'white' }}
-                  title="Export au format ADEME pour soumission bilans-ges.ademe.fr (Art. L229-25)"
+                  title="Export de travail pour préparer la déclaration BEGES : à vérifier et compléter avant tout dépôt sur bilans-ges.ademe.fr"
                 >
                   <Download className="h-4 w-4" />
                   BEGES.xlsx
@@ -821,7 +820,7 @@ export default function BilanCarbone() {
                   <BarChart3 className="h-5 w-5 text-gray-500" />
                   <h3 className="text-base font-bold text-gray-900">{t('carbon.decompChartTitle', 'Classement des 15 catégories GHG Protocol')}</h3>
                 </div>
-                <p className="text-xs text-gray-400 mb-6 ml-7">{t('carbon.decompChartSub', 'Triées par contribution décroissante · Facteurs ADEME / GHG Protocol')}</p>
+                <p className="text-xs text-gray-400 mb-6 ml-7">{t('carbon.decompChartSub', 'Triées par contribution décroissante')}</p>
 
                 <div className="space-y-2.5">
                   {allSorted.map((cat, idx) => {
@@ -1127,10 +1126,10 @@ export default function BilanCarbone() {
                         {/* ADEME factor */}
                         <div className="rounded-xl p-4" style={{ backgroundColor: cat.softHex, border: `1px solid ${cat.borderHex}` }}>
                           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
-                            {t('carbon.ademeFactorLabel', "Facteur d'émission ADEME")}
+                            {t('carbon.calcUnitLabel', 'Unité de calcul usuelle')}
                           </p>
-                          <p className="text-xl font-bold" style={{ color: cat.hex }}>{cat.ademe_factor}</p>
-                          <p className="text-xs text-gray-500 mt-0.5">{cat.ademe_unit}</p>
+                          <p className="text-base font-bold" style={{ color: cat.hex }}>{cat.ademe_unit}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{t('carbon.calcUnitHint', "Multipliez votre donnée d'activité par le facteur de la Base Empreinte ADEME correspondant, puis saisissez le résultat en tCO₂e.")}</p>
                           <p className="text-xs text-gray-400 mt-2 leading-relaxed">{cat.tooltip}</p>
                         </div>
                       </div>
