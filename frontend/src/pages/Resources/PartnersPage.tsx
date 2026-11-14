@@ -32,7 +32,7 @@ const getTiers = (t: TFunction) => [
     target: t('resources.partners.tiers.1.target', 'Cabinet de conseil RSE 5-50 personnes'),
     commission: t('resources.partners.tiers.1.commission', '20 %'),
     duration: t('resources.partners.tiers.1.duration', 'sur 24 mois'),
-    badge: t('resources.partners.tiers.1.badge', 'Le plus choisi'),
+    badge: t('resources.partners.tiers.1.badge', 'Recommandé'),
     benefits: [
       t('resources.partners.tiers.1.benefits.0', "Tout ce qu'inclut Référent"),
       t('resources.partners.tiers.1.benefits.1', 'Traitement prioritaire de vos demandes'),

@@ -146,11 +146,10 @@ export default function EntreprisesINSEE() {
               <span className="px-2.5 py-1 bg-blue-400/20 border border-blue-300/30 rounded-full text-xs font-semibold text-blue-200">{t('insee.officialBadge', 'Données Officielles')}</span>
             </div>
             <h1 className="text-3xl font-bold mb-1">{t('insee.heroTitle', 'Entreprises Françaises (INSEE)')}</h1>
-            <p className="text-blue-100">{t('insee.heroDesc', "Recherche dans la base Sirene · Plus de 10 millions d'établissements")}</p>
+            <p className="text-blue-100">{t('insee.heroDesc', "Recherche dans la base Sirene via l'API officielle de l'INSEE")}</p>
           </div>
           <div className="flex gap-3 flex-wrap">
             {[
-              { icon: Globe,      label: t('insee.statEstab',   'Établissements'), value: '10M+' },
               { icon: BarChart3,  label: t('insee.statSectors', 'Secteurs ESG'),   value: secteurs.length || '—' },
               { icon: CheckCircle,label: 'Source',                                 value: t('insee.officielle', 'Officielle') },
             ].map(({ icon: Icon, label, value }) => (

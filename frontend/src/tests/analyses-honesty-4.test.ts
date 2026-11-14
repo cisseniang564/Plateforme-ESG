@@ -44,3 +44,13 @@ describe('Layout — pas de statut « opérationnel » figé', () => {
     expect(layout).toContain('to="/status"');
   });
 });
+
+import landing from '@/pages/Landing/LandingPage.tsx?raw';
+import partners from '@/pages/Resources/PartnersPage.tsx?raw';
+describe('Landing — pas de chiffre ni de badge de popularité non justifiés', () => {
+  it('ne revendique ni 10M+ entreprises, ni « le plus populaire / choisi »', () => {
+    expect(landing).not.toContain('10M+');
+    expect(landing).not.toContain('Le plus populaire');
+    expect(partners).not.toContain('Le plus choisi');
+  });
+});
