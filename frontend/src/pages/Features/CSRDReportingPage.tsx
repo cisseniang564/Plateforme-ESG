@@ -10,8 +10,8 @@ export default function CSRDReportingPage() {
       color="#0369a1"
       colorLight="#f0f9ff"
       title={t('features.csrdReporting.title', "Reporting CSRD / ESRS")}
-      subtitle={t('features.csrdReporting.subtitle', "Construisez votre rapport de durabilité CSRD conforme aux normes ESRS")}
-      description={t('features.csrdReporting.description', "ESGFlow suit 80 points de données ESRS (European Sustainability Reporting Standards) avec un éditeur de rapport structuré, une gap analysis automatique et des exports multi-formats prêts pour vos auditeurs.")}
+      subtitle={t('features.csrdReporting.subtitle', "Construisez votre rapport de durabilité CSRD structuré selon les normes ESRS")}
+      description={t('features.csrdReporting.description', "ESGFlow suit 80 points de données ESRS (European Sustainability Reporting Standards) avec un éditeur de rapport structuré, une gap analysis automatique et des exports multi-formats pour vos revues et celles de vos auditeurs.")}
       frameworks={['CSRD', 'ESRS Set 1', 'EFRAG', 'ESEF/iXBRL']}
       appPath="/app/reports/csrd-builder"
       benefits={[
@@ -40,7 +40,7 @@ export default function CSRDReportingPage() {
         { title: t('features.csrdReporting.capabilities.0.title', "Éditeur de rapport structuré"), description: t('features.csrdReporting.capabilities.0.description', "Construisez votre rapport section par section selon la structure ESRS : informations générales (ESRS 2), environnement (E1-E5), social (S1-S4) et gouvernance (G1).") },
         { title: t('features.csrdReporting.capabilities.1.title', "Score de complétion en temps réel"), description: t('features.csrdReporting.capabilities.1.description', "Suivez votre progression avec un score global /100 et par standard. Identifiez les sections qui nécessitent encore du travail.") },
         { title: t('features.csrdReporting.capabilities.2.title', "Double matérialité intégrée"), description: t('features.csrdReporting.capabilities.2.description', "Lien direct avec votre analyse de double matérialité : seuls les standards matériels pour votre entreprise sont requis dans le rapport.") },
-        { title: t('features.csrdReporting.capabilities.3.title', "Indicateurs quantitatifs & narratifs"), description: t('features.csrdReporting.capabilities.3.description', "Saisissez vos données chiffrées ET vos explications narratives. L'IA peut générer des ébauches de narratifs conformes ESRS.") },
+        { title: t('features.csrdReporting.capabilities.3.title', "Indicateurs quantitatifs & narratifs"), description: t('features.csrdReporting.capabilities.3.description', "Saisissez vos données chiffrées ET vos explications narratives. L'IA peut générer des ébauches de narratifs, à relire.") },
         { title: t('features.csrdReporting.capabilities.4.title', "Mapping multi-référentiels"), description: t('features.csrdReporting.capabilities.4.description', "Une table de correspondance indicative relie vos données ESRS aux référentiels GRI, CDP, TCFD et ODD. À valider avant tout usage officiel.") },
         { title: t('features.csrdReporting.capabilities.5.title', "Workflow de validation"), description: t('features.csrdReporting.capabilities.5.description', "Soumettez chaque section pour révision et approbation. Historique complet des modifications avec motifs.") },
         { title: t('features.csrdReporting.capabilities.6.title', "Export iXBRL/ESEF"), description: t('features.csrdReporting.capabilities.6.description', "Produisez un document iXBRL (XHTML) validable avec Arelle. Le package ESEF final reste à constituer avec votre prestataire de dépôt.") },
@@ -48,7 +48,7 @@ export default function CSRDReportingPage() {
       ]}
       steps={[
         { step: 1, title: t('features.csrdReporting.steps.0.title', "Réalisez votre gap analysis"), description: t('features.csrdReporting.steps.0.description', "ESGFlow analyse vos données existantes et identifie les écarts par rapport aux 80 points de données ESRS. Score de conformité instant.") },
-        { step: 2, title: t('features.csrdReporting.steps.1.title', "Complétez votre rapport"), description: t('features.csrdReporting.steps.1.description', "Renseignez les indicateurs manquants section par section. L'IA vous aide à rédiger les narratifs conformes.") },
+        { step: 2, title: t('features.csrdReporting.steps.1.title', "Complétez votre rapport"), description: t('features.csrdReporting.steps.1.description', "Renseignez les indicateurs manquants section par section. L'IA propose des ébauches de narratifs, à relire et valider.") },
         { step: 3, title: t('features.csrdReporting.steps.2.title', "Exportez et soumettez"), description: t('features.csrdReporting.steps.2.description', "Générez votre rapport en PDF/Word pour la direction et un document iXBRL pour la validation avant dépôt. Les actions sont tracées dans la piste d'audit.") },
       ]}
       faqs={[
