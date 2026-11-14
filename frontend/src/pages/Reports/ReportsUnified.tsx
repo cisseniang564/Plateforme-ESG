@@ -124,7 +124,7 @@ const getTemplates = (t: TFunction) => [
     type: 'gri' as ReportType,
     label: 'GRI Standards 2021',
     sub: 'Global Reporting Initiative',
-    desc: t('reports.tpl.gri.desc', 'Rapport conforme aux standards GRI avec index de contenu complet et références croisées.'),
+    desc: t('reports.tpl.gri.desc', 'Rapport structuré selon les standards GRI avec index de contenu et références croisées.'),
     icon: Globe,
     gradient: 'from-green-500 to-lime-600',
     lightBg: '#f0fdf4',
