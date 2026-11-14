@@ -54,3 +54,15 @@ describe('Landing — pas de chiffre ni de badge de popularité non justifiés',
     expect(partners).not.toContain('Le plus choisi');
   });
 });
+
+import vigilanceFeat from '@/pages/Features/VigilancePage.tsx?raw';
+import ixbrlFeat from '@/pages/Features/IXBRLPage.tsx?raw';
+import aiFeat from '@/pages/Features/AIAutomationPage.tsx?raw';
+describe('Pages Features — pas de garantie absolue non tenable', () => {
+  it("ne garantit ni l'anonymat complet, ni la conformité du fichier iXBRL, ni « jamais » côté fournisseur IA", () => {
+    expect(vigilanceFeat).not.toContain("Oui. Le canal de signalement public permet");
+    expect(ixbrlFeat).not.toContain('intégré nativement');
+    expect(ixbrlFeat).not.toContain('garantissant la traçabilité requise');
+    expect(aiFeat).not.toContain('ne sont jamais utilisées pour entraîner');
+  });
+});
