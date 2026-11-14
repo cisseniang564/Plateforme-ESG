@@ -149,7 +149,7 @@ export default function SecurityPage() {
 
             <SecurityCard icon={Globe} color="emerald" title={t('security.page.card1Title', 'Hébergement chez IONOS')}>
               <p>{t('security.page.card1p1', 'Infrastructure hébergée chez IONOS, sur un serveur situé en France.')}</p>
-              <p>{t('security.page.card1p2', "Aucun sous-traitant américain. Aucun transfert de données hors UE. Conformité RGPD garantie contractuellement par notre DPA.")}</p>
+              <p>{t('security.page.card1p2', "Vos données applicatives restent chez IONOS (France). Certains sous-traitants listés plus bas peuvent impliquer un transfert hors UE (OpenAI, États-Unis, uniquement si vous activez l’IA ; Sentry, localisation à confirmer). Un DPA est proposé aux clients qui en font la demande.")}</p>
             </SecurityCard>
 
             <SecurityCard icon={Lock} color="violet" title={t('security.page.card2Title', 'Chiffrement en transit')}>
@@ -281,7 +281,7 @@ export default function SecurityPage() {
         <section className="mb-20">
           <h2 className="text-2xl font-extrabold text-gray-900 mb-2">{t('security.page.subprocTitle', 'Sous-traitants (sub-processors)')}</h2>
           <p className="text-gray-500 mb-8">
-            {t('security.page.subprocSubtitle', "Liste exhaustive des prestataires ayant un accès potentiel à vos données. Tous sont liés contractuellement (DPA) et opèrent dans l'UE ou sous garanties équivalentes.")}
+            {t('security.page.subprocSubtitle', "Prestataires ayant un accès potentiel à vos données. Les garanties contractuelles (DPA, clauses contractuelles types) se confirment prestataire par prestataire sur demande.")}
           </p>
           <div className="overflow-hidden rounded-2xl border border-gray-200">
             <table className="w-full text-sm">

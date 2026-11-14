@@ -76,3 +76,13 @@ describe('Page Normes — pas de certification ni de couverture absolue', () => 
     expect(standards).not.toContain('implémenté et en production');
   });
 });
+
+import security from '@/pages/Security/SecurityPage.tsx?raw';
+describe('Page Sécurité — cohérente avec la liste des sous-traitants', () => {
+  it("n'affirme ni l'absence de sous-traitant américain ni un DPA universel", () => {
+    expect(security).not.toContain('Aucun sous-traitant américain');
+    expect(security).not.toContain('Aucun transfert de données hors UE');
+    expect(security).not.toContain('Tous sont liés contractuellement');
+    expect(security).toContain('OpenAI');
+  });
+});
