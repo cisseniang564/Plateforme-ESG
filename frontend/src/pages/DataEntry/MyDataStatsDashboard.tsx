@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+import { sourceLabel } from './dataEntryHelpers';
+
 export interface MyDataStats {
   total: number;
   by_pillar: Record<string, number>;
@@ -161,13 +163,13 @@ export default function MyDataStatsDashboard({ stats }: Props) {
     manual_scope3: { label: t('mydata.srcScope3', 'Saisie Scope 3'), color: C.teal },
     csv_import: { label: 'Import CSV', color: C.purple },
     fec_import: { label: 'Import FEC', color: C.amber },
-    automatic: { label: t('mydata.srcAuto', 'Automatique (IA)'), color: C.cyan },
+    automatic: { label: sourceLabel('automatic'), color: C.cyan },
     unknown: { label: t('mydata.unknown', 'Non renseigné'), color: C.gray },
   };
   const methodData = Object.entries(stats.by_collection_method)
     .filter(([, v]) => v > 0)
     .map(([key, value]) => ({
-      name: METHOD_META[key]?.label ?? key,
+      name: METHOD_META[key]?.label ?? sourceLabel(key),
       value,
       color: METHOD_META[key]?.color ?? C.gray,
     }));

@@ -1,256 +1,180 @@
-/**
- * DataExport — Centre d'export des données ESG.
- */
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Download, FileSpreadsheet, FileText, Leaf, Users, Building2, CheckCircle2, Clock, XCircle, Filter, RefreshCw, BarChart3, Zap, ArrowRight, FileDown } from 'lucide-react'
-import api from '@/services/api'
-import PlanGate from '@/components/common/PlanGate'
-import BackButton from '@/components/common/BackButton'
-import { usePlan } from '@/hooks/usePlan'
-import toast from 'react-hot-toast'
-import { useTranslation } from 'react-i18next'
-import type { TFunction } from 'i18next'
-import i18n from '@/i18n/config'
+// Export des saisies ESG (Excel ou CSV), avec filtres et nombre de lignes exact.
+import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Check, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import toast from 'react-hot-toast';
+import api from '@/services/api';
+import PlanGate from '@/components/common/PlanGate';
+import Spinner from '@/components/common/Spinner';
+import { usePlan } from '@/hooks/usePlan';
+import CollectHeader, { btnPrimary, card, field } from './CollectHeader';
 
-const numLocale = () => (i18n.language?.startsWith('en') ? 'en-US' : 'fr-FR')
+interface ExportStats { total: number; by_period?: Record<string, number> }
+type Fmt = 'xlsx' | 'csv';
 
-interface ExportStats {
-  total: number
-  by_pillar: Record<string, number>
-  by_verification_status: Record<string, number>
-  date_range: { min: string | null; max: string | null }
-}
-
-function getPILLARS(t: TFunction) {
-  return [
-    { id: '',              label: t('dexp.allPillars', 'Tous les piliers'),  icon: BarChart3,  color: 'text-gray-500' },
-    { id: 'environmental', label: t('dexp.pillarEnv',  'Environnement'),     icon: Leaf,       color: 'text-emerald-600' },
-    { id: 'social',        label: t('dexp.pillarSoc',  'Social'),            icon: Users,      color: 'text-blue-600' },
-    { id: 'governance',    label: t('dexp.pillarGov',  'Gouvernance'),       icon: Building2,  color: 'text-purple-600' },
-  ]
-}
-
-function getSTATUSES(t: TFunction) {
-  return [
-    { id: '',          label: t('dexp.allStatuses', 'Tous les statuts') },
-    { id: 'verified',  label: t('dexp.stVerified',  'Vérifié') },
-    { id: 'pending',   label: t('dexp.stPending',   'En attente') },
-    { id: 'rejected',  label: t('dexp.stRejected',  'Rejeté') },
-  ]
-}
-
-const CURRENT_YEAR = new Date().getFullYear()
-const BASE_YEARS = [0, CURRENT_YEAR, CURRENT_YEAR - 1, CURRENT_YEAR - 2, CURRENT_YEAR - 3]
+// Colonnes réellement présentes dans le fichier (voir GET /data-entry/export).
+const COLUMNS = [
+  'Identifiant', 'Pilier', 'Catégorie', 'Indicateur', 'Valeur numérique', 'Valeur texte', 'Unité',
+  'Début de période', 'Fin de période', 'Type de période', 'Source', 'Méthode de collecte',
+  'Statut de vérification', 'Notes', 'Date de création',
+];
 
 export default function DataExport() {
-  const { t } = useTranslation()
-  const PILLARS  = getPILLARS(t)
-  const STATUSES = getSTATUSES(t)
-  const YEARS = BASE_YEARS.map(y => ({ id: y === 0 ? '' : String(y), label: y === 0 ? t('dexp.allYears', 'Toutes les années') : String(y) }))
-  const EXPORT_FORMATS = [
-    { id: 'xlsx', label: 'Excel (.xlsx)', icon: FileSpreadsheet, desc: t('dexp.xlsxDesc', 'Format tabulaire avec mise en forme colorée par pilier, idéal pour analyser et partager.'), color: 'border-emerald-200 bg-emerald-50 hover:bg-emerald-100', badge: t('dexp.recommended', 'Recommandé'), badgeColor: 'bg-emerald-100 text-emerald-700' },
-    { id: 'csv',  label: 'CSV (.csv)',    icon: FileText,        desc: t('dexp.csvDesc', 'Format texte universel compatible avec tous les logiciels (R, Python, Power BI…).'),          color: 'border-blue-200 bg-blue-50 hover:bg-blue-100',         badge: t('dexp.universal',    'Universel'),  badgeColor: 'bg-blue-100 text-blue-700' },
-  ]
-  const EXPORT_FIELDS = [
-    t('dexp.fldId',      "ID de l'entrée"), t('dexp.fldPillar',  'Pilier ESG'),
-    t('dexp.fldCategory','Catégorie'),      t('dexp.fldMetric',  'Indicateur'),
-    t('dexp.fldValue',   'Valeur numérique'), t('dexp.fldUnit',  'Unité'),
-    t('dexp.fldPeriod',  'Période de référence'), t('dexp.fldSource', 'Source de données'),
-    t('dexp.fldMethod',  'Méthode de collecte'),  t('dexp.fldVerif',  'Statut de vérification'),
-    t('dexp.fldNotes',   'Notes'),          t('dexp.fldCreated', 'Date de création'),
-  ]
+  const { t } = useTranslation();
+  const { can, loading: planLoading } = usePlan();
+  const allowed = can('data_export');
 
-  const { can, loading: planLoading } = usePlan()
-  const navigate = useNavigate()
+  const [stats, setStats] = useState<ExportStats | null>(null);
+  const [pillar, setPillar] = useState('');
+  const [year, setYear] = useState('');
+  const [status, setStatus] = useState('');
+  const [format, setFormat] = useState<Fmt>('xlsx');
+  const [count, setCount] = useState<number | null>(null);
+  const [counting, setCounting] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
-  const [stats, setStats] = useState<ExportStats | null>(null)
-  const [loadingStats, setLoadingStats] = useState(false)
-  const [exporting, setExporting] = useState<string | null>(null)
-  const [pillar, setPillar]   = useState('')
-  const [year, setYear]       = useState('')
-  const [status, setStatus]   = useState('')
-  const [format, setFormat]   = useState<'xlsx' | 'csv'>('xlsx')
+  const filters = useCallback(() => {
+    const p: Record<string, string> = {};
+    if (pillar) p.pillar = pillar;
+    if (year) p.year = year;
+    if (status) p.verification_status = status;
+    return p;
+  }, [pillar, year, status]);
 
-  useEffect(() => { if (!planLoading && can('data_export')) loadStats() }, [planLoading])
+  useEffect(() => {
+    if (planLoading || !allowed) return;
+    api.get('/data-entry/stats').then(r => setStats(r.data)).catch(() => setStats(null));
+  }, [planLoading, allowed]);
 
-  const loadStats = async () => {
-    try { setLoadingStats(true); const res = await api.get('/data-entry/stats'); setStats(res.data) }
-    catch { setStats(null) } // le compteur est facultatif : l'export reste utilisable
-    finally { setLoadingStats(false) }
-  }
+  // Nombre exact de lignes pour les filtres choisis : lu dans l'en-tête X-Total-Count de la liste.
+  useEffect(() => {
+    if (planLoading || !allowed) return;
+    let cancelled = false;
+    setCounting(true);
+    api.get('/data-entry/', { params: { ...filters(), limit: 1 } })
+      .then(r => {
+        if (cancelled) return;
+        const h = r.headers?.['x-total-count'];
+        setCount(h !== undefined && Number.isFinite(Number(h)) ? Number(h) : null);
+      })
+      .catch(() => { if (!cancelled) setCount(null); })
+      .finally(() => { if (!cancelled) setCounting(false); });
+    return () => { cancelled = true; };
+  }, [filters, planLoading, allowed]);
 
-  // Nombre affiché uniquement s'il est exact : les stats ne permettent pas de
-  // croiser statut ou année, on n'extrapole donc jamais (pas de "~N lignes").
-  const countForFilter = () => {
-    if (!stats || status || year) return null
-    if (pillar) return stats.by_pillar ? (stats.by_pillar[pillar] ?? 0) : null
-    return stats.total
-  }
-
-  const handleExport = async (fmt: 'xlsx' | 'csv') => {
-    if (!can('data_export')) return
+  const handleExport = async () => {
+    setExporting(true);
     try {
-      setExporting(fmt)
-      const params: Record<string, string> = { format: fmt }
-      if (pillar) params.pillar = pillar
-      if (year)   params.year = year
-      if (status) params.verification_status = status
-      const query = new URLSearchParams(params).toString()
-      const res = await api.get(`/data-entry/export?${query}`, { responseType: 'blob' })
-      const mime = fmt === 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv'
-      const blob = new Blob([res.data], { type: mime })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a'); a.href = url; a.download = `esg_data_export.${fmt}`; a.click(); URL.revokeObjectURL(url)
-      toast.success(t('dexp.exportOk', 'Export {{fmt}} téléchargé avec succès', { fmt: fmt.toUpperCase() }))
+      const res = await api.get('/data-entry/export', { params: { ...filters(), format }, responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a'); a.href = url; a.download = `donnees-esg.${format}`; a.click();
+      URL.revokeObjectURL(url);
     } catch {
-      toast.error(t('dexp.errExport', "Erreur lors de l'export"))
-    } finally { setExporting(null) }
-  }
+      toast.error(t('dexp.errExport', "Erreur lors de l'export"));
+    } finally { setExporting(false); }
+  };
 
-  if (planLoading) return (
-    <div className="p-6 space-y-4 animate-pulse">
-      <div className="h-8 bg-gray-200 rounded-xl w-64" />
-      <div className="grid grid-cols-4 gap-4">{[0,1,2,3].map(i => <div key={i} className="h-20 bg-gray-200 rounded-xl" />)}</div>
-      <div className="h-40 bg-gray-200 rounded-xl" />
-      <div className="grid grid-cols-2 gap-4"><div className="h-48 bg-gray-200 rounded-xl" /><div className="h-48 bg-gray-200 rounded-xl" /></div>
-    </div>
-  )
+  if (planLoading) return <div className="flex h-64 items-center justify-center"><Spinner size="lg" /></div>;
 
-  if (!can('data_export')) return <div className="p-6"><PlanGate feature="data_export" /></div>
-
-  const estimatedCount = countForFilter()
+  const years = Object.keys(stats?.by_period ?? {}).sort().reverse();
+  const formats: { id: Fmt; label: string; desc: string; icon: typeof FileText }[] = [
+    { id: 'xlsx', label: 'Excel (.xlsx)', desc: t('dexp.xlsxDesc2', 'En-têtes en français et lignes colorées par pilier.'), icon: FileSpreadsheet },
+    { id: 'csv', label: 'CSV (.csv)', desc: t('dexp.csvDesc2', 'Texte brut, lisible par Excel, R, Python ou Power BI.'), icon: FileText },
+  ];
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div className="relative overflow-hidden rounded-2xl shadow-xl" style={{ background: 'linear-gradient(135deg, #312e81 0%, #4f46e5 45%, #7c3aed 100%)' }}>
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 80% 15%, rgba(255,255,255,0.1) 0%, transparent 55%)' }} />
-        <div className="relative px-8 py-7 flex items-start justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.2)' }}><Download className="h-6 w-6 text-white" /></div>
-              <h1 className="text-3xl font-bold text-white">{t('dexp.heroTitle', 'Export de données')}</h1>
-            </div>
-            <p className="text-sm mb-4" style={{ color: 'rgba(255,255,255,0.65)' }}>{t('dexp.heroDesc', 'Téléchargez vos données ESG en Excel ou CSV pour vos analyses et rapports.')}</p>
-            <div className="flex items-center gap-2 flex-wrap">
-              {stats && <div className="px-3 py-1.5 rounded-full text-xs font-semibold text-white" style={{ background: 'rgba(255,255,255,0.15)' }}>{t('dexp.entriesAvailable', '{{n}} entrées disponibles', { n: stats.total.toLocaleString(numLocale()) })}</div>}
-              {['Excel (.xlsx)', 'CSV', 'JSON'].map(fmt => <div key={fmt} className="px-2.5 py-1 rounded-full text-xs font-medium text-white" style={{ background: 'rgba(255,255,255,0.1)' }}>{fmt}</div>)}
-            </div>
-          </div>
-          <button onClick={loadStats} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors flex-shrink-0" style={{ background: 'rgba(255,255,255,0.15)', color: 'white' }}>
-            <RefreshCw size={14} /> {t('dexp.refresh', 'Actualiser')}
-          </button>
-        </div>
-      </div>
+    <div className="space-y-5">
+      <CollectHeader
+        title={t('dexp.heroTitle', 'Export de données')}
+        subtitle={t('dexp.subtitle2', 'Téléchargez vos saisies ESG en Excel ou en CSV.')}
+      />
 
-      {loadingStats ? (
-        <div className="grid grid-cols-3 gap-4 animate-pulse">{[0,1,2].map(i => <div key={i} className="h-20 bg-gray-100 rounded-xl" />)}</div>
-      ) : stats ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-4 text-center shadow-sm">
-            <div className="text-3xl font-black text-gray-800">{stats.total.toLocaleString(numLocale())}</div>
-            <div className="text-xs text-gray-500 mt-1">{t('dexp.totalEntries', 'Entrées totales')}</div>
-          </div>
-          <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-4 text-center">
-            <div className="text-3xl font-black text-emerald-600">{stats.by_pillar?.environmental ?? 0}</div>
-            <div className="text-xs text-gray-500 mt-1 flex items-center justify-center gap-1"><Leaf size={10} />{t('dexp.pillarEnv', 'Environnement')}</div>
-          </div>
-          <div className="bg-blue-50 rounded-xl border border-blue-200 p-4 text-center">
-            <div className="text-3xl font-black text-blue-600">{stats.by_pillar?.social ?? 0}</div>
-            <div className="text-xs text-gray-500 mt-1 flex items-center justify-center gap-1"><Users size={10} />{t('dexp.pillarSoc', 'Social')}</div>
-          </div>
-          <div className="bg-purple-50 rounded-xl border border-purple-200 p-4 text-center">
-            <div className="text-3xl font-black text-purple-600">{stats.by_pillar?.governance ?? 0}</div>
-            <div className="text-xs text-gray-500 mt-1 flex items-center justify-center gap-1"><Building2 size={10} />{t('dexp.pillarGov', 'Gouvernance')}</div>
-          </div>
-        </div>
-      ) : null}
-
-      <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-          <Filter size={14} className="text-indigo-500" />{t('dexp.filtersTitle', "Filtres d'export")}
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('dexp.pillarLabel', 'Pilier')}</label>
-            <select value={pillar} onChange={e => setPillar(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
-              {PILLARS.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('dexp.yearLabel', 'Année')}</label>
-            <select value={year} onChange={e => setYear(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
-              {YEARS.map(y => <option key={y.id} value={y.id}>{y.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('dexp.statusLabel', 'Statut de vérification')}</label>
-            <select value={status} onChange={e => setStatus(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
-              {STATUSES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
-            </select>
-          </div>
-        </div>
-        {(pillar || year || status) && (
-          <div className="mt-3 flex flex-wrap gap-2 items-center">
-            <span className="text-xs text-gray-400">{t('dexp.activeFilters', 'Filtres actifs :')}</span>
-            {pillar && <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium">{PILLARS.find(p => p.id === pillar)?.label}</span>}
-            {year   && <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium">{year}</span>}
-            {status && <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium">{STATUSES.find(s => s.id === status)?.label}</span>}
-            <button onClick={() => { setPillar(''); setYear(''); setStatus('') }} className="text-xs text-gray-400 hover:text-gray-600 underline ml-1">{t('dexp.clear', 'Effacer')}</button>
-          </div>
-        )}
-      </div>
-
-      <div className="grid sm:grid-cols-2 gap-4">
-        {EXPORT_FORMATS.map(fmt => {
-          const Icon = fmt.icon
-          const isExporting = exporting === fmt.id
-          return (
-            <div key={fmt.id} className={`rounded-xl border-2 p-5 cursor-pointer transition-all ${fmt.color} ${format === fmt.id ? 'ring-2 ring-indigo-500 ring-offset-1' : ''}`} onClick={() => setFormat(fmt.id as 'xlsx' | 'csv')}>
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 p-2 bg-white rounded-lg shadow-sm"><Icon size={22} className={fmt.id === 'xlsx' ? 'text-emerald-600' : 'text-blue-600'} /></div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-sm font-bold text-gray-800">{fmt.label}</h3>
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${fmt.badgeColor}`}>{fmt.badge}</span>
-                  </div>
-                  <p className="text-xs text-gray-500 leading-relaxed">{fmt.desc}</p>
+      {!allowed ? <PlanGate feature="data_export" /> : (
+        <div className="grid gap-5 lg:grid-cols-3">
+          <section className={`${card} space-y-6 p-5 lg:col-span-2`}>
+            <div>
+              <h2 className="text-sm font-semibold text-gray-900">{t('dexp.filtersTitle2', '1. Que voulez-vous exporter ?')}</h2>
+              <div className="mt-3 grid gap-4 sm:grid-cols-3">
+                <div>
+                  <label htmlFor="dexp-pillar" className="mb-1 block text-xs font-medium text-gray-700">{t('dexp.pillarLabel', 'Pilier')}</label>
+                  <select id="dexp-pillar" value={pillar} onChange={e => setPillar(e.target.value)} className={field}>
+                    <option value="">{t('dexp.allPillars', 'Tous les piliers')}</option>
+                    <option value="environmental">{t('dexp.pillarEnv', 'Environnement')}</option>
+                    <option value="social">{t('dexp.pillarSoc', 'Social')}</option>
+                    <option value="governance">{t('dexp.pillarGov', 'Gouvernance')}</option>
+                  </select>
                 </div>
-                <div className={`flex-shrink-0 w-4 h-4 rounded-full border-2 mt-0.5 transition-colors ${format === fmt.id ? 'border-indigo-600 bg-indigo-600' : 'border-gray-300 bg-white'}`}>
-                  {format === fmt.id && <div className="w-full h-full rounded-full bg-white scale-50 block" />}
+                <div>
+                  <label htmlFor="dexp-year" className="mb-1 block text-xs font-medium text-gray-700">{t('dexp.yearLabel', 'Année')}</label>
+                  <select id="dexp-year" value={year} onChange={e => setYear(e.target.value)} className={field}>
+                    <option value="">{t('dexp.allYears', 'Toutes les années')}</option>
+                    {years.map(y => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="dexp-status" className="mb-1 block text-xs font-medium text-gray-700">{t('dexp.statusLabel', 'Statut de vérification')}</label>
+                  <select id="dexp-status" value={status} onChange={e => setStatus(e.target.value)} className={field}>
+                    <option value="">{t('dexp.allStatuses', 'Tous les statuts')}</option>
+                    <option value="verified">{t('dexp.stVerified2', 'Vérifiées')}</option>
+                    <option value="pending">{t('dexp.stPending2', 'À vérifier')}</option>
+                    <option value="flagged">{t('dexp.stFlagged2', 'Signalées')}</option>
+                    <option value="rejected">{t('dexp.stRejected2', 'Rejetées')}</option>
+                  </select>
                 </div>
               </div>
-              <button onClick={e => { e.stopPropagation(); handleExport(fmt.id as 'xlsx' | 'csv') }} disabled={isExporting || stats?.total === 0}
-                className={`mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white transition-all ${fmt.id === 'xlsx' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'} disabled:opacity-50 disabled:cursor-not-allowed`}>
-                {isExporting ? <><RefreshCw size={14} className="animate-spin" />{t('dexp.exporting', 'Export en cours…')}</>
-                  : <><FileDown size={14} />{t('dexp.downloadBtn', 'Télécharger {{label}}', { label: fmt.label })}{estimatedCount !== null && <span className="bg-white/20 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{estimatedCount.toLocaleString(numLocale())} {t('dexp.lines','lignes')}</span>}</>}
-              </button>
             </div>
-          )
-        })}
-      </div>
 
-      {stats?.total === 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
-          <BarChart3 size={32} className="text-amber-400 mx-auto mb-2" />
-          <h3 className="text-sm font-semibold text-amber-800">{t('dexp.noData', 'Aucune donnée à exporter')}</h3>
-          <p className="text-xs text-amber-600 mt-1">{t('dexp.noDataDesc', 'Commencez par saisir des données ESG pour pouvoir les exporter.')}</p>
-          <button onClick={() => navigate('/app/data-entry')} className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white text-xs font-semibold rounded-lg hover:bg-amber-700">
-            <Zap size={12} />{t('dexp.enterData', 'Saisir des données')}<ArrowRight size={12} />
-          </button>
+            <fieldset>
+              <legend className="text-sm font-semibold text-gray-900">{t('dexp.formatTitle', '2. Dans quel format ?')}</legend>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {formats.map(f => {
+                  const Icon = f.icon; const active = format === f.id;
+                  return (
+                    <label key={f.id} className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors focus-within:ring-2 focus-within:ring-emerald-500 ${active ? 'border-emerald-600 bg-emerald-50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                      <input type="radio" name="dexp-format" value={f.id} checked={active} onChange={() => setFormat(f.id)} className="sr-only" />
+                      <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${active ? 'text-emerald-700' : 'text-gray-400'}`} aria-hidden="true" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-medium text-gray-900">{f.label}</span>
+                        <span className="block text-xs text-gray-500">{f.desc}</span>
+                      </span>
+                      {active && <Check className="h-4 w-4 shrink-0 text-emerald-700" aria-hidden="true" />}
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+
+            <div className="flex flex-wrap items-center gap-4 border-t border-gray-200 pt-5">
+              <button type="button" onClick={handleExport} disabled={exporting || count === 0} className={btnPrimary}>
+                {exporting ? <Spinner size="sm" /> : <Download className="h-4 w-4" aria-hidden="true" />}
+                {exporting ? t('dexp.exporting', 'Export en cours…') : t('dexp.download', 'Télécharger')}
+              </button>
+              <p className="text-sm text-gray-600" aria-live="polite">
+                {counting ? t('dexp.counting', 'Calcul du nombre de lignes…')
+                  : count === null ? ''
+                  : count === 0 ? t('dexp.noMatch', 'Aucune saisie ne correspond à ces filtres.')
+                  : t('dexp.count', '{{n}} ligne(s) seront exportées.', { n: count.toLocaleString('fr-FR') })}
+              </p>
+            </div>
+
+            {stats?.total === 0 && (
+              <p className="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
+                {t('dexp.noData2', 'Vous n’avez encore aucune saisie à exporter.')}{' '}
+                <Link to="/app/data-entry" className="font-semibold text-emerald-700 hover:underline">{t('dexp.enterData', 'Saisir des données')}</Link>
+              </p>
+            )}
+          </section>
+
+          <aside className={`${card} p-5`}>
+            <h2 className="text-sm font-semibold text-gray-900">{t('dexp.exportContent', "Contenu de l'export")}</h2>
+            <p className="mt-1 text-xs text-gray-500">{t('dexp.contentHint', 'Une ligne par saisie, avec les colonnes suivantes :')}</p>
+            <ul className="mt-3 space-y-1.5 text-sm text-gray-700">
+              {COLUMNS.map(c => <li key={c} className="flex items-center gap-2"><span className="h-1 w-1 rounded-full bg-gray-400" aria-hidden="true" />{c}</li>)}
+            </ul>
+          </aside>
         </div>
       )}
-
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-        <h3 className="text-xs font-semibold text-gray-600 mb-2">{t('dexp.exportContent', "Contenu de l'export")}</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs text-gray-500">
-          {EXPORT_FIELDS.map(field => (
-            <div key={field} className="flex items-center gap-1.5">
-              <CheckCircle2 size={10} className="text-emerald-500 flex-shrink-0" />{field}
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
-  )
+  );
 }

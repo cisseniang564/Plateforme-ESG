@@ -4,15 +4,35 @@ from sqlalchemy import select, extract, func, and_, or_
 from typing import List, Optional
 from datetime import date, datetime
 from uuid import UUID
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, model_validator
 
-from app.dependencies import get_db, get_current_user
+from app.core.permissions import Roles
+from app.dependencies import get_db, get_current_user, require_any_role
 from app.models.data_entry import DataEntry
 from app.models.user import User
 from app.services.audit_service import log_change
 from app.utils.spreadsheet_safe import safe_cell
 
 router = APIRouter()
+
+PILLARS = ("environmental", "social", "governance")
+LOCKED_DETAIL = "Cette saisie a été vérifiée : elle est verrouillée et ne peut plus être modifiée ni supprimée."
+
+
+def _client_ip(request: Request) -> Optional[str]:
+    """IP réelle derrière le reverse proxy (nginx pose X-Real-IP / X-Forwarded-For)."""
+    real = request.headers.get("x-real-ip")
+    if real:
+        return real.strip()[:45]
+    fwd = request.headers.get("x-forwarded-for")
+    if fwd:
+        return fwd.split(",")[0].strip()[:45]
+    return request.client.host if request.client else None
+
+
+def _value(entry) -> object:
+    """Valeur à journaliser : 0 est une valeur légitime (pas « vide »)."""
+    return entry.value_numeric if entry.value_numeric is not None else entry.value_text
 
 # ============= SCHEMAS =============
 
@@ -30,6 +50,28 @@ class DataEntryCreate(BaseModel):
     data_source: Optional[str] = None
     collection_method: Optional[str] = "manual"
     notes: Optional[str] = None
+
+    @field_validator("pillar")
+    @classmethod
+    def _pillar(cls, v: str) -> str:
+        v = (v or "").strip().lower()
+        if v not in PILLARS:
+            raise ValueError("Pilier invalide (environmental, social ou governance).")
+        return v
+
+    @field_validator("metric_name", "category")
+    @classmethod
+    def _not_blank(cls, v: str) -> str:
+        v = (v or "").strip()
+        if not v:
+            raise ValueError("Champ obligatoire.")
+        return v
+
+    @model_validator(mode="after")
+    def _period(self):
+        if self.period_end < self.period_start:
+            raise ValueError("La fin de période doit être postérieure ou égale au début.")
+        return self
 
 class DataEntryUpdate(BaseModel):
     value_numeric: Optional[float] = None
@@ -166,12 +208,13 @@ async def create_data_entry(
     entry: DataEntryCreate,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_any_role(*Roles.ENTRY_OR_ABOVE)),
 ):
     """Create manual data entry with audit logging"""
-    
-    if not entry.value_numeric and not entry.value_text:
-        raise HTTPException(status_code=400, detail="Provide value_numeric or value_text")
+
+    # 0 est une valeur valide (zéro accident, zéro émission) : on teste None, pas la « fausseté ».
+    if entry.value_numeric is None and not (entry.value_text or "").strip():
+        raise HTTPException(status_code=400, detail="Renseignez une valeur numérique ou un texte.")
     
     db_entry = DataEntry(
         tenant_id=current_user.tenant_id,
@@ -193,10 +236,10 @@ async def create_data_entry(
         user=current_user,
         new_values={
             "metric_name": db_entry.metric_name,
-            "value": db_entry.value_numeric or db_entry.value_text,
+            "value": _value(db_entry),
             "pillar": db_entry.pillar
         },
-        ip_address=request.client.host if request.client else None
+        ip_address=_client_ip(request)
     )
     
     return db_entry
@@ -311,7 +354,7 @@ async def update_data_entry(
     entry_update: DataEntryUpdate,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_any_role(*Roles.ENTRY_OR_ABOVE)),
 ):
     """Update data entry with audit logging"""
     result = await db.execute(
@@ -324,20 +367,10 @@ async def update_data_entry(
     if not db_entry:
         raise HTTPException(status_code=404, detail="Not found")
 
-    # ── Immutability lock ────────────────────────────────────────────────
-    # Verified entries are locked — any further change must go through a
-    # formal "revoke verification" flow (TENANT_ADMIN only). This is a hard
-    # CSRD / ISAE 3000 requirement: once a CAC (commissaire aux comptes)
-    # has signed off, the underlying data is frozen.
+    # Une saisie vérifiée est verrouillée. Il n'existe pas (encore) de procédure
+    # de déverrouillage : on ne la promet donc pas dans le message.
     if (db_entry.verification_status or "").lower() == "verified":
-        raise HTTPException(
-            status_code=403,
-            detail=(
-                "Cette entrée est verrouillée (verified). Pour modifier, "
-                "demandez d'abord à un administrateur de révoquer la "
-                "vérification — l'opération sera tracée dans l'audit trail."
-            ),
-        )
+        raise HTTPException(status_code=403, detail=LOCKED_DETAIL)
 
     old_values = {
         "value_numeric": db_entry.value_numeric,
@@ -362,7 +395,7 @@ async def update_data_entry(
         user=current_user,
         old_values=old_values,
         new_values=update_data,
-        ip_address=request.client.host if request.client else None
+        ip_address=_client_ip(request)
     )
 
     return db_entry
@@ -372,7 +405,7 @@ async def delete_data_entry(
     entry_id: UUID,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_any_role(*Roles.ENTRY_OR_ABOVE)),
 ):
     """Delete data entry with audit logging"""
     result = await db.execute(
@@ -385,15 +418,8 @@ async def delete_data_entry(
     if not db_entry:
         raise HTTPException(status_code=404, detail="Not found")
 
-    # Verified entries are locked from deletion (CSRD / ISAE 3000).
     if (db_entry.verification_status or "").lower() == "verified":
-        raise HTTPException(
-            status_code=403,
-            detail=(
-                "Cette entrée est verrouillée (verified). Pour supprimer, "
-                "un administrateur doit d'abord révoquer la vérification."
-            ),
-        )
+        raise HTTPException(status_code=403, detail=LOCKED_DETAIL)
 
     await log_change(
         db=db,
@@ -404,9 +430,9 @@ async def delete_data_entry(
         user=current_user,
         old_values={
             "metric_name": db_entry.metric_name,
-            "value": db_entry.value_numeric or db_entry.value_text
+            "value": _value(db_entry)
         },
-        ip_address=request.client.host if request.client else None
+        ip_address=_client_ip(request)
     )
 
     await db.delete(db_entry)
@@ -418,14 +444,16 @@ async def delete_data_entry(
 
 @router.get("/export")
 async def export_data_entries(
-    format: str = Query("xlsx", regex="^(xlsx|csv)$"),
+    format: str = Query("xlsx", pattern="^(xlsx|csv)$"),
     pillar: Optional[str] = None,
     year: Optional[int] = None,
     verification_status: Optional[str] = None,
+    collection_method: Optional[str] = None,
+    search: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Export data entries as Excel (.xlsx) or CSV."""
+    """Export data entries as Excel (.xlsx) or CSV (mêmes filtres que la liste)."""
     from io import BytesIO
     from fastapi.responses import StreamingResponse
 
@@ -436,6 +464,15 @@ async def export_data_entries(
         query = query.where(extract('year', DataEntry.period_start) == year)
     if verification_status:
         query = query.where(DataEntry.verification_status == verification_status)
+    if collection_method:
+        query = query.where(DataEntry.collection_method == collection_method)
+    if search and search.strip():
+        like = f"%{search.strip()}%"
+        query = query.where(or_(
+            DataEntry.metric_name.ilike(like),
+            DataEntry.notes.ilike(like),
+            DataEntry.data_source.ilike(like),
+        ))
     query = query.order_by(DataEntry.period_start.desc(), DataEntry.pillar)
 
     result = await db.execute(query)

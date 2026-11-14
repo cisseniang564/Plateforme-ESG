@@ -7,9 +7,12 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
 
-from app.dependencies import get_db, get_current_user
+from app.core.permissions import Roles
+from app.dependencies import get_db, require_any_role
 from app.models.user import User
-from app.services.esg_data_import_service import ESGDataImportService
+from app.services.esg_data_import_service import (
+    AlreadyImportedError, ESGDataImportService, UploadNotFoundError,
+)
 
 router = APIRouter()
 
@@ -32,39 +35,40 @@ class ColumnMappingRequest(BaseModel):
 async def upload_and_preview(
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_any_role(*Roles.ENTRY_OR_ABOVE))
 ):
     """Upload CSV/Excel and get preview with auto-detected columns."""
     
-    # Validate file type
-    allowed_types = ['text/csv', 'application/vnd.ms-excel', 
-                     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
-    
-    if file.content_type not in allowed_types and not file.filename.endswith(('.csv', '.xlsx', '.xls')):
-        raise HTTPException(status_code=400, detail="Invalid file type")
-    
-    # Read content
+    # L'extension fait foi (le type MIME envoyé par le navigateur n'est pas fiable).
+    filename = (file.filename or "").strip()
+    if not filename.lower().endswith(('.csv', '.xlsx', '.xls')):
+        raise HTTPException(status_code=400, detail="Format non pris en charge : utilisez un fichier .csv, .xlsx ou .xls.")
+
     content = await file.read()
-    
-    # Size limit
+    if not content:
+        raise HTTPException(status_code=400, detail="Le fichier est vide.")
     if len(content) > 10 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="File too large (max 10MB)")
-    
+        raise HTTPException(status_code=400, detail="Fichier trop volumineux (10 Mo maximum).")
+
     # Parse and preview
     service = ESGDataImportService(db)
     upload = await service.parse_and_preview(
         file_content=content,
-        filename=file.filename,
+        filename=filename,
         tenant_id=current_user.tenant_id,
         user_id=current_user.id
     )
 
     # If parsing failed, return a clear 400 (not a 500 crash)
     if upload.status == "failed":
+        import logging
+        logging.getLogger(__name__).warning("Import preview failed (%s): %s", filename, upload.error_message)
         raise HTTPException(
             status_code=400,
-            detail=f"Impossible d'analyser le fichier : {upload.error_message or 'format non reconnu'}"
+            detail="Impossible de lire ce fichier. Vérifiez qu'il s'agit d'un CSV ou d'un Excel valide, avec une ligne d'en-tête.",
         )
+    if not upload.total_rows:
+        raise HTTPException(status_code=400, detail="Le fichier ne contient aucune ligne de données.")
 
     file_meta = upload.file_metadata or {}
     raw_mapping = file_meta.get('detected_mapping', {})
@@ -90,11 +94,15 @@ async def upload_and_preview(
             display_mapping[key] = str(val)
             flat_mapping[key] = str(val)
 
+    columns = file_meta.get('columns', [])
     return {
+        # Destination réelle des lignes : 'generic' (saisies ESG), 'materiality',
+        # 'risks' ou 'suppliers' — décidée d'après les colonnes du fichier.
+        'intent': ESGDataImportService._detect_file_intent(columns),
         'upload_id': str(upload.id),
         'filename': upload.filename,
         'total_rows': upload.total_rows,
-        'columns': file_meta.get('columns', []),
+        'columns': columns,
         'detected_mapping': flat_mapping,
         'display_mapping': display_mapping,
         'inferences':      inferences,    # e.g. {"inferred_unit": "tCO2e"}
@@ -112,7 +120,7 @@ async def import_data(
     upload_id: UUID,
     mapping: ColumnMappingRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_any_role(*Roles.ENTRY_OR_ABOVE))
 ):
     """Import data from upload to data_entries table. Auto-triggers score recalculation."""
 
@@ -123,18 +131,24 @@ async def import_data(
     mapping_dict = mapping.dict(exclude_none=True)
     mapping_dict.pop('organization_id', None)
 
-    result = await service.import_to_data_entries(
-        upload_id=upload_id,
-        column_mapping=mapping_dict,
-        tenant_id=current_user.tenant_id,
-        user_id=current_user.id,
-        organization_id=org_id,
-    )
+    try:
+        result = await service.import_to_data_entries(
+            upload_id=upload_id,
+            column_mapping=mapping_dict,
+            tenant_id=current_user.tenant_id,
+            user_id=current_user.id,
+            organization_id=org_id,
+            user=current_user,
+        )
+    except UploadNotFoundError:
+        raise HTTPException(status_code=404, detail="Fichier introuvable. Recommencez l'import.")
+    except AlreadyImportedError:
+        raise HTTPException(status_code=409, detail="Ce fichier a déjà été importé. Pour le réimporter, déposez-le à nouveau.")
 
     # ── Auto-recalculate ESG scores after a successful import ─────────────
     # Run in the background (best-effort) so the import response is fast.
     scores_recalculated = 0
-    if result.get('imported', 0) > 0:
+    if result.get('imported', 0) > 0 and result.get('target', 'generic') == 'generic':
         try:
             from sqlalchemy import select as _select
             from app.models.organization import Organization

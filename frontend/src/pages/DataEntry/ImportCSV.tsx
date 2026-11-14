@@ -1,712 +1,396 @@
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useState, useCallback, useEffect } from 'react';
+// Import de fichier (CSV / Excel / FEC) en trois étapes : fichier → vérification → résultat.
+import { useEffect, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import BackButton from '@/components/common/BackButton';
 import {
-  Upload,
-  FileText,
-  CheckCircle,
-  AlertTriangle,
-  Download,
-  Database,
-  X,
-  RefreshCw,
-  Eye,
-  Building2,
-  Zap,
-  ArrowRight,
-  FileSpreadsheet,
-  Table,
-  Sparkles,
-  ChevronDown,
-  ChevronUp,
-  Info,
+  AlertTriangle, ArrowRight, Check, CheckCircle2, Download, FileSpreadsheet, FileText, Info, RefreshCw, Upload, X,
 } from 'lucide-react';
 import Spinner from '@/components/common/Spinner';
 import api from '@/services/api';
 import toast from 'react-hot-toast';
+import CollectHeader, { btnPrimary, btnSecondary, card, field } from './CollectHeader';
+import { canImport, errorDetail, importTarget } from './dataEntryHelpers';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface PreviewData {
   upload_id: string;
+  intent?: string;
   filename: string;
   total_rows: number;
   columns: string[];
   detected_mapping: Record<string, string>;
-  preview: Record<string, any>[];
-  validation: { valid_rows: number; invalid_rows: number; errors: any; };
+  preview: Record<string, unknown>[];
+  validation: { valid_rows: number; invalid_rows: number };
 }
 interface ImportResult {
   imported: number;
   indicator_data_created?: number;
   errors: number;
-  error_details: any[];
+  error_details?: { row: number | string; error: string }[];
+  target?: string;
   fec?: boolean;
   scores_recalculated?: number;
 }
-interface Organization { id: string; name: string; }
+interface Organization { id: string; name: string }
 
-// ─── Field definitions ────────────────────────────────────────────────────────
-const FIELD_DEFS = [
-  { key: 'metric_name',   label: 'Indicateur',    required: true,  color: 'purple' },
-  { key: 'value_numeric', label: 'Valeur',         required: true,  color: 'green' },
-  { key: 'pillar',        label: 'Pilier ESG',     required: false, color: 'blue' },
-  { key: 'unit',          label: 'Unité',          required: false, color: 'gray' },
-  { key: 'period_start',  label: 'Début période',  required: false, color: 'gray' },
-  { key: 'period_end',    label: 'Fin période',    required: false, color: 'gray' },
-  { key: 'category',      label: 'Catégorie',      required: false, color: 'gray' },
-  { key: 'data_source',   label: 'Source données', required: false, color: 'gray' },
-  { key: 'notes',         label: 'Notes',          required: false, color: 'gray' },
+const FIELDS = [
+  { key: 'metric_name', label: 'Indicateur', required: true },
+  { key: 'value_numeric', label: 'Valeur', required: true },
+  { key: 'unit', label: 'Unité', required: false },
+  { key: 'pillar', label: 'Pilier ESG', required: false },
+  { key: 'category', label: 'Catégorie', required: false },
+  { key: 'period_start', label: 'Début de période', required: false },
+  { key: 'period_end', label: 'Fin de période', required: false },
+  { key: 'data_source', label: 'Source', required: false },
+  { key: 'notes', label: 'Notes', required: false },
 ] as const;
+const EMPTY_MAPPING: Record<string, string> = Object.fromEntries(FIELDS.map(f => [f.key, '']));
 
-const COLOR_CLASSES: Record<string, { badge: string; dot: string }> = {
-  purple: { badge: 'bg-purple-100 text-purple-800 border-purple-200', dot: 'bg-purple-500' },
-  green:  { badge: 'bg-emerald-100 text-emerald-800 border-emerald-200', dot: 'bg-emerald-500' },
-  blue:   { badge: 'bg-blue-100 text-blue-800 border-blue-200', dot: 'bg-blue-500' },
-  gray:   { badge: 'bg-gray-100 text-gray-600 border-gray-200', dot: 'bg-gray-400' },
-  miss:   { badge: 'bg-red-50 text-red-500 border-red-200', dot: 'bg-red-300' },
-};
+const ACCEPTED = ['.csv', '.xlsx', '.xls', '.txt'];
+const MAX_BYTES = 10 * 1024 * 1024;
 
-// ─── FEC Detection ────────────────────────────────────────────────────────────
-// A real FEC (Fichier des Écritures Comptables) file follows the Article A.47 A-1
-// LPF format: it MUST contain specific column names like JournalCode, EcritureNum,
-// EcritureDate, CompteNum etc. Counting separators alone is unreliable (any French
-// CSV exported by Excel uses ; as separator).
-const FEC_HEADER_KEYWORDS = ['JournalCode', 'EcritureNum', 'EcritureDate', 'CompteNum', 'PieceRef', 'EcritureLib'];
-const FEC_FILENAME_HINT   = /(^|[\\/])\d{9}fec\d{8}\.(txt|csv)$/i;  // e.g. 851234567FEC20251231.txt
-const FEC_MIN_KEYWORDS    = 2;  // require ≥2 FEC-specific column names to claim "FEC"
+// Ce que le serveur sait reconnaître, d'après les colonnes du fichier.
+const RECOGNIZED = [
+  { title: 'Indicateurs ESG', columns: ['metric_name', 'value_numeric', 'unit', 'period_start'], to: 'Mes données' },
+  { title: 'Matérialité', columns: ['name', 'financial_impact', 'esg_impact'], to: 'Matrice de matérialité' },
+  { title: 'Risques', columns: ['title', 'probability', 'impact'], to: 'Registre des risques' },
+  { title: 'Fournisseurs', columns: ['name', 'global_score', 'annual_spend_eur'], to: 'Supply chain' },
+];
 
-async function detectFecFile(file: File): Promise<boolean> {
-  // 1. Filename heuristic — the official naming convention is strong evidence
-  if (FEC_FILENAME_HINT.test(file.name)) return true;
-
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = (e.target?.result as string) || '';
-      const firstLine = (content.split('\n')[0] || '').toLowerCase();
-      // 2. Count how many distinct FEC keywords appear in the header line
-      const matched = FEC_HEADER_KEYWORDS.filter(kw => firstLine.includes(kw.toLowerCase()));
-      resolve(matched.length >= FEC_MIN_KEYWORDS);
-    };
-    reader.onerror = () => resolve(false);
-    reader.readAsText(file.slice(0, 4096));
-  });
+// Un FEC (art. A.47 A-1 du LPF) se reconnaît à son nom officiel ou à ses colonnes normalisées.
+const FEC_KEYWORDS = ['journalcode', 'ecriturenum', 'ecrituredate', 'comptenum', 'pieceref', 'ecriturelib'];
+const FEC_FILENAME = /(^|[\\/])\d{9}fec\d{8}\.(txt|csv)$/i;
+async function looksLikeFec(file: File): Promise<boolean> {
+  if (FEC_FILENAME.test(file.name)) return true;
+  try {
+    const head = (await file.slice(0, 4096).text()).split('\n')[0].toLowerCase();
+    return FEC_KEYWORDS.filter(k => head.includes(k)).length >= 2;
+  } catch { return false; }
 }
 
-// ─── Step indicator ───────────────────────────────────────────────────────────
-function StepBar({ step }: { step: 1 | 2 | 3 }) {
-  const steps = [
-    { n: 1, label: 'Fichier' },
-    { n: 2, label: 'Aperçu' },
-    { n: 3, label: 'Résultat' },
-  ];
+const TEMPLATE = `pillar,category,metric_name,value_numeric,unit,period_start,period_end,data_source,notes
+environmental,emissions,Emissions CO2 Scope 1,1234.5,tCO2e,2025-01-01,2025-12-31,Bilan carbone,
+environmental,energy,Consommation electricite,2500,MWh,2025-01-01,2025-12-31,Factures,
+social,workforce,Effectif total,500,personnes,2025-01-01,2025-12-31,SIRH,`;
+
+function Stepper({ step }: { step: 1 | 2 | 3 }) {
+  const { t } = useTranslation();
+  const steps = [t('imp.stepFile', 'Fichier'), t('imp.stepCheck', 'Vérification'), t('imp.stepResult', 'Résultat')];
   return (
-    <div className="flex items-center justify-center gap-0">
-      {steps.map((s, i) => {
-        const done = step > s.n;
-        const active = step === s.n;
+    <ol className="flex items-center gap-2 text-sm" aria-label={t('imp.steps', "Étapes de l'import")}>
+      {steps.map((label, i) => {
+        const n = i + 1; const done = step > n; const active = step === n;
         return (
-          <div key={s.n} className="flex items-center">
-            <div className="flex flex-col items-center gap-1.5">
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all"
-                style={{
-                  backgroundColor: done ? '#059669' : active ? '#7c3aed' : '#e5e7eb',
-                  color: done || active ? 'white' : '#9ca3af',
-                }}
-              >
-                {done ? <CheckCircle className="h-4 w-4" /> : s.n}
-              </div>
-              <span className="text-xs font-medium" style={{ color: active ? '#7c3aed' : done ? '#059669' : '#9ca3af' }}>
-                {s.label}
-              </span>
-            </div>
-            {i < steps.length - 1 && (
-              <div className="w-16 h-0.5 mb-5 mx-1" style={{ backgroundColor: step > s.n ? '#059669' : '#e5e7eb' }} />
-            )}
-          </div>
+          <li key={label} className="flex items-center gap-2" aria-current={active ? 'step' : undefined}>
+            <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${done ? 'bg-emerald-600 text-white' : active ? 'bg-slate-900 text-white' : 'bg-gray-100 text-gray-500'}`}>
+              {done ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : n}
+            </span>
+            <span className={active ? 'font-semibold text-gray-900' : 'text-gray-500'}>{label}</span>
+            {n < steps.length && <span className="mx-1 h-px w-8 bg-gray-200" aria-hidden="true" />}
+          </li>
         );
       })}
-    </div>
+    </ol>
   );
 }
 
-// ─── Main Component ────────────────────────────────────────────────────────────
-// ─── Contextual banners ────────────────────────────────────────────────────
-// Each entry tells the user what this specific import flow is for and where
-// the data will be visible after upload. Driven by ``?type=<kind>`` in the URL.
-const IMPORT_CONTEXTS: Record<string, {
-  emoji: string;
-  title: string;
-  description: string;
-  destinationLabel: string;
-  destinationPath: string;
-  examples: string[];
-  bg: string;
-  border: string;
-  accent: string;
-}> = {
-  fec: {
-    emoji: '📄',
-    title: 'Import FEC — Bilan Carbone par dépense',
-    description:
-      'Importez votre Fichier des Écritures Comptables (Sage, Cegid, Pennylane…) — chaque ligne sera mappée à un facteur ADEME et agrégée par scope GHG.',
-    destinationLabel: 'Indicateurs / Scores ESG',
-    destinationPath: '/app/data',
-    examples: ['JournalCode', 'CompteNum', 'CompteLib', 'Montantdebit'],
-    bg:     'from-amber-50 to-orange-50',
-    border: 'border-amber-300',
-    accent: 'text-amber-700',
-  },
-  materiality: {
-    emoji: '🎯',
-    title: 'Import Matérialité — Matrice de double matérialité',
-    description:
-      'Chaque ligne devient un enjeu ESG positionné sur la matrice (impact financier × impact ESG). Les enjeux marqués matériels apparaîtront dans le rapport CSRD.',
-    destinationLabel: 'Analyses → Matrice de matérialité',
-    destinationPath: '/app/materiality',
-    examples: ['name', 'category', 'financial_impact', 'esg_impact', 'is_material'],
-    bg:     'from-pink-50 to-rose-50',
-    border: 'border-pink-300',
-    accent: 'text-pink-700',
-  },
-  risks: {
-    emoji: '⚠️',
-    title: 'Import Risques ESG — Registre des risques',
-    description:
-      'Chaque ligne devient un risque positionné sur la heatmap (probabilité × impact). Le score sera calculé automatiquement si non fourni.',
-    destinationLabel: 'Analyses → Registre des risques',
-    destinationPath: '/app/risks',
-    examples: ['title', 'category', 'probability', 'impact', 'severity', 'mitigation_status'],
-    bg:     'from-red-50 to-orange-50',
-    border: 'border-red-300',
-    accent: 'text-red-700',
-  },
-  suppliers: {
-    emoji: '🏭',
-    title: 'Import Fournisseurs — Supply Chain ESG',
-    description:
-      'Chaque ligne devient un fournisseur avec son score ESG global (E/S/G). Utilisé pour le devoir de vigilance CSDDD et le calcul Scope 3.',
-    destinationLabel: 'Parties → Supply Chain ESG',
-    destinationPath: '/app/supply-chain',
-    examples: ['name', 'country', 'sector', 'annual_spend_eur', 'global_score', 'e_score', 's_score', 'g_score'],
-    bg:     'from-cyan-50 to-sky-50',
-    border: 'border-cyan-300',
-    accent: 'text-cyan-700',
-  },
-  ghg: {
-    emoji: '🔥',
-    title: 'Import Bilan Carbone — Scopes 1/2/3',
-    description:
-      'Inventaire GHG Protocol par scope et catégorie. Le système agrège automatiquement par scope et calcule les émissions totales en tCO₂e.',
-    destinationLabel: 'Analyses → Scores ESG',
-    destinationPath: '/app/scores',
-    examples: ['scope', 'category', 'source', 'tco2e', 'calculation_method', 'period'],
-    bg:     'from-orange-50 to-red-50',
-    border: 'border-orange-300',
-    accent: 'text-orange-700',
-  },
-};
-
 export default function ImportCSV() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const typeParam = (searchParams.get('type') || '').toLowerCase();
-  const context = IMPORT_CONTEXTS[typeParam];
+  const fecRequested = (searchParams.get('type') || '').toLowerCase() === 'fec';
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [importing, setImporting] = useState(false);
-  const [fecImporting, setFecImporting] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-  const [previewData, setPreviewData] = useState<PreviewData | null>(null);
-  const [importResult, setImportResult] = useState<ImportResult | null>(null);
-  const [isFecFile, setIsFecFile] = useState(false);
+  const [isFec, setIsFec] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [busy, setBusy] = useState<null | 'analyze' | 'import' | 'fec'>(null);
+  const [preview, setPreview] = useState<PreviewData | null>(null);
+  const [result, setResult] = useState<ImportResult | null>(null);
+  const [mapping, setMapping] = useState<Record<string, string>>(EMPTY_MAPPING);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [selectedOrgId, setSelectedOrgId] = useState<string>('');
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [orgId, setOrgId] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // mapping state — auto-filled from detected_mapping, editable in advanced panel
-  const [mapping, setMapping] = useState<Record<string, string>>({
-    pillar: '', category: '', metric_name: '', value_numeric: '',
-    unit: '', period_start: '', period_end: '', data_source: '', notes: '',
-  });
-
-  // Load orgs on mount
   useEffect(() => {
     api.get('/organizations').then(res => {
-      const orgs = res.data?.items || res.data?.organizations || res.data?.results || [];
+      const orgs = res.data?.items ?? [];
       setOrganizations(Array.isArray(orgs) ? orgs : []);
-    }).catch(() => {});
+    }).catch(() => { /* la liste est facultative */ });
   }, []);
 
-  const handleDrag = useCallback((e: React.DragEvent) => {
-    e.preventDefault(); e.stopPropagation();
-    setDragActive(e.type === 'dragenter' || e.type === 'dragover');
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault(); e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files?.[0]) handleFileSelect(e.dataTransfer.files[0]);
-  }, []);
-
-  const handleFileSelect = async (selectedFile: File) => {
-    const ext = selectedFile.name.substring(selectedFile.name.lastIndexOf('.')).toLowerCase();
-    if (!['.csv', '.xlsx', '.xls', '.txt', '.fec'].includes(ext)) {
-      toast.error(t('importCsv.invalidFileType'));
-      return;
-    }
-    if (selectedFile.size > 10 * 1024 * 1024) {
-      toast.error(t('importCsv.fileTooLarge'));
-      return;
-    }
-    setFile(selectedFile);
-    setIsFecFile(false);
-    const fec = await detectFecFile(selectedFile);
-    setIsFecFile(fec);
-    if (fec) toast('Fichier FEC détecté — utilisez l\'import FEC dédié ci-dessous.', { icon: '⚠️', duration: 5000 });
+  const pickFile = async (f: File | undefined) => {
+    if (!f) return;
+    const ext = f.name.slice(f.name.lastIndexOf('.')).toLowerCase();
+    if (!ACCEPTED.includes(ext)) { toast.error(t('imp.badType', 'Format non pris en charge : utilisez un fichier .csv, .xlsx, .xls, ou un FEC (.txt).')); return; }
+    if (f.size > MAX_BYTES) { toast.error(t('imp.tooBig', 'Fichier trop volumineux (10 Mo maximum).')); return; }
+    const fec = await looksLikeFec(f);
+    if (ext === '.txt' && !fec) { toast.error(t('imp.txtNotFec', 'Ce fichier .txt ne ressemble pas à un FEC. Enregistrez vos données en .csv ou .xlsx.')); return; }
+    setFile(f); setIsFec(fec);
   };
 
-  const handleFecImport = async () => {
-    if (!file) return;
-    setFecImporting(true);
-    const formData = new FormData();
-    formData.append('file', file);
-    if (selectedOrgId) formData.append('organization_id', selectedOrgId);
-    try {
-      const response = await api.post('/connectors/sage-cegid/sync', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      const created = response.data.entries_created ?? response.data.imported ?? response.data.count ?? 0;
-      setImportResult({ imported: created, indicator_data_created: response.data.indicator_data_created ?? 0, errors: response.data.errors ?? 0, error_details: response.data.error_details ?? [], fec: true });
-      setStep(3);
-      toast.success(`FEC importé — ${created} entrée(s) créée(s)`);
-    } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Erreur lors de l\'import FEC');
-    } finally {
-      setFecImporting(false);
-    }
+  const reset = () => {
+    setStep(1); setFile(null); setIsFec(false); setPreview(null); setResult(null); setMapping(EMPTY_MAPPING); setOrgId('');
+    if (inputRef.current) inputRef.current.value = '';
   };
 
-  const handleUpload = async () => {
+  const analyze = async () => {
     if (!file) return;
-    setUploading(true);
-    const formData = new FormData();
-    formData.append('file', file);
+    setBusy('analyze');
     try {
-      const response = await api.post('/esg-import/upload-preview', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setPreviewData(response.data);
-      // Auto-fill mapping from detected columns
-      const dm = response.data.detected_mapping || {};
-      setMapping({
-        pillar: dm.pillar || '',
-        category: dm.category || '',
-        metric_name: dm.metric_name || '',
-        value_numeric: dm.value_numeric || '',
-        unit: dm.unit || '',
-        period_start: dm.period_start || '',
-        period_end: dm.period_end || '',
-        data_source: dm.data_source || '',
-        notes: dm.notes || '',
-      });
+      const body = new FormData(); body.append('file', file);
+      const { data } = await api.post('/esg-import/upload-preview', body, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setPreview(data);
+      setMapping({ ...EMPTY_MAPPING, ...(data.detected_mapping ?? {}) });
       setStep(2);
-      toast.success(t('importCsv.fileAnalyzed'));
-    } catch (error: any) {
-      toast.error(error.response?.data?.detail || t('importCsv.uploadError'));
-    } finally {
-      setUploading(false);
-    }
+    } catch (e) {
+      toast.error(errorDetail(e, t('imp.analyzeError', "L'analyse du fichier a échoué.")));
+    } finally { setBusy(null); }
   };
 
-  const handleImport = async () => {
-    if (!previewData) return;
-    if (!mapping.metric_name || !mapping.value_numeric) {
-      toast.error('Les colonnes "Indicateur" et "Valeur" sont requises. Utilisez la configuration manuelle.');
-      return;
-    }
-    setImporting(true);
+  const runImport = async () => {
+    if (!preview || busy) return;
+    setBusy('import');
     try {
-      const payload: any = { ...mapping };
-      if (selectedOrgId) payload.organization_id = selectedOrgId;
-      const response = await api.post(`/esg-import/uploads/${previewData.upload_id}/import`, payload);
-      setImportResult(response.data);
-      setStep(3);
-      toast.success(t('importCsv.importSuccess', { count: response.data.imported }));
-    } catch (error: any) {
-      toast.error(error.response?.data?.detail || t('importCsv.importError'));
-    } finally {
-      setImporting(false);
-    }
+      const payload: Record<string, string> = { ...mapping };
+      if (orgId) payload.organization_id = orgId;
+      const { data } = await api.post(`/esg-import/uploads/${preview.upload_id}/import`, payload);
+      setResult(data); setStep(3);
+    } catch (e) {
+      toast.error(errorDetail(e, t('imp.importError', "L'import a échoué.")));
+    } finally { setBusy(null); }
   };
 
-  const handleReset = () => {
-    setStep(1); setFile(null); setPreviewData(null); setImportResult(null);
-    setSelectedOrgId(''); setIsFecFile(false); setShowAdvanced(false);
-    setMapping({ pillar: '', category: '', metric_name: '', value_numeric: '', unit: '', period_start: '', period_end: '', data_source: '', notes: '' });
+  const runFecImport = async () => {
+    if (!file || busy) return;
+    setBusy('fec');
+    try {
+      const body = new FormData(); body.append('file', file);
+      if (orgId) body.append('org_id', orgId);
+      const { data } = await api.post('/connectors/sage-cegid/sync', body, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setResult({
+        imported: data.entries_created ?? 0,
+        errors: 0, error_details: [], fec: true,
+      });
+      setStep(3);
+    } catch (e) {
+      toast.error(errorDetail(e, t('imp.fecError', "L'import du FEC a échoué.")));
+    } finally { setBusy(null); }
   };
 
   const downloadTemplate = () => {
-    const template = `pillar,category,metric_name,value_numeric,unit,period_start,period_end,data_source,notes
-environmental,emissions,Emissions CO2 Scope 1,1234.5,tCO2e,2024-01-01,2024-12-31,Bilan Carbone 2024,Donnees validees
-social,workforce,Effectif total,500,personnes,2024-01-01,2024-12-31,HRIS,
-environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Factures EDF,`;
-    const blob = new Blob([template], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'template_import_esg.csv'; a.click();
-    window.URL.revokeObjectURL(url);
+    const url = URL.createObjectURL(new Blob(['﻿' + TEMPLATE], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a'); a.href = url; a.download = 'modele-import-esg.csv'; a.click();
+    URL.revokeObjectURL(url);
   };
 
-  const fileSizeMB = file ? (file.size / 1024 / 1024).toFixed(2) : '0';
+  const intent = preview?.intent ?? 'generic';
+  const generic = intent === 'generic';
+  const target = importTarget(result?.fec ? 'generic' : (result?.target ?? intent));
+  const ready = canImport(intent, mapping);
+  const rowsToImport = generic ? (preview?.validation.valid_rows ?? 0) : (preview?.total_rows ?? 0);
 
-  // Determine if required columns are mapped (auto or manual)
-  const canImport = !!(mapping.metric_name && mapping.value_numeric);
-  const detectedCount = FIELD_DEFS.filter(f => mapping[f.key as keyof typeof mapping]).length;
+  const orgSelect = (
+    <div>
+      <label htmlFor="imp-org" className="mb-1 block text-sm font-medium text-gray-700">{t('imp.org', 'Organisation concernée')}</label>
+      <select id="imp-org" value={orgId} onChange={e => setOrgId(e.target.value)} className={field}>
+        <option value="">{t('imp.orgDefault', 'Organisation par défaut')}</option>
+        {organizations.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+      </select>
+      <p className="mt-1 text-xs text-gray-500">{t('imp.orgHint', "Sans choix, les lignes sont rattachées à la première organisation de votre compte.")}</p>
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
-      <BackButton to="/app/data" label="Données" />
-
-      {/* ─── Contextual banner (visible only when ?type=fec|materiality|… is in the URL) ── */}
-      {context && (
-        <div className={`rounded-2xl border-2 ${context.border} bg-gradient-to-br ${context.bg} p-5`}>
-          <div className="flex items-start gap-4">
-            <div className="text-4xl shrink-0">{context.emoji}</div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-lg font-bold text-gray-900 mb-1">{context.title}</h2>
-              <p className="text-sm text-gray-700 leading-relaxed mb-3">{context.description}</p>
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className={`font-semibold ${context.accent}`}>📍 Destination :</span>
-                <button
-                  type="button"
-                  onClick={() => navigate(context.destinationPath)}
-                  className={`underline-offset-2 hover:underline font-semibold ${context.accent}`}
-                >
-                  {context.destinationLabel}
-                </button>
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                <span className="text-[11px] text-gray-500 font-semibold uppercase tracking-wide mr-1">
-                  Colonnes attendues :
-                </span>
-                {context.examples.map((c) => (
-                  <code
-                    key={c}
-                    className="px-1.5 py-0.5 rounded bg-white/70 text-[11px] font-mono text-gray-700 border border-gray-200"
-                  >
-                    {c}
-                  </code>
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={() => navigate('/app/connectors')}
-                className={`mt-3 inline-flex items-center gap-1 text-xs ${context.accent} hover:opacity-80 font-semibold`}
-              >
-                ↓ Télécharger un template pré-formaté
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ─── Hero ──────────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl shadow-xl" style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 40%, #4f46e5 100%)' }}>
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 85% 15%, rgba(255,255,255,0.12) 0%, transparent 55%)' }} />
-        <div className="relative px-8 py-7 flex items-start justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.2)' }}>
-                <Upload className="h-6 w-6 text-white" />
-              </div>
-              <h1 className="text-3xl font-bold text-white">{t('importCsv.title')}</h1>
-            </div>
-            <p className="text-purple-200 text-sm ml-1 mb-4">{t('importCsv.subtitle')}</p>
-            <div className="flex items-center gap-2 flex-wrap">
-              {[
-                { label: 'CSV', icon: FileText },
-                { label: 'Excel', icon: FileSpreadsheet },
-                { label: 'FEC', icon: Zap },
-                { label: 'Détection auto', icon: Sparkles },
-              ].map(({ label, icon: Icon }) => (
-                <div key={label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-white" style={{ background: 'rgba(255,255,255,0.15)' }}>
-                  <Icon className="h-3 w-3" />
-                  {label}
-                </div>
-              ))}
-            </div>
-          </div>
-          <button
-            onClick={downloadTemplate}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md shrink-0 transition-colors"
-            style={{ background: 'white', color: '#7c3aed' }}
-          >
-            <Download className="h-4 w-4" />
-            {t('importCsv.csvTemplate')}
+    <div className="space-y-5">
+      <CollectHeader
+        title={t('imp.title', 'Import de fichier')}
+        subtitle={t('imp.subtitle', 'Importez vos données depuis un fichier CSV, Excel ou un FEC comptable.')}
+        actions={
+          <button type="button" onClick={downloadTemplate} className={btnSecondary}>
+            <Download className="h-4 w-4" aria-hidden="true" />{t('imp.template', 'Modèle CSV')}
           </button>
-        </div>
-      </div>
+        }
+      />
 
-      {/* ─── Step indicator ────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-8 py-5">
-        <StepBar step={step} />
-      </div>
+      <Stepper step={step} />
 
-      {/* ─── Step 1: Upload ────────────────────────────────────────────────── */}
+      {/* ─── Étape 1 : fichier ─────────────────────────────────────────── */}
       {step === 1 && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="text-lg font-bold text-gray-900">{t('importCsv.step1Title')}</h2>
-            <p className="text-sm text-gray-500 mt-0.5">Formats acceptés : CSV, Excel, TXT, FEC — max 10 MB</p>
-          </div>
-          <div className="p-6 space-y-4">
+        <div className="grid gap-5 lg:grid-cols-3">
+          <section className={`${card} p-5 lg:col-span-2`}>
+            {fecRequested && !file && (
+              <p className="mb-4 flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+                <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                {t('imp.fecHint', 'Déposez votre Fichier des Écritures Comptables (export Sage, Cegid, Pennylane…). Il sera reconnu automatiquement.')}
+              </p>
+            )}
+            <input ref={inputRef} id="imp-file" type="file" accept={ACCEPTED.join(',')} className="sr-only"
+              onChange={e => pickFile(e.target.files?.[0])} />
             {!file ? (
-              <div
-                onDragEnter={handleDrag} onDragLeave={handleDrag}
-                onDragOver={handleDrag} onDrop={handleDrop}
-                className="relative rounded-2xl border-2 border-dashed p-14 text-center cursor-pointer transition-all"
-                style={{ borderColor: dragActive ? '#7c3aed' : '#d1d5db', backgroundColor: dragActive ? '#f5f3ff' : '#fafafa' }}
-                onClick={() => document.getElementById('file-input')?.click()}
-              >
-                <input
-                  id="file-input" type="file"
-                  accept=".csv,.xlsx,.xls,.txt,.fec"
-                  onChange={e => e.target.files && handleFileSelect(e.target.files[0])}
-                  className="hidden"
-                />
-                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center" style={{ backgroundColor: dragActive ? '#ede9fe' : '#f3f4f6' }}>
-                  <Upload className="h-8 w-8" style={{ color: dragActive ? '#7c3aed' : '#9ca3af' }} />
-                </div>
-                <p className="text-lg font-semibold text-gray-700 mb-1">{t('importCsv.dropZoneText')}</p>
-                <p className="text-sm text-gray-400">CSV, Excel, TXT, FEC — max 10 MB</p>
-                <p className="text-xs text-purple-500 mt-3 font-medium">Cliquer pour parcourir</p>
-              </div>
+              <label htmlFor="imp-file"
+                onDragOver={e => { e.preventDefault(); setDragging(true); }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={e => { e.preventDefault(); setDragging(false); pickFile(e.dataTransfer.files?.[0]); }}
+                className={`flex cursor-pointer flex-col items-center rounded-xl border-2 border-dashed px-6 py-14 text-center transition-colors focus-within:ring-2 focus-within:ring-emerald-500 ${dragging ? 'border-emerald-500 bg-emerald-50' : 'border-gray-300 bg-gray-50 hover:border-gray-400'}`}>
+                <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm">
+                  <Upload className="h-5 w-5 text-gray-500" aria-hidden="true" />
+                </span>
+                <span className="text-base font-semibold text-gray-900">{t('imp.drop', 'Déposez un fichier ici')}</span>
+                <span className="mt-1 text-sm text-gray-500">{t('imp.browse', 'ou cliquez pour le choisir sur votre ordinateur')}</span>
+                <span className="mt-3 text-xs text-gray-400">{t('imp.formats', 'CSV, Excel (.xlsx, .xls) ou FEC (.txt) · 10 Mo maximum')}</span>
+              </label>
             ) : (
               <div className="space-y-4">
-                {/* File card */}
-                <div className="flex items-center gap-4 p-4 rounded-2xl border-2" style={{ borderColor: isFecFile ? '#fcd34d' : '#34d399', backgroundColor: isFecFile ? '#fffbeb' : '#f0fdf4' }}>
-                  <div className="p-3 rounded-xl" style={{ backgroundColor: isFecFile ? '#fef3c7' : '#dcfce7' }}>
-                    <FileText className="h-6 w-6" style={{ color: isFecFile ? '#d97706' : '#16a34a' }} />
+                <div className="flex items-center gap-3 rounded-lg border border-gray-200 p-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                    {file.name.toLowerCase().endsWith('.csv') || isFec ? <FileText className="h-5 w-5 text-gray-600" aria-hidden="true" /> : <FileSpreadsheet className="h-5 w-5 text-gray-600" aria-hidden="true" />}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-gray-900">{file.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {(file.size / 1024).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} Ko
+                      {isFec && <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-800">{t('imp.fecDetected', 'FEC reconnu')}</span>}
+                    </p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">{file.name}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-sm text-gray-500">{fileSizeMB} MB</span>
-                      {isFecFile && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-200 text-amber-800">
-                          <Zap className="h-3 w-3" />FEC détecté
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <button onClick={() => { setFile(null); setIsFecFile(false); }} className="p-2 rounded-xl text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors">
+                  <button type="button" onClick={reset} aria-label={t('imp.removeFile', 'Retirer le fichier')} className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
 
-                {/* FEC Dedicated Import */}
-                {isFecFile && (
-                  <div className="rounded-2xl border-2 border-amber-300 p-5 space-y-4" style={{ backgroundColor: '#fffbeb' }}>
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-amber-100 rounded-xl shrink-0">
-                        <AlertTriangle className="h-5 w-5 text-amber-600" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-amber-900">Fichier des Écritures Comptables (FEC) détecté</p>
-                        <p className="text-sm text-amber-700 mt-1">
-                          Utilisez l'<strong>Import FEC dédié</strong> ci-dessous — il analyse, catégorise et agrège automatiquement chaque écriture comptable selon les facteurs ADEME.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-amber-100 shrink-0">
-                        <Building2 className="h-4 w-4 text-amber-700" />
-                      </div>
-                      <select
-                        value={selectedOrgId}
-                        onChange={e => setSelectedOrgId(e.target.value)}
-                        className="flex-1 px-3 py-2.5 border-2 border-amber-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none"
-                      >
-                        <option value="">— Organisation (optionnel) —</option>
-                        {organizations.map(org => <option key={org.id} value={org.id}>{org.name}</option>)}
+                {isFec ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                      {t('imp.fecExplain2', "Les écritures de charges sont regroupées par catégorie de dépense et par mois, puis converties en émissions à l'aide de ratios monétaires. C'est un ordre de grandeur : une saisie est créée par catégorie, à remplacer dès que possible par vos données physiques (kWh, litres, km).")}
+                    </p>
+                    <div className="max-w-sm">
+                      <label htmlFor="imp-fec-org" className="mb-1 block text-sm font-medium text-gray-700">{t('imp.orgOptional', 'Organisation (facultatif)')}</label>
+                      <select id="imp-fec-org" value={orgId} onChange={e => setOrgId(e.target.value)} className={field}>
+                        <option value="">{t('imp.orgNone', 'Aucune')}</option>
+                        {organizations.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
                       </select>
                     </div>
-                    <button
-                      onClick={handleFecImport}
-                      disabled={fecImporting}
-                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-50"
-                      style={{ backgroundColor: '#d97706' }}
-                    >
-                      {fecImporting ? <><Spinner size="sm" />Analyse et import en cours…</> : <><Zap className="h-4 w-4" />Importer avec le parseur FEC dédié</>}
-                    </button>
-                    <button
-                      onClick={handleUpload}
-                      disabled={uploading}
-                      className="w-full text-xs text-gray-400 hover:text-gray-600 underline py-1 transition-colors"
-                    >
-                      {uploading ? 'Analyse…' : 'Forcer l\'import générique CSV (déconseillé pour un FEC)'}
-                    </button>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button type="button" onClick={runFecImport} disabled={busy !== null} className={btnPrimary}>
+                        {busy === 'fec' ? <Spinner size="sm" /> : <Upload className="h-4 w-4" aria-hidden="true" />}
+                        {busy === 'fec' ? t('imp.fecRunning', 'Import en cours…') : t('imp.fecRun', 'Importer le FEC')}
+                      </button>
+                      {!file.name.toLowerCase().endsWith('.txt') && (
+                        <button type="button" onClick={analyze} disabled={busy !== null} className="text-sm text-gray-500 underline hover:text-gray-800">
+                          {t('imp.fecAsCsv', 'Ce n’est pas un FEC : l’importer comme un tableau')}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                )}
-
-                {/* Generic CSV button */}
-                {!isFecFile && (
-                  <button
-                    onClick={handleUpload}
-                    disabled={uploading}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-50"
-                    style={{ backgroundColor: '#7c3aed' }}
-                  >
-                    {uploading ? (
-                      <><Spinner size="sm" />{t('importCsv.analyzing')}</>
-                    ) : (
-                      <><Sparkles className="h-4 w-4" />Analyser et détecter les colonnes automatiquement</>
-                    )}
+                ) : (
+                  <button type="button" onClick={analyze} disabled={busy !== null} className={btnPrimary}>
+                    {busy === 'analyze' ? <Spinner size="sm" /> : <ArrowRight className="h-4 w-4" aria-hidden="true" />}
+                    {busy === 'analyze' ? t('imp.analyzing', 'Analyse en cours…') : t('imp.analyze', 'Analyser le fichier')}
                   </button>
                 )}
               </div>
             )}
-          </div>
+          </section>
+
+          <aside className={`${card} p-5`}>
+            <h2 className="text-sm font-semibold text-gray-900">{t('imp.recognized', 'Fichiers reconnus')}</h2>
+            <p className="mt-1 text-xs text-gray-500">{t('imp.recognizedHint', 'La destination est choisie d’après les colonnes du fichier ; vous la validez avant tout enregistrement.')}</p>
+            <ul className="mt-4 space-y-4">
+              {RECOGNIZED.map(r => (
+                <li key={r.title}>
+                  <p className="text-sm font-medium text-gray-800">{r.title} <span className="font-normal text-gray-400">→ {r.to}</span></p>
+                  <p className="mt-1 flex flex-wrap gap-1">
+                    {r.columns.map(c => <code key={c} className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">{c}</code>)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </aside>
         </div>
       )}
 
-      {/* ─── Step 2: Smart Preview (no manual mapping needed) ──────────────── */}
-      {step === 2 && previewData && (
+      {/* ─── Étape 2 : vérification ────────────────────────────────────── */}
+      {step === 2 && preview && (
         <div className="space-y-5">
-
-          {/* ── Auto-detection result banner ── */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-emerald-100">
-                <Sparkles className="h-5 w-5 text-emerald-600" />
-              </div>
-              <div className="flex-1">
-                <h2 className="text-lg font-bold text-gray-900">Colonnes détectées automatiquement</h2>
-                <p className="text-sm text-gray-500">
-                  {previewData.total_rows} lignes au total ·{' '}
-                  <span className="text-emerald-600 font-medium">{previewData.validation.valid_rows} prêtes à importer</span>
-                  {previewData.validation.invalid_rows > 0 && (
-                    <span className="text-amber-600 font-medium"> · {previewData.validation.invalid_rows} ignorées</span>
-                  )}
-                </p>
-              </div>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full">
-                <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="text-xs font-semibold text-emerald-700">{detectedCount}/{FIELD_DEFS.length} colonnes</span>
-              </div>
+          <section className={`${card} grid divide-y divide-gray-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0`}>
+            <div className="p-4">
+              <p className="text-xs font-medium text-gray-500">{t('imp.file', 'Fichier')}</p>
+              <p className="mt-1 truncate text-sm font-semibold text-gray-900" title={preview.filename}>{preview.filename}</p>
+              <p className="text-xs text-gray-500">{t('imp.rows', '{{n}} ligne(s)', { n: preview.total_rows })}</p>
             </div>
+            <div className="p-4">
+              <p className="text-xs font-medium text-gray-500">{t('imp.destination', 'Destination')}</p>
+              <p className="mt-1 text-sm font-semibold text-gray-900">{importTarget(intent).label}</p>
+              <p className="text-xs text-gray-500">{generic ? t('imp.destGeneric', 'Saisies ESG, à vérifier ensuite') : t('imp.destDedicated', 'Reconnu d’après les colonnes du fichier')}</p>
+            </div>
+            <div className="p-4">
+              <p className="text-xs font-medium text-gray-500">{t('imp.ready', 'Prêtes à importer')}</p>
+              <p className="mt-1 text-sm font-semibold text-gray-900 tabular-nums">{rowsToImport}</p>
+              {generic && preview.validation.invalid_rows > 0 && (
+                <p className="text-xs text-amber-700">{t('imp.ignored', '{{n}} ligne(s) incomplète(s) seront ignorées', { n: preview.validation.invalid_rows })}</p>
+              )}
+            </div>
+          </section>
 
-            {/* Column detection chips */}
-            <div className="p-6">
-              <div className="flex flex-wrap gap-2 mb-5">
-                {FIELD_DEFS.map(f => {
-                  const detectedCol = mapping[f.key as keyof typeof mapping];
-                  const isDetected = !!detectedCol;
-                  const colorKey = isDetected ? f.color : (f.required ? 'miss' : 'gray');
-                  const cls = COLOR_CLASSES[colorKey];
-                  return (
-                    <div
-                      key={f.key}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border ${cls.badge}`}
-                    >
-                      <div className={`w-1.5 h-1.5 rounded-full ${cls.dot}`} />
-                      <span className="font-semibold">{f.label}</span>
-                      {isDetected ? (
-                        <span className="opacity-70">← <code className="font-mono">{detectedCol}</code></span>
-                      ) : (
-                        <span className="opacity-60">{f.required ? 'non détecté ⚠' : 'non détecté'}</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Warning if required columns missing */}
-              {!canImport && (
-                <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl mb-4">
-                  <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-semibold text-red-800">Colonnes requises non détectées</p>
-                    <p className="text-xs text-red-600 mt-0.5">
-                      Les colonnes <strong>Indicateur</strong> et <strong>Valeur</strong> sont obligatoires.
-                      Utilisez la configuration manuelle ci-dessous pour les associer manuellement.
-                    </p>
+          {generic && (
+            <section className={`${card} p-5`}>
+              <h2 className="text-sm font-semibold text-gray-900">{t('imp.mappingTitle', 'Correspondance des colonnes')}</h2>
+              <p className="mt-1 text-xs text-gray-500">{t('imp.mappingHint', 'Proposée automatiquement d’après les en-têtes. Corrigez-la si nécessaire avant d’importer.')}</p>
+              <div className="mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+                {FIELDS.map(f => (
+                  <div key={f.key}>
+                    <label htmlFor={`map-${f.key}`} className="mb-1 block text-xs font-medium text-gray-700">
+                      {f.label}{f.required && <span className="text-red-600"> *</span>}
+                    </label>
+                    <select id={`map-${f.key}`} value={mapping[f.key] ?? ''} onChange={e => setMapping(m => ({ ...m, [f.key]: e.target.value }))}
+                      aria-invalid={f.required && !mapping[f.key]}
+                      className={`${field} ${f.required && !mapping[f.key] ? 'border-red-300' : ''}`}>
+                      <option value="">{f.required ? t('imp.choose', 'Choisir une colonne') : t('imp.none', 'Aucune')}</option>
+                      {preview.columns.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
                   </div>
-                </div>
-              )}
-
-              {/* Info tip when all good */}
-              {canImport && (
-                <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-700">
-                  <Info className="h-4 w-4 shrink-0" />
-                  La détection automatique a identifié toutes les colonnes requises. Vous pouvez importer directement, ou ajuster la configuration ci-dessous.
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* ── Organisation selector ── */}
-          <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-5">
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-blue-100 rounded-xl shrink-0">
-                <Building2 className="h-5 w-5 text-blue-600" />
+                ))}
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-bold text-blue-900 mb-1.5">
-                  Organisation concernée
-                  <span className="ml-2 text-xs font-normal text-blue-600">(recommandé pour le calcul des scores ESG)</span>
+              {!ready && (
+                <p className="mt-4 flex items-start gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700" role="alert">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                  {t('imp.required', 'Associez au moins les colonnes « Indicateur » et « Valeur » pour importer.')}
                 </p>
-                <select
-                  value={selectedOrgId}
-                  onChange={e => setSelectedOrgId(e.target.value)}
-                  className="w-full px-4 py-2.5 border-2 border-blue-200 rounded-xl focus:border-blue-500 bg-white outline-none text-sm"
-                >
-                  <option value="">— Sélectionner une organisation —</option>
-                  {organizations.map(org => <option key={org.id} value={org.id}>{org.name}</option>)}
-                </select>
-                {!selectedOrgId && (
-                  <p className="text-xs text-amber-600 mt-1.5">⚠️ Sans organisation, les données ne seront pas liées aux scores ESG.</p>
-                )}
-              </div>
-            </div>
-          </div>
+              )}
+              {ready && !mapping.period_start && (
+                <p className="mt-4 flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                  {t('imp.noPeriod', 'Aucune colonne de période : les lignes seront datées du mois en cours. Associez une colonne de date si vos données portent sur une autre période.')}
+                </p>
+              )}
+              <div className="mt-5 max-w-sm">{orgSelect}</div>
+            </section>
+          )}
 
-          {/* ── Data preview table ── */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-              <Eye className="h-4 w-4 text-gray-500" />
-              <h3 className="text-base font-bold text-gray-900">Aperçu des données</h3>
-              <span className="ml-auto text-xs text-gray-400">10 premières lignes sur {previewData.total_rows}</span>
+          <section className={`${card} overflow-hidden`}>
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+              <h2 className="text-sm font-semibold text-gray-900">{t('imp.previewTitle', 'Aperçu')}</h2>
+              <span className="text-xs text-gray-500">{t('imp.previewCount', '{{n}} première(s) ligne(s) sur {{total}}', { n: preview.preview.length, total: preview.total_rows })}</span>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-600">
                   <tr>
-                    {previewData.columns.map(col => {
-                      const isMetric = col === mapping.metric_name;
-                      const isValue = col === mapping.value_numeric;
+                    {preview.columns.map(c => {
+                      const used = generic ? FIELDS.find(f => mapping[f.key] === c) : undefined;
                       return (
-                        <th key={col} className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 whitespace-nowrap">
-                          {col}
-                          {isMetric && <span className="ml-1.5 px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-medium">indicateur</span>}
-                          {isValue  && <span className="ml-1.5 px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-medium">valeur</span>}
+                        <th key={c} scope="col" className="whitespace-nowrap px-4 py-2.5">
+                          {c}{used && <span className="ml-1.5 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800">{used.label}</span>}
                         </th>
                       );
                     })}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {previewData.preview.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50/60">
-                      {previewData.columns.map(col => (
-                        <td key={col} className="px-4 py-2 text-gray-700 whitespace-nowrap max-w-xs truncate">
-                          {row[col] !== null && row[col] !== undefined ? String(row[col]) : <span className="text-gray-300">—</span>}
+                <tbody className="divide-y divide-gray-100">
+                  {preview.preview.map((row, i) => (
+                    <tr key={i}>
+                      {preview.columns.map(c => (
+                        <td key={c} className="max-w-xs truncate whitespace-nowrap px-4 py-2 text-gray-700">
+                          {row[c] !== null && row[c] !== undefined && row[c] !== '' ? String(row[c]) : <span className="text-gray-300">—</span>}
                         </td>
                       ))}
                     </tr>
@@ -714,147 +398,85 @@ environmental,energy,Consommation electricite,2500,MWh,2024-01-01,2024-12-31,Fac
                 </tbody>
               </table>
             </div>
-          </div>
+          </section>
 
-          {/* ── Advanced settings (collapsible) ── */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <button
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors text-left"
-            >
-              <div className="flex items-center gap-2">
-                <Table className="h-4 w-4 text-gray-400" />
-                <span className="text-sm font-semibold text-gray-700">Configuration manuelle des colonnes</span>
-                <span className="text-xs text-gray-400 font-normal">(optionnel — si la détection auto est incorrecte)</span>
-              </div>
-              {showAdvanced ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
-            </button>
-
-            {showAdvanced && (
-              <div className="px-6 pb-6 border-t border-gray-50">
-                <p className="text-xs text-gray-500 py-3">Associez manuellement les colonnes de votre fichier aux champs ESG :</p>
-                <div className="grid grid-cols-2 gap-4">
-                  {FIELD_DEFS.map(f => (
-                    <div key={f.key}>
-                      <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                        {f.label}
-                        {f.required && <span className="text-purple-500 ml-1">*</span>}
-                      </label>
-                      <select
-                        value={mapping[f.key as keyof typeof mapping] || ''}
-                        onChange={e => setMapping(prev => ({ ...prev, [f.key]: e.target.value }))}
-                        className={`w-full px-3 py-2 border-2 rounded-xl outline-none text-sm transition-colors focus:border-purple-500 ${
-                          mapping[f.key as keyof typeof mapping] ? 'border-emerald-300 bg-emerald-50' : 'border-gray-200'
-                        }`}
-                      >
-                        <option value="">{f.required ? '— Sélectionner —' : '— Aucune —'}</option>
-                        {previewData.columns.map(col => <option key={col} value={col}>{col}</option>)}
-                      </select>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* ── Action buttons ── */}
-          <div className="flex gap-3">
-            <button
-              onClick={handleReset}
-              className="flex items-center justify-center gap-2 px-5 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition-colors text-sm"
-            >
-              {t('common.cancel')}
-            </button>
-            <button
-              onClick={handleImport}
-              disabled={importing || !canImport}
-              className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white transition-colors disabled:opacity-40"
-              style={{ backgroundColor: canImport ? '#7c3aed' : '#9ca3af' }}
-            >
-              {importing ? (
-                <><Spinner size="sm" />{t('importCsv.importing')}</>
-              ) : (
-                <><Database className="h-4 w-4" />Importer {previewData.validation.valid_rows} ligne{previewData.validation.valid_rows !== 1 ? 's' : ''}</>
-              )}
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <button type="button" onClick={reset} disabled={busy !== null} className={btnSecondary}>{t('imp.cancel', 'Annuler')}</button>
+            <button type="button" onClick={runImport} disabled={busy !== null || !ready || rowsToImport === 0} className={btnPrimary}>
+              {busy === 'import' && <Spinner size="sm" />}
+              {busy === 'import' ? t('imp.importing', 'Import en cours…') : t('imp.importN', 'Importer {{n}} ligne(s)', { n: rowsToImport })}
             </button>
           </div>
         </div>
       )}
 
-      {/* ─── Step 3: Results ───────────────────────────────────────────────── */}
-      {step === 3 && importResult && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="text-center py-16 px-8">
-            <div className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #d1fae5, #a7f3d0)' }}>
-              <CheckCircle className="h-12 w-12 text-emerald-600" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('importCsv.importSuccessTitle')}</h2>
-
-            {importResult.fec && (
-              <p className="text-sm text-amber-700 font-medium mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50">
-                <Zap className="h-4 w-4" />
-                Import FEC — catégorisé et agrégé automatiquement
+      {/* ─── Étape 3 : résultat ────────────────────────────────────────── */}
+      {step === 3 && result && (
+        <section className={`${card} p-6`}>
+          <div className="flex items-start gap-3">
+            {result.imported > 0
+              ? <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-600" aria-hidden="true" />
+              : <AlertTriangle className="h-6 w-6 shrink-0 text-red-600" aria-hidden="true" />}
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">
+                {result.imported > 0
+                  ? (result.fec
+                      ? t('imp.doneFec', '{{n}} saisie(s) créée(s) à partir du FEC', { n: result.imported })
+                      : t('imp.doneTitle', '{{n}} ligne(s) importée(s)', { n: result.imported }))
+                  : t('imp.failTitle', "Aucune ligne n'a été importée")}
+              </h2>
+              <p className="mt-1 text-sm text-gray-600">
+                {result.imported > 0
+                  ? (result.fec || (result.target ?? 'generic') === 'generic'
+                      ? t('imp.doneGeneric', 'Elles sont enregistrées avec le statut « À vérifier » et restent modifiables tant qu’elles ne sont pas vérifiées.')
+                      : t('imp.doneDedicated', 'Elles sont disponibles dans : {{label}}.', { label: target.label }))
+                  : t('imp.failHint', 'Corrigez le fichier d’après le détail ci-dessous, puis recommencez.')}
               </p>
-            )}
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto mb-8">
-              {[
-                { value: importResult.imported, label: t('importCsv.importedData'), color: '#16a34a', bg: '#f0fdf4' },
-                { value: importResult.indicator_data_created ?? 0, label: 'Indicateurs ESG liés', color: '#2563eb', bg: '#eff6ff' },
-                { value: importResult.errors, label: t('importCsv.errors'), color: '#dc2626', bg: '#fef2f2' },
-              ].map(stat => (
-                <div key={stat.label} className="py-6 px-4 rounded-2xl" style={{ backgroundColor: stat.bg }}>
-                  <p className="text-3xl font-bold mb-1" style={{ color: stat.color }}>{stat.value}</p>
-                  <p className="text-xs text-gray-500">{stat.label}</p>
-                </div>
-              ))}
-            </div>
-
-            {(importResult.scores_recalculated ?? 0) > 0 && (
-              <div className="mb-5 p-4 bg-emerald-50 border border-emerald-200 rounded-xl max-w-md mx-auto text-sm text-emerald-800">
-                🔄 Scores ESG recalculés automatiquement pour {importResult.scores_recalculated} organisation(s).
-                Consultez la page <strong>Score ESG</strong> pour voir les nouveaux scores.
-              </div>
-            )}
-            {(importResult.indicator_data_created ?? 0) > 0 && (
-              <div className="mb-5 p-4 bg-blue-50 border border-blue-200 rounded-xl max-w-md mx-auto text-sm text-blue-800">
-                ✅ {importResult.indicator_data_created} point(s) de données liés aux indicateurs ESG.
-              </div>
-            )}
-
-            {/* Error details */}
-            {importResult.errors > 0 && importResult.error_details?.length > 0 && (
-              <div className="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl max-w-lg mx-auto text-left text-xs text-red-700 space-y-1">
-                <p className="font-semibold mb-2">{importResult.errors} ligne(s) en erreur :</p>
-                {importResult.error_details.slice(0, 5).map((e: any, i: number) => (
-                  <p key={i}>Ligne {e.row} — {e.error}</p>
-                ))}
-                {importResult.error_details.length > 5 && (
-                  <p className="text-red-400">… et {importResult.error_details.length - 5} autres erreurs</p>
-                )}
-              </div>
-            )}
-
-            <div className="flex gap-3 justify-center">
-              <button
-                onClick={handleReset}
-                className="flex items-center gap-2 px-6 py-3 border border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition-colors text-sm"
-              >
-                <RefreshCw className="h-4 w-4" />
-                {t('importCsv.importAnother')}
-              </button>
-              <button
-                onClick={() => navigate(importResult.fec ? '/app/my-data?source=fec_import' : '/app/my-data')}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white transition-colors"
-                style={{ backgroundColor: '#059669' }}
-              >
-                <CheckCircle className="h-4 w-4" />
-                {t('importCsv.viewData')}
-              </button>
             </div>
           </div>
-        </div>
+
+          <dl className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg bg-gray-50 p-3">
+              <dt className="text-xs text-gray-500">{t('imp.statImported', 'Lignes importées')}</dt>
+              <dd className="text-xl font-semibold text-gray-900 tabular-nums">{result.imported}</dd>
+            </div>
+            <div className="rounded-lg bg-gray-50 p-3">
+              <dt className="text-xs text-gray-500">{t('imp.statErrors', 'Lignes en erreur')}</dt>
+              <dd className={`text-xl font-semibold tabular-nums ${result.errors > 0 ? 'text-red-700' : 'text-gray-900'}`}>{result.errors}</dd>
+            </div>
+            {(result.indicator_data_created ?? 0) > 0 && (
+              <div className="rounded-lg bg-gray-50 p-3">
+                <dt className="text-xs text-gray-500">{t('imp.statIndicators', 'Valeurs reliées à un indicateur')}</dt>
+                <dd className="text-xl font-semibold text-gray-900 tabular-nums">{result.indicator_data_created}</dd>
+              </div>
+            )}
+          </dl>
+
+          {(result.scores_recalculated ?? 0) > 0 && (
+            <p className="mt-4 text-sm text-gray-600">{t('imp.scores', 'Scores ESG recalculés pour {{n}} organisation(s).', { n: result.scores_recalculated })}</p>
+          )}
+
+          {result.errors > 0 && (result.error_details?.length ?? 0) > 0 && (
+            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+              <p className="font-medium">{t('imp.errorsTitle', 'Détail des erreurs')}</p>
+              <ul className="mt-2 space-y-1 text-xs">
+                {result.error_details!.slice(0, 8).map((e, i) => <li key={i}>{t('imp.errorRow', 'Ligne {{row}}', { row: e.row })} — {e.error}</li>)}
+              </ul>
+              {result.error_details!.length > 8 && <p className="mt-2 text-xs">{t('imp.errorsMore', '… et {{n}} autre(s).', { n: result.errors - 8 })}</p>}
+            </div>
+          )}
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            {result.imported > 0 && (
+              <Link to={result.fec ? '/app/my-data?source=fec_import' : target.path} className={btnPrimary}>
+                {t('imp.open', 'Ouvrir : {{label}}', { label: target.label })}<ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            )}
+            <button type="button" onClick={reset} className={btnSecondary}>
+              <RefreshCw className="h-4 w-4" aria-hidden="true" />{t('imp.again', 'Importer un autre fichier')}
+            </button>
+          </div>
+        </section>
       )}
     </div>
   );

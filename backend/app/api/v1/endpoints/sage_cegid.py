@@ -12,7 +12,9 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies import get_db, get_current_user
+from app.core.permissions import Roles
+from app.dependencies import get_db, get_current_user, require_any_role
+from app.services.audit_service import log_change
 from app.models.user import User
 from app.services.fec_parser import parse_fec
 from app.services.pcg_emission_mapper import aggregate_by_category
@@ -88,7 +90,7 @@ async def parse_fec_file(
 async def sync_fec_to_entries(
     file: UploadFile = File(...),
     org_id: Optional[str] = Form(None),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_any_role(*Roles.ENTRY_OR_ABOVE)),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -102,7 +104,8 @@ async def sync_fec_to_entries(
     try:
         rows = parse_fec(content, file.filename)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Erreur de parsing FEC: {str(e)}")
+        logger.warning("FEC illisible (%s) : %s", file.filename, e)
+        raise HTTPException(status_code=400, detail="Ce fichier n'a pas pu être lu comme un FEC. Vérifiez l'export de votre logiciel comptable.")
 
     if not rows:
         raise HTTPException(status_code=400, detail="Aucune écriture valide trouvée")
@@ -173,6 +176,17 @@ async def sync_fec_to_entries(
         created_count += 1
 
     await db.commit()
+
+    # Une entrée de journal par import, scellée dans la piste d'audit.
+    try:
+        await log_change(
+            db=db, tenant_id=current_user.tenant_id, entity_type="data_entries",
+            entity_id=uuid4(), action="bulk_import", user=current_user,
+            new_values={"source": "fec_import", "filename": file.filename,
+                        "ecritures": len(rows), "imported": created_count},
+        )
+    except Exception as exc:
+        logger.warning("Audit de l'import FEC impossible : %s", exc)
 
     total_co2e = sum(a['value'] for a in aggregated if a['unit'] == 'kgCO2e')
     category_names = [a['metric_name'] for a in aggregated]

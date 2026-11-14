@@ -23,6 +23,14 @@ from app.services.audit_service import log_change
 logger = logging.getLogger(__name__)
 
 
+class UploadNotFoundError(LookupError):
+    """Le fichier déposé n'existe pas (ou plus) pour ce tenant."""
+
+
+class AlreadyImportedError(RuntimeError):
+    """Le fichier a déjà été importé : un second import créerait des doublons."""
+
+
 class ESGDataImportService:
     """Service for importing ESG data to data_entries.
 
@@ -480,6 +488,16 @@ class ESGDataImportService:
             await self.db.flush()
         return {'imported': len(suppliers_to_add), 'errors': len(errors), 'errors_detail': errors}
 
+    async def _audit_import(self, tenant_id, entity_type, upload_id, user, user_id, values) -> None:
+        """Une entrée de journal par import, scellée dans la chaîne (log_change)."""
+        try:
+            await log_change(
+                db=self.db, tenant_id=tenant_id, entity_type=entity_type,
+                entity_id=upload_id, action='bulk_import', user=user, new_values=values,
+            )
+        except Exception as exc:
+            logger.warning("Audit de l'import impossible : %s", exc)
+
     async def _ensure_rls_context(self, tenant_id: UUID, user_id: UUID) -> None:
         """Set RLS GUCs on the current connection — defensive, idempotent."""
         try:
@@ -501,6 +519,7 @@ class ESGDataImportService:
         tenant_id: UUID,
         user_id: UUID,
         organization_id: Optional[UUID] = None,
+        user: Any = None,
     ) -> dict[str, Any]:
         """Import data from upload — dispatches to the appropriate table.
 
@@ -542,7 +561,12 @@ class ESGDataImportService:
         upload = result.scalar_one_or_none()
 
         if not upload:
-            raise ValueError("Upload not found")
+            raise UploadNotFoundError(str(upload_id))
+        # Double-clic, retour arrière, rejeu de requête : sans ce garde-fou,
+        # toutes les lignes seraient insérées une seconde fois.
+        if upload.status == 'imported':
+            raise AlreadyImportedError(str(upload_id))
+        upload_filename = upload.filename  # lu avant tout commit (attributs expirés ensuite)
 
         # ── Dispatch by file intent ─────────────────────────────────────────
         # If the file looks like a materiality / risks / suppliers table,
@@ -567,27 +591,21 @@ class ESGDataImportService:
                 upload.valid_rows   = res['imported']
                 upload.invalid_rows = res['errors']
                 upload.status       = 'imported' if res['imported'] > 0 else 'failed'
-                self.db.add(AuditLog(
-                    tenant_id=tenant_id,
-                    entity_type=intent,
-                    entity_id=upload_id,
-                    action='bulk_import',
-                    user_id=user_id,
-                    new_values={
-                        'source': 'csv_import', 'filename': upload.filename,
-                        'imported': res['imported'], 'errors': res['errors'],
-                        'target_table': {'materiality': 'materiality_issues',
-                                         'risks': 'esg_risks',
-                                         'suppliers': 'suppliers'}[intent],
-                    },
-                ))
                 await self.db.commit()
+                await self._audit_import(tenant_id, intent, upload_id, user, user_id, {
+                    'source': 'csv_import', 'filename': upload_filename,
+                    'imported': res['imported'], 'errors': res['errors'],
+                    'target_table': {'materiality': 'materiality_issues',
+                                     'risks': 'esg_risks',
+                                     'suppliers': 'suppliers'}[intent],
+                })
                 return {
                     'imported':                res['imported'],
                     'errors':                  res['errors'],
-                    'errors_detail':           res.get('errors_detail', [])[:10],
+                    'error_details':           res.get('errors_detail', [])[:50],
                     'indicator_data_created':  0,
                     'target':                  intent,
+                    'upload_id':               str(upload_id),
                 }
             except Exception as exc:
                 logger.exception("Dispatcher %s failed: %s", intent, exc)
@@ -601,7 +619,7 @@ class ESGDataImportService:
                     await self.db.rollback()
                 return {
                     'imported': 0, 'errors': len(all_rows),
-                    'errors_detail': [{'row': 'all', 'error': str(exc)}],
+                    'error_details': [{'row': 'toutes', 'error': "L'import a échoué : aucune ligne n'a été enregistrée."}],
                     'indicator_data_created': 0,
                     'target': intent,
                 }
@@ -812,7 +830,7 @@ class ESGDataImportService:
                 logger.exception("Bulk INSERT failed for tenant %s: %s", tenant_id, exc)
                 await self.db.rollback()
                 error_count = len(entries_to_add)
-                errors.append({'row': 'bulk', 'error': str(exc), 'data': None})
+                errors.append({'row': 'toutes', 'error': "L'enregistrement a échoué : aucune ligne n'a été importée.", 'data': None})
                 imported_count = 0
                 indicator_data_created = 0
                 # Restore the RLS context after rollback (rollback may have
@@ -824,26 +842,6 @@ class ESGDataImportService:
                     )
                 except Exception:
                     pass
-
-        # ── Single audit log entry for the whole import (no per-row commits) ──
-        if imported_count > 0:
-            try:
-                audit_entry = AuditLog(
-                    tenant_id=tenant_id,
-                    entity_type='data_entries',
-                    entity_id=upload_id,
-                    action='bulk_import',
-                    user_id=user_id,
-                    new_values={
-                        'source': 'csv_import',
-                        'filename': upload.filename,
-                        'imported': imported_count,
-                        'errors': error_count,
-                    },
-                )
-                self.db.add(audit_entry)
-            except Exception as exc:
-                logger.warning("Could not write bulk audit log: %s", exc)
 
         # Update the upload row's counters
         try:
@@ -858,8 +856,19 @@ class ESGDataImportService:
         except Exception as exc:
             logger.exception("Final commit failed: %s", exc)
             await self.db.rollback()
+            imported_count = 0
+            indicator_data_created = 0
+            errors.append({'row': 'toutes', 'error': "L'enregistrement a échoué : aucune ligne n'a été importée.", 'data': None})
+            error_count = len(all_rows)
+
+        if imported_count > 0:
+            await self._audit_import(tenant_id, 'data_entries', upload_id, user, user_id, {
+                'source': 'csv_import', 'filename': upload_filename,
+                'imported': imported_count, 'errors': error_count,
+            })
 
         return {
+            'target': 'generic',
             'imported': imported_count,
             'indicator_data_created': indicator_data_created,
             'errors': error_count,

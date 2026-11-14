@@ -13,7 +13,7 @@ Routes covered:
 Data entry uses get_current_user from app.dependencies.
 """
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import patch, AsyncMock, MagicMock
 from uuid import uuid4
 from datetime import date, datetime, timezone
 from tests.conftest import make_access_token
@@ -104,7 +104,10 @@ def client():
     app.dependency_overrides[get_db]           = _db
     app.dependency_overrides[get_current_user] = _user
 
-    with TestClient(app, raise_server_exceptions=False) as c:
+    # Les endpoints d'écriture exigent un rôle : on fige celui de l'utilisateur simulé
+    # (la base étant un mock, la lecture des rôles n'aurait pas de sens).
+    with patch("app.dependencies.get_user_role_names", AsyncMock(return_value={"esg_manager"})), \
+         TestClient(app, raise_server_exceptions=False) as c:
         c._entry = mock_entry
         c._user  = mock_user
         yield c
