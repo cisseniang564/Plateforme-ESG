@@ -396,9 +396,16 @@ export default function ContactPage() {
                     <Mail className="w-4 h-4 text-gray-400" />
                     contact@greenconnect.cloud
                   </a>
+                  <a
+                    href="tel:+33753573974"
+                    className="flex items-center gap-3 hover:text-emerald-600 transition-colors"
+                  >
+                    <Phone className="w-4 h-4 text-gray-400" />
+                    07 53 57 39 74
+                  </a>
                   <div className="flex items-center gap-3">
                     <Building2 className="w-4 h-4 text-gray-400" />
-                    Paris, France
+                    Livry-Gargan, France
                   </div>
                 </div>
               </div>

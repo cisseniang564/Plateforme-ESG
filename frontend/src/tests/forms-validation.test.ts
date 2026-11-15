@@ -4,8 +4,10 @@ import validation from '@/pages/Validation/ValidationWorkflow.tsx?raw';
 import tenant from '@/pages/Settings/TenantSettings.tsx?raw';
 
 describe('Page Contact', () => {
-  it('pas de numéro de téléphone non vérifié ni de délai de réponse promis', () => {
+  it('coordonnées réelles, pas de délai de réponse promis', () => {
     expect(contact).not.toContain('+33 1 76 34 00 00');
+    expect(contact).toContain('tel:+33753573974');
+    expect(contact).toContain('Livry-Gargan');
     expect(contact).not.toContain('2 h ouvrees');
   });
   it('libellés accentués', () => {
