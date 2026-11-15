@@ -1,120 +1,60 @@
-import { ConfirmDialog } from '@/components/common';
-import { useEffect, useMemo, useState } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import { Badge, Button, ConfirmDialog, EmptyState } from '@/components/common';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-
-type StatCard = {
-  title: string; value: string; suffix?: string;
-  icon: LucideIcon; iconBg: string; iconColor: string;
-  gradFrom: string; gradTo: string; kpiVariant: string;
-  onClick?: () => void;
-};
 import {
   RefreshCw,
   Award,
-  TrendingUp,
   BarChart3,
   Download,
   AlertCircle,
-  Building2,
-  Sparkles,
-  ShieldCheck,
   ChevronRight,
-  ExternalLink,
   Info,
   Leaf,
   Users,
-  Landmark,
+  Scale,
   Clock,
   ChevronDown,
+  Target,
+  TrendingUp,
 } from 'lucide-react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from 'recharts';
-import Spinner from '@/components/common/Spinner';
 import ScoreMethodology from '@/components/ESG/ScoreMethodology';
 import { useESGScoring } from '@/hooks/useESGScoring';
 import toast from 'react-hot-toast';
 
-/* ── Hero animated score ring ──────────────────────────────────────────── */
-function HeroScoreRing({ score, label }: { score: number; label: string }) {
-  const R = 54;
-  const circ = 2 * Math.PI * R;
-  const dash = (Math.min(Math.max(score, 0), 100) / 100) * circ;
+/** Objectif de score affiché comme repère sur les barres. */
+const TARGET = 75;
+
+const PILLAR_STYLE = {
+  env: { fill: '#10b981', text: '#047857', route: 'environmental', icon: Leaf },
+  soc: { fill: '#3b82f6', text: '#1d4ed8', route: 'social', icon: Users },
+  gov: { fill: '#8b5cf6', text: '#6d28d9', route: 'governance', icon: Scale },
+} as const;
+
+/* ── Barre fine animée une fois (rien si l'utilisateur réduit les mouvements) ── */
+function Meter({ pct, color, label, target }: { pct: number; color: string; label: string; target?: number }) {
+  const [shown, setShown] = useState(false);
+  useEffect(() => { const id = requestAnimationFrame(() => setShown(true)); return () => cancelAnimationFrame(id); }, []);
   return (
-    <div className="flex flex-col items-center gap-2 shrink-0">
-      <svg width="152" height="152" viewBox="0 0 152 152">
-        <defs>
-          <linearGradient id="hRingGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#c4b5fd" />
-            <stop offset="100%" stopColor="#93c5fd" />
-          </linearGradient>
-        </defs>
-        {/* Track */}
-        <circle cx="76" cy="76" r={R} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="14" />
-        {/* Progress */}
-        <circle
-          cx="76" cy="76" r={R}
-          fill="none"
-          stroke="url(#hRingGrad)"
-          strokeWidth="14"
-          strokeLinecap="round"
-          strokeDasharray={`${dash} ${circ - dash}`}
-          transform="rotate(-90 76 76)"
-          style={{ transition: 'stroke-dasharray 1.3s cubic-bezier(.4,0,.2,1)' }}
-        />
-        <text x="76" y="71" textAnchor="middle" fontSize="34" fontWeight="700" fill="white" fontFamily="system-ui,sans-serif">
-          {Math.round(score)}
-        </text>
-        <text x="76" y="91" textAnchor="middle" fontSize="13" fill="rgba(255,255,255,0.5)" fontFamily="system-ui,sans-serif">
-          / 100
-        </text>
-      </svg>
-      <p className="text-xs font-medium tracking-widest text-white/50 uppercase">{label}</p>
+    <div className="relative h-2 rounded-full bg-gray-100" role="img" aria-label={label}>
+      <div className="h-2 rounded-full motion-safe:transition-[width] motion-safe:duration-700 motion-safe:ease-out"
+        style={{ width: shown ? `${Math.max(0, Math.min(pct, 100))}%` : '0%', background: color }} />
+      {target !== undefined && (
+        <span className="absolute -top-1 h-4 w-0.5 rounded-full bg-gray-400" style={{ left: `calc(${target}% - 1px)` }} aria-hidden="true" />
+      )}
     </div>
   );
 }
 
-/* ── Mini pillar progress bar ───────────────────────────────────────────── */
-function MiniBar({ value, color, gradient }: { value: number; color: string; gradient?: string }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <div className="w-16 h-2 rounded-full bg-gray-100 overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all duration-500${gradient ? ` ${gradient}` : ''}`}
-          style={{ width: `${Math.min(Math.max(value, 0), 100)}%`, ...(gradient ? {} : { backgroundColor: color }) }}
-        />
-      </div>
-      <span className="text-xs font-semibold w-5 text-right tabular-nums" style={{ color }}>
-        {Math.round(value)}
-      </span>
-    </div>
-  );
-}
-
-/* ── Rating metadata ────────────────────────────────────────────────────── */
-const RATING_META: Record<string, { barColor: string; badgeBg: string; badgeBorder: string; badgeText: string }> = {
-  AAA: { barColor: '#10b981', badgeBg: '#ecfdf5', badgeBorder: '#a7f3d0', badgeText: '#065f46' },
-  AA:  { barColor: '#22c55e', badgeBg: '#f0fdf4', badgeBorder: '#bbf7d0', badgeText: '#166534' },
-  A:   { barColor: '#84cc16', badgeBg: '#f7fee7', badgeBorder: '#d9f99d', badgeText: '#3f6212' },
-  BBB: { barColor: '#3b82f6', badgeBg: '#eff6ff', badgeBorder: '#bfdbfe', badgeText: '#1e40af' },
-  BB:  { barColor: '#38bdf8', badgeBg: '#f0f9ff', badgeBorder: '#bae6fd', badgeText: '#0c4a6e' },
-  B:   { barColor: '#818cf8', badgeBg: '#eef2ff', badgeBorder: '#c7d2fe', badgeText: '#3730a3' },
-  CCC: { barColor: '#f59e0b', badgeBg: '#fffbeb', badgeBorder: '#fde68a', badgeText: '#92400e' },
-  CC:  { barColor: '#f97316', badgeBg: '#fff7ed', badgeBorder: '#fed7aa', badgeText: '#9a3412' },
-  C:   { barColor: '#ef4444', badgeBg: '#fef2f2', badgeBorder: '#fecaca', badgeText: '#991b1b' },
+/* ── Couleur des notes : du vert (AAA) au rouge (C) ───────────────────── */
+const RATING_COLOR: Record<string, string> = {
+  AAA: '#047857', AA: '#10b981', A: '#6ee7b7',
+  BBB: '#3b82f6', BB: '#60a5fa', B: '#93c5fd',
+  CCC: '#f59e0b', CC: '#f97316', C: '#ef4444',
 };
-function getRatingMeta(r: string) {
-  return RATING_META[r] ?? { barColor: '#9ca3af', badgeBg: '#f9fafb', badgeBorder: '#e5e7eb', badgeText: '#374151' };
-}
+const ratingColor = (r: string) => RATING_COLOR[r] ?? '#9ca3af';
+const ratingTone = (r: string) =>
+  (r?.startsWith('A') ? 'success' : r?.startsWith('B') ? 'info' : r?.startsWith('C') ? 'warning' : 'neutral') as 'success' | 'info' | 'warning' | 'neutral';
 
 /* ── Confirm Modal ──────────────────────────────────────────────────────── */
 function ConfirmModal({
@@ -263,813 +203,478 @@ export default function ScoresDashboard() {
   /* ── Computed values ──────────────────────────────────────────────── */
   const statistics = dashboard?.statistics || {};
   const totalOrganizations = statistics?.total_organizations || 0;
+  const distribution: any[] = dashboard?.rating_distribution || [];
+  const bestRating = distribution.find((item: any) => item.count > 0)?.rating || '—';
+  const avgScore = statistics?.average_score || 0;
+  const completeness = Math.round(statistics?.average_completeness ?? 0);
 
-  const bestRating = useMemo(() => {
-    const distribution = dashboard?.rating_distribution || [];
-    const best = distribution.find((item: any) => item.count > 0);
-    return best?.rating || '—';
-  }, [dashboard]);
-
-  const pillarData = [
-    { name: t('scores.envLabel'), value: Math.round((statistics?.average_environmental || 0) * 10) / 10, fill: '#16a34a' },
-    { name: t('scores.socialLabel'),  value: Math.round((statistics?.average_social || 0) * 10) / 10,        fill: '#2563eb' },
-    { name: t('scores.govLabel'),     value: Math.round((statistics?.average_governance || 0) * 10) / 10,    fill: '#7c3aed' },
+  const pillars = [
+    { key: 'env' as const, label: t('scores.envLabel', 'Environnement'), value: statistics?.average_environmental || 0 },
+    { key: 'soc' as const, label: t('scores.socialLabel', 'Social'),      value: statistics?.average_social || 0 },
+    { key: 'gov' as const, label: t('scores.govLabel', 'Gouvernance'),    value: statistics?.average_governance || 0 },
   ];
+  const strongestPillar = [...pillars].sort((a, b) => b.value - a.value)[0]?.label || '—';
+  const weakestPillar = [...pillars].sort((a, b) => a.value - b.value)[0]?.label || '—';
+  const lowCompleteness = (statistics?.average_completeness ?? 0) < 60;
 
-  const diagnosticPillars = [
-    { label: t('scores.envLabel', 'Environnement'), value: statistics?.average_environmental || 0 },
-    { label: t('scores.socialLabel', 'Social'),     value: statistics?.average_social || 0 },
-    { label: t('scores.govLabel', 'Gouvernance'),   value: statistics?.average_governance || 0 },
-  ];
-  const strongestPillar = [...diagnosticPillars].sort((a, b) => b.value - a.value)[0]?.label || '—';
+  const periodLabel = recalcPeriod % 12 === 0
+    ? `${recalcPeriod / 12} ${t('scores.yearUnit')}${recalcPeriod / 12 > 1 ? 's' : ''}`
+    : `${recalcPeriod} ${t('scores.monthUnit')}`;
 
-  const statCards: StatCard[] = [
-    {
-      title: t('scores.avgGlobalScore', 'Score global moyen'),
-      value: statistics?.average_score?.toFixed(1) || '0',
-      suffix: '/100',
-      icon: Award,
-      iconBg: '#f3e8ff', iconColor: '#9333ea',
-      gradFrom: '#a78bfa', gradTo: '#a855f7',
-      kpiVariant: 'kpi-card-purple',
-    },
-    {
-      title: t('scores.environmentalAvg', 'Environnement moy.'),
-      value: statistics?.average_environmental?.toFixed(1) || '0',
-      suffix: '/100',
-      icon: Leaf,
-      iconBg: '#dcfce7', iconColor: '#16a34a',
-      gradFrom: '#4ade80', gradTo: '#10b981',
-      kpiVariant: 'kpi-card-green',
-    },
-    {
-      title: t('scores.socialAvg', 'Social moyen'),
-      value: statistics?.average_social?.toFixed(1) || '0',
-      suffix: '/100',
-      icon: Users,
-      iconBg: '#dbeafe', iconColor: '#2563eb',
-      gradFrom: '#60a5fa', gradTo: '#38bdf8',
-      kpiVariant: 'kpi-card-blue',
-    },
-    {
-      title: t('scores.governanceAvg', 'Gouvernance moy.'),
-      value: statistics?.average_governance?.toFixed(1) || '0',
-      suffix: '/100',
-      icon: Landmark,
-      iconBg: '#e0e7ff', iconColor: '#4f46e5',
-      gradFrom: '#818cf8', gradTo: '#a78bfa',
-      kpiVariant: 'kpi-card-purple',
-    },
-    {
-      title: t('scores.analyzedOrgs', 'Organisations'),
-      value: String(totalOrganizations),
-      suffix: t('scores.analyzed'),
-      icon: Building2,
-      iconBg: '#ccfbf1', iconColor: '#0d9488',
-      gradFrom: '#2dd4bf', gradTo: '#22d3ee',
-      kpiVariant: 'kpi-card-blue',
-      onClick: () => navigate('/app/organizations'),
-    },
-    {
-      title: t('scores.avgCompleteness', 'Complétude moyenne'),
-      value: statistics?.average_completeness?.toFixed(0) || '0',
-      suffix: '%',
-      icon: BarChart3,
-      iconBg: '#fef3c7', iconColor: '#d97706',
-      gradFrom: '#fbbf24', gradTo: '#f97316',
-      kpiVariant: 'kpi-card-amber',
-    },
-  ];
+  // Ferme le menu de période au clic extérieur ou avec Échap
+  const periodRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!periodMenuOpen) return;
+    const onDown = (e: MouseEvent) => { if (!periodRef.current?.contains(e.target as Node)) setPeriodMenuOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setPeriodMenuOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
+  }, [periodMenuOpen]);
+
+  const card = 'rounded-2xl border border-gray-200 bg-white';
+  const sectionTitle = 'text-[15px] font-semibold text-gray-900';
+  const sectionHint = 'mt-0.5 text-[13px] text-gray-500';
+  const link = 'inline-flex items-center gap-1 rounded text-[13px] font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300';
+  const ringR = 54;
+  const ringC = 2 * Math.PI * ringR;
+  const ringColor = avgScore >= 60 ? '#047857' : avgScore >= 45 ? '#d97706' : '#dc2626';
+
+  const confirm = (
+    <ConfirmModal
+      open={confirmModal.open}
+      message={confirmModal.message}
+      onConfirm={confirmModal.onConfirm}
+      onCancel={() => setConfirmModal(m => ({ ...m, open: false }))}
+    />
+  );
+
+  /* Période + recalcul : même contrôle dans l'en-tête et l'écran vide */
+  const recalcControl = (
+    <div ref={periodRef} className="relative flex items-stretch overflow-hidden rounded-xl border border-gray-200 bg-white">
+      <button type="button" aria-haspopup="menu" aria-expanded={periodMenuOpen}
+        onClick={() => setPeriodMenuOpen(o => !o)}
+        title={t('scores.dataWindow')}
+        className="flex items-center gap-1.5 px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
+        <Clock className="h-3.5 w-3.5 text-gray-400" aria-hidden="true" />
+        {periodLabel}
+        <ChevronDown className={`h-3.5 w-3.5 text-gray-400 motion-safe:transition-transform ${periodMenuOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+      </button>
+      <button type="button" onClick={handleRecalculateAll} disabled={recalculating}
+        className="inline-flex items-center gap-2 bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 disabled:opacity-60">
+        <RefreshCw className={`h-4 w-4 ${recalculating ? 'motion-safe:animate-spin' : ''}`} aria-hidden="true" />
+        {t('scores.recalculateAll')}
+      </button>
+      {periodMenuOpen && (
+        <div role="menu" className="absolute left-0 top-full z-50 mt-1 w-48 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+          <p className="px-3 pb-1 pt-2.5 text-xs font-medium text-gray-500">{t('scores.dataWindow')}</p>
+          {[
+            { label: `6 ${t('scores.monthUnit')}`, value: 6 },
+            { label: `1 ${t('scores.yearUnit')}`,  value: 12 },
+            { label: `2 ${t('scores.yearUnit')}s`, value: 24 },
+            { label: `3 ${t('scores.yearUnit')}s`, value: 36 },
+            { label: `4 ${t('scores.yearUnit')}s`, value: 48 },
+            { label: `5 ${t('scores.yearUnit')}s`, value: 60 },
+          ].map(opt => (
+            <button key={opt.value} role="menuitemradio" aria-checked={recalcPeriod === opt.value}
+              onClick={() => { setRecalcPeriod(opt.value); setPeriodMenuOpen(false); }}
+              className={`flex w-full items-center justify-between px-3 py-2 text-sm transition-colors ${
+                recalcPeriod === opt.value ? 'bg-emerald-50 font-semibold text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300' : 'text-gray-700 hover:bg-gray-50'}`}>
+              {opt.label}
+              {recalcPeriod === opt.value && <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" aria-hidden="true" />}
+            </button>
+          ))}
+          <div className="border-t border-gray-100 px-3 py-2">
+            <label htmlFor="custom-months" className="mb-1 block text-xs text-gray-500">{t('scores.customMonths')}</label>
+            <input id="custom-months" type="number" min={1} max={120} placeholder={t('scores.customPlaceholder')}
+              className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1 text-center text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/20"
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  const v = parseInt((e.target as HTMLInputElement).value, 10);
+                  if (!isNaN(v) && v >= 1 && v <= 120) { setRecalcPeriod(v); setPeriodMenuOpen(false); }
+                }
+              }} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   /* ── Empty state ──────────────────────────────────────────────────── */
   if (!dashboard && !loading) {
     return (
-      <div className="space-y-6">
-        <ConfirmModal
-          open={confirmModal.open}
-          message={confirmModal.message}
-          onConfirm={confirmModal.onConfirm}
-          onCancel={() => setConfirmModal(m => ({ ...m, open: false }))}
-        />
-
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-800 p-8 text-white shadow-2xl">
-          <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-white/5" />
-          <div className="pointer-events-none absolute -bottom-10 -left-10 h-48 w-48 rounded-full bg-white/5" />
-          <div className="relative max-w-xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15">
-              <Sparkles className="h-3.5 w-3.5" />
-              {t('scores.smartScoring')}
-            </div>
-            <h1 className="mt-4 text-4xl font-bold tracking-tight">{t('scores.dashboardTitle')}</h1>
-            <p className="mt-3 text-sm text-white/75">{t('scores.noScoresAvailable')}</p>
+      <div className="mx-auto max-w-[1400px] space-y-6">
+        {confirm}
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-gray-900 sm:text-[28px]">{t('scores.dashboardTitle')}</h1>
+            <p className="mt-1 max-w-2xl text-sm text-gray-600">{t('scores.noScoresAvailable')}</p>
           </div>
-        </div>
-
-        <div className="rounded-2xl border border-dashed border-purple-200 bg-purple-50 px-8 py-16">
-          <div className="flex flex-col items-center text-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-purple-100 shadow-inner">
-              <BarChart3 className="h-10 w-10 text-purple-500" />
-            </div>
-            <h3 className="mt-5 text-xl font-bold text-gray-900">{t('scores.onboardingTitle')}</h3>
-            <p className="mt-2 max-w-md text-sm text-gray-500">{t('scores.noScoresHint')}</p>
-            <button
-              onClick={handleRecalculateAll}
-              disabled={recalculating}
-              className="mt-6 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
-              style={{ backgroundColor: '#7c3aed' }}
-            >
-              {recalculating ? <Spinner size="sm" /> : <BarChart3 className="mr-2 h-4 w-4" />}
-              {t('scores.calculateNow')}
-            </button>
+          {recalcControl}
+        </header>
+        {errorMessage && (
+          <div role="alert" className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+            <AlertCircle className="mt-0.5 h-4 w-4 flex-none" aria-hidden="true" />{errorMessage}
           </div>
+        )}
+        <div className={card}>
+          <EmptyState icon={BarChart3} title={t('scores.onboardingTitle')} description={t('scores.noScoresHint')}
+            action={<Button loading={recalculating} disabled={recalculating} icon={<BarChart3 className="h-4 w-4" />} onClick={handleRecalculateAll}>{t('scores.calculateNow')}</Button>} />
         </div>
       </div>
     );
   }
 
   /* ── Main render ──────────────────────────────────────────────────── */
+  const trend = sparklinePoints.length >= 2 ? sparklinePoints[sparklinePoints.length - 1] - sparklinePoints[0] : null;
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      <ConfirmModal
-        open={confirmModal.open}
-        message={confirmModal.message}
-        onConfirm={confirmModal.onConfirm}
-        onCancel={() => setConfirmModal(m => ({ ...m, open: false }))}
-      />
+    <div className="mx-auto max-w-[1400px] space-y-6 animate-fade-in">
+      {confirm}
 
-      {/* ── Hero ───────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-800 p-8 text-white shadow-2xl">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-white/5" />
-        <div className="pointer-events-none absolute -bottom-12 left-1/3 h-52 w-52 rounded-full bg-white/5" />
-
-        <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-          {/* Left */}
-          <div className="flex-1 min-w-0">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium ring-1 ring-white/15">
-              <Award className="h-3.5 w-3.5 shrink-0" />
-              {t('scores.smartScoring')}
-            </div>
-
-            <h1 className="mt-4 text-4xl font-bold tracking-tight">{t('scores.dashboardTitle')}</h1>
-            <p className="mt-2 max-w-xl text-sm text-white/70">{t('scores.dashboardSubtitle')}</p>
-
-            <div className="mt-5 flex flex-wrap gap-2 text-sm text-white/80">
-              <span className="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/10">
-                {t('scores.orgsAnalyzed', { count: totalOrganizations, defaultValue: `${totalOrganizations} org. analysées` })}
-              </span>
-              <span className="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/10">
-                {t('scores.bestRating', { rating: bestRating, defaultValue: `Meilleure note : ${bestRating}` })}
-              </span>
-              {lastLoadedAt && (
-                <span className="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/10 text-white/50">
-                  {t('scores.lastUpdate', {
-                    time: lastLoadedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-                    defaultValue: `Actualisé à ${lastLoadedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
-                  })}
-                </span>
-              )}
-            </div>
-            <ScoreMethodology className="mt-3 !text-white/80 hover:!text-white" />
-
-            <div className="mt-6 flex flex-wrap gap-3 items-center">
-              <button
-                onClick={loadDashboard}
-                disabled={loading}
-                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/20 disabled:opacity-60"
-              >
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                {t('scores.refresh')}
-              </button>
-
-              {/* Période + Recalculer groupés */}
-              <div className="flex items-center rounded-xl overflow-hidden border border-white/20 bg-white/10">
-                {/* Sélecteur de période */}
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setPeriodMenuOpen(o => !o)}
-                    className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white hover:bg-white/10 transition-colors"
-                  >
-                    <Clock className="h-3.5 w-3.5 text-white/70" />
-                    <span>
-                      {recalcPeriod % 12 === 0
-                        ? `${recalcPeriod / 12} ${t('scores.yearUnit')}${recalcPeriod / 12 > 1 ? 's' : ''}`
-                        : `${recalcPeriod} ${t('scores.monthUnit')}`}
-                    </span>
-                    <ChevronDown className={`h-3.5 w-3.5 text-white/60 transition-transform ${periodMenuOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                  {periodMenuOpen && (
-                    <div className="absolute left-0 top-full mt-1 z-50 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden w-44">
-                      <p className="px-3 pt-2.5 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{t('scores.dataWindow')}</p>
-                      {[
-                        { label: `6 ${t('scores.monthUnit')}`,   value: 6  },
-                        { label: `1 ${t('scores.yearUnit')}`,    value: 12 },
-                        { label: `2 ${t('scores.yearUnit')}s`,   value: 24 },
-                        { label: `3 ${t('scores.yearUnit')}s`,   value: 36 },
-                        { label: `4 ${t('scores.yearUnit')}s`,   value: 48 },
-                        { label: `5 ${t('scores.yearUnit')}s`,   value: 60 },
-                      ].map(opt => (
-                        <button
-                          key={opt.value}
-                          onClick={() => { setRecalcPeriod(opt.value); setPeriodMenuOpen(false); }}
-                          className={`w-full flex items-center justify-between px-3 py-2 text-sm transition-colors ${
-                            recalcPeriod === opt.value
-                              ? 'bg-purple-50 text-purple-700 font-semibold'
-                              : 'text-gray-700 hover:bg-gray-50'
-                          }`}
-                        >
-                          {opt.label}
-                          {recalcPeriod === opt.value && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-purple-600" />
-                          )}
-                        </button>
-                      ))}
-                      {/* Champ personnalisé */}
-                      <div className="px-3 py-2 border-t border-gray-100">
-                        <p className="text-[10px] text-gray-400 mb-1">{t('scores.customMonths')}</p>
-                        <input
-                          type="number"
-                          min={1}
-                          max={120}
-                          placeholder={t('scores.customPlaceholder')}
-                          className="w-full px-2 py-1 text-sm border border-gray-200 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-purple-400/30"
-                          onKeyDown={e => {
-                            if (e.key === 'Enter') {
-                              const v = parseInt((e.target as HTMLInputElement).value, 10);
-                              if (!isNaN(v) && v >= 1 && v <= 120) {
-                                setRecalcPeriod(v);
-                                setPeriodMenuOpen(false);
-                              }
-                            }
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Séparateur */}
-                <span className="w-px h-6 bg-white/20" />
-
-                {/* Bouton Recalculer */}
-                <button
-                  onClick={handleRecalculateAll}
-                  disabled={recalculating}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-purple-900 bg-white hover:bg-white/90 transition-colors disabled:opacity-60"
-                >
-                  {recalculating ? <Spinner size="sm" /> : <RefreshCw className="h-4 w-4" />}
-                  {t('scores.recalculateAll')}
-                </button>
-              </div>
-            </div>
+      {/* ── En-tête ── */}
+      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-gray-900 sm:text-[28px]">{t('scores.dashboardTitle')}</h1>
+          <p className="mt-1 max-w-2xl text-sm text-gray-600">{t('scores.dashboardSubtitle')}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-gray-500">
+            {lastLoadedAt && (
+              <span>{t('scores.lastUpdate', {
+                time: lastLoadedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+                defaultValue: `Actualisé à ${lastLoadedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
+              })}</span>
+            )}
+            <ScoreMethodology />
           </div>
-
-          {/* Right: animated ring */}
-          <HeroScoreRing score={statistics?.average_score || 0} label={t('scores.avgGlobalScore')} />
         </div>
-      </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="secondary" icon={<RefreshCw className={`h-4 w-4 ${loading ? 'motion-safe:animate-spin' : ''}`} />} onClick={loadDashboard} disabled={loading}>
+            {t('scores.refresh')}
+          </Button>
+          {recalcControl}
+        </div>
+      </header>
 
-      {/* ── Error banner ──────────────────────────────────────────────── */}
       {errorMessage && (
-        <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4">
-          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
-          <div>
-            <p className="font-medium text-red-900">{t('scores.calcError')}</p>
-            <p className="mt-1 text-sm text-red-700">{errorMessage}</p>
+        <div role="alert" className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-500/30 dark:bg-red-500/10">
+          <AlertCircle className="mt-0.5 h-4 w-4 flex-none text-red-600 dark:text-red-400" aria-hidden="true" />
+          <div className="text-sm">
+            <p className="font-medium text-red-900 dark:text-red-200">{t('scores.calcError')}</p>
+            <p className="mt-0.5 text-red-700 dark:text-red-300">{errorMessage}</p>
           </div>
         </div>
       )}
 
-      {/* ── Skipped banner ────────────────────────────────────────────── */}
       {skippedCount > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-          <div className="flex items-start gap-3">
-            <Info className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
+          <div className="flex items-start gap-3 text-sm">
+            <Info className="mt-0.5 h-4 w-4 flex-none text-amber-600 dark:text-amber-400" aria-hidden="true" />
             <div>
-              <p className="font-medium text-amber-900">
-                {t('scores.skippedOrgs', { count: skippedCount })}
-              </p>
-              <p className="mt-1 text-sm text-amber-700">
-                {t('scores.skippedOrgsHint')}
-              </p>
+              <p className="font-medium text-amber-900 dark:text-amber-200">{t('scores.skippedOrgs', { count: skippedCount })}</p>
+              <p className="mt-0.5 text-amber-800 dark:text-amber-300">{t('scores.skippedOrgsHint')}</p>
             </div>
           </div>
-          <div className="flex shrink-0 gap-2">
-            <button
-              onClick={() => navigate('/app/data-entry')}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-50"
-            >
-              <BarChart3 className="h-4 w-4" />
-              {t('scores.enterData')}
-            </button>
-          </div>
+          <Button variant="secondary" size="sm" icon={<BarChart3 className="h-4 w-4" />} onClick={() => navigate('/app/data-entry')}>
+            {t('scores.enterData')}
+          </Button>
         </div>
       )}
 
-      {/* ── Loading ───────────────────────────────────────────────────── */}
       {loading ? (
-        <div className="space-y-4">
-          {/* Skeleton KPI row */}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-                <div className="skeleton h-1.5 w-full" />
-                <div className="p-4 space-y-3">
-                  <div className="skeleton h-8 w-8 rounded-xl" />
-                  <div className="skeleton h-6 w-3/4 rounded-lg" />
-                  <div className="skeleton h-3 w-1/2 rounded" />
-                  <div className="skeleton h-3 w-5/6 rounded" />
-                </div>
-              </div>
-            ))}
-          </div>
-          {/* Skeleton chart row */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <div className="lg:col-span-2 rounded-2xl border border-gray-100 bg-white shadow-sm p-6 space-y-4">
-              <div className="skeleton h-4 w-48 rounded" />
-              <div className="skeleton h-3 w-64 rounded" />
-              <div className="skeleton h-40 w-full rounded-xl" />
-            </div>
-            <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-6 space-y-4">
-              <div className="skeleton h-4 w-40 rounded" />
-              <div className="skeleton h-10 w-24 rounded-lg" />
-              <div className="skeleton h-2.5 w-full rounded-full" />
+        <div className="space-y-6" role="status" aria-label={t('common.loading', 'Chargement')}>
+          <div className={`${card} grid grid-cols-1 gap-6 p-6 lg:grid-cols-[300px_minmax(0,1fr)]`}>
+            <div className="skeleton mx-auto h-[132px] w-[132px] rounded-full" />
+            <div className="space-y-5">
+              {Array.from({ length: 3 }).map((_, i) => <div key={i} className="skeleton h-8 w-full rounded-lg" />)}
             </div>
           </div>
-          {/* Skeleton table */}
-          <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-6 space-y-4">
-            <div className="skeleton h-4 w-48 rounded" />
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-4 py-2">
-                <div className="skeleton h-7 w-7 rounded-full" />
-                <div className="skeleton h-4 w-48 rounded" />
-                <div className="skeleton h-4 w-16 rounded ml-auto" />
-                <div className="skeleton h-6 w-12 rounded-lg" />
-              </div>
-            ))}
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+            <div className={`${card} space-y-3 p-6`}>{Array.from({ length: 6 }).map((_, i) => <div key={i} className="skeleton h-5 w-full rounded" />)}</div>
+            <div className={`${card} space-y-3 p-6`}>{Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton h-5 w-full rounded" />)}</div>
           </div>
         </div>
       ) : (
         <>
-          {/* ── KPI cards ─────────────────────────────────────────────── */}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 animate-slide-up">
-            {statCards.map((item) => {
-              const Icon = item.icon;
-              return (
-                <div
-                  key={item.title}
-                  onClick={item.onClick}
-                  className={`kpi-card ${item.kpiVariant}${item.onClick ? ' cursor-pointer' : ''}`}
-                >
-                  <div className="p-4">
-                    <div className="mb-3 flex items-center justify-between">
-                      <div className="rounded-xl p-2" style={{ backgroundColor: item.iconBg }}>
-                        <Icon className="h-4 w-4" style={{ color: item.iconColor }} />
-                      </div>
-                      {item.onClick && (
-                        <ChevronRight className="h-4 w-4 text-gray-300 transition-transform group-hover:translate-x-0.5" />
-                      )}
-                    </div>
-                    <p className="stat-value">{item.value}</p>
-                    <p className="stat-label mt-0.5">{item.suffix || ' '}</p>
-                    <p className="mt-2 text-xs leading-snug text-gray-500">{item.title}</p>
+          {/* ── Score moyen + piliers + chiffres clés ── */}
+          <section className={`${card} overflow-hidden`} aria-label={t('scores.avgGlobalScore', 'Score global moyen')}>
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
+              <div className="flex items-center gap-5 border-b border-gray-200 p-6 lg:border-b-0 lg:border-r">
+                <div className="relative h-[132px] w-[132px] flex-none" role="img" aria-label={`${t('scores.avgGlobalScore')} : ${avgScore.toFixed(1)} / 100`}>
+                  <svg viewBox="0 0 132 132" className="h-full w-full -rotate-90" aria-hidden="true">
+                    <circle cx="66" cy="66" r={ringR} fill="none" stroke="currentColor" className="text-gray-100 dark:text-white/10" strokeWidth="10" />
+                    <circle cx="66" cy="66" r={ringR} fill="none" stroke={ringColor} strokeWidth="10" strokeLinecap="round"
+                      strokeDasharray={`${(ringC * Math.min(avgScore, 100)) / 100} ${ringC}`}
+                      className="motion-safe:transition-[stroke-dasharray] motion-safe:duration-700" />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-[32px] font-semibold leading-none tracking-tight tabular-nums text-gray-900">{avgScore.toFixed(1)}</span>
+                    <span className="mt-1 text-xs text-gray-500">/ 100</span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-
-          {/* ── Pillar chart + Sector rank ─────────────────────────────── */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            {/* Horizontal pillar BarChart — 2/3 */}
-            <div className="lg:col-span-2 rounded-2xl border border-gray-100 bg-white shadow-sm p-6">
-              <h2 className="flex items-center gap-2 text-base font-semibold text-gray-800">
-                <BarChart3 className="h-4 w-4 text-indigo-500 shrink-0" />
-                {t('scores.pillarPerformance')}
-              </h2>
-              <p className="mt-0.5 text-sm text-gray-500 mb-5">{t('scores.pillarPerformanceSub')}</p>
-              <ResponsiveContainer width="100%" height={160}>
-                <BarChart
-                  data={pillarData}
-                  layout="vertical"
-                  margin={{ top: 0, right: 50, bottom: 0, left: 10 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
-                  <XAxis
-                    type="number"
-                    domain={[0, 100]}
-                    tick={{ fontSize: 11, fill: '#9ca3af' }}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(v) => `${v}`}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    width={115}
-                    tick={{ fontSize: 12, fill: '#374151' }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip
-                    formatter={(value: number) => [`${value.toFixed(1)} / 100`, t('scores.avgScore')]}
-                    contentStyle={{
-                      borderRadius: '12px',
-                      border: '1px solid #e5e7eb',
-                      boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-                      fontSize: '13px',
-                    }}
-                  />
-                  <Bar
-                    dataKey="value"
-                    radius={[0, 8, 8, 0]}
-                    barSize={34}
-                    label={{ position: 'right', fontSize: 12, fontWeight: 600, fill: '#374151', formatter: (v: number) => v > 0 ? v : '' }}
-                  >
-                    {pillarData.map((entry, i) => (
-                      <Cell key={i} fill={entry.fill} fillOpacity={0.9} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Sector rank — 1/3 */}
-            <div
-              className="rounded-2xl border border-gray-100 bg-white shadow-sm p-6 cursor-pointer transition-shadow hover:shadow-md"
-              onClick={() => navigate(sectorState === 'no-sector' ? '/app/organizations' : '/app/benchmarking')}
-            >
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="flex items-center gap-2 text-base font-semibold text-gray-800">
-                  <Award className="h-4 w-4 text-green-600" />
-                  {t('scores.sectorRankTitle', 'Classement sectoriel')}
-                </h3>
-                <ExternalLink className="h-4 w-4 text-gray-300" />
+                <dl className="min-w-0 space-y-2.5 text-[13px]">
+                  <div>
+                    <dt className="text-gray-500">{t('scores.analyzedOrgs', 'Organisations')}</dt>
+                    <dd className="mt-0.5">
+                      <button type="button" onClick={() => navigate('/app/organizations')} className="font-medium tabular-nums text-gray-900 hover:underline">
+                        {totalOrganizations}
+                      </button>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-gray-500">{t('scores.bestRatingLabel', 'Meilleure note')}</dt>
+                    <dd className="mt-0.5">{bestRating !== '—' ? <Badge tone={ratingTone(bestRating)}>{bestRating}</Badge> : '—'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-gray-500">{t('scores.avgCompleteness', 'Complétude moyenne')}</dt>
+                    <dd className="mt-0.5 font-medium tabular-nums text-gray-900">{completeness} %</dd>
+                  </div>
+                </dl>
               </div>
 
-              {sectorRank !== null && sectorTotal !== null && (
-                <div className="mb-4 flex items-baseline gap-2">
-                  <span className="text-4xl font-bold text-green-700">{sectorRank}</span>
-                  <span className="text-sm text-gray-500">/ {sectorTotal} {t('scores.companies')}</span>
+              <div className="p-6">
+                <div className="flex items-baseline justify-between gap-3">
+                  <h2 className={sectionTitle}>{t('scores.pillarPerformance')}</h2>
+                  <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                    <span className="inline-block h-3 w-0.5 rounded-full bg-gray-400" aria-hidden="true" />
+                    {t('dashboard.targetLegend', { n: TARGET, defaultValue: 'objectif {{n}}' })}
+                  </span>
                 </div>
-              )}
-
-              {sectorRank !== null && sectorTotal !== null ? (
-                <>
-                  <div className="relative mb-3 h-2.5 overflow-hidden rounded-full bg-gray-100">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-green-400 to-emerald-500 transition-all duration-700"
-                      style={{
-                        width: `${Math.max(
-                          ((sectorTotal - sectorRank) / Math.max(sectorTotal - 1, 1)) * 100,
-                          sectorRank > 0 ? 4 : 0,
-                        )}%`,
-                      }}
-                    />
-                  </div>
-                  <p className="text-xs font-semibold text-green-700">
-                    {sectorRank <= Math.ceil(sectorTotal * 0.1)
-                      ? '🏆 ' + t('scores.sectorTop10', 'Top 10% du secteur')
-                      : sectorRank <= Math.ceil(sectorTotal * 0.25)
-                        ? '🥈 ' + t('scores.sectorTop25', 'Top 25% du secteur')
-                        : sectorRank <= Math.ceil(sectorTotal * 0.5)
-                          ? '📈 ' + t('scores.sectorUpperHalf', 'Dans la première moitié du secteur')
-                          : t('scores.sectorLowerHalf', 'Dans la seconde moitié du secteur : des marges de progrès')}
-                  </p>
-                </>
-              ) : sectorState === 'no-sector' ? (
-                <p className="text-sm text-gray-500">
-                  {t('scores.sectorMissing', 'Renseignez le secteur de votre organisation pour voir votre rang.')}{' '}
-                  <span className="font-semibold text-green-700">{t('scores.sectorMissingCta', 'Compléter')}</span>
-                </p>
-              ) : sectorState === 'unavailable' ? (
-                <p className="text-sm text-gray-500">
-                  {t('scores.sectorUnavailable', 'Classement indisponible : pas assez d’entreprises comparables dans ce secteur pour le moment.')}
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  <div className="h-2.5 animate-pulse rounded-full bg-gray-100" />
-                  <p className="text-xs text-gray-400">{t('scores.loadingSectorRank')}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* ── Rating distribution + Quick diagnostic ────────────────── */}
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3 xl:items-start">
-            {/* Rating distribution — 2/3 */}
-            <div className="xl:col-span-2 rounded-2xl border border-gray-100 bg-white shadow-sm p-6">
-              <h2 className="flex items-center gap-2 text-base font-semibold text-gray-800">
-                <Award className="h-4 w-4 text-amber-500 shrink-0" />
-                {t('scores.ratingDistribution', 'Distribution des notes ESG')}
-              </h2>
-              <p className="mt-0.5 text-sm text-gray-500 mb-6">
-                {t('scores.ratingDistributionSub', 'Répartition des organisations par rating')}
-              </p>
-
-              {dashboard?.rating_distribution?.length ? (
-                <div className="space-y-3">
-                  {dashboard.rating_distribution.map((item: any) => {
-                    const pct = totalOrganizations > 0 ? (item.count / totalOrganizations) * 100 : 0;
-                    const meta = getRatingMeta(item.rating);
+                <p className={sectionHint}>{t('scores.pillarPerformanceSub')}</p>
+                <ul className="mt-4 space-y-1">
+                  {pillars.map(p => {
+                    const st = PILLAR_STYLE[p.key];
+                    const Icon = st.icon;
+                    const gap = Math.round(p.value - TARGET);
                     return (
-                      <div key={item.rating} className="flex items-center gap-3 rounded-xl px-2 py-1 hover:bg-gray-50/80 transition-colors">
-                        <div className="w-14 shrink-0 text-left">
-                          <span
-                            className="inline-block rounded-full border-2 px-2.5 py-0.5 text-xs font-black tracking-wide"
-                            style={{ backgroundColor: meta.badgeBg, borderColor: meta.badgeBorder, color: meta.badgeText }}
-                          >
-                            {item.rating}
+                      <li key={p.key}>
+                        <button type="button" onClick={() => navigate(`/app/dashboard/pillar/${st.route}`)}
+                          className="group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 rounded-xl px-2 py-3 text-left transition-colors hover:bg-gray-50 sm:grid-cols-[minmax(0,170px)_minmax(0,1fr)_auto]">
+                          <span className="flex min-w-0 items-center gap-2.5">
+                            <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg" style={{ background: `${st.fill}1a`, color: st.text }}>
+                              <Icon className="h-4 w-4" aria-hidden="true" />
+                            </span>
+                            <span className="truncate text-sm font-medium text-gray-800">{p.label}</span>
                           </span>
-                        </div>
-                        <div className="flex-1 h-7 overflow-hidden rounded-full bg-gray-50 border border-gray-100">
-                          <div
-                            className="h-full rounded-full transition-all duration-700"
-                            style={{ width: `${pct > 0 ? Math.max(pct, 3) : 0}%`, backgroundColor: meta.barColor }}
-                          />
-                        </div>
-                        <div className="w-20 shrink-0 text-right">
-                          <span className="text-sm font-semibold text-gray-800">{item.count}</span>
-                          <span className="ml-1 text-xs text-gray-400">({pct.toFixed(0)}%)</span>
-                        </div>
-                      </div>
+                          <span className="order-last col-span-2 min-w-0 sm:order-none sm:col-span-1">
+                            <Meter pct={p.value} color={st.fill} target={TARGET} label={`${p.label} : ${p.value.toFixed(1)} sur 100, objectif ${TARGET}`} />
+                            <span className="mt-1.5 block text-xs text-gray-500">
+                              {gap >= 0
+                                ? t('dashboard.aboveTarget', { n: gap, defaultValue: 'Objectif atteint (+{{n}} pts)' })
+                                : t('dashboard.belowTarget', { n: Math.abs(gap), defaultValue: '{{n}} pts sous l’objectif' })}
+                            </span>
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span className="w-11 text-right text-xl font-semibold tabular-nums text-gray-900">{p.value.toFixed(1)}</span>
+                            <ChevronRight className="h-4 w-4 text-gray-300 transition-colors group-hover:text-gray-500" aria-hidden="true" />
+                          </span>
+                        </button>
+                      </li>
                     );
                   })}
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-6 py-12 text-center text-sm text-gray-400">
-                  {t('scores.noDistribution', 'Aucune distribution disponible')}
-                </div>
-              )}
-            </div>
-
-            {/* Quick Diagnostic — 1/3 */}
-            <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-6">
-              <h2 className="flex items-center gap-2 text-base font-semibold text-gray-800 mb-5">
-                <ShieldCheck className="h-4 w-4 text-purple-500 shrink-0" />
-                {t('scores.quickDiagnostic', 'Diagnostic rapide')}
-              </h2>
-              <div className="space-y-4">
-                {/* Complétude des données : indicateur propre au diagnostic (le score global est déjà en tête de page) */}
-                <div className="rounded-2xl border border-purple-100 bg-gradient-to-br from-purple-50 to-indigo-50 p-4">
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-purple-600">
-                    {t('scores.completenessDiag', 'Complétude des données')}
-                  </p>
-                  <div className="flex items-end gap-2">
-                    <p className="text-3xl font-black tabular-nums leading-none text-purple-900">{Math.round(statistics?.average_completeness ?? 0)}</p>
-                    <p className="pb-1 text-sm text-purple-400">%</p>
-                  </div>
-                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-purple-100" role="progressbar" aria-label={t('scores.completenessDiag', 'Complétude des données')} aria-valuenow={Math.round(statistics?.average_completeness ?? 0)} aria-valuemin={0} aria-valuemax={100}>
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-purple-400 to-indigo-500 transition-all duration-700"
-                      style={{ width: `${Math.min(100, statistics?.average_completeness || 0)}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Strongest pillar */}
-                <div className="rounded-2xl border border-green-100 bg-gradient-to-br from-green-50 to-emerald-50 p-4">
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-green-600">
-                    {t('scores.strongestPillar', 'Pilier le plus fort')}
-                  </p>
-                  <p className="text-lg font-semibold text-green-900">{strongestPillar}</p>
-                </div>
-
-                {/* Watch point */}
-                <div
-                  className={`rounded-2xl border p-4 transition-colors${
-                    statistics?.average_completeness < 60
-                      ? ' cursor-pointer border-amber-100 bg-amber-50 hover:bg-amber-100'
-                      : ' border-gray-100 bg-gray-50'
-                  }`}
-                  onClick={() => statistics?.average_completeness < 60 && navigate('/app/data-entry')}
-                >
-                  <p
-                    className="mb-1 flex items-center justify-between text-xs font-semibold uppercase tracking-wide"
-                    style={{ color: statistics?.average_completeness < 60 ? '#92400e' : '#6b7280' }}
-                  >
-                    {t('scores.watchPoint', "Point d'attention")}
-                    {statistics?.average_completeness < 60 && <ChevronRight className="h-3.5 w-3.5" />}
-                  </p>
-                  <p
-                    className="text-sm font-medium"
-                    style={{ color: statistics?.average_completeness < 60 ? '#78350f' : '#374151' }}
-                  >
-                    {statistics?.average_completeness < 60
-                      ? t('scores.lowCompletenessWarning', 'Complétude insuffisante — enrichissez vos données')
-                      : t('scores.adequateCoverageHint', 'Couverture des données adéquate ✓')}
-                  </p>
-                </div>
+                </ul>
               </div>
             </div>
+          </section>
+
+          {/* ── Distribution des notes + repères ── */}
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+            <section className={`${card} p-6`}>
+              <h2 className={sectionTitle}>{t('scores.ratingDistribution', 'Distribution des notes ESG')}</h2>
+              <p className={sectionHint}>{t('scores.ratingDistributionSub', 'Répartition des organisations par rating')}</p>
+              {distribution.length ? (
+                <ul className="mt-5 space-y-2.5">
+                  {distribution.map((item: any) => {
+                    const pct = totalOrganizations > 0 ? (item.count / totalOrganizations) * 100 : 0;
+                    return (
+                      <li key={item.rating} className="grid grid-cols-[44px_minmax(0,1fr)_72px] items-center gap-3">
+                        <span className="text-[13px] font-semibold text-gray-800">{item.rating}</span>
+                        <Meter pct={pct} color={ratingColor(item.rating)} label={`${item.rating} : ${item.count} organisation(s)`} />
+                        <span className="text-right text-[13px] tabular-nums text-gray-700">
+                          {item.count} <span className="text-xs text-gray-500">({pct.toFixed(0)} %)</span>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="mt-5 text-sm text-gray-500">{t('scores.noDistribution', 'Aucune distribution disponible')}</p>
+              )}
+            </section>
+
+            <section className={`${card} p-6`}>
+              <h2 className={sectionTitle}>{t('scores.quickDiagnostic', 'Diagnostic rapide')}</h2>
+              <dl className="mt-4 divide-y divide-gray-100 dark:divide-gray-800">
+                {/* Classement sectoriel */}
+                <div className="py-3 first:pt-0">
+                  <dt className="text-xs text-gray-500">{t('scores.sectorRankTitle', 'Classement sectoriel')}</dt>
+                  <dd className="mt-1">
+                    {sectorRank !== null && sectorTotal !== null ? (
+                      <button type="button" onClick={() => navigate('/app/benchmarking')} className="group w-full text-left">
+                        <span className="flex items-baseline gap-1.5">
+                          <span className="text-2xl font-semibold tabular-nums text-gray-900">{sectorRank}</span>
+                          <span className="text-[13px] text-gray-500">/ {sectorTotal} {t('scores.companies')}</span>
+                          <ChevronRight className="ml-auto h-4 w-4 self-center text-gray-300 group-hover:text-gray-500" aria-hidden="true" />
+                        </span>
+                        <span className="mt-2 block">
+                          <Meter pct={Math.max(((sectorTotal - sectorRank) / Math.max(sectorTotal - 1, 1)) * 100, sectorRank > 0 ? 4 : 0)}
+                            color="#047857" label={`${sectorRank} / ${sectorTotal}`} />
+                        </span>
+                        <span className="mt-1.5 block text-xs text-gray-600">
+                          {sectorRank <= Math.ceil(sectorTotal * 0.1)
+                            ? t('scores.sectorTop10', 'Top 10% du secteur')
+                            : sectorRank <= Math.ceil(sectorTotal * 0.25)
+                              ? t('scores.sectorTop25', 'Top 25% du secteur')
+                              : sectorRank <= Math.ceil(sectorTotal * 0.5)
+                                ? t('scores.sectorUpperHalf', 'Dans la première moitié du secteur')
+                                : t('scores.sectorLowerHalf', 'Dans la seconde moitié du secteur : des marges de progrès')}
+                        </span>
+                      </button>
+                    ) : sectorState === 'no-sector' ? (
+                      <p className="text-sm text-gray-600">
+                        {t('scores.sectorMissing', 'Renseignez le secteur de votre organisation pour voir votre rang.')}{' '}
+                        <button type="button" onClick={() => navigate('/app/organizations')} className={link}>{t('scores.sectorMissingCta', 'Compléter')}</button>
+                      </p>
+                    ) : sectorState === 'unavailable' ? (
+                      <p className="text-sm text-gray-600">{t('scores.sectorUnavailable', 'Classement indisponible : pas assez d’entreprises comparables dans ce secteur pour le moment.')}</p>
+                    ) : (
+                      <p className="text-xs text-gray-500">{t('scores.loadingSectorRank')}</p>
+                    )}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-3 py-3">
+                  <dt className="text-xs text-gray-500">{t('scores.strongestPillar', 'Pilier le plus fort')}</dt>
+                  <dd className="text-sm font-medium text-gray-900">{strongestPillar}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-3 py-3">
+                  <dt className="text-xs text-gray-500">{t('scores.weakestPillar', 'Pilier à renforcer')}</dt>
+                  <dd className="text-sm font-medium text-gray-900">{weakestPillar}</dd>
+                </div>
+                <div className="py-3 last:pb-0">
+                  <dt className="text-xs text-gray-500">{t('scores.watchPoint', "Point d'attention")}</dt>
+                  <dd className="mt-1">
+                    {lowCompleteness ? (
+                      <button type="button" onClick={() => navigate('/app/data-entry')}
+                        className="flex w-full items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-left text-sm font-medium text-amber-900 transition-colors hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-200">
+                        <AlertCircle className="h-4 w-4 flex-none" aria-hidden="true" />
+                        <span className="flex-1">{t('scores.lowCompletenessWarning', 'Complétude insuffisante — enrichissez vos données')}</span>
+                        <ChevronRight className="h-4 w-4 flex-none" aria-hidden="true" />
+                      </button>
+                    ) : (
+                      <p className="text-sm text-gray-700">{t('scores.adequateCoveragePlain', 'Couverture des données adéquate')}</p>
+                    )}
+                  </dd>
+                </div>
+              </dl>
+            </section>
           </div>
 
-          {/* ── Sparkline — évolution 12 mois ─────────────────────────── */}
-          <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-6">
-            <div className="mb-4 flex items-center justify-between">
+          {/* ── Évolution ── */}
+          <section className={`${card} p-6`}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h3 className="flex items-center gap-2 text-base font-semibold text-gray-800">
-                  <TrendingUp className="h-4 w-4 text-purple-600" />
-                  {t('scores.evolution12mTitle', 'Évolution sur 12 mois')}
-                </h3>
-                <p className="mt-0.5 text-sm text-gray-500">
-                  {t('scores.evolution12mSubtitle', 'Score global moyen : un point par calcul de score')}
-                </p>
+                <h2 className={`${sectionTitle} flex items-center gap-2`}><TrendingUp className="h-4 w-4 text-gray-400" aria-hidden="true" />{t('scores.evolution12mTitle', 'Évolution sur 12 mois')}</h2>
+                <p className={sectionHint}>{t('scores.evolution12mSubtitle', 'Score global moyen : un point par calcul de score')}</p>
               </div>
-              {sparklinePoints.length >= 2 && (() => {
-                const trend = sparklinePoints[sparklinePoints.length - 1] - sparklinePoints[0];
-                return (
-                  <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold ${trend >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                    {trend >= 0 ? '▲' : '▼'} {Math.abs(trend)} pts
-                  </span>
-                );
-              })()}
+              {trend !== null && (
+                <Badge tone={trend >= 0 ? 'success' : 'danger'}>{trend >= 0 ? '+' : '−'}{Math.abs(trend)} pts</Badge>
+              )}
             </div>
-            {(() => {
-              if (sparklinePoints.length < 2) {
-                return (
-                  <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-6 py-10 text-center">
-                    <p className="text-sm font-semibold text-gray-700">{t('scores.evolutionEmptyTitle', 'Pas encore d’évolution à montrer')}</p>
-                    <p className="mt-1 text-sm text-gray-500">{t('scores.evolutionEmptyBody', 'La courbe apparaît dès que vous avez calculé votre score à au moins deux dates. Relancez un calcul après avoir mis à jour vos données.')}</p>
-                  </div>
-                );
-              }
+            {sparklinePoints.length < 2 ? (
+              <EmptyState icon={Target} title={t('scores.evolutionEmptyTitle', 'Pas encore d’évolution à montrer')}
+                description={t('scores.evolutionEmptyBody', 'La courbe apparaît dès que vous avez calculé votre score à au moins deux dates. Relancez un calcul après avoir mis à jour vos données.')} />
+            ) : (() => {
               const points = sparklinePoints;
-              const w = 700, h = 90, pad = 14;
-              const minV = Math.min(...points) - 3;
-              const maxV = Math.max(...points) + 3;
+              const w = 700, h = 110, pad = 16;
+              const minV = Math.max(0, Math.min(...points, TARGET) - 5);
+              const maxV = Math.min(100, Math.max(...points, TARGET) + 5);
+              const y = (v: number) => h - pad - ((v - minV) / (maxV - minV)) * (h - pad * 2);
               const xs = points.map((_, i) => pad + (i / (points.length - 1)) * (w - pad * 2));
-              const ys = points.map((v) => h - pad - ((v - minV) / (maxV - minV)) * (h - pad * 2));
+              const ys = points.map(y);
               const line = xs.map((x, i) => `${x},${ys[i]}`).join(' ');
               const area = `M${xs[0]},${h} ${xs.map((x, i) => `L${x},${ys[i]}`).join(' ')} L${xs[xs.length - 1]},${h} Z`;
               const last = points[points.length - 1];
               return (
-                <div>
-                  <p className="mb-2 text-2xl font-black tabular-nums text-gray-900">
-                    {last}
-                    <span className="ml-1 text-sm font-normal text-gray-400">/100</span>
-                  </p>
-                  <svg width="100%" viewBox={`0 0 ${w} ${h}`} className="overflow-visible">
+                <div className="mt-4">
+                  <div className="flex flex-wrap items-baseline justify-between gap-3">
+                    <p className="text-2xl font-semibold tabular-nums text-gray-900">{last}<span className="ml-1 text-sm font-normal text-gray-500">/ 100</span></p>
+                    <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                      <span className="inline-block w-4 border-t border-dashed border-gray-400" aria-hidden="true" />
+                      {t('dashboard.targetLegend', { n: TARGET, defaultValue: 'objectif {{n}}' })}
+                    </span>
+                  </div>
+                  <svg width="100%" viewBox={`0 0 ${w} ${h}`} className="mt-2 overflow-visible text-gray-400" role="img"
+                    aria-label={`De ${points[0]} à ${last} sur ${points.length} calculs`}>
                     <defs>
                       <linearGradient id="dSparkGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.18" />
-                        <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0" />
+                        <stop offset="0%" stopColor="#047857" stopOpacity="0.16" />
+                        <stop offset="100%" stopColor="#047857" stopOpacity="0" />
                       </linearGradient>
                     </defs>
+                    <line x1={pad} x2={w - pad} y1={y(TARGET)} y2={y(TARGET)} stroke="currentColor" strokeDasharray="4 4" strokeWidth="1" />
                     <path d={area} fill="url(#dSparkGrad)" />
-                    <polyline
-                      points={line}
-                      fill="none"
-                      stroke="#8b5cf6"
-                      strokeWidth="2.5"
-                      strokeLinejoin="round"
-                      strokeLinecap="round"
-                    />
+                    <polyline points={line} fill="none" stroke="#047857" strokeWidth="2.25" strokeLinejoin="round" strokeLinecap="round" />
                     {xs.map((x, i) => (
-                      <circle
-                        key={i}
-                        cx={x} cy={ys[i]}
-                        r={i === 0 || i === xs.length - 1 ? 4.5 : 3}
-                        fill={i === xs.length - 1 ? '#7c3aed' : '#a78bfa'}
-                        stroke="white"
-                        strokeWidth="1.5"
-                      />
+                      <circle key={i} cx={x} cy={ys[i]} r={i === xs.length - 1 ? 4.5 : 3} fill="#047857" />
                     ))}
-                    <text x={xs[0]} y={ys[0] - 9} textAnchor="middle" fontSize="11" fill="#9ca3af">
-                      {points[0]}
-                    </text>
-                    <text x={xs[xs.length - 1]} y={ys[ys.length - 1] - 9} textAnchor="middle" fontSize="11" fontWeight="700" fill="#7c3aed">
-                      {last}
-                    </text>
                   </svg>
                 </div>
               );
             })()}
-          </div>
+          </section>
 
-          {/* ── Top performers ────────────────────────────────────────── */}
-          <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-6">
-            <div className="mb-6 flex items-center justify-between">
+          {/* ── Meilleures organisations ── */}
+          <section className={`${card} overflow-hidden`}>
+            <div className="flex flex-wrap items-start justify-between gap-3 px-6 pb-3 pt-6">
               <div>
-                <h2 className="flex items-center gap-2 text-base font-semibold text-gray-800">
-                  <Sparkles className="h-4 w-4 text-purple-500 shrink-0" />
-                  {t('scores.top5Title', 'Top organisations ESG')}
-                </h2>
-                <p className="mt-0.5 text-sm text-gray-500">
-                  {t('scores.top5Sub', 'Meilleures performances de la période')}
-                </p>
+                <h2 className={sectionTitle}>{t('scores.top5Title', 'Top organisations ESG')}</h2>
+                <p className={sectionHint}>{t('scores.top5Sub', 'Meilleures performances de la période')}</p>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleExportCSV}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-                >
-                  <Download className="h-4 w-4" />
+              <div className="flex flex-wrap items-center gap-3">
+                <Button variant="secondary" size="sm" icon={<Download className="h-4 w-4" />} onClick={handleExportCSV}
+                  disabled={!dashboard?.top_performers?.length}>
                   {t('scores.export', 'Exporter')}
-                </button>
-                <button
-                  onClick={() => navigate('/app/organizations')}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-                >
-                  Voir tout
-                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <button type="button" onClick={() => navigate('/app/organizations')} className={link}>
+                  {t('scores.seeAll', 'Voir tout')} <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
               </div>
             </div>
-
             {dashboard?.top_performers?.length ? (
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-100">
-                      <th className="pb-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400 w-10">#</th>
-                      <th className="pb-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
-                        {t('scores.colOrganization', 'Organisation')}
-                      </th>
-                      <th className="pb-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
-                        {t('scores.colGlobalScore', 'Score')}
-                      </th>
-                      <th className="pb-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
-                        {t('scores.colRating', 'Rating')}
-                      </th>
-                      <th className="pb-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-400 min-w-[140px]">
-                        <span className="text-green-600">E</span>
-                        <span className="text-gray-300 mx-1">/</span>
-                        <span className="text-blue-600">S</span>
-                        <span className="text-gray-300 mx-1">/</span>
-                        <span className="text-purple-600">G</span>
-                      </th>
+                    <tr className="border-b border-gray-100 text-left text-xs font-medium text-gray-500 dark:border-gray-800">
+                      <th scope="col" className="w-12 py-2 pl-6 font-medium">#</th>
+                      <th scope="col" className="py-2 font-medium">{t('scores.colOrganization', 'Organisation')}</th>
+                      <th scope="col" className="hidden w-14 py-2 text-right font-medium sm:table-cell">E</th>
+                      <th scope="col" className="hidden w-14 py-2 text-right font-medium sm:table-cell">S</th>
+                      <th scope="col" className="hidden w-14 py-2 text-right font-medium sm:table-cell">G</th>
+                      <th scope="col" className="w-20 py-2 text-right font-medium">{t('scores.colGlobalScore', 'Score')}</th>
+                      <th scope="col" className="w-24 py-2 pr-6 text-right font-medium">{t('scores.colRating', 'Rating')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {dashboard.top_performers.map((org: any, index: number) => {
-                      const meta = getRatingMeta(org.rating);
-                      const medals = ['🥇', '🥈', '🥉'];
-                      return (
-                        <tr
-                          key={org.id}
-                          className="group cursor-pointer transition-colors hover:bg-purple-50/60"
-                          onClick={() => navigate(`/app/organizations/${org.id}`)}
-                          title={`Voir ${org.name}`}
-                        >
-                          {/* Rank */}
-                          <td className="py-4 pr-2">
-                            {index < 3 ? (
-                              <span className="text-xl leading-none">{medals[index]}</span>
-                            ) : (
-                              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-xs font-bold text-gray-500">
-                                {index + 1}
-                              </div>
-                            )}
-                          </td>
-
-                          {/* Name */}
-                          <td className="py-4 pr-4">
-                            <p className="font-semibold text-gray-900 transition-colors group-hover:text-purple-700">
-                              {org.name}
-                            </p>
-                          </td>
-
-                          {/* Score */}
-                          <td className="py-4 pr-4">
-                            <div className="flex items-end gap-1">
-                              <span className="text-xl font-bold text-gray-900 tabular-nums">
-                                {org.score?.toFixed(1) || '0.0'}
-                              </span>
-                              <span className="pb-0.5 text-xs text-gray-400">/100</span>
-                            </div>
-                          </td>
-
-                          {/* Rating badge */}
-                          <td className="py-4 pr-4">
-                            <span
-                              className="inline-block rounded-full border-2 px-3 py-1 text-xs font-black tracking-wide"
-                              style={{ backgroundColor: meta.badgeBg, borderColor: meta.badgeBorder, color: meta.badgeText }}
-                            >
-                              {org.rating}
-                            </span>
-                          </td>
-
-                          {/* Pillar mini-bars */}
-                          <td className="py-4">
-                            <div className="space-y-1">
-                              <MiniBar value={org.environmental || 0} color="#16a34a" gradient="bg-gradient-to-r from-emerald-400 to-green-500" />
-                              <MiniBar value={org.social || 0}        color="#2563eb" gradient="bg-gradient-to-r from-blue-400 to-cyan-500" />
-                              <MiniBar value={org.governance || 0}    color="#7c3aed" gradient="bg-gradient-to-r from-violet-400 to-purple-500" />
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                    {dashboard.top_performers.map((org: any, index: number) => (
+                      <tr key={org.id} className="cursor-pointer transition-colors hover:bg-gray-50" onClick={() => navigate(`/app/organizations/${org.id}`)}>
+                        <td className="py-3 pl-6 tabular-nums text-gray-500">{index + 1}</td>
+                        <td className="py-3">
+                          <button type="button" onClick={e => { e.stopPropagation(); navigate(`/app/organizations/${org.id}`); }}
+                            className="text-left font-medium text-gray-900 hover:underline">{org.name}</button>
+                        </td>
+                        <td className="hidden py-3 text-right tabular-nums text-gray-600 sm:table-cell">{org.environmental != null ? Math.round(org.environmental) : '—'}</td>
+                        <td className="hidden py-3 text-right tabular-nums text-gray-600 sm:table-cell">{org.social != null ? Math.round(org.social) : '—'}</td>
+                        <td className="hidden py-3 text-right tabular-nums text-gray-600 sm:table-cell">{org.governance != null ? Math.round(org.governance) : '—'}</td>
+                        <td className="py-3 text-right font-semibold tabular-nums text-gray-900">{org.score?.toFixed(1) || '0.0'}</td>
+                        <td className="py-3 pr-6 text-right">{org.rating ? <Badge tone={ratingTone(org.rating)}>{org.rating}</Badge> : '—'}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-6 py-12 text-center text-sm text-gray-400">
-                {t('scores.noPerformers', 'Aucune donnée de performance disponible')}
-              </div>
+              <p className="px-6 pb-6 text-sm text-gray-500">{t('scores.noPerformers', 'Aucune donnée de performance disponible')}</p>
             )}
-          </div>
+          </section>
         </>
       )}
     </div>
