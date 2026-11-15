@@ -6598,60 +6598,6 @@
         "featuresLabel": "Features",
         "featuresAll": "See all features"
       },
-      "hero": {
-        "badge": "22 modules · CSRD · Scope 3 · Generative AI",
-        "titleLine1": "Managing your ESG",
-        "titleLine2": "has never been this simple",
-        "titleTop": "Master",
-        "titleBottom": "with ease",
-        "rotating": {
-          "carbon": "your carbon",
-          "csrd": "your CSRD",
-          "suppliers": "your suppliers",
-          "compliance": "your compliance",
-          "risks": "your ESG risks"
-        },
-        "subtitle": "From data collection to publishing your CSRD report, ESGFlow covers your entire journey — with the AI, connectors and dated audit trail you need.",
-        "cta1": "Free 14-day trial",
-        "cta2": "Interactive demo",
-        "noCard": "No credit card · No commitment",
-        "stat1": "ESG modules",
-        "stat2": "Indicators",
-        "stat3": "INSEE companies",
-        "stat4": "Frameworks",
-        "badgeCsrd": "CSRD compliant",
-        "badgeAudit": "Audit-ready"
-      },
-      "proof": {
-        "badge1Sub": "Sovereign data",
-        "badge2Sub": "Compliant & up to date",
-        "badge4Sub": "Audit-ready",
-        "metricClients": "Client companies",
-        "metricDataPoints": "Data points processed",
-        "metricCountries": "Countries covered",
-        "metricSla": "SLA uptime",
-        "badges": [
-          {
-            "label": "Per-client isolation",
-            "sub": "Database-level separation (RLS)"
-          },
-          {
-            "label": "Encrypted secrets",
-            "sub": "Integration keys encrypted at rest"
-          },
-          {
-            "label": "Audit trail",
-            "sub": "SHA-256 fingerprints, dated validations"
-          }
-        ]
-      },
-      "stats": {
-        "modules": "Integrated modules",
-        "indicators": "ESRS indicators",
-        "companies": "INSEE companies",
-        "actions": "Decarbonization actions",
-        "frameworks": "Regulatory frameworks"
-      },
       "modulesSection": {
         "eyebrow": "Modules",
         "title": "22 modules. One single platform.",
@@ -6911,346 +6857,6 @@
           ]
         }
       },
-      "why": {
-        "eyebrow": "Why ESGFlow",
-        "titleLine1": "Everything you need,",
-        "titleLine2": "nothing you don't",
-        "subtitle": "A platform built by ESG experts, so you can get started in self-service without an integration project.",
-        "pillars": [
-          {
-            "title": "Total compliance, zero blind spots",
-            "desc": "CSRD/ESRS, EU Taxonomy, GRI, CDP, TCFD, SFDR, ISO 14001/26000, Sapin II Law, Duty of Vigilance — 10 frameworks covered natively. One tool, nothing overlooked.",
-            "points": [
-              "80 ESRS data points tracked",
-              "Automatic gap analysis",
-              "Prioritized roadmap",
-              "Audit-ready reporting"
-            ]
-          },
-          {
-            "title": "Reliable, auditable, secure data",
-            "desc": "A dated audit trail (SHA-256), a 3-step validation workflow, and hosting with a European provider. Your data stays your data.",
-            "points": [
-              "SHA-256 fingerprints",
-              "European hosting · GDPR",
-              "Draft → Approved workflow",
-              "ISAE / Big 4 auditor export"
-            ]
-          },
-          {
-            "title": "End-to-end artificial intelligence",
-            "desc": "ESG assistant, anomaly detection, trend forecasts and sector suggestions — aids for your teams to validate.",
-            "points": [
-              "Generative ESG chatbot",
-              "Real-time anomalies",
-              "ML predictions",
-              "Sector suggestions"
-            ]
-          },
-          {
-            "title": "Integrated into your ecosystem from day one",
-            "desc": "FEC and CSV import, REST API and signed webhooks; Pennylane, Qonto and Enedis connections in beta, ERP and HRIS on request. No more double entry.",
-            "points": [
-              "FEC · CSV · Excel import",
-              "REST API + API keys",
-              "HMAC-SHA256 webhooks",
-              "Pennylane · Qonto · Enedis (beta)"
-            ]
-          }
-        ]
-      },
-      "reassure": [
-        {
-          "value": "Self-service",
-          "label": "Getting started",
-          "sub": "no integration"
-        },
-        {
-          "label": "Integrated modules",
-          "sub": "in a single tool"
-        },
-        {
-          "value": "Europe",
-          "label": "European host",
-          "sub": "GDPR"
-        },
-        {
-          "value": "No card",
-          "label": "14-day trial",
-          "sub": "no commitment"
-        }
-      ],
-      "diff": {
-        "eyebrow": "3 key capabilities",
-        "title": "Three technical capabilities to see in a demo",
-        "subtitle": "Concrete capabilities you can check yourself during the free trial.",
-        "cards": [
-          {
-            "badge": "iXBRL TAGGING",
-            "title": "iXBRL preview (XHTML)",
-            "subtitle": "EFRAG 2024-12-31 namespace · ESRS concept catalogue",
-            "body": "We produce <strong>iXBRL-tagged XHTML</strong>, the format targeted by the ESMA for sustainability reports of listed companies. Final ESEF filing remains to be done with your advisers.",
-            "points": [
-              "XHTML EFRAG 2024-12-31",
-              "ESRS concept catalogue",
-              "Strict namespace validation",
-              "Built-in Arelle validation"
-            ],
-            "footerLabel": "Demonstrable:",
-            "footerText": "preview from CSRD Builder, checkable in Arelle."
-          },
-          {
-            "badge": "SPEND-BASED ESTIMATE",
-            "title": "FEC import → Scope 3 estimate",
-            "subtitle": "18-column parser · PCG → ADEME mapping",
-            "body": "Upload your <strong>FEC file</strong>: we estimate your Scope 3 with the <strong>spend-based method</strong> from expense accounts (classes 60 to 62) using ADEME factors. Estimate to review before use.",
-            "points": [
-              "Official 18-column FEC parser",
-              "Built-in ADEME factors",
-              "Automatic PCG mapping",
-              "Standard FEC format"
-            ],
-            "footerLabel": "For the CFO:",
-            "footerText": "a time saving to measure on your own data."
-          },
-          {
-            "badge": "SBTi PREPARATION",
-            "title": "SBTi submission preparation",
-            "subtitle": "Indicative checks before you submit",
-            "body": "Before submitting your targets to the Science-Based Targets initiative, ESGFlow helps you prepare your file with indicative benchmarks. SBTi criteria are evolving (Net-Zero Standard V2.0): <strong>validation remains the SBTi's decision</strong>.",
-            "points": [
-              "Indicative 1.5°C pathway benchmark",
-              "Scope 1, 2 and 3 boundary to document",
-              "Target and base year tracked",
-              "Criteria to confirm with the SBTi"
-            ],
-            "footerLabel": "Upstream check:",
-            "footerText": "the pre-flight flags gaps before any submission."
-          }
-        ],
-        "bottomNote": "These capabilities are available in the free trial.",
-        "bottomCta": "Try it free — 14 days"
-      },
-      "how": {
-        "eyebrow": "How it works",
-        "title": "Get started in 3 steps",
-        "subtitle": "No months-long rollout, no external consultant. Your team takes ownership of the platform from day one.",
-        "steps": [
-          {
-            "title": "Connect your sources",
-            "desc": "Import your FEC, CSV or Excel files, or enter data by hand. 150 pre-configured ESRS concepts guide you from day one.",
-            "detail": [
-              "CSV · FEC · Excel import",
-              "HR exports",
-              "150 ESRS concepts"
-            ]
-          },
-          {
-            "title": "AI analyzes and calculates",
-            "desc": "The AI engine detects anomalies, calculates your Scopes 1/2/3, generates your KPIs and alerts you in real time before issues become critical.",
-            "detail": [
-              "Automatic Scopes 1/2/3",
-              "Real-time anomalies",
-              "Expert ESG chatbot"
-            ]
-          },
-          {
-            "title": "Publish and validate",
-            "desc": "Generate your CSRD, GRI or TCFD report in one click. The SHA-256 audit trail and validation workflow make every data point certifiable by your auditors.",
-            "detail": [
-              "PDF/Word/Excel/JSON report",
-              "ISAE 3000 audit trail",
-              "Secure auditor sharing"
-            ]
-          }
-        ]
-      },
-      "impact": {
-        "eyebrow": "Measurable impact",
-        "titleLine1": "The ROI of your CSR teams,",
-        "titleLine2": "before and after ESGFlow",
-        "subtitle": "Estimate the time you could save, using your own figures.",
-        "beforeBadge": "BEFORE",
-        "beforeTitle": "Without ESGFlow",
-        "afterBadge": "AFTER",
-        "afterTitle": "With ESGFlow",
-        "before": [
-          {
-            "label": "6 to 12 months",
-            "desc": "to produce a CSRD report"
-          },
-          {
-            "label": "15+ Excel spreadsheets",
-            "desc": "disconnected, error-prone"
-          },
-          {
-            "label": "3 to 5 FTEs mobilized",
-            "desc": "manual data collection"
-          },
-          {
-            "label": "Non-compliance risks",
-            "desc": "untraceable data, no audit trail"
-          }
-        ],
-        "after": [
-          {
-            "label": "3 weeks",
-            "desc": "for a complete, auditable CSRD report"
-          },
-          {
-            "label": "1 single platform",
-            "desc": "22 integrated modules, centralized data"
-          },
-          {
-            "label": "1 FTE + AI",
-            "desc": "smart automation of repetitive tasks"
-          },
-          {
-            "label": "Audit-ready",
-            "desc": "detailed log, SHA-256 fingerprints, auditor export"
-          }
-        ],
-        "kpis": [
-          {
-            "label": "Time saved",
-            "sub": "on data collection"
-          },
-          {
-            "label": "Faster",
-            "sub": "for CSRD reporting"
-          },
-          {
-            "label": "Traceability",
-            "sub": "dated validations in the audit trail"
-          },
-          {
-            "label": "Lower costs",
-            "sub": "vs external consulting"
-          }
-        ]
-      },
-      "news": {
-        "eyebrow": "New features 2026",
-        "title": "5 new modules added",
-        "subtitle": "ESGFlow evolves constantly to give you the most complete ESG coverage on the market — now 22 integrated modules.",
-        "cta": "Access all modules",
-        "cards": [
-          {
-            "title": "CSRD Report Builder",
-            "badge": "New",
-            "desc": "Build your CSRD report section by section (E1→G1), track completion and export to PDF, Word, Excel or JSON in one click."
-          },
-          {
-            "title": "Multi-Framework Mapping",
-            "badge": "New",
-            "desc": "Enter once and automatically map to GRI, CDP, TCFD and SDG. Identify gaps per framework."
-          },
-          {
-            "title": "Smart Alerts",
-            "badge": "New",
-            "desc": "Create custom alerts on thresholds, KPIs and regulatory deadlines with real-time email and webhook notifications."
-          },
-          {
-            "title": "API & Developer Portal",
-            "badge": "New",
-            "desc": "Full REST API with API-key management, interactive Swagger documentation, OAuth2 for custom integrations."
-          },
-          {
-            "title": "Data Quality",
-            "badge": "New",
-            "desc": "Completeness score by E/S/G pillar, automatic anomaly detection, missing ESRS data and AI recommendations."
-          },
-          {
-            "title": "FEC Scope 3 Import",
-            "badge": "Popular",
-            "desc": "Calculate your Scope 3 emissions directly from your FEC accounting file (Sage, Cegid, Pennylane)."
-          }
-        ]
-      },
-      "eco": {
-        "eyebrow": "Data & Integrations",
-        "title": "A complete data ecosystem",
-        "subtitle": "Connect to your tools, enrich your data with official sources and automate your flows via webhooks.",
-        "insee": {
-          "subtitle": "Official French database",
-          "indexed": "French companies indexed",
-          "api": "Official API · No key required",
-          "features": [
-            "Search by SIREN / SIRET",
-            "Official legal data",
-            "NAF/APE activity · Headcount",
-            "Automatic ESG enrichment",
-            "Free · Real-time"
-          ]
-        },
-        "integrations": {
-          "title": "Available integrations",
-          "subtitle": "Sync your data with your BI tools",
-          "count": "4 connectors",
-          "items": [
-            {
-              "features": [
-                "import",
-                "export",
-                "real-time sync"
-              ]
-            },
-            {
-              "features": [
-                "export",
-                "dashboard embedding"
-              ]
-            },
-            {
-              "features": [
-                "export",
-                "live connection"
-              ]
-            },
-            {
-              "features": [
-                "import",
-                "export"
-              ]
-            }
-          ]
-        },
-        "webhooks": {
-          "title": "Webhooks & Automation",
-          "subtitle": "Real-time notifications to your services",
-          "count": "6 events",
-          "features": [
-            "HMAC signing",
-            "Automatic retry",
-            "Full logs"
-          ]
-        }
-      },
-      "comparison": {
-        "eyebrow": "Comparison",
-        "title": "Why choose ESGFlow?",
-        "subtitle": "See at a glance what each solution actually offers.",
-        "colFeature": "Feature",
-        "colExcel": "Excel spreadsheets",
-        "rows": [
-          "Scope 1/2/3 carbon footprint",
-          "15 Scope 3 categories",
-          "Full CSRD / ESRS report",
-          "Interactive double materiality",
-          "Supply Chain / Due Diligence",
-          "SBTi decarbonization plan",
-          "Generative AI & ESG chatbot",
-          "SHA-256 audit trail",
-          "Multi-regulatory (10 frameworks)",
-          "EU Taxonomy",
-          "Starting at"
-        ],
-        "customQuote": "Custom quote",
-        "legendIncluded": "Included",
-        "legendPartial": "Partial",
-        "legendUnavailable": "Not available",
-        "detailedCompare": "See detailed comparisons:"
-      },
       "pricing": {
         "eyebrow": "Pricing",
         "title": "Plans that fit your size",
@@ -7281,14 +6887,15 @@
               "Narrative AI",
               "Advanced connectors",
               "SSO OpenID Connect"
-            ]
+            ],
+            "badge": null
           },
           {
             "badge": "Recommended",
             "desc": "Mid-sized companies in ESG transformation",
             "cta": "Free 14-day trial",
             "features": [
-              "100 users · 250 organizations",
+              "100 users · 250 organisations",
               "1,000,000 API calls / month",
               "Everything in PME",
               "Narrative AI & recommendations",
@@ -7300,20 +6907,20 @@
               "Priority support 7 days/week"
             ],
             "missing": [
-              "SSO OpenID Connect",
-              "White-label"
+              "OpenID Connect SSO",
+              "White label"
             ]
           },
           {
             "badge": "Multi-entity",
             "desc": "Large groups & consolidated reporting",
-            "cta": "Start now",
+            "cta": "Get started now",
             "features": [
               "500 users · unlimited orgs",
               "5,000,000 API calls / month",
               "Everything in ETI",
-              "SSO OpenID Connect",
-              "White-label & branding",
+              "OpenID Connect SSO",
+              "White label & branding",
               "IFRS 10 multi-entity consolidation",
               "Dedicated onboarding",
               "Dedicated account manager",
@@ -7325,164 +6932,45 @@
           }
         ]
       },
-      "roi": {
-        "badge": "ROI calculator",
-        "title": "Calculate your savings with ESGFlow",
-        "subtitle": "Adjust the sliders to match your organization and estimate your return on investment.",
-        "employees": "Number of employees",
-        "hours": "Hours/month spent on ESG",
-        "rate": "Average hourly cost (loaded)",
-        "assumption": "Indicative simulation based on an assumed 80% time saving. This assumption has not been measured on customers: adjust the sliders to your situation.",
-        "timeSaved": "Time saved",
-        "perMonth": " / month",
-        "monthlySavings": "Monthly savings",
-        "annualSavings": "Annual savings",
-        "netRoi": "Net ROI",
-        "recommendedPlan": "Recommended plan",
-        "planCost": "Plan cost",
-        "perMonthShort": "/month",
-        "netGain": "Net gain after subscription",
-        "perYear": " / year",
-        "cta": "Free 14-day trial"
-      },
-      "security": {
-        "eyebrow": "Security & Compliance",
-        "title": "Your data deserves the best",
-        "subtitle": "Per-client separation, encrypted secrets, a dated audit trail: trust is proven.",
-        "infraTitle": "Trusted infrastructure",
-        "infraSubtitle": "Every layer is protected",
-        "certs": [
-          {
-            "sub": "Per-client separation",
-            "desc": "Each organisation only sees its own data (PostgreSQL RLS)."
-          },
-          {
-            "sub": "Integration keys",
-            "desc": "Your connector credentials are encrypted before storage."
-          },
-          {
-            "sub": "SHA-256 fingerprints",
-            "desc": "Dated validations; any later change is detected."
-          },
-          {
-            "sub": "Report tagging",
-            "desc": "ESRS concepts tagged for sustainability reports."
-          }
-        ],
-        "features": [
-          {
-            "title": "Encryption",
-            "items": [
-              "Integration secrets encrypted",
-              "HTTPS connection",
-              "Hashed passwords"
-            ]
-          },
-          {
-            "title": "SHA-256 fingerprints",
-            "items": [
-              "Fingerprint per validation",
-              "UTC timestamp",
-              "Change detection"
-            ]
-          },
-          {
-            "title": "European hosting",
-            "items": [
-              "European provider",
-              "Each client's data separated",
-              "AI: text sent to OpenAI, flagged before sending"
-            ]
-          },
-          {
-            "title": "Traceability",
-            "items": [
-              "Detailed audit log",
-              "Who, what, when",
-              "Data export"
-            ]
-          },
-          {
-            "title": "Access control",
-            "items": [
-              "Multi-level RBAC",
-              "SSO OpenID Connect",
-              "Tenant isolation (RLS)"
-            ]
-          }
-        ],
-        "strip": [
-          "Multi-tenant RLS PostgreSQL",
-          "SHA-256 e-signatures per entry",
-          "CSRD Art. 29a compliant",
-          "Zero US cloud dependency"
-        ]
-      },
       "faq": {
         "eyebrow": "FAQ",
         "title": "Frequently asked questions",
         "items": [
           {
             "q": "How long does it take to deploy the platform?",
-            "a": "Going live takes 2 to 3 business days. Our teams handle onboarding, indicator configuration and training for your teams."
+            "a": "The platform is self-service: you create your account, then enter or import your data (FEC, CSV, Excel) yourself. No go-live time is promised at this stage."
           },
           {
             "q": "Is the platform truly CSRD-compliant?",
-            "a": "ESGFlow covers the main ESRS standards (E1-E5, S1-S4, G1) and generates the iXBRL/ESEF format required by ESMA. Our detailed audit trail, with SHA-256 fingerprints and an auditor export, streamlines your internal and external reviews."
+            "a": "ESGFlow covers the main ESRS standards (E1-E5, S1-S4, G1) and offers an iXBRL (XHTML) preview to validate with Arelle; the ESEF filing remains to be done with your advisers. Our detailed audit log with SHA-256 fingerprints and an auditor export supports your internal and external reviews."
           },
           {
             "q": "Can we import our data from Excel or an ERP?",
-            "a": "Yes. The platform accepts CSV, Excel and FEC imports (Sage, Cegid, Pennylane) as well as HR exports from Silae, Lucca or PayFit. Pennylane, Qonto and Enedis API connections are in beta. For SAP, Oracle or Workday, tell us your need: they are not available out of the box. Our REST API allows custom integrations."
+            "a": "Yes. The platform accepts CSV, Excel and FEC imports (Sage, Cegid, Pennylane) as well as HR exports from Silae, Lucca or PayFit. Pennylane, Qonto and Enedis API connections are in beta. For SAP, Oracle or Workday, tell us what you need: they are not available as standard. Our REST API allows custom integrations."
           },
           {
             "q": "Where is the data hosted?",
-            "a": "The platform is hosted with a European provider. The AI features (Gaïa, client questionnaires) send the analysed text to OpenAI, a US provider: this is flagged before each submission, and the file itself is not kept. No certification claim is displayed until it is documented."
+            "a": "The platform is hosted with a European provider. AI features (Gaïa, customer questionnaires) send the analysed text to OpenAI, a US provider: this is shown before each submission, and the file itself is not retained. No certification claim is shown until it is documented."
           },
           {
             "q": "What does the Supply Chain ESG module cover?",
-            "a": "The module covers supplier assessment across 6 ESG dimensions, automated questionnaire sending, due-diligence management and vigilance-plan tracking in line with Law 2017-399."
+            "a": "The module covers supplier assessment across 6 ESG dimensions, automated questionnaires, due diligence management and follow-up of the vigilance plan under French Law 2017-399."
           },
           {
-            "q": "Is there a minimum commitment period?",
-            "a": "No. The PME, ETI and Groupe plans are commitment-free and can be cancelled at any time. Annual contracts get a 15% discount."
+            "q": "Is there a minimum commitment?",
+            "a": "The monthly subscription can be cancelled at any time, effective at the end of the current month. The annual subscription gets a 15% discount: the full year is due, and cancellation takes effect at the term, with no pro rata refund (article 8 of the terms). The 14-day trial requires no credit card and no commitment."
           },
           {
-            "q": "How does FEC import work for Scope 3?",
-            "a": "Export your FEC file from Sage, Cegid or Pennylane and import it directly into ESGFlow. The platform automatically analyzes your 60x/61x/62x accounts and calculates your Scope 3 emissions by spend category using ADEME emission factors."
+            "q": "How does the FEC import work for Scope 3?",
+            "a": "Export your FEC from Sage, Cegid or Pennylane and import it directly into ESGFlow. The platform automatically analyses your 60x/61x/62x accounts and calculates Scope 3 emissions by spend category using ADEME emission factors."
           },
           {
-            "q": "How does the Validation Workflow work?",
-            "a": "Every ESG entry goes through 3 stages: Draft → In review → Approved. Validators can approve or reject with a reason. Each action is automatically recorded in the Audit Trail with date, user and context."
+            "q": "How does the validation workflow work?",
+            "a": "Each ESG entry goes through 3 steps: Draft → In review → Approved. Validators can approve or reject with a reason. Every action is automatically recorded in the audit trail with date, user and context."
           },
           {
-            "q": "What is the ESRS / Gap analysis?",
-            "a": "This module compares your existing data and processes against the 80 ESRS data points (E1 to G1). It automatically generates a gap analysis with a prioritized roadmap to reach CSRD compliance."
-          }
-        ]
-      },
-      "cta": {
-        "badge": "22 modules · 14 days free · No credit card",
-        "titleLine1": "Your ESG, finally",
-        "titleLine2": "fully under control",
-        "subtitle": "Replace your spreadsheets and silos with one platform. Try it free for 14 days.",
-        "primaryBtn": "Start for free",
-        "secondaryBtn": "Watch the interactive demo",
-        "badges": [
-          {
-            "label": "GDPR",
-            "sub": "Built for compliance"
-          },
-          {
-            "label": "European host",
-            "sub": "Data in Europe"
-          },
-          {
-            "label": "iXBRL/ESEF",
-            "sub": "Report tagging"
-          },
-          {
-            "label": "SHA-256",
-            "sub": "Fingerprints per entry"
+            "q": "What is the ESRS / gap analysis?",
+            "a": "This module compares your existing data and processes against the 80 data points of the ESRS standards (E1 to G1). It automatically generates a gap analysis with a prioritised roadmap towards CSRD compliance."
           }
         ]
       },
@@ -7530,137 +7018,6 @@
             ]
           }
         ]
-      },
-      "resources": {
-        "eyebrow": "Free resources",
-        "title": "ESG guides & expertise",
-        "subtitle": "Deepen your knowledge with our practical guides written by ESG experts.",
-        "allLink": "All resources",
-        "readGuide": "Read the guide",
-        "items": [
-          {
-            "category": "Guide",
-            "title": "CSRD for SMBs",
-            "desc": "Everything SMBs need to know about the CSRD: timeline, thresholds, ESRS standards and a concrete action plan."
-          },
-          {
-            "category": "Guide",
-            "title": "Corporate carbon footprint",
-            "desc": "A complete carbon-footprint guide: Scopes 1/2/3, ADEME emission factors, legal obligations and a step-by-step methodology."
-          },
-          {
-            "category": "Guide",
-            "title": "CSDDD & Supply Chain",
-            "desc": "European due diligence: who is concerned, obligations, application timeline and a compliance roadmap."
-          },
-          {
-            "category": "Checklist",
-            "title": "CSRD 2025 checklist",
-            "desc": "The 50 essential control points to prepare your first CSRD report. Downloadable as a PDF."
-          }
-        ]
-      },
-      "about": {
-        "eyebrow": "Our story",
-        "title": "Who are we?",
-        "intro": "ESGFlow was born from a simple observation: European CSR teams deserve a platform built for them — not a spreadsheet, not a US tool, not six different pieces of software.",
-        "missionEyebrow": "Our mission",
-        "missionTitle": "Democratizing ESG compliance for every European company",
-        "missionP1": "We're building the first <strong>natively European</strong> ESG platform: designed from the ground up for the CSRD, EU Taxonomy, SFDR, SBTi and the duty of vigilance — not retrofitted afterwards.",
-        "missionP2": "Our conviction: the sustainability transition shouldn't be reserved for large groups with teams of 20 consultants. A 250-person SMB should be able to produce a CSRD report in a few weeks, with no prior expertise.",
-        "stats": [
-          {
-            "label": "ESG modules"
-          },
-          {
-            "label": "frameworks covered"
-          },
-          {
-            "label": "European host"
-          },
-          {
-            "label": "free trial"
-          }
-        ],
-        "timeline": [
-          {
-            "title": "The project is born",
-            "desc": "Faced with the complexity of the CSRD directive, the project is born from a concrete need: a simple tool to prepare reporting."
-          },
-          {
-            "title": "First prototype",
-            "desc": "First modules: carbon footprint and CSRD report generator."
-          },
-          {
-            "title": "Full platform",
-            "desc": "Added EU Taxonomy, SFDR, SBTi, Vigilance and a validation workflow. iXBRL/ESEF tagging of sustainability reports."
-          },
-          {
-            "title": "Augmented intelligence",
-            "desc": "Built-in generative AI: automatic FEC data extraction, CSRD gap analysis, materiality calculation and CSR policy generation."
-          }
-        ],
-        "problemsEyebrow": "The market's problems",
-        "problemsTitle": "What we solve",
-        "problemsSubtitle": "We faced these same obstacles as CSR consultants. ESGFlow is our direct answer.",
-        "problemLabel": "The problem",
-        "solutionLabel": "Our solution",
-        "problems": [
-          {
-            "problem": "ESG data fragmented across spreadsheets",
-            "problemDesc": "CSR teams spend 60% of their time consolidating scattered Excel files, with no traceability or version control.",
-            "solution": "A centralized platform with 22 connected modules",
-            "solutionDesc": "A single place to enter, validate, approve and export all your ESG data — with an approval workflow and SHA-256 signature."
-          },
-          {
-            "problem": "Confusing, ever-changing regulations",
-            "problemDesc": "CSRD, EU Taxonomy, SFDR, SBTi, CSDDD: each directive has its own indicators, thresholds and timelines. Impossible to keep up with without a dedicated expert.",
-            "solution": "Built-in guides + automatic regulatory updates",
-            "solutionDesc": "Interactive ESRS checklists, a regulatory AI assistant and alerts on text changes — you stay compliant without constant monitoring."
-          },
-          {
-            "problem": "Auditability impossible to guarantee",
-            "problemDesc": "During an ISAE 3000 audit, proving ESG data traceability with a spreadsheet is a perilous exercise — one that can cost you the certification.",
-            "solution": "Time-stamped audit trail + SHA-256 e-signature",
-            "solutionDesc": "Every entry, validation and approval generates an immutable cryptographic fingerprint. Legally recomputable proof during any external audit."
-          },
-          {
-            "problem": "Prohibitive cost of enterprise solutions",
-            "problemDesc": "Many ESG platforms are built for large groups, with a cost and implementation effort that are hard to bear for an SME or mid-cap.",
-            "solution": "Accessible pricing from €0 — no commitment",
-            "solutionDesc": "A functional free plan and a PME plan starting at €249/month. ESG compliance shouldn't be reserved for large groups."
-          }
-        ]
-      },
-      "differentiators": {
-        "eyebrow": "What sets us apart",
-        "title": "Capabilities few ESG tools offer",
-        "subtitle": "Beyond score calculation, ESGFlow natively ships advanced modules, already available in your workspace.",
-        "cta": "Discover",
-        "items": {
-          "0": {
-            "title": "SHA-256 audit trail",
-            "desc": "Every data point and every change is cryptographically chained (SHA-256), making ISAE 3000 assurance easier."
-          },
-          "1": {
-            "title": "Vigilance plan & ethics alert",
-            "desc": "Risk mapping, action plan and a public whistleblowing channel compliant with the EU whistleblower directive."
-          },
-          "2": {
-            "title": "Multi-client Firm mode",
-            "desc": "Manage all your clients from a single workspace, with strict data isolation and a built-in comparator."
-          },
-          "3": {
-            "title": "iXBRL reporting & Arelle validation",
-            "desc": "Generate and validate your CSRD report in the digital ESEF format, ready for regulatory filing."
-          }
-        },
-        "vsme": {
-          "title": "New: VSME voluntary standard (EFRAG) included",
-          "badge": "SMB",
-          "desc": "Ready-to-use template covering the 11 Basic Module requirements (B1–B11): answer ESG requests from your banks and CSRD-bound clients without the cost of a full CSRD report. And your data exports to GRI, CDP and TCFD — 46 mapped indicators, 24 GRI series.",
-          "cta": "See covered standards"
-        }
       },
       "featuresNew": "New",
       "featureGroups": {
@@ -7782,6 +7139,252 @@
       "supply": "Supply Chain ESG",
       "compliance": "Multi-Regulatory",
       "audit": "Audit Trail"
+    },
+    "home": {
+      "nav": {
+        "label": "Main navigation",
+        "home": "ESGFlow, home"
+      },
+      "sheet": {
+        "title": "Sustainability report",
+        "subtitle": "The ESRS structure followed in ESGFlow",
+        "general": "General disclosures",
+        "footer": "80 ESRS data points in the gap analysis."
+      },
+      "facts": {
+        "0": {
+          "title": "22 modules",
+          "sub": "in a single tool"
+        },
+        "1": {
+          "title": "FEC, CSV, Excel",
+          "sub": "HR imports and exports"
+        },
+        "2": {
+          "title": "REST API and webhooks",
+          "sub": "for custom integrations"
+        },
+        "3": {
+          "title": "European host",
+          "sub": "data separated per customer"
+        }
+      },
+      "hero": {
+        "title": "Your CSRD reporting, from raw data to report.",
+        "subtitle": "ESGFlow brings data collection, carbon footprint, ESRS standards and the audit trail into one tool. Import an FEC, a CSV or an Excel file, then prepare your report section by section.",
+        "cta1": "Free 14-day trial",
+        "cta2": "Watch the demo",
+        "note": "No credit card · No commitment"
+      },
+      "pipeline": {
+        "title": "From raw file to audit file",
+        "subtitle": "Four steps that reuse the same data: nothing to re-enter from one tool to the next.",
+        "collect": {
+          "title": "Collect",
+          "desc": "Import an FEC, a CSV or an Excel file, or enter data by hand. HR exports from Silae, Lucca and PayFit are accepted; Pennylane, Qonto and Enedis connections are in beta."
+        },
+        "compute": {
+          "title": "Calculate",
+          "desc": "Scope 1, 2 and 3 emissions with ADEME factors (estimates to be reviewed), E, S and G pillar scores, and a gap analysis on ESRS data points."
+        },
+        "write": {
+          "title": "Write",
+          "desc": "Build the report section by section, from E1 to G1, track completion and export to PDF, Word, Excel or JSON. AI proposes, your team validates."
+        },
+        "trace": {
+          "title": "Trace",
+          "desc": "Each data point goes from draft to approved, with a SHA-256 fingerprint per validation. The iXBRL preview can be checked with Arelle; the ESEF filing remains to be done with your advisers."
+        }
+      },
+      "modules": {
+        "hint": "Pick a category, then a module to see its preview."
+      },
+      "esrsGroups": {
+        "E": "Environment",
+        "S": "Social",
+        "G": "Governance"
+      },
+      "esrs": {
+        "E1": "Climate change",
+        "E2": "Pollution",
+        "E3": "Water and marine resources",
+        "E4": "Biodiversity and ecosystems",
+        "E5": "Resource use and circular economy",
+        "S1": "Own workforce",
+        "S2": "Workers in the value chain",
+        "S3": "Affected communities",
+        "S4": "Consumers and end-users",
+        "G1": "Business conduct"
+      },
+      "data": {
+        "title": "Your data comes in through several doors",
+        "subtitle": "Import your files, connect your tools or let your services receive ESGFlow events.",
+        "events": "Six events available",
+        "limits": "SAP, Oracle and Workday are not available as standard: tell us what you need, the API allows custom integrations.",
+        "contact": "Write to us",
+        "import": {
+          "title": "Import",
+          "items": [
+            "FEC (Sage, Cegid, Pennylane)",
+            "CSV and Excel files",
+            "HR exports from Silae, Lucca and PayFit",
+            "Guided entry, indicator by indicator"
+          ]
+        },
+        "connect": {
+          "title": "Connect",
+          "items": [
+            "Pennylane, Qonto and Enedis (beta)",
+            "Google Sheets: import and export",
+            "INSEE Sirene: legal data from a SIREN number, queried on demand"
+          ]
+        },
+        "automate": {
+          "title": "Automate",
+          "items": [
+            "REST API with API keys and interactive documentation",
+            "Webhooks signed with HMAC-SHA256, with a delivery log"
+          ]
+        }
+      },
+      "roi": {
+        "title": "Estimate the time you could save",
+        "subtitle": "A simulation based on your own figures. The time saved is your assumption: no value has been measured at customers.",
+        "hours": "Hours per month spent on ESG",
+        "rate": "Loaded hourly cost",
+        "gain": "Share of time you expect to save",
+        "plan": "Plan compared",
+        "hoursSaved": "Time saved",
+        "perMonth": " / month",
+        "yearlySavings": "Value of time saved",
+        "perYear": " / year",
+        "yearlyCost": "Subscription",
+        "net": "Estimated net gain",
+        "roiLabel": "Estimated return on investment:",
+        "negative": "With these assumptions the subscription costs more than the time saved: adjust the sliders to your situation.",
+        "cta": "Free 14-day trial"
+      },
+      "pricing": {
+        "billing": "Billing period",
+        "notIncluded": "Not included: "
+      },
+      "security": {
+        "title": "Security and data",
+        "subtitle": "What the platform does today to protect your data, with no promise we could not document.",
+        "hosting": "Hosted with a European provider. AI features send the analysed text to OpenAI, a US provider: this is shown before each submission. No security certification is claimed at this stage.",
+        "more": "Details on the Security page",
+        "isolation": {
+          "title": "Isolation per customer",
+          "desc": "Each organisation only sees its own data: separation is enforced in the database (PostgreSQL RLS)."
+        },
+        "secrets": {
+          "title": "Encrypted secrets",
+          "desc": "Your connector credentials are encrypted before being stored."
+        },
+        "audit": {
+          "title": "Audit trail",
+          "desc": "Validations are dated and carry a SHA-256 fingerprint: any later change is detected."
+        },
+        "access": {
+          "title": "Role-based access",
+          "desc": "Multi-level roles and OpenID Connect SSO (Group plan). No other SSO protocol is offered."
+        }
+      },
+      "resources": {
+        "title": "Free guides and resources",
+        "subtitle": "To understand what applies to you before choosing a tool.",
+        "all": "All resources",
+        "eligibility": {
+          "title": "Are you in scope of the CSRD?",
+          "desc": "Answer a few questions to find out whether your company is in scope, with the thresholds in force after the omnibus.",
+          "cta": "Check my eligibility"
+        },
+        "vsme": {
+          "title": "Voluntary VSME standard (EFRAG) included",
+          "desc": "A template covers the 11 requirements of the Basic Module (B1 to B11), to answer ESG requests from your banks and clients without producing a full CSRD report.",
+          "cta": "See the standards covered"
+        },
+        "csrdpme": {
+          "category": "Guide",
+          "title": "CSRD for SMEs",
+          "desc": "Timeline, thresholds, ESRS standards and a concrete action plan."
+        },
+        "carbon": {
+          "category": "Guide",
+          "title": "Corporate carbon footprint",
+          "desc": "Scopes 1, 2 and 3, ADEME factors, legal obligations and a step-by-step method."
+        },
+        "csddd": {
+          "category": "Guide",
+          "title": "CSDDD and the supply chain",
+          "desc": "Who is concerned, obligations, application timeline and compliance plan."
+        },
+        "checklist": {
+          "category": "Checklist",
+          "title": "CSRD checklist",
+          "desc": "46 priority ESRS indicators ranked by criticality, as a PDF sent by email."
+        }
+      },
+      "about": {
+        "title": "A platform for teams preparing their first report",
+        "p1": "ESGFlow is a recent ESG reporting platform, designed for SMEs and mid-caps that must prepare their CSRD reporting or answer ESG requests from their customers and banks.",
+        "p2": "We show no customer references or awards: you can judge for yourself during the 14-day trial.",
+        "cta": "A question before you start?",
+        "selfservice": {
+          "title": "Self-service start",
+          "desc": "You create your account and start on your own: no integration project is needed."
+        },
+        "estimates": {
+          "title": "Estimates presented as such",
+          "desc": "Indicative ADEME factors, monetary method on the FEC: the tool asks you to review these results before use."
+        },
+        "review": {
+          "title": "Human review",
+          "desc": "AI proposes texts and answers; your team validates them before they are used."
+        }
+      },
+      "cta": {
+        "title": "Try ESGFlow with your own data.",
+        "subtitle": "14 days, no credit card. Import an FEC or enter a first indicator: you will see what the tool does with your figures.",
+        "primary": "Start for free",
+        "secondary": "Watch the demo"
+      },
+      "footer": {
+        "features": {
+          "title": "Features",
+          "links": [
+            "Scope 3 carbon footprint",
+            "CSRD / ESRS reporting",
+            "SBTi decarbonisation plan",
+            "Supply chain",
+            "Double materiality",
+            "EU Taxonomy",
+            "AI and automation",
+            "Audit trail"
+          ]
+        },
+        "resources": {
+          "title": "Resources",
+          "links": [
+            "CSRD guide for SMEs",
+            "Carbon footprint guide",
+            "CSDDD guide",
+            "CSRD checklist",
+            "Standards covered",
+            "Help center"
+          ]
+        },
+        "company": {
+          "title": "ESGFlow",
+          "links": [
+            "Pricing",
+            "About",
+            "Security",
+            "Support",
+            "Contact"
+          ]
+        }
+      }
     }
   },
   "methodology": {

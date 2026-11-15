@@ -58,7 +58,7 @@ describe('page publique : traductions anglaises alignées', () => {
   });
   it('plus de section témoignages ni d’analystes dans les traductions', () => {
     expect((en as any).landing.lp.testimonials).toBeUndefined();
-    expect((en as any).landing.lp.proof.analysts).toBeUndefined();
+    expect((en as any).landing.lp.proof?.analysts).toBeUndefined();
   });
 });
 
@@ -132,7 +132,7 @@ describe('page publique : pas de métriques d’exploitation ni d’économies S
   });
   it('la carte SBTi ne promet ni économie de frais ni taux de rejet chiffré', () => {
     expect(landing).not.toMatch(/ÉCONOMISE|9 500 \$|30 % de rejets/);
-    expect(JSON.stringify((en as any).landing.lp.diff.cards[2])).not.toMatch(/SAVES|9,500|30%/);
+    expect(JSON.stringify((en as any).landing)).not.toMatch(/SAVES|9,500|30%/);
   });
   it('plus de statistique non sourcée sur le temps passé par les équipes RSE', () => {
     expect(landing).not.toMatch(/passent 60% de leur temps/);

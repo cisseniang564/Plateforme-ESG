@@ -63,7 +63,7 @@ export default function FeaturesMegaMenu({ open, onOpen, onClose, scrolled, onMo
       <button
         ref={buttonRef} type="button" aria-expanded={open} aria-controls="features-menu" aria-haspopup="true"
         onClick={onOpen}
-        className={`px-4 py-2 font-medium transition-colors flex items-center gap-1 rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}
+        className={`px-4 py-2 font-medium transition-colors flex items-center gap-1 rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-emerald-800 hover:bg-gray-100' : 'text-white/90 hover:text-white hover:bg-white/10'}`}
       >
         {t('landing.lp.nav.featuresLabel', 'Fonctionnalités')}
         <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />

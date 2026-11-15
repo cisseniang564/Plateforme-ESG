@@ -35,6 +35,8 @@ module.exports = {
       },
       fontFamily: {
         sans: ['Inter Variable', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        // Titres de la page d'accueil : un serif de lecture, comme un rapport annuel.
+        display: ['Newsreader Variable', 'Newsreader', 'Georgia', 'Times New Roman', 'serif'],
       },
       borderRadius: {
         '2xl': '1rem',

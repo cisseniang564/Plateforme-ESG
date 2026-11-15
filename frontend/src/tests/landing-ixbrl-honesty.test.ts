@@ -10,7 +10,7 @@ describe('Landing : iXBRL et FEC sans promesse excessive', () => {
     }
   });
   it('en', () => {
-    const en = JSON.stringify((enJson as any).landing.lp.diff);
+    const en = JSON.stringify((enJson as any).landing);
     for (const re of [/5 minutes instead of 3 months/, /SAVES 200-400/, /Real iXBRL/, /ESMA 2026 REQUIREMENT/]) expect(en).not.toMatch(re);
   });
 });
