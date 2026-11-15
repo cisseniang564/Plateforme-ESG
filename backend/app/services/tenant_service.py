@@ -62,6 +62,9 @@ class TenantService:
         # Update fields
         update_data = request.model_dump(exclude_unset=True)
         for field, value in update_data.items():
+            if field in ("settings", "feature_flags") and isinstance(value, dict):
+                # Fusion : ne pas effacer l'état d'onboarding ou les autres réglages existants
+                value = {**(getattr(tenant, field) or {}), **value}
             setattr(tenant, field, value)
         
         await self.db.commit()

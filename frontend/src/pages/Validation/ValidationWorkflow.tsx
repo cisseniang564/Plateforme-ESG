@@ -51,6 +51,11 @@ interface TeamMember {
   full_name?: string | null;
 }
 
+interface ValidationSettings {
+  allow_self_approval: boolean;
+  can_edit: boolean;
+}
+
 type Tab = 'drafts' | 'pending' | 'queue';
 const LIST_LIMIT = 200;
 
@@ -115,6 +120,8 @@ export default function ValidationWorkflow() {
   const [myQueue, setMyQueue] = useState<Entry[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [assignedTo, setAssignedTo] = useState('');
+  const [vSettings, setVSettings] = useState<ValidationSettings | null>(null);
+  const [savingSettings, setSavingSettings] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('drafts');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -125,13 +132,15 @@ export default function ValidationWorkflow() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [statsRes, draftsRes, pendingRes, membersRes, queueRes] = await Promise.allSettled([
+    const [statsRes, draftsRes, pendingRes, membersRes, queueRes, settingsRes] = await Promise.allSettled([
       api.get('/validation/stats'),
       api.get('/validation/drafts'),
       api.get('/validation/pending'),
       api.get('/validation/team-members'),
       api.get('/validation/my-queue'),
+      api.get('/validation/settings'),
     ]);
+    if (settingsRes.status === 'fulfilled') setVSettings(settingsRes.value.data);
     if (statsRes.status === 'fulfilled') setStats(statsRes.value.data);
     if (draftsRes.status === 'fulfilled') setDrafts(draftsRes.value.data ?? []);
     if (pendingRes.status === 'fulfilled') setPending(pendingRes.value.data ?? []);
@@ -186,14 +195,36 @@ export default function ValidationWorkflow() {
     }
   };
 
+  const toggleSelfApproval = async () => {
+    if (!vSettings) return;
+    const next = !vSettings.allow_self_approval;
+    setSavingSettings(true);
+    try {
+      const { data } = await api.put('/validation/settings', { allow_self_approval: next });
+      setVSettings(data);
+      toast.success(next
+        ? t('validation.selfOn', 'Validation par un seul utilisateur activée. Chaque auto-validation est signalée dans le journal d’audit.')
+        : t('validation.selfOff', 'Principe des 4 yeux rétabli.'));
+      await loadData();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.detail || t('validation.settingsError', 'Impossible de modifier le paramètre.'));
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   const handleApprove = async (ids: string[]) => {
     setActionLoading(true);
     try {
       const { data } = await api.post('/validation/approve', { entry_ids: ids });
       const approved = data?.approved ?? 0;
       const skipped = data?.skipped_self_approval ?? 0;
+      const selfApproved = data?.self_approved ?? 0;
       if (approved > 0) {
         toast.success(t('validation.approveDone', { count: approved, defaultValue: '{{count}} saisie(s) approuvée(s) et tracée(s) dans le journal d\'audit' }));
+      }
+      if (selfApproved > 0) {
+        toast(t('validation.selfApprovedN', { count: selfApproved, defaultValue: '{{count}} auto-validation(s) signalée(s) dans le journal d’audit.' }), { duration: 5000 });
       }
       if (skipped > 0) {
         toast.error(
@@ -500,7 +531,11 @@ export default function ValidationWorkflow() {
                 <ul className="text-sm text-gray-600 space-y-1.5">
                   <li className="flex items-start gap-2">
                     <CheckCircle size={14} className="text-emerald-500 mt-0.5 flex-shrink-0" />
-                    <span>{t('validation.traceFourEyes', "Principe des 4 yeux : l'auteur d'une soumission ne peut pas l'approuver lui-même. Seuls les rôles gestionnaire ESG et supérieurs peuvent approuver ou refuser.")}</span>
+                    <span>
+                      {vSettings?.allow_self_approval
+                        ? t('validation.traceSelf', "Validation par un seul utilisateur activée : l'auteur d'une soumission peut l'approuver lui-même. Ces approbations sont marquées « auto-validation » dans le journal d'audit et dans l'empreinte, pour qu'un vérificateur les repère.")
+                        : t('validation.traceFourEyes', "Principe des 4 yeux : l'auteur d'une soumission ne peut pas l'approuver lui-même. Seuls les rôles gestionnaire ESG et supérieurs peuvent approuver ou refuser.")}
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle size={14} className="text-emerald-500 mt-0.5 flex-shrink-0" />
@@ -511,6 +546,27 @@ export default function ValidationWorkflow() {
                     <span>{t('validation.traceHash', "Une empreinte SHA-256 (saisie, valeur, approbateur, horodatage) est conservée dans les notes de revue de chaque saisie approuvée.")}</span>
                   </li>
                 </ul>
+                {vSettings?.can_edit && (
+                  <div className="mt-4 rounded-xl border border-indigo-100 bg-white p-4">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        checked={vSettings.allow_self_approval}
+                        disabled={savingSettings}
+                        onChange={toggleSelfApproval}
+                      />
+                      <span>
+                        <span className="block text-sm font-semibold text-gray-900">
+                          {t('validation.selfLabel', 'Autoriser la validation par un seul utilisateur')}
+                        </span>
+                        <span className="block text-xs text-gray-500 mt-0.5">
+                          {t('validation.selfHint', "Utile si vous êtes seul sur le compte. Moins robuste qu'un contrôle par une seconde personne : un auditeur peut le relever. Réservé aux administrateurs ; chaque changement est tracé.")}
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                )}
                 <p className="text-xs text-gray-500 mt-3">
                   {t('validation.traceDisclaimer', "Cette empreinte est un repère de traçabilité interne : ce n'est pas une signature électronique qualifiée et elle ne remplace pas la mission d'un vérificateur d'assurance.")}
                 </p>

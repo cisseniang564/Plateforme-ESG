@@ -74,6 +74,19 @@ async def _store_lead(
         await db.commit()
 
 
+async def _already_subscribed(email: str) -> bool:
+    """Vrai si l'adresse est déjà inscrite à la newsletter (évite d'envoyer plusieurs bienvenues)."""
+    from sqlalchemy import text as _t
+    from app.db.session import SystemSessionLocal
+
+    async with SystemSessionLocal() as db:
+        row = (await db.execute(
+            _t("SELECT 1 FROM contact_leads WHERE kind = 'newsletter' AND email = :email AND unsubscribed_at IS NULL LIMIT 1"),
+            {"email": email.strip().lower()},
+        )).first()
+    return row is not None
+
+
 def _client_ip(request: Request) -> str:
     return request.client.host if request.client else ""
 
@@ -355,6 +368,9 @@ async def submit_newsletter(
     à tout moment via le lien dans chaque email — RFC 8058).
     """
     try:
+        if await _already_subscribed(body.email):
+            # Déjà inscrit : même réponse, mais pas de second e-mail de bienvenue.
+            return {"ok": True, "message": "Inscription confirmée."}
         await _store_lead("newsletter", body.email, source=body.source or "footer", consent=True,
                           ip=_client_ip(request))
     except Exception as exc:

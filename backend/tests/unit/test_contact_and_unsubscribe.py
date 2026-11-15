@@ -58,3 +58,16 @@ def test_checklist_annoncee_correspond_au_contenu():
     n = len(lm.ESRS_CHECKLIST)
     assert f"{n} indicateurs" in (ROOT / "api/v1/endpoints/lead_magnets.py").read_text()
     assert "47 indicateurs" not in (ROOT / "api/v1/endpoints/lead_magnets.py").read_text()
+
+
+def test_formulaires_publics_limites_par_ip():
+    from app.middleware import rate_limit_middleware as rl
+    assert {"/api/v1/contact", "/api/v1/leads/newsletter"} <= rl.PUBLIC_FORM_PATHS
+    assert rl.PUBLIC_FORM_LIMIT_PER_MIN <= 10
+
+
+def test_newsletter_pas_de_seconde_bienvenue():
+    import inspect
+    from app.api.v1.endpoints import lead_magnets as lm
+    assert "_already_subscribed" in inspect.getsource(lm.submit_newsletter)
+    assert "unsubscribed_at IS NULL" in inspect.getsource(lm._already_subscribed)

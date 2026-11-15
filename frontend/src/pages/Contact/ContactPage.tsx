@@ -22,16 +22,16 @@ import {
 
 /* ───────────────────────────────────────────────── constants ── */
 const getCompanySizes = (t: TFunction) => [
-  t('contact.size.1', '1-49 salaries'),
-  t('contact.size.2', '50-249 salaries'),
-  t('contact.size.3', '250-999 salaries'),
-  t('contact.size.4', '1 000-4 999 salaries'),
-  t('contact.size.5', '5 000+ salaries'),
+  t('contact.size.1', '1-49 salariés'),
+  t('contact.size.2', '50-249 salariés'),
+  t('contact.size.3', '250-999 salariés'),
+  t('contact.size.4', '1 000-4 999 salariés'),
+  t('contact.size.5', '5 000+ salariés'),
 ] as const;
 
 const getSubjects = (t: TFunction) => [
   t('contact.subject.quote', 'Demande de devis Enterprise'),
-  t('contact.subject.demo', 'Demo personnalisee'),
+  t('contact.subject.demo', 'Démo personnalisée'),
   t('contact.subject.partner', 'Partenariat / Revendeur'),
   t('contact.subject.technical', 'Question technique'),
   t('contact.subject.other', 'Autre'),
@@ -45,18 +45,18 @@ const getBenefits = (t: TFunction) => [
   },
   {
     icon: Users,
-    title: t('contact.benefit.users.title', 'Utilisateurs illimites'),
-    desc: t('contact.benefit.users.desc', 'Toute votre equipe ESG, auditeurs et parties prenantes inclus.'),
+    title: t('contact.benefit.users.title', 'Utilisateurs illimités'),
+    desc: t('contact.benefit.users.desc', 'Toute votre équipe ESG, auditeurs et parties prenantes inclus.'),
   },
   {
     icon: Zap,
-    title: t('contact.benefit.integ.title', 'Integrations sur-mesure'),
-    desc: t('contact.benefit.integ.desc', 'Connecteurs ERP, SIRH et comptables configures pour vous.'),
+    title: t('contact.benefit.integ.title', 'Intégrations sur mesure'),
+    desc: t('contact.benefit.integ.desc', 'Connecteurs ERP, SIRH et comptables configurés avec vous.'),
   },
   {
     icon: HeadphonesIcon,
     title: t('contact.benefit.support.title', 'Support prioritaire'),
-    desc: t('contact.benefit.support.desc', 'CSM dedie, onboarding guide, assistance sous 2 h ouvrees.'),
+    desc: t('contact.benefit.support.desc', 'Accompagnement à la prise en main et réponse prioritaire par e-mail.'),
   },
 ] as const;
 
@@ -85,7 +85,7 @@ export default function ContactPage() {
   // scroll to top + page title on mount
   useEffect(() => {
     window.scrollTo(0, 0);
-    document.title = t('contact.docTitle', 'Contactez-nous — ESGFlow | Devis Enterprise & Demo');
+    document.title = t('contact.docTitle', 'Contactez-nous — ESGFlow | Devis Enterprise & démo');
     return () => { document.title = t('contact.docTitleDefault', 'ESGFlow — Plateforme ESG, CSRD & Bilan Carbone'); };
   }, []);
 
@@ -186,7 +186,7 @@ export default function ContactPage() {
               </Trans>
             </h1>
             <p className="mt-4 text-lg text-gray-600">
-              {t('contact.header.subtitle', 'Obtenez un devis Enterprise sur-mesure, planifiez une demo personnalisee ou posez vos questions a notre equipe.')}
+              {t('contact.header.subtitle', 'Obtenez un devis Enterprise sur mesure, planifiez une démo personnalisée ou posez vos questions à notre équipe.')}
             </p>
           </div>
 
@@ -201,7 +201,7 @@ export default function ContactPage() {
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      {t('contact.form.firstName', 'Prenom *')}
+                      {t('contact.form.firstName', 'Prénom *')}
                     </label>
                     <input
                       type="text"
@@ -246,7 +246,7 @@ export default function ContactPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       <Phone className="inline w-4 h-4 mr-1 text-gray-400" />
-                      {t('contact.form.phone', 'Telephone')}
+                      {t('contact.form.phone', 'Téléphone')}
                     </label>
                     <input
                       type="tel"
@@ -284,7 +284,7 @@ export default function ContactPage() {
                       onChange={e => update('companySize', e.target.value)}
                       className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow bg-white"
                     >
-                      <option value="">{t('contact.form.selectPh', 'Selectionnez')}</option>
+                      <option value="">{t('contact.form.selectPh', 'Sélectionnez')}</option>
                       {COMPANY_SIZES.map(s => (
                         <option key={s} value={s}>{s}</option>
                       ))}
@@ -319,7 +319,7 @@ export default function ContactPage() {
                     rows={5}
                     value={form.message}
                     onChange={e => update('message', e.target.value)}
-                    placeholder={t('contact.form.messagePh', "Decrivez votre projet ESG, le nombre d'entites, vos besoins specifiques...")}
+                    placeholder={t('contact.form.messagePh', "Décrivez votre projet ESG, le nombre d'entités, vos besoins spécifiques…")}
                     className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow resize-none"
                   />
                 </div>
@@ -396,13 +396,6 @@ export default function ContactPage() {
                     <Mail className="w-4 h-4 text-gray-400" />
                     contact@greenconnect.cloud
                   </a>
-                  <a
-                    href="tel:+33176340000"
-                    className="flex items-center gap-3 hover:text-emerald-600 transition-colors"
-                  >
-                    <Phone className="w-4 h-4 text-gray-400" />
-                    +33 1 76 34 00 00
-                  </a>
                   <div className="flex items-center gap-3">
                     <Building2 className="w-4 h-4 text-gray-400" />
                     Paris, France
@@ -412,7 +405,7 @@ export default function ContactPage() {
 
               {/* CTA secondary */}
               <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 text-white space-y-3">
-                <h3 className="text-sm font-bold">{t('contact.cta.title', 'Pas encore pret ?')}</h3>
+                <h3 className="text-sm font-bold">{t('contact.cta.title', 'Pas encore prêt ?')}</h3>
                 <p className="text-sm text-gray-300">
                   {t('contact.cta.body', 'Essayez gratuitement pendant 14 jours, sans engagement ni carte bancaire.')}
                 </p>
@@ -420,7 +413,7 @@ export default function ContactPage() {
                   to="/register"
                   className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
                 >
-                  {t('contact.cta.link', "Demarrer l'essai gratuit")}
+                  {t('contact.cta.link', "Démarrer l'essai gratuit")}
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -431,16 +424,16 @@ export default function ContactPage() {
         {/* ── Mini footer ── */}
         <footer className="border-t border-gray-200 bg-white mt-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
-            <span>{t('contact.footer.copyright', '© {{year}} GreenConnect SAS. Tous droits reserves.', { year: new Date().getFullYear() })}</span>
+            <span>{t('contact.footer.copyright', '© {{year}} GreenConnect SAS. Tous droits réservés.', { year: new Date().getFullYear() })}</span>
             <div className="flex items-center gap-4">
               <Link to="/privacy-policy" className="hover:text-emerald-600 transition-colors">
-                {t('contact.footer.privacy', 'Confidentialite')}
+                {t('contact.footer.privacy', 'Confidentialité')}
               </Link>
               <Link to="/terms-of-service" className="hover:text-emerald-600 transition-colors">
                 {t('contact.footer.terms', 'CGU')}
               </Link>
               <Link to="/legal-notice" className="hover:text-emerald-600 transition-colors">
-                {t('contact.footer.legal', 'Mentions legales')}
+                {t('contact.footer.legal', 'Mentions légales')}
               </Link>
             </div>
           </div>

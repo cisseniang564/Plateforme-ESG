@@ -9,14 +9,26 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 
 from app.core.permissions import Roles
-from app.dependencies import get_db, get_current_user, require_any_role
+from app.dependencies import get_db, get_current_user, get_user_role_names, require_any_role
 from app.models.user import User
 from app.models.indicator import Indicator
 from app.models.indicator_data import IndicatorData
 from app.models.audit_log import AuditLog
+from app.models.tenant import Tenant
 from app.services.audit_chain_service import seal_entry
 
 router = APIRouter(prefix="/validation", tags=["Validation Workflow"])
+
+
+class ValidationSettings(BaseModel):
+    allow_self_approval: bool
+
+
+async def _allow_self_approval(db: AsyncSession, tenant_id) -> bool:
+    """Paramètre du compte : un seul validateur peut approuver ses propres saisies (désactivé par défaut)."""
+    tenant = await db.get(Tenant, tenant_id)
+    settings = (tenant.settings or {}) if tenant else {}
+    return bool((settings.get("validation") or {}).get("allow_self_approval", False))
 
 
 class BulkActionRequest(BaseModel):
@@ -72,6 +84,7 @@ async def _entry_rows(db: AsyncSession, entries: list, current_user: User) -> li
     """Enrichit les saisies : nom de l'indicateur, unité, auteur de la soumission, droit d'approuver."""
     if not entries:
         return []
+    self_ok = await _allow_self_approval(db, current_user.tenant_id)
     ind_ids = {e.indicator_id for e in entries}
     inds = {i.id: i for i in (await db.execute(select(Indicator).where(Indicator.id.in_(ind_ids)))).scalars().all()}
     user_ids = {e.submitted_by for e in entries if e.submitted_by}
@@ -95,8 +108,8 @@ async def _entry_rows(db: AsyncSession, entries: list, current_user: User) -> li
             "submitted_by": str(e.submitted_by) if e.submitted_by else None,
             "submitted_by_name": users.get(e.submitted_by),
             "reviewer_notes": e.reviewer_notes if (e.validation_status or "draft") == "draft" else None,
-            # Principe des 4 yeux : on n'approuve pas ses propres soumissions
-            "can_approve": e.submitted_by != current_user.id,
+            # Principe des 4 yeux, sauf si le compte autorise un validateur unique
+            "can_approve": self_ok or e.submitted_by != current_user.id,
         })
     return out
 
@@ -111,7 +124,7 @@ async def submit_for_review(
     """Move draft entries to pending_review."""
     from sqlalchemy import or_
     if body.assigned_to_user_id:
-        if body.assigned_to_user_id == current_user.id:
+        if body.assigned_to_user_id == current_user.id and not await _allow_self_approval(db, current_user.tenant_id):
             raise HTTPException(status_code=400, detail="Vous ne pouvez pas vous assigner votre propre validation.")
         assignee = (await db.execute(select(User).where(
             User.id == body.assigned_to_user_id, User.tenant_id == current_user.tenant_id, User.is_active.is_(True),
@@ -182,11 +195,17 @@ async def approve_entries(
     # Drop entries where the current user was the submitter. We don't fail
     # the whole batch — we just skip those and report the count back so
     # the UI can surface the conflict to the user.
+    self_ok = await _allow_self_approval(db, current_user.tenant_id)
     skipped_sod: list[str] = []
     approvable = []
+    self_approved: set = set()
     for e in entries:
         if e.submitted_by is not None and e.submitted_by == current_user.id:
-            skipped_sod.append(str(e.id))
+            if self_ok:
+                approvable.append(e)
+                self_approved.add(e.id)
+            else:
+                skipped_sod.append(str(e.id))
         else:
             approvable.append(e)
 
@@ -213,22 +232,30 @@ async def approve_entries(
             f"  Date:       {now.isoformat()}\n"
             f"  IP:         {client_ip or 'n/a'}"
         )
+        if entry.id in self_approved:
+            sig_block += "\n  Mode:       auto-validation (validateur unique autorisé par le compte, sans contrôle par un tiers)"
         user_notes = (body.notes or "").strip()
         entry.reviewer_notes = (user_notes + sig_block) if user_notes else sig_block.strip()
         entry.is_verified = True
 
-    await _write_audit_logs(
-        db, approvable,
-        action="validate",
-        user=current_user,
-        notes=body.notes,
-        old_status="pending_review",
-        new_status="approved",
-        ip_address=client_ip,
-    )
+    others = [e for e in approvable if e.id not in self_approved]
+    mine = [e for e in approvable if e.id in self_approved]
+    if others:
+        await _write_audit_logs(
+            db, others, action="validate", user=current_user, notes=body.notes,
+            old_status="pending_review", new_status="approved", ip_address=client_ip,
+        )
+    if mine:
+        note = "Auto-validation (validateur unique autorisé par le compte)"
+        await _write_audit_logs(
+            db, mine, action="validate_self", user=current_user,
+            notes=f"{note} — {body.notes}" if body.notes else note,
+            old_status="pending_review", new_status="approved", ip_address=client_ip,
+        )
     await db.commit()
     return {
         "approved": len(approvable),
+        "self_approved": len(mine),
         "skipped_self_approval": len(skipped_sod),
         "skipped_ids": skipped_sod,
         "message": (
@@ -365,3 +392,50 @@ async def validation_stats(
         key = row.validation_status or "draft"
         out[key] = out.get(key, 0) + row.count
     return out
+
+
+@router.get("/settings")
+async def get_validation_settings(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Paramètre de validation du compte, et si l'utilisateur peut le modifier (administrateurs)."""
+    roles = await get_user_role_names(current_user, db)
+    return {
+        "allow_self_approval": await _allow_self_approval(db, current_user.tenant_id),
+        "can_edit": bool(roles & set(Roles.ADMIN_OR_ABOVE)),
+    }
+
+
+@router.put("/settings")
+async def update_validation_settings(
+    request: Request,
+    body: ValidationSettings,
+    current_user: User = Depends(require_any_role(*Roles.ADMIN_OR_ABOVE)),
+    db: AsyncSession = Depends(get_db),
+):
+    """Active ou désactive la validation par un seul utilisateur. Le changement est tracé."""
+    tenant = await db.get(Tenant, current_user.tenant_id)
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Compte introuvable.")
+    settings = dict(tenant.settings or {})
+    old = bool((settings.get("validation") or {}).get("allow_self_approval", False))
+    settings["validation"] = dict(settings.get("validation") or {}, allow_self_approval=body.allow_self_approval)
+    tenant.settings = settings  # nouvelle valeur pour que SQLAlchemy détecte la modification du JSON
+    log = AuditLog(
+        id=uuid4(), tenant_id=current_user.tenant_id, entity_type="tenant_settings",
+        entity_id=current_user.tenant_id, action="update",  # colonne action limitée à 20 caractères
+        change_reason="Paramètre de validation : validateur unique " + ("autorisé" if body.allow_self_approval else "désactivé"),
+        user_id=current_user.id, user_email=current_user.email,
+        old_values={"allow_self_approval": old},
+        new_values={"allow_self_approval": body.allow_self_approval},
+        ip_address=_ip(request),
+    )
+    db.add(log)
+    await db.flush()
+    try:
+        await seal_entry(db, log)
+    except Exception:
+        pass
+    await db.commit()
+    return {"allow_self_approval": body.allow_self_approval, "can_edit": True}
