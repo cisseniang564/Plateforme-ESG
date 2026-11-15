@@ -551,7 +551,7 @@ export default function DecarbonationPlan() {
           </div>
         </div>
         {/* Tabs */}
-        <div className="relative mt-6 flex gap-2">
+        <div className="relative mt-6 flex gap-2 overflow-x-auto">
           {tabs.map(t => (
             <button
               key={t.id}
@@ -1208,7 +1208,7 @@ export default function DecarbonationPlan() {
               <div className="px-6 py-4 border-b border-gray-100">
                 <h2 className="text-lg font-bold text-gray-900">{tr('decarbonation.milestonesTitle')}</h2>
               </div>
-              <table className="w-full">
+              <div className="overflow-x-auto"><table className="w-full">
                 <thead>
                   <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
                     <th className="px-6 py-3 text-left">{tr('decarbonation.milestoneYear')}</th>
@@ -1241,7 +1241,7 @@ export default function DecarbonationPlan() {
                     );
                   })}
                 </tbody>
-              </table>
+              </table></div>
             </div>
 
             {/* Real historical data table */}
@@ -1252,7 +1252,7 @@ export default function DecarbonationPlan() {
                   <h2 className="text-lg font-bold text-gray-900">{tr('decarb.historyTitle', 'Historique réel des émissions')}</h2>
                   <span className="ml-auto text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">{tr('decarb.historySource', 'Source : vos données')}</span>
                 </div>
-                <table className="w-full">
+                <div className="overflow-x-auto"><table className="w-full">
                   <thead>
                     <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
                       <th className="px-6 py-3 text-left">{tr('decarb.histYear', 'Année')}</th>
@@ -1290,7 +1290,7 @@ export default function DecarbonationPlan() {
                       );
                     })}
                   </tbody>
-                </table>
+                </table></div>
               </div>
             )}
 
@@ -1353,7 +1353,7 @@ export default function DecarbonationPlan() {
                   <p className="text-xs text-gray-400 mt-1 max-w-xs text-center">{tr('decarb.noOffsetDesc', 'Ajoutez vos achats VCS, Gold Standard ou projets CDR pour calculer vos émissions nettes.')}</p>
                 </div>
               ) : (
-                <table className="w-full">
+                <div className="overflow-x-auto"><table className="w-full">
                   <thead>
                     <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
                       <th className="px-6 py-3 text-left">{tr('decarb.offsetColType', 'Type')}</th>
@@ -1397,7 +1397,7 @@ export default function DecarbonationPlan() {
                       </tr>
                     </tfoot>
                   )}
-                </table>
+                </table></div>
               )}
             </div>
           </div>
@@ -1605,7 +1605,7 @@ export default function DecarbonationPlan() {
                   <div className="px-6 py-4 border-b border-gray-100">
                     <h3 className="text-base font-bold text-gray-900">{tr('decarb.bcDetailTitle', 'Détail des actions du plan')}</h3>
                   </div>
-                  <table className="w-full">
+                  <div className="overflow-x-auto"><table className="w-full">
                     <thead>
                       <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
                         <th className="px-6 py-3 text-left">{tr('decarb.bcColAction', 'Action')}</th>
@@ -1648,7 +1648,7 @@ export default function DecarbonationPlan() {
                         <td></td>
                       </tr>
                     </tfoot>
-                  </table>
+                  </table></div>
                 </div>
               )}
 

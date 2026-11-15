@@ -238,7 +238,7 @@ export default function CSDDD() {
       {/* ── Hero ── */}
       <div style={{ background: 'linear-gradient(135deg,#1c0a00 0%,#450a0a 40%,#7f1d1d 80%,#b91c1c 100%)' }}
         className="px-8 py-10 text-white">
-        <div className="max-w-7xl mx-auto flex items-start justify-between gap-6">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-start justify-between gap-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <ShieldAlert className="h-8 w-8 text-red-300" />
@@ -267,7 +267,7 @@ export default function CSDDD() {
 
       {/* ── Tab stepper ── */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-8 flex gap-1 py-3">
+        <div className="max-w-7xl mx-auto px-8 flex gap-1 py-3 overflow-x-auto">
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -703,7 +703,7 @@ export default function CSDDD() {
                 {stats.total === 0 ? (
                   <p className="text-sm text-gray-400 italic">{t('compliance.csddd.report.art2Empty', 'Aucun risque identifié à ce stade.')}</p>
                 ) : (
-                  <table className="w-full text-sm border-collapse">
+                  <div className="overflow-x-auto"><table className="w-full text-sm border-collapse">
                     <thead>
                       <tr className="bg-gray-50">
                         {[
@@ -736,7 +736,7 @@ export default function CSDDD() {
                         );
                       })}
                     </tbody>
-                  </table>
+                  </table></div>
                 )}
               </section>
 

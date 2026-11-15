@@ -639,7 +639,7 @@ export default function MaterialityMatrix() {
                 {/* Category breakdown table */}
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                   <h3 className="text-sm font-bold text-gray-900 mb-3">{t('materiality.topicsByCategory', 'Enjeux par catégorie et matérialité')}</h3>
-                  <table className="w-full text-xs">
+                  <div className="overflow-x-auto"><table className="w-full text-xs">
                     <thead>
                       <tr className="border-b border-gray-100">
                         <th className="text-left pb-2 font-semibold text-gray-500">{t('materiality.colCategory', 'Catégorie')}</th>
@@ -682,14 +682,14 @@ export default function MaterialityMatrix() {
                         <td className="text-center py-2 font-bold text-gray-900">{issues.length}</td>
                       </tr>
                     </tfoot>
-                  </table>
+                  </table></div>
                 </div>
 
                 {/* Topics table */}
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                   <h3 className="text-sm font-bold text-gray-900 mb-3">{t('materiality.topicsTable', 'Enjeux')}</h3>
                   <div className="overflow-y-auto max-h-80 -mx-1">
-                    <table className="w-full text-xs">
+                    <div className="overflow-x-auto"><table className="w-full text-xs">
                       <thead className="sticky top-0 bg-white">
                         <tr className="border-b border-gray-100">
                           <th className="text-left pb-2 pl-1 font-semibold text-gray-400 w-6">ID</th>
@@ -729,7 +729,7 @@ export default function MaterialityMatrix() {
                           );
                         })}
                       </tbody>
-                    </table>
+                    </table></div>
                     {issues.length === 0 && (
                       <div className="text-center py-6 text-gray-400 text-xs">
                         <Grid className="mx-auto h-6 w-6 mb-2 opacity-30" />

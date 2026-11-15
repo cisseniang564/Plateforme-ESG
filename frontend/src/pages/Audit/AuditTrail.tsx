@@ -204,9 +204,6 @@ function EventDetail({ event, onClose }: { event: AuditEvent; onClose: () => voi
                   <div key={i} className="flex items-center gap-3 p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
                     <FileText className="h-4 w-4 text-indigo-600 flex-shrink-0" />
                     <span className="text-sm text-indigo-800 flex-1 truncate">{att}</span>
-                    <button className="text-indigo-600 hover:text-indigo-800 transition-colors">
-                      <Download className="h-4 w-4" />
-                    </button>
                   </div>
                 ))}
               </div>
@@ -368,7 +365,7 @@ export default function AuditTrail() {
 
       {/* ── Tabs ── */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="flex border-b border-gray-100">
+        <div className="flex border-b border-gray-100 overflow-x-auto">
           {tabs.map(tb => (
             <button
               key={tb.id}

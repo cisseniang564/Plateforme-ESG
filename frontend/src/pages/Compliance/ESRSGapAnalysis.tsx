@@ -499,7 +499,7 @@ export default function ESRSGapAnalysis() {
           </div>
 
           {/* Pillar filter tabs */}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {[
               { key: 'all', label: t('compliance.esrsGap.filter.all', 'Tous') },
               { key: 'environmental', label: t('compliance.esrsGap.filter.environmental', '🌿 Environnement') },

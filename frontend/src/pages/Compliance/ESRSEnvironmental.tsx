@@ -307,7 +307,7 @@ export default function ESRSEnvironmental() {
           />
         </div>
 
-        <div className="flex items-center gap-1 rounded-xl bg-white/[0.03] border border-white/[0.06] p-1">
+        <div className="flex items-center gap-1 rounded-xl bg-white/[0.03] overflow-x-auto border border-white/[0.06] p-1">
           {tabs.map(([key, cfg]) => {
             const Icon = cfg.icon;
             const isActive = activeTab === key;

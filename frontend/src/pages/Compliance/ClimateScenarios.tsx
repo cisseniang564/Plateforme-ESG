@@ -468,7 +468,7 @@ export default function ClimateScenarios() {
 
       {/* ── Tab stepper ── */}
       <div style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '0 32px' }}>
-        <div style={{ display: 'flex', gap: 0 }}>
+        <div style={{ display: 'flex', gap: 0, overflowX: 'auto' }}>
           {([
             { id: 'scenarios', label: t('compliance.climateScenarios.tab1', '1. Scénarios'), icon: <Thermometer size={14} /> },
             { id: 'physical', label: t('compliance.climateScenarios.tab2', '2. Risques physiques'), icon: <AlertTriangle size={14} /> },
@@ -500,7 +500,7 @@ export default function ClimateScenarios() {
         {tab === 'scenarios' && (
           <>
             {/* Cards grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 28 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 28 }}>
               {SCENARIOS.map(s => {
                 const isSelected = selectedScenarios.has(s.id);
                 const isRef = referenceScenario?.id === s.id;
@@ -564,7 +564,7 @@ export default function ClimateScenarios() {
                 <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: '#111' }}>
                   {t('compliance.climateScenarios.comparisonTitle', 'Comparaison des scénarios sélectionnés')}
                 </h3>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <div className="overflow-x-auto"><table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: '#f8fafc' }}>
                       {[
@@ -603,7 +603,7 @@ export default function ClimateScenarios() {
                       );
                     })}
                   </tbody>
-                </table>
+                </table></div>
               </div>
             )}
 

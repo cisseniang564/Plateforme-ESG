@@ -233,7 +233,7 @@ export default function TwoFactorSetup() {
                   {t('2fa.cantScan', 'Impossible de scanner ? Entrez manuellement :')}
                 </p>
                 <div className="flex items-center gap-2">
-                  <code className={`flex-1 text-sm font-mono text-gray-800 bg-white border border-gray-200 rounded-lg px-3 py-2 tracking-widest ${!showSecret ? 'blur-sm select-none' : ''}`}>
+                  <code className={`flex-1 min-w-0 break-all text-sm font-mono text-gray-800 bg-white border border-gray-200 rounded-lg px-3 py-2 tracking-widest ${!showSecret ? 'blur-sm select-none' : ''}`}>
                     {setupData.secret}
                   </code>
                   <button onClick={() => setShowSecret((v) => !v)} className="p-2 hover:bg-gray-200 rounded-lg transition-colors">

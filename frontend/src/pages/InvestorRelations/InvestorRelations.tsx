@@ -370,7 +370,7 @@ ${ratings.map(r => `- **${PROVIDERS[r.provider].name}** : ${r.score} (${fmtDate(
 
       {/* ── Tab stepper ───────────────────────────────────────────────────── */}
       <div style={{ background: '#fff', borderBottom: '1px solid #e5e7eb' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', gap: 0 }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', gap: 0, overflowX: 'auto' }}>
           {([
             { id: 'ratings',        label: t('inv.tab.ratings', '1. Notations ESG'),        icon: <Award size={15} /> },
             { id: 'questionnaires', label: '2. Questionnaires',        icon: <FileText size={15} /> },
@@ -553,7 +553,7 @@ ${ratings.map(r => `- **${PROVIDERS[r.provider].name}** : ${r.score} (${fmtDate(
 
             {/* Questionnaire table */}
             <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14, overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <div className="overflow-x-auto"><table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
                     {[t('inv.qu.thAgency', 'Agence'), t('inv.qu.thYear', 'Année'), t('inv.qu.thStatus', 'Statut'), t('inv.qu.thDeadline', 'Échéance'), t('inv.qu.thCompletion', 'Complétude'), 'Score', 'Actions'].map(h => (
@@ -606,7 +606,7 @@ ${ratings.map(r => `- **${PROVIDERS[r.provider].name}** : ${r.score} (${fmtDate(
                     );
                   })}
                 </tbody>
-              </table>
+              </table></div>
             </div>
           </div>
         )}
@@ -664,7 +664,7 @@ ${ratings.map(r => `- **${PROVIDERS[r.provider].name}** : ${r.score} (${fmtDate(
 
             {/* Document table */}
             <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14, overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <div className="overflow-x-auto"><table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
                     {[t('inv.dr.thName', 'Nom'), t('inv.dr.thCategory', 'Catégorie'), 'Format', t('inv.dr.thSize', 'Taille'), 'Date', t('inv.dr.thAccess', 'Accès'), 'Actions'].map(h => (
@@ -712,7 +712,7 @@ ${ratings.map(r => `- **${PROVIDERS[r.provider].name}** : ${r.score} (${fmtDate(
                     <tr><td colSpan={7} style={{ padding: 32, textAlign: 'center', color: '#9ca3af' }}>{t('inv.dr.empty', 'Aucun document dans cette catégorie')}</td></tr>
                   )}
                 </tbody>
-              </table>
+              </table></div>
             </div>
           </div>
         )}

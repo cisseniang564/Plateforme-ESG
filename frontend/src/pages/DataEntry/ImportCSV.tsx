@@ -78,7 +78,7 @@ function Stepper({ step }: { step: 1 | 2 | 3 }) {
   const { t } = useTranslation();
   const steps = [t('imp.stepFile', 'Fichier'), t('imp.stepCheck', 'Vérification'), t('imp.stepResult', 'Résultat')];
   return (
-    <ol className="flex items-center gap-2 text-sm" aria-label={t('imp.steps', "Étapes de l'import")}>
+    <ol className="flex flex-wrap items-center gap-2 text-sm" aria-label={t('imp.steps', "Étapes de l'import")}>
       {steps.map((label, i) => {
         const n = i + 1; const done = step > n; const active = step === n;
         return (

@@ -267,7 +267,7 @@ export default function ESRSWaterWaste() {
             <rect width="100%" height="100%" fill="url(#dots-ew)" />
           </svg>
         </div>
-        <div className="relative px-8 py-6 flex items-start justify-between gap-6">
+        <div className="relative px-8 py-6 flex flex-wrap items-start justify-between gap-6">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
               <Droplets className="h-4 w-4 text-teal-400/70" />

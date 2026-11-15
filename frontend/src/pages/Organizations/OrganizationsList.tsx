@@ -482,7 +482,7 @@ export default function OrganizationsList() {
       {/* ─── Hero ───────────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-2xl shadow-xl" style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 50%, #2563eb 100%)' }}>
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 80% 10%, rgba(255,255,255,0.12) 0%, transparent 55%)' }} />
-        <div className="relative px-8 py-7 flex items-start justify-between gap-6">
+        <div className="relative px-8 py-7 flex flex-wrap items-start justify-between gap-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.2)' }}>
@@ -678,7 +678,7 @@ export default function OrganizationsList() {
       ) : (
         /* List view */
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto"><table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50">
                 <th className="text-left px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Organisation</th>
@@ -746,7 +746,7 @@ export default function OrganizationsList() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       )}
 

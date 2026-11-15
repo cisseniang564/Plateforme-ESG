@@ -157,7 +157,7 @@ export default function ESRSGovernance() {
             <rect width="100%" height="100%" fill="url(#dots-g)" />
           </svg>
         </div>
-        <div className="relative px-8 py-6 flex items-start justify-between gap-6">
+        <div className="relative px-8 py-6 flex flex-wrap items-start justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <ShieldCheck className="h-5 w-5 text-white/60" />

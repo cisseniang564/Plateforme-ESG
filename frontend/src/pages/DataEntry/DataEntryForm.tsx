@@ -410,7 +410,7 @@ export default function DataEntryForm() {
               placeholder={t('dataEntry.filterSearch', 'Rechercher un indicateur…')} aria-label={t('dataEntry.filterSearch', 'Rechercher un indicateur…')}
               className="w-64 pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
           </div>
-          <div className="flex gap-1.5" role="group" aria-label={t('dataEntry.filterPillar', 'Filtrer par pilier')}>
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label={t('dataEntry.filterPillar', 'Filtrer par pilier')}>
             {([['all', t('dataEntry.filterAll', 'Tous'), grandTotal], ['environmental', 'Environnemental', stats?.by_pillar?.environmental], ['social', 'Social', stats?.by_pillar?.social], ['governance', 'Gouvernance', stats?.by_pillar?.governance]] as [PillarFilter, string, number | undefined][]).map(([key, label, count]) => (
               <button key={key} type="button" onClick={() => { setPillarFilter(key); setPage(1); }} aria-pressed={pillarFilter === key}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${pillarFilter === key ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>

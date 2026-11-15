@@ -252,7 +252,7 @@ export default function LCADashboard() {
         </p>
 
         {/* ── View mode tabs ─────────────────────────────────────── */}
-        <div className="flex items-center gap-2 mb-6 border-b border-gray-200 pb-3">
+        <div className="flex items-center gap-2 mb-6 border-b border-gray-200 pb-3 overflow-x-auto">
           {([
             { key: 'catalog' as ViewMode, label: t('lca.tab.catalog', 'Catalogue'), icon: Package },
             { key: 'compare' as ViewMode, label: t('lca.tab.compare', 'Comparaison'), icon: GitCompare },

@@ -610,7 +610,7 @@ export default function IntelligenceDashboard() {
         <div className="space-y-8">
 
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Intelligence Artificielle & Machine Learning</h2>
               <p className="text-sm text-gray-500 mt-0.5">
@@ -689,7 +689,7 @@ export default function IntelligenceDashboard() {
                                 : 'border-gray-200 bg-white hover:border-gray-300'
                             }`}
                           >
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
                               <span className="text-xs font-mono text-gray-500">{f.indicator_code}</span>
                               <TIcon className={`h-4 w-4 ${TREND_CONFIG[f.trend]?.color}`} />
                             </div>
@@ -1034,7 +1034,7 @@ export default function IntelligenceDashboard() {
       {/* ── PREDICTIONS ── */}
       {activeTab === 'predictions' && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">{t('ia.predictionsTitle')}</h2>
               <p className="text-sm text-gray-500">{t('ia.predictionsDesc')}</p>
@@ -1092,7 +1092,7 @@ export default function IntelligenceDashboard() {
               <div className="lg:col-span-2">
                 {selectedPrediction && (
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border border-gray-200 shadow-sm">
-                    <div className="flex items-start justify-between mb-6">
+                    <div className="flex flex-wrap gap-3 items-start justify-between mb-6">
                       <div>
                         <p className="text-xs font-mono text-gray-400">{selectedPrediction.indicator_code}</p>
                         <h3 className="text-lg font-semibold text-gray-900">{selectedPrediction.indicator_name}</h3>
@@ -1139,7 +1139,7 @@ export default function IntelligenceDashboard() {
       {/* ── ANOMALIES ── */}
       {activeTab === 'anomalies' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">{t('ia.anomaliesTitle')}</h2>
               <p className="text-sm text-gray-500">{t('ia.anomaliesDesc')}</p>

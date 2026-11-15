@@ -284,7 +284,7 @@ export default function SecurityPage() {
             {t('security.page.subprocSubtitle', "Prestataires ayant un accès potentiel à vos données. Les garanties contractuelles (DPA, clauses contractuelles types) se confirment prestataire par prestataire sur demande.")}
           </p>
           <div className="overflow-hidden rounded-2xl border border-gray-200">
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto"><table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">{t('security.page.colVendor', 'Fournisseur')}</th>
@@ -309,7 +309,7 @@ export default function SecurityPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           </div>
           <p className="text-xs text-gray-500 mt-3">
             <ExternalLink className="h-3 w-3 inline mr-1" />

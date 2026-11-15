@@ -92,7 +92,7 @@ export default function SectoralTemplates() {
   return (
     <div className="space-y-6">
       <div className="rounded-3xl bg-gradient-to-br from-violet-50 via-white to-emerald-50 border border-violet-100 p-8">
-        <div className="flex items-start gap-4">
+        <div className="flex flex-wrap items-start gap-4">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-emerald-600 flex items-center justify-center shadow-lg"><Sparkles className="w-6 h-6 text-white" /></div>
           <div className="flex-1">
             <h1 className="text-2xl font-extrabold text-gray-900 mb-1">{t('tmpl.heroTitle','Templates sectoriels')}</h1>

@@ -317,7 +317,7 @@ export default function ScoreBreakdown() {
           </div>
 
           {/* ── Tabs ──────────────────────────────────────────────────── */}
-          <div className="flex gap-1 rounded-2xl bg-gray-100/80 p-1.5 w-fit">
+          <div className="flex gap-1 rounded-2xl bg-gray-100/80 p-1.5 max-w-full overflow-x-auto">
             <Tab active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={AlignLeft}  label="Progression" />
             <Tab active={activeTab === 'radar'}    onClick={() => setActiveTab('radar')}    icon={RadarIcon}  label="Radar" />
             <Tab active={activeTab === 'bars'}     onClick={() => setActiveTab('bars')}     icon={BarChart2}  label="Histogramme" />

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import {
   User, Mail, Briefcase, Lock, Shield, CheckCircle, Loader2,
-  AlertCircle, Eye, EyeOff, Camera, Key, XCircle, Save, ExternalLink,
+  AlertCircle, Eye, EyeOff, Key, XCircle, Save, ExternalLink,
 } from 'lucide-react';
 import type { RootState } from '@/store';
 import { setUser } from '@/store/slices/authSlice';
@@ -206,9 +206,6 @@ export default function UserProfile() {
         <div className="flex items-center gap-5 mb-6">
           <div className="relative">
             <AvatarPlaceholder name={displayName} />
-            <button className="absolute -bottom-1 -right-1 w-7 h-7 bg-white border border-gray-200 rounded-xl flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors">
-              <Camera className="h-3.5 w-3.5 text-gray-500" />
-            </button>
           </div>
           <div>
             <div className="text-lg font-bold text-gray-900">{displayName}</div>
@@ -411,7 +408,7 @@ export default function UserProfile() {
 
       {/* ── Sécurité : 2FA ──────────────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-green-50 rounded-xl flex items-center justify-center">
               <Shield className="h-4.5 w-4.5 text-green-600" style={{ width: '1.125rem', height: '1.125rem' }} />

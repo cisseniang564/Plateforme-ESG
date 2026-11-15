@@ -264,7 +264,7 @@ export default function VigilancePlanPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 border-b border-gray-200">
+      <div className="flex items-center gap-1 border-b border-gray-200 overflow-x-auto">
         {([
           { id: 'overview', label: t('compliance.vigilance.tabOverview', "Vue d'ensemble"), icon: Shield },
           { id: 'risks', label: t('compliance.vigilance.tabRisks', 'Cartographie'), icon: AlertTriangle },
@@ -508,7 +508,7 @@ function RisksTab({ risks, onCreate, onRefresh }: { risks: Risk[]; onCreate: () 
         </button>
       </div>
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto"><table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
               <th className="text-left px-4 py-2">{t('compliance.vigilance.thRisk', 'Risque')}</th>
@@ -543,7 +543,7 @@ function RisksTab({ risks, onCreate, onRefresh }: { risks: Risk[]; onCreate: () 
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
   );

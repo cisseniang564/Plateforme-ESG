@@ -504,7 +504,7 @@ export default function Scope3FecPage() {
               <h3 className="font-bold text-gray-900 text-lg">{t('resources.scope3Fec.ademe.title', "Pourquoi les facteurs ADEME ?")}</h3>
             </div>
             <p className="text-sm text-gray-600 leading-relaxed mb-4">
-              <Trans i18nKey="resources.scope3Fec.ademe.body">La Base Empreinte® de l'ADEME est la référence française pour les facteurs d'émission, validés par des experts sectoriels. ESGFlow en intègre une sélection (Base Carbone v23), mise à jour à chaque version de la plateforme.</Trans>
+              <Trans i18nKey="resources.scope3Fec.ademe.body">La Base Empreinte® de l'ADEME est la référence française pour les facteurs d'émission, validés par des experts sectoriels. ESGFlow utilise des ratios monétaires indicatifs, et non un extrait audité : confrontez-les à la Base Empreinte avant tout usage réglementaire.</Trans>
             </p>
             <div className="grid sm:grid-cols-3 gap-4">
               {[
