@@ -434,7 +434,7 @@ export default function FECWizard() {
             <Flame className="w-4 h-4 text-emerald-600" />
             <h2 className="text-sm font-bold text-gray-900">{t('fec.top10Title', 'Top 10 par impact carbone')}</h2>
           </div>
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto"><table className="w-full text-sm">
             <thead>
               <tr className="text-xs text-gray-500 bg-gray-50/50">
                 <th className="text-left px-5 py-2 font-semibold">{t('fec.thCategory', 'Catégorie')}</th>
@@ -461,7 +461,7 @@ export default function FECWizard() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
 
         {/* All environmental categories (toggleable) */}

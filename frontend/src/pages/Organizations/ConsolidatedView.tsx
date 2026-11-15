@@ -111,7 +111,7 @@ export default function ConsolidatedView() {
               <h2 className="text-sm font-bold text-gray-900">{p}</h2>
               <span className="text-xs text-gray-500">{t('consol.indicCount','{{n}} indicateurs',{n:byPeriod[p].length})}</span>
             </div>
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto"><table className="w-full text-sm">
               <thead>
                 <tr className="text-xs text-gray-500 bg-gray-50/50">
                   <th className="text-left px-5 py-2 font-semibold">{t('consol.thCode','Code')}</th>
@@ -132,7 +132,7 @@ export default function ConsolidatedView() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           </div>
         ))
       )}

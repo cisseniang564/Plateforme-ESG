@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Building2, ArrowLeft, TrendingUp, TrendingDown, Award,
-  Calendar, Download, AlertCircle, CheckCircle, Activity,
+  Calendar, AlertCircle, CheckCircle, Activity,
   BarChart3, Zap, Target, Users, Minus
 } from 'lucide-react';
 import {
@@ -283,11 +283,6 @@ export default function OrganizationDetail() {
           >
             <Building2 className="h-4 w-4" />
             Vue consolidée
-          </button>
-          <button
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white/15 border border-white/20 text-sm font-medium text-white hover:bg-white/25 transition-colors"
-          >
-            <Download className="h-4 w-4" />Exporter
           </button>
           </div>
         </div>

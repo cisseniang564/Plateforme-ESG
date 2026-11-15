@@ -96,6 +96,20 @@ export default function IndicatorsList() {
     }
   };
 
+  const exportCsv = () => {
+    const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const rows = filteredIndicators.map((i) =>
+      [i.code, i.name, i.pillar, i.category, i.unit, i.data_count, i.latest_date].map(cell).join(';'),
+    );
+    const csv = ['Code;Nom;Pilier;Catégorie;Unité;Nb de saisies;Dernière saisie', ...rows].join('\n');
+    const url = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'indicateurs.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const filteredIndicators = useMemo(() => {
     const q = search.toLowerCase().trim();
 
@@ -501,7 +515,7 @@ export default function IndicatorsList() {
                   {t('indicators.resultsCount', { count: filteredIndicators.length })}
                 </p>
               </div>
-              <button className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors">
+              <button onClick={exportCsv} disabled={filteredIndicators.length === 0} className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 disabled:opacity-50 shadow-sm hover:bg-gray-50 transition-colors">
                 <Download className="h-4 w-4" />
                 {t('indicators.exportCsv')}
               </button>

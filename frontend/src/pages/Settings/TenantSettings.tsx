@@ -1,6 +1,6 @@
 import { Alert, Button, Input, Modal } from '@/components/common';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { useSelector, useDispatch } from 'react-redux';
@@ -1155,18 +1155,10 @@ export default function TenantSettings() {
             <p className="text-xs text-gray-400 mt-0.5">{t('settings.tenant.security.changePasswordHint', 'Utilisez un mot de passe fort de 12+ caractères.')}</p>
           </div>
         </div>
-        <div className="space-y-3 max-w-xs pl-10">
-          {[
-            t('settings.tenant.security.currentPassword', 'Mot de passe actuel'),
-            t('settings.tenant.security.newPassword', 'Nouveau mot de passe'),
-            t('settings.tenant.security.confirmNewPassword', 'Confirmer le nouveau'),
-          ].map((ph, i) => (
-            <input key={i} type="password" placeholder={ph}
-              className="w-full px-3.5 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent" />
-          ))}
-          <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-            <Save size={13} /> {t('settings.tenant.security.update', 'Mettre à jour')}
-          </button>
+        <div className="pl-10">
+          <Link to="/app/profile" className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            <Key size={13} /> {t('settings.tenant.security.goToProfile', 'Changer mon mot de passe dans Mon profil')}
+          </Link>
         </div>
       </div>
 

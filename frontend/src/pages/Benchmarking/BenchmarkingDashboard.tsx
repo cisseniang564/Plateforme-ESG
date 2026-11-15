@@ -402,7 +402,7 @@ export default function BenchmarkingDashboard() {
           </p>
         </div>
         {refIndicators.length ? (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto"><table className="w-full text-sm">
             <tbody className="divide-y divide-gray-50">
               {refIndicators.map(i => (
                 <tr key={i.name}>
@@ -411,7 +411,7 @@ export default function BenchmarkingDashboard() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         ) : (
           <p className="px-6 py-6 text-sm text-gray-500">{t('benchmarking.noRefIndicators', 'Aucun indicateur de référence disponible pour ce secteur.')}</p>
         )}

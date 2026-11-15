@@ -704,7 +704,7 @@ function Step4({ state }: { state: WorkflowState }) {
 
       {/* Summary table */}
       <div className="rounded-2xl border border-gray-200 overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto"><table className="w-full text-sm">
           <tbody className="divide-y divide-gray-100">
             {rows.map(({ label, value, ok }) => (
               <tr key={label} className="hover:bg-gray-50/50 transition-colors">
@@ -720,7 +720,7 @@ function Step4({ state }: { state: WorkflowState }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
 
       {state.commitmentText && (
@@ -736,7 +736,7 @@ function Step4({ state }: { state: WorkflowState }) {
           <span className="text-sm font-bold text-gray-800">{t('compliance.sbti.step4.criteriaTitle', 'Critères SBTi (Near-Term v5.x) — Résultats du pré-vol')}</span>
           {backendBusy && <span className="text-xs text-gray-400 ml-auto">{t('compliance.sbti.step4.analysing', 'Analyse en cours…')}</span>}
         </div>
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto"><table className="w-full text-sm">
           <tbody className="divide-y divide-gray-100">
             {SBTI_CRITERIA.map((c, i) => (
               <tr key={i} className="hover:bg-gray-50/50">
@@ -750,7 +750,7 @@ function Step4({ state }: { state: WorkflowState }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
 
       {/* Action buttons */}

@@ -93,7 +93,7 @@ export default function PrivacyPolicy() {
             </ul>
 
             <h2>4. Bases Légales du Traitement</h2>
-            <table className="min-w-full">
+            <div className="overflow-x-auto"><table className="min-w-full">
               <thead>
                 <tr>
                   <th className="text-left">Traitement</th>
@@ -126,7 +126,7 @@ export default function PrivacyPolicy() {
                   <td>Consentement</td>
                 </tr>
               </tbody>
-            </table>
+            </table></div>
 
             <h2>5. Destinataires des Données</h2>
             <p>Vos données peuvent être transmises à :</p>
@@ -151,7 +151,7 @@ export default function PrivacyPolicy() {
             </p>
 
             <h2>7. Durée de Conservation</h2>
-            <table className="min-w-full">
+            <div className="overflow-x-auto"><table className="min-w-full">
               <thead>
                 <tr>
                   <th className="text-left">Type de données</th>
@@ -180,7 +180,7 @@ export default function PrivacyPolicy() {
                   <td>Suppression sous 30 jours</td>
                 </tr>
               </tbody>
-            </table>
+            </table></div>
 
             <h2>8. Vos Droits (RGPD)</h2>
             <p>Conformément au RGPD, vous disposez des droits suivants :</p>

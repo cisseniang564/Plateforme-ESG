@@ -703,7 +703,7 @@ export default function CSDDD() {
                 {stats.total === 0 ? (
                   <p className="text-sm text-gray-400 italic">{t('compliance.csddd.report.art2Empty', 'Aucun risque identifié à ce stade.')}</p>
                 ) : (
-                  <table className="w-full text-sm border-collapse">
+                  <div className="overflow-x-auto"><table className="w-full text-sm border-collapse">
                     <thead>
                       <tr className="bg-gray-50">
                         {[
@@ -736,7 +736,7 @@ export default function CSDDD() {
                         );
                       })}
                     </tbody>
-                  </table>
+                  </table></div>
                 )}
               </section>
 

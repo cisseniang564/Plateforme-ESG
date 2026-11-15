@@ -678,7 +678,7 @@ export default function OrganizationsList() {
       ) : (
         /* List view */
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto"><table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50">
                 <th className="text-left px-5 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Organisation</th>
@@ -746,7 +746,7 @@ export default function OrganizationsList() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       )}
 

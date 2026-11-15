@@ -564,7 +564,7 @@ export default function ClimateScenarios() {
                 <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: '#111' }}>
                   {t('compliance.climateScenarios.comparisonTitle', 'Comparaison des scénarios sélectionnés')}
                 </h3>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <div className="overflow-x-auto"><table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: '#f8fafc' }}>
                       {[
@@ -603,7 +603,7 @@ export default function ClimateScenarios() {
                       );
                     })}
                   </tbody>
-                </table>
+                </table></div>
               </div>
             )}
 
