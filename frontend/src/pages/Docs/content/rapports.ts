@@ -12,7 +12,7 @@ export const rapports: DocArticle[] = [
     ],
     about: 'La page Rapports présente les modèles disponibles et l\'état de vos données pour chacun. La liste conserve l\'historique des rapports générés avec leur statut et un bouton de téléchargement.',
     shows: [
-      'Les types de rapport : directive européenne complète (CSRD, rapport complet E, S, G), résumé exécutif pour la direction, rapport détaillé conforme aux standards GRI, risques climatiques financiers (TCFD).',
+      'Les types de rapport : directive européenne complète (CSRD, rapport complet E, S, G), résumé exécutif pour la direction, rapport détaillé structuré selon les standards GRI, risques climatiques financiers (TCFD).',
       'Les formats d\'export : PDF (universel, idéal pour le partage), Excel ou CSV (données tabulaires), Word (document éditable) et JSON (export structuré).',
       'Pour chaque type, l\'indication de ce qui est validé ou partiel dans vos données.',
       'La liste des rapports générés (nom, statut, actions).',
@@ -31,7 +31,7 @@ export const rapports: DocArticle[] = [
     title: 'Générateur de rapports ESG',
     summary: 'Produire un rapport professionnel à partir de vos données réelles, avec traçabilité.',
     routes: [{ label: 'Générer un rapport', to: '/app/reports/generate' }],
-    about: 'Le générateur crée des rapports PDF connectés à vos données en temps réel, avec une empreinte SHA-256 qui garantit leur intégrité.',
+    about: 'Le générateur crée des rapports PDF à partir de vos données au moment de la génération, avec une empreinte SHA-256 qui permet de vérifier qu\'un fichier n\'a pas été modifié.',
     shows: [
       'Les réglages : organisation, exercice, type de rapport et format d\'export.',
       'Le score ESG global de l\'organisation choisie et la liste de ce que le rapport contiendra.',
@@ -52,7 +52,7 @@ export const rapports: DocArticle[] = [
     title: 'Rapports planifiés',
     summary: 'Automatiser vos rapports récurrents.',
     routes: [{ label: 'Rapports planifiés', to: '/app/reports/scheduled' }],
-    about: 'Vous programmez un rapport pour qu\'il soit généré automatiquement à intervalle régulier.',
+    about: 'Vous programmez un rapport pour qu\'il soit généré et envoyé par e-mail à intervalle régulier.',
     shows: [
       'La liste des rapports planifiés.',
       'Le formulaire « Nouveau rapport planifié » : type de rapport, fréquence, date de début (premier envoi à partir de cette date), date de fin facultative (vide pour une récurrence sans fin). Le fuseau horaire est Europe/Paris.',
@@ -78,7 +78,7 @@ export const rapports: DocArticle[] = [
       'Un filtre par pilier et un tableau : pilier, indicateur ESRS, valeur et statut.',
       'La génération des rapports correspondants en un clic.',
     ],
-    tips: ['Tant que vous n\'avez pas saisi vos données, la page affiche des valeurs d\'exemple, ce qu\'elle indique clairement.'],
+    tips: ['Un indicateur sans donnée saisie apparaît « manquant » : aucune valeur n\'est inventée.'],
     related: ['gri', 'cdp', 'tcfd', 'saisie-manuelle'],
     keywords: ['multi-standards', 'GRI', 'CDP', 'TCFD', 'mapping'],
   },
@@ -93,7 +93,7 @@ export const rapports: DocArticle[] = [
     shows: [
       'Quatre étapes : Configuration, Sections ESRS, Revue des données, Génération.',
       'Les sections ESRS : informations générales, changement climatique, pollution, eau et ressources marines, biodiversité, utilisation des ressources, effectifs propres, chaîne de valeur, communautés, consommateurs, conduite des affaires.',
-      'La génération assistée par IA des textes et l\'export du rapport.',
+      'Des ébauches de textes par IA, à relire et valider, et l\'export du rapport.',
     ],
     steps: [
       { title: 'Configurer', text: 'Choisissez l\'organisation et l\'exercice.' },

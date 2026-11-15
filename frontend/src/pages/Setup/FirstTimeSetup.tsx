@@ -513,7 +513,7 @@ export default function FirstTimeSetup() {
 
               <div className="space-y-2">
                 {[
-                  { id: 'template', label: t('setup.impTemplateLabel', 'Pré-remplir avec un template sectoriel'), desc: t('setup.impTemplateDesc', 'Démarrez à ~50% de couverture CSRD : 20+ entrées typiques de votre secteur (valeurs à éditer ensuite).'), badge: t('setup.impTemplateBadge', '⚡ Le plus rapide') },
+                  { id: 'template', label: t('setup.impTemplateLabel2', 'Ajouter les indicateurs de votre secteur'), desc: t('setup.impTemplateDesc2', 'Les indicateurs habituels de votre secteur, sans valeur : vous les renseignez ensuite avec vos données.'), badge: null },
                   { id: 'fec', label: t('setup.impFecLabel', 'Import FEC'), desc: t('setup.impFecDesc', 'Importez votre Fichier des Écritures Comptables (Sage, Cegid, Pennylane…) — calcul Scope 3 automatique.'), badge: t('setup.impFecBadge', 'Killer DAF') },
                   { id: 'csv', label: t('setup.impCsvLabel', 'Import CSV'), desc: t('setup.impCsvDesc', 'Téléchargez le template, remplissez-le, importez-le. Bon pour les indicateurs sociaux.'), badge: null },
                   { id: 'skip', label: t('setup.impSkipLabel', 'Saisie manuelle pour démarrer'), desc: t('setup.impSkipDesc', 'Pas d\'import maintenant — je remplirai mes données indicateur par indicateur.'), badge: null },

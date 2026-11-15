@@ -39,12 +39,12 @@ export const conformite: DocArticle[] = [
       'La date de publication visée et le nombre de jours restants (ou « Échue »).',
       'Des compteurs : datapoints couverts, datapoints obligatoires couverts, normes « prêtes » et normes « à faire ».',
       'La liste « À remplir en priorité » avec un bouton « Saisir » pour chaque donnée manquante, et le détail des datapoints par norme.',
-      'Une proposition de pré-remplissage en un clic avec un template sectoriel.',
+      'Un raccourci pour ajouter les indicateurs habituels de votre secteur.',
     ],
     steps: [
       { title: 'Lire l\'état global', text: 'Repérez le pourcentage de datapoints obligatoires couverts.' },
       { title: 'Traiter les priorités', text: 'Cliquez sur « Saisir » à côté de chaque donnée à remplir.' },
-      { title: 'Gagner du temps', text: 'Si vous partez de zéro, essayez d\'abord un template sectoriel.' },
+      { title: 'Gagner du temps', text: 'Si vous partez de zéro, ajoutez d\'abord les indicateurs de votre secteur.' },
     ],
     related: ['analyse-ecarts-esrs', 'constructeur-csrd', 'templates-sectoriels'],
     keywords: ['CSRD', 'progression', 'datapoints', 'ESRS'],
@@ -255,7 +255,7 @@ export const conformite: DocArticle[] = [
     title: 'Devoir de vigilance et CSDDD',
     summary: 'Documenter votre diligence raisonnable selon la directive européenne 2024/1760.',
     routes: [{ label: 'Devoir de vigilance & CSDDD', to: '/app/compliance/csddd' }],
-    about: 'La CSDDD concerne notamment les entreprises de l\'UE de plus de 1 000 salariés. La page structure votre démarche en quatre volets.',
+    about: 'Son champ d\'application a été revu par l\'Omnibus : vérifiez d\'abord qu\'elle vous concerne. La page structure votre démarche en quatre volets.',
     shows: [
       'Périmètre : entité déclarante, exercice, périmètre couvert (opérations propres, filiales, fournisseurs de rang 1, de rang 2 et au-delà), effectif, chiffre d\'affaires, pays, fréquence de révision.',
       'Cartographie des risques droits humains et environnement, avec sévérité, probabilité et ampleur.',
@@ -277,7 +277,7 @@ export const conformite: DocArticle[] = [
     title: 'Balisage iXBRL (format ESEF)',
     summary: 'Baliser votre rapport de durabilité avec la taxonomie ESRS pour le publier au format numérique réglementaire.',
     routes: [{ label: 'Balisage iXBRL', to: '/app/compliance/ixbrl' }],
-    about: 'Le format iXBRL associe à chaque chiffre ou texte de votre rapport un concept de la taxonomie ESRS, pour qu\'il soit lisible par machine. La page applique la taxonomie ESRS de l\'EFRAG et contrôle votre balisage.',
+    about: 'Le format iXBRL associe à chaque chiffre ou texte de votre rapport un concept de la taxonomie ESRS, pour qu\'il soit lisible par machine. La page applique la taxonomie ESRS de l\'EFRAG et contrôle la structure de votre balisage ; elle ne garantit pas la conformité ESEF et le dépôt reste à votre charge.',
     shows: [
       'Quatre onglets : Vue d\'ensemble, Taxonomie ESRS, Balisage, Validation & Export.',
       'Des données déjà préparées (émissions Scope 1, 2 et 3, énergie, eau, déchets, effectifs, formation, rémunération, anti-corruption, délais de paiement).',

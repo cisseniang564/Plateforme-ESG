@@ -2331,7 +2331,11 @@
       "weeksAgo_other": "{{count}} weeks ago",
       "yearsAgo_one": "{{count}} year ago",
       "yearsAgo_other": "{{count}} years ago",
-      "yesterday": "Yesterday"
+      "yesterday": "Yesterday",
+      "roleContributorName": "Contributor",
+      "roleContributorDesc": "ESG data entry and import",
+      "roleEsgAdminName": "ESG Admin",
+      "roleEsgAdminDesc": "Methodology, validation and ESG settings"
     }
   },
   "users": {
@@ -5625,7 +5629,9 @@
       "showLess": "Show less",
       "datapointDetail": "Datapoint detail",
       "mandatory": "Mandatory: <1>{{covered}}/{{total}}</1>",
-      "reqAbbr": "Req."
+      "reqAbbr": "Req.",
+      "boosterTitle2": "Add your sector's indicators",
+      "boosterDesc2": "Choose your sector: the usual indicators are created, with no value, ready to be filled in with your data."
     },
     "taxoAlign": {
       "objMitigation": "Climate mitigation",
@@ -6530,7 +6536,8 @@
     "traceFourEyes": "Four-eyes principle: the author of a submission cannot approve it. Only ESG manager roles and above can approve or reject.",
     "traceAudit": "Every submission, approval and rejection is recorded in the audit log (user, date, IP address), chained with SHA-256 hashes.",
     "traceHash": "A SHA-256 hash (entry, value, approver, timestamp) is kept in the review notes of each approved entry.",
-    "traceDisclaimer": "This hash is an internal traceability marker: it is not a qualified electronic signature and does not replace an assurance provider's engagement."
+    "traceDisclaimer": "This hash is an internal traceability marker: it is not a qualified electronic signature and does not replace an assurance provider's engagement.",
+    "traceFourEyes2": "Four-eyes principle: the author of a submission cannot approve it, unless they are the only active user on the account (the approval is then marked \"self-approval\"). Only ESG manager roles and above can approve or reject."
   },
   "gaia": {
     "subtitle": "Your ESG analyst. Drop a company report (sustainability, DPEF, CSRD): Gaïa summarises the key points, picks out the published figures, measures ESRS coverage and tells you what is missing.",
@@ -8459,7 +8466,9 @@
     "readyA": "Click ",
     "readyB": " to access your dashboard. You can invite more colleagues and configure every detail from Settings.",
     "finish": "Finish",
-    "previous": "Previous"
+    "previous": "Previous",
+    "impTemplateLabel2": "Add your sector's indicators",
+    "impTemplateDesc2": "Your sector's usual indicators, with no value: you fill them in afterwards with your data."
   },
   "support": {
     "title": "Support",
@@ -16069,5 +16078,24 @@
     "reasonLabel": "Reason for rejection",
     "reasonPlaceholder": "E.g. value inconsistent with the invoice, wrong unit…",
     "reasonHint": "The reason is kept in the audit trail."
+  },
+  "tmpl2": {
+    "successTitle": "Indicators added",
+    "statCreated": "Indicators created",
+    "statExisting": "Already present",
+    "next": "No value was entered on your behalf: fill in each indicator with your real data, by entry or import.",
+    "enterData": "Enter my data",
+    "viewIndicators": "View indicators",
+    "heroDesc": "Add your sector's usual indicators in one click (name, unit, calculation method). No value is created: you fill them in with your own data.",
+    "clean": "Remove old template values",
+    "cleanTitle": "Deletes the indicative values an older version of the templates had added. Your own entries are not affected.",
+    "cleaned_one": "{{count}} template value removed.",
+    "cleaned_other": "{{count}} template values removed.",
+    "nothingToClean": "No template value to remove.",
+    "cleanError": "Removal failed.",
+    "nIndicators_one": "{{count}} indicator",
+    "nIndicators_other": "{{count}} indicators",
+    "previewNote": "Only indicators are added, with no value. Existing ones are not duplicated.",
+    "apply": "Add these indicators"
   }
 }

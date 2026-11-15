@@ -15,6 +15,7 @@ from app.models.indicator import Indicator
 from app.models.indicator_data import IndicatorData
 from app.models.audit_log import AuditLog
 from app.models.tenant import Tenant
+from app.services import self_approval
 from app.services.audit_chain_service import seal_entry
 
 router = APIRouter(prefix="/validation", tags=["Validation Workflow"])
@@ -25,10 +26,8 @@ class ValidationSettings(BaseModel):
 
 
 async def _allow_self_approval(db: AsyncSession, tenant_id) -> bool:
-    """Paramètre du compte : un seul validateur peut approuver ses propres saisies (désactivé par défaut)."""
-    tenant = await db.get(Tenant, tenant_id)
-    settings = (tenant.settings or {}) if tenant else {}
-    return bool((settings.get("validation") or {}).get("allow_self_approval", False))
+    """Valeur du paramètre « validation par un seul utilisateur » (désactivé par défaut)."""
+    return await self_approval.setting_enabled(db, tenant_id)
 
 
 class BulkActionRequest(BaseModel):
@@ -84,7 +83,7 @@ async def _entry_rows(db: AsyncSession, entries: list, current_user: User) -> li
     """Enrichit les saisies : nom de l'indicateur, unité, auteur de la soumission, droit d'approuver."""
     if not entries:
         return []
-    self_ok = await _allow_self_approval(db, current_user.tenant_id)
+    self_ok = await self_approval.can_self_approve(db, current_user.tenant_id, current_user.id)
     ind_ids = {e.indicator_id for e in entries}
     inds = {i.id: i for i in (await db.execute(select(Indicator).where(Indicator.id.in_(ind_ids)))).scalars().all()}
     user_ids = {e.submitted_by for e in entries if e.submitted_by}
@@ -124,7 +123,7 @@ async def submit_for_review(
     """Move draft entries to pending_review."""
     from sqlalchemy import or_
     if body.assigned_to_user_id:
-        if body.assigned_to_user_id == current_user.id and not await _allow_self_approval(db, current_user.tenant_id):
+        if body.assigned_to_user_id == current_user.id and not await self_approval.can_self_approve(db, current_user.tenant_id, current_user.id):
             raise HTTPException(status_code=400, detail="Vous ne pouvez pas vous assigner votre propre validation.")
         assignee = (await db.execute(select(User).where(
             User.id == body.assigned_to_user_id, User.tenant_id == current_user.tenant_id, User.is_active.is_(True),
@@ -195,7 +194,7 @@ async def approve_entries(
     # Drop entries where the current user was the submitter. We don't fail
     # the whole batch — we just skip those and report the count back so
     # the UI can surface the conflict to the user.
-    self_ok = await _allow_self_approval(db, current_user.tenant_id)
+    self_ok = await self_approval.can_self_approve(db, current_user.tenant_id, current_user.id)
     skipped_sod: list[str] = []
     approvable = []
     self_approved: set = set()

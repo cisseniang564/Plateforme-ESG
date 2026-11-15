@@ -3,8 +3,8 @@ Sectoral Templates endpoints.
 
   GET    /templates/sectoral             — Gallery (list available templates)
   GET    /templates/sectoral/{sector_id} — Preview entries before applying
-  POST   /templates/sectoral/apply       — Apply template (creates DataEntries)
-  POST   /templates/sectoral/revert      — Remove template-seeded entries
+  POST   /templates/sectoral/apply       — Crée les indicateurs du template (aucune valeur)
+  POST   /templates/sectoral/revert      — Supprime les valeurs créées par les anciennes versions
 """
 from typing import Optional
 from uuid import UUID
@@ -14,7 +14,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
-from app.dependencies import get_current_user
+from app.core.permissions import Roles
+from app.dependencies import get_current_user, require_any_role
 from app.models.user import User
 from app.services.template_apply_service import TemplateApplyService
 
@@ -58,23 +59,13 @@ async def preview_template(
     return preview
 
 
-@router.post("/sectoral/apply", summary="Appliquer un template (créer les DataEntries)")
+@router.post("/sectoral/apply", summary="Appliquer un template (crée les indicateurs, aucune valeur)")
 async def apply_template(
     body: ApplyTemplateRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_any_role(*Roles.MANAGER_OR_ABOVE)),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Insère les entrées du template dans le tenant.
-
-    Toutes les entrées sont :
-      - flaggées ``quality_flags.estimated = true``
-      - en ``verification_status = 'pending'``
-      - avec ``data_source`` indiquant l'origine du template
-      - ``collection_method = 'template_apply'`` pour pouvoir les retrouver/supprimer
-
-    L'utilisateur doit ensuite éditer chaque valeur avec sa donnée réelle.
-    """
+    """Crée les indicateurs du template (nom, unité, pilier, méthode). Aucune valeur n'est saisie."""
     service = TemplateApplyService(db, current_user.tenant_id)
     result = await service.apply(
         sector_id=body.sector_id,
@@ -88,13 +79,13 @@ async def apply_template(
     return result
 
 
-@router.post("/sectoral/revert", summary="Supprimer les entrées créées par un template")
+@router.post("/sectoral/revert", summary="Supprimer les valeurs créées par les anciennes versions des templates")
 async def revert_template(
     body: RevertTemplateRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_any_role(*Roles.MANAGER_OR_ABOVE)),
     db: AsyncSession = Depends(get_db),
 ):
-    """Annule l'application d'un template (supprime les entrées avec collection_method='template_apply')."""
+    """Supprime les valeurs de template (jamais les valeurs saisies par l'utilisateur)."""
     service = TemplateApplyService(db, current_user.tenant_id)
     return await service.revert(
         organization_id=body.organization_id,

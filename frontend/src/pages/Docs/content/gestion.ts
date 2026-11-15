@@ -10,7 +10,7 @@ export const gestion: DocArticle[] = [
     about: 'Chaque création, modification, suppression et décision de validation est enregistrée. Le journal permet de prouver à un auditeur d\'où vient un chiffre et qui l\'a modifié.',
     shows: [
       'Des compteurs : événements au total, événements du jour, modifications de données, décisions de validation (approbations et rejets).',
-      'Trois onglets : Journal d\'audit, Historique des versions, Export & Certification.',
+      'Trois onglets : Journal d\'audit, Historique des versions, Export & vérification.',
       'Une recherche dans le journal et, pour chaque événement : description, valeur AVANT et APRÈS, commentaire d\'audit, empreinte d\'intégrité SHA-256 (indiquée Valide quand elle correspond) et pièces justificatives.',
       'Un bouton « Exporter pour audit ».',
     ],
@@ -86,7 +86,7 @@ export const gestion: DocArticle[] = [
     routes: [{ label: 'Organisations (ouvrez une fiche)', to: '/app/organizations' }],
     about: 'En cliquant sur une organisation, vous ouvrez sa fiche. Si elle a des filiales, une vue consolidée est disponible.',
     shows: [
-      'La fiche : score ESG global, complétude des données, évolution dans le temps (au moins deux scores), profil multidimensionnel, comparaison sectorielle et recommandations ; un bouton pour calculer le score et un export.',
+      'La fiche : score ESG global, complétude des données, évolution dans le temps (au moins deux scores), profil multidimensionnel, comparaison sectorielle (si assez d\'organisations comparables) et recommandations ; un bouton pour calculer le score.',
       'La vue consolidée : filiales incluses, méthode (intégration globale à 100 %, proportionnelle ou mixte), période et indicateurs numériques consolidés, conformément à IFRS 10 et à l\'article L233-16 du Code de commerce.',
     ],
     tips: ['Un indicateur n\'apparaît dans la vue consolidée que si au moins une filiale a des données saisies.'],
@@ -122,7 +122,7 @@ export const gestion: DocArticle[] = [
     routes: [{ label: 'Paramètres', to: '/app/settings' }],
     about: 'Les paramètres sont organisés en rubriques : Général, Membres, Notifications, Intégrations, Compte, Facturation, Sécurité, Clés API, Sessions, Avancé et Zone de danger.',
     shows: [
-      'Des raccourcis vers les notifications en temps réel, les données d\'entreprises françaises, l\'enrichissement ESG, les connecteurs (Pennylane, Qonto, Enedis…) et les méthodologies (GRI, SASB, TCFD, ESRS).',
+      'Des raccourcis vers les notifications, les données d\'entreprises françaises, l\'enrichissement ESG, les connecteurs (Pennylane, Qonto, Enedis…) et les méthodologies (GRI, SASB, TCFD, ESRS).',
       'Une rubrique SSO (administrateurs) : connexion unique OpenID Connect pour les utilisateurs déjà invités, sur les domaines e-mail déclarés ; SAML 2.0 n\'est pas pris en charge.',
       'La zone de danger : actions irréversibles, à manier avec précaution.',
     ],
@@ -138,7 +138,7 @@ export const gestion: DocArticle[] = [
     routes: [{ label: 'Gestion des utilisateurs', to: '/app/settings/users' }],
     about: 'Chaque utilisateur a un rôle qui détermine ses droits.',
     shows: [
-      'Quatre rôles : Administrateur (accès complet), Manager ESG (gestion des organisations), Analyste ESG (saisie et analyse des données) et Lecteur (consultation uniquement).',
+      'Cinq rôles : Administrateur (accès complet), Admin ESG (méthodologie, validation et réglages ESG), Manager ESG (validation des saisies, organisations), Contributeur (saisie et import des données) et Lecteur (consultation uniquement).',
       'La liste des membres avec leur dernière connexion.',
       'Désactiver ou réactiver un utilisateur : il ne peut plus se connecter mais ses données sont conservées.',
     ],
@@ -172,7 +172,7 @@ export const gestion: DocArticle[] = [
     slug: 'webhooks',
     section: 'parametres',
     title: 'Webhooks',
-    summary: 'Recevoir des notifications HTTP en temps réel dans vos propres outils.',
+    summary: 'Recevoir une notification HTTP dans vos propres outils dès qu\'un événement se produit.',
     routes: [{ label: 'Webhooks', to: '/app/settings/webhooks' }],
     about: 'Un webhook envoie un message à une adresse de votre choix quand un événement se produit dans ESGFlow. Chaque message est signé (HMAC SHA-256) pour que vous puissiez vérifier son origine.',
     shows: [
@@ -199,7 +199,7 @@ export const gestion: DocArticle[] = [
     shows: [
       'Les types d\'intégrations disponibles et « Mes intégrations » avec leur état (connecté, actif).',
       'Pour chacune : tester la connexion, configurer, activer ou désactiver, supprimer.',
-      'La base officielle des entreprises françaises (SIREN/SIRET), gratuite et en temps réel.',
+      'La base officielle des entreprises françaises (SIREN/SIRET), interrogée à la demande via l\'API officielle de l\'INSEE.',
     ],
     related: ['connecteurs', 'entreprises-insee', 'webhooks'],
     keywords: ['intégrations', 'connexion', 'synchronisation'],
@@ -210,7 +210,7 @@ export const gestion: DocArticle[] = [
     title: 'Entreprises françaises (INSEE / Sirene)',
     summary: 'Rechercher une entreprise dans la base officielle Sirene.',
     routes: [{ label: 'Entreprises INSEE', to: '/app/settings/insee' }],
-    about: 'La base Sirene recense plus de 10 millions d\'établissements. Vous pouvez y retrouver une entreprise pour préremplir ses informations.',
+    about: 'La base est interrogée à la demande ; ESGFlow n\'en garde pas de copie. Vous pouvez y retrouver une entreprise pour préremplir ses informations.',
     shows: [
       'Une recherche avec des filtres, notamment la tranche d\'effectif (de 0 salarié à plus de 10 000).',
       'Des informations officielles sur les établissements trouvés et leur secteur.',

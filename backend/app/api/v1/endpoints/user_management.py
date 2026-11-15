@@ -48,7 +48,7 @@ def _format_role_name(name: str) -> str:
         "tenant_admin": "Administrateur",
         "esg_admin": "Admin ESG",
         "esg_manager": "Manager ESG",
-        "esg_analyst": "Analyste ESG",
+        "data_entry": "Contributeur",
         "viewer": "Lecteur",
         "admin": "Administrateur",
         "manager": "Manager",

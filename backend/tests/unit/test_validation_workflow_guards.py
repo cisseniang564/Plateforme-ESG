@@ -53,8 +53,15 @@ def test_full_name_est_une_propriete_pas_une_colonne():
 # ── Validation par un seul utilisateur (paramètre du compte) ──────────────────
 
 def test_validateur_unique_desactive_par_defaut():
-    src = _src(vw._allow_self_approval)
-    assert '"allow_self_approval", False' in src
+    from app.services import self_approval
+    assert '"allow_self_approval", False' in inspect.getsource(self_approval.setting_enabled)
+
+
+def test_meme_regle_pour_les_deux_pages():
+    """Workflow et Qualité des données appliquent la même règle d'auto-validation."""
+    from app.api.v1.endpoints import data_validation as dv
+    assert "self_approval.can_self_approve" in inspect.getsource(vw)
+    assert "self_approval.setting_enabled" in inspect.getsource(dv)
 
 
 def test_parametre_reserve_aux_admins_et_trace():

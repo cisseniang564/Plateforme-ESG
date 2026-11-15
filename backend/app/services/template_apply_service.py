@@ -1,5 +1,9 @@
 """
-Template Apply Service — seed DataEntry rows from a SectorTemplate.
+Template Apply Service — crée les indicateurs d'un template sectoriel.
+
+Depuis 2026-11 : aucune valeur n'est plus créée (ni DataEntry, ni IndicatorData).
+Les valeurs indicatives du catalogue ne sont jamais présentées comme des données
+de l'entreprise. revert() supprime les valeurs créées par les anciennes versions.
 
 The service is idempotent: applying the same template twice for the same year
 does NOT duplicate entries. The collision key is (tenant, organization, year,
@@ -86,7 +90,6 @@ class TemplateApplyService:
                     "pillar": e.pillar,
                     "category": e.category,
                     "unit": e.unit,
-                    "value": e.value,
                     "framework": e.framework,
                     "notes": e.notes,
                 }
@@ -130,112 +133,39 @@ class TemplateApplyService:
         if org is None:
             return {"error": "No organization found for tenant — create one first."}
 
-        # IndicatorData.source est un varchar(50) — tronquer pour ne jamais dépasser.
-        source_label = f"Template sectoriel — {template.label}"[:50]
+        # Le template ne crée QUE des indicateurs (nom, unité, pilier, méthode) :
+        # aucune valeur n'est saisie à la place de l'entreprise. Les anciennes
+        # valeurs créées par les versions précédentes se retirent avec revert().
+        ind_stmt = select(Indicator.code).where(Indicator.tenant_id == self.tenant_id)
+        existing_codes = {row[0] for row in (await self.db.execute(ind_stmt)).all()}
 
-        replaced = 0
-        if mode == "replace":
-            # Delete prior template-seeded rows for this (org, year).
-            stmt = delete(DataEntry).where(
-                DataEntry.tenant_id == self.tenant_id,
-                DataEntry.organization_id == org.id,
-                DataEntry.period_start == period_start,
-                DataEntry.collection_method == "template_apply",
-            )
-            result = await self.db.execute(stmt)
-            replaced = result.rowcount or 0
-
-        # Load existing metric_names for this (org, year) to dedupe DataEntries.
-        existing_stmt = select(DataEntry.metric_name).where(
-            DataEntry.tenant_id == self.tenant_id,
-            DataEntry.organization_id == org.id,
-            DataEntry.period_start == period_start,
-        )
-        result = await self.db.execute(existing_stmt)
-        existing_names = {row[0].strip().lower() for row in result.all()}
-
-        # Load existing indicator codes for this tenant (to reuse or create).
-        ind_stmt = select(Indicator.code, Indicator.id).where(Indicator.tenant_id == self.tenant_id)
-        ind_result = await self.db.execute(ind_stmt)
-        existing_indicators: Dict[str, UUID] = {row[0]: row[1] for row in ind_result.all()}
-
-        created = 0
-        skipped = 0
         indicators_created = 0
-        ind_data_created = 0
-        period_date = period_end  # Use end-of-year date for IndicatorData.date
-
+        indicators_existing = 0
         for entry in template.entries:
-            key = entry.metric_name.strip().lower()
-            if mode == "merge" and key in existing_names:
-                skipped += 1
+            ind_code = f"TPL-{_slugify(entry.metric_name, 32)}"
+            if ind_code in existing_codes:
+                indicators_existing += 1
                 continue
-
-            # 1. DataEntry (legacy / wide view)
-            data_entry = DataEntry(
+            self.db.add(Indicator(
                 tenant_id=self.tenant_id,
-                organization_id=org.id,
-                period_start=period_start,
-                period_end=period_end,
-                period_type="annual",
+                code=ind_code,
+                name=entry.metric_name,
                 pillar=entry.pillar,
                 category=entry.category,
-                metric_name=entry.metric_name,
-                value_numeric=entry.value,
                 unit=entry.unit,
-                data_source=source_label,
-                collection_method="template_apply",
-                verification_status="pending",
-                quality_flags={"estimated": True, "requires_review": True, "template": sector_id},
-                notes=entry.notes or None,
-                created_by=created_by_id,
-            )
-            self.db.add(data_entry)
-            created += 1
-
-            # 2. Indicator (reused if a code already exists, created otherwise)
-            ind_code = f"TPL-{_slugify(entry.metric_name, 32)}"
-            ind_id = existing_indicators.get(ind_code)
-            if ind_id is None:
-                indicator = Indicator(
-                    tenant_id=self.tenant_id,
-                    code=ind_code,
-                    name=entry.metric_name,
-                    pillar=entry.pillar,
-                    category=entry.category,
-                    unit=entry.unit,
-                    data_type="number",
-                    framework=entry.framework,
-                    description=entry.notes or entry.metric_name,
-                    is_active=True,
-                )
-                self.db.add(indicator)
-                await self.db.flush()
-                ind_id = indicator.id
-                existing_indicators[ind_code] = ind_id
-                indicators_created += 1
-
-            # 3. IndicatorData (powers the CSRD progress dashboard)
-            ind_data = IndicatorData(
-                tenant_id=self.tenant_id,
-                indicator_id=ind_id,
-                organization_id=org.id,
-                date=period_date,
-                value=float(entry.value),
-                unit=entry.unit,
-                source=source_label,
-            )
-            self.db.add(ind_data)
-            ind_data_created += 1
+                data_type="number",
+                framework=entry.framework,
+                description=entry.notes or entry.metric_name,
+                is_active=True,
+            ))
+            existing_codes.add(ind_code)
+            indicators_created += 1
 
         await self.db.commit()
 
         return {
-            "created": created,
-            "skipped": skipped,
-            "replaced": replaced,
             "indicators_created": indicators_created,
-            "indicator_data_created": ind_data_created,
+            "indicators_existing": indicators_existing,
             "entries_total": len(template.entries),
             "year": year,
             "organization_id": str(org.id),
@@ -248,47 +178,23 @@ class TemplateApplyService:
         organization_id: Optional[UUID] = None,
         year: Optional[int] = None,
     ) -> Dict[str, Any]:
-        """Delete template-seeded entries (DataEntry + IndicatorData) for the (org, year)."""
-        from datetime import datetime as _dt
-        year = year or (_dt.utcnow().year - 1)
-        period_start = date(year, 1, 1)
-        period_end = date(year, 12, 31)
+        """Supprime toutes les valeurs créées par les anciennes versions des templates.
 
-        org = await self._resolve_org(organization_id)
-        if org is None:
-            return {"error": "No organization found"}
-
-        # 1. Delete DataEntry rows
-        de_stmt = delete(DataEntry).where(
+        Cible uniquement ce qui porte la marque d'un template (DataEntry avec
+        collection_method='template_apply', IndicatorData dont la source commence par
+        « Template sectoriel ») : les valeurs saisies par l'utilisateur ne sont jamais touchées.
+        Les paramètres organization_id / year sont conservés pour compatibilité.
+        """
+        de_result = await self.db.execute(delete(DataEntry).where(
             DataEntry.tenant_id == self.tenant_id,
-            DataEntry.organization_id == org.id,
-            DataEntry.period_start == period_start,
             DataEntry.collection_method == "template_apply",
-        )
-        de_result = await self.db.execute(de_stmt)
-
-        # 2. Delete IndicatorData rows for TPL-* indicators in the year
-        tpl_ind_codes_stmt = select(Indicator.id).where(
-            Indicator.tenant_id == self.tenant_id,
-            Indicator.code.like("TPL-%"),
-        )
-        tpl_ind_result = await self.db.execute(tpl_ind_codes_stmt)
-        tpl_ind_ids = [row[0] for row in tpl_ind_result.all()]
-
-        ind_data_deleted = 0
-        if tpl_ind_ids:
-            id_stmt = delete(IndicatorData).where(
-                IndicatorData.tenant_id == self.tenant_id,
-                IndicatorData.organization_id == org.id,
-                IndicatorData.indicator_id.in_(tpl_ind_ids),
-                IndicatorData.date == period_end,
-            )
-            id_result = await self.db.execute(id_stmt)
-            ind_data_deleted = id_result.rowcount or 0
-
+        ))
+        id_result = await self.db.execute(delete(IndicatorData).where(
+            IndicatorData.tenant_id == self.tenant_id,
+            IndicatorData.source.like("Template sectoriel%"),
+        ))
         await self.db.commit()
         return {
             "deleted": de_result.rowcount or 0,
-            "indicator_data_deleted": ind_data_deleted,
-            "year": year,
+            "indicator_data_deleted": id_result.rowcount or 0,
         }

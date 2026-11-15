@@ -164,13 +164,10 @@ export default function CSRDProgress() {
             </div>
             <div className="flex-1">
               <h3 className="text-base font-extrabold text-gray-900 mb-0.5">
-                {t('compliance.csrdProgress.boosterTitle', 'Pré-remplir en 1 clic avec un template sectoriel')}
+                {t('compliance.csrdProgress.boosterTitle2', 'Ajouter les indicateurs de votre secteur')}
               </h3>
               <p className="text-sm text-gray-600">
-                <Trans i18nKey="compliance.csrdProgress.boosterDesc" values={{ pct: data.overall_completion_pct.toFixed(0) }}>
-                  Passez de <strong>{'{{pct}}'}%</strong> à <strong>~50%</strong> de couverture CSRD instantanément.
-                  Choisissez votre secteur · 20+ entrées créées · valeurs à éditer.
-                </Trans>
+                {t('compliance.csrdProgress.boosterDesc2', 'Choisissez votre secteur : les indicateurs habituels sont créés, sans valeur, prêts à être renseignés avec vos données.')}
               </p>
             </div>
             <div className="flex items-center gap-1 text-sm font-bold text-violet-700 group-hover:translate-x-1 transition-transform">
