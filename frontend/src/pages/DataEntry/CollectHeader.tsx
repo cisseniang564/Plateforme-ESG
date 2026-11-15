@@ -17,8 +17,8 @@ export default function CollectHeader({ title, subtitle, actions }: { title: str
     <header className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
-          {subtitle && <p className="mt-1 text-sm text-gray-500">{subtitle}</p>}
+          <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-gray-900 sm:text-[28px]">{title}</h1>
+          {subtitle && <p className="mt-1 max-w-2xl text-sm text-gray-600">{subtitle}</p>}
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </div>
@@ -27,7 +27,7 @@ export default function CollectHeader({ title, subtitle, actions }: { title: str
           <NavLink key={to} to={to}
             className={({ isActive }) =>
               `-mb-px inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
-                isActive ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-800'
+                isActive ? 'border-emerald-600 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-800'
               }`}>
             <Icon className="h-4 w-4" aria-hidden="true" />{t(key, fallback)}
           </NavLink>
@@ -38,7 +38,7 @@ export default function CollectHeader({ title, subtitle, actions }: { title: str
 }
 
 // Styles partagés (mêmes boutons et champs sur les quatre pages).
-export const btnPrimary = 'inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50';
-export const btnSecondary = 'inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50';
-export const field = 'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-emerald-500';
-export const card = 'rounded-xl border border-gray-200 bg-white';
+export const btnPrimary = 'inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50';
+export const btnSecondary = 'inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50';
+export const field = 'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20';
+export const card = 'rounded-2xl border border-gray-200 bg-white';

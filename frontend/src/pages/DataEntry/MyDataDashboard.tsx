@@ -24,27 +24,25 @@ interface DataEntry {
 }
 
 const PILLARS: Record<string, { label: string; cls: string }> = {
-  environmental: { label: 'Environnemental', cls: 'bg-green-50 text-green-700' },
-  social: { label: 'Social', cls: 'bg-blue-50 text-blue-700' },
-  governance: { label: 'Gouvernance', cls: 'bg-violet-50 text-violet-700' },
+  environmental: { label: 'Environnemental', cls: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' },
+  social: { label: 'Social', cls: 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300' },
+  governance: { label: 'Gouvernance', cls: 'bg-violet-50 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300' },
 };
 const STATUS: Record<string, { label: string; cls: string; icon: typeof Lock }> = {
-  verified: { label: 'Vérifiée', cls: 'bg-emerald-50 text-emerald-700', icon: Lock },
-  pending: { label: 'À vérifier', cls: 'bg-amber-50 text-amber-700', icon: AlertCircle },
-  flagged: { label: 'Signalée', cls: 'bg-orange-50 text-orange-700', icon: Flag },
-  rejected: { label: 'Rejetée', cls: 'bg-red-50 text-red-700', icon: XCircle },
+  verified: { label: 'Vérifiée', cls: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300', icon: Lock },
+  pending: { label: 'À vérifier', cls: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300', icon: AlertCircle },
+  flagged: { label: 'Signalée', cls: 'bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300', icon: Flag },
+  rejected: { label: 'Rejetée', cls: 'bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300', icon: XCircle },
 };
 const PAGE_SIZES = [25, 50, 100];
 
-function Kpi({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
-  return (
-    <div className={`${card} px-4 py-3`}>
-      <p className="text-xs font-medium text-gray-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums text-gray-900">{value}</p>
-      {hint && <p className="mt-0.5 text-xs text-gray-500">{hint}</p>}
-    </div>
-  );
-}
+/** Couleurs de la barre de répartition par statut (même ordre que la légende). */
+const STATUS_BAR = [
+  { key: 'verified', color: '#047857' },
+  { key: 'pending', color: '#f59e0b' },
+  { key: 'flagged', color: '#f97316' },
+  { key: 'rejected', color: '#ef4444' },
+] as const;
 
 export default function MyDataDashboard() {
   const { t } = useTranslation();
@@ -181,7 +179,7 @@ export default function MyDataDashboard() {
     const Icon = !active ? ArrowUpDown : order === 'asc' ? ArrowUp : ArrowDown;
     return (
       <th scope="col" aria-sort={active ? (order === 'asc' ? 'ascending' : 'descending') : 'none'}
-        className={`px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500 ${right ? 'text-right' : 'text-left'}`}>
+        className={`px-3 py-2.5 text-xs font-medium text-gray-500 ${right ? 'text-right' : 'text-left'} ${k === 'pillar' ? 'hidden md:table-cell' : k === 'period_start' || k === 'verification_status' ? 'hidden sm:table-cell' : ''}`}>
         <button type="button" onClick={() => handleSort(k)} className={`inline-flex items-center gap-1 hover:text-gray-900 ${active ? 'text-gray-900' : ''}`}>
           {label}<Icon className={`h-3 w-3 ${active ? '' : 'opacity-40'}`} aria-hidden="true" />
         </button>
@@ -197,8 +195,8 @@ export default function MyDataDashboard() {
         actions={
           <>
             <button type="button" onClick={refresh} aria-label={t('myd.refresh', 'Actualiser')} title={t('myd.refresh', 'Actualiser')}
-              className="rounded-lg border border-gray-200 bg-white p-2.5 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              className="rounded-xl border border-gray-200 bg-white p-2.5 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
+              <RefreshCw className={`h-4 w-4 ${loading ? 'motion-safe:animate-spin' : ''}`} />
             </button>
             <button type="button" onClick={handleExport} disabled={exporting || total === 0} className={btnSecondary}>
               <Download className="h-4 w-4" aria-hidden="true" />{exporting ? t('myd.exporting', 'Export…') : t('myd.export', 'Exporter (Excel)')}
@@ -207,17 +205,50 @@ export default function MyDataDashboard() {
         }
       />
 
-      <section aria-label={t('myd.kpis', 'Indicateurs clés')} className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Kpi label={t('myd.kpiTotal', 'Saisies')} value={grandTotal.toLocaleString('fr-FR')} />
-        <Kpi label={t('myd.kpiVerified', 'Vérifiées')} value={`${verifiedRate(byStatus, grandTotal)} %`} hint={t('myd.kpiVerifiedHint', '{{n}} sur {{total}}', { n: byStatus.verified ?? 0, total: grandTotal })} />
-        <Kpi label={t('myd.kpiToReview', 'À vérifier')} value={toReview} />
-        <Kpi label={t('myd.kpiRejected', 'Rejetées')} value={byStatus.rejected ?? 0} />
+      <section aria-label={t('myd.kpis', 'Indicateurs clés')} className={`${card} p-5 sm:p-6`}>
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-4">
+          <div>
+            <dt className="text-xs text-gray-500">{t('myd.kpiTotal', 'Saisies')}</dt>
+            <dd className="mt-1 text-[28px] font-semibold leading-none tabular-nums text-gray-900">{grandTotal.toLocaleString('fr-FR')}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-gray-500">{t('myd.kpiVerified', 'Vérifiées')}</dt>
+            <dd className="mt-1 text-[28px] font-semibold leading-none tabular-nums text-gray-900">{verifiedRate(byStatus, grandTotal)} %</dd>
+            <dd className="mt-1 text-xs text-gray-500">{t('myd.kpiVerifiedHint', '{{n}} sur {{total}}', { n: byStatus.verified ?? 0, total: grandTotal })}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-gray-500">{t('myd.kpiToReview', 'À vérifier')}</dt>
+            <dd className="mt-1 text-[28px] font-semibold leading-none tabular-nums text-gray-900">{toReview}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-gray-500">{t('myd.kpiRejected', 'Rejetées')}</dt>
+            <dd className="mt-1 text-[28px] font-semibold leading-none tabular-nums text-gray-900">{byStatus.rejected ?? 0}</dd>
+          </div>
+        </dl>
+        {grandTotal > 0 && (
+          <>
+            <div className="mt-5 flex h-2 overflow-hidden rounded-full bg-gray-100" role="img"
+              aria-label={STATUS_BAR.map(b => `${STATUS[b.key].label} : ${byStatus[b.key] ?? 0}`).join(', ')}>
+              {STATUS_BAR.filter(b => (byStatus[b.key] ?? 0) > 0).map(b => (
+                <span key={b.key} style={{ flexGrow: byStatus[b.key], background: b.color }} />
+              ))}
+            </div>
+            <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+              {STATUS_BAR.map(b => (
+                <li key={b.key} className="inline-flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full" style={{ background: b.color }} aria-hidden="true" />
+                  {byStatus[b.key] ?? 0} {STATUS[b.key].label.toLowerCase()}{(byStatus[b.key] ?? 0) > 1 && b.key !== 'pending' ? 's' : ''}
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </section>
 
       {toReview > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
           <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-          <p className="min-w-0 flex-1">
+          <p className="min-w-[12rem] flex-1">
             {t('myd.reviewBanner', '{{n}} saisie(s) attendent une vérification. Une saisie vérifiée est verrouillée : elle ne peut plus être modifiée ni supprimée.', { n: toReview })}
           </p>
           <Link to="/app/data-quality" className="font-semibold underline-offset-2 hover:underline">{t('myd.reviewLink', 'Qualité des données')}</Link>
@@ -226,21 +257,21 @@ export default function MyDataDashboard() {
 
       <section className={`${card} overflow-hidden`}>
         <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 px-4 py-3">
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
             <input type="search" value={searchInput} onChange={e => setSearchInput(e.target.value)}
               placeholder={t('myd.search', 'Rechercher un indicateur…')} aria-label={t('myd.search', 'Rechercher un indicateur…')}
-              className={`${field} w-64 pl-9`} />
+              className={`${field} pl-9 sm:w-64`} />
           </div>
-          <select value={pillar} onChange={e => { setPillar(e.target.value); setPage(1); }} aria-label={t('myd.fPillar', 'Filtrer par pilier')} className={`${field} w-auto`}>
+          <select value={pillar} onChange={e => { setPillar(e.target.value); setPage(1); }} aria-label={t('myd.fPillar', 'Filtrer par pilier')} className={`${field} sm:w-auto`}>
             <option value="">{t('myd.allPillars', 'Tous les piliers')}</option>
             {Object.entries(PILLARS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
-          <select value={source} onChange={e => { setSource(e.target.value); setPage(1); }} aria-label={t('myd.fSource', 'Filtrer par origine')} className={`${field} w-auto`}>
+          <select value={source} onChange={e => { setSource(e.target.value); setPage(1); }} aria-label={t('myd.fSource', 'Filtrer par origine')} className={`${field} sm:w-auto`}>
             <option value="">{t('myd.allSources', 'Toutes les origines')}</option>
             {[...new Set([...sources, ...(source ? [source] : [])])].map(k => <option key={k} value={k}>{sourceLabel(k)}</option>)}
           </select>
-          <select value={status} onChange={e => { setStatus(e.target.value); setPage(1); }} aria-label={t('myd.fStatus', 'Filtrer par statut')} className={`${field} w-auto`}>
+          <select value={status} onChange={e => { setStatus(e.target.value); setPage(1); }} aria-label={t('myd.fStatus', 'Filtrer par statut')} className={`${field} sm:w-auto`}>
             <option value="">{t('myd.allStatuses', 'Tous les statuts')}</option>
             {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
@@ -251,7 +282,7 @@ export default function MyDataDashboard() {
 
         {loadError ? (
           <div className="px-6 py-14 text-center">
-            <p className="text-sm text-red-700">{t('myd.loadError', 'Impossible de charger vos données.')}</p>
+            <p className="text-sm text-red-700 dark:text-red-400">{t('myd.loadError', 'Impossible de charger vos données.')}</p>
             <button type="button" onClick={refresh} className={`${btnSecondary} mt-4`}><RefreshCw className="h-4 w-4" aria-hidden="true" />{t('myd.retry', 'Réessayer')}</button>
           </div>
         ) : loading && rows.length === 0 ? (
@@ -268,18 +299,18 @@ export default function MyDataDashboard() {
         ) : (
           <div className={`overflow-x-auto transition-opacity ${loading ? 'opacity-60' : ''}`} aria-busy={loading}>
             <table className="min-w-full text-sm">
-              <thead className="border-b border-gray-200 bg-gray-50">
+              <thead className="border-b border-gray-200">
                 <tr>
                   {th(t('myd.thMetric', 'Indicateur'), 'metric_name')}
                   {th(t('myd.thPillar', 'Pilier'), 'pillar')}
                   {th(t('myd.thPeriod', 'Période'), 'period_start')}
                   {th(t('myd.thValue', 'Valeur'), 'value_numeric', true)}
-                  <th scope="col" className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{t('myd.thSource', 'Origine')}</th>
+                  <th scope="col" className="hidden px-3 py-2.5 text-left text-xs font-medium text-gray-500 lg:table-cell">{t('myd.thSource', 'Origine')}</th>
                   {th(t('myd.thStatus', 'Statut'), 'verification_status')}
-                  <th scope="col" className="px-3 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('myd.thActions', 'Actions')}</th>
+                  <th scope="col" className="px-3 py-2.5 text-right text-xs font-medium text-gray-500">{t('myd.thActions', 'Actions')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {rows.length === 0 && (
                   <tr><td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-500">{t('myd.noResult', 'Aucune saisie ne correspond aux filtres.')}</td></tr>
                 )}
@@ -292,47 +323,53 @@ export default function MyDataDashboard() {
                   const reviewable = key === 'pending' || key === 'flagged';
                   const busy = actingId === entry.id;
                   return (
-                    <tr key={entry.id} className="hover:bg-gray-50/70">
-                      <td className="max-w-xs px-3 py-2.5">
+                    <tr key={entry.id} className="transition-colors hover:bg-gray-50">
+                      <td className="max-w-[12rem] px-3 py-3 pl-4 sm:max-w-xs">
                         <span className="flex items-center gap-2">
-                          <span className="truncate font-medium text-gray-900">{title}</span>
+                          <span className="min-w-0 font-medium text-gray-900 sm:truncate">{title}</span>
                           {code && <code className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-500">{code}</code>}
                         </span>
-                        {entry.category && <span className="block truncate text-xs text-gray-400">{entry.category}</span>}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <span className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium ${pl?.cls ?? 'bg-gray-100 text-gray-600'}`}>{pl?.label ?? entry.pillar}</span>
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-gray-600">
-                        {entry.period_start ? format(new Date(entry.period_start), 'MMM yyyy', { locale }) : '—'}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-right">
-                        <span className="font-semibold tabular-nums text-gray-900">{formatValue(entry)}</span>
-                        {entry.unit && <span className="ml-1 text-xs text-gray-400">{entry.unit}</span>}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-xs text-gray-600">
-                        {sourceLabel(entry.collection_method)}
-                        {entry.data_source && <span className="block max-w-[11rem] truncate text-gray-400">{entry.data_source}</span>}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${st.cls}`}>
+                        {entry.category && <span className="block truncate text-xs text-gray-500">{entry.category}</span>}
+                        {entry.period_start && (
+                          <span className="block text-xs text-gray-500 sm:hidden">{format(new Date(entry.period_start), 'MMM yyyy', { locale })}</span>
+                        )}
+                        <span className={`mt-1 inline-flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium sm:hidden ${st.cls}`}>
                           <StIcon className="h-3 w-3" aria-hidden="true" />{st.label}
                         </span>
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-right">
+                      <td className="hidden px-3 py-3 md:table-cell">
+                        <span className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium ${pl?.cls ?? 'bg-gray-100 text-gray-600'}`}>{pl?.label ?? entry.pillar}</span>
+                      </td>
+                      <td className="hidden whitespace-nowrap px-3 py-3 text-gray-600 sm:table-cell">
+                        {entry.period_start ? format(new Date(entry.period_start), 'MMM yyyy', { locale }) : '—'}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-right">
+                        <span className="font-semibold tabular-nums text-gray-900">{formatValue(entry)}</span>
+                        {entry.unit && <span className="ml-1 text-xs text-gray-400">{entry.unit}</span>}
+                      </td>
+                      <td className="hidden whitespace-nowrap px-3 py-3 text-xs text-gray-600 lg:table-cell">
+                        {sourceLabel(entry.collection_method)}
+                        {entry.data_source && <span className="block max-w-[11rem] truncate text-gray-400">{entry.data_source}</span>}
+                      </td>
+                      <td className="hidden px-3 py-3 sm:table-cell">
+                        <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ${st.cls}`}>
+                          <StIcon className="h-3 w-3" aria-hidden="true" />{st.label}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 pr-4 text-right">
                         {busy ? <Spinner size="sm" /> : (
                           <span className="inline-flex items-center gap-1">
                             {reviewable && (
                               <>
                                 <button type="button" onClick={() => validate(entry, 'verify')} aria-label={`${t('myd.verify', 'Vérifier')} ${title}`} title={t('myd.verify', 'Vérifier')}
-                                  className="rounded-md p-1.5 text-gray-400 hover:bg-emerald-50 hover:text-emerald-700"><Check className="h-4 w-4" /></button>
+                                  className="rounded-lg p-1.5 text-gray-400 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-500/15"><Check className="h-4 w-4" /></button>
                                 <button type="button" onClick={() => { setRejectTarget(entry); setRejectReason(''); }} aria-label={`${t('myd.reject', 'Rejeter')} ${title}`} title={t('myd.reject', 'Rejeter')}
-                                  className="rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"><X className="h-4 w-4" /></button>
+                                  className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/15"><X className="h-4 w-4" /></button>
                               </>
                             )}
                             {key !== 'verified' && (
                               <button type="button" onClick={() => setDeleteTarget(entry)} aria-label={`${t('myd.delete', 'Supprimer')} ${title}`} title={t('myd.delete', 'Supprimer')}
-                                className="rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
+                                className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/15"><Trash2 className="h-4 w-4" /></button>
                             )}
                           </span>
                         )}

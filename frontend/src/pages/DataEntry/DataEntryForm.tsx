@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Database, Plus, Save, Leaf, Users, Scale, AlertCircle, Trash2, Download,
   ChevronRight, ChevronLeft, RefreshCw, Search, Lock, ArrowUp, ArrowDown, ArrowUpDown,
-  AlertTriangle,
+  AlertTriangle, Flag, XCircle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -71,12 +71,21 @@ function PillarBadge({ pillar }: { pillar: string }) {
   );
 }
 
+// Même libellé que « Mes données » : une saisie rejetée ou signalée ne doit pas apparaître « À vérifier ».
+const STATUS_BADGE: Record<string, { label: string; cls: string; icon: typeof Lock }> = {
+  verified: { label: 'Vérifiée', cls: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300', icon: Lock },
+  pending: { label: 'À vérifier', cls: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300', icon: AlertCircle },
+  flagged: { label: 'Signalée', cls: 'bg-orange-50 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300', icon: Flag },
+  rejected: { label: 'Rejetée', cls: 'bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300', icon: XCircle },
+};
+
 function StatusBadge({ status }: { status: string }) {
-  const verified = status === 'verified';
+  const st = STATUS_BADGE[(status || 'pending').toLowerCase()] ?? STATUS_BADGE.pending;
+  const Icon = st.icon;
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium ${verified ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-      {verified ? <Lock className="h-3 w-3" aria-hidden="true" /> : <AlertCircle className="h-3 w-3" aria-hidden="true" />}
-      {verified ? 'Vérifiée' : 'À vérifier'}
+    <span className={`inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-md text-xs font-medium ${st.cls}`}>
+      <Icon className="h-3 w-3" aria-hidden="true" />
+      {st.label}
     </span>
   );
 }
@@ -359,7 +368,8 @@ export default function DataEntryForm() {
   }
 
   const grandTotal = stats?.total ?? 0;
-  const pending = Math.max(grandTotal - (stats?.by_verification_status?.verified ?? 0), 0);
+  // « À vérifier » = en attente + signalées ; les saisies rejetées ne sont plus à vérifier.
+  const pending = (stats?.by_verification_status?.pending ?? 0) + (stats?.by_verification_status?.flagged ?? 0);
   const years = Object.keys(stats?.by_period ?? {}).sort().reverse();
   const pages = totalPages(total, pageSize);
   const filtersActive = search.trim() !== '' || pillarFilter !== 'all' || verifFilter !== 'all' || year !== '';
