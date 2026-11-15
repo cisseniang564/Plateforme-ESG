@@ -6,10 +6,9 @@ import api from '@/services/api';
 import {
   Flame, Zap, Package, Truck, Trash2, Briefcase, Users, Home,
   ArrowDownRight, Settings, ShoppingBag, BarChart3, Leaf, Download,
-  AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronUp,
-  Info, RefreshCw, TrendingUp, Target,
-  Calendar, Activity, Upload,
+  AlertTriangle, CheckCircle, ChevronDown, Info, TrendingUp, Target, Upload,
 } from 'lucide-react';
+import { Badge, Button, EmptyState } from '@/components/common';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface Scope3Category {
@@ -23,29 +22,20 @@ interface Scope3Category {
   placeholder: string;
   tooltip: string;
   value: number | null;
-  hex: string;     // main hex color (inline styles — no Tailwind purging)
-  softHex: string; // light bg hex
-  borderHex: string;
+  hex: string; // couleur de la catégorie (styles inline : pas de purge Tailwind)
 }
 
-// ─── Color palette (ALL inline, never dynamic Tailwind) ───────────────────────
-const CAT_COLORS: Record<number, { hex: string; softHex: string; borderHex: string }> = {
-  1:  { hex: '#059669', softHex: '#ecfdf5', borderHex: '#a7f3d0' },
-  2:  { hex: '#2563eb', softHex: '#eff6ff', borderHex: '#bfdbfe' },
-  3:  { hex: '#ca8a04', softHex: '#fefce8', borderHex: '#fde68a' },
-  4:  { hex: '#ea580c', softHex: '#fff7ed', borderHex: '#fed7aa' },
-  5:  { hex: '#dc2626', softHex: '#fef2f2', borderHex: '#fecaca' },
-  6:  { hex: '#9333ea', softHex: '#faf5ff', borderHex: '#e9d5ff' },
-  7:  { hex: '#4338ca', softHex: '#eef2ff', borderHex: '#c7d2fe' },
-  8:  { hex: '#0d9488', softHex: '#f0fdfa', borderHex: '#99f6e4' },
-  9:  { hex: '#0891b2', softHex: '#ecfeff', borderHex: '#a5f3fc' },
-  10: { hex: '#475569', softHex: '#f8fafc', borderHex: '#e2e8f0' },
-  11: { hex: '#e11d48', softHex: '#fff1f2', borderHex: '#fecdd3' },
-  12: { hex: '#d97706', softHex: '#fffbeb', borderHex: '#fde68a' },
-  13: { hex: '#16a34a', softHex: '#f0fdf4', borderHex: '#bbf7d0' },
-  14: { hex: '#7c3aed', softHex: '#f5f3ff', borderHex: '#ddd6fe' },
-  15: { hex: '#db2777', softHex: '#fdf2f8', borderHex: '#fbcfe8' },
-};
+// ─── Couleurs ─────────────────────────────────────────────────────────────────
+// Deux familles seulement : vert pour l'amont (Cat. 1–8), bleu pour l'aval (Cat. 9–15).
+// Les nuances vont du plus foncé au plus clair pour garder les catégories lisibles côte à côte.
+const UPSTREAM_SHADES = ['#064e3b', '#065f46', '#047857', '#059669', '#10b981', '#34d399', '#6ee7b7', '#a7f3d0'];
+const DOWNSTREAM_SHADES = ['#0c4a6e', '#075985', '#0369a1', '#0284c7', '#0ea5e9', '#38bdf8', '#7dd3fc'];
+const CAT_COLORS: Record<number, { hex: string }> = Object.fromEntries(
+  Array.from({ length: 15 }, (_, i) => [i + 1, { hex: i < 8 ? UPSTREAM_SHADES[i] : DOWNSTREAM_SHADES[i - 8] }]),
+);
+
+/** Couleurs des trois scopes, dans la même famille verte que la marque. */
+const SCOPE_COLORS = { s1: '#064e3b', s2: '#059669', s3: '#6ee7b7' } as const;
 
 // ─── Static data ───────────────────────────────────────────────────────────────
 const initialCategories: Scope3Category[] = [
@@ -161,13 +151,12 @@ function fmt(n: number) {
   return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n);
 }
 
-// ─── Sankey Scope 3 component ──────────────────────────────────────────────────
+// ─── Sankey Scope 3 ───────────────────────────────────────────────────────────
 function SankeyScope3({ categories, total }: { categories: Scope3Category[]; total: number }) {
   const active = [...categories]
     .filter(c => (c.value ?? 0) > 0)
     .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
 
-  const SVG_H = 500;
   const startY = 20;
   const endY = 480;
   const totalH = endY - startY;
@@ -186,116 +175,54 @@ function SankeyScope3({ categories, total }: { categories: Scope3Category[]; tot
     const rightNodeH = nodeH;
     leftAcc = leftBandEnd;
     rightAcc = rightAcc + nodeH + GAP;
-    const hex = cat.hex;
-    const cpX = 400;
+    const cpX = 330;
     const path = [
       `M 120 ${leftBandStart}`,
-      `C ${cpX} ${leftBandStart} ${cpX} ${rightNodeY + rightNodeH / 2} 680 ${rightNodeY}`,
-      `L 680 ${rightNodeY + rightNodeH}`,
+      `C ${cpX} ${leftBandStart} ${cpX} ${rightNodeY + rightNodeH / 2} 540 ${rightNodeY}`,
+      `L 540 ${rightNodeY + rightNodeH}`,
       `C ${cpX} ${rightNodeY + rightNodeH} ${cpX} ${leftBandEnd} 120 ${leftBandEnd}`,
       'Z',
     ].join(' ');
-    return { cat, hex, path, rightNodeY, rightNodeH, leftBandStart, leftBandEnd };
+    return { cat, path, rightNodeY, rightNodeH };
   });
 
   return (
-    <svg viewBox="0 0 800 500" width="100%" style={{ display: 'block' }} aria-label="Sankey Scope 3">
-      <rect x={0} y={startY} width={120} height={totalH} rx={6} fill="#10b981" />
-      <text x={60} y={startY + totalH / 2 - 8} textAnchor="middle" fill="white" fontSize={12} fontWeight="700">Scope 3</text>
-      <text x={60} y={startY + totalH / 2 + 8} textAnchor="middle" fill="white" fontSize={12} fontWeight="700">Total</text>
-      <text x={60} y={startY + totalH / 2 + 26} textAnchor="middle" fill="rgba(255,255,255,0.85)" fontSize={10}>
-        {new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(total)} tCO₂e
+    <svg viewBox="0 0 860 500" width="100%" className="block text-gray-900" role="img"
+      aria-label={`Scope 3 : ${fmt(total)} tCO₂e répartis sur ${active.length} catégorie(s)`}>
+      <rect x={0} y={startY} width={120} height={totalH} rx={8} fill="#047857" />
+      <text x={60} y={startY + totalH / 2 - 6} textAnchor="middle" fill="white" fontSize={13} fontWeight="600">Scope 3</text>
+      <text x={60} y={startY + totalH / 2 + 14} textAnchor="middle" fill="rgba(255,255,255,0.85)" fontSize={11}>
+        {fmt(total)} tCO₂e
       </text>
       {nodes.map(n => (
-        <path key={n.cat.id} d={n.path} fill={n.hex} opacity={0.70} />
+        <path key={n.cat.id} d={n.path} fill={n.cat.hex} opacity={0.6}>
+          <title>{`${n.cat.num} ${n.cat.name} : ${fmt(n.cat.value!)} tCO₂e`}</title>
+        </path>
       ))}
       {nodes.map(n => (
         <g key={`node-${n.cat.id}`}>
-          <rect x={680} y={n.rightNodeY} width={120} height={n.rightNodeH} rx={4} fill={n.hex} />
-          <text
-            x={675} y={n.rightNodeY + n.rightNodeH / 2 + 4}
-            textAnchor="end" fill="#111827"
-            fontSize={n.rightNodeH >= 16 ? 11 : 9} fontWeight="600"
-          >
-            {n.cat.num} — {new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n.cat.value!)} tCO₂e
-          </text>
+          <rect x={540} y={n.rightNodeY} width={10} height={n.rightNodeH} rx={2} fill={n.cat.hex} />
+          {n.rightNodeH >= 9 && (
+            <text x={558} y={n.rightNodeY + n.rightNodeH / 2 + 4} fill="currentColor" fontSize={n.rightNodeH >= 16 ? 12 : 10}>
+              <tspan fontWeight="600">{n.cat.num}</tspan>
+              <tspan dx={6} opacity={0.7}>{n.cat.name.length > 28 ? n.cat.name.slice(0, 27) + '…' : n.cat.name}</tspan>
+              <tspan dx={6} fontWeight="600">{fmt(n.cat.value!)} t</tspan>
+            </text>
+          )}
         </g>
       ))}
     </svg>
   );
 }
 
-// ─── Tooltip ────────────────────────────────────────────────────────────────────
-function InfoTooltip({ text }: { text: string }) {
-  const [show, setShow] = useState(false);
+/** Barre fine qui se remplit au chargement (sans animation si l'utilisateur réduit les mouvements). */
+function Meter({ pct, color, label, height = 'h-2' }: { pct: number; color: string; label: string; height?: string }) {
+  const [shown, setShown] = useState(false);
+  useEffect(() => { const id = requestAnimationFrame(() => setShown(true)); return () => cancelAnimationFrame(id); }, []);
   return (
-    <span className="relative inline-flex">
-      <Info
-        className="h-3.5 w-3.5 text-gray-400 cursor-pointer hover:text-gray-600"
-        onMouseEnter={() => setShow(true)}
-        onMouseLeave={() => setShow(false)}
-      />
-      {show && (
-        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2.5 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-50 leading-relaxed pointer-events-none">
-          {text}
-          <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
-        </span>
-      )}
-    </span>
-  );
-}
-
-// ─── SVG Donut ──────────────────────────────────────────────────────────────────
-function DonutChart({
-  parts, total,
-}: { parts: { label: string; value: number; pct: number; color: string }[]; total: number }) {
-  const R = 70, C = 2 * Math.PI * R;
-  let off = 0;
-  const segs = parts.map(p => {
-    const dash = (p.pct / 100) * C;
-    const s = { ...p, dash, gap: C - dash, offset: off };
-    off += dash;
-    return s;
-  });
-  return (
-    <div className="flex items-center gap-8">
-      <div className="relative flex-shrink-0">
-        <svg width="170" height="170" viewBox="0 0 170 170">
-          <circle cx="85" cy="85" r={R} fill="none" stroke="#f3f4f6" strokeWidth="20" />
-          {segs.map((s, i) => (
-            <circle key={i} cx="85" cy="85" r={R} fill="none" stroke={s.color} strokeWidth="20"
-              strokeDasharray={`${s.dash} ${s.gap}`}
-              strokeDashoffset={-s.offset + C * 0.25}
-              strokeLinecap="round"
-              style={{ transition: 'stroke-dasharray 0.7s ease' }}
-            />
-          ))}
-          <text x="85" y="80" textAnchor="middle" fontSize="20" fontWeight="700" fill="#111827" fontFamily="system-ui,sans-serif">
-            {fmt(total)}
-          </text>
-          <text x="85" y="99" textAnchor="middle" fontSize="11" fill="#9ca3af" fontFamily="system-ui,sans-serif">
-            tCO₂e total
-          </text>
-        </svg>
-      </div>
-      <div className="space-y-3 flex-1 min-w-0">
-        {parts.map((p, i) => (
-          <div key={i}>
-            <div className="flex justify-between text-sm mb-1">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
-                <span className="font-medium text-gray-700">{p.label}</span>
-              </div>
-              <span className="font-bold text-gray-900 tabular-nums">{p.pct.toFixed(1)}%</span>
-            </div>
-            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-2 rounded-full transition-all duration-700"
-                style={{ width: `${p.pct}%`, backgroundColor: p.color }} />
-            </div>
-            <p className="text-xs text-gray-400 mt-0.5 text-right tabular-nums">{fmt(p.value)} tCO₂e</p>
-          </div>
-        ))}
-      </div>
+    <div className={`${height} rounded-full bg-gray-100`} role="img" aria-label={label}>
+      <div className={`${height} rounded-full motion-safe:transition-[width] motion-safe:duration-700 motion-safe:ease-out`}
+        style={{ width: shown ? `${Math.max(0, Math.min(pct, 100))}%` : '0%', background: color }} />
     </div>
   );
 }
@@ -317,6 +244,7 @@ export default function BilanCarbone() {
   const [savingS12, setSavingS12] = useState(false);
   const [hasRealData, setHasRealData] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [decompFilter, setDecompFilter] = useState<'all' | 'up' | 'down'>('all');
 
   // ── Load real data from backend ───────────────────────────────────────────────
   useEffect(() => {
@@ -362,11 +290,11 @@ export default function BilanCarbone() {
   const sbtiTarget2030 = Math.round(scope12 * Math.max(0, 1 - 0.042 * yearsTo2030));
   const requiredReduction = Math.max(0, scope12 - sbtiTarget2030);
 
-  // Donut parts
+  // Répartition des trois scopes
   const donutParts = grandTotal > 0 ? [
-    { label: 'Scope 1 — Direct', value: scope1, pct: (scope1 / grandTotal) * 100, color: '#ef4444' },
-    { label: 'Scope 2 — Énergie', value: scope2, pct: (scope2 / grandTotal) * 100, color: '#f97316' },
-    { label: 'Scope 3 — Indirect', value: scope3Total, pct: (scope3Total / grandTotal) * 100, color: '#22c55e' },
+    { key: 's1', label: t('carbon.kpiScope1Label', 'Scope 1 — Direct'), sub: t('carbon.kpiScope1Sub', 'Combustion propre, fugitifs'), value: scope1, pct: (scope1 / grandTotal) * 100, color: SCOPE_COLORS.s1 },
+    { key: 's2', label: t('carbon.kpiScope2Label', 'Scope 2 — Énergie'), sub: t('carbon.kpiScope2Sub', 'Électricité, chaleur achetée'), value: scope2, pct: (scope2 / grandTotal) * 100, color: SCOPE_COLORS.s2 },
+    { key: 's3', label: t('carbon.kpiScope3Label', 'Scope 3 — Indirect'), sub: t('carbon.kpiScope3Sub', '{{done}}/15 catégories saisies', { done: completedCount }), value: scope3Total, pct: (scope3Total / grandTotal) * 100, color: SCOPE_COLORS.s3 },
   ] : [];
 
   const filteredCategories = categories.filter(c => c.upstream === showUpstream);
@@ -432,771 +360,523 @@ export default function BilanCarbone() {
     toast.success(t('carbon.toastCsvExported', 'Export CSV téléchargé'));
   };
 
+  const exportBeges = async () => {
+    try {
+      const res = await api.get(`/carbon/beges-export.xlsx?year=${year}`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `BEGES_${year}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success(t('carbon.toastBegesDownloaded', 'BEGES {{year}} téléchargé', { year }));
+    } catch {
+      toast.error(t('carbon.toastBegesFailed', 'Échec du téléchargement BEGES'));
+    }
+  };
+
   // ── Render ────────────────────────────────────────────────────────────────────
+  const card = 'rounded-2xl border border-gray-200 bg-white';
+  const sectionTitle = 'text-[15px] font-semibold text-gray-900';
+  const sectionHint = 'mt-0.5 text-[13px] text-gray-500';
+  const link = 'inline-flex items-center gap-1 rounded text-[13px] font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300';
+  const input = 'w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-[15px] font-medium tabular-nums text-gray-900 placeholder:text-gray-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20';
+  const pctOf = (v: number, base: number) => (base > 0 ? (v / base) * 100 : 0);
+  const upstreamDone = categories.filter(c => c.upstream && c.value !== null).length;
+  const downstreamDone = categories.filter(c => !c.upstream && c.value !== null).length;
+  const tabs = [
+    { key: 'overview' as const,      label: t('carbon.tabOverviewPlain', 'Vue d’ensemble') },
+    { key: 'scope3' as const,        label: t('carbon.tabScope3Plain', 'Saisie Scope 3') },
+    { key: 'decomposition' as const, label: t('carbon.tabDecompositionPlain', 'Décomposition') },
+    { key: 'sankey' as const,        label: t('carbon.tabSankeyPlain', 'Flux') },
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-[1400px] space-y-6 animate-fade-in">
 
-      {/* ── Hero ──────────────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl shadow-xl"
-        style={{ background: 'linear-gradient(135deg, #064e3b 0%, #065f46 35%, #047857 70%, #059669 100%)' }}>
-        <div className="absolute inset-0 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at 85% 15%, rgba(255,255,255,0.1) 0%, transparent 55%)' }} />
-        {/* dot pattern */}
-        <div className="absolute inset-0 opacity-[0.07] pointer-events-none">
-          <svg width="100%" height="100%">
-            <defs>
-              <pattern id="carbondots" width="28" height="28" patternUnits="userSpaceOnUse">
-                <circle cx="14" cy="14" r="1.5" fill="white" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#carbondots)" />
-          </svg>
-        </div>
-
-        <div className="relative px-8 py-7">
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-            {/* Left: title + stats */}
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.2)' }}>
-                  <Leaf className="h-6 w-6 text-white" />
-                </div>
-                <h1 className="text-3xl font-bold text-white">{t('carbon.title', 'Bilan Carbone — Scope 3')}</h1>
-              </div>
-              <p className="text-emerald-200 text-sm ml-1 mb-5">
-                {t('carbon.subtitle15cat', '15 catégories GHG Protocol')}
-              </p>
-
-              {/* Stat pills */}
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { label: t('carbon.pillTotal', 'Total {{val}} tCO₂e', { val: fmt(grandTotal) }), bg: 'rgba(255,255,255,0.15)', text: 'white' },
-                  { label: t('carbon.pillScope3Count', 'Scope 3 : {{n}}/15 cat.', { n: completedCount }), bg: grandTotal > 0 ? '#bbf7d0' : 'rgba(255,255,255,0.15)', text: grandTotal > 0 ? '#166534' : 'white' },
-                  { label: hasRealData ? t('carbon.pillRealData', 'Données saisies {{year}}', { year }) : t('carbon.pillEmpty', 'Aucune donnée {{year}}', { year }), bg: hasRealData ? '#a7f3d0' : 'rgba(255,255,255,0.12)', text: hasRealData ? '#065f46' : 'white' },
-                ].map(p => (
-                  <div key={p.label} className="px-3 py-1.5 rounded-full text-xs font-semibold"
-                    style={{ backgroundColor: p.bg, color: p.text }}>
-                    {p.label}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Right: year selector + actions */}
-            <div className="flex flex-col gap-3 min-w-0 lg:shrink-0">
-              {/* Year selector */}
-              <div className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-xl px-4 py-2.5">
-                <Calendar className="h-4 w-4 text-emerald-300" />
-                <select
-                  value={year}
-                  onChange={e => setYear(Number(e.target.value))}
-                  className="bg-transparent text-white text-sm font-semibold outline-none cursor-pointer"
-                >
-                  {Array.from({ length: 5 }, (_, i) => currentYear - i).map(y => (
-                    <option key={y} value={y} className="text-gray-900 bg-white">{y}</option>
-                  ))}
-                </select>
-              </div>
-              {/* Actions */}
-              <div className="flex flex-wrap gap-2">
-                <button onClick={() => navigate('/app/carbon/fec-wizard')}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-105"
-                  style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', boxShadow: '0 4px 12px rgba(16,185,129,0.3)' }}
-                  title="Calcul Scope 3 depuis votre Fichier des Écritures Comptables">
-                  <Upload className="h-4 w-4" />
-                  {t('carbon.importFEC', 'Import FEC')}
-                </button>
-                <button onClick={exportCSV}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors"
-                  style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.25)' }}>
-                  <Download className="h-4 w-4" />
-                  CSV
-                </button>
-                <button
-                  onClick={async () => {
-                    try {
-                      const res = await api.get(`/carbon/beges-export.xlsx?year=${year}`, { responseType: 'blob' });
-                      const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `BEGES_${year}.xlsx`;
-                      document.body.appendChild(a);
-                      a.click();
-                      a.remove();
-                      URL.revokeObjectURL(url);
-                      toast.success(t('carbon.toastBegesDownloaded', 'BEGES {{year}} téléchargé', { year }));
-                    } catch {
-                      toast.error(t('carbon.toastBegesFailed', 'Échec du téléchargement BEGES'));
-                    }
-                  }}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors"
-                  style={{ background: 'rgba(16,185,129,0.95)', color: 'white' }}
-                  title="Export de travail pour préparer la déclaration BEGES : à vérifier et compléter avant tout dépôt sur bilans-ges.ademe.fr"
-                >
-                  <Download className="h-4 w-4" />
-                  BEGES.xlsx
-                </button>
-              </div>
-            </div>
+      {/* ── En-tête ── */}
+      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2 text-[13px] text-gray-500">
+            <label htmlFor="carbon-year">{t('carbon.yearLabel', 'Exercice')}</label>
+            <select id="carbon-year" value={year} onChange={e => setYear(Number(e.target.value))}
+              className="rounded-lg border border-gray-200 bg-white py-1 pl-2.5 pr-7 text-[13px] font-semibold text-gray-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20">
+              {Array.from({ length: 5 }, (_, i) => currentYear - i).map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+            {hasRealData
+              ? <Badge tone="success" dot>{t('carbon.statusSaved', 'Données enregistrées')}</Badge>
+              : <Badge tone="neutral">{t('carbon.pillEmpty', 'Aucune donnée {{year}}', { year })}</Badge>}
           </div>
-
-          {/* Tab bar */}
-          <div className="mt-6 flex flex-wrap gap-2">
-            {([
-              { key: 'overview',      label: t('carbon.tabOverview', "📊 Vue d'ensemble") },
-              { key: 'scope3',        label: t('carbon.tabScope3Cats', '📋 15 catégories Scope 3') },
-              { key: 'decomposition', label: t('carbon.tabDecomposition', '📈 Décomposition Scope 3') },
-              { key: 'sankey',        label: t('carbon.tabSankey', '🌊 Flux Sankey') },
-            ] as const).map(tab => (
-              <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                  activeTab === tab.key ? 'bg-white text-emerald-800 shadow-md' : 'text-white/80 hover:bg-white/15'
-                }`}>
-                {tab.label}
-              </button>
-            ))}
-          </div>
+          <h1 className="mt-2 text-[26px] font-semibold leading-tight tracking-tight text-gray-900 sm:text-[28px]">
+            {t('carbon.titlePlain', 'Bilan carbone')}
+          </h1>
+          <p className="mt-1 max-w-2xl text-sm text-gray-600">
+            {t('carbon.subtitlePlain', 'Scopes 1, 2 et 3 selon le GHG Protocol. Les facteurs proposés sont indicatifs : confrontez-les à la Base Empreinte® de l’ADEME.')}
+          </p>
         </div>
+        <div className="flex flex-wrap items-center gap-2 lg:flex-none lg:flex-nowrap">
+          <Button variant="secondary" icon={<Download className="h-4 w-4" />} onClick={exportCSV}>CSV</Button>
+          <Button variant="secondary" icon={<Download className="h-4 w-4" />} onClick={exportBeges}
+            title={t('carbon.begesHint', 'Export de travail pour préparer la déclaration BEGES : à vérifier et compléter avant tout dépôt sur bilans-ges.ademe.fr')}>
+            BEGES.xlsx
+          </Button>
+          <Button icon={<Upload className="h-4 w-4" />} onClick={() => navigate('/app/carbon/fec-wizard')}
+            title={t('carbon.fecHint', 'Calcul du Scope 3 depuis votre Fichier des Écritures Comptables')}>
+            {t('carbon.importFECPlain', 'Importer un FEC')}
+          </Button>
+        </div>
+      </header>
+
+      {/* ── Onglets ── */}
+      <div role="tablist" aria-label={t('carbon.tabsLabel', 'Vues du bilan carbone')}
+        className="-mx-1 flex gap-1 overflow-x-auto border-b border-gray-200 px-1">
+        {tabs.map(tab => {
+          const on = activeTab === tab.key;
+          return (
+            <button key={tab.key} role="tab" aria-selected={on} onClick={() => setActiveTab(tab.key)}
+              className={`relative whitespace-nowrap px-3 pb-3 pt-1 text-sm font-medium transition-colors ${on ? 'text-gray-900' : 'text-gray-500 hover:text-gray-800'}`}>
+              {tab.label}
+              <span className={`absolute inset-x-3 -bottom-px h-0.5 rounded-full transition-colors ${on ? 'bg-emerald-600' : 'bg-transparent'}`} aria-hidden="true" />
+            </button>
+          );
+        })}
       </div>
 
       {loadError && (
-        <div role="alert" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm"
-          style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b' }}>
-          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+        <div role="alert" className="flex flex-wrap items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
           <span className="flex-1">{t('carbon.loadError', 'Impossible de charger vos données {{year}}. Ce que vous voyez peut être incomplet.', { year })}</span>
           <button onClick={() => setReloadKey(k => k + 1)} className="font-semibold underline">{t('carbon.retry', 'Réessayer')}</button>
         </div>
       )}
 
-      {/* ── Data banner ───────────────────────────────────────────────────────── */}
-      {hasRealData && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
-          style={{ backgroundColor: '#ecfdf5', borderColor: '#a7f3d0', border: '1px solid #a7f3d0', color: '#065f46' }}>
-          <CheckCircle className="h-4 w-4 flex-shrink-0" />
-          <span>
-            {t('carbon.dataBannerReal', 'Données réelles chargées pour {{year}}', { year })} —{' '}
-            <strong>Scope 1 : {fmt(scope1)} tCO₂e</strong> ·{' '}
-            <strong>Scope 2 : {fmt(scope2)} tCO₂e</strong>
-            {scope3Total > 0 && <> · <strong>Scope 3 : {fmt(scope3Total)} tCO₂e</strong></>}
-          </span>
-        </div>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════════════ */}
-      {/* TAB: OVERVIEW                                                         */}
-      {/* ══════════════════════════════════════════════════════════════════════ */}
+      {/* ══ Vue d'ensemble ══ */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
 
-          {/* KPI row — 4 cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { label: t('carbon.kpiScope1Label', 'Scope 1 — Direct'), value: scope1, pct: grandTotal > 0 ? (scope1/grandTotal*100).toFixed(1) : '—', icon: Flame, color: '#ef4444', soft: '#fef2f2', sub: t('carbon.kpiScope1Sub', 'Combustion propre, fugitifs') },
-              { label: t('carbon.kpiScope2Label', 'Scope 2 — Énergie'), value: scope2, pct: grandTotal > 0 ? (scope2/grandTotal*100).toFixed(1) : '—', icon: Zap, color: '#f97316', soft: '#fff7ed', sub: t('carbon.kpiScope2Sub', 'Électricité, chaleur achetée') },
-              { label: t('carbon.kpiScope3Label', 'Scope 3 — Indirect'), value: scope3Total, pct: grandTotal > 0 ? (scope3Total/grandTotal*100).toFixed(1) : '—', icon: Package, color: '#059669', soft: '#ecfdf5', sub: t('carbon.kpiScope3Sub', '{{done}}/15 catégories saisies', { done: completedCount }) },
-              { label: t('carbon.kpiTotalLabel', 'Total GES'), value: grandTotal, pct: '100', icon: Activity, color: '#7c3aed', soft: '#f5f3ff', sub: t('carbon.kpiTotalSub', 'Exercice {{year}}', { year }) },
-            ].map((kpi, i) => {
-              const Icon = kpi.icon;
-              return (
-                <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: kpi.soft }}>
-                      <Icon className="h-5 w-5" style={{ color: kpi.color }} />
-                    </div>
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full tabular-nums"
-                      style={{ backgroundColor: kpi.soft, color: kpi.color }}>
-                      {kpi.pct}%
-                    </span>
-                  </div>
-                  <p className="text-2xl font-bold text-gray-900 tabular-nums">{fmt(kpi.value)}</p>
-                  <p className="text-xs font-medium mt-0.5" style={{ color: kpi.color }}>tCO₂e</p>
-                  <p className="text-sm font-semibold text-gray-700 mt-2">{kpi.label}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{kpi.sub}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Main two-column layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-            {/* Donut chart */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <div className="flex items-center gap-2 mb-6">
-                <Activity className="h-4 w-4 text-gray-500" />
-                <h3 className="text-base font-bold text-gray-900">{t('carbon.emissionsChart', 'Répartition des émissions')}</h3>
+          {/* Total et répartition par scope */}
+          <section className={`${card} p-6`} aria-label={t('carbon.kpiTotalLabel', 'Total GES')}>
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <h2 className="text-sm font-medium text-gray-600">{t('carbon.totalHeading', 'Émissions totales {{year}}', { year })}</h2>
+                <p className="mt-1 flex items-baseline gap-2">
+                  <span className="text-[44px] font-semibold leading-none tracking-tight tabular-nums text-gray-900">{fmt(grandTotal)}</span>
+                  <span className="text-base text-gray-500">tCO₂e</span>
+                </p>
               </div>
-              {grandTotal > 0 ? (
-                <DonutChart parts={donutParts} total={grandTotal} />
-              ) : (
-                <div className="flex flex-col items-center justify-center h-40 text-gray-400">
-                  <Leaf className="h-10 w-10 mb-3 opacity-30" />
-                  <p className="text-sm">{t('carbon.emissionsChartEmpty', 'Saisissez des données pour voir le graphique')}</p>
-                </div>
-              )}
-            </div>
-
-            {/* Scope 1 & 2 inputs */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Flame className="h-4 w-4 text-gray-500" />
-                <h3 className="text-base font-bold text-gray-900">{t('carbon.scope12DirectEntry', 'Scope 1 & 2 — Saisie directe')}</h3>
-              </div>
-              <p className="text-sm text-gray-500">{t('carbon.scope12Desc', 'Renseignez vos émissions directes et énergie achetée pour compléter le bilan total.')}</p>
-
-              {[
-                { label: t('carbon.scope1FullLabel', 'Scope 1 — Émissions directes'), desc: t('carbon.scope1Desc', 'Combustion de combustibles, procédés industriels, fuites réfrigérants'), color: '#ef4444', softColor: '#fef2f2', value: scope1, setter: setScope1 },
-                { label: t('carbon.scope2FullLabel', 'Scope 2 — Énergie achetée'), desc: t('carbon.scope2Desc', 'Électricité, chaleur, vapeur et froid achetés à des tiers'), color: '#f97316', softColor: '#fff7ed', value: scope2, setter: setScope2 },
-              ].map(field => (
-                <div key={field.label} className="p-4 rounded-xl border" style={{ backgroundColor: field.softColor, borderColor: '#e5e7eb' }}>
-                  <label className="block text-sm font-semibold text-gray-800 mb-0.5">{field.label}</label>
-                  <p className="text-xs text-gray-500 mb-3">{field.desc}</p>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number" min="0"
-                      value={field.value || ''}
-                      onChange={e => field.setter(parseFloat(e.target.value) || 0)}
-                      placeholder="0"
-                      className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold bg-white focus:outline-none focus:ring-2 focus:border-transparent"
-                      style={{ '--tw-ring-color': field.color } as any}
-                    />
-                    <span className="text-sm font-medium text-gray-500 whitespace-nowrap">tCO₂e</span>
-                  </div>
-                </div>
-              ))}
-
-              <button onClick={saveScope12} disabled={savingS12}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-60"
-                style={{ backgroundColor: '#059669' }}>
-                {savingS12 ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-                {t('carbon.saveScope12', 'Enregistrer Scope 1 & 2')}
-              </button>
-            </div>
-          </div>
-
-          {/* Repère SBTi */}
-          {scope12 > 0 && (
-            <div className="rounded-2xl border p-6" style={{ background: 'linear-gradient(135deg, #ecfdf5, #f0fdf4)', borderColor: '#a7f3d0' }}>
-              <div className="flex items-center gap-2 mb-5">
-                <Target className="h-5 w-5" style={{ color: '#059669' }} />
-                <h3 className="text-base font-bold text-gray-900">{t('carbon.sbtiTitle', 'Repère de réduction — trajectoire 1,5 °C')}</h3>
-                <span className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
-                  {t('carbon.sbtiIndicative', 'Indicatif')}
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                {[
-                  { label: t('carbon.sbtiCurrent', 'Scopes 1+2 {{year}}', { year }), value: fmt(scope12), unit: 'tCO₂e/an', color: '#374151', soft: '#f9fafb', border: '#e5e7eb' },
-                  { label: t('carbon.sbtiTarget', 'Repère 2030 (Scopes 1+2)'), value: fmt(sbtiTarget2030), unit: 'tCO₂e/an', color: '#059669', soft: '#ecfdf5', border: '#a7f3d0' },
-                  { label: t('carbon.sbtiReduction', 'Réduction correspondante'), value: fmt(requiredReduction), unit: 'tCO₂e/an', color: '#d97706', soft: '#fffbeb', border: '#fde68a' },
-                ].map(c => (
-                  <div key={c.label} className="rounded-xl p-4 text-center" style={{ backgroundColor: c.soft, border: `1px solid ${c.border}` }}>
-                    <p className="text-xs text-gray-500 mb-1">{c.label}</p>
-                    <p className="text-2xl font-bold tabular-nums" style={{ color: c.color }}>{c.value}</p>
-                    <p className="text-xs mt-0.5" style={{ color: c.color }}>{c.unit}</p>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-gray-500 flex items-start gap-1.5">
-                <Info className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-                {t('carbon.sbtiNote', "Calcul linéaire à −4,2 %/an sur les Scopes 1+2, repère de la trajectoire 1,5 °C de la SBTi. Ce n'est pas un objectif validé : définissez le vôtre dans le module SBTi.")}
-              </p>
               {scope3Total > 0 && (
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-[13px] text-gray-500">
                   {t('carbon.scope3Share', 'Le Scope 3 représente {{pct}} % de votre bilan saisi.', { pct: scope3Pct.toFixed(0) })}
                 </p>
               )}
             </div>
-          )}
 
-          {/* Top Scope 3 categories bar chart */}
+            {grandTotal > 0 ? (
+              <>
+                <div className="mt-6 flex h-3 overflow-hidden rounded-full bg-gray-100" role="img"
+                  aria-label={donutParts.map(p => `${p.label} ${p.pct.toFixed(1)} %`).join(', ')}>
+                  {donutParts.filter(p => p.value > 0).map(p => (
+                    <span key={p.key} style={{ flexGrow: p.value, background: p.color }} className="border-r-2 border-white last:border-r-0 dark:border-gray-900" />
+                  ))}
+                </div>
+                <dl className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
+                  {donutParts.map(p => (
+                    <div key={p.key} className="min-w-0">
+                      <dt className="flex items-center gap-2 text-[13px] font-medium text-gray-700">
+                        <span className="h-2.5 w-2.5 flex-none rounded-full" style={{ background: p.color }} aria-hidden="true" />
+                        {p.label}
+                      </dt>
+                      <dd className="mt-1.5">
+                        <span className="text-2xl font-semibold tabular-nums text-gray-900">{fmt(p.value)}</span>
+                        <span className="ml-1 text-xs text-gray-500">tCO₂e</span>
+                        <span className="ml-2 text-[13px] tabular-nums text-gray-500">{p.pct.toFixed(1)} %</span>
+                      </dd>
+                      <dd className="mt-0.5 text-xs text-gray-500">{p.sub}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </>
+            ) : (
+              <p className="mt-4 text-sm text-gray-500">{t('carbon.emissionsChartEmpty', 'Saisissez des données pour voir le graphique')}</p>
+            )}
+          </section>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {/* Saisie Scope 1 & 2 */}
+            <section className={`${card} p-6`}>
+              <h2 className={sectionTitle}>{t('carbon.scope12DirectEntry', 'Scope 1 & 2 — Saisie directe')}</h2>
+              <p className={sectionHint}>{t('carbon.scope12Desc', 'Renseignez vos émissions directes et énergie achetée pour compléter le bilan total.')}</p>
+              <div className="mt-5 space-y-4">
+                {[
+                  { id: 'scope1-input', label: t('carbon.scope1FullLabel', 'Scope 1 — Émissions directes'), desc: t('carbon.scope1Desc', 'Combustion de combustibles, procédés industriels, fuites réfrigérants'), value: scope1, setter: setScope1, color: SCOPE_COLORS.s1 },
+                  { id: 'scope2-input', label: t('carbon.scope2FullLabel', 'Scope 2 — Énergie achetée'), desc: t('carbon.scope2Desc', 'Électricité, chaleur, vapeur et froid achetés à des tiers'), value: scope2, setter: setScope2, color: SCOPE_COLORS.s2 },
+                ].map(field => (
+                  <div key={field.id}>
+                    <label htmlFor={field.id} className="flex items-center gap-2 text-sm font-medium text-gray-800">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: field.color }} aria-hidden="true" />
+                      {field.label}
+                    </label>
+                    <p id={`${field.id}-desc`} className="mt-0.5 text-xs text-gray-500">{field.desc}</p>
+                    <div className="relative mt-2">
+                      <input id={field.id} aria-describedby={`${field.id}-desc`} type="number" min="0" inputMode="decimal"
+                        value={field.value || ''} onChange={e => field.setter(parseFloat(e.target.value) || 0)}
+                        placeholder="0" className={`${input} pr-16`} />
+                      <span className="pointer-events-none absolute inset-y-0 right-3.5 flex items-center text-sm text-gray-500">tCO₂e</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-5">
+                <Button fullWidth loading={savingS12} disabled={savingS12} icon={<CheckCircle className="h-4 w-4" />} onClick={saveScope12}>
+                  {t('carbon.saveScope12', 'Enregistrer Scope 1 & 2')}
+                </Button>
+              </div>
+            </section>
+
+            {/* Repère de réduction 1,5 °C */}
+            <section className={`${card} p-6`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className={`${sectionTitle} flex items-start gap-2`}>
+                    <Target className="mt-0.5 h-4 w-4 flex-none text-gray-400" aria-hidden="true" />
+                    {t('carbon.sbtiTitle', 'Repère de réduction — trajectoire 1,5 °C')}
+                  </h2>
+                  <p className={sectionHint}>{t('carbon.sbtiHint', 'Scopes 1 et 2, de l’exercice choisi à 2030')}</p>
+                </div>
+                <Badge tone="neutral">{t('carbon.sbtiIndicative', 'Indicatif')}</Badge>
+              </div>
+              {scope12 > 0 ? (
+                <>
+                  <dl className="mt-5 grid grid-cols-3 gap-3">
+                    {[
+                      { label: t('carbon.sbtiCurrent', 'Scopes 1+2 {{year}}', { year }), value: scope12, strong: false },
+                      { label: t('carbon.sbtiTarget', 'Repère 2030 (Scopes 1+2)'), value: sbtiTarget2030, strong: true },
+                      { label: t('carbon.sbtiReduction', 'Réduction correspondante'), value: requiredReduction, strong: false },
+                    ].map(c => (
+                      <div key={c.label} className="min-w-0">
+                        <dt className="min-h-[32px] text-xs text-gray-500">{c.label}</dt>
+                        <dd className={`mt-1 text-xl font-semibold tabular-nums ${c.strong ? 'text-emerald-700 dark:text-emerald-400' : 'text-gray-900'}`}>{fmt(c.value)}</dd>
+                        <dd className="text-xs text-gray-500">tCO₂e/an</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  {/* Comparaison visuelle : aujourd'hui vs repère 2030 */}
+                  <div className="mt-5 space-y-2">
+                    <div className="grid grid-cols-[44px_minmax(0,1fr)] items-center gap-3 text-xs text-gray-500">
+                      <span className="tabular-nums">{year}</span>
+                      <Meter pct={100} color="#9ca3af" label={`${year} : ${fmt(scope12)} tCO₂e`} />
+                    </div>
+                    <div className="grid grid-cols-[44px_minmax(0,1fr)] items-center gap-3 text-xs text-gray-500">
+                      <span className="tabular-nums">2030</span>
+                      <Meter pct={pctOf(sbtiTarget2030, scope12)} color="#047857" label={`2030 : ${fmt(sbtiTarget2030)} tCO₂e`} />
+                    </div>
+                  </div>
+                  <p className="mt-4 flex items-start gap-1.5 text-xs text-gray-500">
+                    <Info className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
+                    {t('carbon.sbtiNote', "Calcul linéaire à −4,2 %/an sur les Scopes 1+2, repère de la trajectoire 1,5 °C de la SBTi. Ce n'est pas un objectif validé : définissez le vôtre dans le module SBTi.")}
+                  </p>
+                </>
+              ) : (
+                <p className="mt-5 text-sm text-gray-500">{t('carbon.sbtiEmpty', 'Renseignez vos Scopes 1 et 2 pour afficher le repère.')}</p>
+              )}
+            </section>
+          </div>
+
+          {/* Principales catégories Scope 3 */}
           {scope3Total > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <BarChart3 className="h-4 w-4 text-gray-500" />
-                <h3 className="text-base font-bold text-gray-900">{t('carbon.topCatsTitle', 'Top catégories Scope 3')}</h3>
-                <span className="text-xs text-gray-400">{t('carbon.topCatsCount', '{{n}} sur 15 renseignées', { n: completedCount })}</span>
-                <button onClick={() => setActiveTab('decomposition')}
-                  className="ml-auto flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
-                  style={{ backgroundColor: '#ecfdf5', color: '#059669' }}>
-                  <BarChart3 className="h-3.5 w-3.5" />
-                  {t('carbon.decompositionMore', 'Décomposition complète →')}
+            <section className={`${card} p-6`}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className={sectionTitle}>{t('carbon.topCatsTitle', 'Top catégories Scope 3')}</h2>
+                  <p className={sectionHint}>{t('carbon.topCatsCount', '{{n}} sur 15 renseignées', { n: completedCount })}</p>
+                </div>
+                <button type="button" onClick={() => setActiveTab('decomposition')} className={link}>
+                  {t('carbon.decompositionMorePlain', 'Voir la décomposition')} <ChevronDown className="h-3.5 w-3.5 -rotate-90" aria-hidden="true" />
                 </button>
               </div>
-              <div className="space-y-3">
+              <ul className="mt-5 space-y-3">
                 {[...categories]
                   .filter(c => c.value !== null && c.value > 0)
                   .sort((a, b) => (b.value ?? 0) - (a.value ?? 0))
                   .slice(0, 8)
                   .map(c => {
-                    const pct = scope3Total > 0 ? ((c.value ?? 0) / scope3Total) * 100 : 0;
+                    const pct = pctOf(c.value ?? 0, scope3Total);
                     return (
-                      <div key={c.id} className="flex items-center gap-3">
-                        <div className="w-24 text-xs text-gray-500 flex-shrink-0 text-right font-medium">{c.num}</div>
-                        <div className="flex-1 h-7 rounded-lg overflow-hidden" style={{ backgroundColor: '#f3f4f6' }}>
-                          <div className="h-7 rounded-lg flex items-center px-3 transition-all duration-500 min-w-[56px]"
-                            style={{ width: `${Math.max(pct, 6)}%`, backgroundColor: c.softHex, border: `1px solid ${c.borderHex}` }}>
-                            <span className="text-xs font-bold whitespace-nowrap" style={{ color: c.hex }}>
-                              {fmt(c.value ?? 0)} t
-                            </span>
-                          </div>
-                        </div>
-                        <div className="w-12 text-xs font-semibold text-gray-700 text-right tabular-nums">{pct.toFixed(1)}%</div>
-                      </div>
+                      <li key={c.id} className="grid grid-cols-[minmax(0,1fr)_72px_52px] items-center gap-x-3 gap-y-1.5 sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)_72px_52px]">
+                        <span className="min-w-0 text-[13px] text-gray-800 sm:truncate"><span className="font-semibold">{c.num}</span> <span className="text-gray-600">{c.name}</span></span>
+                        <span className="order-last col-span-3 sm:order-none sm:col-span-1"><Meter pct={pct} color={c.hex} label={`${c.num} : ${pct.toFixed(1)} %`} /></span>
+                        <span className="text-right text-[13px] font-semibold tabular-nums text-gray-900">{fmt(c.value ?? 0)} t</span>
+                        <span className="text-right text-[13px] tabular-nums text-gray-500">{pct.toFixed(1)} %</span>
+                      </li>
                     );
                   })}
-              </div>
-            </div>
+              </ul>
+            </section>
           )}
 
-          {/* Empty state when no data */}
           {grandTotal === 0 && (
-            <div className="rounded-2xl border-2 border-dashed p-12 text-center" style={{ borderColor: '#a7f3d0', backgroundColor: '#f0fdf4' }}>
-              <Leaf className="h-12 w-12 mx-auto mb-4 opacity-30" style={{ color: '#059669' }} />
-              <h3 className="text-lg font-bold text-gray-800 mb-2">{t('carbon.noDataTitle', 'Aucune donnée pour {{year}}', { year })}</h3>
-              <p className="text-sm text-gray-500 mb-5 max-w-md mx-auto">
-                {t('carbon.noDataDesc', "Commencez par renseigner vos Scope 1 & 2 ci-dessus, puis passez à l'onglet « 15 catégories Scope 3 » pour compléter votre bilan carbone.")}
-              </p>
-              <button onClick={() => setActiveTab('scope3')}
-                className="px-6 py-3 rounded-xl text-sm font-semibold text-white transition-colors"
-                style={{ backgroundColor: '#059669' }}>
-                {t('carbon.noDataCta', 'Saisir les 15 catégories Scope 3 →')}
-              </button>
+            <div className={card}>
+              <EmptyState icon={Leaf}
+                title={t('carbon.noDataTitle', 'Aucune donnée pour {{year}}', { year })}
+                description={t('carbon.noDataDescPlain', 'Renseignez vos Scopes 1 et 2 ci-dessus, importez un FEC ou saisissez les 15 catégories du Scope 3.')}
+                action={<Button onClick={() => setActiveTab('scope3')}>{t('carbon.noDataCtaPlain', 'Saisir le Scope 3')}</Button>} />
             </div>
           )}
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════════════ */}
-      {/* TAB: DECOMPOSITION SCOPE 3                                           */}
-      {/* ══════════════════════════════════════════════════════════════════════ */}
+      {/* ══ Décomposition Scope 3 ══ */}
       {activeTab === 'decomposition' && (() => {
-        const allSorted = [...categories].sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
         const upstreamCats = categories.filter(c => c.upstream);
         const downstreamCats = categories.filter(c => !c.upstream);
-        const upstreamTotal = upstreamCats.reduce((s, c) => s + (c.value ?? 0), 0);
-        const downstreamTotal = downstreamCats.reduce((s, c) => s + (c.value ?? 0), 0);
-        const maxVal = allSorted.length > 0 ? (allSorted[0].value ?? 0) : 0;
+        const upstreamTotal = upstreamCats.reduce((s2, c) => s2 + (c.value ?? 0), 0);
+        const downstreamTotal = downstreamCats.reduce((s2, c) => s2 + (c.value ?? 0), 0);
+        const shown = (decompFilter === 'up' ? upstreamCats : decompFilter === 'down' ? downstreamCats : categories)
+          .slice().sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
+        const base = decompFilter === 'up' ? upstreamTotal : decompFilter === 'down' ? downstreamTotal : scope3Total;
+        const maxVal = shown.length > 0 ? (shown[0].value ?? 0) : 0;
+
+        if (scope3Total === 0) {
+          return (
+            <div className={card}>
+              <EmptyState icon={BarChart3}
+                title={t('carbon.decompEmptyTitle', 'Pas encore de Scope 3')}
+                description={t('carbon.decompEmptyDesc', 'Saisissez des données Scope 3 pour voir la décomposition par catégorie.')}
+                action={<Button onClick={() => setActiveTab('scope3')}>{t('carbon.decompEmptyCtaPlain', 'Saisir les catégories')}</Button>} />
+            </div>
+          );
+        }
 
         return (
           <div className="space-y-6">
-
-            {/* KPI row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                { label: t('carbon.decompUpstreamKpi', 'Émissions amont (Cat. 1–8)'), value: upstreamTotal, color: '#059669', soft: '#ecfdf5', border: '#a7f3d0', pct: scope3Total > 0 ? (upstreamTotal / scope3Total * 100) : 0, icon: '⬆' },
-                { label: t('carbon.decompDownstreamKpi', 'Émissions aval (Cat. 9–15)'), value: downstreamTotal, color: '#3b82f6', soft: '#eff6ff', border: '#bfdbfe', pct: scope3Total > 0 ? (downstreamTotal / scope3Total * 100) : 0, icon: '⬇' },
-                { label: t('carbon.decompTotalKpi', 'Total Scope 3'), value: scope3Total, color: '#7c3aed', soft: '#f5f3ff', border: '#ddd6fe', pct: 100, icon: '∑' },
-              ].map(k => (
-                <div key={k.label} className="rounded-2xl p-5" style={{ backgroundColor: k.soft, border: `1px solid ${k.border}` }}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg">{k.icon}</span>
-                    <span className="text-xs font-semibold text-gray-600">{k.label}</span>
+            {/* Amont / aval */}
+            <section className={`${card} p-6`}>
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                  <h2 className="text-sm font-medium text-gray-600">{t('carbon.decompTotalKpi', 'Total Scope 3')}</h2>
+                  <p className="mt-1 flex items-baseline gap-2">
+                    <span className="text-[36px] font-semibold leading-none tracking-tight tabular-nums text-gray-900">{fmt(scope3Total)}</span>
+                    <span className="text-sm text-gray-500">tCO₂e</span>
+                  </p>
+                </div>
+                <div className="w-full max-w-xs">
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>{t('carbon.decompFilledLabel', 'Catégories renseignées')}</span>
+                    <span className="font-semibold tabular-nums text-gray-900">{completedCount}/15</span>
                   </div>
-                  <p className="text-3xl font-bold tabular-nums" style={{ color: k.color }}>{fmt(k.value)}</p>
-                  <p className="text-xs mt-0.5 font-medium" style={{ color: k.color }}>tCO₂e · {k.pct.toFixed(1)}{t('carbon.pctScope3Suffix', '% du Scope 3')}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Empty state */}
-            {scope3Total === 0 && (
-              <div className="rounded-2xl border-2 border-dashed p-12 text-center" style={{ borderColor: '#a7f3d0', backgroundColor: '#f0fdf4' }}>
-                <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-30" style={{ color: '#059669' }} />
-                <p className="text-sm text-gray-500">{t('carbon.decompEmptyDesc', 'Saisissez des données Scope 3 pour voir la décomposition par catégorie.')}</p>
-                <button onClick={() => setActiveTab('scope3')}
-                  className="mt-4 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
-                  style={{ backgroundColor: '#059669' }}>
-                  {t('carbon.decompEmptyCta', 'Saisir les catégories →')}
-                </button>
-              </div>
-            )}
-
-            {/* Ranked bar chart — ALL 15 categories */}
-            {scope3Total > 0 && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <div className="flex items-center gap-2 mb-1">
-                  <BarChart3 className="h-5 w-5 text-gray-500" />
-                  <h3 className="text-base font-bold text-gray-900">{t('carbon.decompChartTitle', 'Classement des 15 catégories GHG Protocol')}</h3>
-                </div>
-                <p className="text-xs text-gray-400 mb-6 ml-7">{t('carbon.decompChartSub', 'Triées par contribution décroissante')}</p>
-
-                <div className="space-y-2.5">
-                  {allSorted.map((cat, idx) => {
-                    const Icon = cat.icon;
-                    const val = cat.value ?? 0;
-                    const pct = scope3Total > 0 ? (val / scope3Total) * 100 : 0;
-                    const barPct = maxVal > 0 ? (val / maxVal) * 100 : 0;
-                    const hasValue = cat.value !== null;
-                    return (
-                      <div key={cat.id} className="grid items-center gap-3"
-                        style={{ gridTemplateColumns: '1.5rem 6rem 1fr 5rem 3.5rem' }}>
-                        {/* rank */}
-                        <span className="text-xs font-bold text-gray-400 text-right">#{idx + 1}</span>
-                        {/* label */}
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
-                            style={{ backgroundColor: hasValue ? cat.softHex : '#f9fafb' }}>
-                            <Icon className="h-3.5 w-3.5" style={{ color: hasValue ? cat.hex : '#d1d5db' }} />
-                          </div>
-                          <span className="text-xs font-semibold truncate" style={{ color: hasValue ? '#111827' : '#9ca3af' }}>
-                            {cat.num}
-                          </span>
-                        </div>
-                        {/* bar track */}
-                        <div className="relative h-7 rounded-lg overflow-hidden" style={{ backgroundColor: '#f3f4f6' }}>
-                          {hasValue && (
-                            <div className="h-7 rounded-lg flex items-center gap-2 px-3 transition-all duration-700"
-                              style={{
-                                width: `${Math.max(barPct, 4)}%`,
-                                backgroundColor: cat.softHex,
-                                border: `1px solid ${cat.borderHex}`,
-                              }}>
-                              <span className="text-xs font-bold whitespace-nowrap" style={{ color: cat.hex }}>
-                                {cat.name.length > 20 ? cat.name.slice(0, 20) + '…' : cat.name}
-                              </span>
-                            </div>
-                          )}
-                          {!hasValue && (
-                            <div className="h-7 flex items-center px-3">
-                              <span className="text-xs text-gray-300 italic">{cat.name}{t('carbon.notEntered', ' — non renseigné')}</span>
-                            </div>
-                          )}
-                        </div>
-                        {/* tCO2e */}
-                        <div className="text-right">
-                          <span className="text-sm font-bold tabular-nums"
-                            style={{ color: hasValue ? '#111827' : '#d1d5db' }}>
-                            {hasValue ? fmt(val) : '—'}
-                          </span>
-                          <span className="text-xs text-gray-400 ml-1">t</span>
-                        </div>
-                        {/* % */}
-                        <div className="text-right">
-                          <span className="text-xs font-semibold tabular-nums"
-                            style={{ color: hasValue ? cat.hex : '#d1d5db' }}>
-                            {hasValue ? pct.toFixed(1) + '%' : '—'}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  <div className="mt-1.5"><Meter pct={completenessRate} color="#047857" label={`${completenessRate} %`} height="h-1.5" /></div>
                 </div>
               </div>
-            )}
-
-            {/* Upstream vs Downstream breakdown */}
-            {scope3Total > 0 && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="mt-6 flex h-3 overflow-hidden rounded-full bg-gray-100" role="img"
+                aria-label={`Amont ${pctOf(upstreamTotal, scope3Total).toFixed(1)} %, aval ${pctOf(downstreamTotal, scope3Total).toFixed(1)} %`}>
+                {upstreamTotal > 0 && <span style={{ flexGrow: upstreamTotal, background: '#047857' }} />}
+                {downstreamTotal > 0 && <span style={{ flexGrow: downstreamTotal, background: '#0284c7' }} className="border-l-2 border-white dark:border-gray-900" />}
+              </div>
+              <dl className="mt-4 grid grid-cols-2 gap-4">
                 {[
-                  { label: t('carbon.decompUpstreamGroup', '⬆ Émissions amont'), cats: upstreamCats, total: upstreamTotal, color: '#059669', soft: '#ecfdf5', border: '#a7f3d0' },
-                  { label: t('carbon.decompDownstreamGroup', '⬇ Émissions aval'), cats: downstreamCats, total: downstreamTotal, color: '#3b82f6', soft: '#eff6ff', border: '#bfdbfe' },
-                ].map(group => (
-                  <div key={group.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                    <div className="flex items-center justify-between mb-5">
-                      <h3 className="text-base font-bold text-gray-900">{group.label}</h3>
-                      <span className="text-sm font-bold tabular-nums px-3 py-1 rounded-full"
-                        style={{ backgroundColor: group.soft, color: group.color }}>
-                        {fmt(group.total)} tCO₂e
-                      </span>
-                    </div>
-                    <div className="space-y-3">
-                      {[...group.cats].sort((a, b) => (b.value ?? 0) - (a.value ?? 0)).map(cat => {
-                        const Icon = cat.icon;
-                        const val = cat.value ?? 0;
-                        const pct = group.total > 0 ? (val / group.total) * 100 : 0;
-                        const hasValue = cat.value !== null;
-                        return (
-                          <div key={cat.id} className="space-y-1">
-                            <div className="flex items-center justify-between text-xs">
-                              <div className="flex items-center gap-1.5">
-                                <div className="w-5 h-5 rounded-md flex items-center justify-center"
-                                  style={{ backgroundColor: hasValue ? cat.softHex : '#f9fafb' }}>
-                                  <Icon className="h-3 w-3" style={{ color: hasValue ? cat.hex : '#d1d5db' }} />
-                                </div>
-                                <span className="font-semibold" style={{ color: hasValue ? '#374151' : '#9ca3af' }}>
-                                  {cat.num} {cat.name.length > 26 ? cat.name.slice(0, 26) + '…' : cat.name}
-                                </span>
-                              </div>
-                              <span className="font-bold tabular-nums" style={{ color: hasValue ? cat.hex : '#d1d5db' }}>
-                                {hasValue ? `${fmt(val)} t` : '—'}
-                              </span>
-                            </div>
-                            <div className="h-2 rounded-full" style={{ backgroundColor: '#f3f4f6' }}>
-                              {hasValue && (
-                                <div className="h-2 rounded-full transition-all duration-500"
-                                  style={{ width: `${Math.max(pct, 1)}%`, backgroundColor: cat.hex }} />
-                              )}
-                            </div>
-                            {hasValue && (
-                              <p className="text-right text-xs tabular-nums" style={{ color: '#9ca3af' }}>
-                                {pct.toFixed(1)}{t('carbon.pctGroup', '% du groupe')}
-                              </p>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+                  { label: t('carbon.decompUpstreamKpi', 'Émissions amont (Cat. 1–8)'), value: upstreamTotal, color: '#047857', done: upstreamDone, of: 8 },
+                  { label: t('carbon.decompDownstreamKpi', 'Émissions aval (Cat. 9–15)'), value: downstreamTotal, color: '#0284c7', done: downstreamDone, of: 7 },
+                ].map(k => (
+                  <div key={k.label}>
+                    <dt className="flex items-center gap-2 text-[13px] font-medium text-gray-700">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: k.color }} aria-hidden="true" />{k.label}
+                    </dt>
+                    <dd className="mt-1">
+                      <span className="text-xl font-semibold tabular-nums text-gray-900">{fmt(k.value)}</span>
+                      <span className="ml-1 text-xs text-gray-500">tCO₂e</span>
+                      <span className="ml-2 text-[13px] tabular-nums text-gray-500">{pctOf(k.value, scope3Total).toFixed(1)} %</span>
+                    </dd>
+                    <dd className="text-xs text-gray-500">{t('carbon.decompDoneOf', '{{done}}/{{of}} catégories renseignées', { done: k.done, of: k.of })}</dd>
                   </div>
                 ))}
-              </div>
-            )}
+              </dl>
+            </section>
 
-            {/* Completeness summary */}
-            <div className="rounded-2xl p-5 flex flex-wrap items-center gap-6"
-              style={{ background: 'linear-gradient(135deg, #f0fdf4, #ecfdf5)', border: '1px solid #a7f3d0' }}>
-              <div className="flex items-center gap-3">
-                <div className="h-14 w-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: '#059669' }}>
-                  <BarChart3 className="h-7 w-7 text-white" />
-                </div>
+            {/* Classement des catégories */}
+            <section className={`${card} p-6`}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs text-gray-500 font-medium">{t('carbon.decompFilledLabel', 'Catégories renseignées')}</p>
-                  <p className="text-3xl font-bold" style={{ color: '#059669' }}>{completedCount}<span className="text-lg text-gray-400">/15</span></p>
+                  <h2 className={sectionTitle}>{t('carbon.decompChartTitle', 'Classement des 15 catégories GHG Protocol')}</h2>
+                  <p className={sectionHint}>{t('carbon.decompChartSub', 'Triées par contribution décroissante')}</p>
+                </div>
+                <div role="radiogroup" aria-label={t('carbon.decompFilterLabel', 'Filtrer')} className="inline-flex rounded-xl bg-gray-100 p-1">
+                  {([
+                    ['all', t('carbon.filterAll', 'Toutes')],
+                    ['up', t('carbon.filterUp', 'Amont')],
+                    ['down', t('carbon.filterDown', 'Aval')],
+                  ] as const).map(([k, l]) => (
+                    <button key={k} role="radio" aria-checked={decompFilter === k} onClick={() => setDecompFilter(k)}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${decompFilter === k ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}>
+                      {l}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <div className="flex-1 min-w-[200px]">
-                <div className="flex justify-between text-xs text-gray-500 mb-1.5">
-                  <span>{t('carbon.decompCompletenessLabel', 'Complétude Scope 3')}</span>
-                  <span className="font-bold" style={{ color: '#059669' }}>{completenessRate}%</span>
-                </div>
-                <div className="h-3 rounded-full" style={{ backgroundColor: '#d1fae5' }}>
-                  <div className="h-3 rounded-full transition-all duration-700"
-                    style={{ width: `${completenessRate}%`, background: 'linear-gradient(90deg, #059669, #10b981)' }} />
-                </div>
-                <p className="text-xs text-gray-400 mt-1.5">
-                  {t('carbon.decompRemaining', '{{n}} catégories restantes · source GHG Protocol Scope 3 Standard', { n: 15 - completedCount })}
-                </p>
-              </div>
-              <button onClick={() => setActiveTab('scope3')}
-                className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white"
-                style={{ backgroundColor: '#059669' }}>
-                {t('carbon.decompCompleteCta', 'Compléter →')}
-              </button>
-            </div>
+              <ol className="mt-5 divide-y divide-gray-100 dark:divide-gray-800">
+                {shown.map((cat, idx) => {
+                  const Icon = cat.icon;
+                  const has = cat.value !== null;
+                  const val = cat.value ?? 0;
+                  const pct = pctOf(val, base);
+                  return (
+                    <li key={cat.id} className="grid grid-cols-[24px_minmax(0,1fr)_76px_56px] items-center gap-x-3 gap-y-1.5 py-2.5 sm:grid-cols-[24px_minmax(0,260px)_minmax(0,1fr)_76px_56px]">
+                      <span className="text-right text-xs tabular-nums text-gray-400">{idx + 1}</span>
+                      <span className="flex min-w-0 items-center gap-2">
+                        <Icon className="h-4 w-4 flex-none" style={{ color: has ? cat.hex : '#9ca3af' }} aria-hidden="true" />
+                        <span className={`min-w-0 truncate text-[13px] ${has ? 'text-gray-800' : 'text-gray-400'}`}>
+                          <span className="font-semibold">{cat.num}</span> {cat.name}
+                        </span>
+                      </span>
+                      <span className="order-last col-span-4 col-start-2 sm:order-none sm:col-span-1 sm:col-start-auto">
+                        {has
+                          ? <Meter pct={maxVal > 0 ? (val / maxVal) * 100 : 0} color={cat.hex} label={`${cat.num} : ${fmt(val)} tCO₂e`} />
+                          : <span className="text-xs italic text-gray-400">{t('carbon.notEnteredPlain', 'Non renseignée')}</span>}
+                      </span>
+                      <span className={`text-right text-[13px] font-semibold tabular-nums ${has ? 'text-gray-900' : 'text-gray-300'}`}>{has ? `${fmt(val)} t` : '—'}</span>
+                      <span className="text-right text-xs tabular-nums text-gray-500">{has ? `${pct.toFixed(1)} %` : '—'}</span>
+                    </li>
+                  );
+                })}
+              </ol>
+              <p className="mt-3 text-xs text-gray-500">
+                {decompFilter === 'all'
+                  ? t('carbon.decompPctOfScope3', 'Pourcentages exprimés sur le total Scope 3.')
+                  : t('carbon.decompPctOfGroup', 'Pourcentages exprimés sur le total du groupe.')}
+              </p>
+            </section>
           </div>
         );
       })()}
 
-      {/* ══════════════════════════════════════════════════════════════════════ */}
-      {/* TAB: 15 SCOPE 3 CATEGORIES                                           */}
-      {/* ══════════════════════════════════════════════════════════════════════ */}
+      {/* ══ Saisie des 15 catégories ══ */}
       {activeTab === 'scope3' && (
-        <div className="space-y-5">
-
-          {/* Progress banner */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <div className="flex-1">
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="font-semibold text-gray-700">{t('carbon.scope3CompletenessLabel', 'Complétude Scope 3')}</span>
-                  <span className="font-bold tabular-nums" style={{ color: '#059669' }}>
-                    {t('carbon.scope3Progress', '{{n}} / 15 catégories — {{pct}}%', { n: completedCount, pct: completenessRate })}
-                  </span>
+        <div className="space-y-5 pb-24">
+          <section className={`${card} p-5`}>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap justify-between gap-x-3 text-sm">
+                  <span className="font-medium text-gray-700">{t('carbon.scope3CompletenessLabel', 'Complétude Scope 3')}</span>
+                  <span className="tabular-nums text-gray-600">{t('carbon.scope3Progress', '{{n}} / 15 catégories — {{pct}}%', { n: completedCount, pct: completenessRate })}</span>
                 </div>
-                <div className="h-3 rounded-full overflow-hidden" style={{ backgroundColor: '#f3f4f6' }}>
-                  <div className="h-3 rounded-full transition-all duration-500"
-                    style={{ width: `${completenessRate}%`, background: 'linear-gradient(90deg, #10b981, #059669)' }} />
-                </div>
+                <div className="mt-2"><Meter pct={completenessRate} color="#047857" label={`${completenessRate} %`} /></div>
               </div>
-              <div className="flex gap-5 text-sm">
-                <div className="flex items-center gap-1.5 font-medium" style={{ color: '#059669' }}>
-                  <CheckCircle className="h-4 w-4" />{t('carbon.scope3Completed', '{{n}} complétées', { n: completedCount })}
-                </div>
-                <div className="flex items-center gap-1.5 font-medium" style={{ color: '#d97706' }}>
-                  <Clock className="h-4 w-4" />{t('carbon.scope3Remaining', '{{n}} restantes', { n: 15 - completedCount })}
-                </div>
+              <div role="radiogroup" aria-label={t('carbon.scope3ToggleLabel', 'Catégories affichées')} className="flex w-full flex-none rounded-xl bg-gray-100 p-1 sm:inline-flex sm:w-auto">
+                {[
+                  { val: true,  label: t('carbon.filterUpLong', 'Amont · Cat. 1–8'),  count: upstreamDone, total: 8 },
+                  { val: false, label: t('carbon.filterDownLong', 'Aval · Cat. 9–15'), count: downstreamDone, total: 7 },
+                ].map(opt => (
+                  <button key={String(opt.val)} role="radio" aria-checked={showUpstream === opt.val} onClick={() => setShowUpstream(opt.val)}
+                    className={`flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-colors sm:flex-none sm:text-[13px] ${showUpstream === opt.val ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}>
+                    {opt.label}
+                    <span className="tabular-nums text-xs text-gray-500">{opt.count}/{opt.total}</span>
+                  </button>
+                ))}
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* Upstream / Downstream toggle */}
-          <div className="flex gap-2">
-            {[
-              { val: true,  label: t('carbon.scope3ToggleUpstream', '⬆ Émissions amont (Cat. 1→8)'),  count: categories.filter(c => c.upstream && c.value !== null).length, total: 8 },
-              { val: false, label: t('carbon.scope3ToggleDownstream', '⬇ Émissions aval (Cat. 9→15)'), count: categories.filter(c => !c.upstream && c.value !== null).length, total: 7 },
-            ].map(opt => (
-              <button key={String(opt.val)} onClick={() => setShowUpstream(opt.val)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border`}
-                style={showUpstream === opt.val
-                  ? { backgroundColor: '#111827', color: 'white', borderColor: '#111827' }
-                  : { backgroundColor: 'white', color: '#4b5563', borderColor: '#e5e7eb' }}>
-                {opt.label}
-                <span className="px-1.5 py-0.5 rounded-full text-xs font-bold"
-                  style={showUpstream === opt.val
-                    ? { backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }
-                    : { backgroundColor: '#f3f4f6', color: '#374151' }}>
-                  {opt.count}/{opt.total}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          {/* Category cards */}
-          <div className="space-y-3">
+          <ul className={`${card} divide-y divide-gray-100 overflow-hidden dark:divide-gray-800`}>
             {filteredCategories.map(cat => {
               const Icon = cat.icon;
               const isExpanded = expandedId === cat.id;
-              const pct = scope3Total > 0 && cat.value !== null ? ((cat.value / scope3Total) * 100) : 0;
-              const status: 'done' | 'missing' = cat.value !== null ? 'done' : 'missing';
-
+              const pct = scope3Total > 0 && cat.value !== null ? pctOf(cat.value, scope3Total) : 0;
+              const panelId = `cat-panel-${cat.id}`;
               return (
-                <div key={cat.id}
-                  className="bg-white rounded-2xl shadow-sm transition-all duration-200"
-                  style={{
-                    border: isExpanded ? `2px solid ${cat.borderHex}` : '1px solid #f3f4f6',
-                    boxShadow: isExpanded ? `0 4px 20px -4px ${cat.hex}22` : undefined,
-                  }}>
-
-                  {/* Card header */}
-                  <div className="flex items-center gap-4 p-4 cursor-pointer"
-                    onClick={() => setExpandedId(isExpanded ? null : cat.id)}>
-
-                    {/* Icon bubble */}
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: cat.softHex }}>
-                      <Icon className="h-5 w-5" style={{ color: cat.hex }} />
-                    </div>
-
-                    {/* Title + progress */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                          style={{ backgroundColor: cat.softHex, color: cat.hex }}>
-                          {cat.num}
-                        </span>
-                        <span className="font-semibold text-gray-900 text-sm truncate">{cat.name}</span>
-                        {status === 'done' && <CheckCircle className="h-4 w-4 flex-shrink-0" style={{ color: '#059669' }} />}
-                        {status === 'missing' && <AlertTriangle className="h-4 w-4 flex-shrink-0" style={{ color: '#d97706' }} />}
-                      </div>
-
-                      {/* Mini progress bar */}
-                      {cat.value !== null && scope3Total > 0 && (
-                        <div className="flex items-center gap-2 mt-1.5">
-                          <div className="flex-1 h-1.5 rounded-full max-w-[160px]" style={{ backgroundColor: '#f3f4f6' }}>
-                            <div className="h-1.5 rounded-full transition-all duration-500"
-                              style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: cat.hex }} />
-                          </div>
-                          <span className="text-xs text-gray-400 tabular-nums">{pct.toFixed(1)}{t('carbon.pctScope3Suffix', '% du Scope 3')}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Value display */}
-                    <div className="text-right flex-shrink-0 mr-2">
+                <li key={cat.id}>
+                  <button type="button" aria-expanded={isExpanded} aria-controls={panelId}
+                    onClick={() => setExpandedId(isExpanded ? null : cat.id)}
+                    className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-gray-50">
+                    <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-gray-100">
+                      <Icon className="h-4 w-4" style={{ color: cat.hex }} aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                        <span className="whitespace-nowrap text-xs font-semibold text-gray-500">{cat.num}</span>
+                        <span className="text-sm font-medium text-gray-900 sm:truncate">{cat.name}</span>
+                      </span>
+                      <span className="mt-0.5 block text-xs text-gray-500">
+                        {cat.value !== null
+                          ? (scope3Total > 0 ? t('carbon.catShare', '{{pct}} % du Scope 3', { pct: pct.toFixed(1) }) : t('carbon.catFilledShort', 'Renseignée'))
+                          : t('carbon.notEnteredPlain', 'Non renseignée')}
+                      </span>
+                    </span>
+                    <span className="flex-none text-right">
                       {cat.value !== null ? (
-                        <div>
-                          <span className="text-lg font-bold text-gray-900 tabular-nums">{fmt(cat.value)}</span>
-                          <span className="text-xs text-gray-400 ml-1">tCO₂e</span>
-                        </div>
+                        <>
+                          <span className="text-base font-semibold tabular-nums text-gray-900">{fmt(cat.value)}</span>
+                          <span className="ml-1 text-xs text-gray-500">tCO₂e</span>
+                        </>
                       ) : (
-                        <span className="text-sm text-gray-300 italic">—</span>
+                        <span className="inline-block h-2 w-2 rounded-full bg-amber-400" title={t('carbon.notEnteredPlain', 'Non renseignée')} aria-hidden="true" />
                       )}
-                    </div>
+                    </span>
+                    <ChevronDown className={`h-4 w-4 flex-none text-gray-400 motion-safe:transition-transform ${isExpanded ? 'rotate-180' : ''}`} aria-hidden="true" />
+                  </button>
 
-                    {isExpanded
-                      ? <ChevronUp className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                      : <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0" />}
-                  </div>
-
-                  {/* Expanded content */}
                   {isExpanded && (
-                    <div className="px-5 pb-5 pt-0 space-y-4" style={{ borderTop: `1px solid ${cat.borderHex}` }}>
-                      <p className="text-sm text-gray-600 leading-relaxed pt-4">{cat.description}</p>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Value input */}
-                        <div>
-                          <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-2">
-                            {t('carbon.measuredValue', 'Valeur mesurée')} <InfoTooltip text={cat.tooltip} />
-                          </label>
-                          <div className="flex gap-2 items-center">
-                            <input
-                              type="number" min="0"
-                              placeholder={cat.placeholder}
-                              value={cat.value ?? ''}
-                              onChange={e => updateValue(cat.id, e.target.value)}
-                              className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:border-transparent transition-all"
-                              style={{ '--tw-ring-color': cat.hex } as any}
-                            />
-                            <span className="text-sm text-gray-500 font-medium">tCO₂e</span>
-                          </div>
-                        </div>
-
-                        {/* ADEME factor */}
-                        <div className="rounded-xl p-4" style={{ backgroundColor: cat.softHex, border: `1px solid ${cat.borderHex}` }}>
-                          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
-                            {t('carbon.calcUnitLabel', 'Unité de calcul usuelle')}
-                          </p>
-                          <p className="text-base font-bold" style={{ color: cat.hex }}>{cat.ademe_unit}</p>
-                          <p className="text-xs text-gray-500 mt-0.5">{t('carbon.calcUnitHint', "Multipliez votre donnée d'activité par le facteur de la Base Empreinte ADEME correspondant, puis saisissez le résultat en tCO₂e.")}</p>
-                          <p className="text-xs text-gray-400 mt-2 leading-relaxed">{cat.tooltip}</p>
+                    <div id={panelId} className="grid grid-cols-1 gap-5 bg-gray-50 px-5 py-5 md:grid-cols-2">
+                      <div>
+                        <p className="text-sm leading-relaxed text-gray-600">{cat.description}</p>
+                        <label htmlFor={`cat-input-${cat.id}`} className="mt-4 block text-sm font-medium text-gray-800">
+                          {t('carbon.measuredValue', 'Valeur mesurée')}
+                        </label>
+                        <div className="relative mt-2">
+                          <input id={`cat-input-${cat.id}`} type="number" min="0" inputMode="decimal"
+                            placeholder={cat.placeholder} value={cat.value ?? ''}
+                            onChange={e => updateValue(cat.id, e.target.value)}
+                            className={`${input} pr-16`} />
+                          <span className="pointer-events-none absolute inset-y-0 right-3.5 flex items-center text-sm text-gray-500">tCO₂e</span>
                         </div>
                       </div>
-
-                      {/* Status banners */}
-                      {cat.value !== null && (
-                        <div className="flex items-center gap-3 p-3 rounded-xl text-sm"
-                          style={{ backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', color: '#065f46' }}>
-                          <CheckCircle className="h-4 w-4 flex-shrink-0" style={{ color: '#059669' }} />
-                          <span>
-                            {t('carbon.catFilled', 'Catégorie renseignée —')} <strong>{fmt(cat.value)} tCO₂e</strong>
-                            {scope3Total > 0 && <> · <strong>{pct.toFixed(1)}%</strong> {t('carbon.ofScope3Total', 'du total Scope 3')}</>}
-                          </span>
-                        </div>
-                      )}
+                      <div className="rounded-xl border border-gray-200 bg-white p-4">
+                        <p className="text-xs font-medium text-gray-500">{t('carbon.calcUnitLabelPlain', 'Unité de calcul usuelle')}</p>
+                        <p className="mt-1 text-[15px] font-semibold text-gray-900">{cat.ademe_unit}</p>
+                        <p className="mt-2 text-xs leading-relaxed text-gray-500">{t('carbon.calcUnitHint', "Multipliez votre donnée d'activité par le facteur de la Base Empreinte ADEME correspondant, puis saisissez le résultat en tCO₂e.")}</p>
+                        <p className="mt-2 text-xs leading-relaxed text-gray-500">{cat.tooltip}</p>
+                      </div>
                     </div>
                   )}
-                </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
 
-          {/* Footer summary */}
-          <div className="rounded-2xl p-6 text-white"
-            style={{ background: 'linear-gradient(135deg, #064e3b, #047857)' }}>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+          {/* Barre d'enregistrement, toujours visible pendant la saisie */}
+          <div className="sticky bottom-4 z-10">
+            <div className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white/95 p-4 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-emerald-300 text-sm font-medium mb-1">{t('carbon.footerScope3Total', 'Total Scope 3 saisi')}</p>
-                <p className="text-4xl font-bold tabular-nums">
-                  {fmt(scope3Total)} <span className="text-xl text-emerald-300">tCO₂e</span>
-                </p>
-                <p className="text-emerald-400 text-sm mt-1">
-                  {t('carbon.footerCatCount', '{{n}} catégories sur 15 complétées', { n: completedCount })}
+                <p className="text-xs text-gray-500">{t('carbon.footerScope3Total', 'Total Scope 3 saisi')}</p>
+                <p className="text-xl font-semibold tabular-nums text-gray-900">
+                  {fmt(scope3Total)} <span className="text-sm font-normal text-gray-500">tCO₂e</span>
+                  <span className="ml-3 hidden text-[13px] font-normal text-gray-500 sm:inline">{t('carbon.footerCatCount', '{{n}} catégories sur 15 complétées', { n: completedCount })}</span>
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button onClick={saveScope3} disabled={saving}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-60"
-                  style={{ backgroundColor: '#10b981', color: 'white' }}>
-                  {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-                  {saving ? t('carbon.saving', 'Sauvegarde...') : t('carbon.saveDB', 'Sauvegarder en DB')}
-                </button>
-                <button onClick={exportCSV}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-colors"
-                  style={{ backgroundColor: 'white', color: '#064e3b' }}>
-                  <Download className="h-4 w-4" />
-                  Export CSV
-                </button>
+                <Button variant="secondary" icon={<Download className="h-4 w-4" />} onClick={exportCSV}>CSV</Button>
+                <Button loading={saving} disabled={saving} icon={<CheckCircle className="h-4 w-4" />} onClick={saveScope3}>
+                  {saving ? t('carbon.saving', 'Sauvegarde...') : t('carbon.saveScope3Plain', 'Enregistrer le Scope 3')}
+                </Button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════════════ */}
-      {/* TAB: SANKEY SCOPE 3                                                   */}
-      {/* ══════════════════════════════════════════════════════════════════════ */}
+      {/* ══ Flux ══ */}
       {activeTab === 'sankey' && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <h3 className="text-base font-bold text-gray-900">{t('carbon.sankeyTitle', 'Flux Sankey — Scope 3 par catégorie')}</h3>
-          </div>
+        <section className={`${card} p-6`}>
+          <h2 className={sectionTitle}>{t('carbon.sankeyTitlePlain', 'Flux du Scope 3 par catégorie')}</h2>
+          <p className={sectionHint}>{t('carbon.sankeyHint', 'L’épaisseur de chaque flux est proportionnelle aux émissions. Vert : amont, bleu : aval.')}</p>
           {scope3Total > 0
-            ? <SankeyScope3 categories={categories} total={scope3Total} />
-            : <p className="text-gray-400 text-sm">{t('carbon.sankeyEmpty', 'Aucune donnée Scope 3 saisie.')}</p>
-          }
-        </div>
+            ? <div className="mt-5 overflow-x-auto"><div className="mx-auto min-w-[640px] max-w-[900px]"><SankeyScope3 categories={categories} total={scope3Total} /></div></div>
+            : <EmptyState icon={BarChart3} title={t('carbon.sankeyEmpty', 'Aucune donnée Scope 3 saisie.')}
+                action={<Button onClick={() => setActiveTab('scope3')}>{t('carbon.decompEmptyCtaPlain', 'Saisir les catégories')}</Button>} />}
+        </section>
       )}
     </div>
   );
