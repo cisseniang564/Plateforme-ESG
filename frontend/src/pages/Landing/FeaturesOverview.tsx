@@ -5,52 +5,61 @@ import { FeatureLink, useFeatureText } from './FeaturesMegaMenu';
 
 interface Props { onModule: (moduleId: string) => void }
 
+// Un groupe par couleur du logo : vert, bleu, violet (collecter, analyser, rapporter).
+const GROUP_STYLE = [
+  { rule: 'border-emerald-500', tile: 'bg-emerald-50 text-emerald-700 group-hover:bg-emerald-100' },
+  { rule: 'border-blue-500', tile: 'bg-blue-50 text-blue-700 group-hover:bg-blue-100' },
+  { rule: 'border-violet-500', tile: 'bg-violet-50 text-violet-700 group-hover:bg-violet-100' },
+];
+
 /** Vue d'ensemble des fonctionnalités, rangées par besoin : de la donnée au rapport. */
 export default function FeaturesOverview({ onModule }: Props) {
   const { title, desc, group, newLabel, t } = useFeatureText();
   return (
-    <section id="fonctionnalites" className="py-24 bg-gray-50 border-y border-gray-100" aria-labelledby="features-title">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-14">
-          <span className="text-sm font-semibold text-green-600 uppercase tracking-widest">{t('landing.lp.featuresSection.eyebrow', 'Fonctionnalités')}</span>
-          <h2 id="features-title" className="text-4xl font-bold text-gray-900 mt-3 mb-4">{t('landing.lp.featuresSection.title', 'De la donnée au rapport, sans changer d’outil')}</h2>
-          <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-            {t('landing.lp.featuresSection.subtitle', 'Collectez, fiabilisez, analysez, puis rapportez et répondez à vos clients : chaque étape s’appuie sur les mêmes données.')}
-          </p>
-        </div>
+    <section id="fonctionnalites" className="scroll-mt-16 bg-white py-20 sm:py-24" aria-labelledby="features-title">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <h2 id="features-title" className="font-display text-3xl font-medium tracking-tight text-gray-900 sm:text-4xl">
+          {t('landing.lp.featuresSection.title', 'De la donnée au rapport, sans changer d’outil')}
+        </h2>
+        <p className="mt-4 max-w-2xl text-lg leading-relaxed text-gray-600">
+          {t('landing.lp.featuresSection.subtitle', 'Collectez, fiabilisez, analysez, puis rapportez et répondez à vos clients : chaque étape s’appuie sur les mêmes données.')}
+        </p>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          {FEATURE_GROUPS.map(g => (
-            <div key={g.id}>
-              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-5 pb-3 border-b border-gray-200">{group(g.id, g.title)}</h3>
-              <ul className="space-y-2">
-                {g.items.map(item => (
-                  <li key={item.id}>
-                    <FeatureLink item={item} onModule={onModule}
-                      className="group flex gap-4 p-4 -mx-4 rounded-2xl hover:bg-white hover:shadow-sm focus-visible:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 transition-all">
-                      <span className="w-10 h-10 rounded-xl bg-green-50 group-hover:bg-green-100 flex items-center justify-center flex-shrink-0 transition-colors">
-                        <item.icon className="h-5 w-5 text-green-600" aria-hidden="true" />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block text-[15px] font-semibold text-gray-900">
-                          {title(item)}
-                          {item.isNew && <span className="ml-2 align-middle px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold">{newLabel}</span>}
+        <div className="mt-14 grid grid-cols-1 gap-10 lg:grid-cols-3">
+          {FEATURE_GROUPS.map((g, gi) => {
+            const style = GROUP_STYLE[gi % GROUP_STYLE.length];
+            return (
+              <div key={g.id}>
+                <h3 className={`border-t-[3px] pt-4 font-display text-2xl font-medium text-gray-900 ${style.rule}`}>{group(g.id, g.title)}</h3>
+                <ul className="mt-4 space-y-1">
+                  {g.items.map(item => (
+                    <li key={item.id}>
+                      <FeatureLink item={item} onModule={onModule}
+                        className="group -mx-3 flex gap-4 rounded-xl p-3 transition-colors hover:bg-gray-50 focus-visible:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600">
+                        <span className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg transition-colors ${style.tile}`}>
+                          <item.icon className="h-5 w-5" aria-hidden="true" />
                         </span>
-                        <span className="block text-sm leading-relaxed text-gray-500 mt-1">{desc(item)}</span>
-                      </span>
-                    </FeatureLink>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+                        <span className="min-w-0">
+                          <span className="block text-[15px] font-semibold text-gray-900">
+                            {title(item)}
+                            {item.isNew && <span className="ml-2 rounded-full bg-emerald-100 px-1.5 py-0.5 align-middle text-[10px] font-bold text-emerald-800">{newLabel}</span>}
+                          </span>
+                          <span className="mt-1 block text-sm leading-relaxed text-gray-600">{desc(item)}</span>
+                        </span>
+                      </FeatureLink>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
         </div>
 
-        <div className="mt-14 flex flex-wrap items-center justify-center gap-3">
-          <Link to="/register" className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl text-sm shadow-lg shadow-green-600/25 transition-all hover:-translate-y-0.5">
-            {t('landing.lp.nav.trial', 'Essai gratuit')} <ArrowRight className="h-4 w-4" />
+        <div className="mt-14 flex flex-wrap items-center gap-3">
+          <Link to="/register" className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
+            {t('landing.lp.nav.trial', 'Essai gratuit')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
-          <Link to="/demo" className="inline-flex items-center gap-2 px-6 py-3 border border-green-600 text-green-700 hover:bg-green-50 font-semibold rounded-xl text-sm transition-colors">
+          <Link to="/demo" className="inline-flex items-center rounded-xl border border-gray-300 px-6 py-3 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
             {t('landing.lp.nav.demo', 'Voir la démo')}
           </Link>
         </div>

@@ -1,121 +1,69 @@
-import MissionIllustrated from './MissionIllustrated';
 import FeaturesMegaMenu from './FeaturesMegaMenu';
 import FeaturesOverview from './FeaturesOverview';
 import { FEATURE_GROUPS } from './featuresCatalog';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useId } from 'react';
 import { Link } from 'react-router-dom';
-import { useTranslation, Trans } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import { usePageSeo } from '@/hooks/usePageSeo';
 import LazySection from '@/components/common/LazySection';
 import {
   TrendingUp, Shield, Zap, Users, FileText, BarChart3,
-  CheckCircle, ArrowRight, Sparkles, Award, ChevronDown,
-  Brain, Building2, Database, Plus, Minus, Star, Check, X,
-  Play, Globe, ChevronRight, Truck, ClipboardList,
-  FlameKindling, Scale, PackageSearch, ShieldCheck, TrendingDown,
-  Flame, Lock, Hash, Target, Layers, Plug, Radio, Link2, Server, Eye,
-  Table2, PieChart, FileSpreadsheet, Activity, Search, Bell,
-  GitMerge, BarChart2, AlertTriangle, BookOpen, Upload, RefreshCw,
-  CheckSquare, TrendingUp as Trending, Cpu, MapPin, Code2,
-  Menu, X as XIcon, Clock, Calculator, FileCheck, ArrowUpRight,
-  Newspaper, GraduationCap, ChevronLeft, Mail, ShieldAlert, Leaf
+  ArrowRight, Brain, CheckCircle, Building2, Plus, Minus, Check, X,
+  ChevronDown, ChevronRight, Truck, ClipboardList,
+  FlameKindling, ShieldCheck, Flame, Lock, Target, Layers, Plug, Radio, Server, Activity, Search, Bell,
+  GitMerge, BarChart2, AlertTriangle, BookOpen, Upload, CheckSquare, Code2,
+  Menu, X as XIcon, Calculator, FileCheck, Mail, Landmark,
 } from 'lucide-react';
 import { LogoMark, Wordmark } from '@/components/common/Logo';
+import '@fontsource-variable/newsreader/wght.css';
 
-// ─── Hooks ────────────────────────────────────────────────────────────────────
-function useCounter(end: number, duration = 2000, started = false) {
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    if (!started) return;
-    let t: number | null = null;
-    const step = (ts: number) => {
-      if (!t) t = ts;
-      const p = Math.min((ts - t) / duration, 1);
-      setCount(Math.floor(p * end));
-      if (p < 1) requestAnimationFrame(step);
+// ─── Utilitaires de page ──────────────────────────────────────────────────────
+/** La page d'accueil est dessinée en thème clair : on retire la classe « dark » le temps de la visite, puis on la remet. */
+function useLightTheme() {
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    const wasDark = root.classList.contains('dark');
+    const previousScheme = root.style.colorScheme;
+    root.classList.remove('dark');
+    root.style.colorScheme = 'light';
+    return () => {
+      if (wasDark) root.classList.add('dark');
+      root.style.colorScheme = previousScheme;
     };
-    requestAnimationFrame(step);
-  }, [end, duration, started]);
-  return count;
+  }, []);
 }
 
-function useInView(threshold = 0.15) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState(false);
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setInView(true); obs.disconnect(); } }, { threshold });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, [threshold]);
-  return { ref, inView };
+/** Défilement vers une ancre, sans animation pour les personnes qui ont demandé moins de mouvement. */
+function scrollToId(id: string) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
 }
 
-function useInterval(cb: () => void, delay: number | null) {
-  const saved = useRef(cb);
-  useEffect(() => { saved.current = cb; }, [cb]);
-  useEffect(() => {
-    if (delay === null) return;
-    const id = setInterval(() => saved.current(), delay);
-    return () => clearInterval(id);
-  }, [delay]);
+/** Textes propres à la page d'accueil : clé `landing.home.*`, texte français par défaut. */
+function useHome() {
+  const { t, i18n } = useTranslation();
+  const h = (key: string, fallback: string) => t(`landing.home.${key}`, fallback) as string;
+  return { t, h, lang: i18n.language };
 }
 
-// ─── Rotating text ───────────────────────────────────────────────────────────
-const ROTATING_WORDS = [
-  { key: 'carbon', text: 'votre carbone', color: 'from-orange-400 to-amber-300' },
-  { key: 'csrd', text: 'votre CSRD', color: 'from-blue-400 to-cyan-300' },
-  { key: 'suppliers', text: 'vos fournisseurs', color: 'from-violet-400 to-purple-300' },
-  { key: 'compliance', text: 'votre conformité', color: 'from-emerald-400 to-green-300' },
-  { key: 'risks', text: 'vos risques ESG', color: 'from-red-400 to-rose-300' },
-];
+// Styles partagés : un seul vocabulaire de boutons, de titres et de largeur de page.
+const WRAP = 'mx-auto max-w-7xl px-4 sm:px-6 lg:px-8';
+const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2';
+const BTN_PRIMARY = `inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-emerald-800 ${FOCUS}`;
+const BTN_SECONDARY = `inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-6 py-3.5 text-[15px] font-semibold text-gray-800 transition-colors hover:bg-gray-50 ${FOCUS}`;
+const H2 = 'font-display text-3xl font-medium tracking-tight text-gray-900 sm:text-4xl';
+const LEAD = 'mt-4 max-w-2xl text-lg leading-relaxed text-gray-600';
 
-function useRotatingText(interval = 2800) {
-  const [index, setIndex] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
-  useEffect(() => {
-    const id = setInterval(() => {
-      setIsAnimating(true);
-      setTimeout(() => {
-        setIndex(i => (i + 1) % ROTATING_WORDS.length);
-        setIsAnimating(false);
-      }, 300);
-    }, interval);
-    return () => clearInterval(id);
-  }, [interval]);
-  return { word: ROTATING_WORDS[index], isAnimating };
-}
+// Un seul moment animé : l'apparition des normes dans le rapport du hero.
+const PAGE_CSS = `
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes lp-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .lp-rise { animation: lp-rise .5s cubic-bezier(.2,.7,.2,1) both; }
+}`;
 
-// ─── Count-up (inline span) ──────────────────────────────────────────────────
-function CountUp({ end, duration = 2000, started = true }: { end: number; duration?: number; started?: boolean }) {
-  const count = useCounter(end, duration, started);
-  return <>{count}</>;
-}
-
-// ─── Stat counter ─────────────────────────────────────────────────────────────
-function StatCounter({ value, suffix, label, started }: { value: number; suffix: string; label: string; started: boolean }) {
-  const count = useCounter(value, 2000, started);
-  return (
-    <div className="text-center">
-      <div className="text-4xl lg:text-5xl font-extrabold text-white tabular-nums">{count}{suffix}</div>
-      {label && <div className="text-sm text-green-300 mt-1 font-medium">{label}</div>}
-    </div>
-  );
-}
-
-// ─── FAQ ──────────────────────────────────────────────────────────────────────
-function FaqItem({ q, a }: { q: string; a: string }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="border border-gray-200 rounded-2xl overflow-hidden">
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-gray-50 transition-colors">
-        <span className="font-semibold text-gray-900">{q}</span>
-        {open ? <Minus className="h-5 w-5 text-green-600 flex-shrink-0" /> : <Plus className="h-5 w-5 text-gray-400 flex-shrink-0" />}
-      </button>
-      {open && <div className="px-6 pb-5 text-gray-600 leading-relaxed border-t border-gray-100 pt-4 text-sm">{a}</div>}
-    </div>
-  );
-}
-
+// ─── Module data ──────────────────────────────────────────────────────────────
 // ─── Module data ──────────────────────────────────────────────────────────────
 const MODULES = [
   {
@@ -264,7 +212,7 @@ const MODULES = [
     name: 'Webhooks & API',
     tagline: 'Événements · Notifications · Intégrations temps réel',
     desc: 'Connectez ESGFlow à vos outils externes via webhooks : recevez des notifications en temps réel pour chaque événement ESG (données, scores, indicateurs, seuils) avec signature HMAC.',
-    badges: ['6 types d\'événements', 'Signature HMAC-SHA256', 'Retry automatique', 'Logs & monitoring'],
+    badges: ['6 types d\'événements', 'Signature HMAC-SHA256', 'Journal des livraisons'],
     preview: 'webhooks',
   },
   {
@@ -754,7 +702,7 @@ function PreviewWebhooks() {
     { type: 'data.uploaded', color: 'bg-blue-500', time: '14:32:01', status: 'success', target: 'Slack #esg-alerts' },
     { type: 'score.calculated', color: 'bg-green-500', time: '14:32:05', status: 'success', target: 'Zapier → Notion' },
     { type: 'threshold.exceeded', color: 'bg-red-500', time: '14:31:48', status: 'success', target: 'PagerDuty' },
-    { type: 'indicator.created', color: 'bg-amber-500', time: '14:30:12', status: 'retry', target: 'Teams webhook' },
+    { type: 'indicator.created', color: 'bg-amber-500', time: '14:30:12', status: 'failed', target: 'Teams webhook' },
   ];
   return (
     <div className="p-5 space-y-3">
@@ -764,7 +712,7 @@ function PreviewWebhooks() {
         </div>
         <div className="flex gap-1.5">
           <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded-full">3 actifs</span>
-          <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs rounded-full">1 retry</span>
+          <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs rounded-full">1 échec</span>
         </div>
       </div>
       <div className="space-y-2">
@@ -780,7 +728,7 @@ function PreviewWebhooks() {
             <div className="flex items-center gap-2 flex-shrink-0">
               <span className="text-slate-500 text-xs">{e.time}</span>
               <span className={`text-xs px-1.5 py-0.5 rounded ${e.status === 'success' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'}`}>
-                {e.status === 'success' ? '200' : 'retry'}
+                {e.status === 'success' ? '200' : '500'}
               </span>
             </div>
           </div>
@@ -1268,165 +1216,942 @@ const PREVIEWS: Record<string, () => JSX.Element> = {
   dataquality: PreviewDataQuality,
 };
 
-// ─── Why ESGFlow pillars ───────────────────────────────────────────────────────
-const WHY_PILLARS = [
+// ─── Contenu de la page ───────────────────────────────────────────────────────
+// Les trois piliers reprennent les couleurs du logo : vert = environnement, bleu = social, violet = gouvernance.
+const ESRS_GROUPS = [
   {
-    icon: Shield,
-    color: 'from-emerald-500 to-green-600',
-    lightBg: 'bg-emerald-50',
-    lightText: 'text-emerald-700',
-    border: 'border-emerald-100',
-    title: 'Conformité totale, zéro angle mort',
-    desc: 'CSRD/ESRS, Taxonomie UE, BEGES ADEME, CSDDD, Devoir de vigilance (Loi 2017-399), Sapin 2, SBTi, SFDR, GRI, TCFD — 10 référentiels ESG/climat/anti-corruption couverts. Un seul outil, aucun oubli.',
-    points: ['80 points de données ESRS mappées', 'Gap analysis automatique', 'Roadmap priorisée', 'Document iXBRL à valider (Arelle)'],
+    id: 'E', label: 'Environnement', rule: 'border-emerald-500', tone: 'text-emerald-800', code: 'bg-emerald-50 text-emerald-700',
+    items: [
+      ['E1', 'Changement climatique'],
+      ['E2', 'Pollution'],
+      ['E3', 'Ressources hydrauliques et marines'],
+      ['E4', 'Biodiversité et écosystèmes'],
+      ['E5', 'Utilisation des ressources et économie circulaire'],
+    ],
   },
   {
-    icon: Lock,
-    color: 'from-blue-500 to-indigo-600',
-    lightBg: 'bg-blue-50',
-    lightText: 'text-blue-700',
-    border: 'border-blue-100',
-    title: 'Données fiables, auditables, sécurisées',
-    desc: 'Journal d\'audit détaillé avec empreintes SHA-256 par entrée, workflow de validation en 3 étapes, hébergement chez un prestataire européen. Vos données restent vos données.',
-    points: ['Empreintes SHA-256', 'Hébergement européen · RGPD', 'Workflow Brouillon → Approuvé', 'Export complet pour auditeurs'],
+    id: 'S', label: 'Social', rule: 'border-blue-500', tone: 'text-blue-800', code: 'bg-blue-50 text-blue-700',
+    items: [
+      ['S1', 'Personnel de l’entreprise'],
+      ['S2', 'Travailleurs de la chaîne de valeur'],
+      ['S3', 'Communautés affectées'],
+      ['S4', 'Consommateurs et utilisateurs finaux'],
+    ],
   },
   {
-    icon: Brain,
-    color: 'from-violet-500 to-purple-600',
-    lightBg: 'bg-violet-50',
-    lightText: 'text-violet-700',
-    border: 'border-violet-100',
-    title: 'Intelligence artificielle de bout en bout',
-    desc: 'Assistant ESG, détection d\'anomalies, prévisions de tendances et suggestions sectorielles — des aides à valider par vos équipes.',
-    points: ['Chatbot ESG générative', 'Anomalies temps réel', 'Prévisions statistiques', 'Suggestions sectorielles'],
+    id: 'G', label: 'Gouvernance', rule: 'border-violet-500', tone: 'text-violet-800', code: 'bg-violet-50 text-violet-700',
+    items: [['G1', 'Conduite des affaires']],
+  },
+] as const;
+
+// Les six événements réellement émis par le service de webhooks (backend/app/services/webhook_service.py).
+const WEBHOOK_EVENTS = ['data.uploaded', 'score.calculated', 'indicator.created', 'indicator.updated', 'user.created', 'threshold.exceeded'];
+
+const PLANS = [
+  {
+    name: 'PME', desc: 'PME soumises CSRD ou supply-chain',
+    monthly: 249, annual: 212,
+    badge: null,
+    features: [
+      '25 utilisateurs · 50 organisations',
+      '100 000 appels API / mois',
+      'CSRD / ESRS complet',
+      'Bilan Carbone Scope 1/2/3',
+      'Import FEC (Sage, Cegid, Pennylane)',
+      'Taxonomie UE & DPEF',
+      'Supply Chain ESG & due diligence',
+      'Plan décarbonation SBTi',
+      'Support email 5j/7',
+    ],
+    missing: ['IA narrative', 'Connecteurs avancés', 'SSO OpenID Connect'],
+    cta: 'Essai gratuit 14 jours', primary: false,
   },
   {
-    icon: Plug,
-    color: 'from-cyan-500 to-teal-600',
-    lightBg: 'bg-cyan-50',
-    lightText: 'text-cyan-700',
-    border: 'border-cyan-100',
-    title: 'Intégré à votre écosystème dès le J+1',
-    desc: 'Import FEC et CSV, API REST et webhooks signés ; connexions Pennylane, Qonto et Enedis en bêta, ERP et SIRH sur demande. Fini la double saisie.',
-    points: ['Import FEC · CSV · Excel', 'API REST + clés API', 'Webhooks HMAC-SHA256', 'Pennylane · Qonto · Enedis (bêta)'],
+    name: 'ETI', desc: 'ETI en transformation ESG',
+    monthly: 599, annual: 509,
+    badge: 'Recommandé',
+    features: [
+      '100 utilisateurs · 250 organisations',
+      '1 000 000 appels API / mois',
+      'Tout PME inclus',
+      'IA narrative & recommandations',
+      'Connecteurs avancés (Pennylane, Qonto, Enedis — bêta)',
+      'SFDR & multi-réglementaire',
+      'Benchmarking sectoriel',
+      'Webhooks & intégrations',
+      'Piste d\'audit détaillée + SHA-256',
+      'Support prioritaire 7j/7',
+    ],
+    missing: ['SSO OpenID Connect', 'Marque blanche'],
+    cta: 'Essai gratuit 14 jours', primary: true,
+  },
+  {
+    name: 'Groupe', desc: 'Grands groupes & reporting consolidé',
+    monthly: 1199, annual: 1019,
+    badge: 'Multi-entités',
+    features: [
+      '500 utilisateurs · orgs illimitées',
+      '5 000 000 appels API / mois',
+      'Tout ETI inclus',
+      'SSO OpenID Connect',
+      'Marque blanche & branding',
+      'Consolidation IFRS 10 multi-entités',
+      'Onboarding dédié',
+      'Account manager attitré',
+      'Rétention données 84 mois',
+    ],
+    missing: ['On-premise'],
+    cta: 'Démarrer maintenant', primary: false,
   },
 ];
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
-export default function LandingPage() {
-  const { t } = useTranslation();
-  const tMod = (m: { id: string; name: string; tagline: string; desc: string }, field: 'name' | 'tagline' | 'desc') =>
-    t(`landing.lp.modules.${m.id}.${field}`, m[field]) as string;
-  const tBadge = (m: { id: string }, i: number, b: string) =>
-    t(`landing.lp.modules.${m.id}.badges.${i}`, b) as string;
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const [mobileFeaturesOpen, setMobileFeaturesOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
-  const [scrolled, setScrolled] = useState(false);
-  const [activeModule, setActiveModule] = useState(0);   // explorateur de modules (change au clic uniquement)
-  const [heroModule, setHeroModule] = useState(0);         // aperçu du hero (défile seul)
-  const [autoPlay, setAutoPlay] = useState(true);
-  const [roiEmployees, setRoiEmployees] = useState(150);
-  const [roiHoursMonth, setRoiHoursMonth] = useState(120);
-  const [roiHourlyRate, setRoiHourlyRate] = useState(65);
+const FAQS = [
+  { q: 'Combien de temps pour déployer la plateforme ?', a: 'La plateforme est en self-service : vous créez votre compte, puis saisissez ou importez vos données (FEC, CSV, Excel) vous-même. Aucun délai de mise en service n’est promis à ce stade.' },
+  { q: 'La plateforme est-elle vraiment conforme CSRD ?', a: 'ESGFlow couvre les standards ESRS principaux (E1-E5, S1-S4, G1) et propose un aperçu iXBRL (XHTML) à valider avec Arelle ; le dépôt ESEF reste à faire avec vos conseils. Notre journal d\'audit détaillé avec empreintes SHA-256 et export pour auditeurs facilite vos revues internes et externes.' },
+  { q: 'Peut-on importer nos données depuis Excel ou ERP ?', a: 'Oui. La plateforme accepte les imports CSV, Excel et FEC (Sage, Cegid, Pennylane) ainsi que les exports RH de Silae, Lucca ou PayFit. Les connexions API Pennylane, Qonto et Enedis sont en bêta. Pour SAP, Oracle ou Workday, dites-nous votre besoin : ils ne sont pas disponibles en standard. Notre API REST permet des intégrations sur mesure.' },
+  { q: 'Où sont hébergées les données ?', a: "La plateforme est hébergée chez un prestataire européen. Les fonctions d'IA (Gaïa, questionnaires clients) envoient le texte analysé à OpenAI, un prestataire américain : ce point est indiqué avant chaque envoi, et le fichier lui-même n'est pas conservé. Aucun engagement de certification n'est affiché tant qu'il n'est pas documenté." },
+  { q: 'Que couvre le module Supply Chain ESG ?', a: 'Le module couvre l\'évaluation des fournisseurs sur 6 dimensions ESG, l\'envoi de questionnaires automatisés, la gestion de la due diligence et le suivi du plan de vigilance conformément à la Loi 2017-399.' },
+  { q: 'Y a-t-il un engagement de durée ?', a: 'L\'abonnement mensuel se résilie à tout moment, avec effet à la fin du mois en cours. L\'abonnement annuel bénéficie de 15 % de réduction : l\'année entière est due, et la résiliation prend effet à l\'échéance, sans remboursement au prorata (article 8 des conditions générales). L\'essai de 14 jours est sans carte bancaire ni engagement.' },
+  { q: 'Comment fonctionne l\'import FEC pour le Scope 3 ?', a: 'Exportez votre FEC depuis Sage, Cegid ou Pennylane et importez-le directement dans ESGFlow. La plateforme analyse automatiquement vos comptes 60x/61x/62x et calcule vos émissions Scope 3 par catégorie de dépenses en appliquant les facteurs d\'émission ADEME.' },
+  { q: 'Comment fonctionne le Workflow de Validation ?', a: 'Chaque saisie ESG passe par 3 étapes : Brouillon → En révision → Approuvé. Les validateurs peuvent approuver ou rejeter avec un motif. Chaque action est automatiquement enregistrée dans la Piste d\'Audit avec date, utilisateur et contexte.' },
+  { q: 'Qu\'est-ce que l\'analyse ESRS / Gap analysis ?', a: 'Ce module compare vos données et processus existants aux 80 points de données des normes ESRS (E1 à G1). Il génère automatiquement une analyse des écarts avec une roadmap priorisée pour atteindre la conformité CSRD.' },
+];
 
-  const { word: rotatingWord, isAnimating: wordAnimating } = useRotatingText();
-  const { ref: heroRef, inView: heroInView } = useInView(0.3);
-  const { ref: statsRef, inView: statsInView } = useInView(0.3);
-  const { ref: proofRef, inView: proofInView } = useInView(0.2);
-  const { ref: roiRef, inView: roiInView } = useInView(0.2);
+// ─── Décor : les trois vagues du logo, agrandies ──────────────────────────────
+function FlowWaves({ className = '', dark = false }: { className?: string; dark?: boolean }) {
+  const o = dark ? 0.2 : 0.15;
+  return (
+    <svg aria-hidden="true" viewBox="0 0 900 640" preserveAspectRatio="xMaxYMid slice" fill="none" strokeLinecap="round" className={className}>
+      <path d="M-40 210 C 120 90, 280 330, 470 210 S 780 110, 940 230" stroke="#10b981" strokeWidth="34" opacity={o} />
+      <path d="M-40 340 C 120 220, 280 460, 470 340 S 780 240, 940 360" stroke="#3b82f6" strokeWidth="34" opacity={o - 0.01} />
+      <path d="M-40 470 C 120 350, 280 590, 470 470 S 780 370, 940 490" stroke="#8b5cf6" strokeWidth="34" opacity={o - 0.01} />
+    </svg>
+  );
+}
+
+// ─── Navigation ───────────────────────────────────────────────────────────────
+function Nav({ onModule }: { onModule: (moduleId: string) => void }) {
+  const { t, h } = useHome();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileFeatures, setMobileFeatures] = useState(false);
+  const [raised, setRaised] = useState(false);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const openMenu = useCallback(() => setMenuOpen(true), []);
+
   useEffect(() => {
-    const h = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', h);
-    return () => window.removeEventListener('scroll', h);
+    const onScroll = () => setRaised(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  useInterval(() => {
-    if (autoPlay) setHeroModule(m => (m + 1) % MODULES.length);
-  }, autoPlay ? 3500 : null);
+  const anchors: [string, string][] = [
+    ['tarifs', t('landing.lp.nav.pricing', 'Tarifs') as string],
+    ['qui-sommes-nous', t('landing.lp.nav.about', 'À propos') as string],
+    ['faq', t('landing.lp.nav.faqLabel', 'FAQ') as string],
+  ];
+  const link = `rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 hover:text-emerald-800 ${FOCUS}`;
+  const go = (id: string) => (e: React.MouseEvent) => { e.preventDefault(); scrollToId(id); setMobileOpen(false); };
+  const mobileLink = 'block rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50';
 
-  const mod = MODULES[heroModule];
-  const activeCategory = MODULE_CATEGORIES.find(c => c.modules.includes(MODULES[activeModule].id)) ?? MODULE_CATEGORIES[0];
-  const categoryModules = activeCategory.modules
-    .map(id => ({ m: MODULES[MODULES.findIndex(x => x.id === id)], i: MODULES.findIndex(x => x.id === id) }))
-    .filter(x => x.i >= 0);
-  const PreviewComp = PREVIEWS[mod.preview];
+  return (
+    <header className={`fixed inset-x-0 top-0 z-50 bg-white/90 backdrop-blur transition-shadow ${raised ? 'border-b border-gray-200 shadow-sm' : 'border-b border-transparent'}`}>
+      <nav aria-label={h('nav.label', "Navigation principale")} className={`${WRAP} flex h-16 items-center justify-between`}>
+        <Link to="/" aria-label={h('nav.home', "ESGFlow, accueil")} className={`flex items-center gap-2.5 rounded-lg ${FOCUS}`}>
+          <LogoMark size={34} decorative />
+          <Wordmark className="text-xl" tone="dark" />
+        </Link>
 
-  const scrollTo = (id: string) => {
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
+        <div className="hidden items-center gap-0.5 lg:flex">
+          <FeaturesMegaMenu open={menuOpen} scrolled onOpen={openMenu} onClose={closeMenu} onModule={onModule} onSeeAll={() => scrollToId('fonctionnalites')} />
+          {anchors.slice(0, 1).map(([id, label]) => <a key={id} href={`#${id}`} onClick={go(id)} className={link}>{label}</a>)}
+          <Link to="/resources" className={link}>{t('landing.lp.nav.resources', 'Ressources') as string}</Link>
+          <Link to="/normes" className={link}>{t('landing.lp.nav.normes', 'Normes') as string}</Link>
+          {anchors.slice(1).map(([id, label]) => <a key={id} href={`#${id}`} onClick={go(id)} className={link}>{label}</a>)}
+          <Link to="/contact" className={link}>{t('landing.lp.nav.contact', 'Contact') as string}</Link>
+          <span className="mx-2 h-5 w-px bg-gray-300" aria-hidden="true" />
+          <Link to="/login" className={link}>{t('landing.lp.nav.login', 'Connexion') as string}</Link>
+          <Link to="/demo" className={`ml-1 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-800 transition-colors hover:bg-gray-50 ${FOCUS}`}>{t('landing.lp.nav.demo', 'Voir la démo') as string}</Link>
+          <Link to="/register" className={`ml-1 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 ${FOCUS}`}>{t('landing.lp.nav.trial', 'Essai gratuit') as string}</Link>
+        </div>
 
-  const plans = [
+        <button type="button" aria-expanded={mobileOpen} aria-controls="mobile-menu"
+          aria-label={mobileOpen ? t('landing.lp.nav.closeMenu', 'Fermer le menu') as string : t('landing.lp.nav.openMenu', 'Ouvrir le menu') as string}
+          onClick={() => setMobileOpen(v => !v)}
+          className={`tap-target flex items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100 lg:hidden ${FOCUS}`}>
+          {mobileOpen ? <XIcon className="h-6 w-6" aria-hidden="true" /> : <Menu className="h-6 w-6" aria-hidden="true" />}
+        </button>
+      </nav>
+
+      {mobileOpen && (
+        <div id="mobile-menu" className="max-h-[calc(100vh-4rem)] overflow-y-auto border-t border-gray-100 bg-white shadow-xl lg:hidden">
+          <div className="space-y-1 px-4 py-4">
+            <button type="button" aria-expanded={mobileFeatures} aria-controls="mobile-features" onClick={() => setMobileFeatures(v => !v)}
+              className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              {t('landing.lp.nav.featuresLabel', 'Fonctionnalités') as string}
+              <ChevronDown className={`h-4 w-4 transition-transform ${mobileFeatures ? 'rotate-180' : ''}`} aria-hidden="true" />
+            </button>
+            {mobileFeatures && (
+              <div id="mobile-features" className="space-y-3 px-2 pb-2">
+                {FEATURE_GROUPS.map(g => (
+                  <div key={g.id}>
+                    <p className="px-2 pb-1 pt-2 text-xs font-semibold text-gray-500">{t(`landing.lp.featureGroups.${g.id}`, g.title) as string}</p>
+                    {g.items.map(item => {
+                      const label = t(`landing.lp.features.${item.id}.title`, item.title) as string;
+                      const cls = 'flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50';
+                      return item.to
+                        ? <Link key={item.id} to={item.to} onClick={() => setMobileOpen(false)} className={cls}><item.icon className="h-4 w-4 flex-shrink-0 text-emerald-700" aria-hidden="true" />{label}</Link>
+                        : <button key={item.id} type="button" onClick={() => { onModule(item.module || item.id); setMobileOpen(false); }} className={cls}><item.icon className="h-4 w-4 flex-shrink-0 text-emerald-700" aria-hidden="true" />{label}</button>;
+                    })}
+                  </div>
+                ))}
+                <Link to="/ressources/suis-je-concerne" onClick={() => setMobileOpen(false)} className="mx-2 block rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-sm font-semibold text-emerald-800">
+                  {t('landing.lp.featuresPromo.title', 'Êtes-vous concerné par la CSRD ?') as string}
+                </Link>
+              </div>
+            )}
+            {anchors.map(([id, label]) => <a key={id} href={`#${id}`} onClick={go(id)} className={mobileLink}>{label}</a>)}
+            <Link to="/resources" onClick={() => setMobileOpen(false)} className={mobileLink}>{t('landing.lp.nav.resources', 'Ressources') as string}</Link>
+            <Link to="/normes" onClick={() => setMobileOpen(false)} className={mobileLink}>{t('landing.lp.nav.normes', 'Normes & Conformité') as string}</Link>
+            <Link to="/contact" onClick={() => setMobileOpen(false)} className={mobileLink}>{t('landing.lp.nav.contact', 'Contact') as string}</Link>
+            <div className="mt-3 space-y-2 border-t border-gray-100 pt-3">
+              <Link to="/login" onClick={() => setMobileOpen(false)} className="block rounded-xl px-4 py-3 text-center text-sm font-medium text-gray-700 hover:bg-gray-50">{t('landing.lp.nav.login', 'Connexion') as string}</Link>
+              <Link to="/demo" onClick={() => setMobileOpen(false)} className="block rounded-xl border border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-800">{t('landing.lp.nav.demo', 'Voir la démo') as string}</Link>
+              <Link to="/register" onClick={() => setMobileOpen(false)} className="block rounded-xl bg-emerald-700 px-4 py-3 text-center text-sm font-semibold text-white">{t('landing.lp.nav.trial14', 'Essai gratuit 14 jours') as string}</Link>
+            </div>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}
+
+// ─── Hero ─────────────────────────────────────────────────────────────────────
+/** La structure d'un rapport de durabilité ESRS : ce que l'outil aide à remplir. Aucune donnée client, aucun chiffre. */
+function ReportSheet() {
+  const { h } = useHome();
+  let row = 0;
+  const delay = () => ({ animationDelay: `${150 + row++ * 55}ms` });
+  return (
+    <figure className="relative mx-auto w-full max-w-xl lg:max-w-none">
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_28px_60px_-24px_rgba(15,23,42,0.28)]">
+        <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-5">
+          <div>
+            <figcaption className="font-display text-xl font-medium text-gray-900">{h('sheet.title', "Rapport de durabilité")}</figcaption>
+            <p className="mt-0.5 text-sm text-gray-500">{h('sheet.subtitle', "La structure ESRS suivie dans ESGFlow")}</p>
+          </div>
+        </div>
+        <div className="flex items-baseline gap-3 border-b border-gray-100 bg-gray-50 px-6 py-3 lp-rise" style={delay()}>
+          <span className="rounded-md bg-gray-200 px-1.5 py-0.5 text-xs font-bold tabular-nums text-gray-700">ESRS 2</span>
+          <span className="text-sm text-gray-800">{h('sheet.general', "Informations générales")}</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 sm:divide-x sm:divide-gray-100">
+          <GroupBlock group={ESRS_GROUPS[0]} delay={delay} />
+          <div className="divide-y divide-gray-100 border-t border-gray-100 sm:border-t-0">
+            <GroupBlock group={ESRS_GROUPS[1]} delay={delay} />
+            <GroupBlock group={ESRS_GROUPS[2]} delay={delay} />
+          </div>
+        </div>
+        <p className="border-t border-gray-100 bg-gray-50 px-6 py-3 text-xs text-gray-600">
+          {h('sheet.footer', "80 points de données ESRS dans l’analyse d’écart.")}
+        </p>
+      </div>
+    </figure>
+  );
+}
+
+function GroupBlock({ group, delay }: { group: (typeof ESRS_GROUPS)[number]; delay: () => { animationDelay: string } }) {
+  const { h } = useHome();
+  return (
+    <div className="px-6 py-5">
+      <p className={`border-l-[3px] pl-3 text-sm font-semibold ${group.rule} ${group.tone}`}>{h(`esrsGroups.${group.id}`, group.label)}</p>
+      <ul className="mt-3 space-y-2">
+        {group.items.map(([code, title]) => (
+          <li key={code} className="lp-rise flex items-baseline gap-3" style={delay()}>
+            <span className={`w-8 flex-shrink-0 rounded-md px-1.5 py-0.5 text-center text-xs font-bold tabular-nums ${group.code}`}>{code}</span>
+            <span className="text-[13px] leading-snug text-gray-800">{h(`esrs.${code}`, title)}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function Hero() {
+  const { h } = useHome();
+  const facts: { icon: typeof Layers; title: string; sub: string }[] = [
+    { icon: Layers, title: h('facts.0.title', "22 modules"), sub: h('facts.0.sub', "dans un seul outil") },
+    { icon: Upload, title: h('facts.1.title', "FEC, CSV, Excel"), sub: h('facts.1.sub', "imports et exports RH") },
+    { icon: Code2, title: h('facts.2.title', "API REST et webhooks"), sub: h('facts.2.sub', "pour les intégrations sur mesure") },
+    { icon: Server, title: h('facts.3.title', "Hébergeur européen"), sub: h('facts.3.sub', "données cloisonnées par client") },
+  ];
+  return (
+    <section aria-labelledby="hero-title" className="relative overflow-hidden bg-white pb-16 pt-28 sm:pt-32 lg:pb-20 lg:pt-36">
+      <FlowWaves className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[56%] [-webkit-mask-image:linear-gradient(to_right,transparent,#000_40%)] [mask-image:linear-gradient(to_right,transparent,#000_40%)] lg:block" />
+      <div className={`${WRAP} relative`}>
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12">
+          <div className="lg:col-span-6">
+            <h1 id="hero-title" className="font-display text-[42px] font-medium leading-[1.04] tracking-[-0.02em] text-gray-900 sm:text-6xl lg:text-[64px]">
+              {h('hero.title', "Votre reporting CSRD, de la donnée brute au rapport.")}
+            </h1>
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-gray-600">
+              {h('hero.subtitle', "ESGFlow réunit la collecte, le bilan carbone, les normes ESRS et la piste d’audit dans un seul outil. Importez un FEC, un CSV ou un fichier Excel, puis préparez votre rapport section par section.")}
+            </p>
+            <div className="mt-9 flex flex-wrap gap-3">
+              <Link to="/register" className={BTN_PRIMARY}>
+                {h('hero.cta1', "Essai gratuit 14 jours")} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+              <Link to="/demo" className={BTN_SECONDARY}>{h('hero.cta2', "Voir la démo")}</Link>
+            </div>
+            <p className="mt-4 flex items-center gap-2 text-sm text-gray-600">
+              <Check className="h-4 w-4 flex-shrink-0 text-emerald-700" aria-hidden="true" />
+              {h('hero.note', "Aucune carte bancaire · Sans engagement")}
+            </p>
+          </div>
+          <div className="lg:col-span-6"><ReportSheet /></div>
+        </div>
+
+        <ul className="mt-16 grid grid-cols-2 gap-x-8 gap-y-6 border-t border-gray-200 pt-8 lg:mt-20 lg:grid-cols-4">
+          {facts.map(({ icon: Icon, title, sub }) => (
+            <li key={title} className="flex items-start gap-3">
+              <Icon className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-700" aria-hidden="true" />
+              <div>
+                <p className="text-sm font-semibold text-gray-900">{title}</p>
+                <p className="text-sm text-gray-600">{sub}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+// ─── Parcours : de la donnée au dossier d'audit ───────────────────────────────
+function Pipeline() {
+  const { h } = useHome();
+  const steps = [
+    { icon: Upload, k: 'collect', title: "Collecter", desc: "Importez un FEC, un CSV ou un fichier Excel, ou saisissez à la main. Les exports RH de Silae, Lucca et PayFit sont acceptés ; les connexions Pennylane, Qonto et Enedis sont en bêta." },
+    { icon: Flame, k: 'compute', title: "Calculer", desc: "Émissions des Scopes 1, 2 et 3 avec les facteurs ADEME (des estimations à relire), scores par pilier E, S et G, et analyse d’écart sur les points de données ESRS." },
+    { icon: FileText, k: 'write', title: "Rédiger", desc: "Construisez le rapport section par section, de E1 à G1, suivez la complétion et exportez en PDF, Word, Excel ou JSON. L’IA propose, votre équipe valide." },
+    { icon: ShieldCheck, k: 'trace', title: "Tracer", desc: "Chaque donnée passe de brouillon à approuvé, avec une empreinte SHA-256 par validation. L’aperçu iXBRL se vérifie avec Arelle ; le dépôt ESEF reste à faire avec vos conseils." },
+  ];
+  return (
+    <section aria-labelledby="pipeline-title" className="scroll-mt-16 bg-gray-50 py-20 sm:py-24">
+      <div className={WRAP}>
+        <h2 id="pipeline-title" className={H2}>{h('pipeline.title', "Du fichier brut au dossier d’audit")}</h2>
+        <p className={LEAD}>{h('pipeline.subtitle', "Quatre étapes qui réutilisent les mêmes données : rien à ressaisir d’un outil à l’autre.")}</p>
+        <ol className="relative mt-14 grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+          <span aria-hidden="true" className="absolute left-5 right-5 top-5 hidden h-[3px] rounded-full bg-gradient-to-r from-emerald-500 via-blue-500 to-violet-500 lg:block" />
+          {steps.map((s, i) => (
+            <li key={s.k} className="relative">
+              <span className="relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 border-gray-900 bg-gray-50 text-sm font-bold text-gray-900">{i + 1}</span>
+              <h3 className="mt-5 flex items-center gap-2 font-display text-2xl font-medium text-gray-900">
+                <s.icon className="h-5 w-5 text-gray-500" aria-hidden="true" />
+                {h(`pipeline.${s.k}.title`, s.title)}
+              </h3>
+              <p className="mt-2 text-[15px] leading-relaxed text-gray-600">{h(`pipeline.${s.k}.desc`, s.desc)}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
+// ─── Explorateur de modules ───────────────────────────────────────────────────
+function ModuleExplorer({ active, onSelect }: { active: number; onSelect: (index: number) => void }) {
+  const { t, h } = useHome();
+  const mod = MODULES[active];
+  const category = MODULE_CATEGORIES.find(c => c.modules.includes(mod.id)) ?? MODULE_CATEGORIES[0];
+  const indexes = category.modules.map(id => MODULES.findIndex(x => x.id === id)).filter(i => i >= 0);
+  const Preview = PREVIEWS[mod.preview];
+  const tMod = (m: { id: string; name: string; tagline: string; desc: string }, field: 'name' | 'tagline' | 'desc') =>
+    t(`landing.lp.modules.${m.id}.${field}`, m[field]) as string;
+
+  return (
+    <section id="modules" aria-labelledby="modules-title" className="scroll-mt-16 bg-gray-50 py-20 sm:py-24">
+      <div className={WRAP}>
+        <h2 id="modules-title" className={H2}>{t('landing.lp.modulesSection.title', '22 modules. Une seule plateforme.') as string}</h2>
+        <p className={LEAD}>{t('landing.lp.modulesSection.subtitle', 'Chaque module est conçu pour répondre à un besoin précis — et ils fonctionnent tous ensemble.') as string}</p>
+
+        <div role="tablist" aria-label={t('landing.lp.modulesSection.tabsLabel', 'Catégories de modules') as string}
+          className="mb-8 mt-10 flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {MODULE_CATEGORIES.map(c => {
+            const on = c.id === category.id;
+            return (
+              <button key={c.id} id={`module-tab-${c.id}`} role="tab" type="button" aria-selected={on} aria-controls="module-panel"
+                onClick={() => { const first = MODULES.findIndex(m => m.id === c.modules[0]); if (first >= 0) onSelect(first); }}
+                className={`inline-flex flex-shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${FOCUS} ${on ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'}`}>
+                {t(`landing.lp.modulesSection.cat.${c.id}`, c.label) as string}
+                <span className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold ${on ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'}`}>{c.modules.length}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-5">
+          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:col-span-2 lg:grid-cols-1">
+            {indexes.map(i => {
+              const m = MODULES[i];
+              const on = i === active;
+              return (
+                <li key={m.id}>
+                  <button type="button" aria-current={on ? 'true' : undefined} onClick={() => onSelect(i)}
+                    className={`flex w-full items-center gap-3 rounded-xl border bg-white px-4 py-3 text-left transition-colors ${FOCUS} ${on ? 'border-gray-900 shadow-sm' : 'border-gray-200 hover:border-gray-300'}`}>
+                    <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: `${m.color}1a`, color: m.color }}>
+                      <m.icon className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold text-gray-900">{tMod(m, 'name')}</span>
+                      <span className="mt-0.5 block truncate text-xs text-gray-600">{tMod(m, 'tagline')}</span>
+                    </span>
+                    <ChevronRight className={`h-4 w-4 flex-shrink-0 ${on ? 'text-gray-900' : 'text-gray-400'}`} aria-hidden="true" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+
+          <div id="module-panel" role="tabpanel" aria-labelledby={`module-tab-${category.id}`} className="lg:col-span-3">
+            <div className="overflow-hidden rounded-2xl border border-gray-200 border-t-4 bg-white" style={{ borderTopColor: mod.color }}>
+              <div className="mx-4 mt-4 overflow-hidden rounded-xl bg-slate-900">
+                {Preview && <Preview />}
+              </div>
+              <p className="px-6 pb-2 pt-2 text-right text-xs text-gray-600">
+                {t('landing.lp.modulesSection.illustrative', 'Aperçu illustratif · données fictives') as string}
+              </p>
+              <div className="px-6 pb-6">
+                <h3 className="font-display text-2xl font-medium text-gray-900">{tMod(mod, 'name')}</h3>
+                <p className="mt-2 text-[15px] leading-relaxed text-gray-600">{tMod(mod, 'desc')}</p>
+                <ul className="mt-4 flex flex-wrap gap-2">
+                  {mod.badges.map((b, i) => (
+                    <li key={i} className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-700">
+                      <Check className="h-3.5 w-3.5 text-emerald-700" aria-hidden="true" />
+                      {t(`landing.lp.modules.${mod.id}.badges.${i}`, b) as string}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  {mod.featurePath && (
+                    <Link to={mod.featurePath} className={`${BTN_PRIMARY} !px-5 !py-2.5 !text-sm`}>
+                      {t('landing.lp.modulesSection.learnMore', 'En savoir plus') as string} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    </Link>
+                  )}
+                  <Link to="/register" className={mod.featurePath ? `${BTN_SECONDARY} !px-5 !py-2.5 !text-sm` : `${BTN_PRIMARY} !px-5 !py-2.5 !text-sm`}>
+                    {t('landing.lp.nav.trial', 'Essai gratuit') as string}
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p className="sr-only">{h('modules.hint', "Choisissez une catégorie, puis un module pour voir son aperçu.")}</p>
+      </div>
+    </section>
+  );
+}
+
+// ─── Données et intégrations ──────────────────────────────────────────────────
+function DataSources() {
+  const { h } = useHome();
+  const columns: { k: string; icon: typeof Upload; title: string; items: string[] }[] = [
     {
-      name: 'PME', desc: 'PME soumises CSRD ou supply-chain',
-      monthly: 249, annual: 212,
-      color: 'border-gray-200', badge: null, badgeStyle: '',
-      features: [
-        '25 utilisateurs · 50 organisations',
-        '100 000 appels API / mois',
-        'CSRD / ESRS complet',
-        'Bilan Carbone Scope 1/2/3',
-        'Import FEC (Sage, Cegid, Pennylane)',
-        'Taxonomie UE & DPEF',
-        'Supply Chain ESG & due diligence',
-        'Plan décarbonation SBTi',
-        'Support email 5j/7',
-      ],
-      missing: ['IA narrative', 'Connecteurs avancés', 'SSO OpenID Connect'],
-      cta: 'Essai gratuit 14 jours', primary: false,
+      k: 'import', icon: Upload, title: "Importer",
+      items: ["FEC (Sage, Cegid, Pennylane)", "Fichiers CSV et Excel", "Exports RH de Silae, Lucca et PayFit", "Saisie guidée, indicateur par indicateur"],
     },
     {
-      name: 'ETI', desc: 'ETI en transformation ESG',
-      monthly: 599, annual: 509,
-      color: 'border-green-500', badge: 'Recommandé', badgeStyle: 'bg-green-500 text-white',
-      features: [
-        '100 utilisateurs · 250 organisations',
-        '1 000 000 appels API / mois',
-        'Tout PME inclus',
-        'IA narrative & recommandations',
-        'Connecteurs avancés (Pennylane, Qonto, Enedis — bêta)',
-        'SFDR & multi-réglementaire',
-        'Benchmarking sectoriel',
-        'Webhooks & intégrations',
-        'Piste d\'audit détaillée + SHA-256',
-        'Support prioritaire 7j/7',
-      ],
-      missing: ['SSO OpenID Connect', 'Marque blanche'],
-      cta: 'Essai gratuit 14 jours', primary: true,
+      k: 'connect', icon: Plug, title: "Se connecter",
+      items: ["Pennylane, Qonto et Enedis (en bêta)", "Google Sheets : import et export", "INSEE Sirene : données légales à partir d’un SIREN, interrogées à la demande"],
     },
     {
-      name: 'Groupe', desc: 'Grands groupes & reporting consolidé',
-      monthly: 1199, annual: 1019,
-      color: 'border-slate-700', badge: 'Multi-entités', badgeStyle: 'bg-slate-800 text-white',
-      features: [
-        '500 utilisateurs · orgs illimitées',
-        '5 000 000 appels API / mois',
-        'Tout ETI inclus',
-        'SSO OpenID Connect',
-        'Marque blanche & branding',
-        'Consolidation IFRS 10 multi-entités',
-        'Onboarding dédié',
-        'Account manager attitré',
-        'Rétention données 84 mois',
-      ],
-      missing: ['On-premise'],
-      cta: 'Démarrer maintenant', primary: false,
+      k: 'automate', icon: Radio, title: "Automatiser",
+      items: ["API REST avec clés d’API et documentation interactive", "Webhooks signés HMAC-SHA256, avec journal des livraisons"],
     },
   ];
+  return (
+    <section id="donnees" aria-labelledby="data-title" className="scroll-mt-16 bg-white py-20 sm:py-24">
+      <div className={WRAP}>
+        <h2 id="data-title" className={H2}>{h('data.title', "Vos données entrent par plusieurs portes")}</h2>
+        <p className={LEAD}>{h('data.subtitle', "Importez vos fichiers, branchez vos outils ou laissez vos services recevoir les événements d’ESGFlow.")}</p>
 
-  const faqs = [
-    { q: 'Combien de temps pour déployer la plateforme ?', a: 'La plateforme est en self-service : vous créez votre compte, puis saisissez ou importez vos données (FEC, CSV, Excel) vous-même. Aucun délai de mise en service n’est promis à ce stade.' },
-    { q: 'La plateforme est-elle vraiment conforme CSRD ?', a: 'ESGFlow couvre les standards ESRS principaux (E1-E5, S1-S4, G1) et propose un aperçu iXBRL (XHTML) à valider avec Arelle ; le dépôt ESEF reste à faire avec vos conseils. Notre journal d\'audit détaillé avec empreintes SHA-256 et export pour auditeurs facilite vos revues internes et externes.' },
-    { q: 'Peut-on importer nos données depuis Excel ou ERP ?', a: 'Oui. La plateforme accepte les imports CSV, Excel et FEC (Sage, Cegid, Pennylane) ainsi que les exports RH de Silae, Lucca ou PayFit. Les connexions API Pennylane, Qonto et Enedis sont en bêta. Pour SAP, Oracle ou Workday, dites-nous votre besoin : ils ne sont pas disponibles en standard. Notre API REST permet des intégrations sur mesure.' },
-    { q: 'Où sont hébergées les données ?', a: "La plateforme est hébergée chez un prestataire européen. Les fonctions d'IA (Gaïa, questionnaires clients) envoient le texte analysé à OpenAI, un prestataire américain : ce point est indiqué avant chaque envoi, et le fichier lui-même n'est pas conservé. Aucun engagement de certification n'est affiché tant qu'il n'est pas documenté." },
-    { q: 'Que couvre le module Supply Chain ESG ?', a: 'Le module couvre l\'évaluation des fournisseurs sur 6 dimensions ESG, l\'envoi de questionnaires automatisés, la gestion de la due diligence et le suivi du plan de vigilance conformément à la Loi 2017-399.' },
-    { q: 'Y a-t-il un engagement de durée ?', a: 'L\'abonnement mensuel se résilie à tout moment, avec effet à la fin du mois en cours. L\'abonnement annuel bénéficie de 15 % de réduction : l\'année entière est due, et la résiliation prend effet à l\'échéance, sans remboursement au prorata (article 8 des conditions générales). L\'essai de 14 jours est sans carte bancaire ni engagement.' },
-    { q: 'Comment fonctionne l\'import FEC pour le Scope 3 ?', a: 'Exportez votre FEC depuis Sage, Cegid ou Pennylane et importez-le directement dans ESGFlow. La plateforme analyse automatiquement vos comptes 60x/61x/62x et calcule vos émissions Scope 3 par catégorie de dépenses en appliquant les facteurs d\'émission ADEME.' },
-    { q: 'Comment fonctionne le Workflow de Validation ?', a: 'Chaque saisie ESG passe par 3 étapes : Brouillon → En révision → Approuvé. Les validateurs peuvent approuver ou rejeter avec un motif. Chaque action est automatiquement enregistrée dans la Piste d\'Audit avec date, utilisateur et contexte.' },
-    { q: 'Qu\'est-ce que l\'analyse ESRS / Gap analysis ?', a: 'Ce module compare vos données et processus existants aux 80 points de données des normes ESRS (E1 à G1). Il génère automatiquement une analyse des écarts avec une roadmap priorisée pour atteindre la conformité CSRD.' },
+        <div className="mt-12 grid grid-cols-1 gap-10 md:grid-cols-3 md:gap-0 md:divide-x md:divide-gray-200">
+          {columns.map(col => (
+            <div key={col.k} className="md:px-8 md:first:pl-0 md:last:pr-0">
+              <h3 className="flex items-center gap-2 font-display text-2xl font-medium text-gray-900">
+                <col.icon className="h-5 w-5 text-emerald-700" aria-hidden="true" />
+                {h(`data.${col.k}.title`, col.title)}
+              </h3>
+              <ul className="mt-4 space-y-3">
+                {col.items.map((item, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-[15px] leading-snug text-gray-700">
+                    <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-700" aria-hidden="true" />
+                    {h(`data.${col.k}.items.${i}`, item)}
+                  </li>
+                ))}
+              </ul>
+              {col.k === 'automate' && (
+                <div className="mt-5">
+                  <p className="text-sm font-medium text-gray-900">{h('data.events', "Six événements disponibles")}</p>
+                  <ul className="mt-2 flex flex-wrap gap-1.5">
+                    {WEBHOOK_EVENTS.map(ev => (
+                      <li key={ev}><code className="rounded-md bg-gray-100 px-2 py-1 font-mono text-xs text-gray-800">{ev}</code></li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <p className="mt-10 max-w-3xl rounded-xl border border-gray-200 bg-gray-50 px-5 py-4 text-sm leading-relaxed text-gray-700">
+          {h('data.limits', "SAP, Oracle et Workday ne sont pas disponibles en standard : dites-nous votre besoin, l’API permet des intégrations sur mesure.")}{' '}
+          <Link to="/contact" className="font-semibold text-emerald-800 underline underline-offset-2 hover:text-emerald-900">{h('data.contact', "Nous écrire")}</Link>
+        </p>
+      </div>
+    </section>
+  );
+}
+
+// ─── Tarifs et simulateur ─────────────────────────────────────────────────────
+function RangeField({ label, value, min, max, step, display, onChange, icon: Icon }:
+  { label: string; value: number; min: number; max: number; step: number; display: string; onChange: (v: number) => void; icon: typeof Users }) {
+  const id = useId();
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between gap-4">
+        <label htmlFor={id} className="flex min-w-0 items-center gap-2 text-sm font-semibold text-gray-800">
+          <Icon className="h-4 w-4 text-gray-500" aria-hidden="true" />{label}
+        </label>
+        <output htmlFor={id} className="shrink-0 whitespace-nowrap rounded-lg bg-gray-100 px-3 py-1 text-lg font-semibold tabular-nums text-gray-900">{display}</output>
+      </div>
+      <input id={id} type="range" min={min} max={max} step={step} value={value} onChange={e => onChange(+e.target.value)}
+        className={`h-2 w-full cursor-pointer appearance-none rounded-full bg-gray-200 accent-emerald-700 ${FOCUS}`} />
+    </div>
+  );
+}
+
+function RoiCalculator({ billing }: { billing: 'monthly' | 'annual' }) {
+  const { h, lang } = useHome();
+  const [hours, setHours] = useState(120);
+  const [rate, setRate] = useState(65);
+  const [gain, setGain] = useState(50);
+  const [planName, setPlanName] = useState('ETI');
+  const plan = PLANS.find(p => p.name === planName) ?? PLANS[1];
+  const planCost = billing === 'annual' ? plan.annual : plan.monthly;
+
+  const hoursSaved = Math.round(hours * gain / 100);
+  const yearlySavings = hoursSaved * rate * 12;
+  const yearlyCost = planCost * 12;
+  const net = yearlySavings - yearlyCost;
+  const roi = Math.round(net / yearlyCost * 100);
+  const loc = lang?.startsWith('en') ? 'en-GB' : 'fr-FR';
+  const eur = (n: number) => `${n.toLocaleString(loc)} €`;
+
+  return (
+    <div id="roi-calculator" className="mt-20 rounded-2xl border border-gray-200 bg-white p-6 sm:p-10">
+      <h3 className="font-display text-2xl font-medium text-gray-900 sm:text-3xl">{h('roi.title', "Estimez le temps que vous pourriez gagner")}</h3>
+      <p className="mt-2 max-w-2xl text-gray-600">{h('roi.subtitle', "Une simulation à partir de vos propres chiffres. Le gain de temps est votre hypothèse : aucune valeur n’a été mesurée chez des clients.")}</p>
+
+      <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-5">
+        <div className="space-y-7 lg:col-span-3">
+          <RangeField icon={Calculator} label={h('roi.hours', "Heures par mois consacrées à l’ESG")} value={hours} min={10} max={500} step={5} display={`${hours} h`} onChange={setHours} />
+          <RangeField icon={TrendingUp} label={h('roi.rate', "Coût horaire chargé")} value={rate} min={25} max={200} step={5} display={eur(rate)} onChange={setRate} />
+          <RangeField icon={Zap} label={h('roi.gain', "Part du temps que vous pensez gagner")} value={gain} min={10} max={90} step={5} display={`${gain} %`} onChange={setGain} />
+          <fieldset>
+            <legend className="mb-2 text-sm font-semibold text-gray-800">{h('roi.plan', "Plan comparé")}</legend>
+            <div className="inline-flex rounded-xl border border-gray-300 bg-white p-1">
+              {PLANS.map(p => (
+                <button key={p.name} type="button" aria-pressed={p.name === planName} onClick={() => setPlanName(p.name)}
+                  className={`rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors ${FOCUS} ${p.name === planName ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}`}>
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+        </div>
+
+        <div className="lg:col-span-2">
+          <div className="rounded-2xl bg-gray-50 p-6" aria-live="polite">
+            <dl className="space-y-4 text-sm">
+              <div className="flex items-baseline justify-between gap-4 border-b border-gray-200 pb-4">
+                <dt className="text-gray-600">{h('roi.hoursSaved', "Temps gagné")}</dt>
+                <dd className="whitespace-nowrap text-xl font-semibold tabular-nums text-gray-900">{hoursSaved} h<span className="text-sm font-normal text-gray-500">{h('roi.perMonth', " / mois")}</span></dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-4 border-b border-gray-200 pb-4">
+                <dt className="text-gray-600">{h('roi.yearlySavings', "Valeur du temps gagné")}</dt>
+                <dd className="whitespace-nowrap text-xl font-semibold tabular-nums text-gray-900">{eur(yearlySavings)}<span className="text-sm font-normal text-gray-500">{h('roi.perYear', " / an")}</span></dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-4 border-b border-gray-200 pb-4">
+                <dt className="text-gray-600">{h('roi.yearlyCost', "Abonnement")} {plan.name}</dt>
+                <dd className="whitespace-nowrap text-xl font-semibold tabular-nums text-gray-900">{eur(yearlyCost)}<span className="text-sm font-normal text-gray-500">{h('roi.perYear', " / an")}</span></dd>
+              </div>
+              <div>
+                <dt className="text-gray-600">{h('roi.net', "Gain net estimé")}</dt>
+                <dd className={`mt-1 font-display text-4xl font-medium tabular-nums ${net >= 0 ? 'text-emerald-800' : 'text-gray-700'}`}>
+                  {net >= 0 ? '+' : '−'}{eur(Math.abs(net))}<span className="font-sans text-sm font-normal text-gray-500">{h('roi.perYear', " / an")}</span>
+                </dd>
+                <p className="mt-2 text-xs text-gray-600">
+                  {net >= 0
+                    ? `${h('roi.roiLabel', "Retour sur investissement estimé :")} ${roi > 0 ? '+' : ''}${roi} %`
+                    : h('roi.negative', "Avec ces hypothèses, l’abonnement coûte plus que le temps gagné : ajustez les curseurs à votre situation.")}
+                </p>
+              </div>
+            </dl>
+          </div>
+          <Link to="/register" className={`${BTN_PRIMARY} mt-4 w-full`}>{h('roi.cta', "Essai gratuit 14 jours")}</Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Pricing() {
+  const { t, h } = useHome();
+  const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
+  const toggle = (on: boolean) =>
+    `rounded-lg px-5 py-2 text-sm font-semibold transition-colors ${FOCUS} ${on ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}`;
+  return (
+    <section id="tarifs" aria-labelledby="pricing-title" className="scroll-mt-16 bg-gray-50 py-20 sm:py-24">
+      <div className={WRAP}>
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 id="pricing-title" className={H2}>{t('landing.lp.pricing.title', 'Plans adaptés à votre taille') as string}</h2>
+            <p className={LEAD}>{t('landing.lp.pricing.subtitle', 'Commencez gratuitement. Évoluez à votre rythme. Sans engagement.') as string}</p>
+          </div>
+          <div role="group" aria-label={h('pricing.billing', "Période de facturation")} className="inline-flex flex-shrink-0 items-center gap-1 self-start rounded-xl border border-gray-300 bg-white p-1 sm:self-auto">
+            <button type="button" aria-pressed={billing === 'monthly'} onClick={() => setBilling('monthly')} className={toggle(billing === 'monthly')}>{t('landing.lp.pricing.monthly', 'Mensuel') as string}</button>
+            <button type="button" aria-pressed={billing === 'annual'} onClick={() => setBilling('annual')} className={`${toggle(billing === 'annual')} flex items-center gap-2`}>
+              {t('landing.lp.pricing.annual', 'Annuel') as string}
+              <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${billing === 'annual' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'}`}>-15 %</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-12 grid grid-cols-1 items-stretch gap-6 md:grid-cols-3">
+          {PLANS.map((plan, i) => {
+            const price = billing === 'annual' ? plan.annual : plan.monthly;
+            return (
+              <div key={plan.name} className={`relative flex flex-col rounded-2xl bg-white p-7 ${plan.primary ? 'border-2 border-emerald-700' : 'border border-gray-200'}`}>
+                {plan.badge && (
+                  <span className={`absolute -top-3 left-7 rounded-full px-3 py-1 text-xs font-semibold ${plan.primary ? 'bg-emerald-700 text-white' : 'bg-gray-900 text-white'}`}>
+                    {t(`landing.lp.pricing.plans.${i}.badge`, plan.badge) as string}
+                  </span>
+                )}
+                <h3 className="text-lg font-semibold text-gray-900">{plan.name}</h3>
+                <p className="mt-1 text-sm text-gray-600">{t(`landing.lp.pricing.plans.${i}.desc`, plan.desc) as string}</p>
+                <p className="mt-6 flex items-baseline gap-2">
+                  <span className="font-display text-5xl font-medium tabular-nums text-gray-900">{price} €</span>
+                  <span className="text-sm text-gray-600">
+                    {t('landing.lp.pricing.perMonth', '/mois') as string}
+                    {billing === 'annual' && <span className="block text-xs font-semibold text-emerald-800">{t('landing.lp.pricing.billedAnnually', 'facturé annuellement') as string}</span>}
+                  </span>
+                </p>
+                <Link to="/register" className={`${plan.primary ? BTN_PRIMARY : BTN_SECONDARY} mt-6 w-full`}>
+                  {t(`landing.lp.pricing.plans.${i}.cta`, plan.cta) as string}
+                </Link>
+                <ul className="mt-7 flex-1 space-y-2.5">
+                  {plan.features.map((f, j) => (
+                    <li key={j} className="flex items-start gap-2.5 text-sm text-gray-800">
+                      <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-700" aria-hidden="true" />
+                      {t(`landing.lp.pricing.plans.${i}.features.${j}`, f) as string}
+                    </li>
+                  ))}
+                  {plan.missing.map((f, j) => (
+                    <li key={j} className="flex items-start gap-2.5 text-sm text-gray-500">
+                      <X className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400" aria-hidden="true" />
+                      <span><span className="sr-only">{h('pricing.notIncluded', "Non inclus : ")}</span>{t(`landing.lp.pricing.plans.${i}.missing.${j}`, f) as string}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-8 text-sm text-gray-600">
+          {t('landing.lp.pricing.vatNote', 'Tous les prix sont HT · TVA applicable · ') as string}
+          <a href="#faq" onClick={(e) => { e.preventDefault(); scrollToId('faq'); }} className="font-medium text-emerald-800 underline underline-offset-2 hover:text-emerald-900">{t('landing.lp.pricing.faqLink', 'Questions fréquentes') as string}</a>
+        </p>
+
+        <RoiCalculator billing={billing} />
+      </div>
+    </section>
+  );
+}
+
+// ─── Sécurité et données ──────────────────────────────────────────────────────
+function SecuritySection() {
+  const { h } = useHome();
+  const items = [
+    { icon: Shield, k: 'isolation', title: "Isolation par client", desc: "Chaque organisation ne voit que ses propres données : le cloisonnement est appliqué dans la base (RLS PostgreSQL)." },
+    { icon: Lock, k: 'secrets', title: "Secrets chiffrés", desc: "Les identifiants de vos connecteurs sont chiffrés avant d’être stockés." },
+    { icon: ShieldCheck, k: 'audit', title: "Piste d’audit", desc: "Les validations sont datées et portent une empreinte SHA-256 : toute modification ultérieure est détectée." },
+    { icon: Users, k: 'access', title: "Accès par rôles", desc: "Rôles à plusieurs niveaux et SSO OpenID Connect (plan Groupe). Aucun autre protocole SSO n’est proposé." },
   ];
+  return (
+    <section id="securite" aria-labelledby="security-title" className="scroll-mt-16 bg-white py-20 sm:py-24">
+      <div className={WRAP}>
+        <h2 id="security-title" className={H2}>{h('security.title', "Sécurité et données")}</h2>
+        <p className={LEAD}>{h('security.subtitle', "Ce que la plateforme fait aujourd’hui pour protéger vos données, sans promesse que nous ne pourrions pas documenter.")}</p>
+        <ul className="mt-12 grid grid-cols-1 gap-x-10 gap-y-8 sm:grid-cols-2">
+          {items.map(({ icon: Icon, k, title, desc }) => (
+            <li key={k} className="flex gap-4">
+              <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><Icon className="h-5 w-5" aria-hidden="true" /></span>
+              <div>
+                <h3 className="font-semibold text-gray-900">{h(`security.${k}.title`, title)}</h3>
+                <p className="mt-1 text-[15px] leading-relaxed text-gray-600">{h(`security.${k}.desc`, desc)}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-10 flex flex-col gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex gap-4">
+            <Server className="mt-0.5 h-5 w-5 flex-shrink-0 text-gray-600" aria-hidden="true" />
+            <p className="max-w-3xl text-[15px] leading-relaxed text-gray-700">
+              {h('security.hosting', "Hébergement chez un prestataire européen. Les fonctions d’IA envoient le texte analysé à OpenAI, un prestataire américain : c’est indiqué avant chaque envoi. Aucune certification de sécurité n’est revendiquée à ce stade.")}
+            </p>
+          </div>
+          <Link to="/security" className="flex-shrink-0 text-sm font-semibold text-emerald-800 underline underline-offset-2 hover:text-emerald-900">{h('security.more', "Détails sur la page Sécurité")}</Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Ressources ───────────────────────────────────────────────────────────────
+function Resources() {
+  const { h } = useHome();
+  const guides = [
+    { k: 'csrdpme', href: '/guide/csrd-pme', category: "Guide", title: "CSRD pour les PME", desc: "Calendrier, seuils, normes ESRS et plan d’action concret." },
+    { k: 'carbon', href: '/guide/bilan-carbone-entreprise', category: "Guide", title: "Bilan carbone d’entreprise", desc: "Scopes 1, 2 et 3, facteurs ADEME, obligations légales et méthode pas à pas." },
+    { k: 'csddd', href: '/guide/csddd-supply-chain', category: "Guide", title: "CSDDD et chaîne d’approvisionnement", desc: "Qui est concerné, obligations, calendrier d’application et plan de mise en conformité." },
+    { k: 'checklist', href: '/ressources/checklist-csrd', category: "Checklist", title: "Checklist CSRD", desc: "46 indicateurs ESRS prioritaires classés par criticité, en PDF envoyé par e-mail." },
+  ];
+  return (
+    <section id="ressources" aria-labelledby="resources-title" className="scroll-mt-16 bg-gray-50 py-20 sm:py-24">
+      <div className={WRAP}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 id="resources-title" className={H2}>{h('resources.title', "Guides et ressources gratuites")}</h2>
+            <p className={LEAD}>{h('resources.subtitle', "Pour comprendre ce qui vous concerne avant de choisir un outil.")}</p>
+          </div>
+          <Link to="/resources" className={`inline-flex items-center gap-1.5 self-start rounded-lg text-sm font-semibold text-emerald-800 hover:text-emerald-900 sm:self-auto ${FOCUS}`}>
+            {h('resources.all', "Toutes les ressources")} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </div>
+
+        <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-5">
+          <Link to="/ressources/suis-je-concerne" className={`group flex flex-col justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-7 transition-colors hover:bg-emerald-100/70 lg:col-span-2 ${FOCUS}`}>
+            <div>
+              <Landmark className="h-8 w-8 text-emerald-700" aria-hidden="true" />
+              <h3 className="mt-5 font-display text-2xl font-medium text-gray-900">{h('resources.eligibility.title', "Êtes-vous concerné par la CSRD ?")}</h3>
+              <p className="mt-2 text-[15px] leading-relaxed text-gray-700">{h('resources.eligibility.desc', "Répondez à quelques questions et sachez si votre entreprise entre dans le champ, avec les seuils en vigueur après l’omnibus.")}</p>
+            </div>
+            <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-900">
+              {h('resources.eligibility.cta', "Tester mon éligibilité")} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+            </span>
+          </Link>
+
+          <ul className="divide-y divide-gray-200 border-y border-gray-200 lg:col-span-3">
+            {guides.map(g => (
+              <li key={g.k}>
+                <Link to={g.href} className={`group flex items-start justify-between gap-4 py-5 ${FOCUS}`}>
+                  <span>
+                    <span className="text-xs font-semibold text-gray-600">{h(`resources.${g.k}.category`, g.category)}</span>
+                    <span className="mt-0.5 block text-lg font-semibold text-gray-900 group-hover:text-emerald-800">{h(`resources.${g.k}.title`, g.title)}</span>
+                    <span className="mt-1 block text-[15px] leading-relaxed text-gray-600">{h(`resources.${g.k}.desc`, g.desc)}</span>
+                  </span>
+                  <ArrowRight className="mt-6 h-4 w-4 flex-shrink-0 text-gray-400 transition-transform group-hover:translate-x-0.5 group-hover:text-emerald-800" aria-hidden="true" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <Link to="/normes" className={`group mt-8 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-6 transition-colors hover:border-gray-300 sm:flex-row sm:items-center sm:justify-between ${FOCUS}`}>
+          <div className="flex items-start gap-4">
+            <FileCheck className="mt-0.5 h-6 w-6 flex-shrink-0 text-emerald-700" aria-hidden="true" />
+            <div>
+              <p className="font-semibold text-gray-900">{h('resources.vsme.title', "Norme volontaire VSME (EFRAG) incluse")}</p>
+              <p className="mt-1 max-w-3xl text-[15px] leading-relaxed text-gray-600">{h('resources.vsme.desc', "Un modèle couvre les 11 exigences du Module de Base (B1 à B11), pour répondre aux demandes ESG de vos banques et donneurs d’ordre sans produire un rapport CSRD complet.")}</p>
+            </div>
+          </div>
+          <span className="inline-flex flex-shrink-0 items-center gap-1.5 text-sm font-semibold text-emerald-800">
+            {h('resources.vsme.cta', "Voir les normes couvertes")} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+          </span>
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+// ─── À propos ─────────────────────────────────────────────────────────────────
+function About() {
+  const { h } = useHome();
+  const principles = [
+    { k: 'selfservice', title: "Un démarrage en autonomie", desc: "Vous créez votre compte et commencez seul : aucun projet d’intégration n’est nécessaire." },
+    { k: 'estimates', title: "Des estimations présentées comme telles", desc: "Facteurs ADEME indicatifs, méthode monétaire sur le FEC : l’outil vous invite à relire ces résultats avant usage." },
+    { k: 'review', title: "Une relecture humaine", desc: "L’IA propose des textes et des réponses ; votre équipe les valide avant qu’ils ne servent." },
+  ];
+  return (
+    <section id="qui-sommes-nous" aria-labelledby="about-title" className="scroll-mt-16 bg-white py-20 sm:py-24">
+      <div className={`${WRAP} grid gap-12 lg:grid-cols-2 lg:gap-16`}>
+        <div>
+          <h2 id="about-title" className={H2}>{h('about.title', "Une plateforme pour les équipes qui préparent leur premier rapport")}</h2>
+          <p className="mt-5 max-w-xl text-lg leading-relaxed text-gray-600">
+            {h('about.p1', "ESGFlow est une plateforme de reporting ESG récente, pensée pour les PME et ETI qui doivent préparer leur reporting CSRD ou répondre aux demandes ESG de leurs clients et de leurs banques.")}
+          </p>
+          <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-gray-600">
+            {h('about.p2', "Nous n’affichons ni références clients ni récompenses : vous jugerez sur pièces, pendant les 14 jours d’essai.")}
+          </p>
+          <Link to="/contact" className={`${BTN_SECONDARY} mt-7`}><Mail className="h-4 w-4" aria-hidden="true" />{h('about.cta', "Une question avant de vous lancer ?")}</Link>
+        </div>
+        <ul className="space-y-6 lg:pt-3">
+          {principles.map(p => (
+            <li key={p.k} className="border-l-[3px] border-emerald-600 pl-5">
+              <h3 className="font-semibold text-gray-900">{h(`about.${p.k}.title`, p.title)}</h3>
+              <p className="mt-1 text-[15px] leading-relaxed text-gray-600">{h(`about.${p.k}.desc`, p.desc)}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+// ─── FAQ ──────────────────────────────────────────────────────────────────────
+function FaqItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  return (
+    <div className="border-b border-gray-200">
+      <h3>
+        <button type="button" aria-expanded={open} aria-controls={id} onClick={() => setOpen(v => !v)}
+          className={`flex w-full items-center justify-between gap-4 py-5 text-left text-[17px] font-semibold text-gray-900 hover:text-emerald-800 ${FOCUS}`}>
+          {q}
+          {open ? <Minus className="h-5 w-5 flex-shrink-0 text-emerald-700" aria-hidden="true" /> : <Plus className="h-5 w-5 flex-shrink-0 text-gray-500" aria-hidden="true" />}
+        </button>
+      </h3>
+      <div id={id} role="region" hidden={!open} className="pb-5 pr-9 text-[15px] leading-relaxed text-gray-600">{a}</div>
+    </div>
+  );
+}
+
+function Faq() {
+  const { t } = useHome();
+  return (
+    <section id="faq" aria-labelledby="faq-title" className="scroll-mt-16 bg-gray-50 py-20 sm:py-24">
+      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+        <h2 id="faq-title" className={H2}>{t('landing.lp.faq.title', 'Questions fréquentes') as string}</h2>
+        <div className="mt-10 border-t border-gray-200">
+          {FAQS.map((f, i) => <FaqItem key={i} q={t(`landing.lp.faq.items.${i}.q`, f.q) as string} a={t(`landing.lp.faq.items.${i}.a`, f.a) as string} />)}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Appel final et pied de page ──────────────────────────────────────────────
+function FinalCta() {
+  const { h } = useHome();
+  return (
+    <section aria-labelledby="cta-title" className="relative overflow-hidden bg-emerald-950 py-20 sm:py-24">
+      <FlowWaves dark className="pointer-events-none absolute inset-0 h-full w-full" />
+      <div className={`${WRAP} relative`}>
+        <h2 id="cta-title" className="max-w-3xl font-display text-4xl font-medium leading-[1.1] tracking-tight text-white sm:text-5xl">
+          {h('cta.title', "Essayez ESGFlow avec vos propres données.")}
+        </h2>
+        <p className="mt-5 max-w-2xl text-lg leading-relaxed text-emerald-100">
+          {h('cta.subtitle', "14 jours, sans carte bancaire. Importez un FEC ou saisissez un premier indicateur : vous verrez ce que l’outil fait de vos chiffres.")}
+        </p>
+        <div className="mt-9 flex flex-wrap gap-3">
+          <Link to="/register" className={`inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 text-[15px] font-semibold text-emerald-950 transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-950`}>
+            {h('cta.primary', "Démarrer gratuitement")} <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+          <Link to="/demo" className="inline-flex items-center justify-center rounded-xl border border-white/40 px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-950">
+            {h('cta.secondary', "Voir la démo")}
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Footer() {
+  const { t, h } = useHome();
+  const cols: { k: string; title: string; links: { label: string; href: string; anchor?: string }[] }[] = [
+    { k: 'features', title: "Fonctionnalités", links: [
+      { label: "Bilan carbone Scope 3", href: '/features/bilan-carbone' },
+      { label: "Reporting CSRD / ESRS", href: '/features/csrd-reporting' },
+      { label: "Plan de décarbonation SBTi", href: '/features/decarbonation' },
+      { label: "Chaîne d’approvisionnement", href: '/features/supply-chain' },
+      { label: "Double matérialité", href: '/features/double-materialite' },
+      { label: "Taxonomie UE", href: '/features/taxonomie-ue' },
+      { label: "IA et automatisation", href: '/features/ia-automatisation' },
+      { label: "Piste d’audit", href: '/features/audit-trail' },
+    ] },
+    { k: 'resources', title: "Ressources", links: [
+      { label: "Guide CSRD pour les PME", href: '/guide/csrd-pme' },
+      { label: "Guide du bilan carbone", href: '/guide/bilan-carbone-entreprise' },
+      { label: "Guide CSDDD", href: '/guide/csddd-supply-chain' },
+      { label: "Checklist CSRD", href: '/ressources/checklist-csrd' },
+      { label: "Normes couvertes", href: '/normes' },
+      { label: "Centre d’aide", href: '/help' },
+    ] },
+    { k: 'company', title: "ESGFlow", links: [
+      { label: "Tarifs", href: '#tarifs', anchor: 'tarifs' },
+      { label: "À propos", href: '#qui-sommes-nous', anchor: 'qui-sommes-nous' },
+      { label: "Sécurité", href: '/security' },
+      { label: "Support", href: '/support' },
+      { label: "Contact", href: '/contact' },
+    ] },
+  ];
+  const linkCls = `rounded text-sm text-slate-400 transition-colors hover:text-white ${FOCUS} focus-visible:ring-offset-slate-950`;
+  return (
+    <footer className="bg-slate-950 py-16 text-white">
+      <div className={WRAP}>
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-5">
+          <div className="md:col-span-2">
+            <div className="mb-4 flex items-center gap-2.5">
+              <LogoMark size={34} decorative />
+              <Wordmark className="text-xl" tone="light" />
+            </div>
+            <p className="max-w-xs text-sm leading-relaxed text-slate-400">{t('landing.lp.footer.tagline', 'La plateforme ESG pour préparer votre reporting CSRD : collecte, scores, rapports, IA.') as string}</p>
+          </div>
+          {cols.map(col => (
+            <div key={col.k}>
+              <h3 className="mb-4 text-sm font-semibold text-white">{h(`footer.${col.k}.title`, col.title)}</h3>
+              <ul className="space-y-3">
+                {col.links.map((l, i) => (
+                  <li key={l.href}>
+                    {l.anchor
+                      ? <a href={l.href} onClick={(e) => { e.preventDefault(); scrollToId(l.anchor!); }} className={linkCls}>{h(`footer.${col.k}.links.${i}`, l.label)}</a>
+                      : <Link to={l.href} className={linkCls}>{h(`footer.${col.k}.links.${i}`, l.label)}</Link>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <div className="mt-12 flex flex-col items-start justify-between gap-4 border-t border-slate-800 pt-8 md:flex-row md:items-center">
+          <p className="text-sm text-slate-400">{t('landing.lp.footer.copyright', '© 2026 ESGFlow. Tous droits réservés.') as string}</p>
+          <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-400">
+            <li><Link to="/legal-notice" className={linkCls}>{t('landing.lp.footer.legalNotice', 'Mentions légales') as string}</Link></li>
+            <li><Link to="/privacy-policy" className={linkCls}>{t('landing.lp.footer.privacy', 'Confidentialité') as string}</Link></li>
+            <li><Link to="/terms-of-service" className={linkCls}>{t('landing.lp.footer.terms', 'CGU') as string}</Link></li>
+            <li><Link to="/privacy-policy#cookies" className={linkCls}>{t('landing.lp.footer.cookies', 'Cookies') as string}</Link></li>
+          </ul>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+export default function LandingPage() {
+  useLightTheme();
+  const [activeModule, setActiveModule] = useState(0);
 
   usePageSeo({
     id: 'landing',
@@ -1440,7 +2165,7 @@ export default function LandingPage() {
     faqJsonLd: {
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
-      mainEntity: faqs.slice(0, 5).map(f => ({
+      mainEntity: FAQS.slice(0, 5).map(f => ({
         '@type': 'Question',
         name: f.q,
         acceptedAnswer: { '@type': 'Answer', text: f.a },
@@ -1451,1802 +2176,31 @@ export default function LandingPage() {
   // Ouvre un module dans l'explorateur de modules (menu Fonctionnalités, section Fonctionnalités).
   const openModule = (moduleId: string) => {
     const i = MODULES.findIndex(m => m.id === moduleId);
-    scrollTo('modules');
+    scrollToId('modules');
     if (i >= 0) setActiveModule(i);
   };
 
   return (
-    <div className="min-h-screen bg-white antialiased font-sans">
-
-      {/* ── Nav ──────────────────────────────────────────────────────────────── */}
-      <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-lg shadow-sm border-b border-gray-100' : 'bg-transparent'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
-          <Link to="/" className="flex items-center gap-2.5">
-            <LogoMark size={36} decorative />
-            <Wordmark className="text-xl transition-colors" tone={scrolled ? 'dark' : 'light'} />
-          </Link>
-
-          <div className="hidden md:flex items-center gap-1">
-            <FeaturesMegaMenu
-              open={openMenu === 'features'} scrolled={scrolled}
-              onOpen={() => setOpenMenu('features')} onClose={() => setOpenMenu(null)}
-              onModule={openModule} onSeeAll={() => scrollTo('fonctionnalites')}
-            />
-            {[{ key: 'solutions', label: t('landing.lp.nav.solutionsLabel', 'Solutions') }].map(({ key, label }) => (
-              <div key={key} className="relative" onMouseEnter={() => setOpenMenu(key)} onMouseLeave={() => setOpenMenu(null)}>
-                <button className={`px-4 py-2 font-medium transition-colors flex items-center gap-1 rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>
-                  {label} <ChevronDown className="h-3.5 w-3.5" />
-                </button>
-                {openMenu === key && (
-                  <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 p-3">
-                    {[
-                      { icon: Building2, title: t('landing.lp.nav.sol1Title', 'PME & ETI'), desc: t('landing.lp.nav.sol1Desc', 'Solution complète accessible') },
-                      { icon: Layers, title: t('landing.lp.nav.sol2Title', 'Grands Groupes'), desc: t('landing.lp.nav.sol2Desc', 'CAC40, SBF120, Enterprise') },
-                      { icon: Globe, title: t('landing.lp.nav.sol3Title', 'Cabinets Conseil'), desc: t('landing.lp.nav.sol3Desc', 'Multi-clients, white-label') },
-                    ].map((s, i) => (
-                      <Link key={i} to="/register" className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
-                        <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
-                          <s.icon className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-semibold text-gray-900">{s.title}</div>
-                          <div className="text-xs text-gray-500">{s.desc}</div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-            <button onClick={() => scrollTo('tarifs')} className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>{t('landing.lp.nav.pricing', 'Tarifs')}</button>
-            <button onClick={() => scrollTo('qui-sommes-nous')} className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>{t('landing.lp.nav.about', 'À propos')}</button>
-            <button onClick={() => scrollTo('faq')} className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>{t('landing.lp.nav.faqLabel', 'FAQ')}</button>
-            <Link to="/normes" className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>
-              {t('landing.lp.nav.normes', 'Normes')}
-            </Link>
-            <Link to="/contact" className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm flex items-center gap-1.5 ${scrolled ? 'text-gray-700 hover:text-green-600 hover:bg-gray-50' : 'text-white/90 hover:text-white hover:bg-white/10'}`}>
-              <Mail className="h-3.5 w-3.5" />
-              {t('landing.lp.nav.contact', 'Contact')}
-            </Link>
-            <div className="h-5 w-px bg-gray-300 mx-2" />
-            <Link to="/login" className={`px-4 py-2 font-medium transition-colors rounded-lg text-sm ${scrolled ? 'text-gray-700 hover:text-green-600' : 'text-white/90 hover:text-white'}`}>{t('landing.lp.nav.login', 'Connexion')}</Link>
-            <Link to="/demo">
-              <button className={`ml-1 px-4 py-2 font-semibold rounded-xl transition-all text-sm border ${scrolled ? 'border-green-600 text-green-600 hover:bg-green-50' : 'border-white/40 text-white hover:bg-white/10'}`}>
-                {t('landing.lp.nav.demo', 'Voir la démo')}
-              </button>
-            </Link>
-            <Link to="/register">
-              <button className="ml-1 px-5 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-green-600/25 text-sm hover:-translate-y-0.5">
-                {t('landing.lp.nav.trial', 'Essai gratuit')}
-              </button>
-            </Link>
-          </div>
-
-          {/* Mobile hamburger */}
-          <button aria-label={mobileMenuOpen ? t('landing.lp.nav.closeMenu', 'Fermer le menu') : t('landing.lp.nav.openMenu', 'Ouvrir le menu')} onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className={`md:hidden tap-target flex items-center justify-center rounded-lg transition-colors ${scrolled ? 'text-gray-700 hover:bg-gray-100' : 'text-white hover:bg-white/10'}`}>
-            {mobileMenuOpen ? <XIcon className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
-        </div>
-
-        {/* Mobile menu drawer */}
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-t border-gray-100 shadow-xl animate-in slide-in-from-top-2">
-            <div className="px-4 py-4 space-y-1">
-              <div>
-                <button type="button" aria-expanded={mobileFeaturesOpen} aria-controls="mobile-features" onClick={() => setMobileFeaturesOpen(v => !v)}
-                  className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">
-                  {t('landing.lp.nav.featuresLabel', 'Fonctionnalités')}
-                  <ChevronDown className={`h-4 w-4 transition-transform ${mobileFeaturesOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {mobileFeaturesOpen && (
-                  <div id="mobile-features" className="px-2 pb-2 space-y-3">
-                    {FEATURE_GROUPS.map(g => (
-                      <div key={g.id}>
-                        <p className="px-2 pt-2 pb-1 text-[11px] font-bold uppercase tracking-widest text-gray-400">{t(`landing.lp.featureGroups.${g.id}`, g.title)}</p>
-                        {g.items.map(item => (
-                          item.to
-                            ? <Link key={item.id} to={item.to} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-gray-50 text-sm text-gray-700"><item.icon className="h-4 w-4 text-green-600 flex-shrink-0" aria-hidden="true" />{t(`landing.lp.features.${item.id}.title`, item.title)}</Link>
-                            : <button key={item.id} type="button" onClick={() => { openModule(item.module || item.id); setMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-2 py-2.5 rounded-xl hover:bg-gray-50 text-sm text-gray-700 text-left"><item.icon className="h-4 w-4 text-green-600 flex-shrink-0" aria-hidden="true" />{t(`landing.lp.features.${item.id}.title`, item.title)}</button>
-                        ))}
-                      </div>
-                    ))}
-                    <Link to="/ressources/suis-je-concerne" onClick={() => setMobileMenuOpen(false)} className="block mx-2 px-4 py-3 text-sm font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl text-center">
-                      {t('landing.lp.featuresPromo.title', 'Êtes-vous concerné par la CSRD ?')}
-                    </Link>
-                  </div>
-                )}
-              </div>
-              <button onClick={() => { scrollTo('tarifs'); setMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">{t('landing.lp.nav.pricing', 'Tarifs')}</button>
-              <button onClick={() => { scrollTo('qui-sommes-nous'); setMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">{t('landing.lp.nav.about', 'À propos')}</button>
-              <button onClick={() => { scrollTo('faq'); setMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">{t('landing.lp.nav.faqLabel', 'FAQ')}</button>
-              <Link to="/resources" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">{t('landing.lp.nav.resources', 'Ressources')}</Link>
-              <Link to="/normes" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">{t('landing.lp.nav.normes', 'Normes & Conformité')}</Link>
-              <Link to="/contact" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl">
-                <Mail className="h-4 w-4 text-green-600" />
-                {t('landing.lp.nav.contact', 'Contact')}
-              </Link>
-              <div className="border-t border-gray-100 pt-3 mt-3 space-y-2">
-                <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl text-center">{t('landing.lp.nav.login', 'Connexion')}</Link>
-                <Link to="/demo" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-semibold text-green-700 border border-green-200 bg-green-50 rounded-xl text-center">{t('landing.lp.nav.demo', 'Voir la démo')}</Link>
-                <Link to="/register" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-semibold text-white bg-green-600 rounded-xl text-center shadow-lg">{t('landing.lp.nav.trial14', 'Essai gratuit 14 jours')}</Link>
-              </div>
-            </div>
-          </div>
-        )}
-      </nav>
-
-      {/* ── Hero ─────────────────────────────────────────────────────────────── */}
-      <section ref={heroRef} className="relative min-h-screen flex items-center overflow-hidden" style={{ background: 'linear-gradient(135deg, #020b18 0%, #06101f 45%, #051a10 85%, #020b18 100%)' }}>
-        {/* Dot grid */}
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.038) 1px, transparent 0)', backgroundSize: '36px 36px' }} />
-        {/* Aurora blobs — animés via keyframes */}
-        <div className="absolute pointer-events-none" style={{ top: '-8%', left: '16%', width: 740, height: 740, borderRadius: '50%', filter: 'blur(130px)', background: 'radial-gradient(ellipse, rgba(16,185,129,0.22) 0%, transparent 65%)', animation: 'aurora1 9s ease-in-out infinite' }} />
-        <div className="absolute pointer-events-none" style={{ bottom: '-5%', right: '8%', width: 630, height: 630, borderRadius: '50%', filter: 'blur(110px)', background: 'radial-gradient(ellipse, rgba(5,150,105,0.16) 0%, transparent 65%)', animation: 'aurora2 11s ease-in-out infinite' }} />
-        <div className="absolute pointer-events-none" style={{ top: '42%', left: '-5%', width: 460, height: 460, borderRadius: '50%', filter: 'blur(90px)', background: 'radial-gradient(ellipse, rgba(14,165,233,0.08) 0%, transparent 65%)', animation: 'aurora3 13s ease-in-out infinite' }} />
-        <div className="absolute pointer-events-none" style={{ top: '5%', right: '4%', width: 340, height: 340, borderRadius: '50%', filter: 'blur(80px)', background: 'radial-gradient(ellipse, rgba(52,211,153,0.1) 0%, transparent 65%)', animation: 'aurora2 7s ease-in-out infinite reverse' }} />
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-8">
-            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full text-sm font-medium" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.32)', color: '#6ee7b7' }}>
-              <span className="relative flex h-2 w-2 flex-shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
-              </span>
-              {t('landing.lp.hero.badge', '22 modules · CSRD · Scope 3 · IA générative')}
-              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: 'rgba(16,185,129,0.25)', color: '#34d399' }}>2026</span>
-            </div>
-
-            <h1 className="text-5xl lg:text-6xl xl:text-7xl font-extrabold text-white leading-[1.05] tracking-tight">
-              {t('landing.lp.hero.titleTop', 'Maîtrisez')}
-              <br />
-              <span className={`inline-block bg-gradient-to-r ${rotatingWord.color} bg-clip-text text-transparent transition-all duration-300 ${wordAnimating ? 'opacity-0 translate-y-3' : 'opacity-100 translate-y-0'}`}>
-                {t(`landing.lp.hero.rotating.${rotatingWord.key}`, rotatingWord.text)}
-              </span>
-              <br />
-              <span className="text-3xl lg:text-4xl xl:text-5xl font-bold text-slate-300">
-                {t('landing.lp.hero.titleBottom', 'en toute simplicité')}
-              </span>
-            </h1>
-
-            <p className="text-xl text-slate-300 leading-relaxed max-w-lg">
-              {t('landing.lp.hero.subtitle', "De la collecte de données à la publication de votre rapport CSRD, ESGFlow couvre l'intégralité de votre démarche — avec l'IA, les connecteurs et la piste d'audit horodatée qu'il vous faut.")}
-            </p>
-
-            <div className="flex flex-wrap gap-3">
-              <Link to="/register">
-                <button className="group flex items-center gap-2 px-7 py-4 text-white font-bold rounded-2xl transition-all text-base hover:-translate-y-0.5 active:translate-y-0" style={{ background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', boxShadow: '0 0 0 1px rgba(16,185,129,0.5), 0 8px 32px rgba(5,150,105,0.45), 0 2px 6px rgba(0,0,0,0.3)' }}>
-                  {t('landing.lp.hero.cta1', 'Essai gratuit 14 jours')}
-                  <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </button>
-              </Link>
-              <Link to="/demo">
-                <button className="flex items-center gap-2 px-7 py-4 font-semibold rounded-2xl transition-all text-base text-white hover:bg-white/[0.13]" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.18)' }}>
-                  <Play className="h-4 w-4 fill-white" /> {t('landing.lp.hero.cta2', 'Démo interactive')}
-                </button>
-              </Link>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-slate-400">
-                <CheckCircle className="h-4 w-4 text-green-400 flex-shrink-0" />
-                {t('landing.lp.hero.noCard', 'Aucune carte bancaire · Sans engagement')}
-              </div>
-            </div>
-
-            {/* Stats */}
-            <div ref={heroRef} className="grid grid-cols-3 gap-4 pt-8 border-t border-white/10">
-              <StatCounter value={22} suffix="" label={t('landing.lp.hero.stat1', 'Modules ESG')} started={heroInView} />
-              <StatCounter value={100} suffix="+" label={t('landing.lp.hero.stat2', 'Indicateurs')} started={heroInView} />
-              <StatCounter value={10} suffix="" label={t('landing.lp.hero.stat4', 'Référentiels')} started={heroInView} />
-            </div>
-          </div>
-
-          {/* Hero — Browser mockup avec preview rotatif */}
-          <div className="relative hidden lg:block">
-            {/* Multi-layer glow */}
-            <div className="absolute rounded-3xl pointer-events-none" style={{ inset: '-28px', background: 'radial-gradient(ellipse at 50% 40%, rgba(16,185,129,0.28) 0%, rgba(5,150,105,0.12) 40%, transparent 65%)', filter: 'blur(40px)' }} />
-            <div className="absolute rounded-3xl pointer-events-none" style={{ inset: '-16px', background: 'radial-gradient(ellipse at 70% 60%, rgba(14,165,233,0.1) 0%, transparent 60%)', filter: 'blur(25px)' }} />
-
-            {/* Browser chrome frame */}
-            <div className="relative rounded-2xl overflow-hidden" style={{ boxShadow: '0 40px 80px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.07), inset 0 1px 0 rgba(255,255,255,0.07)' }}>
-              {/* Barre de titre navigateur */}
-              <div className="flex items-center gap-3 px-4 py-3 border-b" style={{ background: '#111927', borderColor: 'rgba(255,255,255,0.06)' }}>
-                {/* Boutons macOS */}
-                <div className="flex gap-1.5 flex-shrink-0">
-                  <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-                  <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
-                  <div className="w-3 h-3 rounded-full bg-[#28ca41]" />
-                </div>
-                {/* Barre d'adresse */}
-                <div className="flex-1 flex items-center gap-2 bg-white/[0.06] rounded-lg px-3 py-1.5 mx-2">
-                  <div className="flex items-center gap-1">
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <circle cx="5" cy="5" r="4.5" stroke="#10b981" strokeWidth="1" />
-                      <path d="M3.5 5L4.5 6L6.5 4" stroke="#10b981" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                  <span className="text-[11px] text-slate-400 font-mono tracking-tight">app.greenconnect.cloud</span>
-                </div>
-                {/* Action icons */}
-                <div className="flex gap-2 flex-shrink-0">
-                  <div className="w-3.5 h-3.5 rounded bg-white/[0.06]" />
-                  <div className="w-3.5 h-3.5 rounded bg-white/[0.06]" />
-                </div>
-              </div>
-
-              {/* Contenu app — mini sidebar + preview */}
-              <div className="flex bg-[#0f1117]" style={{ minHeight: 340 }}>
-                {/* Mini sidebar */}
-                <div className="w-[52px] flex-shrink-0 bg-[#0f1117] border-r border-white/[0.05] flex flex-col items-center py-3 gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-1">
-                    <div className="w-2.5 h-2.5 rounded-sm bg-white/90" />
-                  </div>
-                  {['#10b981','#6b7280','#6b7280','#6b7280','#6b7280'].map((c, i) => (
-                    <div key={i} className="w-8 h-7 rounded-lg flex flex-col items-center justify-center gap-0.5" style={{ background: i === 0 ? c + '18' : 'transparent' }}>
-                      <div className="w-3.5 h-0.5 rounded-full" style={{ background: i === 0 ? c : '#374151' }} />
-                      <div className="w-2.5 h-0.5 rounded-full" style={{ background: i === 0 ? c : '#374151' }} />
-                    </div>
-                  ))}
-                </div>
-
-                {/* Module preview */}
-                <div className="flex-1 flex flex-col overflow-hidden">
-                  {/* Tabs */}
-                  <div className="flex gap-1 px-3 pt-2.5 pb-0 bg-[#141720] border-b border-white/[0.05]">
-                    {MODULES.slice(0, 5).map((m, i) => (
-                      <button
-                        key={i}
-                        onClick={() => { setHeroModule(i); setAutoPlay(false); }}
-                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-t-lg text-[11px] font-semibold whitespace-nowrap transition-colors flex-shrink-0 -mb-px ${
-                          heroModule === i
-                            ? 'bg-[#0f1117] text-white border border-b-[#0f1117] border-white/[0.08]'
-                            : 'text-slate-500 hover:text-slate-300'
-                        }`}
-                      >
-                        <m.icon className="h-3 w-3" style={{ color: heroModule === i ? m.color : undefined }} />
-                        {tMod(m, 'name').split(' ')[0]}
-                      </button>
-                    ))}
-                  </div>
-                  {/* Preview — fond sombre identique à l'app */}
-                  <div className="flex-1 overflow-hidden" style={{ background: '#1a1f2e' }}>
-                    <div className="scale-[0.82] origin-top-left" style={{ width: '122%', height: '122%' }}>
-                      {PreviewComp && <PreviewComp />}
-                    </div>
-                  </div>
-                  {/* Progress bar en bas */}
-                  <div className="flex items-center gap-2 px-3 py-2 bg-[#141720] border-t border-white/[0.05]">
-                    <div className="flex gap-0.5 flex-1">
-                      {MODULES.map((_, i) => (
-                        <div key={i} onClick={() => { setHeroModule(i); setAutoPlay(false); }}
-                          className="h-0.5 rounded-full flex-1 cursor-pointer transition-all"
-                          style={{ background: i === heroModule ? '#10b981' : 'rgba(255,255,255,0.12)' }}
-                        />
-                      ))}
-                    </div>
-                    <button onClick={() => setAutoPlay(a => !a)} className="text-[10px] text-slate-500 hover:text-white transition-colors ml-1">
-                      {autoPlay ? '⏸' : '▶'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Floating card — CSRD, top right */}
-            <div className="absolute -top-5 -right-5 rounded-2xl px-3.5 py-3" style={{ background: 'white', border: '1px solid #ecfdf5', boxShadow: '0 20px 50px rgba(0,0,0,0.22), 0 4px 12px rgba(5,150,105,0.12)' }}>
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-green-50">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                </div>
-                <div>
-                  <div className="text-[12px] font-bold text-gray-900">CSRD Conforme</div>
-                  <div className="text-[10px] text-gray-400">ESRS 2024</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Floating card — Score ESG, bottom left */}
-            <div className="absolute -bottom-5 -left-5 rounded-2xl px-3.5 py-3" style={{ background: 'white', border: '1px solid #f0f9ff', boxShadow: '0 20px 50px rgba(0,0,0,0.22), 0 4px 12px rgba(16,185,129,0.1)' }}>
-              <div className="flex items-center gap-2.5">
-                <div className="relative flex-shrink-0 w-10 h-10">
-                  <svg width="40" height="40" viewBox="0 0 40 40" style={{ transform: 'rotate(-90deg)' }}>
-                    <circle cx="20" cy="20" r="16" fill="none" stroke="#e5e7eb" strokeWidth="4.5" />
-                    <circle cx="20" cy="20" r="16" fill="none" stroke="#10b981" strokeWidth="4.5"
-                      strokeDasharray={`${2 * Math.PI * 16 * 0.78} ${2 * Math.PI * 16 * 0.22}`} strokeLinecap="round" />
-                  </svg>
-                  <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-gray-800">78</span>
-                </div>
-                <div>
-                  <div className="text-[12px] font-bold text-gray-900">Score ESG /100</div>
-                  <div className="flex items-center gap-1">
-                    <TrendingUp className="h-3 w-3 text-emerald-500" />
-                    <span className="text-[10px] text-emerald-600 font-semibold">+4 pts ce mois</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Floating card — Live sync, right */}
-            <div className="absolute top-[38%] -right-10 rounded-xl px-3 py-2.5" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 10px 30px rgba(0,0,0,0.4)' }}>
-              <div className="flex items-center gap-2">
-                <span className="relative flex h-2 w-2 flex-shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
-                </span>
-                <div>
-                  <div className="text-[11px] font-bold text-white whitespace-nowrap">47 sources</div>
-                  <div className="text-[10px] text-slate-400">Live · Temps réel</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="absolute bottom-0 inset-x-0">
-          <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 60L1440 60L1440 30C1200 60 960 0 720 15C480 30 240 60 0 30L0 60Z" fill="white" />
-          </svg>
-        </div>
-      </section>
-
-      {/* ── Social proof ─────────────────────────────────────────────────────── */}
-      <style>{`
-        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        .marquee-track { animation: marquee 45s linear infinite; }
-        .marquee-track:hover { animation-play-state: paused; }
-        @keyframes aurora1 {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33%  { transform: translate(-55px, 35px) scale(1.07); }
-          66%  { transform: translate(40px, -25px) scale(0.94); }
-        }
-        @keyframes aurora2 {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33%  { transform: translate(50px, -40px) scale(1.1); }
-          66%  { transform: translate(-35px, 28px) scale(0.92); }
-        }
-        @keyframes aurora3 {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          50%  { transform: translate(28px, -50px) scale(1.09); }
-        }
-      `}</style>
-      <section ref={proofRef} className="pt-16 pb-8 bg-white border-b border-gray-100 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-          {/* ── Key metrics counters ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-14">
-            {[
-              { value: 22,  suffix: '',    label: 'Modules ESG couverts',       icon: BarChart3,  color: 'text-emerald-600', bg: 'bg-emerald-50', ring: 'ring-emerald-100', accent: '#059669' },
-              { value: 100, suffix: '+',   label: 'Indicateurs ESRS trackés',   icon: Database,   color: 'text-blue-600',    bg: 'bg-blue-50',    ring: 'ring-blue-100',    accent: '#2563eb' },
-              { value: 10,  suffix: '',    label: 'Référentiels intégrés',      icon: Globe,      color: 'text-violet-600',  bg: 'bg-violet-50',  ring: 'ring-violet-100',  accent: '#7c3aed' },
-            ].map(({ value, suffix, label, icon: Icon, color, bg, ring, accent }) => (
-              <div key={label} className={`relative text-center p-6 rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-lg transition-all duration-200 group ring-1 ${ring}`}>
-                <div className={`w-12 h-12 ${bg} rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform`}>
-                  <Icon className={`h-6 w-6 ${color}`} />
-                </div>
-                <div className="text-3xl lg:text-4xl font-extrabold tabular-nums" style={{ color: accent }}>
-                  <CountUp end={value} started={proofInView} />{suffix}
-                </div>
-                <div className="text-sm text-gray-500 mt-1 font-medium">{label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* ── Trust badges ── */}
-          <div className="flex flex-wrap justify-center gap-3 mb-12">
-            {[
-              { icon: Shield, label: t('landing.lp.proof.badges.0.label', 'Isolation par client'), sub: t('landing.lp.proof.badges.0.sub', 'Cloisonnement en base de données (RLS)'), bg: 'bg-blue-50', text: 'text-blue-700', ring: 'ring-blue-100' },
-              { icon: Lock, label: t('landing.lp.proof.badges.1.label', 'Secrets chiffrés'), sub: t('landing.lp.proof.badges.1.sub', "Clés d'intégration chiffrées au repos"), bg: 'bg-slate-50', text: 'text-slate-700', ring: 'ring-slate-100' },
-              { icon: ShieldCheck, label: t('landing.lp.proof.badges.2.label', "Piste d'audit"), sub: t('landing.lp.proof.badges.2.sub', 'Empreintes SHA-256, validations datées'), bg: 'bg-violet-50', text: 'text-violet-700', ring: 'ring-violet-100' },
-            ].map(({ icon: Icon, label, sub, bg, text, ring }) => (
-              <div key={label} className={`flex items-center gap-3 px-5 py-3 rounded-2xl bg-white border border-gray-200 ring-1 ${ring} shadow-sm hover:shadow-md transition-all duration-200`}>
-                <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center flex-shrink-0`}>
-                  <Icon className={`h-5 w-5 ${text}`} />
-                </div>
-                <div>
-                  <div className="text-sm font-bold text-gray-900">{label}</div>
-                  <div className="text-xs text-gray-500">{sub}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-        </div>
-      </section>
-
-      {/* ── Global stats ─────────────────────────────────────────────────────── */}
-      <section ref={statsRef} className="relative py-16 overflow-hidden" style={{ background: 'linear-gradient(135deg, #020b18 0%, #06101f 50%, #051a10 100%)' }}>
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.032) 1px, transparent 0)', backgroundSize: '36px 36px' }} />
-        <div className="absolute pointer-events-none" style={{ top: '50%', left: '20%', transform: 'translateY(-50%)', width: 600, height: 300, borderRadius: '50%', filter: 'blur(80px)', background: 'radial-gradient(ellipse, rgba(16,185,129,0.18) 0%, transparent 65%)' }} />
-        <div className="absolute pointer-events-none" style={{ top: '50%', right: '15%', transform: 'translateY(-50%)', width: 400, height: 300, borderRadius: '50%', filter: 'blur(70px)', background: 'radial-gradient(ellipse, rgba(5,150,105,0.12) 0%, transparent 65%)' }} />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 lg:gap-8">
-            {[
-              { value: 22, suffix: '', label: t('landing.lp.stats.modules', 'Modules intégrés'), icon: Layers },
-              { value: 100, suffix: '+', label: t('landing.lp.stats.indicators', 'Indicateurs ESRS'), icon: FileCheck },
-              { value: 24, suffix: '', label: t('landing.lp.stats.actions', 'Actions décarbonation'), icon: Flame },
-              { value: 10, suffix: '', label: t('landing.lp.stats.frameworks', 'Référentiels couverts'), icon: BookOpen },
-            ].map(({ value, suffix, label, icon: Icon }) => (
-              <div key={label} className="text-center group cursor-default">
-                <div className="w-12 h-12 mx-auto mb-3 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110" style={{ background: 'rgba(16,185,129,0.14)', border: '1px solid rgba(16,185,129,0.2)', boxShadow: '0 0 20px rgba(16,185,129,0.08)' }}>
-                  <Icon className="h-5 w-5 text-emerald-400" />
-                </div>
-                <StatCounter value={value} suffix={suffix} label={label} started={statsInView} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Notre objectif (illustrations) ────────────────────────────────────── */}
-      <MissionIllustrated />
-
-      <FeaturesOverview onModule={openModule} />
-
-      {/* ── Module explorer ───────────────────────────────────────────────────── */}
-      <LazySection id="modules">
-      <section id="modules" className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <span className="text-sm font-semibold text-green-600 uppercase tracking-widest">{t('landing.lp.modulesSection.eyebrow', 'Modules')}</span>
-            <h2 className="text-4xl font-bold text-gray-900 mt-3 mb-4">{t('landing.lp.modulesSection.title', '22 modules. Une seule plateforme.')}</h2>
-            <p className="text-lg text-gray-500 max-w-2xl mx-auto">{t('landing.lp.modulesSection.subtitle', 'Chaque module est conçu pour répondre à un besoin précis — et ils fonctionnent tous ensemble.')}</p>
-          </div>
-
-          {/* Onglets par catégorie */}
-          <div role="tablist" aria-label={t('landing.lp.modulesSection.tabsLabel', 'Catégories de modules')}
-            className="flex gap-2 overflow-x-auto pb-2 mb-8 sm:justify-center [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {MODULE_CATEGORIES.map(c => {
-              const on = c.id === activeCategory.id;
-              return (
-                <button key={c.id} role="tab" aria-selected={on}
-                  onClick={() => { const first = MODULES.findIndex(m => m.id === c.modules[0]); if (first >= 0) { setActiveModule(first); } }}
-                  className={`flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border transition-all ${on ? 'bg-gray-900 text-white border-gray-900 shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
-                >
-                  {t(`landing.lp.modulesSection.cat.${c.id}`, c.label)}
-                  <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${on ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>{c.modules.length}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-            {/* Modules de la catégorie */}
-            <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
-              {categoryModules.map(({ m, i }) => (
-                <button
-                  key={m.id}
-                  onClick={() => setActiveModule(i)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all border-2 ${activeModule === i ? `border-transparent ${m.lightBg} shadow-md` : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'}`}
-                >
-                  <div className={`w-10 h-10 ${activeModule === i ? m.bg : 'bg-gray-100'} rounded-xl flex items-center justify-center flex-shrink-0 transition-colors`}>
-                    <m.icon className={`h-5 w-5 ${activeModule === i ? 'text-white' : 'text-gray-400'}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className={`text-sm font-bold ${activeModule === i ? 'text-gray-900' : 'text-gray-700'}`}>{tMod(m, 'name')}</div>
-                    <div className="text-xs text-gray-400 truncate mt-0.5">{tMod(m, 'tagline')}</div>
-                  </div>
-                  <ChevronRight className={`h-4 w-4 flex-shrink-0 transition-colors ${activeModule === i ? m.lightText : 'text-gray-300'}`} />
-                </button>
-              ))}
-            </div>
-
-            {/* Detail panel */}
-            <div className="lg:col-span-3">
-              <div className={`rounded-3xl border-2 ${MODULES[activeModule].lightBg} overflow-hidden`} style={{ borderColor: MODULES[activeModule].color + '30' }}>
-                {/* Dark preview */}
-                <div className="bg-slate-900 rounded-2xl mx-4 mt-4 overflow-hidden">
-                  {PREVIEWS[MODULES[activeModule].preview] && (() => { const P = PREVIEWS[MODULES[activeModule].preview]; return <P />; })()}
-                </div>
-                <p className="px-6 pt-2 pb-3 text-right text-[11px] text-gray-400">
-                  {t('landing.lp.modulesSection.illustrative', 'Aperçu illustratif · données fictives')}
-                </p>
-
-                {/* Info */}
-                <div className="px-6 pb-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{tMod(MODULES[activeModule], 'name')}</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed mb-4">{tMod(MODULES[activeModule], 'desc')}</p>
-                  <div className="flex flex-wrap gap-2 mb-5">
-                    {MODULES[activeModule].badges.map((b, i) => (
-                      <span key={i} className={`text-xs font-semibold px-3 py-1.5 rounded-full ${MODULES[activeModule].lightBg} ${MODULES[activeModule].lightText} border`} style={{ borderColor: MODULES[activeModule].color + '30' }}>
-                        ✓ {tBadge(MODULES[activeModule], i, b)}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {MODULES[activeModule].featurePath && (
-                      <Link to={MODULES[activeModule].featurePath!}>
-                        <button className={`flex items-center gap-2 px-5 py-2.5 ${MODULES[activeModule].bg} text-white font-semibold rounded-xl text-sm transition-all hover:-translate-y-0.5 hover:shadow-lg`}>
-                          {t('landing.lp.modulesSection.learnMore', 'En savoir plus')} <ArrowRight className="h-4 w-4" />
-                        </button>
-                      </Link>
-                    )}
-                    <Link to="/register">
-                      <button className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all hover:-translate-y-0.5 ${MODULES[activeModule].featurePath ? 'border-2 text-gray-700 hover:bg-gray-50' : `${MODULES[activeModule].bg} text-white hover:shadow-lg`}`} style={MODULES[activeModule].featurePath ? { borderColor: MODULES[activeModule].color + '40' } : undefined}>
-                        {t('landing.lp.nav.trial', 'Essai gratuit')} <ArrowRight className="h-4 w-4" />
-                      </button>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Pourquoi ESGFlow ─────────────────────────────────────────────────── */}
-      <section className="py-28 bg-white relative overflow-hidden">
-        {/* Subtle background texture */}
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, rgba(16,185,129,0.05) 0%, transparent 60%), radial-gradient(circle at 10% 80%, rgba(99,102,241,0.04) 0%, transparent 60%)' }} />
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
-            <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
-              <span className="w-8 h-px bg-emerald-400 inline-block" />
-              {t('landing.lp.why.eyebrow', 'Pourquoi ESGFlow')}
-              <span className="w-8 h-px bg-emerald-400 inline-block" />
-            </span>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">
-              {t('landing.lp.why.titleLine1', 'Tout ce dont vous avez besoin,')}
-              <br />
-              <span className="text-emerald-600">{t('landing.lp.why.titleLine2', "rien de ce que vous n'utilisez pas")}</span>
-            </h2>
-            <p className="text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
-              {t('landing.lp.why.subtitle', 'Une plateforme pensée par des experts ESG, pour démarrer en self-service, sans projet d’intégration.')}
-            </p>
-          </div>
-
-          {/* 4 piliers en grille */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {WHY_PILLARS.map((p, i) => (
-              <div key={i} className={`group relative bg-white rounded-3xl border ${p.border} p-8 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden`}>
-                {/* Gradient accent top */}
-                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${p.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
-
-                <div className="flex items-start gap-5">
-                  <div className={`w-14 h-14 bg-gradient-to-br ${p.color} rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg`}>
-                    <p.icon className="h-7 w-7 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">{t(`landing.lp.why.pillars.${i}.title`, p.title)}</h3>
-                    <p className="text-gray-500 text-sm leading-relaxed mb-5">{t(`landing.lp.why.pillars.${i}.desc`, p.desc)}</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {p.points.map((pt, j) => (
-                        <div key={j} className={`flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-xl ${p.lightBg} ${p.lightText}`}>
-                          <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" />
-                          {t(`landing.lp.why.pillars.${i}.points.${j}`, pt)}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Bande de réassurance */}
-          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6">
-            {[
-              { value: t('landing.lp.reassure.0.value', 'Self-service'), label: t('landing.lp.reassure.0.label', 'Démarrage'), sub: t('landing.lp.reassure.0.sub', 'sans intégration') },
-              { value: t('landing.lp.reassure.1.value', '22'), label: t('landing.lp.reassure.1.label', 'Modules intégrés'), sub: t('landing.lp.reassure.1.sub', 'dans un seul outil') },
-              { value: t('landing.lp.reassure.2.value', 'Europe'), label: t('landing.lp.reassure.2.label', 'Hébergeur européen'), sub: t('landing.lp.reassure.2.sub', 'RGPD') },
-              { value: t('landing.lp.reassure.3.value', 'Sans CB'), label: t('landing.lp.reassure.3.label', 'Essai 14 jours'), sub: t('landing.lp.reassure.3.sub', 'aucun engagement') },
-            ].map((s, i) => (
-              <div key={i} className="text-center p-6 bg-gray-50 rounded-2xl border border-gray-100">
-                <div className="text-3xl font-extrabold text-gray-900 mb-1">{s.value}</div>
-                <div className="text-sm font-semibold text-gray-700">{s.label}</div>
-                <div className="text-xs text-gray-400 mt-0.5">{s.sub}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── 3 différenciateurs uniques (pépites cachées amplifiées) ──────────── */}
-      <section className="py-24 bg-white relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(ellipse at 80% 20%, rgba(16,185,129,0.07) 0%, transparent 60%), radial-gradient(ellipse at 20% 80%, rgba(99,102,241,0.05) 0%, transparent 60%)' }} />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14 max-w-3xl mx-auto">
-            <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
-              <span className="w-8 h-px bg-emerald-400 inline-block" />
-              {t('landing.lp.diff.eyebrow', '3 capacités clés')}
-              <span className="w-8 h-px bg-emerald-400 inline-block" />
-            </span>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">
-              {t('landing.lp.diff.title', 'Trois capacités techniques à voir en démonstration')}
-            </h2>
-            <p className="text-lg text-gray-500">
-              {t('landing.lp.diff.subtitle', 'Des capacités concrètes, que vous pouvez vérifier vous-même pendant l’essai gratuit.')}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            {/* Pépite 1 : iXBRL/ESEF réel */}
-            <div className="group relative p-8 bg-white rounded-3xl border-2 border-emerald-100 hover:border-emerald-300 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 flex flex-col">
-              <div className="absolute -top-3 left-6 px-3 py-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-[10px] font-extrabold tracking-widest rounded-full shadow-md">{t('landing.lp.diff.cards.0.badge', 'BALISAGE iXBRL')}</div>
-              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center mb-5 shadow-lg">
-                <FileText className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="text-xl font-extrabold text-gray-900 mb-2">{t('landing.lp.diff.cards.0.title', 'Aperçu iXBRL (XHTML)')}</h3>
-              <div className="text-xs font-bold text-emerald-700 mb-4">{t('landing.lp.diff.cards.0.subtitle', 'Namespace EFRAG 2024-12-31 · catalogue de concepts ESRS')}</div>
-              <p className="text-sm text-gray-600 leading-relaxed mb-5 flex-1">
-                <Trans i18nKey="landing.lp.diff.cards.0.body">
-                  Nous produisons un <strong>XHTML balisé en iXBRL</strong>, le format visé par l'ESMA pour les rapports de durabilité des sociétés cotées. Le dépôt ESEF final reste à faire avec vos conseils.
-                </Trans>
-              </p>
-              <div className="space-y-2 mb-6">
-                {['XHTML EFRAG 2024-12-31', 'Catalogue de concepts ESRS', 'Validation namespace stricte', 'Validation Arelle intégrée'].map((p, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm text-gray-700">
-                    <Check className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                    {t(`landing.lp.diff.cards.0.points.${i}`, p)}
-                  </div>
-                ))}
-              </div>
-              <div className="pt-5 border-t border-gray-100 text-xs text-gray-500">
-                <strong className="text-gray-900">{t('landing.lp.diff.cards.0.footerLabel', 'Démontrable :')}</strong> {t('landing.lp.diff.cards.0.footerText', 'aperçu depuis CSRD Builder, vérifiable dans Arelle.')}
-              </div>
-            </div>
-
-            {/* Pépite 2 : FEC → Scope 3 */}
-            <div className="group relative p-8 bg-white rounded-3xl border-2 border-blue-100 hover:border-blue-300 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 flex flex-col">
-              <div className="absolute -top-3 left-6 px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-[10px] font-extrabold tracking-widest rounded-full shadow-md">{t('landing.lp.diff.cards.1.badge', 'ESTIMATION SPEND-BASED')}</div>
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-5 shadow-lg">
-                <Database className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="text-xl font-extrabold text-gray-900 mb-2">{t('landing.lp.diff.cards.1.title', 'Import FEC → estimation Scope 3')}</h3>
-              <div className="text-xs font-bold text-blue-700 mb-4">{t('landing.lp.diff.cards.1.subtitle', 'Parser 18 colonnes · Mapping PCG → ADEME')}</div>
-              <p className="text-sm text-gray-600 leading-relaxed mb-5 flex-1">
-                <Trans i18nKey="landing.lp.diff.cards.1.body">
-                  Téléversez votre <strong>FEC</strong> : nous estimons votre Scope 3 par <strong>méthode monétaire</strong> à partir des comptes de charges (classes 60 à 62) avec des facteurs ADEME. Estimation à relire avant usage.
-                </Trans>
-              </p>
-              <div className="space-y-2 mb-6">
-                {['Parser FEC 18 colonnes officiel', 'Facteurs ADEME embarqués', 'Mapping PCG automatique', 'Format FEC normalisé'].map((p, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm text-gray-700">
-                    <Check className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                    {t(`landing.lp.diff.cards.1.points.${i}`, p)}
-                  </div>
-                ))}
-              </div>
-              <div className="pt-5 border-t border-gray-100 text-xs text-gray-500">
-                <strong className="text-gray-900">{t('landing.lp.diff.cards.1.footerLabel', 'Pour le DAF :')}</strong> {t('landing.lp.diff.cards.1.footerText', 'un gain de temps à mesurer sur vos propres données.')}
-              </div>
-            </div>
-
-            {/* Pépite 3 : Préflight SBTi */}
-            <div className="group relative p-8 bg-white rounded-3xl border-2 border-violet-100 hover:border-violet-300 hover:shadow-2xl hover:shadow-violet-500/10 transition-all duration-300 flex flex-col">
-              <div className="absolute -top-3 left-6 px-3 py-1 bg-gradient-to-r from-violet-500 to-purple-600 text-white text-[10px] font-extrabold tracking-widest rounded-full shadow-md">{t('landing.lp.diff.cards.2.badge', 'PRÉPARATION SBTi')}</div>
-              <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center mb-5 shadow-lg">
-                <Target className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="text-xl font-extrabold text-gray-900 mb-2">{t('landing.lp.diff.cards.2.title', 'Préparation du dossier SBTi')}</h3>
-              <div className="text-xs font-bold text-violet-700 mb-4">{t('landing.lp.diff.cards.2.subtitle', 'Vérifications indicatives avant soumission')}</div>
-              <p className="text-sm text-gray-600 leading-relaxed mb-5 flex-1">
-                <Trans i18nKey="landing.lp.diff.cards.2.body">
-                  Avant de soumettre vos objectifs au Science-Based Targets initiative, ESGFlow vous aide à préparer votre dossier avec des repères indicatifs. Les critères SBTi évoluent (Net-Zero Standard V2.0) : <strong>la validation reste prononcée par la SBTi</strong>.
-                </Trans>
-              </p>
-              <div className="space-y-2 mb-6">
-                {['Repère de trajectoire 1,5 °C (indicatif)', 'Périmètre Scope 1, 2 et 3 à documenter', 'Cible et année de référence suivies', 'Critères à confirmer auprès de la SBTi'].map((p, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm text-gray-700">
-                    <Check className="h-4 w-4 text-violet-500 flex-shrink-0" />
-                    {t(`landing.lp.diff.cards.2.points.${i}`, p)}
-                  </div>
-                ))}
-              </div>
-              <div className="pt-5 border-t border-gray-100 text-xs text-gray-500">
-                <strong className="text-gray-900">{t('landing.lp.diff.cards.2.footerLabel', 'Contrôle en amont :')}</strong> {t('landing.lp.diff.cards.2.footerText', 'le préflight signale les écarts avant toute soumission.')}
-              </div>
-            </div>
-
-          </div>
-
-          <div className="mt-12 text-center">
-            <p className="text-sm text-gray-500 mb-4">{t('landing.lp.diff.bottomNote', 'Ces capacités sont disponibles dans l’essai gratuit.')}</p>
-            <Link
-              to="/register"
-              className="inline-flex items-center gap-2 px-7 py-3.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold rounded-2xl shadow-xl shadow-emerald-500/30 hover:-translate-y-0.5 transition-all"
-            >
-              {t('landing.lp.diff.bottomCta', 'Tester gratuitement — 14 jours')}
-              <ArrowRight className="h-5 w-5" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── How it works ─────────────────────────────────────────────────────── */}
-      <section className="py-24 bg-gray-50 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(16,185,129,0.06) 0%, transparent 70%)' }} />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
-              <span className="w-8 h-px bg-emerald-400 inline-block" />
-              {t('landing.lp.how.eyebrow', 'Comment ça marche')}
-              <span className="w-8 h-px bg-emerald-400 inline-block" />
-            </span>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mt-2 mb-4">{t('landing.lp.how.title', 'Démarrez en 3 étapes')}</h2>
-            <p className="text-lg text-gray-500 max-w-xl mx-auto">{t('landing.lp.how.subtitle', 'Pas de mois de déploiement, pas de consultant externe. Votre équipe prend en main la plateforme dès le premier jour.')}</p>
-          </div>
-
-          <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Connector line (desktop only) */}
-            <div className="hidden md:block absolute top-16 left-1/3 right-1/3 h-px bg-gradient-to-r from-transparent via-emerald-300 to-transparent" />
-
-            {[
-              {
-                num: '01', title: 'Connectez vos sources',
-                desc: 'Importez vos fichiers FEC, CSV ou Excel, ou saisissez à la main. Un catalogue de concepts ESRS vous guide dès le premier jour.',
-                icon: Database, color: 'from-emerald-500 to-green-600',
-                detail: ['Import CSV · FEC · Excel', 'Exports RH', 'Catalogue de concepts ESRS'],
-              },
-              {
-                num: '02', title: "L'IA analyse et calcule",
-                desc: "Le moteur IA détecte les anomalies, calcule vos Scopes 1/2/3, génère vos KPIs et vous alerte en temps réel avant que les problèmes deviennent critiques.",
-                icon: Brain, color: 'from-violet-500 to-purple-600',
-                detail: ['Scopes 1/2/3 automatiques', 'Anomalies temps réel', 'Chatbot ESG expert'],
-              },
-              {
-                num: '03', title: 'Préparez et partagez',
-                desc: "Générez votre rapport (PDF, Word, Excel, JSON) avec aperçu iXBRL. Le journal d'audit avec empreintes SHA-256 et le workflow de validation facilitent vos revues auditeurs.",
-                icon: FileText, color: 'from-blue-500 to-indigo-600',
-                detail: ['Rapport PDF/Word/Excel/JSON', 'Aperçu iXBRL (EFRAG 2024)', 'Partage sécurisé auditeurs'],
-              },
-            ].map((s, i) => (
-              <div key={i} className="relative flex flex-col bg-white rounded-3xl border border-gray-200 p-8 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                {/* Step badge */}
-                <div className="absolute -top-4 left-8">
-                  <span className={`inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br ${s.color} text-white text-xs font-black rounded-full shadow-lg`}>{s.num}</span>
-                </div>
-                <div className={`w-14 h-14 bg-gradient-to-br ${s.color} rounded-2xl flex items-center justify-center mb-5 shadow-lg mt-2`}>
-                  <s.icon className="h-7 w-7 text-white" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">{t(`landing.lp.how.steps.${i}.title`, s.title)}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed flex-1 mb-5">{t(`landing.lp.how.steps.${i}.desc`, s.desc)}</p>
-                <div className="space-y-2 pt-5 border-t border-gray-100">
-                  {s.detail.map((d, j) => (
-                    <div key={j} className="flex items-center gap-2 text-xs text-gray-600 font-medium">
-                      <CheckCircle className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
-                      {t(`landing.lp.how.steps.${i}.detail.${j}`, d)}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── ROI / Impact ────────────────────────────────────────────────────── */}
-      <section ref={roiRef} className="py-24 bg-white relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(16,185,129,0.04) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(99,102,241,0.04) 0%, transparent 50%)' }} />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
-              <span className="w-8 h-px bg-emerald-400 inline-block" />
-              {t('landing.lp.impact.eyebrow', 'Impact mesurable')}
-              <span className="w-8 h-px bg-emerald-400 inline-block" />
-            </span>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">
-              {t('landing.lp.impact.titleLine1', 'Le ROI de vos équipes RSE,')}
-              <br />
-              <span className="text-emerald-600">{t('landing.lp.impact.titleLine2', 'avant et après ESGFlow')}</span>
-            </h2>
-            <p className="text-lg text-gray-500 max-w-2xl mx-auto">{t('landing.lp.impact.subtitle', "Estimez le temps que vous pourriez gagner, avec vos propres chiffres.")}</p>
-          </div>
-
-          {/* Before / After cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-            {/* AVANT */}
-            <div className="relative bg-gradient-to-br from-red-50 to-orange-50 rounded-3xl p-8 border border-red-100 overflow-hidden">
-              <div className="absolute top-4 right-4 px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full">{t('landing.lp.impact.beforeBadge', 'AVANT')}</div>
-              <h3 className="text-xl font-bold text-red-900 mb-6 flex items-center gap-2"><XIcon className="h-6 w-6 text-red-500" /> {t('landing.lp.impact.beforeTitle', 'Sans ESGFlow')}</h3>
-              <div className="space-y-4">
-                {[
-                  { icon: Clock, label: t('landing.lp.impact.before.0.label', '6 à 12 mois'), desc: t('landing.lp.impact.before.0.desc', 'pour produire un rapport CSRD'), color: 'text-red-600' },
-                  { icon: FileSpreadsheet, label: t('landing.lp.impact.before.1.label', '15+ tableurs Excel'), desc: t('landing.lp.impact.before.1.desc', "non connectés, sources d'erreurs"), color: 'text-red-600' },
-                  { icon: Users, label: t('landing.lp.impact.before.2.label', '3 à 5 ETP mobilisés'), desc: t('landing.lp.impact.before.2.desc', 'collecte manuelle des données'), color: 'text-red-600' },
-                  { icon: AlertTriangle, label: t('landing.lp.impact.before.3.label', 'Risques de non-conformité'), desc: t('landing.lp.impact.before.3.desc', "données non traçables, pas de piste d'audit"), color: 'text-red-600' },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-3 bg-white/70 rounded-xl p-4">
-                    <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <item.icon className={`h-5 w-5 ${item.color}`} />
-                    </div>
-                    <div>
-                      <div className="text-sm font-bold text-gray-900">{item.label}</div>
-                      <div className="text-xs text-gray-500">{item.desc}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* APRÈS */}
-            <div className="relative bg-gradient-to-br from-emerald-50 to-green-50 rounded-3xl p-8 border border-emerald-200 overflow-hidden shadow-lg shadow-emerald-100/50">
-              <div className="absolute top-4 right-4 px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full">{t('landing.lp.impact.afterBadge', 'APRÈS')}</div>
-              <h3 className="text-xl font-bold text-emerald-900 mb-6 flex items-center gap-2"><CheckCircle className="h-6 w-6 text-emerald-500" /> {t('landing.lp.impact.afterTitle', 'Avec ESGFlow')}</h3>
-              <div className="space-y-4">
-                {[
-                  { icon: Zap, label: t('landing.lp.impact.after.0.label', '3 semaines'), desc: t('landing.lp.impact.after.0.desc', 'pour un rapport CSRD complet et auditable'), color: 'text-emerald-600' },
-                  { icon: Database, label: t('landing.lp.impact.after.1.label', '1 plateforme unique'), desc: t('landing.lp.impact.after.1.desc', '22 modules intégrés, données centralisées'), color: 'text-emerald-600' },
-                  { icon: Brain, label: t('landing.lp.impact.after.2.label', '1 ETP + IA'), desc: t('landing.lp.impact.after.2.desc', 'automatisation intelligente des tâches répétitives'), color: 'text-emerald-600' },
-                  { icon: Shield, label: t('landing.lp.impact.after.3.label', 'Audit-ready'), desc: t('landing.lp.impact.after.3.desc', 'journal détaillé, empreintes SHA-256, export auditeurs'), color: 'text-emerald-600' },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-3 bg-white/70 rounded-xl p-4">
-                    <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <item.icon className={`h-5 w-5 ${item.color}`} />
-                    </div>
-                    <div>
-                      <div className="text-sm font-bold text-gray-900">{item.label}</div>
-                      <div className="text-xs text-gray-500">{item.desc}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Impact KPIs */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {[
-              { value: 80, suffix: '%', label: t('landing.lp.impact.kpis.0.label', 'Temps gagné'), sub: t('landing.lp.impact.kpis.0.sub', 'sur la collecte de données'), color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-              { value: 3, suffix: 'x', label: t('landing.lp.impact.kpis.1.label', 'Plus rapide'), sub: t('landing.lp.impact.kpis.1.sub', 'pour le reporting CSRD'), color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
-              { value: 100, suffix: '%', label: t('landing.lp.impact.kpis.2.label', 'Traçabilité'), sub: t('landing.lp.impact.kpis.2.sub', "des validations datées dans la piste d'audit"), color: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-100' },
-              { value: 40, suffix: '%', label: t('landing.lp.impact.kpis.3.label', 'Coûts réduits'), sub: t('landing.lp.impact.kpis.3.sub', 'vs prestation externe'), color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
-            ].map((kpi, i) => {
-              // TODO : hook appelé dans un .map() — fonctionne car la liste est fixe (4 éléments) ; à extraire dans un composant <KpiCounter />.
-              // eslint-disable-next-line react-hooks/rules-of-hooks
-              const animValue = useCounter(kpi.value, 1800, roiInView);
-              return (
-                <div key={i} className={`text-center p-6 ${kpi.bg} rounded-2xl border ${kpi.border}`}>
-                  <div className={`text-4xl font-extrabold ${kpi.color} tabular-nums`}>{animValue}{kpi.suffix}</div>
-                  <div className="text-sm font-bold text-gray-900 mt-1">{kpi.label}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{kpi.sub}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Nouveautés ──────────────────────────────────────────────────────── */}
-      <section className="py-20 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0)', backgroundSize: '32px 32px' }} />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-green-500/20 border border-green-500/30 rounded-full text-green-400 text-sm font-semibold mb-4">
-              <Sparkles className="h-4 w-4" /> {t('landing.lp.news.eyebrow', 'Nouvelles fonctionnalités 2026')}
-            </span>
-            <h2 className="text-4xl font-bold text-white mt-2 mb-4">{t('landing.lp.news.title', '5 nouveaux modules ajoutés')}</h2>
-            <p className="text-slate-400 max-w-2xl mx-auto">{t('landing.lp.news.subtitle', 'ESGFlow évolue constamment pour vous offrir la couverture ESG la plus complète du marché — désormais 22 modules intégrés.')}</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {[
-              { icon: FileText, color: 'from-sky-600 to-blue-700', title: t('landing.lp.news.cards.0.title', 'CSRD Report Builder'), desc: t('landing.lp.news.cards.0.desc', 'Construisez votre rapport CSRD section par section (E1→G1), suivez la complétion et exportez en PDF, Word, Excel ou JSON en 1 clic.'), badge: t('landing.lp.news.cards.0.badge', 'Nouveau') },
-              { icon: GitMerge, color: 'from-teal-500 to-teal-700', title: t('landing.lp.news.cards.1.title', 'Mapping Multi-Référentiels'), desc: t('landing.lp.news.cards.1.desc', 'Saisissez une seule fois et mappez automatiquement vers GRI, CDP, TCFD et SDG. Identifiez les lacunes par référentiel.'), badge: t('landing.lp.news.cards.1.badge', 'Nouveau') },
-              { icon: Bell, color: 'from-orange-500 to-red-600', title: t('landing.lp.news.cards.2.title', 'Alertes Intelligentes'), desc: t('landing.lp.news.cards.2.desc', 'Créez des alertes personnalisées sur seuils, KPIs et échéances réglementaires avec notifications email et webhook temps réel.'), badge: t('landing.lp.news.cards.2.badge', 'Nouveau') },
-              { icon: Code2, color: 'from-indigo-500 to-violet-600', title: t('landing.lp.news.cards.3.title', 'API & Portail Développeur'), desc: t('landing.lp.news.cards.3.desc', 'API REST complète avec gestion des clés API, documentation Swagger interactive, OAuth2 et SSO OpenID Connect pour les intégrations sur mesure.'), badge: t('landing.lp.news.cards.3.badge', 'Nouveau') },
-              { icon: Activity, color: 'from-violet-500 to-purple-700', title: t('landing.lp.news.cards.4.title', 'Qualité des Données'), desc: t('landing.lp.news.cards.4.desc', "Score de complétude par pilier E/S/G, détection d'anomalies automatique, données manquantes ESRS et recommandations IA."), badge: t('landing.lp.news.cards.4.badge', 'Nouveau') },
-              { icon: Upload, color: 'from-cyan-500 to-teal-600', title: t('landing.lp.news.cards.5.title', 'Import FEC Scope 3'), desc: t('landing.lp.news.cards.5.desc', 'Calculez vos émissions Scope 3 directement depuis votre fichier comptable FEC (Sage, Cegid, Pennylane).'), badge: t('landing.lp.news.cards.5.badge', 'Populaire') },
-            ].map((f, i) => (
-              <div key={i} className="group relative bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/8 hover:border-white/20 transition-all duration-300 hover:-translate-y-1">
-                <div className={`w-12 h-12 bg-gradient-to-br ${f.color} rounded-xl flex items-center justify-center mb-4 shadow-lg`}>
-                  <f.icon className="h-6 w-6 text-white" />
-                </div>
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-white font-bold text-base">{f.title}</h3>
-                  <span className="ml-2 px-2 py-0.5 bg-green-500/20 text-green-400 text-xs font-semibold rounded-full border border-green-500/30 flex-shrink-0">{f.badge}</span>
-                </div>
-                <p className="text-slate-400 text-sm leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-10 text-center">
-            <Link to="/register">
-              <button className="inline-flex items-center gap-2 px-8 py-3.5 bg-green-500 hover:bg-green-400 text-white font-bold rounded-2xl transition-all shadow-xl shadow-green-500/25 hover:-translate-y-0.5">
-                {t('landing.lp.news.cta', 'Accéder à tous les modules')} <ArrowRight className="h-5 w-5" />
-              </button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Data Ecosystem ───────────────────────────────────────────────────── */}
-      <section className="py-24 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <span className="text-sm font-semibold text-blue-600 uppercase tracking-widest">{t('landing.lp.eco.eyebrow', 'Données & Intégrations')}</span>
-            <h2 className="text-4xl font-bold text-gray-900 mt-3 mb-4">{t('landing.lp.eco.title', 'Un écosystème de données complet')}</h2>
-            <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-              {t('landing.lp.eco.subtitle', 'Connectez-vous à vos outils, enrichissez vos données avec les sources officielles et automatisez vos flux via webhooks.')}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-            {/* INSEE Card */}
-            <div className="lg:col-span-1 bg-gradient-to-br from-blue-600 to-blue-800 rounded-3xl p-8 text-white relative overflow-hidden">
-              <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZyIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLW9wYWNpdHk9IjAuMDYiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg==')] opacity-40" />
-              <div className="relative">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2.5 bg-white/20 rounded-xl">
-                    <Building2 className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <div className="font-bold text-lg">INSEE Sirene</div>
-                    <div className="text-blue-200 text-xs">{t('landing.lp.eco.insee.subtitle', 'Base officielle française')}</div>
-                  </div>
-                </div>
-                <div className="text-3xl font-extrabold mb-1">API</div>
-                <div className="text-blue-200 text-sm mb-6">{t('landing.lp.eco.insee.indexed', 'interrogée à la demande, sans copie locale de la base')}</div>
-                <div className="space-y-2.5">
-                  {['Recherche par SIREN / SIRET', 'Données légales officielles', 'Activité NAF/APE · Effectifs', 'Pré-remplissage de la fiche entreprise', 'Interrogation à la demande'].map((f, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm text-blue-100">
-                      <CheckCircle className="h-4 w-4 text-blue-300 flex-shrink-0" />
-                      {t(`landing.lp.eco.insee.features.${i}`, f)}
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-6 pt-6 border-t border-white/20">
-                  <div className="flex items-center gap-2 text-xs text-blue-200">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                    {t('landing.lp.eco.insee.api', 'API officielle · Pas de clé requise')}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Integrations + Webhooks */}
-            <div className="lg:col-span-2 space-y-6">
-
-              {/* Integrations */}
-              <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6">
-                <div className="flex items-center justify-between mb-5">
-                  <div>
-                    <h3 className="font-bold text-gray-900">{t('landing.lp.eco.integrations.title', 'Intégrations disponibles')}</h3>
-                    <p className="text-sm text-gray-500 mt-0.5">{t('landing.lp.eco.integrations.subtitle', 'Synchronisez vos données avec vos outils BI')}</p>
-                  </div>
-                  <span className="px-3 py-1 bg-green-50 text-green-700 text-xs font-semibold rounded-full border border-green-200">{t('landing.lp.eco.integrations.count', '4 connecteurs')}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { icon: Table2, name: 'Google Sheets', features: ['import', 'export', 'sync temps réel'], color: 'text-green-600', bg: 'bg-green-50' },
-                    { icon: BarChart3, name: 'Microsoft Power BI', features: ['export', 'dashboard embedding'], color: 'text-yellow-600', bg: 'bg-yellow-50' },
-                    { icon: PieChart, name: 'Tableau', features: ['export', 'live connection'], color: 'text-blue-600', bg: 'bg-blue-50' },
-                    { icon: FileSpreadsheet, name: 'Excel Online', features: ['import', 'export'], color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                  ].map((int, i) => (
-                    <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all">
-                      <div className={`p-2 ${int.bg} rounded-lg flex-shrink-0 ${int.color}`}>
-                        <int.icon className="h-4 w-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold text-gray-900 truncate">{int.name}</div>
-                        <div className="flex gap-1 mt-1 flex-wrap">
-                          {int.features.map((f, j) => (
-                            <span key={j} className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{t(`landing.lp.eco.integrations.items.${i}.features.${j}`, f)}</span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Webhooks */}
-              <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6">
-                <div className="flex items-center justify-between mb-5">
-                  <div>
-                    <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                      <Radio className="h-4 w-4 text-violet-500" />
-                      {t('landing.lp.eco.webhooks.title', 'Webhooks & Automatisation')}
-                    </h3>
-                    <p className="text-sm text-gray-500 mt-0.5">{t('landing.lp.eco.webhooks.subtitle', 'Notifications temps réel vers vos services')}</p>
-                  </div>
-                  <span className="px-3 py-1 bg-violet-50 text-violet-700 text-xs font-semibold rounded-full border border-violet-200">{t('landing.lp.eco.webhooks.count', '6 événements')}</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { type: 'data.uploaded', color: 'bg-blue-100 text-blue-700' },
-                    { type: 'score.calculated', color: 'bg-green-100 text-green-700' },
-                    { type: 'indicator.created', color: 'bg-amber-100 text-amber-700' },
-                    { type: 'indicator.updated', color: 'bg-orange-100 text-orange-700' },
-                    { type: 'user.created', color: 'bg-pink-100 text-pink-700' },
-                    { type: 'threshold.exceeded', color: 'bg-red-100 text-red-700' },
-                  ].map((ev, i) => (
-                    <div key={i} className={`px-2.5 py-1.5 rounded-lg text-xs font-mono font-medium ${ev.color}`}>
-                      {ev.type}
-                    </div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-3 gap-3 mt-4">
-                  {[
-                    { label: 'Signature HMAC', icon: Shield, color: 'text-gray-600' },
-                    { label: 'Retry automatique', icon: Activity, color: 'text-violet-600' },
-                    { label: 'Logs complets', icon: FileText, color: 'text-blue-600' },
-                  ].map((f, i) => (
-                    <div key={i} className="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 rounded-xl p-3">
-                      <f.icon className={`h-4 w-4 ${f.color} flex-shrink-0`} />
-                      {t(`landing.lp.eco.webhooks.features.${i}`, f.label)}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Pricing ──────────────────────────────────────────────────────────── */}
-      </LazySection>
-      <LazySection id="tarifs">
-      <section id="tarifs" className="py-24 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <span className="text-sm font-semibold text-green-600 uppercase tracking-widest">{t('landing.lp.pricing.eyebrow', 'Tarifs')}</span>
-            <h2 className="text-4xl font-bold text-gray-900 mt-3 mb-4">{t('landing.lp.pricing.title', 'Plans adaptés à votre taille')}</h2>
-            <p className="text-lg text-gray-500 mb-8">{t('landing.lp.pricing.subtitle', 'Commencez gratuitement. Évoluez à votre rythme. Sans engagement.')}</p>
-            <div className="inline-flex items-center gap-2 bg-white border border-gray-200 p-1 rounded-xl shadow-sm">
-              <button onClick={() => setBilling('monthly')} className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${billing === 'monthly' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500'}`}>{t('landing.lp.pricing.monthly', 'Mensuel')}</button>
-              <button onClick={() => setBilling('annual')} className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${billing === 'annual' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500'}`}>
-                {t('landing.lp.pricing.annual', 'Annuel')} <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-bold">-15%</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-            {plans.map((plan, i) => {
-              const price = billing === 'annual' ? plan.annual : plan.monthly;
-              const highlight = plan.primary;
-              return (
-                <div key={i} className={`relative flex flex-col rounded-3xl border-2 ${plan.color} bg-white p-8 transition-all duration-300 ${highlight ? 'shadow-2xl shadow-green-500/15 scale-105' : 'hover:shadow-xl hover:-translate-y-1'}`}>
-                  {plan.badge && (
-                    <div className={`absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap ${plan.badgeStyle} shadow-lg`}>
-                      {t(`landing.lp.pricing.plans.${i}.badge`, plan.badge)}
-                    </div>
-                  )}
-                  <div className="mb-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">{plan.name}</h3>
-                    <p className="text-sm text-gray-500">{t(`landing.lp.pricing.plans.${i}.desc`, plan.desc)}</p>
-                  </div>
-                  <div className="mb-8">
-                    {price !== null ? (
-                      <div className="flex items-end gap-2">
-                        <span className="text-5xl font-extrabold text-gray-900">{price}€</span>
-                        <span className="text-gray-400 mb-2 text-sm">{t('landing.lp.pricing.perMonth', '/mois')}{billing === 'annual' && <span className="block text-xs text-green-600 font-semibold">{t('landing.lp.pricing.billedAnnually', 'facturé annuellement')}</span>}</span>
-                      </div>
-                    ) : <div className="text-4xl font-extrabold text-gray-900">{t('landing.lp.pricing.custom', 'Sur devis')}</div>}
-                  </div>
-                  <Link to={plan.cta?.toLowerCase().includes('contact') ? '/contact' : '/register'} className="block mb-8">
-                    <button className={`w-full py-3.5 rounded-xl font-semibold text-sm transition-all ${highlight ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/30 hover:-translate-y-0.5' : 'bg-gray-900 hover:bg-gray-800 text-white'}`}>
-                      {t(`landing.lp.pricing.plans.${i}.cta`, plan.cta)}
-                    </button>
-                  </Link>
-                  <div className="space-y-2.5 flex-1">
-                    {plan.features.map((f, j) => (
-                      <div key={j} className="flex items-start gap-2.5">
-                        <Check className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-gray-700">{t(`landing.lp.pricing.plans.${i}.features.${j}`, f)}</span>
-                      </div>
-                    ))}
-                    {plan.missing.map((f, j) => (
-                      <div key={j} className="flex items-start gap-2.5 opacity-35">
-                        <X className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-gray-500">{t(`landing.lp.pricing.plans.${i}.missing.${j}`, f)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <p className="text-center text-sm text-gray-400 mt-10">{t('landing.lp.pricing.vatNote', 'Tous les prix sont HT · TVA applicable · ')}<button onClick={() => scrollTo('faq')} className="text-green-600 hover:underline">{t('landing.lp.pricing.faqLink', 'Questions fréquentes')}</button></p>
-
-          {/* ── ROI Calculator ──────────────────────────────────────────────── */}
-          {(() => {
-            const timeSaved = Math.round(roiHoursMonth * 0.80);
-            const monthlySavings = timeSaved * roiHourlyRate;
-            const annualSavings = monthlySavings * 12;
-            const recommendedPlan = roiEmployees <= 80 ? 'PME' : roiEmployees <= 350 ? 'ETI' : 'Groupe';
-            const planCost = roiEmployees <= 80
-              ? (billing === 'annual' ? 212 : 249)
-              : roiEmployees <= 350
-                ? (billing === 'annual' ? 509 : 599)
-                : (billing === 'annual' ? 1019 : 1199);
-            const planAnnualCost = planCost * 12;
-            const netSavings = annualSavings - planAnnualCost;
-            const roiPercent = Math.round((netSavings / planAnnualCost) * 100);
-            const paybackMonths = monthlySavings > 0 ? Math.max(1, Math.ceil(planAnnualCost / monthlySavings / 12)) : 0;
-
-            return (
-              <div id="roi-calculator" className="mt-20 bg-white rounded-3xl border-2 border-emerald-100 shadow-xl shadow-emerald-100/30 p-8 md:p-12 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-bl from-emerald-50 to-transparent rounded-bl-full pointer-events-none" />
-                <div className="relative">
-                  <div className="text-center mb-10">
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full text-emerald-700 text-sm font-semibold mb-4">
-                      <Calculator className="h-4 w-4" />
-                      {t('landing.lp.roi.badge', 'Simulateur ROI')}
-                    </div>
-                    <h3 className="text-2xl md:text-3xl font-extrabold text-gray-900">{t('landing.lp.roi.title', 'Calculez vos économies avec ESGFlow')}</h3>
-                    <p className="text-gray-500 mt-2 max-w-xl mx-auto">{t('landing.lp.roi.subtitle', 'Ajustez les curseurs selon votre organisation pour estimer le retour sur investissement.')}</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
-                    {/* ── Inputs (3 cols) ── */}
-                    <div className="lg:col-span-3 space-y-8">
-                      {/* Slider: Employees */}
-                      <div>
-                        <div className="flex justify-between items-center mb-3">
-                          <label className="text-sm font-semibold text-gray-700 flex items-center gap-2"><Users className="h-4 w-4 text-gray-400" />{t('landing.lp.roi.employees', 'Nombre de collaborateurs')}</label>
-                          <span className="text-xl font-extrabold text-gray-900 tabular-nums bg-gray-50 px-3 py-1 rounded-lg">{roiEmployees}</span>
-                        </div>
-                        <input type="range" min={10} max={2000} step={10} value={roiEmployees}
-                          onChange={e => setRoiEmployees(+e.target.value)}
-                          className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-emerald-500"
-                        />
-                        <div className="flex justify-between text-xs text-gray-400 mt-1"><span>10</span><span>500</span><span>1 000</span><span>2 000</span></div>
-                      </div>
-
-                      {/* Slider: Hours/month */}
-                      <div>
-                        <div className="flex justify-between items-center mb-3">
-                          <label className="text-sm font-semibold text-gray-700 flex items-center gap-2"><Clock className="h-4 w-4 text-gray-400" />{t('landing.lp.roi.hours', "Heures / mois consacrées à l'ESG")}</label>
-                          <span className="text-xl font-extrabold text-gray-900 tabular-nums bg-gray-50 px-3 py-1 rounded-lg">{roiHoursMonth}h</span>
-                        </div>
-                        <input type="range" min={10} max={500} step={5} value={roiHoursMonth}
-                          onChange={e => setRoiHoursMonth(+e.target.value)}
-                          className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-blue-500"
-                        />
-                        <div className="flex justify-between text-xs text-gray-400 mt-1"><span>10h</span><span>150h</span><span>300h</span><span>500h</span></div>
-                      </div>
-
-                      {/* Slider: Hourly rate */}
-                      <div>
-                        <div className="flex justify-between items-center mb-3">
-                          <label className="text-sm font-semibold text-gray-700 flex items-center gap-2"><TrendingUp className="h-4 w-4 text-gray-400" />{t('landing.lp.roi.rate', 'Coût horaire moyen (chargé)')}</label>
-                          <span className="text-xl font-extrabold text-gray-900 tabular-nums bg-gray-50 px-3 py-1 rounded-lg">{roiHourlyRate}€</span>
-                        </div>
-                        <input type="range" min={25} max={200} step={5} value={roiHourlyRate}
-                          onChange={e => setRoiHourlyRate(+e.target.value)}
-                          className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-violet-500"
-                        />
-                        <div className="flex justify-between text-xs text-gray-400 mt-1"><span>25€</span><span>75€</span><span>125€</span><span>200€</span></div>
-                      </div>
-
-                      {/* Assumptions */}
-                      <div className="flex items-start gap-2 text-xs text-gray-400 bg-gray-50 rounded-xl p-3">
-                        <BookOpen className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                        <span>{t('landing.lp.roi.assumption', "Simulation indicative fondée sur une hypothèse de 80 % de temps gagné. Cette hypothèse n'a pas été mesurée sur des clients : adaptez les curseurs à votre situation.")}</span>
-                      </div>
-                    </div>
-
-                    {/* ── Results (2 cols) ── */}
-                    <div className="lg:col-span-2 flex flex-col">
-                      <div className="bg-gradient-to-br from-emerald-600 to-green-700 rounded-2xl p-6 text-white flex-1 flex flex-col justify-between shadow-lg shadow-emerald-500/20">
-                        <div className="space-y-5">
-                          <div className="flex items-center justify-between pb-4 border-b border-white/20">
-                            <span className="text-sm text-emerald-100 font-medium">{t('landing.lp.roi.timeSaved', 'Temps économisé')}</span>
-                            <span className="text-2xl font-extrabold tabular-nums">{timeSaved}h<span className="text-sm font-medium text-emerald-200">{t('landing.lp.roi.perMonth', ' / mois')}</span></span>
-                          </div>
-                          <div className="flex items-center justify-between pb-4 border-b border-white/20">
-                            <span className="text-sm text-emerald-100 font-medium">{t('landing.lp.roi.monthlySavings', 'Économie mensuelle')}</span>
-                            <span className="text-2xl font-extrabold tabular-nums">{monthlySavings.toLocaleString('fr-FR')}€</span>
-                          </div>
-                          <div className="flex items-center justify-between pb-4 border-b border-white/20">
-                            <span className="text-sm text-emerald-100 font-medium">{t('landing.lp.roi.annualSavings', 'Économie annuelle')}</span>
-                            <span className="text-3xl font-extrabold tabular-nums">{annualSavings.toLocaleString('fr-FR')}€</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-emerald-100 font-medium">{t('landing.lp.roi.netRoi', 'ROI net')}</span>
-                            <span className={`text-2xl font-extrabold tabular-nums ${roiPercent > 0 ? 'text-green-200' : 'text-red-300'}`}>{roiPercent > 0 ? '+' : ''}{roiPercent}%</span>
-                          </div>
-                        </div>
-
-                        <div className="mt-6 pt-5 border-t border-white/20">
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="text-sm text-emerald-100">{t('landing.lp.roi.recommendedPlan', 'Plan recommandé')}</span>
-                            <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-bold">{recommendedPlan}</span>
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-emerald-100">{t('landing.lp.roi.planCost', 'Coût plan')}</span>
-                            <span className="font-semibold">{planCost}€{t('landing.lp.roi.perMonthShort', '/mois')}</span>
-                          </div>
-                          {netSavings > 0 && (
-                            <div className="mt-3 bg-white/10 rounded-xl p-3 text-center">
-                              <div className="text-xs text-emerald-200">{t('landing.lp.roi.netGain', 'Gain net après abonnement')}</div>
-                              <div className="text-2xl font-extrabold mt-1">{netSavings.toLocaleString('fr-FR')}€<span className="text-sm font-medium text-emerald-200">{t('landing.lp.roi.perYear', ' / an')}</span></div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <Link to="/register" className="mt-4">
-                        <button className="w-full py-3.5 bg-gray-900 hover:bg-gray-800 text-white font-semibold text-sm rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2">
-                          {t('landing.lp.roi.cta', 'Essai gratuit 14 jours')} <ArrowRight className="h-4 w-4" />
-                        </button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-      </section>
-
-      {/* ── Sécurité & Conformité ──────────────────────────────────────────── */}
-      <section className="py-24 bg-white relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(ellipse at 70% 50%, rgba(99,102,241,0.04) 0%, transparent 60%)' }} />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 uppercase tracking-widest mb-4">
-              <span className="w-8 h-px bg-slate-300 inline-block" />
-              {t('landing.lp.security.eyebrow', 'Sécurité & Conformité')}
-              <span className="w-8 h-px bg-slate-300 inline-block" />
-            </span>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mt-2 mb-4">{t('landing.lp.security.title', 'Vos données méritent le meilleur')}</h2>
-            <p className="text-lg text-gray-500 max-w-2xl mx-auto">{t('landing.lp.security.subtitle', "Cloisonnement par client, secrets chiffrés, piste d'audit horodatée : la confiance se prouve.")}</p>
-          </div>
-
-          {/* Certifications row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-14">
-            {[
-              { icon: Shield, label: 'Isolation', sub: 'Cloisonnement par client', desc: 'Chaque organisation ne voit que ses propres données (RLS PostgreSQL).', color: 'from-blue-500 to-indigo-600', ring: 'ring-blue-100' },
-              { icon: Lock, label: 'Secrets chiffrés', sub: "Clés d'intégration", desc: 'Les identifiants de vos connecteurs sont chiffrés avant stockage.', color: 'from-slate-600 to-slate-800', ring: 'ring-slate-100' },
-              { icon: ShieldCheck, label: 'Piste d\'audit', sub: 'Empreintes SHA-256', desc: 'Validations datées ; toute modification ultérieure est détectée.', color: 'from-violet-500 to-purple-600', ring: 'ring-violet-100' },
-              { icon: Award, label: 'iXBRL / ESEF', sub: 'Balisage des rapports', desc: 'Concepts ESRS balisés pour les rapports de durabilité.', color: 'from-emerald-500 to-green-600', ring: 'ring-emerald-100' },
-            ].map(({ icon: Icon, label, sub, desc, color, ring }, i) => (
-              <div key={label} className={`relative group p-6 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 ring-1 ${ring}`}>
-                <div className={`w-12 h-12 bg-gradient-to-br ${color} rounded-xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-105 transition-transform`}>
-                  <Icon className="h-6 w-6 text-white" />
-                </div>
-                <div className="text-lg font-extrabold text-gray-900 mb-1">{label}</div>
-                <div className="text-sm font-semibold text-gray-600 mb-2">{t(`landing.lp.security.certs.${i}.sub`, sub)}</div>
-                <div className="text-xs text-gray-400 leading-relaxed">{t(`landing.lp.security.certs.${i}.desc`, desc)}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Security features grid */}
-          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-10 relative overflow-hidden">
-            <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0)', backgroundSize: '32px 32px' }} />
-            <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="relative">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-                  <ShieldCheck className="h-5 w-5 text-emerald-400" />
-                </div>
-                <div>
-                  <div className="text-white font-bold text-lg">{t('landing.lp.security.infraTitle', 'Infrastructure de confiance')}</div>
-                  <div className="text-slate-400 text-sm">{t('landing.lp.security.infraSubtitle', 'Chaque couche est protégée')}</div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[
-                  { icon: Lock, title: 'Chiffrement', items: ['Secrets d\'intégration chiffrés', 'Connexion en HTTPS', 'Mots de passe hachés'] },
-                  { icon: Hash, title: 'Empreintes SHA-256', items: ['Empreinte par validation', 'Horodatage UTC', 'Détection des modifications'] },
-                  { icon: Server, title: 'Hébergement européen', items: ['Prestataire européen', 'Données de chaque client cloisonnées', 'IA : texte envoyé à OpenAI, signalé avant envoi'] },
-                  { icon: Eye, title: 'Traçabilité', items: ['Journal d\'audit détaillé', 'Qui, quoi, quand', 'Export des données'] },
-                  { icon: Users, title: 'Contrôle d\'accès', items: ['RBAC multi-niveaux', 'SSO OpenID Connect', 'Isolation tenant (RLS)'] },
-                ].map(({ icon: Icon, title, items }, i) => (
-                  <div key={title} className="p-5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/8 transition-colors">
-                    <div className="flex items-center gap-3 mb-4">
-                      <Icon className="h-5 w-5 text-emerald-400 flex-shrink-0" />
-                      <div className="text-white font-semibold text-sm">{t(`landing.lp.security.features.${i}.title`, title)}</div>
-                    </div>
-                    <div className="space-y-2">
-                      {items.map((item, j) => (
-                        <div key={item} className="flex items-center gap-2 text-sm text-slate-300">
-                          <Check className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
-                          {t(`landing.lp.security.features.${i}.items.${j}`, item)}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-8 pt-6 border-t border-white/10 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-400">
-                <span className="flex items-center gap-1.5"><div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" /> {t('landing.lp.security.strip.0', 'Multi-tenant RLS PostgreSQL')}</span>
-                <span className="flex items-center gap-1.5"><div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" /> {t('landing.lp.security.strip.1', 'E-signatures SHA-256 par entrée')}</span>
-                <span className="flex items-center gap-1.5"><div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" /> {t('landing.lp.security.strip.2', 'Conforme CSRD Art. 29a')}</span>
-                <span className="flex items-center gap-1.5"><div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" /> {t('landing.lp.security.strip.3', 'Zéro dépendance cloud US')}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Ressources & Guides ─────────────────────────────────────────────── */}
-      <section className="py-24 bg-gray-50 border-t border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
-            <div>
-              <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
-                <span className="w-8 h-px bg-emerald-400 inline-block" />
-                {t('landing.lp.resources.eyebrow', 'Ressources gratuites')}
-              </span>
-              <h2 className="text-4xl font-extrabold text-gray-900 mt-2">{t('landing.lp.resources.title', 'Guides & expertises ESG')}</h2>
-              <p className="text-gray-500 mt-2 max-w-lg">{t('landing.lp.resources.subtitle', 'Approfondissez vos connaissances avec nos guides pratiques rédigés par des experts ESG.')}</p>
-            </div>
-            <Link to="/resources" className="mt-4 md:mt-0 inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">
-              {t('landing.lp.resources.allLink', 'Toutes les ressources')} <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                category: 'Guide',
-                catColor: 'bg-blue-100 text-blue-700',
-                title: 'CSRD pour les PME',
-                desc: 'Tout ce que les PME doivent savoir sur la CSRD : calendrier, seuils, normes ESRS et plan d\'action concret.',
-                icon: GraduationCap,
-                color: 'from-blue-500 to-indigo-600',
-                href: '/guide/csrd-pme',
-                readTime: '12 min',
-              },
-              {
-                category: 'Guide',
-                catColor: 'bg-orange-100 text-orange-700',
-                title: 'Bilan Carbone entreprise',
-                desc: 'Guide complet du bilan carbone : Scopes 1/2/3, facteurs ADEME, obligations légales et méthodologie pas à pas.',
-                icon: Flame,
-                color: 'from-orange-500 to-red-600',
-                href: '/guide/bilan-carbone-entreprise',
-                readTime: '15 min',
-              },
-              {
-                category: 'Guide',
-                catColor: 'bg-violet-100 text-violet-700',
-                title: 'CSDDD & Supply Chain',
-                desc: 'Due diligence européenne : qui est concerné, obligations, calendrier d\'application et plan de mise en conformité.',
-                icon: Truck,
-                color: 'from-violet-500 to-purple-600',
-                href: '/guide/csddd-supply-chain',
-                readTime: '10 min',
-              },
-              {
-                category: 'Checklist',
-                catColor: 'bg-emerald-100 text-emerald-700',
-                title: 'Checklist CSRD 2025',
-                desc: 'Les 50 points de contrôle essentiels pour préparer votre premier reporting CSRD. Téléchargeable en PDF.',
-                icon: FileCheck,
-                color: 'from-emerald-500 to-green-600',
-                href: '/ressources/checklist-csrd',
-                readTime: '8 min',
-              },
-            ].map((resource, i) => (
-              <Link key={i} to={resource.href} className="group flex flex-col bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                {/* Top gradient bar */}
-                <div className={`h-2 bg-gradient-to-r ${resource.color}`} />
-                <div className="p-6 flex flex-col flex-1">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${resource.catColor}`}>{t(`landing.lp.resources.items.${i}.category`, resource.category)}</span>
-                    <span className="text-xs text-gray-400 flex items-center gap-1"><Clock className="h-3 w-3" />{resource.readTime}</span>
-                  </div>
-                  <div className={`w-11 h-11 bg-gradient-to-br ${resource.color} rounded-xl flex items-center justify-center mb-4 shadow-md group-hover:scale-105 transition-transform`}>
-                    <resource.icon className="h-5 w-5 text-white" />
-                  </div>
-                  <h3 className="text-base font-bold text-gray-900 mb-2 group-hover:text-emerald-600 transition-colors">{t(`landing.lp.resources.items.${i}.title`, resource.title)}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed flex-1">{t(`landing.lp.resources.items.${i}.desc`, resource.desc)}</p>
-                  <div className="mt-4 flex items-center gap-1 text-sm font-semibold text-emerald-600 group-hover:gap-2 transition-all">
-                    {t('landing.lp.resources.readGuide', 'Lire le guide')} <ArrowRight className="h-4 w-4" />
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Qui sommes-nous ──────────────────────────────────────────────────── */}
-      </LazySection>
-      <LazySection id="qui-sommes-nous">
-      <section id="qui-sommes-nous" className="py-24 bg-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-          {/* ── Header ── */}
-          <div className="text-center mb-20">
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full text-emerald-700 text-sm font-semibold uppercase tracking-widest mb-5">
-              <Users className="h-4 w-4" /> {t('landing.lp.about.eyebrow', 'Notre histoire')}
-            </span>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 tracking-tight mb-5">
-              {t('landing.lp.about.title', 'Qui sommes-nous ?')}
-            </h2>
-            <p className="text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
-              {t('landing.lp.about.intro', "ESGFlow est né d'un constat simple : les équipes RSE européennes méritent une plateforme pensée pour elles — pas un tableur, pas un outil américain, pas 6 logiciels différents.")}
-            </p>
-          </div>
-
-          {/* ── Mission block ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-24">
-            {/* Left: texte */}
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full text-slate-600 text-xs font-semibold uppercase tracking-wide mb-6">
-                <Target className="h-3.5 w-3.5" /> {t('landing.lp.about.missionEyebrow', 'Notre mission')}
-              </div>
-              <h3 className="text-3xl font-bold text-gray-900 mb-6 leading-tight">
-                {t('landing.lp.about.missionTitle', 'Démocratiser la conformité ESG pour toutes les entreprises européennes')}
-              </h3>
-              <p className="text-gray-600 leading-relaxed mb-6 text-lg">
-                <Trans i18nKey="landing.lp.about.missionP1">
-                  Nous construisons une plateforme ESG <strong className="text-gray-900">pensée pour l'Europe</strong> : conçue dès le départ pour la CSRD, la Taxonomie UE, SFDR, les SBTi et le devoir de vigilance — pas adaptée après coup.
-                </Trans>
-              </p>
-              <p className="text-gray-600 leading-relaxed mb-8">
-                {t('landing.lp.about.missionP2', 'Notre conviction : la transition durable ne doit pas être réservée aux grands groupes avec des équipes de 20 consultants. Une PME de 250 personnes doit pouvoir préparer un rapport CSRD, en quelques semaines, sans expertise préalable.')}
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { value: '22', label: 'modules ESG', color: 'text-emerald-600' },
-                  { value: '10', label: 'référentiels couverts', color: 'text-blue-600' },
-                  { value: 'UE', label: 'hébergeur européen', color: 'text-violet-600' },
-                  { value: '14j', label: "d'essai gratuit", color: 'text-amber-600' },
-                ].map((s, i) => (
-                  <div key={i} className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
-                    <div className={`text-2xl font-extrabold ${s.color} mb-1`}>{s.value}</div>
-                    <div className="text-sm text-gray-600 font-medium">{t(`landing.lp.about.stats.${i}.label`, s.label)}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Right: visual timeline */}
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl" />
-              <div className="relative p-8 space-y-6">
-                {[
-                  {
-                    year: 'Origine', icon: Leaf, color: 'bg-emerald-500',
-                    title: 'Naissance du projet',
-                    desc: 'Face à la complexité de la directive CSRD, le projet naît d\'un besoin concret : un outil simple pour préparer le reporting.',
-                  },
-                  {
-                    year: 'Prototype', icon: Code2, color: 'bg-blue-500',
-                    title: 'Premier prototype',
-                    desc: 'Premiers modules : bilan carbone et générateur de rapport CSRD.',
-                  },
-                  {
-                    year: 'Plateforme', icon: Globe, color: 'bg-violet-500',
-                    title: 'Plateforme complète',
-                    desc: 'Ajout de la Taxonomie UE, SFDR, SBTi, Vigilance et d\'un circuit de validation. Balisage iXBRL/ESEF des rapports de durabilité.',
-                  },
-                  {
-                    year: 'En cours', icon: Sparkles, color: 'bg-amber-500',
-                    title: 'Intelligence augmentée',
-                    desc: 'IA générative intégrée : extraction automatique des données FEC, analyse de gap CSRD, calcul de matérialité, génération de politiques RSE.',
-                  },
-                ].map((item, i) => (
-                  <div key={i} className="flex gap-4 items-start">
-                    <div className="flex flex-col items-center">
-                      <div className={`w-9 h-9 ${item.color} rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm`}>
-                        <item.icon className="h-4 w-4 text-white" />
-                      </div>
-                      {i < 3 && <div className="w-0.5 h-6 bg-gray-200 mt-2" />}
-                    </div>
-                    <div className="pb-2">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">{item.year}</span>
-                        <span className="text-sm font-bold text-gray-900">{t(`landing.lp.about.timeline.${i}.title`, item.title)}</span>
-                      </div>
-                      <p className="text-sm text-gray-600 leading-relaxed">{t(`landing.lp.about.timeline.${i}.desc`, item.desc)}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* ── Problèmes & Solutions ── */}
-          <div className="mb-24">
-            <div className="text-center mb-14">
-              <span className="inline-flex items-center gap-2 px-3 py-1 bg-red-50 border border-red-100 rounded-full text-red-600 text-xs font-semibold uppercase tracking-wide mb-4">
-                <AlertTriangle className="h-3.5 w-3.5" /> {t('landing.lp.about.problemsEyebrow', 'Les problèmes du marché')}
-              </span>
-              <h3 className="text-3xl font-bold text-gray-900">{t('landing.lp.about.problemsTitle', 'Ce que nous résolvons')}</h3>
-              <p className="text-gray-500 mt-3 max-w-xl mx-auto">{t('landing.lp.about.problemsSubtitle', 'Nous avons rencontré ces mêmes obstacles en tant que consultants RSE. ESGFlow est notre réponse directe.')}</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {[
-                {
-                  problem: 'Données ESG fragmentées dans des tableurs',
-                  problemDesc: 'Consolider des fichiers Excel épars prend du temps aux équipes RSE, sans traçabilité ni contrôle des versions.',
-                  solution: 'Plateforme centralisée avec 22 modules connectés',
-                  solutionDesc: 'Un seul endroit pour saisir, valider, approuver et exporter toutes vos données ESG — avec circuit d\'approbation et signature SHA-256.',
-                  problemIcon: AlertTriangle,
-                  solutionIcon: CheckCircle,
-                  problemColor: 'text-red-500',
-                  solutionColor: 'text-emerald-600',
-                  problemBg: 'bg-red-50',
-                  solutionBg: 'bg-emerald-50',
-                },
-                {
-                  problem: 'Réglementations incompréhensibles & évolutives',
-                  problemDesc: 'CSRD, Taxonomie UE, SFDR, SBTi, CSDDD : chaque directive a ses propres indicateurs, seuils et calendriers. Impossible à suivre sans expert dédié.',
-                  solution: 'Guides intégrés + mises à jour réglementaires automatiques',
-                  solutionDesc: 'Checklists ESRS interactives, assistant IA réglementaire, alertes sur les changements de texte — vous restez conformes sans veille permanente.',
-                  problemIcon: AlertTriangle,
-                  solutionIcon: CheckCircle,
-                  problemColor: 'text-orange-500',
-                  solutionColor: 'text-emerald-600',
-                  problemBg: 'bg-orange-50',
-                  solutionBg: 'bg-emerald-50',
-                },
-                {
-                  problem: 'Auditabilité impossible à garantir',
-                  problemDesc: 'Lors d\'un audit ISAE 3000, prouver la traçabilité des données ESG avec un tableur est un exercice périlleux — qui peut coûter la certification.',
-                  solution: 'Journal d\'audit horodaté + e-signature SHA-256',
-                  solutionDesc: 'Chaque saisie, validation et approbation génère une empreinte cryptographique immuable. Preuve légale recalculable lors de tout audit externe.',
-                  problemIcon: AlertTriangle,
-                  solutionIcon: CheckCircle,
-                  problemColor: 'text-red-500',
-                  solutionColor: 'text-emerald-600',
-                  problemBg: 'bg-red-50',
-                  solutionBg: 'bg-emerald-50',
-                },
-                {
-                  problem: 'Coût prohibitif des solutions enterprise',
-                  problemDesc: 'Beaucoup de plateformes ESG sont conçues pour les grands groupes, avec un coût et une mise en œuvre difficiles à porter pour une PME ou une ETI.',
-                  solution: 'Pricing accessible dès 0 € — sans engagement',
-                  solutionDesc: 'Plan gratuit fonctionnel, plan PME à partir de 249 €/mois. La conformité ESG ne doit pas être réservée aux grands groupes.',
-                  problemIcon: AlertTriangle,
-                  solutionIcon: CheckCircle,
-                  problemColor: 'text-orange-500',
-                  solutionColor: 'text-emerald-600',
-                  problemBg: 'bg-orange-50',
-                  solutionBg: 'bg-emerald-50',
-                },
-              ].map((item, i) => (
-                <div key={i} className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                  {/* Problem */}
-                  <div className={`${item.problemBg} p-5 border-b border-gray-100`}>
-                    <div className="flex items-start gap-3">
-                      <item.problemIcon className={`h-5 w-5 ${item.problemColor} flex-shrink-0 mt-0.5`} />
-                      <div>
-                        <p className={`text-sm font-bold ${item.problemColor} mb-1`}>{t('landing.lp.about.problemLabel', 'Le problème')}</p>
-                        <p className="text-sm font-semibold text-gray-800 mb-1">{t(`landing.lp.about.problems.${i}.problem`, item.problem)}</p>
-                        <p className="text-xs text-gray-500 leading-relaxed">{t(`landing.lp.about.problems.${i}.problemDesc`, item.problemDesc)}</p>
-                      </div>
-                    </div>
-                  </div>
-                  {/* Solution */}
-                  <div className="p-5">
-                    <div className="flex items-start gap-3">
-                      <item.solutionIcon className={`h-5 w-5 ${item.solutionColor} flex-shrink-0 mt-0.5`} />
-                      <div>
-                        <p className="text-sm font-bold text-emerald-600 mb-1">{t('landing.lp.about.solutionLabel', 'Notre solution')}</p>
-                        <p className="text-sm font-semibold text-gray-800 mb-1">{t(`landing.lp.about.problems.${i}.solution`, item.solution)}</p>
-                        <p className="text-xs text-gray-500 leading-relaxed">{t(`landing.lp.about.problems.${i}.solutionDesc`, item.solutionDesc)}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      {/* ── FAQ ──────────────────────────────────────────────────────────────── */}
-      </LazySection>
-      <LazySection id="faq">
-      <section id="faq" className="py-24 bg-gray-50">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-14">
-            <span className="text-sm font-semibold text-green-600 uppercase tracking-widest">{t('landing.lp.faq.eyebrow', 'FAQ')}</span>
-            <h2 className="text-4xl font-bold text-gray-900 mt-3">{t('landing.lp.faq.title', 'Questions fréquentes')}</h2>
-          </div>
-          <div className="space-y-3">
-            {faqs.map((f, i) => <FaqItem key={i} q={t(`landing.lp.faq.items.${i}.q`, f.q)} a={t(`landing.lp.faq.items.${i}.a`, f.a)} />)}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Différenciateurs ────────────────────────────────────────────────── */}
-      <section className="py-24 bg-white relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(ellipse at 30% 20%, rgba(16,185,129,0.05) 0%, transparent 60%)' }} />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-widest mb-4">
-              <span className="w-8 h-px bg-emerald-400 inline-block" />
-              {t('landing.lp.differentiators.eyebrow', 'Ce qui nous différencie')}
-              <span className="w-8 h-px bg-emerald-400 inline-block" />
-            </span>
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mt-2 mb-4">{t('landing.lp.differentiators.title', "Des fonctionnalités que peu d'outils ESG proposent")}</h2>
-            <p className="text-lg text-gray-500 max-w-2xl mx-auto">{t('landing.lp.differentiators.subtitle', 'Au-delà du calcul de score, ESGFlow embarque nativement des modules avancés, déjà disponibles dans votre espace.')}</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { icon: ClipboardList, title: "Piste d'audit SHA-256", desc: "Chaque donnée et chaque modification est chaînée cryptographiquement (SHA-256), pour une assurance ISAE 3000 facilitée.", path: '/features/audit-trail', color: '#374151', light: '#f9fafb' },
-              { icon: ShieldAlert, title: 'Plan de vigilance & alerte éthique', desc: "Cartographie des risques, plan d'actions et canal de signalement public conforme à la directive lanceurs d'alerte.", path: '/features/vigilance', color: '#dc2626', light: '#fef2f2' },
-              { icon: Building2, title: 'Mode Cabinet multi-clients', desc: 'Pilotez tous vos clients depuis un espace unique, avec isolation stricte des données et comparateur intégré.', path: '/features/cabinet', color: '#4f46e5', light: '#eef2ff' },
-              { icon: Code2, title: 'Reporting iXBRL & validation Arelle', desc: 'Générez un aperçu iXBRL de votre rapport CSRD et validez-le avec Arelle. Le dépôt réglementaire reste à votre charge.', path: '/features/ixbrl', color: '#0891b2', light: '#ecfeff' },
-            ].map(({ icon: Icon, title, desc, path, color, light }, i) => (
-              <Link key={path} to={path} className="group p-6 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col">
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: light }}>
-                  <Icon className="h-6 w-6" style={{ color }} />
-                </div>
-                <h3 className="font-bold text-gray-900 mb-2">{t(`landing.lp.differentiators.items.${i}.title`, title)}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed flex-1 mb-4">{t(`landing.lp.differentiators.items.${i}.desc`, desc)}</p>
-                <span className="inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color }}>
-                  {t('landing.lp.differentiators.cta', 'Découvrir')}
-                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </span>
-              </Link>
-            ))}
-          </div>
-
-          {/* Bandeau VSME */}
-          <Link
-            to="/normes"
-            className="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 p-6 rounded-2xl border border-lime-200 bg-lime-50/60 hover:bg-lime-50 hover:shadow-md transition-all group"
-          >
-            <div className="w-12 h-12 rounded-xl bg-lime-600 flex items-center justify-center flex-shrink-0">
-              <FileCheck className="h-6 w-6 text-white" />
-            </div>
-            <div className="flex-1">
-              <p className="font-bold text-gray-900 mb-1">
-                {t('landing.lp.differentiators.vsme.title', 'Nouveau : norme volontaire VSME (EFRAG) incluse')}
-                <span className="ml-2 align-middle text-[10px] font-extrabold uppercase tracking-wide bg-lime-600 text-white px-2 py-0.5 rounded-full">{t('landing.lp.differentiators.vsme.badge', 'PME')}</span>
-              </p>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                {t('landing.lp.differentiators.vsme.desc', "Template prêt à l'emploi couvrant les 11 exigences du Module de Base (B1–B11) : répondez aux demandes ESG de vos banques et donneurs d'ordre sans subir le coût d'un rapport CSRD complet. Et vos données s'exportent vers GRI, CDP et TCFD — 46 indicateurs mappés, 24 séries GRI.")}
-              </p>
-            </div>
-            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-lime-700 flex-shrink-0">
-              {t('landing.lp.differentiators.vsme.cta', 'Voir les normes couvertes')}
-              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </span>
-          </Link>
-        </div>
-      </section>
-
-      {/* ── CTA ──────────────────────────────────────────────────────────────── */}
-      <section className="py-28 relative overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900" />
-        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.025) 1px, transparent 0)', backgroundSize: '40px 40px' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/8 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500/15 border border-emerald-500/30 rounded-full text-emerald-300 text-sm font-semibold mb-10">
-            <Sparkles className="h-4 w-4" />
-            {t('landing.lp.cta.badge', '22 modules · 14 jours gratuits · Sans carte bancaire')}
-          </div>
-
-          <h2 className="text-4xl lg:text-6xl font-extrabold text-white mb-6 leading-[1.05] tracking-tight">
-            {t('landing.lp.cta.titleLine1', 'Votre ESG, enfin')}
-            <br />
-            <span className="bg-gradient-to-r from-emerald-400 via-green-300 to-teal-400 bg-clip-text text-transparent">
-              {t('landing.lp.cta.titleLine2', 'sous contrôle total')}
-            </span>
-          </h2>
-
-          <p className="text-xl text-slate-300 mb-12 max-w-2xl mx-auto leading-relaxed">
-            {t('landing.lp.cta.subtitle', 'Remplacez vos tableurs et vos silos par une plateforme unique. Essayez gratuitement pendant 14 jours.')}
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <Link to="/register">
-              <button className="group flex items-center gap-2 px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-2xl transition-all shadow-2xl shadow-emerald-500/30 text-base hover:-translate-y-0.5">
-                {t('landing.lp.cta.primaryBtn', 'Démarrer gratuitement')}
-                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </Link>
-            <Link to="/demo">
-              <button className="flex items-center gap-2 px-8 py-4 bg-white/8 hover:bg-white/15 border border-white/20 text-white font-semibold rounded-2xl transition-all text-base backdrop-blur-sm">
-                <Play className="h-4 w-4 fill-white" /> {t('landing.lp.cta.secondaryBtn', 'Voir la démo interactive')}
-              </button>
-            </Link>
-          </div>
-
-          {/* Trust badges */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mx-auto">
-            {[
-              { icon: Shield, label: 'RGPD', sub: 'Conçu pour la conformité' },
-              { icon: Globe, label: 'Hébergeur européen', sub: 'Données en Europe' },
-              { icon: Award, label: 'iXBRL/ESEF', sub: 'Balisage des rapports' },
-              { icon: Lock, label: 'SHA-256', sub: 'Empreintes par entrée' },
-            ].map((item, i) => (
-              <div key={i} className="flex flex-col items-center gap-2 p-4 bg-white/5 border border-white/10 rounded-2xl">
-                <item.icon className="h-5 w-5 text-emerald-400" />
-                <div className="text-white text-xs font-semibold">{t(`landing.lp.cta.badges.${i}.label`, item.label)}</div>
-                <div className="text-slate-400 text-xs">{t(`landing.lp.cta.badges.${i}.sub`, item.sub)}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-      </LazySection>
-
-      {/* ── Footer ───────────────────────────────────────────────────────────── */}
-      <footer className="bg-slate-950 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-12 mb-12">
-            <div className="md:col-span-2">
-              <div className="flex items-center gap-2.5 mb-4">
-                <LogoMark size={36} decorative />
-                <Wordmark className="text-xl" tone="light" />
-              </div>
-              <p className="text-slate-400 text-sm leading-relaxed max-w-xs mb-6">
-                {t('landing.lp.footer.tagline', 'La plateforme ESG pour préparer votre reporting CSRD : collecte, scores, rapports, IA.')}
-              </p>
-              <div className="flex gap-2.5">
-                {[
-                  { key: 'in', label: 'LinkedIn', href: 'https://www.linkedin.com/company/esgflow' },
-                  { key: 'tw', label: 'Twitter / X', href: 'https://twitter.com/esgflow' },
-                  { key: 'yt', label: 'YouTube', href: 'https://www.youtube.com/@esgflow' },
-                ].map(s => (
-                  <a key={s.key} href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.label} className="w-11 h-11 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center justify-center cursor-pointer transition-colors text-slate-400 hover:text-white text-xs font-bold uppercase">{s.key}</a>
-                ))}
-              </div>
-            </div>
-            {[
-              { title: 'Fonctionnalités', links: [
-                  { label: 'Bilan Carbone Scope 3', href: '/features/bilan-carbone' },
-                  { label: 'Reporting CSRD / ESRS', href: '/features/csrd-reporting' },
-                  { label: 'Plan Décarbonation SBTi', href: '/features/decarbonation' },
-                  { label: 'Supply Chain ESG', href: '/features/supply-chain' },
-                  { label: 'Double Matérialité', href: '/features/double-materialite' },
-                  { label: 'Taxonomie UE', href: '/features/taxonomie-ue' },
-                  { label: 'IA & Automatisation', href: '/features/ia-automatisation' },
-                  { label: 'Piste d\'Audit', href: '/features/audit-trail' },
-              ]},
-              { title: 'Solutions', links: [
-                  { label: 'PME & ETI', href: '/register' },
-                  { label: 'Grands Groupes', href: '/register' },
-                  { label: 'Cabinets Conseil', href: '/register' },
-                  { label: 'Investisseurs', href: '/register' },
-                  { label: 'Voir la démo', href: '/demo' },
-              ]},
-              { title: 'Ressources', links: [
-                  { label: 'Guide CSRD PME', href: '/guide/csrd-pme' },
-                  { label: 'Guide Bilan Carbone', href: '/guide/bilan-carbone-entreprise' },
-                  { label: 'Guide CSDDD', href: '/guide/csddd-supply-chain' },
-                  { label: 'Checklist CSRD', href: '/ressources/checklist-csrd' },
-                  { label: 'Centre d\'aide', href: '/help' },
-                  { label: 'Support', href: '/support' },
-                  { label: 'Tarifs', href: '#tarifs', scroll: 'tarifs' },
-              ]},
-            ].map((col, ci) => (
-              <div key={col.title}>
-                <h4 className="font-semibold text-sm mb-4 text-white">{t(`landing.lp.footer.cols.${ci}.title`, col.title)}</h4>
-                <ul className="space-y-3 tap-list">
-                  {col.links.map((l: any, li: number) => (
-                    <li key={l.label}>
-                      {l.scroll
-                        ? <button onClick={() => scrollTo(l.scroll)} className="text-slate-400 hover:text-white transition-colors text-sm">{t(`landing.lp.footer.cols.${ci}.links.${li}`, l.label as string)}</button>
-                        : l.href.startsWith('/') && !l.href.startsWith('/app')
-                          ? <Link to={l.href} className="text-slate-400 hover:text-white transition-colors text-sm">{t(`landing.lp.footer.cols.${ci}.links.${li}`, l.label as string)}</Link>
-                          : <a href={l.href} className="text-slate-400 hover:text-white transition-colors text-sm">{t(`landing.lp.footer.cols.${ci}.links.${li}`, l.label as string)}</a>
-                      }
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-          <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-slate-500 text-sm">{t('landing.lp.footer.copyright', '© 2026 ESGFlow. Tous droits réservés.')}</p>
-            <div className="flex gap-6 text-sm text-slate-500 tap-list">
-              <Link to="/legal-notice" className="hover:text-white transition-colors">{t('landing.lp.footer.legalNotice', 'Mentions légales')}</Link>
-              <Link to="/privacy-policy" className="hover:text-white transition-colors">{t('landing.lp.footer.privacy', 'Confidentialité')}</Link>
-              <Link to="/terms-of-service" className="hover:text-white transition-colors">{t('landing.lp.footer.terms', 'CGU')}</Link>
-              <Link to="/privacy-policy#cookies" className="hover:text-white transition-colors">{t('landing.lp.footer.cookies', 'Cookies')}</Link>
-            </div>
-          </div>
-        </div>
-      </footer>
-
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: scale(0.5); }
-          to { opacity: 1; transform: scale(1); }
-        }
-      `}</style>
+    <div className="min-h-screen bg-white font-sans text-gray-900 antialiased">
+      <style>{PAGE_CSS}</style>
+      <a href="#contenu" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:shadow-lg">
+        Aller au contenu
+      </a>
+      <Nav onModule={openModule} />
+      <main id="contenu">
+        <Hero />
+        <Pipeline />
+        <FeaturesOverview onModule={openModule} />
+        <LazySection id="modules" minHeight={720}><ModuleExplorer active={activeModule} onSelect={setActiveModule} /></LazySection>
+        <LazySection id="donnees" minHeight={520}><DataSources /></LazySection>
+        <LazySection id="tarifs" minHeight={900}><Pricing /></LazySection>
+        <LazySection id="securite" minHeight={520}><SecuritySection /></LazySection>
+        <LazySection id="ressources" minHeight={560}><Resources /></LazySection>
+        <LazySection id="qui-sommes-nous" minHeight={420}><About /></LazySection>
+        <LazySection id="faq" minHeight={640}><Faq /></LazySection>
+        <FinalCta />
+      </main>
+      <Footer />
     </div>
   );
 }
