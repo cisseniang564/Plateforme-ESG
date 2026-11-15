@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Leaf, Users, Scale, RefreshCw, Sparkles, ArrowUpRight, ChevronRight, AlertTriangle, CheckCircle2,
-  Target, CalendarClock, Bell, FileText,
+  Leaf, Users, Scale, RefreshCw, Sparkles, ArrowUpRight, ChevronRight, CheckCircle2,
+  Target, CalendarClock, Bell, FileText, Info, AlertTriangle, AlertOctagon,
 } from 'lucide-react';
 import {
-  Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -71,7 +71,46 @@ function buildDeadlines(t: (k: string) => string) {
 interface ActivityItem {
   label: string;
   time: string;
-  icon: string;
+  type: 'success' | 'info' | 'warning' | 'error';
+}
+
+/** Objectif de score par pilier, utilisé par les barres et la courbe. */
+const TARGET = 75;
+
+const PILLAR_STYLE = {
+  env: { text: '#047857', fill: '#10b981', route: 'environmental' },
+  soc: { text: '#1d4ed8', fill: '#3b82f6', route: 'social' },
+  gov: { text: '#6d28d9', fill: '#8b5cf6', route: 'governance' },
+} as const;
+
+/** Familles ESRS pour regrouper la couverture (ordre de lecture d'un rapport CSRD). */
+const ESRS_FAMILIES = [
+  { key: 'general', label: 'Informations générales', match: (c: string) => /^ESRS\s*\d/i.test(c) },
+  { key: 'env', label: 'Environnement', match: (c: string) => /^E\d/i.test(c) },
+  { key: 'soc', label: 'Social', match: (c: string) => /^S\d/i.test(c) },
+  { key: 'gov', label: 'Gouvernance', match: (c: string) => /^G\d/i.test(c) },
+] as const;
+
+const LEVEL_STYLE = {
+  covered: { bar: '#047857', label: 'couverte' },
+  partial: { bar: '#d97706', label: 'partielle' },
+  missing: { bar: '#94a3b8', label: 'non couverte' },
+} as const;
+
+/** Barre qui se remplit une fois au chargement (désactivé si l'utilisateur réduit les animations). */
+function Bar({ pct, color, target, label }: { pct: number; color: string; target?: number; label: string }) {
+  const [shown, setShown] = useState(false);
+  useEffect(() => { const id = requestAnimationFrame(() => setShown(true)); return () => cancelAnimationFrame(id); }, []);
+  const w = Math.max(0, Math.min(pct, 100));
+  return (
+    <div className="relative h-2 rounded-full bg-gray-100" role="img" aria-label={label}>
+      <div className="h-2 rounded-full motion-safe:transition-[width] motion-safe:duration-700 motion-safe:ease-out"
+        style={{ width: shown ? `${w}%` : '0%', background: color }} />
+      {target !== undefined && (
+        <span className="absolute -top-1 h-4 w-0.5 rounded-full bg-gray-400" style={{ left: `calc(${target}% - 1px)` }} aria-hidden="true" />
+      )}
+    </div>
+  );
 }
 
 export default function ExecutiveDashboard() {
@@ -121,9 +160,6 @@ export default function ExecutiveDashboard() {
     try {
       const res = await api.get('/notifications?limit=5');
       const items: any[] = res.data?.items ?? [];
-      const ICON_MAP: Record<string, string> = {
-        success: '✅', info: '📋', warning: '⚠️', error: '🚨',
-      };
       const now = new Date();
       const formatted: ActivityItem[] = items.map((n: any) => {
         const created = new Date(n.created_at ?? n.time ?? now);
@@ -136,7 +172,7 @@ export default function ExecutiveDashboard() {
         return {
           label: n.title ?? n.body ?? t('dashboard.activity'),
           time: timeStr,
-          icon: ICON_MAP[n.type] ?? '📋',
+          type: (['success', 'info', 'warning', 'error'].includes(n.type) ? n.type : 'info') as ActivityItem['type'],
         };
       });
       if (formatted.length > 0) setRecentActivity(formatted);
@@ -238,15 +274,11 @@ export default function ExecutiveDashboard() {
     [scoreHistory],
   );
 
-  const PILLAR_STYLE = {
-    env: { text: '#047857', fill: '#10b981', soft: '#ecfdf5', route: 'environmental' },
-    soc: { text: '#1d4ed8', fill: '#3b82f6', soft: '#eff6ff', route: 'social' },
-    gov: { text: '#6d28d9', fill: '#8b5cf6', soft: '#f5f3ff', route: 'governance' },
-  } as const;
-
-  const orgCount = organizations.length || 1;
-  const avgOf = (k: 'environmental_score' | 'social_score' | 'governance_score') =>
-    Math.round(organizations.reduce((sum, org) => sum + (org[k] || 0), 0) / orgCount);
+  // Moyenne de chaque pilier sur les organisations qui ont un score (une organisation non notée ne compte pas pour 0).
+  const avgOf = (k: 'environmental_score' | 'social_score' | 'governance_score') => {
+    const vals = organizations.map(o => o[k]).filter((v): v is number => typeof v === 'number');
+    return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+  };
   const pillars = [
     { key: 'env' as const, name: t('dashboard.environmental'), icon: Leaf,  value: avgOf('environmental_score') },
     { key: 'soc' as const, name: t('dashboard.social'),        icon: Users, value: avgOf('social_score') },
@@ -260,21 +292,29 @@ export default function ExecutiveDashboard() {
   const deadlines = buildDeadlines(t);
   const scoreTone = (n: number) => (n >= 75 ? 'success' : n >= 60 ? 'info' : n >= 45 ? 'warning' : 'danger') as 'success' | 'info' | 'warning' | 'danger';
   const scoreLabel = avg >= 75 ? t('dashboard.scoreExcellent') : avg >= 60 ? t('dashboard.scoreGood') : avg >= 45 ? t('dashboard.scoreAverage') : t('dashboard.scoreLow');
+  const ringColor = avg >= 60 ? '#047857' : avg >= 45 ? '#d97706' : '#dc2626';
   const greeting = () => {
     const h = new Date().getHours();
     return h < 6 ? t('dashboard.greetNight', 'Bonsoir') : h < 18 ? t('dashboard.greetDay', 'Bonjour') : t('dashboard.greetEvening', 'Bonsoir');
   };
   const firstName = (user as any)?.first_name || '';
+  const scoredCount = organizations.filter(o => o.overall_score != null).length;
 
-  const card = 'rounded-xl border border-gray-200 bg-white';
-  const ringR = 52;
+  const card = 'rounded-2xl border border-gray-200 bg-white';
+  const sectionTitle = 'text-[15px] font-semibold text-gray-900';
+  const sectionHint = 'mt-0.5 text-[13px] text-gray-500';
+  const link = 'inline-flex items-center gap-1 rounded text-[13px] font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300';
+  const ringR = 54;
   const ringC = 2 * Math.PI * ringR;
-  const LEVEL = {
-    covered: { bg: '#047857', fg: '#ffffff', label: 'couverte' },
-    partial: { bg: '#fbbf24', fg: '#1f2937', label: 'partielle' },
-    missing: { bg: '#e2e8f0', fg: '#1f2937', label: 'non couverte' },
-  } as const;
-  const TONE_ICON = { danger: 'text-red-600', warning: 'text-amber-600', info: 'text-blue-600' } as const;
+  const ACTION_ICON = { danger: AlertOctagon, warning: AlertTriangle, info: Info } as const;
+  const ACTION_TONE = { danger: 'text-red-600 bg-red-50 dark:bg-red-500/15 dark:text-red-400', warning: 'text-amber-700 bg-amber-50 dark:bg-amber-500/15 dark:text-amber-400', info: 'text-blue-700 bg-blue-50 dark:bg-blue-500/15 dark:text-blue-400' } as const;
+  const ACTIVITY_ICON = { success: CheckCircle2, info: Info, warning: AlertTriangle, error: AlertOctagon } as const;
+  const ACTIVITY_TONE = { success: 'text-emerald-600', info: 'text-blue-600', warning: 'text-amber-600', error: 'text-red-600' } as const;
+
+  const esrsGroups = (esrsSections ?? []).length
+    ? ESRS_FAMILIES.map(f => ({ ...f, items: (esrsSections ?? []).filter(s => f.match(shortCode(s.code))) })).filter(g => g.items.length)
+    : [];
+  const levelCounts = (esrsSections ?? []).reduce((acc, s) => { acc[esrsLevel(s.pct)] += 1; return acc; }, { covered: 0, partial: 0, missing: 0 });
 
   if (loading) {
     return (
@@ -289,20 +329,20 @@ export default function ExecutiveDashboard() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* ── En-tête : un titre, une action principale ── */}
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-xs font-medium text-gray-600 capitalize">
-            {greeting()}{firstName ? `, ${firstName}` : ''} · {format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}
-          </p>
-          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-gray-900">{t('dashboard.titleNew', 'Votre performance ESG')}</h2>
+    <div className="mx-auto max-w-[1400px] space-y-6 animate-fade-in">
+      {/* ── En-tête ── */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-[13px] text-gray-500 first-letter:uppercase">{format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}</p>
+          <h1 className="mt-1 text-[26px] font-semibold leading-tight tracking-tight text-gray-900 sm:text-[28px]">
+            {greeting()}{firstName ? `, ${firstName}` : ''}
+          </h1>
           <p className="mt-1 text-sm text-gray-600">
-            {t('dashboard.subtitleNew', 'Voici où en est votre performance ESG.')}
-            {latestPeriodMonths ? <span className="ml-1">· {t('dashboard.dataWindow', 'Données sur')} {humanizePeriod(latestPeriodMonths, t)}</span> : null}
+            {t('dashboard.subtitleNew2', { count: organizations.length, defaultValue: '{{count}} organisation(s) suivie(s)' })}
+            {latestPeriodMonths ? `, ${t('dashboard.dataWindowLower', 'données sur')} ${humanizePeriod(latestPeriodMonths, t)}` : ''}.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="secondary" icon={<RefreshCw className="h-4 w-4" />} onClick={() => { loadDashboard(); loadActivity(); loadEsrsCoverage(); }}>
             {t('dashboard.refresh', 'Actualiser')}
           </Button>
@@ -312,89 +352,137 @@ export default function ExecutiveDashboard() {
         </div>
       </header>
 
-      {/* ── Score global + trois piliers ── */}
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[1.25fr_1fr_1fr_1fr]" aria-label={t('dashboard.keyFigures', 'Chiffres clés')}>
-        <div className={`${card} flex items-center gap-5 p-5`}>
-          <div className="relative h-[124px] w-[124px] flex-none" role="img" aria-label={`${avg} / 100`}>
-            <svg viewBox="0 0 128 128" className="h-full w-full -rotate-90" aria-hidden="true">
-              <circle cx="64" cy="64" r={ringR} fill="none" stroke="#e2e8f0" strokeWidth="12" />
-              <circle cx="64" cy="64" r={ringR} fill="none" stroke="#047857" strokeWidth="12" strokeLinecap="round"
-                strokeDasharray={`${(ringC * Math.min(avg, 100)) / 100} ${ringC}`} />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-4xl font-bold tracking-tight text-gray-900 tabular-nums">{avg}</span>
-              <span className="text-xs text-gray-600">/ 100</span>
+      {/* ── Performance : score global, trois piliers face à l'objectif, tendance ── */}
+      <section className={`${card} overflow-hidden`} aria-label={t('dashboard.keyFigures', 'Chiffres clés')}>
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
+          <div className="flex items-center gap-5 border-b border-gray-200 p-6 lg:border-b-0 lg:border-r">
+            <div className="relative h-[132px] w-[132px] flex-none" role="img" aria-label={`${t('dashboard.avgScore')} : ${avg} / 100`}>
+              <svg viewBox="0 0 132 132" className="h-full w-full -rotate-90" aria-hidden="true">
+                <circle cx="66" cy="66" r={ringR} fill="none" stroke="currentColor" className="text-gray-100 dark:text-white/10" strokeWidth="10" />
+                <circle cx="66" cy="66" r={ringR} fill="none" stroke={ringColor} strokeWidth="10" strokeLinecap="round"
+                  strokeDasharray={`${(ringC * Math.min(avg, 100)) / 100} ${ringC}`}
+                  className="motion-safe:transition-[stroke-dasharray] motion-safe:duration-700" />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-[40px] font-semibold leading-none tracking-tight text-gray-900 tabular-nums">{avg}</span>
+                <span className="mt-1 text-xs text-gray-500">/ 100</span>
+              </div>
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-sm font-medium text-gray-600">{t('dashboard.avgScore')}</h2>
+              <div className="mt-2"><Badge tone={scoreTone(avg)} dot>{scoreLabel}</Badge></div>
+              {trendPts !== null && (
+                <p className={`mt-2 text-[13px] font-medium tabular-nums ${trendPts >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>
+                  {trendPts >= 0 ? '+' : ''}{trendPts.toFixed(1)} {t('dashboard.ptsVsPrevShort', 'pts depuis le calcul précédent')}
+                </p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">
+                {t('dashboard.scoredOf', { scored: scoredCount, total: organizations.length, defaultValue: '{{scored}} organisation(s) notée(s) sur {{total}}' })}
+              </p>
             </div>
           </div>
-          <div className="min-w-0">
-            <h2 className="text-[15px] font-semibold text-gray-900">{t('dashboard.avgScore')}</h2>
-            <div className="mt-2"><Badge tone={scoreTone(avg)} dot>{scoreLabel}</Badge></div>
-            {trendPts !== null && (
-              <p className={`mt-2 text-sm font-medium ${trendPts >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
-                {trendPts >= 0 ? '▲ +' : '▼ '}{trendPts.toFixed(1)} {t('dashboard.ptsVsPrev', 'pts vs. période précédente')}
-              </p>
-            )}
+
+          <div className="p-6">
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 className={sectionTitle}>{t('dashboard.pillarsTitle', 'Piliers face à l’objectif')}</h2>
+              <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                <span className="inline-block h-3 w-0.5 rounded-full bg-gray-400" aria-hidden="true" />
+                {t('dashboard.targetLegend', { n: TARGET, defaultValue: 'objectif {{n}}' })}
+              </span>
+            </div>
+            <ul className="mt-4 space-y-1">
+              {pillars.map(p => {
+                const st = PILLAR_STYLE[p.key];
+                const gap = p.value == null ? null : gapToTarget(p.value, TARGET);
+                return (
+                  <li key={p.key}>
+                    <button type="button" onClick={() => navigate(`/app/dashboard/pillar/${st.route}`)}
+                      className="group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 rounded-xl px-2 py-3 text-left transition-colors hover:bg-gray-50 sm:grid-cols-[minmax(0,170px)_minmax(0,1fr)_auto]">
+                      <span className="flex min-w-0 items-center gap-2.5">
+                        <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg" style={{ background: `${st.fill}1a`, color: st.text }}>
+                          <p.icon className="h-4 w-4" aria-hidden="true" />
+                        </span>
+                        <span className="truncate text-sm font-medium text-gray-800">{p.name}</span>
+                      </span>
+                      <span className="order-last col-span-2 min-w-0 sm:order-none sm:col-span-1">
+                        <Bar pct={p.value ?? 0} color={st.fill} target={TARGET} label={`${p.name} : ${p.value ?? '—'} sur 100, objectif ${TARGET}`} />
+                        <span className="mt-1.5 block text-xs text-gray-500">
+                          {gap == null ? t('dashboard.noScoreYet', 'Pas encore de score')
+                            : gap >= 0 ? t('dashboard.aboveTarget', { n: gap, defaultValue: 'Objectif atteint (+{{n}} pts)' })
+                            : t('dashboard.belowTarget', { n: Math.abs(gap), defaultValue: '{{n}} pts sous l’objectif' })}
+                        </span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-9 text-right text-xl font-semibold tabular-nums text-gray-900">{p.value ?? '—'}</span>
+                        <ChevronRight className="h-4 w-4 text-gray-300 transition-colors group-hover:text-gray-500" aria-hidden="true" />
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         </div>
-
-        {pillars.map(p => {
-          const st = PILLAR_STYLE[p.key];
-          const gap = gapToTarget(p.value);
-          return (
-            <div key={p.key} className={`${card} flex flex-col gap-3 p-5`}>
-              <div className="flex items-center gap-2">
-                <p.icon className="h-[18px] w-[18px]" style={{ color: st.text }} aria-hidden="true" />
-                <h3 className="text-sm font-semibold" style={{ color: st.text }}>{p.name}</h3>
-                <span className="ml-auto text-3xl font-bold leading-none tabular-nums text-gray-900">{p.value}</span>
-              </div>
-              <div className="h-2 rounded-full bg-gray-200" role="img" aria-label={`${p.name} : ${p.value} sur 100`}>
-                <div className="h-2 rounded-full" style={{ width: `${Math.min(p.value, 100)}%`, background: st.fill }} />
-              </div>
-              <p className="text-[13px] text-gray-600">
-                {gap >= 0 ? `Objectif de 75 atteint (+${gap} pts)` : `${Math.abs(gap)} pts sous l’objectif de 75`}
-              </p>
-              <button type="button" onClick={() => navigate(`/app/dashboard/pillar/${st.route}`)} className="mt-auto inline-flex items-center gap-1.5 text-[13px] font-semibold text-emerald-700 hover:underline">
-                {t('dashboard.seePillar', 'Voir les indicateurs')} <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
-            </div>
-          );
-        })}
       </section>
 
-      {/* ── Prêt pour la CSRD ? + prochaines actions ── */}
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1.15fr_1fr]">
-        <div className={`${card} p-5`}>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="text-[15px] font-semibold text-gray-900">{t('dashboard.csrdReady', 'Prêt pour la CSRD ?')}</h2>
-              <p className="mt-1 text-[13px] text-gray-600">{t('dashboard.csrdReadyHint', 'Couverture de vos données par norme ESRS')}</p>
+      {/* ── Couverture CSRD + prochaines actions ── */}
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+        <div className={`${card} p-6`}>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0">
+              <h2 className={sectionTitle}>{t('dashboard.csrdReady', 'Prêt pour la CSRD ?')}</h2>
+              <p className={sectionHint}>{t('dashboard.csrdReadyHint', 'Couverture de vos données par norme ESRS')}</p>
             </div>
             {esrsAvg !== null && (
-              <div className="text-right">
-                <div className="text-3xl font-bold leading-none tabular-nums text-gray-900">{esrsAvg} %</div>
-                <div className="mt-1.5"><Badge tone={esrsAvg >= 70 ? 'success' : 'warning'}>{esrsAvg >= 70 ? 'Couverte' : 'À renforcer'}</Badge></div>
+              <div className="sm:text-right">
+                <div className="text-[32px] font-semibold leading-none tabular-nums text-gray-900">{esrsAvg} %</div>
+                <div className="mt-1 text-xs text-gray-500">{t('dashboard.esrsOverall', 'couverture globale')}</div>
               </div>
             )}
           </div>
-          {esrsSections && esrsSections.length > 0 ? (
+
+          {esrsGroups.length > 0 ? (
             <>
-              <ul className="mt-4 grid grid-cols-5 gap-2">
-                {esrsSections.map(s => {
-                  const lv = LEVEL[esrsLevel(s.pct)];
-                  return (
-                    <li key={s.code} title={`${s.label} : ${s.pct} % (${lv.label})`}
-                      className="flex h-14 flex-col items-center justify-center rounded-lg text-xs font-bold" style={{ background: lv.bg, color: lv.fg }}>
-                      <span>{shortCode(s.code)}</span>
-                      <span className="font-medium">{s.pct} %</span>
-                    </li>
-                  );
-                })}
-              </ul>
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600">
-                <span><b style={{ color: '#047857' }}>■</b> couverte (70 % et plus)</span>
-                <span><b style={{ color: '#d97706' }}>■</b> partielle</span>
-                <span><b style={{ color: '#94a3b8' }}>■</b> non couverte</span>
-                <button type="button" onClick={() => navigate('/app/esrs-gap')} className="ml-auto font-semibold text-emerald-700 hover:underline">{t('dashboard.esrsLink', 'Analyse détaillée')}</button>
+              {/* Répartition des normes par niveau */}
+              <div className="mt-5 flex h-2 overflow-hidden rounded-full bg-gray-100" role="img"
+                aria-label={`${levelCounts.covered} couvertes, ${levelCounts.partial} partielles, ${levelCounts.missing} non couvertes`}>
+                {(['covered', 'partial', 'missing'] as const).map(k => levelCounts[k] > 0 && (
+                  <span key={k} style={{ flexGrow: levelCounts[k], background: LEVEL_STYLE[k].bar }} />
+                ))}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+                {(['covered', 'partial', 'missing'] as const).map(k => (
+                  <span key={k} className="inline-flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full" style={{ background: LEVEL_STYLE[k].bar }} aria-hidden="true" />
+                    {levelCounts[k]} {LEVEL_STYLE[k].label}{levelCounts[k] > 1 ? 's' : ''}
+                  </span>
+                ))}
+                <span className="text-gray-400">{t('dashboard.coveredRule', 'couverte = 70 % et plus')}</span>
+              </div>
+
+              <div className="mt-5 gap-x-8 md:columns-2">
+                {esrsGroups.map(g => (
+                  <div key={g.key} className="mb-5 break-inside-avoid">
+                    <h3 className="text-xs font-medium text-gray-500">{g.label}</h3>
+                    <ul className="mt-2 space-y-2.5">
+                      {g.items.map(s => {
+                        const lv = esrsLevel(s.pct);
+                        return (
+                          <li key={s.code} className="grid grid-cols-[52px_minmax(0,1fr)_44px] items-center gap-3" title={`${s.label} : ${s.pct} % (${LEVEL_STYLE[lv].label})`}>
+                            <span className="text-[13px] font-semibold text-gray-800">{shortCode(s.code)}</span>
+                            <Bar pct={s.pct} color={LEVEL_STYLE[lv].bar} label={`${shortCode(s.code)} ${s.label} : ${s.pct} %`} />
+                            <span className="text-right text-[13px] tabular-nums text-gray-700">{s.pct} %</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-5 flex justify-end">
+                <button type="button" onClick={() => navigate('/app/esrs-gap')} className={link}>
+                  {t('dashboard.esrsLink', 'Analyse détaillée')} <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
               </div>
             </>
           ) : (
@@ -402,65 +490,71 @@ export default function ExecutiveDashboard() {
           )}
         </div>
 
-        <div className={`${card} p-5`}>
-          <h2 className="text-[15px] font-semibold text-gray-900">{t('dashboard.nextActions', 'Prochaines actions')}</h2>
-          <p className="mt-1 text-[13px] text-gray-600">{t('dashboard.nextActionsHint', 'Classées par urgence, à partir de vos données')}</p>
-          {actions.length === 0 ? (
-            <p className="mt-4 flex items-start gap-2 text-sm text-gray-700">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none text-emerald-700" aria-hidden="true" />
-              {t('dashboard.attentionNone', 'Rien d\'urgent : toutes vos organisations sont au-dessus des seuils.')}
-            </p>
-          ) : (
-            <ol className="mt-3">
-              {actions.map((a, i) => (
-                <li key={a.id} className="border-t border-gray-100 first:border-t-0">
-                  <button type="button" onClick={() => navigate(a.to)} className="group flex w-full items-start gap-3 py-3 text-left">
-                    <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-gray-100 text-[13px] font-bold text-gray-700">{i + 1}</span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-semibold text-gray-900">{a.title}</span>
-                      <span className="block text-[13px] text-gray-600">{a.why}</span>
-                    </span>
-                    <AlertTriangle className={`mt-0.5 h-4 w-4 flex-none ${TONE_ICON[a.tone]}`} aria-hidden="true" />
-                    <ChevronRight className="mt-0.5 h-4 w-4 flex-none text-gray-400 transition group-hover:text-gray-600" aria-hidden="true" />
-                  </button>
-                </li>
-              ))}
-            </ol>
-          )}
+        <div className="flex flex-col gap-6">
+          <div className={`${card} p-6`}>
+            <h2 className={sectionTitle}>{t('dashboard.nextActions', 'Prochaines actions')}</h2>
+            <p className={sectionHint}>{t('dashboard.nextActionsHint', 'Classées par urgence, à partir de vos données')}</p>
+            {actions.length === 0 ? (
+              <p className="mt-4 flex items-start gap-2 text-sm text-gray-700">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
+                {t('dashboard.attentionNone', 'Rien d\'urgent : toutes vos organisations sont au-dessus des seuils.')}
+              </p>
+            ) : (
+              <ol className="mt-3 -mx-2">
+                {actions.map(a => {
+                  const Icon = ACTION_ICON[a.tone];
+                  return (
+                    <li key={a.id}>
+                      <button type="button" onClick={() => navigate(a.to)} className="group flex w-full items-start gap-3 rounded-xl px-2 py-3 text-left transition-colors hover:bg-gray-50">
+                        <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-lg ${ACTION_TONE[a.tone]}`}><Icon className="h-4 w-4" aria-hidden="true" /></span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-medium text-gray-900">{a.title}</span>
+                          <span className="block text-[13px] text-gray-500">{a.why}</span>
+                        </span>
+                        <ChevronRight className="mt-2 h-4 w-4 flex-none text-gray-300 transition-colors group-hover:text-gray-500" aria-hidden="true" />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </div>
+
+          <button type="button" onClick={() => navigate('/app/gaia')}
+            className={`${card} group flex w-full items-center gap-4 p-5 text-left transition-colors hover:border-gray-300`}>
+            <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-violet-50 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300" aria-hidden="true"><Sparkles className="h-5 w-5" /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-gray-900">{t('dashboard.gaiaTitleNew', 'Analysez le rapport d’une entreprise avec Gaïa')}</span>
+              <span className="block text-[13px] text-gray-500">{t('dashboard.gaiaPitch', 'Déposez le rapport d\'une entreprise : Gaïa le résume, relève les chiffres et repère ce qui manque.')}</span>
+            </span>
+            <ArrowUpRight className="h-5 w-5 flex-none text-gray-300 transition-colors group-hover:text-gray-600" aria-hidden="true" />
+          </button>
         </div>
       </section>
 
-      {/* ── Gaïa : une ligne, pas un bandeau ── */}
-      <button type="button" onClick={() => navigate('/app/gaia')}
-        className={`${card} group flex w-full items-center gap-4 p-4 text-left transition hover:border-gray-300`}>
-        <span className="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-violet-50 text-violet-700" aria-hidden="true"><Sparkles className="h-5 w-5" /></span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold text-gray-900">{t('dashboard.gaiaTitleNew', 'Analysez le rapport d’une entreprise avec Gaïa')}</span>
-          <span className="block text-[13px] text-gray-600">{t('dashboard.gaiaPitch', 'Déposez le rapport d\'une entreprise : Gaïa le résume, relève les chiffres et repère ce qui manque.')}</span>
-        </span>
-        <ArrowUpRight className="h-5 w-5 flex-none text-gray-400 transition group-hover:text-gray-700" aria-hidden="true" />
-      </button>
-
       {/* ── Évolution + échéances / activité ── */}
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1.15fr_1fr]">
-        <div className={`${card} p-5`}>
-          <h2 className="text-[15px] font-semibold text-gray-900">{t('dashboard.evolutionTitle', 'Évolution du score ESG')}</h2>
-          <p className="mt-1 text-[13px] text-gray-600">{t('dashboard.evolutionHint', 'Score moyen de vos organisations, par mois')}</p>
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+        <div className={`${card} p-6`}>
+          <h2 className={sectionTitle}>{t('dashboard.evolutionTitle', 'Évolution du score ESG')}</h2>
+          <p className={sectionHint}>{t('dashboard.evolutionHint', 'Score moyen de vos organisations, par mois')}</p>
           {evolutionData.length > 1 ? (
-            <div className="mt-3 h-56">
+            <div className="mt-4 h-60">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={evolutionData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+                <AreaChart data={evolutionData} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
                   <defs>
                     <linearGradient id="gOverall" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#047857" stopOpacity={0.2} />
+                      <stop offset="0%" stopColor="#047857" stopOpacity={0.16} />
                       <stop offset="100%" stopColor="#047857" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#556274' }} />
-                  <YAxis domain={[(m: number) => Math.max(0, Math.floor(m - 8)), (m: number) => Math.min(100, Math.ceil(m + 8))]} allowDecimals={false} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#556274' }} />
-                  <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }} />
-                  <Area type="monotone" dataKey="overall" name={t('dashboard.overall', 'Global')} stroke="#047857" strokeWidth={2.5} fill="url(#gOverall)" />
+                  <CartesianGrid vertical={false} stroke="#9ca3af" strokeOpacity={0.3} strokeDasharray="3 3" />
+                  <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                  <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} allowDecimals={false} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                  <ReferenceLine y={TARGET} stroke="#9ca3af" strokeDasharray="4 4"
+                    label={{ value: t('dashboard.targetLegend', { n: TARGET, defaultValue: 'objectif {{n}}' }), position: 'insideTopRight', fill: '#6b7280', fontSize: 11 }} />
+                  <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 12, boxShadow: '0 4px 12px -2px rgb(0 0 0 / 0.08)' }} />
+                  <Area type="monotone" dataKey="overall" name={t('dashboard.overall', 'Global')} stroke="#047857" strokeWidth={2.25}
+                    fill="url(#gOverall)" dot={{ r: 3, fill: '#047857', strokeWidth: 0 }} activeDot={{ r: 5 }} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -470,25 +564,36 @@ export default function ExecutiveDashboard() {
           )}
         </div>
 
-        <div className="space-y-4">
-          <div className={`${card} p-5`}>
-            <h2 className="flex items-center gap-2 text-[15px] font-semibold text-gray-900"><CalendarClock className="h-4 w-4 text-gray-500" aria-hidden="true" />{t('dashboard.deadlinesTitle', 'Prochaines échéances')}</h2>
-            <ul className="mt-3 space-y-3">
-              {deadlines.map(d => (
-                <li key={d.label} className="flex items-center justify-between gap-3">
-                  <span className="min-w-0"><span className="block truncate text-sm font-medium text-gray-800">{d.label}</span><span className="text-xs text-gray-600">{d.dateStr}</span></span>
-                  <Badge tone={d.urgent ? 'danger' : 'neutral'}>{t('dashboard.daysLeft', { n: d.daysLeft, defaultValue: 'J-{{n}}' })}</Badge>
-                </li>
-              ))}
-            </ul>
+        <div className="flex flex-col gap-6">
+          <div className={`${card} p-6`}>
+            <h2 className={`${sectionTitle} flex items-center gap-2`}><CalendarClock className="h-4 w-4 text-gray-400" aria-hidden="true" />{t('dashboard.deadlinesTitle', 'Prochaines échéances')}</h2>
+            {deadlines.length === 0 ? (
+              <p className="mt-3 text-sm text-gray-500">{t('dashboard.noDeadline', 'Aucune échéance à venir.')}</p>
+            ) : (
+              <ul className="mt-3 divide-y divide-gray-100 dark:divide-gray-800">
+                {deadlines.map(d => (
+                  <li key={d.label} className="flex items-center justify-between gap-3 py-2.5">
+                    <span className="min-w-0"><span className="block truncate text-sm font-medium text-gray-800">{d.label}</span><span className="text-xs text-gray-500">{d.dateStr}</span></span>
+                    <Badge tone={d.urgent ? 'danger' : 'neutral'}>{t('dashboard.daysLeft', { n: d.daysLeft, defaultValue: 'J-{{n}}' })}</Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           {recentActivity.length > 0 && (
-            <div className={`${card} p-5`}>
-              <h2 className="flex items-center gap-2 text-[15px] font-semibold text-gray-900"><Bell className="h-4 w-4 text-gray-500" aria-hidden="true" />{t('dashboard.activityTitle', 'Activité récente')}</h2>
+            <div className={`${card} p-6`}>
+              <h2 className={`${sectionTitle} flex items-center gap-2`}><Bell className="h-4 w-4 text-gray-400" aria-hidden="true" />{t('dashboard.activityTitle', 'Activité récente')}</h2>
               <ul className="mt-3 space-y-3">
-                {recentActivity.map((a, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm"><span aria-hidden="true">{a.icon}</span><span className="flex-1 text-gray-700">{a.label}</span><span className="flex-none text-xs text-gray-600">{a.time}</span></li>
-                ))}
+                {recentActivity.map((a, i) => {
+                  const Icon = ACTIVITY_ICON[a.type];
+                  return (
+                    <li key={i} className="flex items-start gap-3 text-sm">
+                      <Icon className={`mt-0.5 h-4 w-4 flex-none ${ACTIVITY_TONE[a.type]}`} aria-hidden="true" />
+                      <span className="min-w-0 flex-1 text-gray-700">{a.label}</span>
+                      <span className="flex-none text-xs text-gray-500">{a.time}</span>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}
@@ -497,28 +602,44 @@ export default function ExecutiveDashboard() {
 
       {/* ── Organisations ── */}
       <section className={`${card} overflow-hidden`}>
-        <div className="flex items-center justify-between p-5 pb-2">
-          <h2 className="text-[15px] font-semibold text-gray-900">{t('dashboard.orgsTitle', 'Vos organisations')}</h2>
-          <button type="button" onClick={() => navigate('/app/organizations')} className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:underline">
+        <div className="flex items-center justify-between gap-3 px-6 pt-6 pb-3">
+          <div>
+            <h2 className={sectionTitle}>{t('dashboard.orgsTitle', 'Vos organisations')}</h2>
+            <p className={sectionHint}>{t('dashboard.orgsHint', 'Classées par score global')}</p>
+          </div>
+          <button type="button" onClick={() => navigate('/app/organizations')} className={link}>
             {t('dashboard.seeAll', 'Tout voir')} <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
         </div>
-        <ul className="divide-y divide-gray-100">
-          {[...organizations].sort((a, b) => (b.overall_score ?? -1) - (a.overall_score ?? -1)).slice(0, 6).map(o => (
-            <li key={o.id}>
-              <button type="button" onClick={() => navigate(`/app/organizations/${o.id}`)} className="flex w-full items-center gap-4 px-5 py-3 text-left transition hover:bg-gray-50">
-                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-emerald-50 text-sm font-semibold text-emerald-800">{(o.name || '?').slice(0, 1).toUpperCase()}</span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium text-gray-900">{o.name}</span>
-                  <span className="mt-1.5 block h-1.5 rounded-full bg-gray-200">
-                    <span className="block h-1.5 rounded-full bg-emerald-600" style={{ width: `${Math.min(o.overall_score ?? 0, 100)}%` }} />
+        <div className="hidden grid-cols-[minmax(0,1fr)_repeat(3,56px)_64px_72px] gap-4 border-b border-gray-100 dark:border-gray-800 px-6 pb-2 text-xs font-medium text-gray-500 md:grid">
+          <span>{t('dashboard.colOrg', 'Organisation')}</span>
+          <span className="text-right">E</span><span className="text-right">S</span><span className="text-right">G</span>
+          <span className="text-right">{t('dashboard.colGlobal', 'Global')}</span>
+          <span className="text-right">{t('dashboard.colRating', 'Note')}</span>
+        </div>
+        <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+          {[...organizations].sort((a, b) => (b.overall_score ?? -1) - (a.overall_score ?? -1)).slice(0, 6).map(o => {
+            const n = (v?: number | null) => (v != null ? Math.round(v) : '—');
+            return (
+              <li key={o.id}>
+                <button type="button" onClick={() => navigate(`/app/organizations/${o.id}`)}
+                  className="grid w-full grid-cols-[minmax(0,1fr)_36px_44px] items-center gap-3 px-5 sm:px-6 md:gap-4 py-3 text-left transition-colors hover:bg-gray-50 md:grid-cols-[minmax(0,1fr)_repeat(3,56px)_64px_72px]">
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-emerald-50 text-sm font-semibold text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300">{(o.name || '?').slice(0, 1).toUpperCase()}</span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium text-gray-900">{o.name}</span>
+                      {o.industry && <span className="block truncate text-xs text-gray-500">{o.industry}</span>}
+                    </span>
                   </span>
-                </span>
-                <span className="w-10 text-right text-sm font-semibold tabular-nums text-gray-900">{o.overall_score != null ? Math.round(o.overall_score) : '—'}</span>
-                {o.rating ? <Badge tone={scoreTone(o.overall_score ?? 0)}>{o.rating}</Badge> : <span className="w-12" />}
-              </button>
-            </li>
-          ))}
+                  <span className="hidden text-right text-sm tabular-nums text-gray-600 md:block">{n(o.environmental_score)}</span>
+                  <span className="hidden text-right text-sm tabular-nums text-gray-600 md:block">{n(o.social_score)}</span>
+                  <span className="hidden text-right text-sm tabular-nums text-gray-600 md:block">{n(o.governance_score)}</span>
+                  <span className="text-right text-sm font-semibold tabular-nums text-gray-900">{n(o.overall_score)}</span>
+                  <span className="flex justify-end">{o.rating ? <Badge tone={scoreTone(o.overall_score ?? 0)}>{o.rating}</Badge> : <span className="text-xs text-gray-400">—</span>}</span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </section>
     </div>
