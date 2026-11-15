@@ -2665,7 +2665,7 @@
       "journal": "Journal d'audit",
       "versions": "Historique versions",
       "documents": "Pièces justificatives",
-      "export": "Export & Certification"
+      "export": "Export & vérification"
     },
     "event": "Événement",
     "user": "Utilisateur",
@@ -2935,7 +2935,7 @@
   },
   "carbon": {
     "title": "Bilan Carbone — Scope 3",
-    "subtitle15cat": "15 catégories GHG Protocol · Facteurs ADEME Base Empreinte® · Exercice",
+    "subtitle15cat": "15 catégories GHG Protocol · Facteurs indicatifs (à confronter à la Base Empreinte® ADEME) · Exercice",
     "tabOverview": "Vue d'ensemble",
     "tabScope3": "15 Catégories Scope 3",
     "completeWithAI": "Compléter avec l'IA",

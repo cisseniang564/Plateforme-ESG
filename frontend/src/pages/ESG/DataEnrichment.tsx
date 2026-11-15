@@ -80,7 +80,7 @@ function StepIndicator({ current }: { current: SirenStep }) {
   const STEPS = getSteps(t);
   const idx = { input: 0, preview: 1, confirm: 2, done: 3 }[current];
   return (
-    <div className="flex items-center gap-0 select-none">
+    <div className="flex items-center gap-0 select-none overflow-x-auto">
       {STEPS.map((label, i) => {
         const done = i < idx;
         const active = i === idx;
@@ -650,7 +650,7 @@ export default function DataEnrichment() {
           {sirenStep === 'preview' && company && (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
               {/* Header */}
-              <div className="flex items-start justify-between mb-6">
+              <div className="flex flex-wrap gap-3 items-start justify-between mb-6">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl flex items-center justify-center border border-blue-100 shadow-sm">
                     <Building2 className="h-7 w-7 text-blue-600" />

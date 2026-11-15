@@ -253,7 +253,7 @@ export default function IntegrationManagement() {
             {t('integ.settings', 'Paramètres')}
           </button>
 
-          <div className="flex items-start justify-between gap-6">
+          <div className="flex flex-wrap items-start justify-between gap-6">
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide uppercase">

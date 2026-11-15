@@ -672,7 +672,7 @@ export default function TenantSettings() {
       {/* ── Organisation name mapping card ────────────────────────────────── */}
       <div className="mb-6 rounded-2xl border border-violet-100 overflow-hidden" style={{ background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)' }}>
         {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-violet-100">
+        <div className="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-violet-100">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)' }}>
             <Link2 size={14} className="text-white" />
           </div>
@@ -704,7 +704,7 @@ export default function TenantSettings() {
             </div>
           </div>
           {tenantData?.slug && (
-            <div className="flex items-center gap-2 text-xs text-violet-500">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-violet-500">
               <span className="font-mono bg-violet-50 border border-violet-100 px-2 py-0.5 rounded text-violet-600">{tenantData.slug}</span>
               <span className="text-violet-400">{t('settings.tenant.workspace.uniqueId', 'identifiant unique (non modifiable)')}</span>
             </div>

@@ -408,7 +408,7 @@ export default function UserProfile() {
 
       {/* ── Sécurité : 2FA ──────────────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-green-50 rounded-xl flex items-center justify-center">
               <Shield className="h-4.5 w-4.5 text-green-600" style={{ width: '1.125rem', height: '1.125rem' }} />

@@ -431,7 +431,7 @@ export default function CalculatedMetrics() {
           </div>
 
           {/* Right */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {/* Year selector */}
             <div className="flex items-center gap-1 bg-white/10 rounded-xl p-1 border border-white/20">
               {YEARS.map(y => (

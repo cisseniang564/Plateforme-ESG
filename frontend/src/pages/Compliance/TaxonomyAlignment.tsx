@@ -611,7 +611,7 @@ export default function TaxonomyAlignment() {
         style={{ background: 'linear-gradient(135deg,#052e16 0%,#166534 50%,#15803d 100%)' }}
         className="px-8 py-10 text-white"
       >
-        <div className="flex items-start justify-between max-w-7xl mx-auto">
+        <div className="flex flex-wrap gap-4 items-start justify-between max-w-7xl mx-auto">
           <div>
             <div className="flex items-center gap-3 mb-3">
               <Leaf className="h-8 w-8 text-green-300" />

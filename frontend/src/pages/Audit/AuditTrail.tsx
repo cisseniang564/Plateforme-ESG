@@ -365,7 +365,7 @@ export default function AuditTrail() {
 
       {/* ── Tabs ── */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="flex border-b border-gray-100">
+        <div className="flex border-b border-gray-100 overflow-x-auto">
           {tabs.map(tb => (
             <button
               key={tb.id}

@@ -424,7 +424,7 @@ export default function ScoresList() {
           )}
 
           {/* ── AI insights CTA ──────────────────────────────────────── */}
-          <div className="flex items-center gap-4 rounded-2xl border border-violet-100 bg-gradient-to-r from-violet-50 to-indigo-50 p-5">
+          <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-violet-100 bg-gradient-to-r from-violet-50 to-indigo-50 p-5">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-100">
               <Sparkles className="h-5 w-5 text-violet-600" />
             </div>

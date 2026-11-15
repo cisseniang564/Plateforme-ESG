@@ -472,7 +472,7 @@ ${taggedText}
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
               <FileCode2 className="h-5 w-5 text-white" />
@@ -515,7 +515,7 @@ ${taggedText}
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mt-4">
+        <div className="flex gap-1 mt-4 overflow-x-auto">
           {TABS.map(tab => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;

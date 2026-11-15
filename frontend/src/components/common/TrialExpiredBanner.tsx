@@ -52,7 +52,10 @@ export default function TrialBanner() {
       .catch(() => {});
   }, [isBillingPage]);
 
-  if (isBillingPage || !sub) return null;
+  // La session de démo n'a pas de vraie période d'essai : pas de bandeau.
+  let isDemo = false;
+  try { isDemo = localStorage.getItem('is_demo_session') === '1'; } catch { /* stockage indisponible */ }
+  if (isBillingPage || isDemo || !sub) return null;
 
   const { plan_tier, status, trial_ends_at } = sub;
 

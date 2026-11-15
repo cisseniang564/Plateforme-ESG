@@ -267,7 +267,7 @@ export default function HRImport() {
           className="absolute inset-0 pointer-events-none"
           style={{ background: 'radial-gradient(ellipse at 85% 15%, rgba(255,255,255,0.1) 0%, transparent 55%)' }}
         />
-        <div className="relative px-8 py-7 flex items-start justify-between gap-6">
+        <div className="relative px-8 py-7 flex flex-wrap items-start justify-between gap-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,0.2)' }}>

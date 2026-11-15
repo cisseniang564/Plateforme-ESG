@@ -250,7 +250,7 @@ export default function IndicatorComparison() {
       <div>
         <div className="bg-gradient-to-br from-primary-600 to-primary-700 rounded-2xl p-8 text-white shadow-xl">
           <BackButton to="/app/indicators" label={t('indicators.backToIndicators', 'Indicateurs')} className="mb-4 text-white/70 hover:text-white" />
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
                 <BarChart3 className="h-10 w-10" />
@@ -271,7 +271,7 @@ export default function IndicatorComparison() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border-l-4 border-primary-500">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <p className="text-sm text-gray-600 mb-1">{t('indicators.totalIndicatorsLabel')}</p>
               <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
@@ -283,7 +283,7 @@ export default function IndicatorComparison() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border-l-4 border-green-500">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <p className="text-sm text-gray-600 mb-1">{t('indicators.targetsReached')}</p>
               <p className="text-3xl font-bold text-green-600">{stats.onTrack}</p>
@@ -295,7 +295,7 @@ export default function IndicatorComparison() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border-l-4 border-orange-500">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <p className="text-sm text-gray-600 mb-1">{t('indicators.belowTarget')}</p>
               <p className="text-3xl font-bold text-orange-600">{stats.belowTarget}</p>
@@ -307,7 +307,7 @@ export default function IndicatorComparison() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm border-l-4 border-blue-500">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <p className="text-sm text-gray-600 mb-1">{t('indicators.avgCompletion')}</p>
               <p className="text-3xl font-bold text-blue-600">{stats.avgCompletion.toFixed(0)}%</p>

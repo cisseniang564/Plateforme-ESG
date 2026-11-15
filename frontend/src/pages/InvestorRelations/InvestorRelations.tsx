@@ -370,7 +370,7 @@ ${ratings.map(r => `- **${PROVIDERS[r.provider].name}** : ${r.score} (${fmtDate(
 
       {/* ── Tab stepper ───────────────────────────────────────────────────── */}
       <div style={{ background: '#fff', borderBottom: '1px solid #e5e7eb' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', gap: 0 }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', gap: 0, overflowX: 'auto' }}>
           {([
             { id: 'ratings',        label: t('inv.tab.ratings', '1. Notations ESG'),        icon: <Award size={15} /> },
             { id: 'questionnaires', label: '2. Questionnaires',        icon: <FileText size={15} /> },

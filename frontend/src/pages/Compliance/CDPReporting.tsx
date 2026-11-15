@@ -393,7 +393,7 @@ export default function CDPReporting() {
         className="relative px-6 py-10 text-white"
         style={{ background: 'linear-gradient(135deg,#0c1445 0%,#1e3a8a 50%,#1d4ed8 100%)' }}
       >
-        <div className="mx-auto max-w-6xl flex items-start justify-between gap-6">
+        <div className="mx-auto max-w-6xl flex flex-wrap items-start justify-between gap-6">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
@@ -443,7 +443,7 @@ export default function CDPReporting() {
       </div>
 
       {/* Body */}
-      <div className="mx-auto max-w-6xl px-6 py-8 flex gap-6">
+      <div className="mx-auto max-w-6xl px-6 py-8 flex flex-col lg:flex-row gap-6">
         {/* Sidebar */}
         <aside className="w-52 flex-shrink-0">
           <div className="sticky top-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-4">

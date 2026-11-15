@@ -264,7 +264,7 @@ export default function VigilancePlanPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 border-b border-gray-200">
+      <div className="flex items-center gap-1 border-b border-gray-200 overflow-x-auto">
         {([
           { id: 'overview', label: t('compliance.vigilance.tabOverview', "Vue d'ensemble"), icon: Shield },
           { id: 'risks', label: t('compliance.vigilance.tabRisks', 'Cartographie'), icon: AlertTriangle },

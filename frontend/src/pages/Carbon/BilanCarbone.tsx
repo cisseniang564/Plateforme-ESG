@@ -483,7 +483,7 @@ export default function BilanCarbone() {
             </div>
 
             {/* Right: year selector + actions */}
-            <div className="flex flex-col gap-3 shrink-0">
+            <div className="flex flex-col gap-3 min-w-0 lg:shrink-0">
               {/* Year selector */}
               <div className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-xl px-4 py-2.5">
                 <Calendar className="h-4 w-4 text-emerald-300" />
@@ -498,7 +498,7 @@ export default function BilanCarbone() {
                 </select>
               </div>
               {/* Actions */}
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button onClick={() => navigate('/app/carbon/fec-wizard')}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-105"
                   style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', boxShadow: '0 4px 12px rgba(16,185,129,0.3)' }}

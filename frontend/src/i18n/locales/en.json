@@ -6232,7 +6232,7 @@
       "journal": "Audit journal",
       "versions": "Version history",
       "documents": "Evidence documents",
-      "export": "Export & Certification"
+      "export": "Export & verification"
     },
     "event": "Event",
     "user": "User",
@@ -8149,7 +8149,7 @@
   },
   "carbon": {
     "title": "Carbon Balance — Scope 3",
-    "subtitle15cat": "15 GHG Protocol categories · ADEME Base Empreinte® factors · Year",
+    "subtitle15cat": "15 GHG Protocol categories · Indicative factors (check against ADEME Base Empreinte®) · Year",
     "tabOverview": "📊 Overview",
     "tabScope3": "15 Scope 3 Categories",
     "completeWithAI": "Complete with AI",
@@ -12392,7 +12392,7 @@
       },
       "ademe": {
         "title": "Why ADEME factors?",
-        "body": "The ADEME Base Empreinte® is the French reference for emission factors, validated by sector experts. ESGFlow includes a selection (Base Carbone v23), updated with each platform release.",
+        "body": "The ADEME Base Empreinte® is the French reference for emission factors, validated by sector experts. ESGFlow uses indicative monetary ratios, not an audited extract: compare them with the Base Empreinte before any regulatory use.",
         "stat1": {
           "label": "Available factors",
           "value": "3,000+"

@@ -441,7 +441,7 @@ export default function DataQualityDashboard() {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-2 ml-auto lg:ml-0">
+              <div className="flex flex-wrap gap-2 ml-auto lg:ml-0">
                 <button
                   onClick={() => loadData(true)}
                   disabled={refreshing}

@@ -1155,7 +1155,7 @@ export default function SBTiWorkflow() {
         </div>
 
         {/* Navigation */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <button
             onClick={() => setStep((s) => s - 1)}
             disabled={!canGoPrev}

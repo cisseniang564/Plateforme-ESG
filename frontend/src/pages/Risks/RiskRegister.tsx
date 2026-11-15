@@ -107,7 +107,7 @@ function HeatmapTab({ risks }: { risks: ESGRisk[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-8 items-start">
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
         {/* Matrix */}
         <div className="flex-1">
           <div className="flex gap-3 items-center mb-4">
@@ -712,7 +712,7 @@ export default function RiskRegister() {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZyIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLW9wYWNpdHk9IjAuMDUiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg==')] opacity-30" />
         <div className="relative">
           {/* Top row: title + actions */}
-          <div className="flex items-start justify-between mb-6">
+          <div className="flex flex-wrap gap-3 items-start justify-between mb-6">
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide uppercase">
@@ -797,7 +797,7 @@ export default function RiskRegister() {
       {/* ── Tabs ──────────────────────────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         {/* Tab bar */}
-        <div className="flex border-b border-gray-100">
+        <div className="flex border-b border-gray-100 overflow-x-auto">
           {TABS.map(tab => {
             const Icon = tab.icon;
             const active = activeTab === tab.key;

@@ -551,7 +551,7 @@ export default function DecarbonationPlan() {
           </div>
         </div>
         {/* Tabs */}
-        <div className="relative mt-6 flex gap-2">
+        <div className="relative mt-6 flex gap-2 overflow-x-auto">
           {tabs.map(t => (
             <button
               key={t.id}
