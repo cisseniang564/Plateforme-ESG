@@ -109,6 +109,10 @@ async def create_or_update_sso_config(
     if body.is_enabled:
         if not body.issuer_url or not body.issuer_url.startswith("https://"):
             raise HTTPException(status_code=400, detail="L'URL du fournisseur doit commencer par https://.")
+        try:
+            oidc_service.check_issuer_url(body.issuer_url)
+        except OIDCError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
         if not body.client_id:
             raise HTTPException(status_code=400, detail="Le Client ID est obligatoire.")
         domains = oidc_service.parse_domains(body.allowed_domains)
@@ -205,6 +209,7 @@ async def test_sso_config(
         raise HTTPException(status_code=400, detail="Aucune configuration SSO trouvée")
 
     try:
+        oidc_service.check_issuer_url(config.issuer_url)
         async with httpx.AsyncClient(timeout=10, follow_redirects=False) as client:
             discovery = await oidc_service.discover(config.issuer_url, client)
         return {
@@ -214,11 +219,11 @@ async def test_sso_config(
             "token_endpoint": discovery.get("token_endpoint"),
             "supported_scopes": discovery.get("scopes_supported", []),
         }
+    except OIDCError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Impossible de contacter le provider: {exc}",
-        )
+        logger.warning("SSO test-config tenant=%s: %s", current_user.tenant_id, exc)
+        raise HTTPException(status_code=400, detail="Impossible de joindre le fournisseur : vérifiez l'URL de l'émetteur.")
 
 
 # ─── Helpers ────────────────────────────────────────────────────────────────────

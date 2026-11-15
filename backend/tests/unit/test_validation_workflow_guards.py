@@ -48,3 +48,30 @@ def test_full_name_est_une_propriete_pas_une_colonne():
     src = inspect.getsource(vw)
     assert "User.full_name" not in src
     assert "select(User.id" not in src
+
+
+# ── Validation par un seul utilisateur (paramètre du compte) ──────────────────
+
+def test_validateur_unique_desactive_par_defaut():
+    src = _src(vw._allow_self_approval)
+    assert '"allow_self_approval", False' in src
+
+
+def test_parametre_reserve_aux_admins_et_trace():
+    src = _src(vw.update_validation_settings)
+    assert "ADMIN_OR_ABOVE" in src
+    assert "AuditLog" in src and "seal_entry" in src
+
+
+def test_action_d_audit_tient_dans_la_colonne():
+    """La colonne audit_logs.action est un VARCHAR(20)."""
+    import re
+    for action in re.findall(r'action="([^"]+)"', inspect.getsource(vw)):
+        assert len(action) <= 20, action
+
+
+def test_auto_validation_signalee():
+    src = _src(vw.approve_entries)
+    assert "validate_self" in src
+    assert "auto-validation" in src
+    assert "self_approved" in src

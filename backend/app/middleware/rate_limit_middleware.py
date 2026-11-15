@@ -55,6 +55,9 @@ def limit_for_plan(plan_tier: str) -> int:
 # Read-only endpoints called on every page load — these should never trip the
 # bucket alone. We still count them but exempt path matching is enforced for
 # public/static-like routes.
+PUBLIC_FORM_PATHS = {"/api/v1/contact", "/api/v1/leads/newsletter", "/api/v1/leads/checklist-csrd"}
+PUBLIC_FORM_LIMIT_PER_MIN = 5
+
 _EXEMPT = {
     "/health", "/health/live", "/health/ready",
     "/", "/docs", "/redoc", "/openapi.json", "/metrics",
@@ -206,6 +209,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         Authenticated requests are limited per plan tier; unauthenticated
         requests fall back to per-IP rate limiting at the free-plan level.
         """
+        path = request.url.path
+        if path in PUBLIC_FORM_PATHS:
+            # Formulaires publics qui envoient un e-mail : limite basse par IP (anti-abus).
+            ip = request.client.host if request.client else "unknown"
+            return PUBLIC_FORM_LIMIT_PER_MIN, f"form:{ip}"
+
         tenant_id = getattr(request.state, "tenant_id", None)
         if tenant_id:
             plan_tier = getattr(request.state, "plan_tier", None)

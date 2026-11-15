@@ -89,6 +89,21 @@ def email_allowed(email: str, allowed_domains: Optional[str]) -> bool:
 
 # ── Fournisseur ─────────────────────────────────────────────────────────────────
 
+_MS_MULTI_TENANT = ("/common", "/organizations", "/consumers")
+
+
+def check_issuer_url(issuer_url: str) -> None:
+    """Erreurs de saisie fréquentes, avec un message qui dit quoi corriger."""
+    url = (issuer_url or "").strip()
+    if "{" in url or "}" in url:
+        raise OIDCError("Remplacez la partie entre accolades de l'URL (ex. {tenant}) par votre identifiant.")
+    if "login.microsoftonline.com" in url and any(seg in url.lower() for seg in _MS_MULTI_TENANT):
+        raise OIDCError(
+            "Microsoft Entra : utilisez l'URL propre à votre annuaire, "
+            "https://login.microsoftonline.com/<ID de l'annuaire>/v2.0 (et non common ou organizations)."
+        )
+
+
 async def discover(issuer_url: str, client: httpx.AsyncClient) -> Dict[str, Any]:
     assert_public_https(issuer_url)
     resp = await client.get(issuer_url.rstrip("/") + "/.well-known/openid-configuration")
@@ -100,7 +115,10 @@ async def discover(issuer_url: str, client: httpx.AsyncClient) -> Dict[str, Any]
         if key != "issuer":
             assert_public_https(doc[key])
     if doc["issuer"].rstrip("/") != issuer_url.rstrip("/"):
-        raise OIDCError("L'émetteur annoncé ne correspond pas à la configuration.")
+        raise OIDCError(
+            f"L'émetteur annoncé par le fournisseur ({doc['issuer']}) ne correspond pas à l'URL saisie : "
+            "copiez exactement cette valeur."
+        )
     return doc
 
 

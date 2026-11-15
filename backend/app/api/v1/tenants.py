@@ -138,6 +138,7 @@ async def update_tenant(
     request: TenantUpdateRequest,
     tenant_id: UUID = Depends(get_current_tenant_id),
     db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_role(Roles.TENANT_ADMIN)),
 ):
     """
     Update tenant settings.

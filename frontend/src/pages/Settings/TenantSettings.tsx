@@ -279,15 +279,16 @@ function SSOTab() {
         <p className="text-xs font-medium text-gray-700 mb-2">{t('settings.tenant.sso.prefillFor', 'Pré-remplir pour :')}</p>
         <div className="flex flex-wrap gap-2">
           {[
-            { name: 'Microsoft Entra', issuer: 'https://login.microsoftonline.com/{tenant}/v2.0', icon: '🏢' },
-            { name: 'Okta',            issuer: 'https://{domain}.okta.com',                      icon: '🔑' },
-            { name: 'Google Workspace',issuer: 'https://accounts.google.com',                    icon: '🔵' },
-            { name: 'Keycloak',        issuer: 'https://your-keycloak.com/realms/{realm}',       icon: '🔐' },
+            // Microsoft n'envoie pas l'attribut « email » par défaut : preferred_username contient l'adresse de connexion.
+            { name: 'Microsoft Entra', issuer: 'https://login.microsoftonline.com/{tenant}/v2.0', icon: '🏢', email: 'preferred_username' },
+            { name: 'Okta',            issuer: 'https://{domain}.okta.com',                      icon: '🔑', email: 'email' },
+            { name: 'Google',          issuer: 'https://accounts.google.com',                    icon: '🔵', email: 'email' },
+            { name: 'Keycloak',        issuer: 'https://your-keycloak.com/realms/{realm}',       icon: '🔐', email: 'email' },
           ].map(p => (
             <button
               type="button"
               key={p.name}
-              onClick={() => setForm(f => ({ ...f, provider_name: p.name, issuer_url: f.issuer_url || p.issuer }))}
+              onClick={() => setForm(f => ({ ...f, provider_name: p.name, issuer_url: p.issuer, email_attribute: p.email, scopes: 'openid email profile' }))}
               className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             >
               {p.icon} {p.name}
@@ -295,6 +296,17 @@ function SSOTab() {
           ))}
         </div>
       </div>
+
+      {form.issuer_url.includes('microsoftonline') && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg p-3">
+          {t('settings.tenant.sso.msHint', "Microsoft Entra : remplacez {tenant} par l'ID de l'annuaire (Entra › Vue d'ensemble). Dans l'inscription d'application, déclarez l'URL de redirection ci-dessus en plateforme « Web » et créez un secret client.")}
+        </p>
+      )}
+      {form.issuer_url === 'https://accounts.google.com' && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg p-3">
+          {t('settings.tenant.sso.googleHint', "Google : dans Google Cloud Console › API et services › Identifiants, créez un « ID client OAuth » de type « Application Web » et déclarez l'URL de redirection ci-dessus. Indiquez ensuite le domaine de vos adresses (ex. votre domaine Google Workspace).")}
+        </p>
+      )}
 
       {/* Form */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

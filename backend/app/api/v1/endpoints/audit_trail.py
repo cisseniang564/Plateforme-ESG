@@ -56,6 +56,7 @@ _ACTION_MAP: Dict[str, str] = {
     "update":           "UPDATE",
     "delete":           "DELETE",
     "validate":         "APPROVE",
+    "validate_self":    "APPROVE",
     "approve":          "APPROVE",
     "reject":           "REJECT",
     "submit":           "SUBMIT",
