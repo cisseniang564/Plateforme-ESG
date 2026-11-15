@@ -534,7 +534,7 @@ export default function ValidationWorkflow() {
                     <span>
                       {vSettings?.allow_self_approval
                         ? t('validation.traceSelf', "Validation par un seul utilisateur activée : l'auteur d'une soumission peut l'approuver lui-même. Ces approbations sont marquées « auto-validation » dans le journal d'audit et dans l'empreinte, pour qu'un vérificateur les repère.")
-                        : t('validation.traceFourEyes', "Principe des 4 yeux : l'auteur d'une soumission ne peut pas l'approuver lui-même. Seuls les rôles gestionnaire ESG et supérieurs peuvent approuver ou refuser.")}
+                        : t('validation.traceFourEyes2', "Principe des 4 yeux : l'auteur d'une soumission ne peut pas l'approuver lui-même, sauf s'il est le seul utilisateur actif du compte (l'approbation est alors marquée « auto-validation »). Seuls les rôles gestionnaire ESG et supérieurs peuvent approuver ou refuser.")}
                     </span>
                   </li>
                   <li className="flex items-start gap-2">

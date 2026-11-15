@@ -83,7 +83,7 @@ export const collecter: DocArticle[] = [
     summary: 'Transformer votre Fichier des Écritures Comptables en émissions Scope 3 estimées.',
     routes: [{ label: 'Assistant FEC', to: '/app/carbon/fec-wizard' }],
     feature: 'fec_import',
-    about: 'Vous déposez le FEC exporté de votre logiciel comptable (Sage, Cegid, Pennylane…) ; la plateforme classe vos dépenses par poste et estime les émissions Scope 3 des seules dépenses de services (assurances, honoraires, maintenance, télécoms, missions…) avec les ratios monétaires ADEME, incertains à 80 %. Les achats d\'énergie, de matières et de transport ne sont pas convertis : saisissez vos données physiques.',
+    about: 'Vous déposez le FEC exporté de votre logiciel comptable (Sage, Cegid, Pennylane…) ; la plateforme classe vos dépenses par poste et estime les émissions Scope 3 des seules dépenses de services (assurances, honoraires, maintenance, télécoms, missions…) avec des ratios monétaires indicatifs de type ADEME, incertains à 80 %. Les achats d\'énergie, de matières et de transport ne sont pas convertis : saisissez vos données physiques.',
     shows: [
       'Un assistant en 3 étapes : Téléverser, Vérifier, Confirmer.',
       'Format attendu : fichier .txt (FEC officiel) ou .csv ; un fichier de plus de 30 Mo doit être découpé par exercice fiscal.',
@@ -147,7 +147,7 @@ export const collecter: DocArticle[] = [
       { title: 'Surveiller', text: 'Dans le hub, repérez les connecteurs en erreur et utilisez « Reconfigurer ».' },
     ],
     tips: [
-      'Certains connecteurs sont marqués « Démo » ou « Bientôt » : leur intégration native n\'est pas encore disponible.',
+      'Un connecteur marqué « Bientôt » n\'a pas encore d\'intégration native.',
       'Vous pouvez exporter la liste de vos connecteurs en CSV.',
     ],
     related: ['connecteurs-energie-finance', 'import-fec', 'integrations'],
@@ -175,8 +175,7 @@ export const collecter: DocArticle[] = [
       { title: 'Synchroniser', text: 'Suivez la synchronisation puis ouvrez le bilan Scope 3 pour voir le résultat.' },
     ],
     tips: [
-      'Les clés et identifiants sont transmis en HTTPS et ne sont pas conservés.',
-      'Si l\'authentification échoue, la page affiche des données de démonstration clairement indiquées : ce ne sont pas vos données.',
+      'Les identifiants sont transmis en HTTPS.',
       'Déconnecter Enedis ne supprime pas les données déjà importées.',
     ],
     related: ['connecteurs', 'scope3', 'bilan-carbone'],

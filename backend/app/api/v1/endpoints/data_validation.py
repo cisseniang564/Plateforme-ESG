@@ -7,6 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel
 import hashlib
 
+from app.services import self_approval
 from app.core.permissions import Roles
 from app.dependencies import get_db, get_current_user, require_any_role
 from app.models.data_entry import DataEntry
@@ -102,8 +103,8 @@ def _sign_and_verify_entry(
     }
     if solo_mode:
         e_signature["note"] = (
-            "Validation en mode mono-utilisateur : aucun autre utilisateur actif "
-            "sur ce compte, l'auteur de la saisie l'a vérifiée lui-même."
+            "Auto-validation : l'auteur de la saisie l'a vérifiée lui-même (seul utilisateur "
+            "actif du compte, ou paramètre « validation par un seul utilisateur » activé)."
         )
     flags["e_signature"] = e_signature
     entry.quality_flags = flags
@@ -160,7 +161,7 @@ async def validate_entry(
         has_other_reviewer = await _has_other_active_reviewer(
             db, current_user.tenant_id, current_user.id
         )
-        if has_other_reviewer:
+        if has_other_reviewer and not await self_approval.setting_enabled(db, current_user.tenant_id):
             raise HTTPException(
                 status_code=403,
                 detail=(
@@ -267,7 +268,7 @@ async def batch_validate(
     has_other_reviewer = await _has_other_active_reviewer(
         db, current_user.tenant_id, current_user.id
     )
-    solo_mode = not has_other_reviewer
+    solo_mode = (not has_other_reviewer) or await self_approval.setting_enabled(db, current_user.tenant_id)
 
     now = datetime.utcnow()
     client_ip = request.client.host if request.client else None

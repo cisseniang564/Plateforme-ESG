@@ -57,18 +57,18 @@ const EMPTY_FORM: UserForm = {
 
 const getFallbackRoles = (t: TFunc): Role[] => [
   { id: '', name: 'tenant_admin', display_name: t('settings.userMgmt.roleAdminName', 'Administrateur'), description: t('settings.userMgmt.roleAdminDesc', 'Accès complet à la plateforme'),    is_system: true },
+  { id: '', name: 'esg_admin',    display_name: t('settings.userMgmt.roleEsgAdminName', 'Admin ESG'),     description: t('settings.userMgmt.roleEsgAdminDesc', 'Méthodologie, validation et réglages ESG'), is_system: true },
   { id: '', name: 'esg_manager',  display_name: t('settings.userMgmt.roleManagerName', 'Manager ESG'),   description: t('settings.userMgmt.roleManagerDesc', 'Gestion des organisations'),        is_system: true },
-  { id: '', name: 'esg_analyst',  display_name: t('settings.userMgmt.roleAnalystName', 'Analyste ESG'),  description: t('settings.userMgmt.roleAnalystDesc', 'Saisie et analyse des données ESG'), is_system: true },
+  { id: '', name: 'data_entry',   display_name: t('settings.userMgmt.roleContributorName', 'Contributeur'),  description: t('settings.userMgmt.roleContributorDesc', 'Saisie et import des données ESG'), is_system: true },
   { id: '', name: 'viewer',       display_name: t('settings.userMgmt.roleViewerName', 'Lecteur'),        description: t('settings.userMgmt.roleViewerDesc', 'Consultation uniquement'),            is_system: true },
 ];
 
 const ADMIN_ROLE_NAMES = new Set(['tenant_admin', 'esg_admin', 'admin']);
 
+// Seuls les rôles renvoyés par le serveur (avec un identifiant) sont proposés :
+// un rôle ajouté côté navigateur n'existerait pas en base et l'invitation échouerait.
 function mergeRoles(apiRoles: Role[], t: TFunc): Role[] {
-  const fallback = getFallbackRoles(t);
-  if (apiRoles.length === 0) return fallback;
-  const apiNames = new Set(apiRoles.map(r => r.name));
-  return [...apiRoles, ...fallback.filter(f => !apiNames.has(f.name))];
+  return apiRoles.length > 0 ? apiRoles : getFallbackRoles(t);
 }
 
 const isValidUUID = (v: string) =>
@@ -78,7 +78,7 @@ const ROLE_STYLE: Record<string, { bg: string; text: string; border: string; dot
   tenant_admin: { bg: 'bg-red-50',     text: 'text-red-700',     border: 'border-red-200',    dot: 'bg-red-500',    icon: Crown },
   esg_admin:    { bg: 'bg-red-50',     text: 'text-red-700',     border: 'border-red-200',    dot: 'bg-red-500',    icon: Crown },
   esg_manager:  { bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200',   dot: 'bg-blue-500',   icon: BarChart3 },
-  esg_analyst:  { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200',dot: 'bg-emerald-500',icon: Zap },
+  data_entry:   { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200',dot: 'bg-emerald-500',icon: Zap },
   admin:        { bg: 'bg-red-50',     text: 'text-red-700',     border: 'border-red-200',    dot: 'bg-red-500',    icon: Crown },
   manager:      { bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200',   dot: 'bg-blue-500',   icon: BarChart3 },
   analyst:      { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200',dot: 'bg-emerald-500',icon: Zap },
